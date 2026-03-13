@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find \"C:\\\\Users\\\\sahoo\\\\AorboTreks\\\\aorbowebapp\\\\aorbo_flutter_app-dev-raj\\\\aorbo_flutter_app-dev-raj\\\\lib\\\\utils\" -type f -name \"*.dart\" 2>/dev/null | head -15)",
+      "Bash(grep -r \"class.*Controller\" \"C:\\\\Users\\\\sahoo\\\\AorboTreks\\\\aorbowebapp\\\\aorbo_flutter_app-dev-raj\\\\aorbo_flutter_app-dev-raj\\\\lib\\\\controller\" 2>/dev/null | head -10)",
+      "Bash(cd \"C:\\\\Users\\\\sahoo\\\\AorboTreks\\\\aorbowebapp\\\\aorbo_flutter_app-dev-raj\\\\aorbo_flutter_app-dev-raj\" && flutter analyze lib/screens/about_us_screen.dart lib/screens/my_account_screen.dart 2>&1)",
+      "Bash(cd \"C:\\\\Users\\\\sahoo\\\\AorboTreks\\\\aorbowebapp\\\\aorbo_flutter_app-dev-raj\\\\aorbo_flutter_app-dev-raj\" && find lib/screens -name \"*.dart\" | xargs wc -l 2>/dev/null | sort -rn | head -20)",
+      "Bash(cd \"C:\\\\Users\\\\sahoo\\\\AorboTreks\\\\aorbowebapp\\\\aorbo_flutter_app-dev-raj\\\\aorbo_flutter_app-dev-raj\" && flutter pub get 2>&1)",
+      "Bash(cd \"C:\\\\Users\\\\sahoo\\\\AorboTreks\\\\aorbowebapp\\\\aorbo_flutter_app-dev-raj\\\\aorbo_flutter_app-dev-raj\" && flutter analyze 2>&1)",
+      "Bash(cd \"C:\\\\Users\\\\sahoo\\\\AorboTreks\\\\aorbowebapp\\\\aorbo_flutter_app-dev-raj\\\\aorbo_flutter_app-dev-raj\" && flutter analyze 2>&1 | head -30)",
+      "Bash(cd \"C:\\\\Users\\\\sahoo\\\\AorboTreks\\\\aorbowebapp\\\\aorbo_flutter_app-dev-raj\\\\aorbo_flutter_app-dev-raj\" && flutter analyze 2>&1 | grep -E \"^  error|^  warning\" | head -20)",
+      "Bash(cd \"C:\\\\Users\\\\sahoo\\\\AorboTreks\\\\aorbowebapp\\\\aorbo_flutter_app-dev-raj\\\\aorbo_flutter_app-dev-raj\" && flutter analyze 2>&1 | grep -E \"^  error|^  warning|No issues|issue\" | head -20)",
+      "Bash(cd \"C:\\\\Users\\\\sahoo\\\\AorboTreks\\\\aorbowebapp\\\\aorbo_flutter_app-dev-raj\\\\aorbo_flutter_app-dev-raj\" && flutter analyze 2>&1 | grep -E \"^  error|^  warning|No issues|issues found\" | head -20)",
+      "Bash(cd \"C:\\\\Users\\\\sahoo\\\\AorboTreks\\\\aorbowebapp\\\\aorbo_flutter_app-dev-raj\\\\aorbo_flutter_app-dev-raj\" && flutter analyze 2>&1 | grep \"^ *error\" | head -20)",
+      "Bash(cd \"C:\\\\Users\\\\sahoo\\\\AorboTreks\\\\aorbowebapp\\\\aorbo_flutter_app-dev-raj\\\\aorbo_flutter_app-dev-raj\" && flutter analyze 2>&1 | grep -c \"^ *error\")",
+      "Bash(cd \"C:\\\\Users\\\\sahoo\\\\AorboTreks\\\\aorbowebapp\\\\aorbo_flutter_app-dev-raj\\\\aorbo_flutter_app-dev-raj\" && flutter analyze 2>&1 | tail -5)",
+      "Bash(find \"C:\\\\Users\\\\sahoo\\\\AorboTreks\\\\aorbowebapp\\\\aorbo_flutter_app-dev-raj\\\\aorbo_flutter_app-dev-raj\\\\lib\\\\widgets\" -name \"*.dart\" -type f 2>/dev/null | head -20)",
+      "Bash(find \"C:\\\\Users\\\\sahoo\\\\AorboTreks\\\\aorbowebapp\\\\aorbo_flutter_app-dev-raj\\\\aorbo_flutter_app-dev-raj\\\\lib\" -type f -name \"*.dart\" 2>/dev/null | wc -l)"
+    ]
+  }
+}

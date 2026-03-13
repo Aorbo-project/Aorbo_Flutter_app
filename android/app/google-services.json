@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "979616910593",
+    "firebase_url": "https://aorbo-trek-2a7dd-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "aorbo-trek-2a7dd",
+    "storage_bucket": "aorbo-trek-2a7dd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:979616910593:android:fad40c7486469a7e9d9f00",
+        "android_client_info": {
+          "package_name": "com.eclipso.arobo_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDoZtlOEGEjLUgn4CJG8PZHW1oVMWEXBRo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
