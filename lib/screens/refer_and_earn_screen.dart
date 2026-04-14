@@ -1,19 +1,18 @@
+import 'package:arobo_app/utils/app_dimensions.dart';
+import 'package:arobo_app/utils/common_colors.dart';
+import 'package:arobo_app/utils/common_images.dart';
+import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:sizer/sizer.dart';
 
-import '../utils/common_colors.dart';
-import '../utils/common_images.dart';
-import '../utils/screen_constants.dart';
-
-// Custom painter for ticket shape with shadow
+// ── Ticket Painter (logic unchanged) ─────────────────────────────────────────
 class TicketPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final Paint shadowPaint = Paint()
-      ..color = CommonColors.blackColor.withValues(alpha: 0.2)
-      ..maskFilter = MaskFilter.blur(BlurStyle.normal, 6);
+      ..color = CommonColors.blackColor.withValues(alpha: 0.12)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
 
     final Paint mainPaint = Paint()
       ..color = CommonColors.whiteColor
@@ -34,7 +33,11 @@ class TicketPainter extends CustomPainter {
     );
     path.lineTo(size.width, size.height - radius);
     path.quadraticBezierTo(
-        size.width, size.height, size.width - radius, size.height);
+      size.width,
+      size.height,
+      size.width - radius,
+      size.height,
+    );
     path.lineTo(radius, size.height);
     path.quadraticBezierTo(0, size.height, 0, size.height - radius);
     path.lineTo(0, (size.height / 2) + circleRadius);
@@ -47,9 +50,7 @@ class TicketPainter extends CustomPainter {
     path.quadraticBezierTo(0, 0, radius, 0);
     path.close();
 
-    // Draw shadow first
-    canvas.drawPath(path.shift(Offset(2, 2)), shadowPaint);
-    // Draw main shape
+    canvas.drawPath(path.shift(const Offset(0, 3)), shadowPaint);
     canvas.drawPath(path, mainPaint);
   }
 
@@ -57,234 +58,268 @@ class TicketPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-class Refer extends StatefulWidget {
-  const Refer({super.key});
+// ── Screen ────────────────────────────────────────────────────────────────────
+class ReferAndEarnScreen extends StatefulWidget {
+  const ReferAndEarnScreen({super.key});
 
   @override
-  State<Refer> createState() => _ReferState();
+  State<ReferAndEarnScreen> createState() => _ReferAndEarnScreenState();
 }
 
-class _ReferState extends State<Refer> with SingleTickerProviderStateMixin {
+class _ReferAndEarnScreenState extends State<ReferAndEarnScreen>
+    with TickerProviderStateMixin {
+  // ── All original state & logic untouched ────────────────────────────────
   int _selectedTabIndex = 0;
-  String referralCode = "AO12345";
+  final String referralCode = 'AO12345';
   bool _copied = false;
 
-  void _copyToClipboard() async {
-    await Clipboard.setData(ClipboardData(text: referralCode));
-    setState(() {
-      _copied = true;
-    });
-    await Future.delayed(const Duration(seconds: 1));
-    setState(() {
-      _copied = false;
-    });
+  late final AnimationController _entryCtrl;
+  late final Animation<double> _fadeAnim;
+  late final Animation<Offset> _slideAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _entryCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 550),
+    )..forward();
+    _fadeAnim = CurvedAnimation(parent: _entryCtrl, curve: Curves.easeOut);
+    _slideAnim = Tween<Offset>(
+      begin: const Offset(0, 0.06),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _entryCtrl, curve: Curves.easeOutCubic));
   }
 
-  void _onTabSelected(int index) {
-    setState(() {
-      _selectedTabIndex = index;
-    });
+  @override
+  void dispose() {
+    _entryCtrl.dispose();
+    super.dispose();
   }
+
+  Future<void> _copyToClipboard() async {
+    await Clipboard.setData(ClipboardData(text: referralCode));
+    setState(() => _copied = true);
+    await Future.delayed(const Duration(seconds: 2));
+    if (!mounted) return;
+    setState(() => _copied = false);
+  }
+
+  void _onTabSelected(int index) => setState(() => _selectedTabIndex = index);
+
+  // ── Design tokens ────────────────────────────────────────────────────────
+  static const _ink = Color(0xFF0F172A);
+  static const _inkMid = Color(0xFF64748B);
+  static const _inkLight = Color(0xFF94A3B8);
+  static const _divider = Color(0xFFE2E8F0);
+  static const _cardBg = Color(0xFFFFFFFF);
+  static const _pageBg = Color(0xFFF1F5F9);
+  static const _teal1 = Color(0xFF7ECBA1);
+  static const _teal2 = Color(0xFF4BB7DE);
+  static const _accent = Color(0xFF0F172A);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: CommonColors.whiteColor,
+      backgroundColor: _pageBg,
       appBar: AppBar(
-        backgroundColor: CommonColors.whiteColor,
+        backgroundColor: _cardBg,
         scrolledUnderElevation: 0,
         elevation: 0,
         automaticallyImplyLeading: true,
         centerTitle: false,
-        iconTheme: IconThemeData(
-          color: CommonColors.blackColor,
-        ),
+        iconTheme: const IconThemeData(color: _ink),
         title: Text(
           'Refer & Earn',
-          style: GoogleFonts.poppins(
-            fontSize: FontSize.s14,
-            fontWeight: FontWeight.w500,
-            color: CommonColors.blackColor,
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: FontSize.s15,
+            fontWeight: FontWeight.w700,
+            color: _ink,
           ),
         ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: _divider),
+        ),
       ),
-      body: SingleChildScrollView(
-        physics: const ClampingScrollPhysics(),
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 4.w),
-          child: Column(
-            children: [
-              SizedBox(height: ScreenConstant.size20),
-              _buildGreenReferBox(),
-              SizedBox(height: 3.h),
-              _buildReferralCode(),
-              SizedBox(height: 3.h),
-              _buildTabBar(),
-              SizedBox(height: 3.h),
-              _selectedTabIndex == 0
-                  ? _buildReferAndEarnContent()
-                  : _buildReferralHistoryContent(),
-            ],
+      body: FadeTransition(
+        opacity: _fadeAnim,
+        child: SlideTransition(
+          position: _slideAnim,
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              children: [
+                // ── Hero banner ───────────────────────────────────────────
+                _buildHeroBanner(),
+
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 4.w),
+                  child: Column(
+                    children: [
+                      SizedBox(height: 2.h),
+
+                      // ── Referral code ─────────────────────────────────
+                      _buildReferralCode(),
+                      SizedBox(height: 2.5.h),
+
+                      // ── Tab switcher ──────────────────────────────────
+                      _buildTabBar(),
+                      SizedBox(height: 2.5.h),
+
+                      // ── Tab content ───────────────────────────────────
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 300),
+                        switchInCurve: Curves.easeOut,
+                        switchOutCurve: Curves.easeIn,
+                        child: _selectedTabIndex == 0
+                            ? _buildReferAndEarnContent()
+                            : _buildReferralHistoryContent(),
+                      ),
+
+                      SizedBox(height: 4.h),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
-}
 
-  Widget _buildGreenReferBox() {
+  // ── Hero banner ───────────────────────────────────────────────────────────
+  Widget _buildHeroBanner() {
     return Container(
-      width: 100.w,
-      height: 26.h,
-      padding: EdgeInsets.all(5.w),
-      decoration: BoxDecoration(
+      width: double.infinity,
+      decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF7ECBA1),
-            Color(0xFF4BB7DE),
-          ],
+          colors: [_teal1, _teal2],
         ),
-        borderRadius: BorderRadius.circular(6.w),
-        boxShadow: [
-          BoxShadow(
-            color: CommonColors.blackColor.withValues(alpha: 0.2),
-            offset: Offset(2, 2),
-            blurRadius: 6,
-            spreadRadius: 2,
-          )
-        ],
       ),
       child: Stack(
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Refer & Earn ₹ 1000!",
-                style: GoogleFonts.poppins(
-                  fontSize: FontSize.s14,
-                  fontWeight: FontWeight.w600,
-                  color: CommonColors.whiteColor,
-                ),
+          // Decorative circles
+          Positioned(
+            top: -4.h,
+            right: -6.w,
+            child: Container(
+              width: 30.w,
+              height: 30.w,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: CommonColors.whiteColor.withValues(alpha: 0.08),
               ),
-              SizedBox(height: ScreenConstant.size20),
-              SizedBox(
-                width: 60.w, // Reduced width to make space for image
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Column(
-                          children: [
-                            Container(
-                              width: 2.w,
-                              height: 3.w,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: CommonColors.whiteColor,
-                              ),
-                            ),
-                            Container(
-                              width: 1.5.w,
-                              height: 4.h,
-                              color: CommonColors.ceced.withValues(alpha: 0.7),
-                            ),
-                          ],
+            ),
+          ),
+          Positioned(
+            bottom: -2.h,
+            left: -4.w,
+            child: Container(
+              width: 20.w,
+              height: 20.w,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: CommonColors.whiteColor.withValues(alpha: 0.06),
+              ),
+            ),
+          ),
+
+          // Content
+          Padding(
+            padding: EdgeInsets.fromLTRB(5.w, 3.h, 5.w, 0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                // Left text
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Pill badge
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 3.w,
+                          vertical: 0.4.h,
                         ),
-                        SizedBox(width: 3.w),
-                        Expanded(
-                          child: Text(
-                            "You will receive a ₹50 cashback when a friend completes their first trek using your referral coupon.",
-                            style: GoogleFonts.poppins(
-                              fontSize: FontSize.s8,
-                              color: CommonColors.whiteColor,
-                              height: 1.2,
+                        decoration: BoxDecoration(
+                          color: CommonColors.whiteColor.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: CommonColors.whiteColor.withValues(
+                              alpha: 0.35,
                             ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
+                            width: 1,
                           ),
                         ),
-                      ],
-                    ),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Column(
-                          children: [
-                            Container(
-                              width: 2.w,
-                              height: 3.w,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: CommonColors.whiteColor,
-                              ),
-                            ),
-                            Container(
-                              width: 1.5.w,
-                              height: 4.h,
-                              color: CommonColors.ceced.withValues(alpha: 0.7),
-                            ),
-                          ],
-                        ),
-                        SizedBox(width: 3.w),
-                        Expanded(
-                          child: Text(
-                            "Your friend will receive a flat ₹50 discount on their first trek booking.",
-                            style: GoogleFonts.poppins(
-                              fontSize: FontSize.s8,
-                              color: CommonColors.whiteColor,
-                              height: 1.2,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          width: 2.w,
-                          height: 3.w,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
+                        child: Text(
+                          '🎉  Limited Offer',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: FontSize.s8,
+                            fontWeight: FontWeight.w600,
                             color: CommonColors.whiteColor,
                           ),
                         ),
-                        SizedBox(width: 3.w),
-                        Expanded(
-                          child: Text(
-                            "You will receive a ₹1000 cashback for the first twenty successful referrals.",
-                            style: GoogleFonts.poppins(
-                              fontSize: FontSize.s8,
-                              color: CommonColors.whiteColor,
-                              height: 1.2,
-                            ),
-                          ),
+                      ),
+                      SizedBox(height: 1.2.h),
+
+                      Text(
+                        'Refer Friends,\nEarn Rewards',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: FontSize.s20,
+                          fontWeight: FontWeight.w800,
+                          color: CommonColors.whiteColor,
+                          height: 1.15,
                         ),
-                      ],
-                    ),
-                  ],
+                      ),
+                      SizedBox(height: 1.h),
+
+                      // Reward chips row
+                      Wrap(
+                        spacing: 2.w,
+                        runSpacing: 0.8.h,
+                        children: [
+                          _rewardChip('You get ₹50'),
+                          _rewardChip('Friend gets ₹50'),
+                          _rewardChip('Up to ₹1,000'),
+                        ],
+                      ),
+
+                      SizedBox(height: 2.h),
+
+                      // Bullets
+                      _buildBullet(
+                        '₹50 cashback when friend completes first trek.',
+                      ),
+                      _buildBullet(
+                        '₹50 discount for your friend on first booking.',
+                      ),
+                      _buildBullet(
+                        '₹1,000 bonus for first 20 referrals.',
+                        hasConnector: false,
+                      ),
+                      SizedBox(height: 2.h),
+                    ],
+                  ),
                 ),
-              ),
-              SizedBox(height: ScreenConstant.size20),
-            ],
-          ),
-          Positioned(
-            right: 0,
-            left: 25.h,
-            top: 13.h,
-            bottom: 0,
-            child: Image.asset(
-              CommonImages.referandearn,
-              width: 28.w,
-              height: 12.h,
-              fit: BoxFit.contain,
+
+                // Illustration
+                Align(
+                  alignment: Alignment.bottomRight,
+                  child: Image.asset(
+                    CommonImages.referandearn,
+                    width: 28.w,
+                    height: 18.h,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -292,128 +327,179 @@ class _ReferState extends State<Refer> with SingleTickerProviderStateMixin {
     );
   }
 
-  // Widget _buildBulletPoint(String text) {
-  //   return Row(
-  //     crossAxisAlignment: CrossAxisAlignment.start,
-  //     children: [
-  //       Container(
-  //         margin: EdgeInsets.only(top: 1.w, right: 2.w),
-  //         width: 1.5.w,
-  //         height: 1.5.w,
-  //         decoration: BoxDecoration(
-  //           color: CommonColors.whiteColor,
-  //           shape: BoxShape.circle,
-  //         ),
-  //       ),
-  //       Expanded(
-  //         child: Text(
-  //           text,
-  //           style: GoogleFonts.poppins(
-  //             fontSize: 10.sp,
-  //             color: CommonColors.whiteColor,
-  //             height: 1.4,
-  //           ),
-  //         ),
-  //       ),
-  //     ],
-  //   );
-  // }
-
-  Widget _buildReferralCode() {
+  Widget _rewardChip(String label) {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 4.5.w),
-      height: 12.h,
+      padding: EdgeInsets.symmetric(horizontal: 2.5.w, vertical: 0.4.h),
+      decoration: BoxDecoration(
+        color: CommonColors.whiteColor.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontFamily: 'Poppins',
+          fontSize: FontSize.s8,
+          fontWeight: FontWeight.w600,
+          color: CommonColors.whiteColor,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBullet(String text, {bool hasConnector = true}) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Column(
+          children: [
+            Container(
+              width: 5,
+              height: 5,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: CommonColors.whiteColor,
+              ),
+            ),
+            if (hasConnector)
+              Container(
+                width: 1,
+                height: 3.h,
+                color: CommonColors.whiteColor.withValues(alpha: 0.35),
+              ),
+          ],
+        ),
+        SizedBox(width: 2.5.w),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: FontSize.s8,
+              color: CommonColors.whiteColor.withValues(alpha: 0.9),
+              height: 1.4,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── Referral code ticket ────────────────────────────────────────────────
+  Widget _buildReferralCode() {
+    return SizedBox(
+      height: 13.h,
       child: CustomPaint(
         painter: TicketPainter(),
-        child: Container(
-          margin: EdgeInsets.only(
-            left: 6.w,
-            right: 6.w,
-            top: 2.h,
-            bottom: 2.h,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+          child: Row(
             children: [
-              Text(
-                'Your referral code',
-                style: GoogleFonts.poppins(
-                  fontSize: FontSize.s9,
-                  fontWeight: FontWeight.w400,
-                  color: CommonColors.blackColor.withValues(alpha: 0.6),
+              // Left section
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'YOUR REFERRAL CODE',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: FontSize.s7,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1.0,
+                        color: _inkLight,
+                      ),
+                    ),
+                    SizedBox(height: 0.6.h),
+                    Text(
+                      referralCode,
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: FontSize.s22,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 4,
+                        color: _ink,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              SizedBox(height: 1.h),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 4.w,
-                      vertical: 1.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Color(0xFF0004FF).withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(2.w),
-                    ),
-                    child: Text(
-                      'AO12345',
-                      style: GoogleFonts.archivoBlack(
-                        fontSize: FontSize.s11,
-                        fontWeight: FontWeight.w400,
-                        letterSpacing: 0.5,
-                        color: CommonColors.blackColor,
-                      ),
-                    ),
+
+              // Dashed separator (visual only)
+              Column(
+                children: List.generate(
+                  6,
+                  (i) => Container(
+                    width: 1,
+                    height: 4,
+                    margin: const EdgeInsets.symmetric(vertical: 2),
+                    color: _divider,
                   ),
-                  GestureDetector(
-                    onTap: () async {
-                      await Clipboard.setData(ClipboardData(text: 'AO12345'));
-                      setState(() {
-                        _copied = true;
-                      });
-                      await Future.delayed(Duration(seconds: 1));
-                      setState(() {
-                        _copied = false;
-                      });
-                    },
-                    child: Container(
-                      margin: EdgeInsets.only(right: 2.w),
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 3.w,
-                        vertical: 0.6.h,
-                      ),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Color(0xFF9CB0FF).withValues(alpha: 0.9),
-                            Color(0xFF9CC5FF),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(8.w),
-                      ),
-                      child: AnimatedSwitcher(
-                        duration: Duration(milliseconds: 300),
-                        child: _copied
-                            ? Icon(
-                                Icons.check,
-                                color: CommonColors.blackColor,
-                                size: 5.w,
-                              )
-                            : Text(
-                                'Copy',
-                                style: GoogleFonts.poppins(
-                                  fontSize: FontSize.s10,
-                                  fontWeight: FontWeight.w500,
-                                  color: CommonColors.blackColor,
+                ),
+              ),
+
+              SizedBox(width: 4.w),
+
+              // Copy button
+              GestureDetector(
+                onTap: _copyToClipboard,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 4.w,
+                    vertical: 1.2.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _copied ? const Color(0xFFD1FAE5) : _accent,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 250),
+                    child: _copied
+                        ? Row(
+                            key: const ValueKey('copied'),
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.check_rounded,
+                                size: 4.w,
+                                color: const Color(0xFF065F46),
+                              ),
+                              SizedBox(width: 1.w),
+                              Text(
+                                'Copied!',
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: FontSize.s9,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF065F46),
                                 ),
                               ),
-                      ),
-                    ),
+                            ],
+                          )
+                        : Row(
+                            key: const ValueKey('copy'),
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.copy_rounded,
+                                size: 4.w,
+                                color: CommonColors.whiteColor,
+                              ),
+                              SizedBox(width: 1.w),
+                              Text(
+                                'Copy',
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: FontSize.s10,
+                                  fontWeight: FontWeight.w700,
+                                  color: CommonColors.whiteColor,
+                                ),
+                              ),
+                            ],
+                          ),
                   ),
-                ],
+                ),
               ),
             ],
           ),
@@ -422,160 +508,235 @@ class _ReferState extends State<Refer> with SingleTickerProviderStateMixin {
     );
   }
 
+  // ── Tab bar ─────────────────────────────────────────────────────────────
   Widget _buildTabBar() {
-    return SizedBox(
-      width: 100.w,
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: _cardBg,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: CommonColors.blackColor.withValues(alpha: 0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Row(
         children: [
-          _buildTabItem("Refer and earn", 0),
-          _buildTabItem("Referral history", 1),
+          _buildTabItem('Refer & Earn', 0),
+          _buildTabItem('Referral History', 1),
         ],
       ),
     );
   }
 
   Widget _buildTabItem(String title, int index) {
-    bool isSelected = _selectedTabIndex == index;
+    final bool isSelected = _selectedTabIndex == index;
     return Expanded(
       child: GestureDetector(
         onTap: () => _onTabSelected(index),
-        child: Column(
-          children: [
-            Text(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOut,
+          padding: EdgeInsets.symmetric(vertical: 1.3.h),
+          decoration: BoxDecoration(
+            color: isSelected ? _accent : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Center(
+            child: Text(
               title,
-              style: GoogleFonts.poppins(
+              style: TextStyle(
+                fontFamily: 'Poppins',
                 fontSize: FontSize.s10,
-                fontWeight: FontWeight.w500,
-                color: isSelected ? CommonColors.blackColor : Colors.grey,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected ? CommonColors.whiteColor : _inkLight,
               ),
             ),
-            SizedBox(height: 1.h),
-            Container(
-              height: 0.3.h,
-              color: isSelected ? CommonColors.blueColor : Colors.grey.shade300,
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
+  // ── Refer & Earn tab content ────────────────────────────────────────────
   Widget _buildReferAndEarnContent() {
     return Column(
+      key: const ValueKey('refer'),
       children: [
-        _buildSteps(),
-        SizedBox(height: 4.h),
+        _buildStepsCard(),
+        SizedBox(height: 2.h),
         _buildButton(
-          text: "Get friends to refer",
+          text: 'Get Friends to Refer',
           isOutlined: true,
           onPressed: () {},
         ),
-        SizedBox(height: ScreenConstant.size20),
-        _buildButton(
-          text: "Refer Now",
-          isOutlined: false,
-          onPressed: () {},
-        ),
-        SizedBox(height: 4.h),
+        SizedBox(height: 1.2.h),
+        _buildButton(text: 'Refer Now', isOutlined: false, onPressed: () {}),
       ],
     );
   }
 
-  Widget _buildSteps() {
-    return Column(
-      children: [
-        _buildReferStep(
-          number: "1",
-          text:
-              "Share your referral link via WhatsApp, SMS, email, and other platforms.",
-          imagePath: "assets/images/cover/womanspeak.png",
-        ),
-        _buildReferStep(
-          number: "2",
-          text:
-              "Your friend clicks on the referral link and registers an account.",
-          imagePath: "assets/images/cover/mobilephone.png",
-        ),
-        _buildReferStep(
-          number: "3",
-          text:
-              "Earn cashback when a friend completes their first trek using your referral.",
-          imagePath: "assets/images/img/approval.png",
-          isLastStep: true,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildReferStep({
-    required String number,
-    required String text,
-    required String imagePath,
-    bool isLastStep = false,
-  }) {
-    final bool isEvenStep = number == "2"; // Image on right for step 2
-
+  Widget _buildStepsCard() {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 1.h),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      decoration: BoxDecoration(
+        color: _cardBg,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: CommonColors.blackColor.withValues(alpha: 0.06),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
         children: [
-          if (!isEvenStep) ...[
-            // Image on left for odd numbered steps
-            SizedBox(
-              width: 25.w,
-              height: 25.w,
-              child: Image.asset(
-                imagePath,
-                fit: BoxFit.contain,
-              ),
-            ),
-            SizedBox(width: 4.w),
-          ],
-          // Text content in middle
-          Expanded(
-            child: Column(
-              crossAxisAlignment: isEvenStep
-                  ? CrossAxisAlignment.end
-                  : CrossAxisAlignment.start,
+          // Card header
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+            child: Row(
               children: [
-                Text(
-                  number,
-                  style: GoogleFonts.poppins(
-                    fontSize: FontSize.s14,
-                    fontWeight: FontWeight.w600,
-                    color: CommonColors.blueColor,
+                Container(
+                  width: 9.w,
+                  height: 9.w,
+                  decoration: BoxDecoration(
+                    color: _accent,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.route_rounded,
+                    color: CommonColors.whiteColor,
+                    size: 5.w,
                   ),
                 ),
-                SizedBox(height: 0.5.h),
+                SizedBox(width: 3.w),
                 Text(
-                  text,
-                  textAlign: isEvenStep ? TextAlign.right : TextAlign.left,
-                  style: GoogleFonts.poppins(
-                    fontSize: FontSize.s9,
-                    height: 1.4,
-                    color: Colors.black87,
+                  'How it works',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: FontSize.s13,
+                    fontWeight: FontWeight.w700,
+                    color: _ink,
                   ),
                 ),
               ],
             ),
           ),
-          if (isEvenStep) ...[
-            // Image on right for even numbered steps
-            SizedBox(width: 4.w),
-            SizedBox(
-              width: 25.w,
-              height: 25.w,
-              child: Image.asset(
-                imagePath,
-                fit: BoxFit.contain,
+
+          Container(height: 1, color: const Color(0xFFF1F5F9)),
+
+          _buildReferStep(
+            number: '1',
+            title: 'Share your link',
+            text:
+                'Send your referral link via WhatsApp, SMS, email, or any platform.',
+            imagePath: 'assets/images/cover/womanspeak.png',
+          ),
+          Container(
+            height: 1,
+            color: const Color(0xFFF1F5F9),
+            margin: EdgeInsets.symmetric(horizontal: 4.w),
+          ),
+          _buildReferStep(
+            number: '2',
+            title: 'Friend registers',
+            text:
+                'Your friend clicks the link and creates an account on Aorbo.',
+            imagePath: 'assets/images/cover/mobilephone.png',
+            flip: true,
+          ),
+          Container(
+            height: 1,
+            color: const Color(0xFFF1F5F9),
+            margin: EdgeInsets.symmetric(horizontal: 4.w),
+          ),
+          _buildReferStep(
+            number: '3',
+            title: 'Both earn rewards',
+            text: 'Get cashback when your friend completes their first trek.',
+            imagePath: 'assets/images/img/approval.png',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReferStep({
+    required String number,
+    required String title,
+    required String text,
+    required String imagePath,
+    bool flip = false,
+  }) {
+    final content = Expanded(
+      child: Column(
+        crossAxisAlignment: flip
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
+        children: [
+          // Step number badge
+          Container(
+            width: 7.w,
+            height: 7.w,
+            decoration: BoxDecoration(
+              color: flip ? const Color(0xFFF1F5F9) : _accent,
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                number,
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: FontSize.s11,
+                  fontWeight: FontWeight.w700,
+                  color: flip ? _inkMid : CommonColors.whiteColor,
+                ),
               ),
             ),
-          ],
-          if (!isLastStep) ...[
-            SizedBox(height: ScreenConstant.size20),
-          ],
+          ),
+          SizedBox(height: 0.6.h),
+          Text(
+            title,
+            textAlign: flip ? TextAlign.right : TextAlign.left,
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: FontSize.s11,
+              fontWeight: FontWeight.w700,
+              color: _ink,
+            ),
+          ),
+          SizedBox(height: 0.3.h),
+          Text(
+            text,
+            textAlign: flip ? TextAlign.right : TextAlign.left,
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: FontSize.s9,
+              height: 1.5,
+              color: _inkMid,
+            ),
+          ),
         ],
+      ),
+    );
+
+    final illustration = Image.asset(
+      imagePath,
+      width: 18.w,
+      height: 18.w,
+      fit: BoxFit.contain,
+    );
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: flip
+            ? [content, SizedBox(width: 4.w), illustration]
+            : [illustration, SizedBox(width: 4.w), content],
       ),
     );
   }
@@ -585,35 +746,41 @@ class _ReferState extends State<Refer> with SingleTickerProviderStateMixin {
     required bool isOutlined,
     required VoidCallback onPressed,
   }) {
-    return Container(
-      width: 100.w,
-      height: 7.h,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8.w),
-        gradient: !isOutlined ? CommonColors.btnGradient : null,
-        color: isOutlined ? Colors.white : null,
-        border: isOutlined ? Border.all(color: Colors.grey.shade300) : null,
-        boxShadow: [
-          BoxShadow(
-            color: CommonColors.blackColor.withValues(alpha: 0.2),
-            offset: Offset(2, 2),
-            blurRadius: 6,
-            spreadRadius: 2,
-          )
-        ],
-      ),
+    return SizedBox(
+      width: double.infinity,
+      height: 6.5.h,
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: onPressed,
-          borderRadius: BorderRadius.circular(3.w),
-          child: Center(
-            child: Text(
-              text,
-              style: GoogleFonts.poppins(
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w600,
-                color: isOutlined ? Colors.grey.shade700 : Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          child: Ink(
+            decoration: BoxDecoration(
+              gradient: !isOutlined ? CommonColors.btnGradient : null,
+              color: isOutlined ? _cardBg : null,
+              border: isOutlined
+                  ? Border.all(color: _divider, width: 1.5)
+                  : null,
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: isOutlined
+                      ? CommonColors.blackColor.withValues(alpha: 0.04)
+                      : CommonColors.blueColor.withValues(alpha: 0.28),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Center(
+              child: Text(
+                text,
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: FontSize.s12,
+                  fontWeight: FontWeight.w700,
+                  color: isOutlined ? _ink : CommonColors.whiteColor,
+                ),
               ),
             ),
           ),
@@ -622,75 +789,183 @@ class _ReferState extends State<Refer> with SingleTickerProviderStateMixin {
     );
   }
 
+  // ── Referral History tab content ────────────────────────────────────────
   Widget _buildReferralHistoryContent() {
     return Column(
+      key: const ValueKey('history'),
       children: [
+        // Stats card
         Container(
-          width: 100.w,
-          padding: EdgeInsets.all(4.w),
+          width: double.infinity,
           decoration: BoxDecoration(
-            color: CommonColors.whiteColor,
-            borderRadius: BorderRadius.circular(3.w),
-            border: Border.all(color: Colors.grey.shade300),
+            color: _cardBg,
+            borderRadius: BorderRadius.circular(18),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                spreadRadius: 0,
-                offset: Offset(0, 2),
+                color: CommonColors.blackColor.withValues(alpha: 0.06),
+                blurRadius: 14,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
-          child: Row(
+          child: Column(
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "₹0.00",
-                    style: GoogleFonts.poppins(
-                      fontSize: 15.sp,
-                      fontWeight: FontWeight.w600,
-                      color: CommonColors.blackColor,
+              // Header row
+              Padding(
+                padding: EdgeInsets.fromLTRB(4.w, 2.h, 4.w, 0),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 9.w,
+                      height: 9.w,
+                      decoration: BoxDecoration(
+                        color: _accent,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        Icons.account_balance_wallet_outlined,
+                        color: CommonColors.whiteColor,
+                        size: 5.w,
+                      ),
                     ),
-                  ),
-                  SizedBox(height: 0.5.h),
-                  Text(
-                    "Total rewards",
-                    style: GoogleFonts.poppins(
-                      fontSize: 10.sp,
-                      color: Colors.grey.shade600,
+                    SizedBox(width: 3.w),
+                    Text(
+                      'Total Rewards',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: FontSize.s13,
+                        fontWeight: FontWeight.w700,
+                        color: _ink,
+                      ),
                     ),
-                  ),
-                ],
+                    const Spacer(),
+                    Image.asset(
+                      'assets/images/cover/moneytransfer.png',
+                      width: 15.w,
+                      height: 7.h,
+                      fit: BoxFit.contain,
+                    ),
+                  ],
+                ),
               ),
-              Spacer(),
-              Image.asset(
-                "assets/images/cover/moneytransfer.png",
-                width: 20.w,
-                height: 10.h,
-                fit: BoxFit.contain,
+
+              Padding(
+                padding: EdgeInsets.fromLTRB(4.w, 1.h, 4.w, 2.h),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '₹0',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: FontSize.s30,
+                        fontWeight: FontWeight.w800,
+                        color: _ink,
+                        height: 1,
+                      ),
+                    ),
+                    SizedBox(width: 2.w),
+                    Padding(
+                      padding: EdgeInsets.only(bottom: 0.4.h),
+                      child: Text(
+                        '.00 earned',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: FontSize.s11,
+                          color: _inkMid,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              Container(height: 1, color: const Color(0xFFF1F5F9)),
+
+              // Stats row
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
+                child: Row(
+                  children: [
+                    _statItem('0', 'Referrals'),
+                    Container(width: 1, height: 4.h, color: _divider),
+                    _statItem('0', 'Completed'),
+                    Container(width: 1, height: 4.h, color: _divider),
+                    _statItem('₹0', 'Pending'),
+                  ],
+                ),
               ),
             ],
           ),
         ),
-        SizedBox(height: 25.h),
+
+        SizedBox(height: 5.h),
+
+        // Empty state
+        Container(
+          width: 18.w,
+          height: 18.w,
+          decoration: const BoxDecoration(
+            color: Color(0xFFEEF2FF),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            Icons.people_outline_rounded,
+            size: 9.w,
+            color: const Color(0xFF4F46E5),
+          ),
+        ),
+        SizedBox(height: 1.5.h),
         Text(
-          "Invite your friends and earn exciting rewards!",
+          'No referrals yet',
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: FontSize.s13,
+            fontWeight: FontWeight.w700,
+            color: _ink,
+          ),
+        ),
+        SizedBox(height: 0.5.h),
+        Text(
+          'Start referring friends to earn exciting rewards!',
           textAlign: TextAlign.center,
-          style: GoogleFonts.poppins(
-            fontSize: 10.sp,
-            color: Colors.grey.shade700,
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: FontSize.s10,
+            color: _inkLight,
+            height: 1.5,
           ),
         ),
         SizedBox(height: 3.h),
-        _buildButton(
-          text: "Refer Now",
-          isOutlined: false,
-          onPressed: () {},
-        ),
-        SizedBox(height: 3.h),
+        _buildButton(text: 'Refer Now', isOutlined: false, onPressed: () {}),
       ],
+    );
+  }
+
+  Widget _statItem(String value, String label) {
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: FontSize.s14,
+              fontWeight: FontWeight.w800,
+              color: _ink,
+            ),
+          ),
+          SizedBox(height: 0.2.h),
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: FontSize.s8,
+              color: _inkLight,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
