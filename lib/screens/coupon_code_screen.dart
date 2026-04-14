@@ -9,7 +9,7 @@ import '../utils/common_colors.dart';
 import '../utils/common_images.dart';
 import '../utils/screen_constants.dart';
 import '../utils/coupon_card.dart';
-import '../models/coupon_code/coupon_code_modal.dart';
+import '../models/coupon_code/coupon_code_model.dart';
 import '../controller/trek_controller.dart';
 import '../utils/custom_snackbar.dart';
 

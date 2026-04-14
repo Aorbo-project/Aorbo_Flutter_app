@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-
 import '../utils/common_colors.dart';
 import '../utils/common_images.dart';
 import '../utils/screen_constants.dart';
@@ -130,7 +129,7 @@ class _ReferState extends State<Refer> with SingleTickerProviderStateMixin {
       ),
     );
   }
-}
+
 
   Widget _buildGreenReferBox() {
     return Container(
@@ -368,14 +367,8 @@ class _ReferState extends State<Refer> with SingleTickerProviderStateMixin {
                   ),
                   GestureDetector(
                     onTap: () async {
-                      await Clipboard.setData(ClipboardData(text: 'AO12345'));
-                      setState(() {
-                        _copied = true;
-                      });
-                      await Future.delayed(Duration(seconds: 1));
-                      setState(() {
-                        _copied = false;
-                      });
+                      _copyToClipboard();
+
                     },
                     child: Container(
                       margin: EdgeInsets.only(right: 2.w),
@@ -694,3 +687,4 @@ class _ReferState extends State<Refer> with SingleTickerProviderStateMixin {
     );
   }
 }
+

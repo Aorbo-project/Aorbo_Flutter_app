@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
 import 'common_colors.dart';
 import 'screen_constants.dart';
-import '../models/coupon_code/coupon_code_modal.dart';
+import '../models/coupon_code/coupon_code_model.dart';
 
 class CouponCard extends StatelessWidget {
   final CouponCardData coupon;

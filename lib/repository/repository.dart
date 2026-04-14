@@ -8,6 +8,7 @@ import 'package:arobo_app/utils/shared_preferences.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart' hide FormData, Response;
 
 class Repository {
@@ -35,8 +36,8 @@ class Repository {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          logger.i("➡️ onRequest: URI ->> ${options.uri}");
-          logger.d("Headers ->> ${options.headers}");
+          final curl = _toCurl(options);
+          debugPrint("📡 CURL: $curl");
 
           if (options.data is FormData) {
             logger.w("Data is FormData");
@@ -129,6 +130,24 @@ class Repository {
           : {},
       extra: extra,
     );
+  }
+
+  String _toCurl(RequestOptions options) {
+    final method = options.method;
+    final headers = options.headers.entries
+        .map((e) => "-H '${e.key}: ${e.value}'")
+        .join(" ");
+
+    String data = "";
+    if (options.data != null) {
+      if (options.data is Map || options.data is List) {
+        data = "-d '${jsonEncode(options.data)}'";
+      } else {
+        data = "-d '${options.data}'";
+      }
+    }
+
+    return "curl -X $method $headers $data '${options.uri}'";
   }
 
   Future<dynamic> getApiCall({required String url}) async {

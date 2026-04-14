@@ -244,11 +244,8 @@ class _SourceLocationScreenState extends State<SourceLocationScreen> {
                       if (widget.locationType == LocationType.city &&
                           location != null) {
                         _dashboardC.selectedCityId.value = location.id ?? 0;
-                        log("message: ${location.id}");
-                        log("message: ${location.cityName}");
-                        log("message: ${index}");
-                        _dashboardC.fromController.value.text =
-                            location.cityName ?? '';
+
+                        _dashboardC.fromController.value.text = location.cityName ?? '';
                       } else if (widget.locationType == LocationType.trek &&
                           trek != null) {
                         _dashboardC.selectedTrekId.value = trek.id ?? 0;

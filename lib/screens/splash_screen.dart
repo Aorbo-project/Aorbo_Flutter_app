@@ -1,5 +1,6 @@
 import 'package:arobo_app/controller/auth_controller.dart';
 import 'package:arobo_app/controller/otp_controller.dart';
+import 'package:arobo_app/screens/update_version_screen.dart';
 import 'package:arobo_app/utils/common_btn.dart';
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/common_images.dart';
@@ -16,6 +17,8 @@ import 'package:pinput/pinput.dart';
 import 'dart:async';
 import 'package:shimmer/shimmer.dart';
 import 'package:sizer/sizer.dart';
+
+import '../controller/auth_controller.dart';
 
 class SplashWithLoginScreen extends StatefulWidget {
   const SplashWithLoginScreen({super.key});
@@ -34,13 +37,15 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
   late Animation<Offset> _formOffsetAnimation;
   late AnimationController _breathingController;
   late Animation<double> _breathingAnimation;
-  final AuthController _authC = Get.find<AuthController>();
   late final OTPController _otpC;
   final FocusNode _phoneFocusNode = FocusNode();
   final FocusNode _pinFocusNode = FocusNode();
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
   Animation<double>? _shakeAnimation;
+
+  final AuthController _authC = Get.put(AuthController());
+
 
   // final TextEditingController _phoneController = TextEditingController();
   bool isValid = false;
@@ -275,9 +280,20 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
         }
 
         // Delay slightly for UX before checking login status
-        Future.delayed(const Duration(milliseconds: 300), () {
+        Future.delayed(const Duration(milliseconds: 300), () async {
           // Adjust delay as needed
           if (!mounted) return;
+
+          final validateResponse = await _authC.validateVersion();
+
+          // if(validateResponse?.updateAvailable == true){
+          //   Get.offAll(() => UpdateVersionScreen(dataModel:validateResponse));
+          // }
+          // else if (CommonLogics.checkUserLogin() && validateResponse?.updateAvailable == false) {
+          //   Get.offAllNamed('/dashboard');
+          // } else {
+          //   _startFormAnimation(); // Defined below, handles form slide up
+          // }
 
           if (CommonLogics.checkUserLogin()) {
             Get.offAllNamed('/dashboard');
@@ -408,8 +424,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
             _errorMessage = null;
           });
 
-          PhoneAuthCredential credential = PhoneAuthProvider.credential(
-              verificationId: _authC.verificationIdData.value, smsCode: pin);
+          PhoneAuthCredential credential = PhoneAuthProvider.credential(verificationId: _authC.verificationIdData.value, smsCode: pin);
 
           try {
             // First verify with Firebase
@@ -420,8 +435,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
 
             // Get the token and verify with backend
             String firebaseToken = Get.find<AuthController>().idToken.value;
-            bool verified = await Get.find<AuthController>()
-                .verifyFirebaseToken(firebaseToken);
+            bool verified = await Get.find<AuthController>().verifyFirebaseToken(firebaseToken);
 
             if (!mounted) return;
 

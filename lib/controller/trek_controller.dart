@@ -5,7 +5,7 @@ import 'package:arobo_app/models/treaks/treak_detail_modal.dart';
 import 'package:arobo_app/models/treaks/treaks_serach_modal.dart';
 import 'package:arobo_app/models/treaks/verify_order_modal.dart';
 import 'package:arobo_app/models/user_profile/user_profile_modal.dart';
-import 'package:arobo_app/models/coupon_code/coupon_code_modal.dart';
+import 'package:arobo_app/models/coupon_code/coupon_code_model.dart';
 import 'package:arobo_app/models/dispute/submit_issue_modal.dart';
 import 'package:arobo_app/utils/custom_snackbar.dart';
 import 'package:arobo_app/utils/loader_dialog.dart';
@@ -56,7 +56,7 @@ class TrekController extends GetxController {
   //endregion
 
   //region Coupons
-  Rx<CouponCodeModal> couponModal = CouponCodeModal().obs;
+  Rx<CouponCodeModel> couponModal = CouponCodeModel().obs;
   RxList<CouponCardData> couponsList = <CouponCardData>[].obs;
   RxBool isCouponLoading = false.obs;
   RxString couponErrorMessage = ''.obs;
@@ -355,7 +355,7 @@ class TrekController extends GetxController {
 
       if (response != null) {
         if (response['success'] == true) {
-          couponModal.value = CouponCodeModal.fromJson(response);
+          couponModal.value = CouponCodeModel.fromJson(response);
           couponsList.value = couponModal.value.data ?? [];
         } else {
           couponErrorMessage.value =

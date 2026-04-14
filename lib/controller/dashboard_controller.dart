@@ -1,5 +1,9 @@
 import 'dart:convert';
 
+import 'package:arobo_app/models/know_more_data.dart';
+import 'package:arobo_app/models/seasonal_forecast_data.dart';
+import 'package:arobo_app/models/shorts_treks_data.dart';
+import 'package:arobo_app/models/top_treks_data.dart';
 import 'package:arobo_app/widgets/logger.dart';
 import 'package:flutter/material.dart';
 
@@ -11,12 +15,22 @@ import 'package:arobo_app/models/dispute/dispute_detail_modal.dart';
 import 'package:get/get.dart';
 import '../models/dashboard/cities_model.dart';
 import '../models/treaks/booking_cancelled_modal.dart';
+import '../repository/api_result.dart';
 import '../repository/network_url.dart';
 import '../repository/repository.dart';
 import '../utils/custom_snackbar.dart';
 
 class DashboardController extends GetxController {
   final Repository _repository = Repository();
+
+
+  final whatsNewObserver = const ApiResult<WhatsNewDataResponseModel>.init().obs;
+  final topTreksObserver = const ApiResult<TopTreksDataResponseModel>.init().obs;
+  final shortsTreksObserver = const ApiResult<ShortsTreksDataResponseModel>.init().obs;
+  final seasonalForcastObserver = const ApiResult<SeasonalForecastDataResponseModel>.init().obs;
+
+
+
 
   // Cities list variables
   RxInt selectedCityId = 0.obs;
@@ -25,6 +39,7 @@ class DashboardController extends GetxController {
   Rx<TextEditingController> toController = TextEditingController().obs;
   Rx<TextEditingController> dateController = TextEditingController().obs;
   Rx<DateTime?> selectedDate = Rx<DateTime?>(null);
+
   RxBool isLoadingCities = false.obs;
   Rx<GetCities> citiesData = GetCities().obs;
   Rx<TrekModal> trekData = TrekModal().obs;
@@ -77,6 +92,90 @@ class DashboardController extends GetxController {
     cancellationReasonController.value.dispose();
     super.onClose();
   }
+
+
+
+  Future<void> fetchWhatsNew() async {
+    try {
+      whatsNewObserver.value = const ApiResult.loading("");
+      final response = await _repository.getApiCall(url:NetworkUrl.fetchWhatsNew);
+      final body = response.body;
+      if (response.isOk && body != null) {
+        final responseData = WhatsNewDataResponseModel.fromJson(body);
+        if (responseData.success == true) {
+          whatsNewObserver.value = ApiResult.success(responseData);
+          return;
+        }
+        throw "${responseData.message}";
+      }
+      throw "Response Body Null";
+    } catch (e) {
+      CustomSnackBar.show(Get.context!, message: e.toString());
+      whatsNewObserver.value = ApiResult.error(e.toString());
+    }
+  }
+
+  Future<void> fetchTopTreks() async {
+    try {
+      topTreksObserver.value = const ApiResult.loading("");
+      final response = await _repository.getApiCall(url:NetworkUrl.fetchTopTreks);
+      final body = response.body;
+      if (response.isOk && body != null) {
+        final responseData = TopTreksDataResponseModel.fromJson(body);
+        if (responseData.success == true) {
+          topTreksObserver.value = ApiResult.success(responseData);
+          return;
+        }
+        throw "${responseData.message}";
+      }
+      throw "Response Body Null";
+    } catch (e) {
+      CustomSnackBar.show(Get.context!, message: e.toString());
+      topTreksObserver.value = ApiResult.error(e.toString());
+    }
+  }
+
+  Future<void> fetchShortsTreks() async {
+    try {
+      shortsTreksObserver.value = const ApiResult.loading("");
+      final response = await _repository.getApiCall(url:NetworkUrl.fetchShotsTreks);
+      final body = response.body;
+      if (response.isOk && body != null) {
+        final responseData = ShortsTreksDataResponseModel.fromJson(body);
+        if (responseData.success == true) {
+          shortsTreksObserver.value = ApiResult.success(responseData);
+          return;
+        }
+        throw "${responseData.message}";
+      }
+      throw "Response Body Null";
+    } catch (e) {
+      CustomSnackBar.show(Get.context!, message: e.toString());
+      shortsTreksObserver.value = ApiResult.error(e.toString());
+    }
+  }
+
+  Future<void> fetchSeasonalForeCasts() async {
+    try {
+      seasonalForcastObserver.value = const ApiResult.loading("");
+      final response = await _repository.getApiCall(url:NetworkUrl.fetchSeasonalForcasts);
+      final body = response.body;
+      if (response.isOk && body != null) {
+        final responseData = SeasonalForecastDataResponseModel.fromJson(body);
+        if (responseData.success == true) {
+          seasonalForcastObserver.value = ApiResult.success(responseData);
+          return;
+        }
+        throw "${responseData.message}";
+      }
+      throw "Response Body Null";
+    } catch (e) {
+      CustomSnackBar.show(Get.context!, message: e.toString());
+      seasonalForcastObserver.value = ApiResult.error(e.toString());
+    }
+  }
+
+
 
   Future<void> fetchStateList() async {
     isLoadingCities.value = true;

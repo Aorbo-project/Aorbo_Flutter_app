@@ -1,3 +1,4 @@
+import 'package:arobo_app/controller/coupon_controller.dart';
 import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/controller/trek_controller.dart';
 import 'package:arobo_app/controller/user_controller.dart';
@@ -24,6 +25,7 @@ class _DashboardMainState extends State<DashboardMain> {
     super.initState();
     _dashboardC = Get.put(DashboardController());
     Get.put(TrekController());
+    Get.put(CouponController());
     Get.put(UserController());
   }
 

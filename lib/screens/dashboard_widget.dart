@@ -1008,7 +1008,11 @@ class _DashboardState extends State<Dashboard>
               child: Column(
                 spacing: MediaQuery.of(context).size.height / 50,
                 children: [
-                  Container(),
+                  Column(
+                    children: [
+
+                    ],
+                  ),
                   // What's New Section
                   Padding(
                     padding: EdgeInsets.only(
@@ -1082,8 +1086,7 @@ class _DashboardState extends State<Dashboard>
                         },
                         physics: const BouncingScrollPhysics(),
                         itemBuilder: (context, index) {
-                          final cardData = knowMoreCardsData[
-                              index % knowMoreCardsData.length];
+                          final cardData = knowMoreCardsData[index % knowMoreCardsData.length];
                           return Container(
                             margin: EdgeInsets.only(
                               left: ScreenConstant.size0,

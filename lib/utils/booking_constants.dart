@@ -1,3 +1,5 @@
+import '../repository/app_env.dart';
+
 /// Constants used throughout the booking flow for business logic and UI values
 class BookingConstants {
   // Business Logic Constants (Per Payment.md Policy)
@@ -9,10 +11,7 @@ class BookingConstants {
 
   // Payment Constants
   // Pass at build time: flutter build apk --dart-define=RAZORPAY_KEY=rzp_live_XXXX
-  static const String razorpayKey = String.fromEnvironment(
-    'RAZORPAY_KEY',
-    defaultValue: 'rzp_test_REPLACE_WITH_YOUR_KEY',
-  );
+  static final String razorpayKey = AppEnv().razorpayKey;
   static const String partialPayment = 'partial';
   static const String fullPayment = 'full';
   static const String addInsurance = 'add';

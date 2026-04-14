@@ -1,31 +1,49 @@
-import 'package:arobo_app/utils/common_colors.dart';
-import 'package:flutter/material.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-class KnowMoreData {
-  final String title;
-  final String subtitle;
-  final String imagePath;
-  final bool hasKnowMore;
-  final LinearGradient customGradient;
-  final Color textColor;
-  final String? detailedTitle;
-  final String? detailedDescription;
-  final List<Map<String, String>>? bulletPoints;
-  final String? callToAction;
+import '../utils/common_colors.dart';
+part 'know_more_data.freezed.dart';
+part 'know_more_data.g.dart';
+@freezed
+class WhatsNewDataResponseModel with _$WhatsNewDataResponseModel {
+  const factory WhatsNewDataResponseModel({
+    bool? success,
+    String? message,
+    List<KnowMoreData>? data,
+    int? count
+  }) = _WhatsNewDataResponseModel;
 
-  KnowMoreData({
-    required this.title,
-    required this.subtitle,
-    required this.imagePath,
-    this.hasKnowMore = true,
-    required this.customGradient,
-    required this.textColor,
-    this.detailedTitle,
-    this.detailedDescription,
-    this.bulletPoints,
-    this.callToAction,
-  });
+  factory WhatsNewDataResponseModel.fromJson(Map<String, dynamic> json) => _$WhatsNewDataResponseModelFromJson(json);
 }
+
+@freezed
+class KnowMoreData with _$KnowMoreData {
+  const factory KnowMoreData({
+    String? title,
+    String? subtitle,
+    String? imagePath,
+    bool? hasKnowMore,
+    List<String>? customGradient,
+    String? textColor,
+    String? detailedTitle,
+    String? detailedDescription,
+    List<BulletPointModel>? bulletPoints,
+    String? callToAction,
+  }) = _KnowMoreData;
+
+  factory KnowMoreData.fromJson(Map<String, dynamic> json) => _$KnowMoreDataFromJson(json);
+}
+
+@freezed
+class BulletPointModel with _$BulletPointModel {
+  const factory BulletPointModel({
+    String? title,
+    String? description
+  }) = _BulletPointModel;
+
+  factory BulletPointModel.fromJson(Map<String, dynamic> json) => _$BulletPointModelFromJson(json);
+}
+
+
 
 final List<Map<String, dynamic>> knowMoreCardsData = [
   {
@@ -100,8 +118,7 @@ final List<Map<String, dynamic>> knowMoreCardsData = [
             'Connect directly with organizers while booking through our secure platform.'
       }
     ],
-    'callToAction':
-        'Choose your perfect trek organizer today and embark on an unforgettable journey!'
+    'callToAction': 'Choose your perfect trek organizer today and embark on an unforgettable journey!'
   },
   {
     'title': 'Boundless Adventure',

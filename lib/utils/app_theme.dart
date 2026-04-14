@@ -19,6 +19,18 @@ class AppTheme {
     },
   );
 
+
+  static Color hexToColor(String hex) {
+    if(hex.isEmpty) return Color(0xffffffff);
+    hex = hex.replaceAll('#', '');
+
+    if (hex.length == 6) {
+      hex = 'FF$hex'; // add full opacity if not provided
+    }
+
+    return Color(int.parse(hex, radix: 16));
+  }
+
   ///orange primary color
   static const int _bluePrimaryValue = 0xff001B38;
 

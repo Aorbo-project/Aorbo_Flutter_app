@@ -190,7 +190,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
     _couponController.removeListener(_handleTextChange);
     _couponController.dispose();
     _razorpay.clear();
-    super.dispose();  
+    super.dispose();
+  }
 
   void _handleTextChange() {
     setState(() {

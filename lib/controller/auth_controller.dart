@@ -7,17 +7,19 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../models/auth/validate_version_model.dart';
 import '../models/auth/verify_otp_modal.dart';
+import '../repository/api_result.dart';
 import '../repository/network_url.dart';
 import '../repository/repository.dart';
+import '../utils/auth_utils.dart';
 import '../utils/custom_snackbar.dart';
 import '../widgets/logger.dart';
 
 class AuthController extends GetxController {
   Repository repository = Repository();
   Rx<VerifyOtpModal> verifyOtpModal = VerifyOtpModal().obs;
-  Rx<TextEditingController> phoneNumberLoginTextField =
-      TextEditingController().obs;
+  Rx<TextEditingController> phoneNumberLoginTextField = TextEditingController().obs;
   Rx<TextEditingController> otpTextField = TextEditingController().obs;
   RxBool isLoading = false.obs;
   RxBool isProfileLoading = false.obs;
@@ -26,11 +28,43 @@ class AuthController extends GetxController {
   RxString idToken = ''.obs;
   RxString verificationIdData = ''.obs;
 
+  final validaVersionObserver = const ApiResult<ValidateVersionResponseModel>.init().obs;
+
   String formattedPhoneNumber({required String phoneNumber}) {
     final number = phoneNumber.trim();
     if (number.startsWith('+91')) return number;
     return '+91$number';
   }
+
+  Future<ValidateDataModel?> validateVersion() async {
+    try {
+      validaVersionObserver.value = const ApiResult.loading("");
+      final version = await AuthUtils.getAppVersion();
+      final platform = AuthUtils.getSource();
+      final String? validatorResponse = AuthUtils.validateRequestFields(['version'], {"version":version,"platform":platform});
+      if (validatorResponse != null) throw validatorResponse;
+      final body = await repository.getApiCall(url: NetworkUrl.validateVersion(version ?? "1.0.0",platform));
+      if (body != null) {
+        final responseData = ValidateVersionResponseModel.fromJson(body);
+
+        if (responseData.success == true) {
+          validaVersionObserver.value = ApiResult.success(responseData);
+          return responseData.data;
+        }
+        throw responseData.message ?? "something went wrong";
+      }
+      throw "Response Body Null";
+    } catch (e) {
+      CustomSnackBar.show(
+        Get.context!,
+        message: e.toString(),
+      );
+      return null;
+    }
+  }
+
+
+
 
   Future<void> getIdToken() async {
     try {
@@ -92,8 +126,7 @@ class AuthController extends GetxController {
     });
 
     try {
-      var res = await repository.postApiCall(
-          url: NetworkUrl.firebaseVerify, body: body);
+      var res = await repository.postApiCall(url: NetworkUrl.firebaseVerify, body: body);
 
       isLoading.value = false;
 

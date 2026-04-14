@@ -14,22 +14,19 @@
 //     --dart-define=API_SOCKET_URL=https://your-server.com/
 // ============================================================
 
+import 'package:arobo_app/repository/app_env.dart';
+
 class NetworkUrl {
   NetworkUrl._();
 
-  static const String baseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: 'https://YOUR_API_URL_HERE/api/v1/',
-  );
+  static  String baseUrl = '${AppEnv().apiBaseUrl}/api/v1/';
 
-  static const String imageUrl = String.fromEnvironment(
-    'API_IMAGE_URL',
-    defaultValue: 'https://YOUR_API_URL_HERE/',
-  );
+  static  String imageUrl = AppEnv().imageUrl;
 
   //#region Auth
   static const String loginPath = 'customer/auth/request-otp';
   static const String firebaseVerify = 'customer/auth/firebase-verify';
+
   //#endregion
 
   // Cities & destinations
@@ -37,13 +34,28 @@ class NetworkUrl {
   static const String getTreksList = 'destinations';
   static const String getStateList = 'states';
 
+  //dashboard
+
+  static String fetchWhatsNew = 'coupons/whatsNew';
+  static String fetchTopTreks = 'coupons/topTreks';
+  static String fetchShotsTreks = 'coupons/shotsTreks';
+  static String fetchSeasonalForcasts = 'coupons/seasonalForcasts';
+
+
+  //coupons
+
+  static String fetchAdminCoupons(int trekId) => 'coupons/trek/$trekId';
+
+  static String validateVersion(String? version,String platform) => 'version/check?current_version=$version&platform=$platform';
+
   // Trek search & detail
   static String searchTrek(
     String cityId,
     String destinationId,
     String startDate,
   ) =>
-      'treks?city_id=$cityId&destination_id=$destinationId&start_date=$startDate';
+      'treks';
+      // 'treks?city_id=$cityId&destination_id=$destinationId&start_date=$startDate';
 
   static const String getTrekDetail = 'treks/';
 
@@ -82,10 +94,7 @@ class NetworkUrl {
   //#endregion
 
   //#region Chat
-  static const String socketUrl = String.fromEnvironment(
-    'API_SOCKET_URL',
-    defaultValue: 'https://YOUR_API_URL_HERE/',
-  );
+  static  String socketUrl = AppEnv().socketUrl;
 
   static const String createOrGetChat = 'customer/chats';
   static String getChatMessages(int chatId) =>

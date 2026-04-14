@@ -1,5 +1,7 @@
 import 'package:arobo_app/models/know_more_data.dart';
+import 'package:arobo_app/utils/app_theme.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
+import 'package:arobo_app/widgets/custom_network_image.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'package:google_fonts/google_fonts.dart';
@@ -8,7 +10,7 @@ import 'package:sizer/sizer.dart';
 import '../utils/common_colors.dart';
 
 class KnowMoreDetailsScreen extends StatelessWidget {
-  final KnowMoreData knowMoreData;
+  final KnowMoreData? knowMoreData;
 
   const KnowMoreDetailsScreen({
     super.key,
@@ -27,7 +29,7 @@ class KnowMoreDetailsScreen extends StatelessWidget {
           onPressed: () => Get.back(),
         ),
         title: Text(
-          knowMoreData.title,
+          knowMoreData?.title ?? "",
           style: GoogleFonts.poppins(
             fontSize: FontSize.s14,
             fontWeight: FontWeight.w400,
@@ -45,7 +47,15 @@ class KnowMoreDetailsScreen extends StatelessWidget {
               width: double.infinity,
               height: 20.h,
               decoration: BoxDecoration(
-                gradient: knowMoreData.customGradient,
+                gradient: LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  // stops: [0.0, 0.5, 1],
+                  colors: (knowMoreData?.customGradient?.isEmpty == true) ? [
+                  Color(0xFFCF6565),
+                    Color(0xFFCF6565),
+                    ] :  (knowMoreData?.customGradient?.map((color) => AppTheme.hexToColor(color)).toList() ?? [])
+                )
               ),
               child: Stack(
                 children: [
@@ -84,21 +94,14 @@ class KnowMoreDetailsScreen extends StatelessWidget {
                                     Colors.black.withValues(alpha: 0.45),
                                     BlendMode.srcATop,
                                   ),
-                                  child: Image.asset(
-                                    knowMoreData.imagePath,
-                                    fit: BoxFit.contain,
-                                  ),
+                                  child: CustomNetworkImage(imageUrl: knowMoreData?.imagePath ?? "",width: 50,height: 50,fit:BoxFit.cover),
                                 ),
                               ),
                             ),
                           ),
+                          CustomNetworkImage(imageUrl: knowMoreData?.imagePath ?? "",height: 13.h,
+                              width: 13.h,fit:BoxFit.cover)
                           // Main image
-                          Image.asset(
-                            knowMoreData.imagePath,
-                            height: 13.h,
-                            width: 13.h,
-                            fit: BoxFit.contain,
-                          ),
                         ],
                       ),
                     ),
@@ -117,17 +120,16 @@ class KnowMoreDetailsScreen extends StatelessWidget {
                           style: GoogleFonts.poppins(
                             fontSize: FontSize.s12,
                             fontWeight: FontWeight.w400,
-                            color:
-                                knowMoreData.textColor.withValues(alpha: 0.9),
+                            color:AppTheme.hexToColor(knowMoreData?.textColor ?? ""),
                           ),
                         ),
                         // SizedBox(height: 1.h),
                         Text(
-                          knowMoreData.title,
+                          knowMoreData?.title ?? "",
                           style: GoogleFonts.poppins(
                             fontSize: FontSize.s14,
                             fontWeight: FontWeight.w600,
-                            color: knowMoreData.textColor,
+                            color:AppTheme.hexToColor(knowMoreData?.textColor ?? ""),
                           ),
                         ),
                       ],
@@ -138,7 +140,7 @@ class KnowMoreDetailsScreen extends StatelessWidget {
             ),
 
             // Detailed Title Section
-            if (knowMoreData.detailedTitle != null)
+            if (knowMoreData?.detailedTitle != null)
               Container(
                 // width: 100.w,
                 margin: EdgeInsets.symmetric(horizontal: 2.h, vertical: 1.h),
@@ -158,7 +160,7 @@ class KnowMoreDetailsScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      knowMoreData.detailedTitle!,
+                      knowMoreData?.detailedTitle ?? "",
                       style: GoogleFonts.poppins(
                         fontSize: FontSize.s12,
                         fontWeight: FontWeight.w600,
@@ -166,9 +168,9 @@ class KnowMoreDetailsScreen extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: 1.5.h),
-                    if (knowMoreData.detailedDescription != null)
+                    if (knowMoreData?.detailedDescription != null)
                       Text(
-                        knowMoreData.detailedDescription!,
+                        knowMoreData?.detailedDescription ?? "",
                         style: GoogleFonts.poppins(
                           fontSize: FontSize.s10,
                           height: 1.5,
@@ -180,7 +182,7 @@ class KnowMoreDetailsScreen extends StatelessWidget {
               ),
 
             // Bullet Points Section
-            if (knowMoreData.bulletPoints?.isNotEmpty ?? false)
+            if (knowMoreData?.bulletPoints?.isNotEmpty ?? false)
               Container(
                 // width: 100.w,
                 margin: EdgeInsets.symmetric(horizontal: 2.h, vertical: 1.h),
@@ -208,20 +210,20 @@ class KnowMoreDetailsScreen extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: 2.h),
-                    ...knowMoreData.bulletPoints!
+                    ...(knowMoreData?.bulletPoints ?? [])
                         .map((point) => _buildBulletPoint(
-                              title: point['title'] ?? '',
-                              description: point['description'] ?? '',
+                              title: point.title ?? '',
+                              description: point.description ?? '',
                             )),
                   ],
                 ),
               ),
 
             // Call to Action Section
-            if (knowMoreData.callToAction?.isNotEmpty ?? false)
+            if (knowMoreData?.callToAction?.isNotEmpty ?? false)
               _buildSection(
                 title: 'Ready to Start?',
-                content: knowMoreData.callToAction!,
+                content: knowMoreData?.callToAction ?? "",
                 isCallToAction: true,
               ),
 
