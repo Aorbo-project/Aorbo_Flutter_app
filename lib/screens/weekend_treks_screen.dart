@@ -1,7 +1,6 @@
 import 'dart:developer';
 
 import 'package:arobo_app/controller/trek_controller.dart';
-import 'package:arobo_app/models/treaks/treaks_serach_modal.dart';
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:arobo_app/utils/common_trek_card.dart';
@@ -10,6 +9,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:sizer/sizer.dart';
+
+import '../freezed_models/treks/treks_model_data.dart';
 
 class WeekendTreksScreen extends StatefulWidget {
   final String city;
@@ -35,7 +36,8 @@ class _WeekendTreksScreenState extends State<WeekendTreksScreen> {
   final TrekController _trekControllerC = Get.find<TrekController>();
 
   List<TrekData> _getAvailableTreks(DateTime date) {
-    return _trekControllerC.trekList.where((trek) {
+    List<TrekData>? treks = _trekControllerC.treksResponseObserver.value.maybeMap(success: (response) => (response as FetchTreksResponseModel).data,orElse: () => []);
+    return (treks ?? []).where((trek) {
       final startDateStr = trek.batchInfo?.startDate;
       if (startDateStr == null || startDateStr.isEmpty) {
         return false;

@@ -28,6 +28,14 @@ class TopTreksData with _$TopTreksData {
   }) = _TopTreksData;
 
   factory TopTreksData.fromJson(Map<String, dynamic> json) => _$TopTreksDataFromJson(json);
+
+  static TopTreksData get dummy => TopTreksData(
+    title: "Everest Base Camp",
+    description: "A breathtaking trek to the base of the world's highest peak.",
+    imagePath: "assets/images/everest.png",
+    gradient: ["#1E3C72", "#2A5298"],
+    isFavorite: false,
+  );
 }
 
 

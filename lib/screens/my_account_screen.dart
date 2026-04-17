@@ -333,7 +333,7 @@ class _MyAccountScreenState extends State<MyAccountScreen>
                 // FIX: dark near-black badge background for active items
                 color: isComingSoon
                     ? CommonColors.cFFF3F4F6
-                    : CommonColors.cFF111827,
+                    : CommonColors.blackColor,
                 borderRadius: BorderRadius.circular(2.5.w),
               ),
               child: Center(
@@ -343,7 +343,7 @@ class _MyAccountScreenState extends State<MyAccountScreen>
                   height: 5.w,
                   // FIX: white icon on dark badge (bold, high contrast)
                   colorFilter: ColorFilter.mode(
-                    isComingSoon ? _C.inkMid : CommonColors.whiteColor,
+                    isComingSoon ? _C.inkMid : CommonColors.primaryColor,
                     BlendMode.srcIn,
                   ),
                 ),

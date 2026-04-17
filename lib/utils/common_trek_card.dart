@@ -1,4 +1,3 @@
-import 'package:arobo_app/models/treaks/treaks_serach_modal.dart';
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/common_images.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
@@ -6,8 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
 
+import '../freezed_models/treks/treks_model_data.dart';
+
 class CommonTrekCard extends StatelessWidget {
-  final TrekData trek;
+  final TrekData? trek;
   final VoidCallback? onTap;
   final bool showShare;
   final VoidCallback? onShareTap;
@@ -66,18 +67,18 @@ class CommonTrekCard extends StatelessWidget {
   String _calculateDiscountedPrice() {
     // The trek.price already contains the discounted price from the API
     // We don't need to apply discount calculation again here
-    return trek.price?.replaceAll(',', '') ?? '0.00';
+    return trek?.price?.replaceAll(',', '') ?? '0.00';
   }
 
   // Method to get original price for strikethrough (calculate from discounted price)
   String _getOriginalPrice() {
-    if (trek.hasDiscount != true || trek.discountText == null) {
-      return trek.price?.replaceAll(',', '') ?? '0.00';
+    if (trek?.hasDiscount != true || trek?.discountText == null) {
+      return trek?.price?.replaceAll(',', '') ?? '0.00';
     }
 
     double discountedPrice =
-        double.tryParse(trek.price?.replaceAll(',', '') ?? '0.00') ?? 0.00;
-    String discountText = trek.discountText ?? '';
+        double.tryParse(trek?.price?.replaceAll(',', '') ?? '0.00') ?? 0.00;
+    String discountText = trek?.discountText ?? '';
 
     // Check if discount is percentage
     if (discountText.contains('%')) {
@@ -121,7 +122,7 @@ class CommonTrekCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         width: 92.w,
-        height: (trek.hasDiscount! || trek.badge != null) ? 23.h : 22.h,
+        // height: (trek.hasDiscount! || trek.badge != null) ? 23.h : 22.h,
         margin: EdgeInsets.symmetric(horizontal: 3.w),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -159,7 +160,7 @@ class CommonTrekCard extends StatelessWidget {
                       children: [
                         SizedBox(height: 0.8.h),
                         Text(
-                          trek.name ?? '-',
+                          trek?.name ?? '-',
                           textScaler: const TextScaler.linear(1.0),
                           style: GoogleFonts.poppins(
                             fontSize: FontSize.s11,
@@ -168,7 +169,7 @@ class CommonTrekCard extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          trek.vendor ?? '-',
+                          trek?.vendor ?? '-',
                           textScaler: const TextScaler.linear(1.0),
                           style: GoogleFonts.poppins(
                             fontSize: FontSize.s9,
@@ -181,7 +182,7 @@ class CommonTrekCard extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      if (trek.hasDiscount!)
+                      if (trek?.hasDiscount == true)
                         Container(
                           padding: EdgeInsets.fromLTRB(2.w, 0.6.h, 2.w, 0.6.h),
                           decoration: BoxDecoration(
@@ -189,7 +190,7 @@ class CommonTrekCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(0.8.h),
                           ),
                           child: Text(
-                            trek.discountText ?? '0%',
+                            trek?.discountText ?? '0%',
                             textScaler: const TextScaler.linear(1.0),
                             style: GoogleFonts.poppins(
                               color: CommonColors.blackColor,
@@ -199,23 +200,23 @@ class CommonTrekCard extends StatelessWidget {
                             ),
                           ),
                         )
-                      else if (trek.badge != null)
+                      else if (trek?.badge != null)
                         Container(
                           padding: EdgeInsets.fromLTRB(2.w, 0.6.h, 2.w, 0.6.h),
                           decoration: BoxDecoration(
-                            color: _parseBadgeColor(trek.badge!.color),
+                            color: _parseBadgeColor(trek?.badge?.color),
                             borderRadius: BorderRadius.circular(0.8.h),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                trek.badge!.icon ?? '',
+                                trek?.badge?.icon ?? '',
                                 style: TextStyle(fontSize: FontSize.s6),
                               ),
                               SizedBox(width: 0.5.w),
                               Text(
-                                trek.badge!.name ?? '',
+                                trek?.badge?.name ?? '',
                                 textScaler: const TextScaler.linear(1.0),
                                 style: GoogleFonts.poppins(
                                   color: CommonColors.blackColor,
@@ -229,12 +230,12 @@ class CommonTrekCard extends StatelessWidget {
                         ),
                       Padding(
                         padding: EdgeInsets.only(
-                          top: trek.hasDiscount == true ? 1.h : 2.h,
+                          top: trek?.hasDiscount == true ? 1.h : 2.h,
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            if (trek.hasDiscount == true) ...[
+                            if (trek?.hasDiscount == true) ...[
                               // Show original price with strikethrough
                               Text(
                                 '₹${_getOriginalPrice()}',
@@ -261,20 +262,20 @@ class CommonTrekCard extends StatelessWidget {
                                   style: GoogleFonts.roboto(
                                     fontSize: FontSize.s14,
                                     fontWeight: FontWeight.w600,
-                                    color: trek.hasDiscount == true
+                                    color: trek?.hasDiscount == true
                                         ? CommonColors.softGreen3
                                         : CommonColors.blackColor,
                                   ),
                                 ),
                                 Text(
-                                  trek.hasDiscount == true
+                                  trek?.hasDiscount == true
                                       ? _calculateDiscountedPrice()
-                                      : (trek.price ?? '0.00'),
+                                      : (trek?.price ?? '0.00'),
                                   textScaler: const TextScaler.linear(1.0),
                                   style: GoogleFonts.roboto(
                                     fontSize: FontSize.s14,
                                     fontWeight: FontWeight.w800,
-                                    color: trek.hasDiscount == true
+                                    color: trek?.hasDiscount == true
                                         ? CommonColors.softGreen3
                                         : CommonColors.blackColor,
                                   ),
@@ -299,7 +300,7 @@ class CommonTrekCard extends StatelessWidget {
                   ),
                 ],
               ),
-              SizedBox(height: trek.hasDiscount == true ? 1.h : 0.7.h),
+              SizedBox(height: trek?.hasDiscount == true ? 1.h : 0.7.h),
               Row(
                 children: [
                   Expanded(
@@ -316,7 +317,7 @@ class CommonTrekCard extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          trek.duration ?? '-',
+                          trek?.duration ?? '-',
                           textScaler: const TextScaler.linear(1.0),
                           style: GoogleFonts.poppins(
                             fontSize: FontSize.s9,
@@ -332,7 +333,7 @@ class CommonTrekCard extends StatelessWidget {
                   Container(
                     padding: EdgeInsets.fromLTRB(0.8.w, 0.25.h, 2.w, 0.4.h),
                     decoration: BoxDecoration(
-                      gradient: getRatingColor(trek.rating?.toDouble() ?? 0.0),
+                      gradient: getRatingColor(trek?.rating?.toDouble() ?? 0.0),
                       borderRadius: BorderRadius.circular(1.5.w),
                     ),
                     child: Row(
@@ -341,7 +342,7 @@ class CommonTrekCard extends StatelessWidget {
                         Icon(Icons.star, color: Colors.white, size: 3.8.w),
                         SizedBox(width: 0.5.w),
                         Text(
-                          trek.rating.toString(),
+                          "${trek?.rating ?? 0}",
                           textScaler: const TextScaler.linear(1.0),
                           style: GoogleFonts.poppins(
                             color: Colors.white,
@@ -354,7 +355,7 @@ class CommonTrekCard extends StatelessWidget {
                   ),
                 ],
               ),
-              SizedBox(height: trek.hasDiscount == true ? 0.5.h : 1.2.h),
+              SizedBox(height: trek?.hasDiscount == true ? 0.5.h : 1.2.h),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -372,7 +373,7 @@ class CommonTrekCard extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          _formatDate(trek.batchInfo?.startDate),
+                          _formatDate(trek?.batchInfo?.startDate),
                           textScaler: const TextScaler.linear(1.0),
                           style: GoogleFonts.poppins(
                             fontSize: FontSize.s9,
@@ -389,7 +390,7 @@ class CommonTrekCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        '${trek.batchInfo?.availableSlots} Slots left',
+                        '${trek?.batchInfo?.availableSlots} Slots left',
                         textScaler: const TextScaler.linear(1.0),
                         style: GoogleFonts.poppins(
                           fontSize: FontSize.s9,

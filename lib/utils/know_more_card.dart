@@ -1,5 +1,6 @@
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
+import 'package:arobo_app/widgets/custom_network_image.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -72,20 +73,21 @@ class KnowMoreCard extends StatelessWidget {
                             Colors.black.withValues(alpha: 0.45),
                             BlendMode.srcATop,
                           ),
-                          child: Image.asset(
-                            imagePath,
-                            fit: BoxFit.contain,
-                          ),
+                          child:
+                          CustomNetworkImage(
+                              imageUrl: imagePath,
+                              fit: BoxFit.contain,
+                              height: 10.h,
+                              width: 10.h)
                         ),
                       ),
                     ),
                   ),
                   // Main image
-                  Image.asset(
-                    imagePath,
+                  CustomNetworkImage(
+                    imageUrl: imagePath,
                     height: 10.h,
-                    width: 10.h,
-                  ),
+                    width: 10.h),
                 ],
               ),
               Expanded(
@@ -124,19 +126,22 @@ class KnowMoreCard extends StatelessWidget {
                       SizedBox(
                         height: 2.8.h,
                       ),
-                      InkWell(
-                        onTap: onKnowMoreTap,
-                        child: Text(
-                          'Know more',
-                          textScaler: const TextScaler.linear(1.0),
-                          style: GoogleFonts.poppins(
-                              decoration: TextDecoration.underline,
-                              decorationColor:
-                                  textColor ?? CommonColors.blackColor,
-                              decorationThickness: 2,
-                              color: textColor ?? CommonColors.blackColor,
-                              fontWeight: FontWeight.w600,
-                              fontSize: FontSize.s9),
+                      Visibility(
+                        visible: onKnowMoreTap != null,
+                        child: InkWell(
+                          onTap: onKnowMoreTap,
+                          child: Text(
+                            'Know more',
+                            textScaler: const TextScaler.linear(1.0),
+                            style: GoogleFonts.poppins(
+                                decoration: TextDecoration.underline,
+                                decorationColor:
+                                    textColor ?? CommonColors.blackColor,
+                                decorationThickness: 2,
+                                color: textColor ?? CommonColors.blackColor,
+                                fontWeight: FontWeight.w600,
+                                fontSize: FontSize.s9),
+                          ),
                         ),
                       )
                     ],

@@ -27,6 +27,7 @@ class CommonColors {
   static const Color orangeColor = Color(0xFFFF4804);
   static const Color splashBgColor = Color(0xffffffff);
   static const Color blackColor = Color(0xff000000);
+  static const String blackColorHex = "0xff000000";
   static const Color textColor2 = Color(0xff434343);
 
   static const Color ceced = Color(0xFFCCECED);

@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/controller/trek_controller.dart';
 import 'package:arobo_app/models/seasonal_forecast_data.dart';
+import 'package:arobo_app/utils/app_theme.dart';
 import 'package:arobo_app/utils/common_btn.dart';
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/common_images.dart';
@@ -23,6 +24,7 @@ import 'package:intl/intl.dart';
 import 'package:get/get.dart';
 import 'dart:async';
 import 'package:flutter_touch_ripple/flutter_touch_ripple.dart';
+import 'package:shimmer_ai/shimmer_ai.dart';
 import 'package:sizer/sizer.dart';
 import 'package:arobo_app/utils/custom_snackbar.dart';
 import 'package:ntp/ntp.dart';
@@ -95,6 +97,11 @@ class _DashboardState extends State<Dashboard>
     for (var trek in topTreksCardsData) {
       _favoriteTreks[trek['title']] = trek['isFavorite'] ?? false;
     }
+
+    _dashboardC.fetchWhatsNew();
+    _dashboardC.fetchTopTreks();
+    _dashboardC.fetchShortsTreks();
+    _dashboardC.fetchSeasonalForeCasts();
   }
 
   @override
@@ -1008,399 +1015,415 @@ class _DashboardState extends State<Dashboard>
               child: Column(
                 spacing: MediaQuery.of(context).size.height / 50,
                 children: [
-                  Column(
-                    children: [
-
-                    ],
+                  Obx(() {
+                    final knowMoreLoading = _dashboardC.whatsNewObserver.value.maybeWhen(loading: (data) => true,orElse: () => false);
+                    List<KnowMoreData>? knowMoreCardsData = _dashboardC.whatsNewObserver.value.maybeWhen(success: (whatsNewResponse) => (whatsNewResponse as WhatsNewDataResponseModel).data,error: (sc) => [],orElse: () => [KnowMoreData(),KnowMoreData(),KnowMoreData(),KnowMoreData()]);
+                    if(knowMoreCardsData?.isEmpty == true) return SizedBox();
+                   return  Column(
+                     children: [
+                       Padding(
+                         padding: EdgeInsets.only(
+                             left: ScreenConstant.size17,
+                             right: ScreenConstant.size17,
+                             top: ScreenConstant.size10),
+                         child: Row(
+                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                           children: [
+                             Column(
+                               crossAxisAlignment: CrossAxisAlignment.start,
+                               children: [
+                                 Text(
+                                   "What's New",
+                                   textScaler: const TextScaler.linear(1.0),
+                                   style: GoogleFonts.poppins(
+                                     fontSize: FontSize.s12,
+                                     fontWeight: FontWeight.w500,
+                                   ),
+                                 ).withShimmerAi(loading: knowMoreLoading),
+                                 Text(
+                                   'Adventure simplified combo delivers !',
+                                   textScaler: const TextScaler.linear(1.0),
+                                   style: GoogleFonts.poppins(
+                                     fontSize: FontSize.s10,
+                                     color: Colors.grey,
+                                   ),
+                                 ).withShimmerAi(loading: knowMoreLoading),
+                               ],
+                             ),
+                             InkWell(
+                               onTap: () {
+                                 Get.toNamed('/know-more-screen');
+                               },
+                               child: Text(
+                                 'View more',
+                                 style: TextStyle(
+                                   decorationColor: CommonColors.blueColor,
+                                   color: CommonColors.blueColor,
+                                   fontSize: FontSize.s11,
+                                   letterSpacing: 2,
+                                   fontWeight: FontWeight.w600,
+                                 ),
+                               ).withShimmerAi(loading: knowMoreLoading),
+                             ),
+                           ],
+                         ),
+                       ),
+                       // Know More Cards
+                       Container(
+                         margin: EdgeInsets.only(top: 1.h),
+                         height: 22.h,
+                         child: Listener(
+                           onPointerDown: (_) {
+                             _isUserInteracting = true;
+                             _stopAutoScroll();
+                           },
+                           onPointerUp: (_) {
+                             _isUserInteracting = false;
+                             _startAutoScroll();
+                           },
+                           onPointerCancel: (_) {
+                             _isUserInteracting = false;
+                             _startAutoScroll();
+                           },
+                           child: PageView.builder(
+                             controller: _pageController,
+                             itemCount: null,
+                             onPageChanged: (int page) {
+                               _currentPage = page % (knowMoreCardsData?.length ?? 0);
+                             },
+                             physics: const BouncingScrollPhysics(),
+                             itemBuilder: (context, index) {
+                               final cardData = knowMoreCardsData?[index % (knowMoreCardsData.length ?? 0)];
+                               return Container(
+                                 margin: EdgeInsets.only(
+                                   left: ScreenConstant.size0,
+                                   right: ScreenConstant.size6,
+                                 ),
+                                 child: KnowMoreCard(
+                                   customGradient: AppTheme.customGradient(cardData?.customGradient ?? []),
+                                   imagePath: cardData?.imagePath ?? "",
+                                   title: cardData?.title ?? "",
+                                   subtitle: cardData?.subtitle ?? "",
+                                   onKnowMoreTap: cardData?.hasKnowMore == false
+                                       ? null
+                                       : () {
+                                     Get.toNamed(
+                                       '/know-more-details',
+                                       arguments: {
+                                         'knowMoreData': cardData,
+                                       },
+                                     );
+                                   },
+                                   // width: MediaQuery.of(context).size.width * 0.8,
+                                   // height: MediaQuery.of(context).size.height * 0.20,
+                                   textColor: AppTheme.hexToColor(cardData?.textColor),
+                                 ).withShimmerAi(loading: knowMoreLoading),
+                               );
+                             },
+                           ),
+                         ),
+                       ),
+                     ],
+                   );
+                  }
                   ),
                   // What's New Section
-                  Padding(
-                    padding: EdgeInsets.only(
-                        left: ScreenConstant.size17,
-                        right: ScreenConstant.size17,
-                        top: ScreenConstant.size10),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "What's New",
-                              textScaler: const TextScaler.linear(1.0),
-                              style: GoogleFonts.poppins(
-                                fontSize: FontSize.s12,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            Text(
-                              'Adventure simplified combo delivers !',
-                              textScaler: const TextScaler.linear(1.0),
-                              style: GoogleFonts.poppins(
-                                fontSize: FontSize.s10,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
-                        InkWell(
-                          onTap: () {
-                            Get.toNamed('/know-more-screen');
-                          },
-                          child: Text(
-                            'View more',
-                            style: TextStyle(
-                              decorationColor: CommonColors.blueColor,
-                              color: CommonColors.blueColor,
-                              fontSize: FontSize.s11,
-                              letterSpacing: 2,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Know More Cards
-                  Container(
-                    margin: EdgeInsets.only(top: 1.h),
-                    height: 22.h,
-                    child: Listener(
-                      onPointerDown: (_) {
-                        _isUserInteracting = true;
-                        _stopAutoScroll();
-                      },
-                      onPointerUp: (_) {
-                        _isUserInteracting = false;
-                        _startAutoScroll();
-                      },
-                      onPointerCancel: (_) {
-                        _isUserInteracting = false;
-                        _startAutoScroll();
-                      },
-                      child: PageView.builder(
-                        controller: _pageController,
-                        itemCount: null,
-                        onPageChanged: (int page) {
-                          _currentPage = page % knowMoreCardsData.length;
-                        },
-                        physics: const BouncingScrollPhysics(),
-                        itemBuilder: (context, index) {
-                          final cardData = knowMoreCardsData[index % knowMoreCardsData.length];
-                          return Container(
-                            margin: EdgeInsets.only(
-                              left: ScreenConstant.size0,
-                              right: ScreenConstant.size6,
-                            ),
-                            child: KnowMoreCard(
-                              customGradient: cardData['customGradient'],
-                              imagePath: cardData['imagePath'],
-                              title: cardData['title'],
-                              subtitle: cardData['subtitle'],
-                              onKnowMoreTap: cardData['hasKnowMore'] == false
-                                  ? null
-                                  : () {
-                                      Get.toNamed(
-                                        '/know-more-details',
-                                        arguments: {
-                                          'knowMoreData': KnowMoreData(
-                                            title: cardData['title'],
-                                            subtitle: cardData['subtitle'],
-                                            imagePath: cardData['imagePath'],
-                                            customGradient:
-                                                cardData['customGradient'],
-                                            textColor: cardData['textColor'],
-                                            detailedTitle:
-                                                cardData['detailedTitle'],
-                                            detailedDescription:
-                                                cardData['detailedDescription'],
-                                            bulletPoints:
-                                                cardData['bulletPoints'],
-                                            callToAction:
-                                                cardData['callToAction'],
-                                          ),
-                                        },
-                                      );
-                                    },
-                              // width: MediaQuery.of(context).size.width * 0.8,
-                              // height: MediaQuery.of(context).size.height * 0.20,
-                              textColor: cardData['textColor'],
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
                   // Top Treks Section
                   // Container(),
-                  Padding(
-                    padding: EdgeInsets.only(
-                        left: ScreenConstant.size17,
-                        right: ScreenConstant.size17,
-                        top: ScreenConstant.size10),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  Obx(() {
+                    final topTreksLoading = _dashboardC.topTreksObserver.value.maybeWhen(loading: (data) => true,orElse: () => false);
+                    List<TopTreksData>? topTreksCardsData = _dashboardC.topTreksObserver.value.maybeWhen(success: (topTreksResponse) => (topTreksResponse as TopTreksDataResponseModel).data,error: (sc) => [],orElse: () => [TopTreksData(),TopTreksData(),TopTreksData(),TopTreksData()]);
+                    if(topTreksCardsData?.isEmpty == true) return SizedBox();
+                    return  Column(
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Top Treks",
-                              textScaler: const TextScaler.linear(1.0),
-                              style: GoogleFonts.poppins(
-                                fontSize: FontSize.s12,
-                                fontWeight: FontWeight.w500,
+                        Padding(
+                          padding: EdgeInsets.only(
+                              left: ScreenConstant.size17,
+                              right: ScreenConstant.size17,
+                              top: ScreenConstant.size10),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "Top Treks",
+                                    textScaler: const TextScaler.linear(1.0),
+                                    style: GoogleFonts.poppins(
+                                      fontSize: FontSize.s12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ).withShimmerAi(loading: topTreksLoading),
+                                  Text(
+                                    "Season's Best Treks, Ready for you !",
+                                    textScaler: const TextScaler.linear(1.0),
+                                    style: GoogleFonts.poppins(
+                                      fontSize: FontSize.s10,
+                                      color: Colors.grey,
+                                    ),
+                                  ).withShimmerAi(loading: topTreksLoading),
+                                ],
                               ),
-                            ),
-                            Text(
-                              "Season's Best Treks, Ready for you !",
-                              textScaler: const TextScaler.linear(1.0),
-                              style: GoogleFonts.poppins(
-                                fontSize: FontSize.s10,
-                                color: Colors.grey,
+                              InkWell(
+                                onTap: () {
+                                  Get.toNamed('/popular-treks');
+                                },
+                                child: Text(
+                                  'View more',
+                                  // textScaler: const TextScaler.linear(1.0),
+                                  style: GoogleFonts.poppins(
+                                    // decoration: TextDecoration.underline,
+                                    decorationColor: CommonColors.blueColor,
+                                    color: CommonColors.blueColor,
+                                    fontSize: FontSize.s11,
+                                    letterSpacing: 2,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ).withShimmerAi(loading: topTreksLoading),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                        InkWell(
-                          onTap: () {
-                            Get.toNamed('/popular-treks');
-                          },
-                          child: Text(
-                            'View more',
-                            // textScaler: const TextScaler.linear(1.0),
-                            style: GoogleFonts.poppins(
-                              // decoration: TextDecoration.underline,
-                              decorationColor: CommonColors.blueColor,
-                              color: CommonColors.blueColor,
-                              fontSize: FontSize.s11,
-                              letterSpacing: 2,
-                              fontWeight: FontWeight.w600,
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          controller: _topTreksController,
+                          child: Container(
+                            margin: EdgeInsets.only(
+                              left: ScreenConstant.size10,
+                              top: 1.h,
+                            ),
+                            child: Row(
+                              children: [
+                                // SizedBox(width: ScreenConstant.size16),
+                                ...(topTreksCardsData ?? []).map((trekData) => Container(
+                                  margin: EdgeInsets.only(
+                                    right: ScreenConstant.size15,
+                                  ),
+                                  child: TopTreksCard(
+                                    gradientEndColor: Colors.transparent,
+                                    imagePath: trekData.imagePath ?? "",
+                                    title: trekData.title ?? "",
+                                    description: trekData.description ?? "",
+                                    customGradient: AppTheme.customGradient(trekData.gradient),
+                                    textColor: CommonColors.blackColor,
+                                    isFavorite: trekData.isFavorite ?? false,
+                                    onFavoriteTap: () => _toggleFavorite(trekData.title ?? ""),
+                                  ),
+                                ).withShimmerAi(loading: topTreksLoading))
+                                    .toList(),
+                              ],
                             ),
                           ),
                         ),
                       ],
-                    ),
+                    );
+                  }
                   ),
 
                   // Top Treks Cards
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    controller: _topTreksController,
-                    child: Container(
-                      margin: EdgeInsets.only(
-                        left: ScreenConstant.size10,
-                        top: 1.h,
-                      ),
-                      child: Row(
-                        children: [
-                          // SizedBox(width: ScreenConstant.size16),
-                          ...topTreksCardsData
-                              .map((trekData) => Container(
-                                    margin: EdgeInsets.only(
-                                      right: ScreenConstant.size15,
-                                    ),
-                                    child: TopTreksCard(
-                                      gradientEndColor: Colors.transparent,
-                                      imagePath: trekData['imagePath'],
-                                      title: trekData['title'],
-                                      description: trekData['description'],
-                                      customGradient: _getGradientByName(
-                                          trekData['gradient']),
-                                      textColor: trekData['textColor'],
-                                      isFavorite:
-                                          _favoriteTreks[trekData['title']] ??
-                                              false,
-                                      onFavoriteTap: () =>
-                                          _toggleFavorite(trekData['title']),
-                                    ),
-                                  ))
-                              .toList(),
-                        ],
-                      ),
-                    ),
-                  ),
-
                   // Container(),
-                  Padding(
-                    padding: EdgeInsets.only(
-                      left: ScreenConstant.size17,
-                      right: ScreenConstant.size17,
-                      top: ScreenConstant.size10,
-                      // bottom: ScreenConstant.size10
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  Obx(() {
+                    final shortsLoading = _dashboardC.shortsTreksObserver.value.maybeWhen(loading: (data) => true,orElse: () => false);
+                    List<ShortsTreksData>? shortsTreksCardsData = _dashboardC.shortsTreksObserver.value.maybeWhen(success: (shortsTreksResponse) => (shortsTreksResponse as ShortsTreksDataResponseModel).data,error: (sc) => [],orElse: () => [ShortsTreksData(),ShortsTreksData(),ShortsTreksData(),ShortsTreksData()]);
+                    if(shortsTreksCardsData?.isEmpty == true) return SizedBox();
+                    return  Column(
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Trek Shorts",
-                              textScaler: const TextScaler.linear(1.0),
-                              style: GoogleFonts.poppins(
-                                fontSize: FontSize.s12,
-                                fontWeight: FontWeight.w500,
+                        Padding(
+                          padding: EdgeInsets.only(
+                            left: ScreenConstant.size17,
+                            right: ScreenConstant.size17,
+                            top: ScreenConstant.size10,
+                            // bottom: ScreenConstant.size10
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "Trek Shorts",
+                                    textScaler: const TextScaler.linear(1.0),
+                                    style: GoogleFonts.poppins(
+                                      fontSize: FontSize.s12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ).withShimmerAi(loading: shortsLoading),
+                                  Text(
+                                    "Watch the Action Unfold!",
+                                    textScaler: const TextScaler.linear(1.0),
+                                    style: GoogleFonts.poppins(
+                                      fontSize: FontSize.s10,
+                                      fontWeight: FontWeight.w400,
+                                      color: Colors.grey,
+                                    ),
+                                  ).withShimmerAi(loading: shortsLoading),
+                                ],
                               ),
-                            ),
-                            Text(
-                              "Watch the Action Unfold!",
-                              textScaler: const TextScaler.linear(1.0),
-                              style: GoogleFonts.poppins(
-                                fontSize: FontSize.s10,
-                                fontWeight: FontWeight.w400,
-                                color: Colors.grey,
+                              InkWell(
+                                onTap: () {
+                                  Get.toNamed('/trek-shorts');
+                                },
+                                child: Text(
+                                  'View more',
+                                  // textScaler: const TextScaler.linear(1.0),
+                                  style: GoogleFonts.poppins(
+                                    // decoration: TextDecoration.underline,
+                                    decorationColor: CommonColors.blueColor,
+                                    color: CommonColors.blueColor,
+                                    fontSize: FontSize.s11,
+                                    letterSpacing: 2,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ).withShimmerAi(loading: shortsLoading),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                        InkWell(
-                          onTap: () {
-                            Get.toNamed('/trek-shorts');
-                          },
-                          child: Text(
-                            'View more',
-                            // textScaler: const TextScaler.linear(1.0),
-                            style: GoogleFonts.poppins(
-                              // decoration: TextDecoration.underline,
-                              decorationColor: CommonColors.blueColor,
-                              color: CommonColors.blueColor,
-                              fontSize: FontSize.s11,
-                              letterSpacing: 2,
-                              fontWeight: FontWeight.w600,
+                        // Trek Shorts Cards with PageView
+                        Container(
+                          margin: EdgeInsets.only(
+                            left: 1.5.h,
+                            top: 1.h,
+                          ),
+                          height: 23.h, // Match the height of TrekShorts widget
+                          child: Listener(
+                            onPointerDown: (_) {
+                              _isTrekShortsUserInteracting = true;
+                              _trekShortsTimer?.cancel();
+                            },
+                            onPointerUp: (_) {
+                              _isTrekShortsUserInteracting = false;
+                              _startTrekShortsAutoScroll();
+                            },
+                            onPointerCancel: (_) {
+                              _isTrekShortsUserInteracting = false;
+                              _startTrekShortsAutoScroll();
+                            },
+                            child: PageView.builder(
+                              controller: _trekShortsPageController,
+                              itemCount: null,
+                              // Infinite scrolling
+                              padEnds: false,
+                              pageSnapping: true,
+                              physics: const BouncingScrollPhysics(),
+                              itemBuilder: (context, index) {
+                                final cardData = shortsTreksCardsData?[index % shortsTreksCardsData.length];
+                                return Align(
+                                  alignment: Alignment.center,
+                                  child: Padding(
+                                    padding: EdgeInsets.symmetric(horizontal: 1.w),
+                                    child: TrekShorts(
+                                      imagePath: cardData?.imagePath ?? "",
+                                      title: cardData?.title ?? "",
+                                      description: cardData?.description ?? "",
+                                    ).withShimmerAi(loading: shortsLoading),
+                                  ),
+                                );
+                              },
                             ),
                           ),
                         ),
                       ],
-                    ),
-                  ),
-                  // Trek Shorts Cards with PageView
-                  Container(
-                    margin: EdgeInsets.only(
-                      left: 1.5.h,
-                      top: 1.h,
-                    ),
-                    height: 23.h, // Match the height of TrekShorts widget
-                    child: Listener(
-                      onPointerDown: (_) {
-                        _isTrekShortsUserInteracting = true;
-                        _trekShortsTimer?.cancel();
-                      },
-                      onPointerUp: (_) {
-                        _isTrekShortsUserInteracting = false;
-                        _startTrekShortsAutoScroll();
-                      },
-                      onPointerCancel: (_) {
-                        _isTrekShortsUserInteracting = false;
-                        _startTrekShortsAutoScroll();
-                      },
-                      child: PageView.builder(
-                        controller: _trekShortsPageController,
-                        itemCount: null,
-                        // Infinite scrolling
-                        padEnds: false,
-                        pageSnapping: true,
-                        physics: const BouncingScrollPhysics(),
-                        itemBuilder: (context, index) {
-                          final cardData = shortsTreksCardsData[
-                              index % shortsTreksCardsData.length];
-                          return Align(
-                            alignment: Alignment.center,
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 1.w),
-                              child: TrekShorts(
-                                imagePath: cardData['imagePath'],
-                                title: cardData['title'],
-                                description: cardData['description'],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
+                    );
+                  }
                   ),
 
-                  // Container(),
-                  Padding(
-                    padding: EdgeInsets.only(
-                      left: ScreenConstant.size16,
-                      right: ScreenConstant.size16,
-                      top: ScreenConstant.size10,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  Obx(() {
+                    final seasonalForcastLoading = _dashboardC.seasonalForcastObserver.value.maybeWhen(loading: (data) => true,orElse: () => false);
+                    List<SeasonalForecastData>? seasonalForecastData = _dashboardC.seasonalForcastObserver.value.maybeWhen(success: (seasonalForcastResponse) => (seasonalForcastResponse as SeasonalForecastDataResponseModel).data,error: (sc) => [],orElse: () => [SeasonalForecastData(),SeasonalForecastData(),SeasonalForecastData(),SeasonalForecastData()]);
+                    if(seasonalForecastData?.isEmpty == true) return SizedBox();
+                    return  Column(
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Seasonal Forecast",
-                              textScaler: const TextScaler.linear(1.0),
-                              style: GoogleFonts.poppins(
-                                fontSize: FontSize.s12,
-                                fontWeight: FontWeight.w500,
+                        Padding(
+                          padding: EdgeInsets.only(
+                            left: ScreenConstant.size16,
+                            right: ScreenConstant.size16,
+                            top: ScreenConstant.size10,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "Seasonal Forecast",
+                                    textScaler: const TextScaler.linear(1.0),
+                                    style: GoogleFonts.poppins(
+                                      fontSize: FontSize.s12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ).withShimmerAi(loading: seasonalForcastLoading),
+                                  Text(
+                                    "Weather Alerts for Safer Treks!",
+                                    textScaler: const TextScaler.linear(1.0),
+                                    style: GoogleFonts.poppins(
+                                      fontSize: FontSize.s10,
+                                      fontWeight: FontWeight.w400,
+                                      color: Colors.grey,
+                                    ),
+                                  ).withShimmerAi(loading: seasonalForcastLoading),
+                                ],
                               ),
-                            ),
-                            Text(
-                              "Weather Alerts for Safer Treks!",
-                              textScaler: const TextScaler.linear(1.0),
-                              style: GoogleFonts.poppins(
-                                fontSize: FontSize.s10,
-                                fontWeight: FontWeight.w400,
-                                color: Colors.grey,
+                              InkWell(
+                                onTap: () {
+                                  Get.toNamed('/seasonal-forecast');
+                                },
+                                child: Text(
+                                  'View more',
+                                  // textScaler: const TextScaler.linear(1.0),
+                                  style: TextStyle(
+                                    // decoration: TextDecoration.underline,
+                                    letterSpacing: 2,
+                                    decorationColor: CommonColors.blueColor,
+                                    color: CommonColors.blueColor,
+                                    fontSize: FontSize.s11,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ).withShimmerAi(loading: seasonalForcastLoading),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                        InkWell(
-                          onTap: () {
-                            Get.toNamed('/seasonal-forecast');
-                          },
-                          child: Text(
-                            'View more',
-                            // textScaler: const TextScaler.linear(1.0),
-                            style: TextStyle(
-                              // decoration: TextDecoration.underline,
-                              letterSpacing: 2,
-                              decorationColor: CommonColors.blueColor,
-                              color: CommonColors.blueColor,
-                              fontSize: FontSize.s11,
-                              fontWeight: FontWeight.w500,
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          controller: _seasonalForecastController,
+                          child: Container(
+                            margin: EdgeInsets.only(
+                              left: ScreenConstant.size15,
+                              top: 1.h,
+                              bottom: ScreenConstant.size15,
+                            ),
+                            child: Row(
+                              children: [
+                                ...(seasonalForecastData ?? [])
+                                    .map((cardData) => Padding(
+                                  padding: EdgeInsets.only(right: 2.h),
+                                  child: SeasonalForecast(
+                                    title: cardData.title ?? "",
+                                    description: cardData.description ?? "",
+                                    imagePath: cardData.imagePath ?? "",
+                                    gradientColors: AppTheme.hexToColor(cardData.color),
+                                    // onViewMore: () {
+                                    //   // Handle view more tap
+                                    // },
+                                  ).withShimmerAi(loading: seasonalForcastLoading),
+                                ))
+                                    .toList(),
+                              ],
                             ),
                           ),
                         ),
                       ],
-                    ),
+                    );
+                  }
                   ),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    controller: _seasonalForecastController,
-                    child: Container(
-                      margin: EdgeInsets.only(
-                        left: ScreenConstant.size15,
-                        top: 1.h,
-                        bottom: ScreenConstant.size15,
-                      ),
-                      child: Row(
-                        children: [
-                          ...seasonalForecastData
-                              .map((cardData) => Padding(
-                                    padding: EdgeInsets.only(right: 2.h),
-                                    child: SeasonalForecast(
-                                      title: cardData['title'],
-                                      description: cardData['description'],
-                                      imagePath: cardData['imagePath'],
-                                      gradientColors: cardData['color'],
-                                      // onViewMore: () {
-                                      //   // Handle view more tap
-                                      // },
-                                    ),
-                                  ))
-                              .toList(),
-                        ],
-                      ),
-                    ),
-                  ),
+
+
+                  // Container(),
+
 
                   SizedBox(height: ScreenConstant.size20),
 

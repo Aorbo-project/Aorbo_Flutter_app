@@ -10,6 +10,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
 import 'package:animated_rating_stars/animated_rating_stars.dart';
+import '../freezed_models/treks/treks_model_data.dart';
 import '../utils/common_colors.dart';
 import '../utils/common_images.dart';
 import '../utils/common_trek_card.dart';
@@ -498,11 +499,9 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                 width: 100.w,
                 margin: EdgeInsets.only(top: 2.h, bottom: 1.2.h),
                 child: CommonTrekCard(
-                  trek:
-                      _trekControllerC.trekList[_trekControllerC.trekList
-                          .indexWhere((p0) {
-                            return p0.id == _trekControllerC.trekDetailId.value;
-                          })],
+                  trek: _trekControllerC.treksResponseObserver.value.maybeMap(success: (response) => (response as FetchTreksResponseModel).data?.firstWhereOrNull((p0) {
+                    return p0.id == _trekControllerC.trekDetailId.value;
+                  }),orElse: () => null),
                   showShare: true,
                 ),
               ),

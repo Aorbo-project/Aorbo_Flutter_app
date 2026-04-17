@@ -1,4 +1,5 @@
 import 'package:arobo_app/utils/screen_constants.dart';
+import 'package:arobo_app/widgets/custom_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 
@@ -21,8 +22,8 @@ class TrekShorts extends StatelessWidget {
       child: Stack(
         children: [
           // Image Background
-          Image.asset(
-            imagePath,
+          CustomNetworkImage(
+            imageUrl: imagePath,
             width: 33.w,
             height: 25.h,
             fit: BoxFit.cover,

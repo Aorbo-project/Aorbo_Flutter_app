@@ -1,6 +1,7 @@
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/common_images.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
+import 'package:arobo_app/widgets/custom_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -106,8 +107,10 @@ class SeasonalForecast extends StatelessWidget {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Image.asset(
-                    imagePath,
+                  child: CustomNetworkImage(
+                    imageUrl: imagePath,
+                    width: 35.w,
+                    height: 16.h,
                     fit: BoxFit.contain,
                   ),
                 ),

@@ -1,3 +1,4 @@
+import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:arobo_app/utils/know_more_card.dart';
@@ -6,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
 import 'package:get/get.dart';
+
+import '../utils/app_theme.dart';
 
 class KnowMoreScreen extends StatefulWidget {
   const KnowMoreScreen({super.key});
@@ -25,6 +28,9 @@ class _KnowMoreScreenState extends State<KnowMoreScreen> {
 
   @override
   Widget build(BuildContext context) {
+
+    final _dashboardC  = Get.find<DashboardController>();
+
     return Scaffold(
       backgroundColor: CommonColors.offWhiteColor2,
       appBar: AppBar(
@@ -43,46 +49,45 @@ class _KnowMoreScreenState extends State<KnowMoreScreen> {
           ),
         ),
       ),
-      body: ListView.builder(
-        controller: _scrollController,
-        padding: EdgeInsets.symmetric(vertical: 2.h),
-        itemCount: knowMoreCardsData.length,
-        itemBuilder: (context, index) {
-          final cardData = knowMoreCardsData[index];
-          return Container(
-            margin: EdgeInsets.only(
-              left: 4.w,
-              // right: 8.w,
-              bottom: 2.h,
-            ),
-            height: 22.h,
-            child: KnowMoreCard(
-              customGradient: cardData['customGradient'],
-              imagePath: cardData['imagePath'],
-              title: cardData['title'],
-              subtitle: cardData['subtitle'],
-              textColor: cardData['textColor'],
-              onKnowMoreTap: () {
-                Get.toNamed(
-                  '/know-more-details',
-                  arguments: {
-                    'knowMoreData': KnowMoreData(
-                      title: cardData['title'],
-                      subtitle: cardData['subtitle'],
-                      imagePath: cardData['imagePath'],
-                      customGradient: cardData['customGradient'],
-                      textColor: cardData['textColor'],
-                      detailedTitle: cardData['detailedTitle'],
-                      detailedDescription: cardData['detailedDescription'],
-                      bulletPoints: cardData['bulletPoints'],
-                      callToAction: cardData['callToAction'],
-                    ),
-                  },
-                );
-              },
-            ),
-          );
-        },
+      body: Obx(() {
+        List<KnowMoreData>? knowMoreCardsData = _dashboardC.whatsNewObserver.value.maybeWhen(success: (whatsNewResponse) => (whatsNewResponse as WhatsNewDataResponseModel).data,error: (sc) => [],orElse: () => [KnowMoreData(),KnowMoreData(),KnowMoreData(),KnowMoreData()]);
+
+         return ListView.builder(
+          controller: _scrollController,
+          padding: EdgeInsets.symmetric(vertical: 2.h),
+          itemCount: knowMoreCardsData?.length,
+          itemBuilder: (context, index) {
+            final cardData = knowMoreCardsData?[index];
+            return Container(
+              margin: EdgeInsets.only(
+                left: 4.w,
+                // right: 8.w,
+                bottom: 2.h,
+              ),
+              height: 22.h,
+              child: KnowMoreCard(
+                customGradient: AppTheme.customGradient(cardData?.customGradient ?? []),
+                imagePath: cardData?.imagePath ?? "",
+                title: cardData?.title ?? "",
+                subtitle: cardData?.subtitle ?? "",
+                onKnowMoreTap: cardData?.hasKnowMore == false
+                    ? null
+                    : () {
+                  Get.toNamed(
+                    '/know-more-details',
+                    arguments: {
+                      'knowMoreData': cardData,
+                    },
+                  );
+                },
+                // width: MediaQuery.of(context).size.width * 0.8,
+                // height: MediaQuery.of(context).size.height * 0.20,
+                textColor: AppTheme.hexToColor(cardData?.textColor),
+              ),
+            );
+          },
+        );
+         },
       ),
     );
   }

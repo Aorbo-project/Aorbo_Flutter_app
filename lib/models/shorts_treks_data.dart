@@ -23,6 +23,12 @@ class ShortsTreksData with _$ShortsTreksData {
   }) = _ShortsTreksData;
 
   factory ShortsTreksData.fromJson(Map<String, dynamic> json) => _$ShortsTreksDataFromJson(json);
+
+  static ShortsTreksData get dummy => ShortsTreksData(
+    title: "Everest Base Camp",
+    description: "A breathtaking trek to the base of the world's highest peak.",
+    imagePath: "assets/images/everest.png",
+  );
 }
 
 

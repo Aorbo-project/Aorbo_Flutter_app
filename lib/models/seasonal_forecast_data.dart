@@ -26,6 +26,13 @@ class SeasonalForecastData with _$SeasonalForecastData {
   }) = _SeasonalForecastData;
 
   factory SeasonalForecastData.fromJson(Map<String, dynamic> json) => _$SeasonalForecastDataFromJson(json);
+
+  static SeasonalForecastData get dummy => SeasonalForecastData(
+    title: "Everest Base Camp",
+    description: "A breathtaking trek to the base of the world's highest peak.",
+    imagePath: "assets/images/everest.png",
+    color: "#1E3C72"
+  );
 }
 
 
