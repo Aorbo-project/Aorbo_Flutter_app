@@ -20,15 +20,48 @@ class AppTheme {
   );
 
 
-  static Color hexToColor(String hex) {
-    if(hex.isEmpty) return Color(0xffffffff);
-    hex = hex.replaceAll('#', '');
+  static LinearGradient customGradient(List<String>? colors) {
+    final colorList = (colors == null || colors.isEmpty)
+        ? [
+      CommonColors.whiteColor,
+      CommonColors.primaryColor,
+    ]
+        : colors.map((col) => hexToColor(col)).toList();
 
-    if (hex.length == 6) {
-      hex = 'FF$hex'; // add full opacity if not provided
+    // Generate matching stops dynamically
+    final stops = List.generate(
+      colorList.length,
+          (index) => index / (colorList.length - 1),
+    );
+
+    return LinearGradient(
+      begin: Alignment.centerLeft,
+      end: Alignment.centerRight,
+      colors: colorList,
+      stops: stops,
+    );
+  }
+
+
+  static Color hexToColor(String? hex) {
+    // Default to white if null or empty
+    if (hex == null || hex.isEmpty) {
+      return const Color(0xFFFFFFFF);
     }
 
-    return Color(int.parse(hex, radix: 16));
+    hex = hex.replaceAll('#', '');
+
+    // Add opacity if missing
+    if (hex.length == 6) {
+      hex = 'FF$hex';
+    }
+
+    try {
+      return Color(int.parse(hex, radix: 16));
+    } catch (e) {
+      // Fallback to white if parsing fails
+      return const Color(0xFFFFFFFF);
+    }
   }
 
   ///orange primary color

@@ -1,7 +1,6 @@
 import 'package:arobo_app/controller/coupon_controller.dart';
 import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/controller/trek_controller.dart';
-import 'package:arobo_app/models/treaks/treaks_serach_modal.dart';
 import 'package:arobo_app/models/trek_model.dart';
 import 'package:arobo_app/utils/app_theme.dart';
 import 'package:arobo_app/utils/common_bottom_nav.dart';
@@ -22,6 +21,7 @@ import 'package:arobo_app/utils/common_images.dart';
 import 'package:shimmer_ai/shimmer_ai.dart';
 import 'package:sizer/sizer.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../freezed_models/treks/treks_model_data.dart';
 import '../models/coupon_code/coupon_code_model.dart';
 
 class _StickyFilterBarDelegate extends SliverPersistentHeaderDelegate {
@@ -134,8 +134,9 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen> {
 
   int selectedIndex = 0;
   bool isGroupBooking = false;
+
   final ScrollController _scrollController = ScrollController();
-  List<TrekData> filteredTreks = [];
+
   List<String> activeFilters = [];
   bool _isDiscountCardsUserInteracting = false;
   Timer? _discountCardsTimer;
@@ -187,95 +188,94 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen> {
   }
 
   void _applyFilters(List<String> filters) {
-    setState(() {
-      activeFilters = List.from(filters);
-
-      // Start with date-filtered treks from all treks
-      filteredTreks = _trekControllerC.trekList.where((trek) {
-        // First apply date filter
-        DateTime? searchDate =
-            _parseDate(_dashboardC.dateController.value.text);
-        DateTime? trekDate = _parseDate(trek.batchInfo?.startDate ?? '');
-        if (searchDate == null || trekDate == null) return true;
-        if (!trekDate.isAtSameMomentAs(searchDate)) return false;
-
-        // Then apply other filters
-        bool matchesFilters = true;
-
-        for (String filter in filters) {
-          // Handle rating filters
-          if (filter == 'High Rated Treks') {
-            if ((trek.rating ?? 0) < 4.0) {
-              // Assuming 4.0 is the threshold for high rated treks
-              matchesFilters = false;
-              break;
-            }
-          } else if (filter.contains('+ Rated')) {
-            double requiredRating = double.parse(filter.split('+ ')[0]);
-            if ((trek.rating ?? 0) < requiredRating) {
-              matchesFilters = false;
-              break;
-            }
-          }
-
-          // Handle duration filters
-          // if (filter.contains('D/')) {
-          //   // Extract the number of days from trek duration (assuming format like "3 Days")
-          //   String trekDurationStr = trek.duration.split(' ')[0];
-          //   int trekDays = int.parse(trekDurationStr);
-          //
-          //   if (filter == 'More') {
-          //     if (trekDays <= 6) {
-          //       // If trek days is less than or equal to 6, it doesn't match 'More'
-          //       matchesFilters = false;
-          //       break;
-          //     }
-          //   } else {
-          //     // Extract days from filter (format: "XD/YN")
-          //     int filterDays = int.parse(filter.split('D/')[0]);
-          //     if (trekDays != filterDays) {
-          //       matchesFilters = false;
-          //       break;
-          //     }
-          //   }
-          // }
-
-          // Handle offers
-          if (filter == 'Special Offers' && !trek.hasDiscount!) {
-            matchesFilters = false;
-            break;
-          }
-        }
-
-        return matchesFilters;
-      }).toList();
-
-      // Apply sorting if needed
-      if (filters.contains('Price - Low to high')) {
-        filteredTreks.sort((a, b) {
-          double priceA = double.parse(a.price ?? '0.0');
-          double priceB = double.parse(b.price ?? '0.0');
-          return priceA.compareTo(priceB);
-        });
-      } else if (filters.contains('Price - High to low')) {
-        filteredTreks.sort((a, b) {
-          double priceA = double.parse(a.price ?? '0.0');
-          double priceB = double.parse(b.price ?? '0.0');
-          return priceB.compareTo(priceA);
-        });
-      }
-
-      // If no filters are active, show all treks for the selected date
-      if (filters.isEmpty) {
-        filteredTreks = _trekControllerC.trekList.where((trek) {
-          DateTime? searchDate =
-              _parseDate(_dashboardC.dateController.value.text);
-          DateTime? trekDate = _parseDate(trek.batchInfo?.startDate ?? '');
-          if (searchDate == null || trekDate == null) return true;
-          return trekDate.isAtSameMomentAs(searchDate);
-        }).toList();
-      }
-    });
+    // setState(() {
+    //   activeFilters = List.from(filters);
+    //
+    //   // Start with date-filtered treks from all treks
+    //   filteredTreks = _trekControllerC.trekList.where((trek) {
+    //     // First apply date filter
+    //     DateTime? searchDate = _parseDate(_dashboardC.dateController.value.text);
+    //     DateTime? trekDate = _parseDate(trek.batchInfo?.startDate ?? '');
+    //     if (searchDate == null || trekDate == null) return true;
+    //     if (!trekDate.isAtSameMomentAs(searchDate)) return false;
+    //
+    //     // Then apply other filters
+    //     bool matchesFilters = true;
+    //
+    //     for (String filter in filters) {
+    //       // Handle rating filters
+    //       if (filter == 'High Rated Treks') {
+    //         if ((trek.rating ?? 0) < 4.0) {
+    //           // Assuming 4.0 is the threshold for high rated treks
+    //           matchesFilters = false;
+    //           break;
+    //         }
+    //       } else if (filter.contains('+ Rated')) {
+    //         double requiredRating = double.parse(filter.split('+ ')[0]);
+    //         if ((trek.rating ?? 0) < requiredRating) {
+    //           matchesFilters = false;
+    //           break;
+    //         }
+    //       }
+    //
+    //       // Handle duration filters
+    //       // if (filter.contains('D/')) {
+    //       //   // Extract the number of days from trek duration (assuming format like "3 Days")
+    //       //   String trekDurationStr = trek.duration.split(' ')[0];
+    //       //   int trekDays = int.parse(trekDurationStr);
+    //       //
+    //       //   if (filter == 'More') {
+    //       //     if (trekDays <= 6) {
+    //       //       // If trek days is less than or equal to 6, it doesn't match 'More'
+    //       //       matchesFilters = false;
+    //       //       break;
+    //       //     }
+    //       //   } else {
+    //       //     // Extract days from filter (format: "XD/YN")
+    //       //     int filterDays = int.parse(filter.split('D/')[0]);
+    //       //     if (trekDays != filterDays) {
+    //       //       matchesFilters = false;
+    //       //       break;
+    //       //     }
+    //       //   }
+    //       // }
+    //
+    //       // Handle offers
+    //       if (filter == 'Special Offers' && !trek.hasDiscount!) {
+    //         matchesFilters = false;
+    //         break;
+    //       }
+    //     }
+    //
+    //     return matchesFilters;
+    //   }).toList();
+    //
+    //   // Apply sorting if needed
+    //   if (filters.contains('Price - Low to high')) {
+    //     filteredTreks.sort((a, b) {
+    //       double priceA = double.parse(a.price ?? '0.0');
+    //       double priceB = double.parse(b.price ?? '0.0');
+    //       return priceA.compareTo(priceB);
+    //     });
+    //   } else if (filters.contains('Price - High to low')) {
+    //     filteredTreks.sort((a, b) {
+    //       double priceA = double.parse(a.price ?? '0.0');
+    //       double priceB = double.parse(b.price ?? '0.0');
+    //       return priceB.compareTo(priceA);
+    //     });
+    //   }
+    //
+    //   // If no filters are active, show all treks for the selected date
+    //   if (filters.isEmpty) {
+    //     filteredTreks = _trekControllerC.trekList.where((trek) {
+    //       DateTime? searchDate =
+    //           _parseDate(_dashboardC.dateController.value.text);
+    //       DateTime? trekDate = _parseDate(trek.batchInfo?.startDate ?? '');
+    //       if (searchDate == null || trekDate == null) return true;
+    //       return trekDate.isAtSameMomentAs(searchDate);
+    //     }).toList();
+    //   }
+    // });
   }
 
   void _removeFilter(String filter) {
@@ -342,14 +342,15 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen> {
 
         _startDiscountCardsAutoScroll();
         // Initial filtering based on date using all treks
-        filteredTreks = List.from(_trekControllerC.trekList.where((trek) {
-          // Convert both dates to comparable format
-          DateTime? searchDate = _parseDate(_dashboardC.dateController.value.text);
-          DateTime? trekDate = _parseDate(trek.batchInfo?.startDate ?? '');
 
-          if (searchDate == null || trekDate == null) return true;
-          return trekDate.isAtSameMomentAs(searchDate);
-        }).toList());
+        //  filteredTreks = List.from(_trekControllerC.trekList.where((trek) {
+        //   // Convert both dates to comparable format
+        //   DateTime? searchDate = _parseDate(_dashboardC.dateController.value.text);
+        //   DateTime? trekDate = _parseDate(trek.batchInfo?.startDate ?? '');
+        //
+        //   if (searchDate == null || trekDate == null) return true;
+        //   return trekDate.isAtSameMomentAs(searchDate);
+        // }).toList());
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (_scrollController.hasClients) {
@@ -521,72 +522,56 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen> {
                         controller: _scrollController,
                         child: Column(
                           children: [
-                            SizedBox(
-                              height: MediaQuery.of(context).size.height * 0.18,
-                              width: MediaQuery.of(context).size.width,
-                              child: Listener(
-                                onPointerDown: (_) {
-                                  _isDiscountCardsUserInteracting = true;
-                                  _discountCardsTimer?.cancel();
-                                },
-                                onPointerUp: (_) {
-                                  _isDiscountCardsUserInteracting = false;
-                                  _startDiscountCardsAutoScroll();
-                                },
-                                onPointerCancel: (_) {
-                                  _isDiscountCardsUserInteracting = false;
-                                  _startDiscountCardsAutoScroll();
-                                },
-                                child: Obx(() => couponController.adminCouponsObserver.value.maybeWhen(
-                                  loading: (loadingData){
-                                    return PageView.builder(
-                                      itemCount: 10,
-                                      physics: const BouncingScrollPhysics(),
-                                      itemBuilder: (context, index) {
-                                        return Container(
-                                          height: 130,
-                                          width: 200,
-                                          decoration: BoxDecoration(
-                                            color: CommonColors.greyColorEBEBEB,
-                                            borderRadius: BorderRadius.circular(20),
-                                          ),
-                                        ).withShimmerAi(loading: true);
-                                      },
-                                    );
-                                  },
-                                  success: (response) {
-                                    final discountCards = (response as CouponCodeModel).data;
-                                    return PageView.builder(
-                                      controller: _discountCardsPageController,
-                                      itemCount: null,
-                                      physics: const BouncingScrollPhysics(),
-                                      itemBuilder: (context, index) {
-                                        final discount = discountCards?[index % (discountCards.length ?? 0)];
+                            Obx(() {
+                              final loading = couponController.adminCouponsObserver.value.maybeWhen(loading: (data) => true,orElse: () => false);
+                              List<CouponCardData>? discountCards = couponController.adminCouponsObserver.value.maybeWhen(success: (couponsResponse) => (couponsResponse as CouponCodeModel).data,orElse: () => [CouponCardData(),CouponCardData(),CouponCardData(),CouponCardData()]);
+                              if(discountCards?.isEmpty == true) return SizedBox();
 
-                                        return Container(
-                                          margin: const EdgeInsets.symmetric(
-                                              horizontal: 10),
-                                          child: CommonDiscountCard(
-                                            title: discount?.title ?? "",
-                                            subtitle: discount?.description ?? "",
-                                            color: AppTheme.hexToColor(discount?.color ?? "#3B82F6"),
-                                            code: discount?.code ?? "",
-                                            offerAmount: discount?.discountValue ?? "",
-                                            imagePath: discount?.imagePath ?? '',
-                                            imageHeight: 30,
-                                            detailedDescription: discount?.description ?? "",
-                                            howToApply: "dcc",
-                                            termsAndConditions: discount?.termsAndConditions?.join("\n"),
-                                            footerNote: "efr",
-                                          ),
-                                        );
-                                      },
-                                    );
+                              return SizedBox(
+                                height: MediaQuery.of(context).size.height * 0.18,
+                                width: MediaQuery.of(context).size.width,
+                                child: Listener(
+                                  onPointerDown: (_) {
+                                    _isDiscountCardsUserInteracting = true;
+                                    _discountCardsTimer?.cancel();
                                   },
-                                    orElse: () => SizedBox()),
+                                  onPointerUp: (_) {
+                                    _isDiscountCardsUserInteracting = false;
+                                    _startDiscountCardsAutoScroll();
+                                  },
+                                  onPointerCancel: (_) {
+                                    _isDiscountCardsUserInteracting = false;
+                                    _startDiscountCardsAutoScroll();
+                                  },
+                                  child: PageView.builder(
+                                    controller: _discountCardsPageController,
+                                    itemCount: null,
+                                    physics: const BouncingScrollPhysics(),
+                                    itemBuilder: (context, index) {
+                                      final discount = discountCards?[index % (discountCards.length ?? 0)];
+
+                                      return Container(
+                                        margin: const EdgeInsets.symmetric(
+                                            horizontal: 10),
+                                        child: CommonDiscountCard(
+                                          title: discount?.title ?? "",
+                                          subtitle: discount?.description ?? "",
+                                          color: AppTheme.hexToColor(discount?.color ?? "#3B82F6"),
+                                          code: discount?.code ?? "",
+                                          offerAmount: discount?.discountValue ?? "",
+                                          imagePath: discount?.imagePath ?? '',
+                                          imageHeight: 30,
+                                          detailedDescription: discount?.description ?? "",
+                                          howToApply: "dcc",
+                                          termsAndConditions: discount?.termsAndConditions?.join("\n"),
+                                          footerNote: "efr",
+                                        ).withShimmerAi(loading: loading),
+                                      );
+                                    },
+                                  ),
                                 ),
-                              ),
-                            ),
+                              );
+                            })
                           ],
                         ),
                       ),
@@ -634,72 +619,80 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen> {
                 ),
 
                 // Trek List Section
-                SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      if (filteredTreks.isEmpty) {
-                        return Container(
-                          margin: const EdgeInsets.only(top: 40),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.hiking,
-                                size: 64,
-                                color: CommonColors.grey_AEAEAE,
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'No treks available for ${getFormattedDate(_dashboardC.dateController.value.text)}',
-                                textScaler: const TextScaler.linear(1.0),
-                                style: TextStyle(
-                                  fontSize: FontSize.s11,
-                                  fontWeight: FontWeight.w500,
-                                  color: CommonColors.blackColor,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Try selecting a different date',
-                                textScaler: const TextScaler.linear(1.0),
-                                style: TextStyle(
-                                  fontSize: FontSize.s9,
+                Obx(() {
+                  final treksLoading = _trekControllerC.treksResponseObserver.value.maybeWhen(loading: (data) => true,orElse: () => false);
+                  List<TrekData>? filteredTreks = _trekControllerC.treksResponseObserver.value.maybeWhen(success: (treksResponse) => (treksResponse as FetchTreksResponseModel).data,orElse: () => [TrekData(),TrekData(),TrekData(),TrekData()]);
+
+                  return SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                        if (filteredTreks?.isEmpty == true) {
+                          return Container(
+                            margin: const EdgeInsets.only(top: 40),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.hiking,
+                                  size: 64,
                                   color: CommonColors.grey_AEAEAE,
                                 ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No treks available for ${getFormattedDate(
+                                      _dashboardC.dateController.value.text)}',
+                                  textScaler: const TextScaler.linear(1.0),
+                                  style: TextStyle(
+                                    fontSize: FontSize.s11,
+                                    fontWeight: FontWeight.w500,
+                                    color: CommonColors.blackColor,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Try selecting a different date',
+                                  textScaler: const TextScaler.linear(1.0),
+                                  style: TextStyle(
+                                    fontSize: FontSize.s9,
+                                    color: CommonColors.grey_AEAEAE,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+                        final trek = filteredTreks?[index];
+                        return Column(
+                          children: [
+                            Container(
+                              margin: const EdgeInsets.only(
+                                top: 24,
                               ),
-                            ],
-                          ),
+                              //CommonTrekCard
+                              child: CommonTrekCard(
+                                trek: trek,
+                                onTap: () async {
+                                  // Set the trek detail ID
+                                  _trekControllerC.trekDetailId.value =
+                                      trek?.id ?? 0;
+
+                                  // Call the trek detail API
+                                  await _trekControllerC.trekDetail(
+                                      batchId: trek?.batchInfo?.id ?? 0);
+
+                                  // Navigate to trek details screen
+                                },
+                              ).withShimmerAi(loading: treksLoading),
+                            ),
+                            if (index == ((filteredTreks?.length ?? 0) - 1))
+                              const SizedBox(height: 34),
+                          ],
                         );
-                      }
-                      final trek = filteredTreks[index];
-                      return Column(
-                        children: [
-                          Container(
-                            margin: const EdgeInsets.only(
-                              top: 24,
-                            ),
-                            //CommonTrekCard
-                            child: CommonTrekCard(
-                              trek: trek,
-                              onTap: () async {
-                                // Set the trek detail ID
-                                _trekControllerC.trekDetailId.value =
-                                    trek.id ?? 0;
-
-                                // Call the trek detail API
-                                await _trekControllerC.trekDetail(batchId: trek.batchInfo?.id??0);
-
-                                // Navigate to trek details screen
-                              },
-                            ),
-                          ),
-                          if (index == filteredTreks.length - 1)
-                            const SizedBox(height: 34),
-                        ],
-                      );
-                    },
-                    childCount: filteredTreks.isEmpty ? 1 : filteredTreks.length,
-                  ),
+                      },
+                      childCount: filteredTreks?.isEmpty == true ? 1 : filteredTreks?.length ?? 0,
+                    ),
+                  );
+                },
                 ),
               ],
             ),

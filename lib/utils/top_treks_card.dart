@@ -5,6 +5,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
 import 'dart:math';
 
+import '../widgets/custom_network_image.dart';
+
 class TopTreksCard extends StatefulWidget {
   final Color gradientEndColor;
   final String imagePath;
@@ -191,8 +193,8 @@ class _TopTreksCardState extends State<TopTreksCard>
                     ClipRRect(
                       borderRadius:
                           BorderRadius.circular(ScreenConstant.size18),
-                      child: Image.asset(
-                        widget.imagePath,
+                      child: CustomNetworkImage(
+                        imageUrl :widget.imagePath,
                         width: 34.w,
                         height: 23.h,
                         fit: BoxFit.cover,

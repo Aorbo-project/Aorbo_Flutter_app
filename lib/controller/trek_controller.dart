@@ -1,8 +1,8 @@
 import 'dart:convert';
 
+import 'package:arobo_app/freezed_models/treks/treks_model_data.dart';
 import 'package:arobo_app/models/treaks/create_order_modal.dart';
 import 'package:arobo_app/models/treaks/treak_detail_modal.dart';
-import 'package:arobo_app/models/treaks/treaks_serach_modal.dart';
 import 'package:arobo_app/models/treaks/verify_order_modal.dart';
 import 'package:arobo_app/models/user_profile/user_profile_modal.dart';
 import 'package:arobo_app/models/coupon_code/coupon_code_model.dart';
@@ -13,6 +13,7 @@ import 'package:arobo_app/widgets/logger.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import '../repository/api_result.dart';
 import '../repository/repository.dart';
 import '../repository/network_url.dart';
 import '../controller/dashboard_controller.dart';
@@ -23,9 +24,11 @@ class TrekController extends GetxController {
   final Repository repository = Repository();
   final DashboardController _dashboardC = Get.find<DashboardController>();
 
+
+  final treksResponseObserver = const ApiResult<FetchTreksResponseModel>.init().obs;
+
+
   // Trek search results
-  Rx<TrekCardListModel> searchResults = TrekCardListModel().obs;
-  RxList<TrekData> trekList = <TrekData>[].obs;
   RxBool isLoading = false.obs;
   RxString errorMessage = ''.obs;
   Rx<TrekDetailModal> trekDetailModal = TrekDetailModal().obs;
@@ -40,6 +43,8 @@ class TrekController extends GetxController {
   Rx<CreateOrderModal> orderModal = CreateOrderModal().obs;
   Rx<Order> orderData = Order().obs;
   Rx<BookingData> orderBookingData = BookingData().obs;
+
+
 
   //endregion
   //region VerifyTrek
@@ -113,10 +118,9 @@ class TrekController extends GetxController {
     required int trekId,
     required String date,
   }) async {
-    isLoading.value = true;
-    errorMessage.value = '';
 
     try {
+      treksResponseObserver.value = ApiResult.loading("");
       final response = await repository.getApiCall(
         url: NetworkUrl.searchTrek(
           cityId.toString(),
@@ -125,20 +129,20 @@ class TrekController extends GetxController {
         ),
       );
 
-      if (response != null) {
-        if (response['success']) {
-          searchResults.value = TrekCardListModel.fromJson(response);
-          trekList.value = searchResults.value.data ?? [];
-        } else {
-          errorMessage.value = response['message'];
-          CustomSnackBar.show(Get.context!, message: errorMessage.value);
+      final body = response.body;
+      if (response.isOk && body != null) {
+        final responseData = FetchTreksResponseModel.fromJson(body);
+        if (responseData.success == true) {
+          treksResponseObserver.value = ApiResult.success(responseData);
+          return;
         }
+        throw "${responseData.message}";
       }
+      throw "Response Body Null";
     } catch (e) {
       errorMessage.value = 'Failed to search treks: ${e.toString()}';
       CustomSnackBar.show(Get.context!, message: errorMessage.value);
-    } finally {
-      isLoading.value = false;
+      treksResponseObserver.value = ApiResult.error('Failed to search treks: ${e.toString()}');
     }
   }
 
@@ -171,6 +175,28 @@ class TrekController extends GetxController {
       CustomSnackBar.show(Get.context!, message: errorMessage.value);
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  Future<void> fetchTrekBatches(int trekId) async{
+    try{
+
+      final response = await repository.getApiCall(url: NetworkUrl.getTrekBatches(trekId));
+
+
+    }
+    catch(error){
+
+    }
+  }
+
+
+  Future<void> calculateFare() async{
+    try{
+
+    }
+    catch(error){
+
     }
   }
 

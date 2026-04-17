@@ -99,9 +99,8 @@ class DashboardController extends GetxController {
     try {
       whatsNewObserver.value = const ApiResult.loading("");
       final response = await _repository.getApiCall(url:NetworkUrl.fetchWhatsNew);
-      final body = response.body;
-      if (response.isOk && body != null) {
-        final responseData = WhatsNewDataResponseModel.fromJson(body);
+      if (response != null) {
+        final responseData = WhatsNewDataResponseModel.fromJson(response);
         if (responseData.success == true) {
           whatsNewObserver.value = ApiResult.success(responseData);
           return;
@@ -119,9 +118,8 @@ class DashboardController extends GetxController {
     try {
       topTreksObserver.value = const ApiResult.loading("");
       final response = await _repository.getApiCall(url:NetworkUrl.fetchTopTreks);
-      final body = response.body;
-      if (response.isOk && body != null) {
-        final responseData = TopTreksDataResponseModel.fromJson(body);
+      if (response != null) {
+        final responseData = TopTreksDataResponseModel.fromJson(response);
         if (responseData.success == true) {
           topTreksObserver.value = ApiResult.success(responseData);
           return;
@@ -139,9 +137,8 @@ class DashboardController extends GetxController {
     try {
       shortsTreksObserver.value = const ApiResult.loading("");
       final response = await _repository.getApiCall(url:NetworkUrl.fetchShotsTreks);
-      final body = response.body;
-      if (response.isOk && body != null) {
-        final responseData = ShortsTreksDataResponseModel.fromJson(body);
+      if (response != null) {
+        final responseData = ShortsTreksDataResponseModel.fromJson(response);
         if (responseData.success == true) {
           shortsTreksObserver.value = ApiResult.success(responseData);
           return;
@@ -159,9 +156,8 @@ class DashboardController extends GetxController {
     try {
       seasonalForcastObserver.value = const ApiResult.loading("");
       final response = await _repository.getApiCall(url:NetworkUrl.fetchSeasonalForcasts);
-      final body = response.body;
-      if (response.isOk && body != null) {
-        final responseData = SeasonalForecastDataResponseModel.fromJson(body);
+      if (response != null) {
+        final responseData = SeasonalForecastDataResponseModel.fromJson(response);
         if (responseData.success == true) {
           seasonalForcastObserver.value = ApiResult.success(responseData);
           return;

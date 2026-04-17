@@ -1,3 +1,4 @@
+import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:arobo_app/utils/top_treks_card.dart';
@@ -7,6 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
 import 'package:sizer/sizer.dart';
+
+import '../utils/app_theme.dart';
 
 class PopularTreksScreen extends StatefulWidget {
   const PopularTreksScreen({super.key});
@@ -18,6 +21,8 @@ class PopularTreksScreen extends StatefulWidget {
 class _PopularTreksScreenState extends State<PopularTreksScreen> {
   final ScrollController _scrollController = ScrollController();
   Map<String, bool> _favoriteTreks = {};
+
+  final _dashboardC = Get.find<DashboardController>();
 
   LinearGradient _getGradientByName(String name) {
     switch (name) {
@@ -68,6 +73,8 @@ class _PopularTreksScreenState extends State<PopularTreksScreen> {
 
   @override
   Widget build(BuildContext context) {
+
+
     return Scaffold(
       backgroundColor: CommonColors.offWhiteColor2,
       appBar: AppBar(
@@ -86,28 +93,35 @@ class _PopularTreksScreenState extends State<PopularTreksScreen> {
           ),
         ),
       ),
-      body: ListView.builder(
-        controller: _scrollController,
-        padding: EdgeInsets.symmetric(vertical: 2.h),
-        itemCount: topTreksCardsData.length,
-        itemBuilder: (context, index) {
-          final trekData = topTreksCardsData[index];
-          return Padding(
-            padding: EdgeInsets.only(bottom: 2.h, left: 4.w, right: 4.w),
-            child: TopTreksCard(
-              gradientEndColor: Colors.transparent,
-              imagePath: trekData['imagePath'],
-              title: trekData['title'],
-              description: trekData['description'],
-              customGradient: _getGradientByName(trekData['gradient']),
-              textColor: trekData['textColor'],
-              isFavorite: _favoriteTreks[trekData['title']] ?? false,
-              onFavoriteTap: () => _toggleFavorite(trekData['title']),
-              width: 100.w,
-              height: 25.h,
-            ),
-          );
-        },
+      body: Obx((){
+        List<TopTreksData>? topTreksCardsData = _dashboardC.topTreksObserver.value.maybeWhen(success: (topTreksResponse) => (topTreksResponse as TopTreksDataResponseModel).data,error: (sc) => [],orElse: () => [TopTreksData(),TopTreksData(),TopTreksData(),TopTreksData()]);
+
+        return ListView.builder(
+          controller: _scrollController,
+          padding: EdgeInsets.symmetric(vertical: 2.h),
+          itemCount: topTreksCardsData?.length,
+          itemBuilder: (context, index) {
+            final trekData = topTreksCardsData?[index];
+            return Padding(
+              padding: EdgeInsets.only(bottom: 2.h, left: 4.w, right: 4.w),
+              child:
+              TopTreksCard(
+                gradientEndColor: Colors.transparent,
+                imagePath: trekData?.imagePath ?? "",
+                title: trekData?.title ?? "",
+                description: trekData?.description ?? "",
+                customGradient: AppTheme.customGradient(trekData?.gradient),
+                textColor: CommonColors.blackColor,
+                isFavorite: trekData?.isFavorite ?? false,
+                onFavoriteTap: () => _toggleFavorite(trekData?.title ?? ""),
+                width: 100.w,
+                height: 25.h,
+              ),
+
+            );
+          },
+        );
+      },
       ),
     );
   }

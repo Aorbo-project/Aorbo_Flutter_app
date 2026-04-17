@@ -36,10 +36,10 @@ class NetworkUrl {
 
   //dashboard
 
-  static String fetchWhatsNew = 'coupons/whatsNew';
-  static String fetchTopTreks = 'coupons/topTreks';
-  static String fetchShotsTreks = 'coupons/shotsTreks';
-  static String fetchSeasonalForcasts = 'coupons/seasonalForcasts';
+  static String fetchWhatsNew = 'discovery/whats-new';
+  static String fetchTopTreks = 'discovery/top-treks';
+  static String fetchShotsTreks = 'discovery/shorts-treks';
+  static String fetchSeasonalForcasts = 'discovery/seasonal-forecast';
 
 
   //coupons
@@ -58,6 +58,8 @@ class NetworkUrl {
       // 'treks?city_id=$cityId&destination_id=$destinationId&start_date=$startDate';
 
   static const String getTrekDetail = 'treks/';
+
+  static String getTrekBatches(int trekId) => 'treks/$trekId/batches';
 
   //#region User & Bookings
   static const String getUserProfile = 'customer/auth/profile';
