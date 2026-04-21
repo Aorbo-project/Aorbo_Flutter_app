@@ -1,3 +1,5 @@
+import '../../freezed_models/profile/user_profile_model.dart';
+
 class VerifyOrderModal {
   bool? success;
   String? message;
@@ -730,51 +732,6 @@ class VerifyTrekTraveler {
   }
 }
 
-class Traveler {
-  int? id;
-  int? customerId;
-  String? name;
-  int? age;
-  String? gender;
-  bool? isActive;
-  String? createdAt;
-  String? updatedAt;
-
-  Traveler({
-    this.id,
-    this.customerId,
-    this.name,
-    this.age,
-    this.gender,
-    this.isActive,
-    this.createdAt,
-    this.updatedAt,
-  });
-
-  Traveler.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
-    customerId = json['customer_id'];
-    name = json['name'];
-    age = json['age'];
-    gender = json['gender'];
-    isActive = json['is_active'];
-    createdAt = json['createdAt'];
-    updatedAt = json['updatedAt'];
-  }
-
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['id'] = this.id;
-    data['customer_id'] = this.customerId;
-    data['name'] = this.name;
-    data['age'] = this.age;
-    data['gender'] = this.gender;
-    data['is_active'] = this.isActive;
-    data['createdAt'] = this.createdAt;
-    data['updatedAt'] = this.updatedAt;
-    return data;
-  }
-}
 
 class Payments {
   int? id;

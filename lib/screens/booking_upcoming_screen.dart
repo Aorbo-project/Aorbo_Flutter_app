@@ -5,7 +5,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
 import 'package:shimmer_ai/shimmer_ai.dart';
-import '../models/treaks/booking_history_modal.dart';
+import '../freezed_models/booking/booking_history_model.dart';
 import '../models/dispute/dispute_detail_modal.dart';
 import '../controller/dashboard_controller.dart';
 import '../utils/common_colors.dart';

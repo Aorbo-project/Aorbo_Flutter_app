@@ -18,42 +18,26 @@ class CouponCodeModel with _$CouponCodeModel {
 }
 
 
+
+
 @freezed
 class CouponCardData with _$CouponCardData {
   const factory CouponCardData({
     int? id,
     String? title,
-    @JsonKey(name: 'image_url') String? imagePath,
-    String? code,
     String? description,
+    @JsonKey(name: 'image_url') String? imagePath,
     String? color,
-
+    String? code,
     @JsonKey(name: 'discount_type') String? discountType,
     @JsonKey(name: 'discount_value') String? discountValue,
-    @JsonKey(name: 'min_amount') String? minAmount,
-    @JsonKey(name: 'max_discount_amount') String? maxDiscountAmount,
-    @JsonKey(name: 'max_uses') String? maxUses,
-    @JsonKey(name: 'current_uses') int? currentUses,
-    @JsonKey(name: 'valid_from') String? validFrom,
-    @JsonKey(name: 'valid_until') String? validUntil,
-
-    String? status,
-    @JsonKey(name: 'approval_status') String? approvalStatus,
-    @JsonKey(name: 'admin_notes') String? adminNotes,
 
     @JsonKey(name: 'terms_and_conditions')
     List<String>? termsAndConditions,
 
-    @JsonKey(name: 'vendor_id') int? vendorId,
-    Vendor? vendor,
-
-    @JsonKey(name: 'created_at') String? createdAt,
-    @JsonKey(name: 'updated_at') String? updatedAt,
-
     @JsonKey(name: 'is_expired') bool? isExpired,
     @JsonKey(name: 'is_active') bool? isActive,
-    @JsonKey(name: 'usage_percentage') int? usagePercentage,
-    @JsonKey(name: 'remaining_uses') String? remainingUses,
+
   }) = _CouponCardData;
 
   factory CouponCardData.fromJson(Map<String, dynamic> json) =>

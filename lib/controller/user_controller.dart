@@ -1,11 +1,11 @@
 import 'dart:convert';
-
-import 'package:arobo_app/models/user_profile/user_profile_modal.dart';
 import 'package:arobo_app/repository/network_url.dart';
 import 'package:arobo_app/repository/repository.dart';
 import 'package:arobo_app/utils/custom_snackbar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
+
+import '../freezed_models/profile/user_profile_model.dart';
 
 class UserController extends GetxController {
   final Repository repository = Repository();

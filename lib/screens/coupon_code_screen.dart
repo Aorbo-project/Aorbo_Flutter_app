@@ -23,6 +23,7 @@ class CouponCodeScreen extends StatefulWidget {
 class _CouponCodeScreenState extends State<CouponCodeScreen> {
   final TextEditingController _couponController = TextEditingController();
   final TrekController _trekController = Get.find<TrekController>();
+  RxString searchQuery = "".obs;
 
   @override
   void initState() {
@@ -31,55 +32,55 @@ class _CouponCodeScreenState extends State<CouponCodeScreen> {
   }
 
   Future<void> _fetchCoupons() async {
-    await _trekController.getCoupons();
+    await _trekController.fetchVendorCoupons();
   }
 
-  Future<void> _validateAndApplyCoupon(String couponCode) async {
-    if (couponCode.isEmpty) return;
-
-    // Get the base amount for validation
-    final basePricePerPerson = double.parse(_trekController.trekDetailData.value.basePrice?? "0.0");
-    final baseAmount = basePricePerPerson * _trekController.trekPersonCount.value;
-    final customerId = sp!.getInt(SpUtil.userID) ?? 0;
-
-    if (baseAmount <= 0) {
-      CustomSnackBar.show(
-        context,
-        message: 'Unable to validate coupon. Invalid trek amount.',
-      );
-      return;
-    }
-
-    if (customerId <= 0) {
-      CustomSnackBar.show(
-        context,
-        message: 'Unable to validate coupon. User not found.',
-      );
-      return;
-    }
-
-    // Show loading state
-    setState(() {});
-
-    try {
-      final isValid = await _trekController.validateCoupon(
-        couponCode: couponCode,
-        customerId: customerId,
-        baseAmount: baseAmount,
-      );
-
-      if (isValid) {
-        // Coupon is valid, return to previous screen
-        Navigator.pop(context, couponCode);
-      }
-      // If invalid, the error message is already shown in the validateCoupon function
-    } catch (e) {
-      CustomSnackBar.show(
-        context,
-        message: 'Failed to validate coupon. Please try again.',
-      );
-    }
-  }
+  // Future<void> _validateAndApplyCoupon(String couponCode) async {
+  //   if (couponCode.isEmpty) return;
+  //
+  //   // Get the base amount for validation
+  //   final basePricePerPerson = double.parse(_trekController.trekDetailData.value.basePrice?? "0.0");
+  //   final baseAmount = basePricePerPerson * _trekController.trekPersonCount.value;
+  //   final customerId = sp!.getInt(SpUtil.userID) ?? 0;
+  //
+  //   if (baseAmount <= 0) {
+  //     CustomSnackBar.show(
+  //       context,
+  //       message: 'Unable to validate coupon. Invalid trek amount.',
+  //     );
+  //     return;
+  //   }
+  //
+  //   if (customerId <= 0) {
+  //     CustomSnackBar.show(
+  //       context,
+  //       message: 'Unable to validate coupon. User not found.',
+  //     );
+  //     return;
+  //   }
+  //
+  //   // Show loading state
+  //   setState(() {});
+  //
+  //   try {
+  //     final isValid = await _trekController.validateCoupon(
+  //       couponCode: couponCode,
+  //       customerId: customerId,
+  //       baseAmount: baseAmount,
+  //     );
+  //
+  //     if (isValid) {
+  //       // Coupon is valid, return to previous screen
+  //       Navigator.pop(context, couponCode);
+  //     }
+  //     // If invalid, the error message is already shown in the validateCoupon function
+  //   } catch (e) {
+  //     CustomSnackBar.show(
+  //       context,
+  //       message: 'Failed to validate coupon. Please try again.',
+  //     );
+  //   }
+  // }
 
   @override
   void dispose() {
@@ -87,15 +88,7 @@ class _CouponCodeScreenState extends State<CouponCodeScreen> {
     super.dispose();
   }
 
-  List<CouponCardData> get _filteredCoupons {
-    if (_couponController.text.isEmpty) {
-      return _trekController.couponsList;
-    }
-    return _trekController.couponsList
-        .where((coupon) =>
-            coupon.code?.toLowerCase().contains(_couponController.text.toLowerCase()) ?? false)
-        .toList();
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -176,9 +169,9 @@ class _CouponCodeScreenState extends State<CouponCodeScreen> {
                 ),
                 TextButton(
                   onPressed: () async {
-                    if (_couponController.text.isNotEmpty) {
-                      await _validateAndApplyCoupon(_couponController.text);
-                    }
+                    // if (_couponController.text.isNotEmpty) {
+                    //   await _validateAndApplyCoupon(_couponController.text);
+                    // }
                   },
                   child: Text(
                     'Apply',
@@ -198,13 +191,23 @@ class _CouponCodeScreenState extends State<CouponCodeScreen> {
           // Content based on loading state
           Expanded(
             child: Obx(() {
-              if (_trekController.isCouponLoading.value) {
+              final isCouponLoading = _trekController.vendorCouponsObserver.value.maybeWhen(loading: (data) => true,orElse: () => false);
+              List<CouponCardData>? couponsList = _trekController.vendorCouponsObserver.value.maybeWhen(success: (couponsResponse) => (couponsResponse as CouponCodeModel).data,error: (sc) => [],orElse: () => [CouponCardData(),CouponCardData(),CouponCardData(),CouponCardData()]);
+              final couponErrorMessage = _trekController.vendorCouponsObserver.value.maybeWhen(error: (errorMsg) => errorMsg,orElse: () => "");
+              if(couponsList?.isEmpty == true) return SizedBox();
+
+
+              // final filteredCoupons =  _couponController.text.isEmpty ? couponsList : couponsList?.where((coupon) =>
+              //           coupon.code?.toLowerCase().contains(_couponController.text.toLowerCase()) ?? false)
+              //       .toList();
+
+              if (isCouponLoading) {
                 return const Center(
                   child: CircularProgressIndicator(),
                 );
               }
 
-              if (_trekController.couponErrorMessage.value.isNotEmpty) {
+              if (couponErrorMessage.isNotEmpty) {
                 return Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -218,7 +221,7 @@ class _CouponCodeScreenState extends State<CouponCodeScreen> {
                       ),
                       SizedBox(height: 1.h),
                       Text(
-                        _trekController.couponErrorMessage.value,
+                        couponErrorMessage,
                         style: GoogleFonts.poppins(
                           fontSize: FontSize.s10,
                           color: CommonColors.blackColor.withOpacity(0.6),
@@ -235,7 +238,7 @@ class _CouponCodeScreenState extends State<CouponCodeScreen> {
                 );
               }
 
-              if (_filteredCoupons.isEmpty) {
+              if (couponsList?.isEmpty == true) {
                 return Center(
                   child: Text(
                     'No matching coupons found',
@@ -249,13 +252,13 @@ class _CouponCodeScreenState extends State<CouponCodeScreen> {
 
               return ListView.builder(
                 padding: EdgeInsets.symmetric(vertical: 1.h),
-                itemCount: _filteredCoupons.length,
+                itemCount: couponsList?.length,
                 itemBuilder: (context, index) {
-                  final coupon = _filteredCoupons[index];
+                  final coupon = couponsList?[index];
                   return CouponCard(
                     coupon: coupon,
                     onApply: () async {
-                      await _validateAndApplyCoupon(coupon.code ?? '');
+                      // await _validateAndApplyCoupon(coupon.code ?? '');
                     },
                     isApplied: false,
                   );

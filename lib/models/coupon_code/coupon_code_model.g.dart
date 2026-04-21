@@ -34,34 +34,17 @@ _$CouponCardDataImpl _$$CouponCardDataImplFromJson(Map<String, dynamic> json) =>
     _$CouponCardDataImpl(
       id: json['id'] as int?,
       title: json['title'] as String?,
-      imagePath: json['image_url'] as String?,
-      code: json['code'] as String?,
       description: json['description'] as String?,
+      imagePath: json['image_url'] as String?,
       color: json['color'] as String?,
+      code: json['code'] as String?,
       discountType: json['discount_type'] as String?,
       discountValue: json['discount_value'] as String?,
-      minAmount: json['min_amount'] as String?,
-      maxDiscountAmount: json['max_discount_amount'] as String?,
-      maxUses: json['max_uses'] as String?,
-      currentUses: json['current_uses'] as int?,
-      validFrom: json['valid_from'] as String?,
-      validUntil: json['valid_until'] as String?,
-      status: json['status'] as String?,
-      approvalStatus: json['approval_status'] as String?,
-      adminNotes: json['admin_notes'] as String?,
       termsAndConditions: (json['terms_and_conditions'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
-      vendorId: json['vendor_id'] as int?,
-      vendor: json['vendor'] == null
-          ? null
-          : Vendor.fromJson(json['vendor'] as Map<String, dynamic>),
-      createdAt: json['created_at'] as String?,
-      updatedAt: json['updated_at'] as String?,
       isExpired: json['is_expired'] as bool?,
       isActive: json['is_active'] as bool?,
-      usagePercentage: json['usage_percentage'] as int?,
-      remainingUses: json['remaining_uses'] as String?,
     );
 
 Map<String, dynamic> _$$CouponCardDataImplToJson(
@@ -69,30 +52,15 @@ Map<String, dynamic> _$$CouponCardDataImplToJson(
     <String, dynamic>{
       'id': instance.id,
       'title': instance.title,
-      'image_url': instance.imagePath,
-      'code': instance.code,
       'description': instance.description,
+      'image_url': instance.imagePath,
       'color': instance.color,
+      'code': instance.code,
       'discount_type': instance.discountType,
       'discount_value': instance.discountValue,
-      'min_amount': instance.minAmount,
-      'max_discount_amount': instance.maxDiscountAmount,
-      'max_uses': instance.maxUses,
-      'current_uses': instance.currentUses,
-      'valid_from': instance.validFrom,
-      'valid_until': instance.validUntil,
-      'status': instance.status,
-      'approval_status': instance.approvalStatus,
-      'admin_notes': instance.adminNotes,
       'terms_and_conditions': instance.termsAndConditions,
-      'vendor_id': instance.vendorId,
-      'vendor': instance.vendor,
-      'created_at': instance.createdAt,
-      'updated_at': instance.updatedAt,
       'is_expired': instance.isExpired,
       'is_active': instance.isActive,
-      'usage_percentage': instance.usagePercentage,
-      'remaining_uses': instance.remainingUses,
     };
 
 _$VendorImpl _$$VendorImplFromJson(Map<String, dynamic> json) => _$VendorImpl(

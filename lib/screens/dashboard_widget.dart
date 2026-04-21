@@ -235,9 +235,9 @@ class _DashboardState extends State<Dashboard>
       context,
       MaterialPageRoute(
         builder: (context) => SourceLocationScreen(
-          hintText: "Search Source Location",
-          title: "Popular Cities",
-          locationType: LocationType.city,
+          // hintText: "Search Source Location",
+          // title: "Popular Cities",
+          // locationType: LocationType.city,
           // popularCities: popularCities,
           // allCities: allCities,
         ),
@@ -256,9 +256,9 @@ class _DashboardState extends State<Dashboard>
       context,
       MaterialPageRoute(
         builder: (context) => SourceLocationScreen(
-          hintText: "Search Destination Location",
-          title: "Popular Treks",
-          locationType: LocationType.trek,
+          // hintText: "Search Destination Location",
+          // title: "Popular Treks",
+          // locationType: LocationType.trek,
           // popularCities: popularTreks.map((t) => City(name: t.name)).toList(),
           // allCities: allTreks.map((t) => City(name: t.name)).toList(),
         ),
@@ -1316,8 +1316,8 @@ class _DashboardState extends State<Dashboard>
                                     padding: EdgeInsets.symmetric(horizontal: 1.w),
                                     child: TrekShorts(
                                       imagePath: cardData?.imagePath ?? "",
-                                      title: cardData?.title ?? "",
-                                      description: cardData?.description ?? "",
+                                      title: cardData?.description ?? "",
+                                      description: cardData?.title ?? "",
                                     ).withShimmerAi(loading: shortsLoading),
                                   ),
                                 );

@@ -275,49 +275,21 @@ CouponCardData _$CouponCardDataFromJson(Map<String, dynamic> json) {
 mixin _$CouponCardData {
   int? get id => throw _privateConstructorUsedError;
   String? get title => throw _privateConstructorUsedError;
+  String? get description => throw _privateConstructorUsedError;
   @JsonKey(name: 'image_url')
   String? get imagePath => throw _privateConstructorUsedError;
-  String? get code => throw _privateConstructorUsedError;
-  String? get description => throw _privateConstructorUsedError;
   String? get color => throw _privateConstructorUsedError;
+  String? get code => throw _privateConstructorUsedError;
   @JsonKey(name: 'discount_type')
   String? get discountType => throw _privateConstructorUsedError;
   @JsonKey(name: 'discount_value')
   String? get discountValue => throw _privateConstructorUsedError;
-  @JsonKey(name: 'min_amount')
-  String? get minAmount => throw _privateConstructorUsedError;
-  @JsonKey(name: 'max_discount_amount')
-  String? get maxDiscountAmount => throw _privateConstructorUsedError;
-  @JsonKey(name: 'max_uses')
-  String? get maxUses => throw _privateConstructorUsedError;
-  @JsonKey(name: 'current_uses')
-  int? get currentUses => throw _privateConstructorUsedError;
-  @JsonKey(name: 'valid_from')
-  String? get validFrom => throw _privateConstructorUsedError;
-  @JsonKey(name: 'valid_until')
-  String? get validUntil => throw _privateConstructorUsedError;
-  String? get status => throw _privateConstructorUsedError;
-  @JsonKey(name: 'approval_status')
-  String? get approvalStatus => throw _privateConstructorUsedError;
-  @JsonKey(name: 'admin_notes')
-  String? get adminNotes => throw _privateConstructorUsedError;
   @JsonKey(name: 'terms_and_conditions')
   List<String>? get termsAndConditions => throw _privateConstructorUsedError;
-  @JsonKey(name: 'vendor_id')
-  int? get vendorId => throw _privateConstructorUsedError;
-  Vendor? get vendor => throw _privateConstructorUsedError;
-  @JsonKey(name: 'created_at')
-  String? get createdAt => throw _privateConstructorUsedError;
-  @JsonKey(name: 'updated_at')
-  String? get updatedAt => throw _privateConstructorUsedError;
   @JsonKey(name: 'is_expired')
   bool? get isExpired => throw _privateConstructorUsedError;
   @JsonKey(name: 'is_active')
   bool? get isActive => throw _privateConstructorUsedError;
-  @JsonKey(name: 'usage_percentage')
-  int? get usagePercentage => throw _privateConstructorUsedError;
-  @JsonKey(name: 'remaining_uses')
-  String? get remainingUses => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -334,32 +306,15 @@ abstract class $CouponCardDataCopyWith<$Res> {
   $Res call(
       {int? id,
       String? title,
-      @JsonKey(name: 'image_url') String? imagePath,
-      String? code,
       String? description,
+      @JsonKey(name: 'image_url') String? imagePath,
       String? color,
+      String? code,
       @JsonKey(name: 'discount_type') String? discountType,
       @JsonKey(name: 'discount_value') String? discountValue,
-      @JsonKey(name: 'min_amount') String? minAmount,
-      @JsonKey(name: 'max_discount_amount') String? maxDiscountAmount,
-      @JsonKey(name: 'max_uses') String? maxUses,
-      @JsonKey(name: 'current_uses') int? currentUses,
-      @JsonKey(name: 'valid_from') String? validFrom,
-      @JsonKey(name: 'valid_until') String? validUntil,
-      String? status,
-      @JsonKey(name: 'approval_status') String? approvalStatus,
-      @JsonKey(name: 'admin_notes') String? adminNotes,
       @JsonKey(name: 'terms_and_conditions') List<String>? termsAndConditions,
-      @JsonKey(name: 'vendor_id') int? vendorId,
-      Vendor? vendor,
-      @JsonKey(name: 'created_at') String? createdAt,
-      @JsonKey(name: 'updated_at') String? updatedAt,
       @JsonKey(name: 'is_expired') bool? isExpired,
-      @JsonKey(name: 'is_active') bool? isActive,
-      @JsonKey(name: 'usage_percentage') int? usagePercentage,
-      @JsonKey(name: 'remaining_uses') String? remainingUses});
-
-  $VendorCopyWith<$Res>? get vendor;
+      @JsonKey(name: 'is_active') bool? isActive});
 }
 
 /// @nodoc
@@ -377,30 +332,15 @@ class _$CouponCardDataCopyWithImpl<$Res, $Val extends CouponCardData>
   $Res call({
     Object? id = freezed,
     Object? title = freezed,
-    Object? imagePath = freezed,
-    Object? code = freezed,
     Object? description = freezed,
+    Object? imagePath = freezed,
     Object? color = freezed,
+    Object? code = freezed,
     Object? discountType = freezed,
     Object? discountValue = freezed,
-    Object? minAmount = freezed,
-    Object? maxDiscountAmount = freezed,
-    Object? maxUses = freezed,
-    Object? currentUses = freezed,
-    Object? validFrom = freezed,
-    Object? validUntil = freezed,
-    Object? status = freezed,
-    Object? approvalStatus = freezed,
-    Object? adminNotes = freezed,
     Object? termsAndConditions = freezed,
-    Object? vendorId = freezed,
-    Object? vendor = freezed,
-    Object? createdAt = freezed,
-    Object? updatedAt = freezed,
     Object? isExpired = freezed,
     Object? isActive = freezed,
-    Object? usagePercentage = freezed,
-    Object? remainingUses = freezed,
   }) {
     return _then(_value.copyWith(
       id: freezed == id
@@ -411,21 +351,21 @@ class _$CouponCardDataCopyWithImpl<$Res, $Val extends CouponCardData>
           ? _value.title
           : title // ignore: cast_nullable_to_non_nullable
               as String?,
-      imagePath: freezed == imagePath
-          ? _value.imagePath
-          : imagePath // ignore: cast_nullable_to_non_nullable
-              as String?,
-      code: freezed == code
-          ? _value.code
-          : code // ignore: cast_nullable_to_non_nullable
-              as String?,
       description: freezed == description
           ? _value.description
           : description // ignore: cast_nullable_to_non_nullable
               as String?,
+      imagePath: freezed == imagePath
+          ? _value.imagePath
+          : imagePath // ignore: cast_nullable_to_non_nullable
+              as String?,
       color: freezed == color
           ? _value.color
           : color // ignore: cast_nullable_to_non_nullable
+              as String?,
+      code: freezed == code
+          ? _value.code
+          : code // ignore: cast_nullable_to_non_nullable
               as String?,
       discountType: freezed == discountType
           ? _value.discountType
@@ -435,62 +375,10 @@ class _$CouponCardDataCopyWithImpl<$Res, $Val extends CouponCardData>
           ? _value.discountValue
           : discountValue // ignore: cast_nullable_to_non_nullable
               as String?,
-      minAmount: freezed == minAmount
-          ? _value.minAmount
-          : minAmount // ignore: cast_nullable_to_non_nullable
-              as String?,
-      maxDiscountAmount: freezed == maxDiscountAmount
-          ? _value.maxDiscountAmount
-          : maxDiscountAmount // ignore: cast_nullable_to_non_nullable
-              as String?,
-      maxUses: freezed == maxUses
-          ? _value.maxUses
-          : maxUses // ignore: cast_nullable_to_non_nullable
-              as String?,
-      currentUses: freezed == currentUses
-          ? _value.currentUses
-          : currentUses // ignore: cast_nullable_to_non_nullable
-              as int?,
-      validFrom: freezed == validFrom
-          ? _value.validFrom
-          : validFrom // ignore: cast_nullable_to_non_nullable
-              as String?,
-      validUntil: freezed == validUntil
-          ? _value.validUntil
-          : validUntil // ignore: cast_nullable_to_non_nullable
-              as String?,
-      status: freezed == status
-          ? _value.status
-          : status // ignore: cast_nullable_to_non_nullable
-              as String?,
-      approvalStatus: freezed == approvalStatus
-          ? _value.approvalStatus
-          : approvalStatus // ignore: cast_nullable_to_non_nullable
-              as String?,
-      adminNotes: freezed == adminNotes
-          ? _value.adminNotes
-          : adminNotes // ignore: cast_nullable_to_non_nullable
-              as String?,
       termsAndConditions: freezed == termsAndConditions
           ? _value.termsAndConditions
           : termsAndConditions // ignore: cast_nullable_to_non_nullable
               as List<String>?,
-      vendorId: freezed == vendorId
-          ? _value.vendorId
-          : vendorId // ignore: cast_nullable_to_non_nullable
-              as int?,
-      vendor: freezed == vendor
-          ? _value.vendor
-          : vendor // ignore: cast_nullable_to_non_nullable
-              as Vendor?,
-      createdAt: freezed == createdAt
-          ? _value.createdAt
-          : createdAt // ignore: cast_nullable_to_non_nullable
-              as String?,
-      updatedAt: freezed == updatedAt
-          ? _value.updatedAt
-          : updatedAt // ignore: cast_nullable_to_non_nullable
-              as String?,
       isExpired: freezed == isExpired
           ? _value.isExpired
           : isExpired // ignore: cast_nullable_to_non_nullable
@@ -499,27 +387,7 @@ class _$CouponCardDataCopyWithImpl<$Res, $Val extends CouponCardData>
           ? _value.isActive
           : isActive // ignore: cast_nullable_to_non_nullable
               as bool?,
-      usagePercentage: freezed == usagePercentage
-          ? _value.usagePercentage
-          : usagePercentage // ignore: cast_nullable_to_non_nullable
-              as int?,
-      remainingUses: freezed == remainingUses
-          ? _value.remainingUses
-          : remainingUses // ignore: cast_nullable_to_non_nullable
-              as String?,
     ) as $Val);
-  }
-
-  @override
-  @pragma('vm:prefer-inline')
-  $VendorCopyWith<$Res>? get vendor {
-    if (_value.vendor == null) {
-      return null;
-    }
-
-    return $VendorCopyWith<$Res>(_value.vendor!, (value) {
-      return _then(_value.copyWith(vendor: value) as $Val);
-    });
   }
 }
 
@@ -534,33 +402,15 @@ abstract class _$$CouponCardDataImplCopyWith<$Res>
   $Res call(
       {int? id,
       String? title,
-      @JsonKey(name: 'image_url') String? imagePath,
-      String? code,
       String? description,
+      @JsonKey(name: 'image_url') String? imagePath,
       String? color,
+      String? code,
       @JsonKey(name: 'discount_type') String? discountType,
       @JsonKey(name: 'discount_value') String? discountValue,
-      @JsonKey(name: 'min_amount') String? minAmount,
-      @JsonKey(name: 'max_discount_amount') String? maxDiscountAmount,
-      @JsonKey(name: 'max_uses') String? maxUses,
-      @JsonKey(name: 'current_uses') int? currentUses,
-      @JsonKey(name: 'valid_from') String? validFrom,
-      @JsonKey(name: 'valid_until') String? validUntil,
-      String? status,
-      @JsonKey(name: 'approval_status') String? approvalStatus,
-      @JsonKey(name: 'admin_notes') String? adminNotes,
       @JsonKey(name: 'terms_and_conditions') List<String>? termsAndConditions,
-      @JsonKey(name: 'vendor_id') int? vendorId,
-      Vendor? vendor,
-      @JsonKey(name: 'created_at') String? createdAt,
-      @JsonKey(name: 'updated_at') String? updatedAt,
       @JsonKey(name: 'is_expired') bool? isExpired,
-      @JsonKey(name: 'is_active') bool? isActive,
-      @JsonKey(name: 'usage_percentage') int? usagePercentage,
-      @JsonKey(name: 'remaining_uses') String? remainingUses});
-
-  @override
-  $VendorCopyWith<$Res>? get vendor;
+      @JsonKey(name: 'is_active') bool? isActive});
 }
 
 /// @nodoc
@@ -576,30 +426,15 @@ class __$$CouponCardDataImplCopyWithImpl<$Res>
   $Res call({
     Object? id = freezed,
     Object? title = freezed,
-    Object? imagePath = freezed,
-    Object? code = freezed,
     Object? description = freezed,
+    Object? imagePath = freezed,
     Object? color = freezed,
+    Object? code = freezed,
     Object? discountType = freezed,
     Object? discountValue = freezed,
-    Object? minAmount = freezed,
-    Object? maxDiscountAmount = freezed,
-    Object? maxUses = freezed,
-    Object? currentUses = freezed,
-    Object? validFrom = freezed,
-    Object? validUntil = freezed,
-    Object? status = freezed,
-    Object? approvalStatus = freezed,
-    Object? adminNotes = freezed,
     Object? termsAndConditions = freezed,
-    Object? vendorId = freezed,
-    Object? vendor = freezed,
-    Object? createdAt = freezed,
-    Object? updatedAt = freezed,
     Object? isExpired = freezed,
     Object? isActive = freezed,
-    Object? usagePercentage = freezed,
-    Object? remainingUses = freezed,
   }) {
     return _then(_$CouponCardDataImpl(
       id: freezed == id
@@ -610,21 +445,21 @@ class __$$CouponCardDataImplCopyWithImpl<$Res>
           ? _value.title
           : title // ignore: cast_nullable_to_non_nullable
               as String?,
-      imagePath: freezed == imagePath
-          ? _value.imagePath
-          : imagePath // ignore: cast_nullable_to_non_nullable
-              as String?,
-      code: freezed == code
-          ? _value.code
-          : code // ignore: cast_nullable_to_non_nullable
-              as String?,
       description: freezed == description
           ? _value.description
           : description // ignore: cast_nullable_to_non_nullable
               as String?,
+      imagePath: freezed == imagePath
+          ? _value.imagePath
+          : imagePath // ignore: cast_nullable_to_non_nullable
+              as String?,
       color: freezed == color
           ? _value.color
           : color // ignore: cast_nullable_to_non_nullable
+              as String?,
+      code: freezed == code
+          ? _value.code
+          : code // ignore: cast_nullable_to_non_nullable
               as String?,
       discountType: freezed == discountType
           ? _value.discountType
@@ -634,62 +469,10 @@ class __$$CouponCardDataImplCopyWithImpl<$Res>
           ? _value.discountValue
           : discountValue // ignore: cast_nullable_to_non_nullable
               as String?,
-      minAmount: freezed == minAmount
-          ? _value.minAmount
-          : minAmount // ignore: cast_nullable_to_non_nullable
-              as String?,
-      maxDiscountAmount: freezed == maxDiscountAmount
-          ? _value.maxDiscountAmount
-          : maxDiscountAmount // ignore: cast_nullable_to_non_nullable
-              as String?,
-      maxUses: freezed == maxUses
-          ? _value.maxUses
-          : maxUses // ignore: cast_nullable_to_non_nullable
-              as String?,
-      currentUses: freezed == currentUses
-          ? _value.currentUses
-          : currentUses // ignore: cast_nullable_to_non_nullable
-              as int?,
-      validFrom: freezed == validFrom
-          ? _value.validFrom
-          : validFrom // ignore: cast_nullable_to_non_nullable
-              as String?,
-      validUntil: freezed == validUntil
-          ? _value.validUntil
-          : validUntil // ignore: cast_nullable_to_non_nullable
-              as String?,
-      status: freezed == status
-          ? _value.status
-          : status // ignore: cast_nullable_to_non_nullable
-              as String?,
-      approvalStatus: freezed == approvalStatus
-          ? _value.approvalStatus
-          : approvalStatus // ignore: cast_nullable_to_non_nullable
-              as String?,
-      adminNotes: freezed == adminNotes
-          ? _value.adminNotes
-          : adminNotes // ignore: cast_nullable_to_non_nullable
-              as String?,
       termsAndConditions: freezed == termsAndConditions
           ? _value._termsAndConditions
           : termsAndConditions // ignore: cast_nullable_to_non_nullable
               as List<String>?,
-      vendorId: freezed == vendorId
-          ? _value.vendorId
-          : vendorId // ignore: cast_nullable_to_non_nullable
-              as int?,
-      vendor: freezed == vendor
-          ? _value.vendor
-          : vendor // ignore: cast_nullable_to_non_nullable
-              as Vendor?,
-      createdAt: freezed == createdAt
-          ? _value.createdAt
-          : createdAt // ignore: cast_nullable_to_non_nullable
-              as String?,
-      updatedAt: freezed == updatedAt
-          ? _value.updatedAt
-          : updatedAt // ignore: cast_nullable_to_non_nullable
-              as String?,
       isExpired: freezed == isExpired
           ? _value.isExpired
           : isExpired // ignore: cast_nullable_to_non_nullable
@@ -698,14 +481,6 @@ class __$$CouponCardDataImplCopyWithImpl<$Res>
           ? _value.isActive
           : isActive // ignore: cast_nullable_to_non_nullable
               as bool?,
-      usagePercentage: freezed == usagePercentage
-          ? _value.usagePercentage
-          : usagePercentage // ignore: cast_nullable_to_non_nullable
-              as int?,
-      remainingUses: freezed == remainingUses
-          ? _value.remainingUses
-          : remainingUses // ignore: cast_nullable_to_non_nullable
-              as String?,
     ));
   }
 }
@@ -716,31 +491,16 @@ class _$CouponCardDataImpl implements _CouponCardData {
   const _$CouponCardDataImpl(
       {this.id,
       this.title,
-      @JsonKey(name: 'image_url') this.imagePath,
-      this.code,
       this.description,
+      @JsonKey(name: 'image_url') this.imagePath,
       this.color,
+      this.code,
       @JsonKey(name: 'discount_type') this.discountType,
       @JsonKey(name: 'discount_value') this.discountValue,
-      @JsonKey(name: 'min_amount') this.minAmount,
-      @JsonKey(name: 'max_discount_amount') this.maxDiscountAmount,
-      @JsonKey(name: 'max_uses') this.maxUses,
-      @JsonKey(name: 'current_uses') this.currentUses,
-      @JsonKey(name: 'valid_from') this.validFrom,
-      @JsonKey(name: 'valid_until') this.validUntil,
-      this.status,
-      @JsonKey(name: 'approval_status') this.approvalStatus,
-      @JsonKey(name: 'admin_notes') this.adminNotes,
       @JsonKey(name: 'terms_and_conditions')
       final List<String>? termsAndConditions,
-      @JsonKey(name: 'vendor_id') this.vendorId,
-      this.vendor,
-      @JsonKey(name: 'created_at') this.createdAt,
-      @JsonKey(name: 'updated_at') this.updatedAt,
       @JsonKey(name: 'is_expired') this.isExpired,
-      @JsonKey(name: 'is_active') this.isActive,
-      @JsonKey(name: 'usage_percentage') this.usagePercentage,
-      @JsonKey(name: 'remaining_uses') this.remainingUses})
+      @JsonKey(name: 'is_active') this.isActive})
       : _termsAndConditions = termsAndConditions;
 
   factory _$CouponCardDataImpl.fromJson(Map<String, dynamic> json) =>
@@ -751,46 +511,20 @@ class _$CouponCardDataImpl implements _CouponCardData {
   @override
   final String? title;
   @override
+  final String? description;
+  @override
   @JsonKey(name: 'image_url')
   final String? imagePath;
   @override
-  final String? code;
-  @override
-  final String? description;
-  @override
   final String? color;
+  @override
+  final String? code;
   @override
   @JsonKey(name: 'discount_type')
   final String? discountType;
   @override
   @JsonKey(name: 'discount_value')
   final String? discountValue;
-  @override
-  @JsonKey(name: 'min_amount')
-  final String? minAmount;
-  @override
-  @JsonKey(name: 'max_discount_amount')
-  final String? maxDiscountAmount;
-  @override
-  @JsonKey(name: 'max_uses')
-  final String? maxUses;
-  @override
-  @JsonKey(name: 'current_uses')
-  final int? currentUses;
-  @override
-  @JsonKey(name: 'valid_from')
-  final String? validFrom;
-  @override
-  @JsonKey(name: 'valid_until')
-  final String? validUntil;
-  @override
-  final String? status;
-  @override
-  @JsonKey(name: 'approval_status')
-  final String? approvalStatus;
-  @override
-  @JsonKey(name: 'admin_notes')
-  final String? adminNotes;
   final List<String>? _termsAndConditions;
   @override
   @JsonKey(name: 'terms_and_conditions')
@@ -804,32 +538,15 @@ class _$CouponCardDataImpl implements _CouponCardData {
   }
 
   @override
-  @JsonKey(name: 'vendor_id')
-  final int? vendorId;
-  @override
-  final Vendor? vendor;
-  @override
-  @JsonKey(name: 'created_at')
-  final String? createdAt;
-  @override
-  @JsonKey(name: 'updated_at')
-  final String? updatedAt;
-  @override
   @JsonKey(name: 'is_expired')
   final bool? isExpired;
   @override
   @JsonKey(name: 'is_active')
   final bool? isActive;
-  @override
-  @JsonKey(name: 'usage_percentage')
-  final int? usagePercentage;
-  @override
-  @JsonKey(name: 'remaining_uses')
-  final String? remainingUses;
 
   @override
   String toString() {
-    return 'CouponCardData(id: $id, title: $title, imagePath: $imagePath, code: $code, description: $description, color: $color, discountType: $discountType, discountValue: $discountValue, minAmount: $minAmount, maxDiscountAmount: $maxDiscountAmount, maxUses: $maxUses, currentUses: $currentUses, validFrom: $validFrom, validUntil: $validUntil, status: $status, approvalStatus: $approvalStatus, adminNotes: $adminNotes, termsAndConditions: $termsAndConditions, vendorId: $vendorId, vendor: $vendor, createdAt: $createdAt, updatedAt: $updatedAt, isExpired: $isExpired, isActive: $isActive, usagePercentage: $usagePercentage, remainingUses: $remainingUses)';
+    return 'CouponCardData(id: $id, title: $title, description: $description, imagePath: $imagePath, color: $color, code: $code, discountType: $discountType, discountValue: $discountValue, termsAndConditions: $termsAndConditions, isExpired: $isExpired, isActive: $isActive)';
   }
 
   @override
@@ -839,82 +556,39 @@ class _$CouponCardDataImpl implements _CouponCardData {
             other is _$CouponCardDataImpl &&
             (identical(other.id, id) || other.id == id) &&
             (identical(other.title, title) || other.title == title) &&
-            (identical(other.imagePath, imagePath) ||
-                other.imagePath == imagePath) &&
-            (identical(other.code, code) || other.code == code) &&
             (identical(other.description, description) ||
                 other.description == description) &&
+            (identical(other.imagePath, imagePath) ||
+                other.imagePath == imagePath) &&
             (identical(other.color, color) || other.color == color) &&
+            (identical(other.code, code) || other.code == code) &&
             (identical(other.discountType, discountType) ||
                 other.discountType == discountType) &&
             (identical(other.discountValue, discountValue) ||
                 other.discountValue == discountValue) &&
-            (identical(other.minAmount, minAmount) ||
-                other.minAmount == minAmount) &&
-            (identical(other.maxDiscountAmount, maxDiscountAmount) ||
-                other.maxDiscountAmount == maxDiscountAmount) &&
-            (identical(other.maxUses, maxUses) || other.maxUses == maxUses) &&
-            (identical(other.currentUses, currentUses) ||
-                other.currentUses == currentUses) &&
-            (identical(other.validFrom, validFrom) ||
-                other.validFrom == validFrom) &&
-            (identical(other.validUntil, validUntil) ||
-                other.validUntil == validUntil) &&
-            (identical(other.status, status) || other.status == status) &&
-            (identical(other.approvalStatus, approvalStatus) ||
-                other.approvalStatus == approvalStatus) &&
-            (identical(other.adminNotes, adminNotes) ||
-                other.adminNotes == adminNotes) &&
             const DeepCollectionEquality()
                 .equals(other._termsAndConditions, _termsAndConditions) &&
-            (identical(other.vendorId, vendorId) ||
-                other.vendorId == vendorId) &&
-            (identical(other.vendor, vendor) || other.vendor == vendor) &&
-            (identical(other.createdAt, createdAt) ||
-                other.createdAt == createdAt) &&
-            (identical(other.updatedAt, updatedAt) ||
-                other.updatedAt == updatedAt) &&
             (identical(other.isExpired, isExpired) ||
                 other.isExpired == isExpired) &&
             (identical(other.isActive, isActive) ||
-                other.isActive == isActive) &&
-            (identical(other.usagePercentage, usagePercentage) ||
-                other.usagePercentage == usagePercentage) &&
-            (identical(other.remainingUses, remainingUses) ||
-                other.remainingUses == remainingUses));
+                other.isActive == isActive));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hashAll([
-        runtimeType,
-        id,
-        title,
-        imagePath,
-        code,
-        description,
-        color,
-        discountType,
-        discountValue,
-        minAmount,
-        maxDiscountAmount,
-        maxUses,
-        currentUses,
-        validFrom,
-        validUntil,
-        status,
-        approvalStatus,
-        adminNotes,
-        const DeepCollectionEquality().hash(_termsAndConditions),
-        vendorId,
-        vendor,
-        createdAt,
-        updatedAt,
-        isExpired,
-        isActive,
-        usagePercentage,
-        remainingUses
-      ]);
+  int get hashCode => Object.hash(
+      runtimeType,
+      id,
+      title,
+      description,
+      imagePath,
+      color,
+      code,
+      discountType,
+      discountValue,
+      const DeepCollectionEquality().hash(_termsAndConditions),
+      isExpired,
+      isActive);
 
   @JsonKey(ignore: true)
   @override
@@ -933,34 +607,18 @@ class _$CouponCardDataImpl implements _CouponCardData {
 
 abstract class _CouponCardData implements CouponCardData {
   const factory _CouponCardData(
-          {final int? id,
-          final String? title,
-          @JsonKey(name: 'image_url') final String? imagePath,
-          final String? code,
-          final String? description,
-          final String? color,
-          @JsonKey(name: 'discount_type') final String? discountType,
-          @JsonKey(name: 'discount_value') final String? discountValue,
-          @JsonKey(name: 'min_amount') final String? minAmount,
-          @JsonKey(name: 'max_discount_amount') final String? maxDiscountAmount,
-          @JsonKey(name: 'max_uses') final String? maxUses,
-          @JsonKey(name: 'current_uses') final int? currentUses,
-          @JsonKey(name: 'valid_from') final String? validFrom,
-          @JsonKey(name: 'valid_until') final String? validUntil,
-          final String? status,
-          @JsonKey(name: 'approval_status') final String? approvalStatus,
-          @JsonKey(name: 'admin_notes') final String? adminNotes,
-          @JsonKey(name: 'terms_and_conditions')
-          final List<String>? termsAndConditions,
-          @JsonKey(name: 'vendor_id') final int? vendorId,
-          final Vendor? vendor,
-          @JsonKey(name: 'created_at') final String? createdAt,
-          @JsonKey(name: 'updated_at') final String? updatedAt,
-          @JsonKey(name: 'is_expired') final bool? isExpired,
-          @JsonKey(name: 'is_active') final bool? isActive,
-          @JsonKey(name: 'usage_percentage') final int? usagePercentage,
-          @JsonKey(name: 'remaining_uses') final String? remainingUses}) =
-      _$CouponCardDataImpl;
+      {final int? id,
+      final String? title,
+      final String? description,
+      @JsonKey(name: 'image_url') final String? imagePath,
+      final String? color,
+      final String? code,
+      @JsonKey(name: 'discount_type') final String? discountType,
+      @JsonKey(name: 'discount_value') final String? discountValue,
+      @JsonKey(name: 'terms_and_conditions')
+      final List<String>? termsAndConditions,
+      @JsonKey(name: 'is_expired') final bool? isExpired,
+      @JsonKey(name: 'is_active') final bool? isActive}) = _$CouponCardDataImpl;
 
   factory _CouponCardData.fromJson(Map<String, dynamic> json) =
       _$CouponCardDataImpl.fromJson;
@@ -970,14 +628,14 @@ abstract class _CouponCardData implements CouponCardData {
   @override
   String? get title;
   @override
+  String? get description;
+  @override
   @JsonKey(name: 'image_url')
   String? get imagePath;
   @override
-  String? get code;
-  @override
-  String? get description;
-  @override
   String? get color;
+  @override
+  String? get code;
   @override
   @JsonKey(name: 'discount_type')
   String? get discountType;
@@ -985,57 +643,14 @@ abstract class _CouponCardData implements CouponCardData {
   @JsonKey(name: 'discount_value')
   String? get discountValue;
   @override
-  @JsonKey(name: 'min_amount')
-  String? get minAmount;
-  @override
-  @JsonKey(name: 'max_discount_amount')
-  String? get maxDiscountAmount;
-  @override
-  @JsonKey(name: 'max_uses')
-  String? get maxUses;
-  @override
-  @JsonKey(name: 'current_uses')
-  int? get currentUses;
-  @override
-  @JsonKey(name: 'valid_from')
-  String? get validFrom;
-  @override
-  @JsonKey(name: 'valid_until')
-  String? get validUntil;
-  @override
-  String? get status;
-  @override
-  @JsonKey(name: 'approval_status')
-  String? get approvalStatus;
-  @override
-  @JsonKey(name: 'admin_notes')
-  String? get adminNotes;
-  @override
   @JsonKey(name: 'terms_and_conditions')
   List<String>? get termsAndConditions;
-  @override
-  @JsonKey(name: 'vendor_id')
-  int? get vendorId;
-  @override
-  Vendor? get vendor;
-  @override
-  @JsonKey(name: 'created_at')
-  String? get createdAt;
-  @override
-  @JsonKey(name: 'updated_at')
-  String? get updatedAt;
   @override
   @JsonKey(name: 'is_expired')
   bool? get isExpired;
   @override
   @JsonKey(name: 'is_active')
   bool? get isActive;
-  @override
-  @JsonKey(name: 'usage_percentage')
-  int? get usagePercentage;
-  @override
-  @JsonKey(name: 'remaining_uses')
-  String? get remainingUses;
   @override
   @JsonKey(ignore: true)
   _$$CouponCardDataImplCopyWith<_$CouponCardDataImpl> get copyWith =>

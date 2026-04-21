@@ -2,20 +2,12 @@ import '../repository/app_env.dart';
 
 /// Constants used throughout the booking flow for business logic and UI values
 class BookingConstants {
-  // Business Logic Constants (Per Payment.md Policy)
-  static const double platformFee = 15.0; // Fixed ₹15 (non-refundable, per Payment.md)
-  static const double insuranceFeePerPerson = 80.0; // ₹80 per person
-  static const double cancellationFeePerPerson = 90.0; // ₹90 per person
-  static const double partialPaymentPerPerson = 999.0; // ₹999 advance per person
-  static const double gstRate = 0.05; // 5% GST rate
+
 
   // Payment Constants
   // Pass at build time: flutter build apk --dart-define=RAZORPAY_KEY=rzp_live_XXXX
   static final String razorpayKey = AppEnv().razorpayKey;
   static const String partialPayment = 'partial';
-  static const String fullPayment = 'full';
-  static const String addInsurance = 'add';
-  static const String skipInsurance = 'skip';
 
   // UI Constants
   static const double cardBorderRadius = 4.0;

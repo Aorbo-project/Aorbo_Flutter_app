@@ -8,11 +8,11 @@ import 'package:arobo_app/widgets/logger.dart';
 import 'package:flutter/material.dart';
 
 import 'package:arobo_app/models/dashboard/trek_modal.dart';
-import 'package:arobo_app/models/treaks/booking_history_modal.dart';
 import 'package:arobo_app/models/user_profile/state_list_model.dart';
 import 'package:arobo_app/models/refund/refund_detail_modal.dart';
 import 'package:arobo_app/models/dispute/dispute_detail_modal.dart';
 import 'package:get/get.dart';
+import '../freezed_models/booking/booking_history_model.dart';
 import '../models/dashboard/cities_model.dart';
 import '../models/treaks/booking_cancelled_modal.dart';
 import '../repository/api_result.dart';
@@ -275,12 +275,15 @@ class DashboardController extends GetxController {
 
           // Get.forceAppUpdate();
           update();
-        } else {
+        }
+        else {
           errorMessage.value = response['message'];
           CustomSnackBar.show(Get.context!, message: errorMessage.value);
         }
       }
     } catch (e) {
+      print("Server Error");
+      print(e.toString());
       errorMessage.value = 'Failed to load booking history: ${e.toString()}';
       CustomSnackBar.show(Get.context!, message: errorMessage.value);
     } finally {

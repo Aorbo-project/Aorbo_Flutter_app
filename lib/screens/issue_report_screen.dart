@@ -5,7 +5,7 @@ import 'package:sizer/sizer.dart';
 import 'package:shimmer_ai/shimmer_ai.dart';
 import '../controller/user_controller.dart';
 import '../controller/trek_controller.dart';
-import '../models/treaks/booking_history_modal.dart';
+import '../freezed_models/booking/booking_history_model.dart';
 import '../utils/common_colors.dart';
 import '../utils/screen_constants.dart';
 import '../utils/common_btn.dart';
