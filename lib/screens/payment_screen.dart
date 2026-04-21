@@ -1,10 +1,10 @@
+import 'package:arobo_app/freezed_models/booking/booking_data_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:sizer/sizer.dart';
-
 import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/controller/trek_controller.dart';
 import 'package:arobo_app/controller/user_controller.dart';
@@ -33,59 +33,25 @@ class _PaymentScreenState extends State<PaymentScreen> {
   final TrekController _trekControllerC = Get.find<TrekController>();
   final UserController _userC = Get.find<UserController>();
 
+  bool _isCouponValid = false;
+  String? _couponError = null;
+
   // Coupon related state
   final TextEditingController _couponController = TextEditingController();
-  bool _isCouponValid = false;
-  String? _couponError;
-  double _discountAmount = 0.0;
   bool _isCouponSectionExpanded = true;
 
   // UI State
-  String? _selectedUPIOption;
+  String? _selectedUPIOption = PaymentMethods.razorpay;
 
-  // Data from traveller information screen
-  String _totalAmount = '0';
-  int _adultCount = BookingConstants.defaultAdultCount;
-  String _selectedPaymentOption = BookingConstants.partialPayment;
-  String _selectedInsuranceOption = BookingConstants.addInsurance;
-  bool _freeCancellation = false;
-
-  // Fare breakdown data (used in calculations)
-  double _vendorDiscount = 0.0;
-  double _platformFee = BookingConstants.platformFee;
-  double _gst = 0.0;
-
-  // Calculated fare components (used in calculations)
-  double _totalBaseFare = 0.0;
-  double _finalPayable = 0.0;
-
-  // Partial payment amounts
-  double _advanceAmount = 0.0;
-  double _remainingAmount = 0.0;
 
   // Payment processing
   late Razorpay _razorpay;
 
   /// Opens Razorpay payment gateway with calculated amount and order details
-  void _openRazorpay() async {
+  void _openRazorpay(BreakDownDataModel? breakdown) async {
     // Calculate the exact final amount using the same logic as TotalFareModal
-    final finalAmount = _calculateExactFinalAmount();
+    final finalAmount = breakdown?.amountToPayNow;
 
-    // Calculate components for debug logging (same logic as _calculateExactFinalAmount)
-    final insuranceFee = _selectedInsuranceOption == BookingConstants.addInsurance
-        ? (BookingConstants.insuranceFeePerPerson * _adultCount)
-        : 0.0;
-    final cancellationFee = _freeCancellation
-        ? (BookingConstants.cancellationFeePerPerson * _adultCount)
-        : 0.0;
-
-    // Calculate NET FARE for GST calculation (per Payment.md COUP-041)
-    // Coupon discount applies to both partial and full payment
-    double netFare = _totalBaseFare - _vendorDiscount - _discountAmount;
-    final calculatedGst = netFare * BookingConstants.gstRate;
-
-    // Get remaining amount for debugging
-    final remainingAmount = _calculateRemainingAmount();
 
     var options = {
       'key': BookingConstants.razorpayKey,
@@ -113,13 +79,18 @@ class _PaymentScreenState extends State<PaymentScreen> {
     _trekControllerC.paymentId.value = response.paymentId ?? '';
     _trekControllerC.signature.value = response.signature ?? '';
 
-    // Build fare breakup for API
-    final fareBreakup = _buildFareBreakup();
+    print("Respose orderId  ${response.orderId ?? ''}");
+    print("Respose paymentId  ${response.paymentId ?? ''}");
+    print("Respose signature  ${response.signature ?? ''}");
+
+
 
     await _trekControllerC.verifyTrekOrder(
-      selectedPaymentOption: _selectedPaymentOption,
-      fareBreakup: fareBreakup,
+      razorpayOrderId: response.orderId ?? '',
+      razorpayPaymentId: response.paymentId ?? '',
+      razorpaySignature: response.signature ?? ''
     );
+
     // CustomSnackBar.show(context, message: 'Payment Successful!');
   }
 
@@ -146,43 +117,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
     _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
     _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
     _couponController.addListener(_handleTextChange);
-
-    // Get arguments from previous screen
-    final arguments = Get.arguments as Map<String, dynamic>?;
-    if (arguments != null) {
-      // Basic booking info
-      _totalAmount = arguments['totalAmount'] ?? '0';
-      _adultCount = arguments['adultCount'] ?? 1;
-      _selectedPaymentOption =
-          arguments['selectedPaymentOption'] ?? BookingConstants.partialPayment;
-      _selectedInsuranceOption =
-          arguments['selectedInsuranceOption'] ?? BookingConstants.addInsurance;
-      _freeCancellation = arguments['freeCancellation'] ?? false;
-
-      // Calculated fare components (only store what's needed for calculations)
-      _totalBaseFare = arguments['totalBaseFare'] ?? 0.0;
-      _vendorDiscount = arguments['vendorDiscount'] ?? 0.0;
-      _platformFee = arguments['platformFee'] ?? BookingConstants.platformFee;
-      _gst = arguments['gst'] ?? 0.0;
-      _finalPayable = arguments['finalPayable'] ?? 0.0;
-
-      // Partial payment specific
-      _advanceAmount = arguments['advanceAmount'] ?? 0.0;
-      _remainingAmount = arguments['remainingAmount'] ?? 0.0;
-
-    } else {
-      // Fallback to controller values if no arguments
-      _adultCount = _trekControllerC.trekPersonCount.value;
-      _totalAmount = _trekControllerC.totalAmount.value.toString();
-    }
-
-    // Check if coupon is already applied in controller and restore it to UI
-    if (_trekControllerC.appliedCouponCode.value.isNotEmpty) {
-      _couponController.text = _trekControllerC.appliedCouponCode.value;
-      _isCouponValid = true;
-      _couponError = null;
-      _discountAmount = _trekControllerC.discountAmount.value;
-    }
   }
 
   @override
@@ -199,74 +133,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     });
   }
 
-  /// Validates the entered coupon code with the API
-  Future<void> _validateCouponWithAPI() async {
-    if (_couponController.text.isEmpty) {
-      setState(() {
-        _couponError = 'Please enter a coupon code';
-      });
-      return;
-    }
 
-    // Get the base amount for validation
-    final basePricePerPerson = double.parse(
-      _trekControllerC.trekDetailData.value.basePrice ?? "0.0",
-    );
-    final baseAmount =
-        basePricePerPerson * _trekControllerC.trekPersonCount.value;
-    final customerId = sp!.getInt(SpUtil.userID) ?? 0;
-
-    if (baseAmount <= 0) {
-      setState(() {
-        _couponError = 'Unable to validate coupon. Invalid trek amount.';
-      });
-      return;
-    }
-
-    if (customerId <= 0) {
-      setState(() {
-        _couponError = 'Unable to validate coupon. User not found.';
-      });
-      return;
-    }
-
-    try {
-      final isValid = await _trekControllerC.validateCoupon(
-        couponCode: _couponController.text,
-        customerId: customerId,
-        baseAmount: baseAmount,
-      );
-
-      setState(() {
-        if (isValid) {
-          _isCouponValid = true;
-          _couponError = null;
-          _discountAmount = _trekControllerC.discountAmount.value;
-        } else {
-          _isCouponValid = false;
-          _discountAmount = 0.0;
-          _couponError = BookingMessages.invalidCouponCode;
-        }
-      });
-    } catch (e) {
-      setState(() {
-        _couponError = 'Failed to validate coupon. Please try again.';
-        _isCouponValid = false;
-        _discountAmount = 0.0;
-      });
-    }
-  }
-
-  /// Removes the currently applied coupon and resets coupon state
-  void _removeCoupon() {
-    setState(() {
-      _couponController.clear();
-      _isCouponValid = false;
-      _discountAmount = 0.0;
-      _couponError = null;
-    });
-    _trekControllerC.removeCoupon();
-  }
 
   // Coupon section UI
   Widget _buildCouponSection() {
@@ -356,41 +223,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
                             Expanded(
                               child: GestureDetector(
                                 onTap: () async {
-                                  final result = await Get.toNamed(
-                                    '/coupon-code',
-                                  );
-                                  if (result != null) {
-                                    setState(() {
-                                      _couponController.text = result
-                                          .toString();
-                                      // If coupon was validated in coupon screen, mark as valid
-                                      if (_trekControllerC
-                                              .appliedCouponCode
-                                              .value
-                                              .isNotEmpty &&
-                                          _trekControllerC
-                                                  .appliedCouponCode
-                                                  .value ==
-                                              result.toString()) {
-                                        _isCouponValid = true;
-                                        _couponError = null;
-                                        _discountAmount = _trekControllerC
-                                            .discountAmount
-                                            .value;
-                                      } else {
-                                        // Reset coupon state if not validated
-                                        _isCouponValid = false;
-                                        _discountAmount = 0.0;
-                                        _couponError = null;
-                                      }
-                                    });
-                                  }
+                                  await Get.toNamed('/coupon-code');
                                 },
                                 child: AbsorbPointer(
                                   child: TextField(
                                     controller: _couponController,
                                     textCapitalization:
-                                        TextCapitalization.characters,
+                                    TextCapitalization.characters,
                                     decoration: InputDecoration(
                                       hintText: BookingMessages.enterCouponCode,
                                       hintStyle: GoogleFonts.poppins(
@@ -409,22 +248,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                       color: CommonColors.blackColor,
                                     ),
                                     onChanged: (value) {
-                                      setState(() {
-                                        // Reset coupon state when text changes
-                                        _isCouponValid = false;
-                                        _discountAmount = 0.0;
-                                        _couponError = null;
-                                        if (value != value.toUpperCase()) {
-                                          _couponController.value =
-                                              _couponController.value.copyWith(
-                                                text: value.toUpperCase(),
-                                                selection:
-                                                    TextSelection.collapsed(
-                                                      offset: value.length,
-                                                    ),
-                                              );
-                                        }
-                                      });
+
                                     },
                                   ),
                                 ),
@@ -435,8 +259,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                 gradient: _isCouponValid
                                     ? CommonColors.btnGradient
                                     : (_couponController.text.isNotEmpty
-                                          ? CommonColors.btnGradient
-                                          : CommonColors.disableBtnGradient),
+                                    ? CommonColors.btnGradient
+                                    : CommonColors.disableBtnGradient),
                                 borderRadius: BorderRadius.horizontal(
                                   right: Radius.circular(3.w),
                                 ),
@@ -446,13 +270,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                 child: InkWell(
                                   onTap: _isCouponValid
                                       ? () {
-                                          _removeCoupon();
-                                        }
+                                         _trekControllerC.calculateFareRequestModel.value = _trekControllerC.calculateFareRequestModel.value.copyWith(couponCode: "");
+                                      }
                                       : (_couponController.text.isNotEmpty
-                                            ? () async {
-                                                await _validateCouponWithAPI();
-                                              }
-                                            : null),
+                                      ? () async {
+                                        _trekControllerC.calculateFareRequestModel.value = _trekControllerC.calculateFareRequestModel.value.copyWith(couponCode: _couponController.text);
+                                      }
+                                      : null),
                                   borderRadius: BorderRadius.horizontal(
                                     right: Radius.circular(3.w),
                                   ),
@@ -483,7 +307,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         Padding(
                           padding: EdgeInsets.only(left: 1.w),
                           child: Text(
-                            _couponError!,
+                            _couponError ?? "",
                             style: GoogleFonts.poppins(
                               fontSize: FontSize.s7,
                               color: CommonColors.appRedColor,
@@ -599,15 +423,15 @@ class _PaymentScreenState extends State<PaymentScreen> {
               ),
               child: isSelected
                   ? Center(
-                      child: Container(
-                        width: 3.w,
-                        height: 3.w,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: CommonColors.blueColor,
-                        ),
-                      ),
-                    )
+                child: Container(
+                  width: 3.w,
+                  height: 3.w,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: CommonColors.blueColor,
+                  ),
+                ),
+              )
                   : null,
             ),
           ],
@@ -735,172 +559,151 @@ class _PaymentScreenState extends State<PaymentScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Review Booking Section
-              Container(
-                margin: EdgeInsets.symmetric(horizontal: 4.w),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            "Review booking",
+              Obx(() {
+                final calculateFareRequestModel = _trekControllerC.calculateFareRequestModel.value;
+                BreakDownDataModel? breakdown = _trekControllerC.calculateFareResponseModel.value.maybeWhen(success: (response) => (response as CalculateFareResponseModel).breakdown,orElse: () => null);
+                 return Container(
+                  margin: EdgeInsets.symmetric(horizontal: 4.w),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              "Review booking",
+                              textScaler: const TextScaler.linear(1.0),
+                              style: GoogleFonts.poppins(
+                                fontSize: FontSize.s14,
+                                fontWeight: FontWeight.w500,
+                                color: CommonColors.blackColor,
+                              ),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              showModalBottomSheet(
+                                context: context,
+                                backgroundColor: Colors.transparent,
+                                builder: (context) => SlotBookingDetailsModal(
+                                  trekName: travelData.title ?? '-',
+                                  adultCount: calculateFareRequestModel.travelerCount,
+                                  fromLocation:
+                                  _dashboardC.fromController.value.text,
+                                  toLocation: _dashboardC.toController.value.text,
+                                  departureDate:
+                                  travelData.batchInfo?.startDate ?? '-',
+                                  duration:
+                                  '${travelData.durationDays}D ${travelData.durationNights}N',
+                                  email: _userC.userProfileData.value.customer?.email ?? '-',
+                                  phone: _userC.userProfileData.value.customer?.phone ?? '-',
+                                  travellers: _getTravellerDetails(),
+                                  breakdown: breakdown,
+                                  isPartialPayment:calculateFareRequestModel.cancellationPolicyType == "partial",
+                                ),
+                              );
+                            },
+                            child: Text(
+                              'View details',
+                              style: GoogleFonts.poppins(
+                                fontSize: FontSize.s10,
+                                fontWeight: FontWeight.w500,
+                                color: CommonColors.blueColor,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 0.5.h),
+                      Row(
+                        children: [
+                          Text(
+                            "${calculateFareRequestModel.travelerCount} Traveller:",
                             textScaler: const TextScaler.linear(1.0),
                             style: GoogleFonts.poppins(
-                              fontSize: FontSize.s14,
-                              fontWeight: FontWeight.w500,
+                              fontSize: FontSize.s9,
+                              fontWeight: FontWeight.w600,
                               color: CommonColors.blackColor,
                             ),
                           ),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            showModalBottomSheet(
-                              context: context,
-                              backgroundColor: Colors.transparent,
-                              builder: (context) => SlotBookingDetailsModal(
-                                trekName: travelData.title ?? '-',
-                                adultCount: _adultCount,
-                                fromLocation:
-                                    _dashboardC.fromController.value.text,
-                                toLocation: _dashboardC.toController.value.text,
-                                departureDate:
-                                    travelData.batchInfo?.startDate ?? '-',
-                                duration:
-                                    '${travelData.durationDays}D ${travelData.durationNights}N',
-                                email:
-                                    _userC
-                                        .userProfileData
-                                        .value
-                                        .customer
-                                        ?.email ??
-                                    '-',
-                                phone:
-                                    _userC
-                                        .userProfileData
-                                        .value
-                                        .customer
-                                        ?.phone ??
-                                    '-',
-                                travellers: _getTravellerDetails(),
-                                baseAmount: _totalBaseFare,
-                                discountAmount:
-                                    _vendorDiscount + _discountAmount,
-                                isInsurance:
-                                    _selectedInsuranceOption ==
-                                    BookingConstants.addInsurance,
-                                isFreeCancellation: _freeCancellation,
-                                // Partial payment specific values
-                                isPartialPayment:
-                                    _selectedPaymentOption ==
-                                    BookingConstants.partialPayment,
-                                advanceAmount: _advanceAmount,
-                                remainingAmount: _calculateRemainingAmount(),
-                                finalPayable: _finalPayable,
-                                gst: _gst,
-                              ),
-                            );
-                          },
-                          child: Text(
-                            'View details',
+                          Text(
+                            " ${calculateFareRequestModel.travelerCount} Adults/ From ${_dashboardC.fromController.value.text}",
+                            textScaler: const TextScaler.linear(1.0),
                             style: GoogleFonts.poppins(
-                              fontSize: FontSize.s10,
-                              fontWeight: FontWeight.w500,
-                              color: CommonColors.blueColor,
+                              fontSize: FontSize.s9,
+                              fontWeight: FontWeight.w300,
+                              color: CommonColors.blackColor,
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 0.5.h),
-                    Row(
-                      children: [
-                        Text(
-                          "$_adultCount Traveller:",
-                          textScaler: const TextScaler.linear(1.0),
-                          style: GoogleFonts.poppins(
-                            fontSize: FontSize.s9,
-                            fontWeight: FontWeight.w600,
-                            color: CommonColors.blackColor,
+                        ],
+                      ),
+                      SizedBox(height: 2.h),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _dashboardC.fromController.value.text,
+                                textScaler: const TextScaler.linear(1.0),
+                                style: GoogleFonts.poppins(
+                                  fontSize: FontSize.s9,
+                                  fontWeight: FontWeight.w500,
+                                  color: CommonColors.blackColor,
+                                ),
+                              ),
+                              Text(
+                                travelData.batchInfo?.startDate ?? '-',
+                                textScaler: const TextScaler.linear(1.0),
+                                style: GoogleFonts.poppins(
+                                  fontSize: FontSize.s9,
+                                  fontWeight: FontWeight.w400,
+                                  color: CommonColors.blackColor,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                        Text(
-                          " $_adultCount Adults/ From ${_dashboardC.fromController.value.text}",
-                          textScaler: const TextScaler.linear(1.0),
-                          style: GoogleFonts.poppins(
-                            fontSize: FontSize.s9,
-                            fontWeight: FontWeight.w300,
-                            color: CommonColors.blackColor,
+                          SizedBox(width: 3.w),
+                          Icon(
+                            Icons.arrow_right_alt,
+                            size: 5.w,
+                            color: CommonColors.grey_AEAEAE,
                           ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 2.h),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _dashboardC.fromController.value.text,
-                              textScaler: const TextScaler.linear(1.0),
-                              style: GoogleFonts.poppins(
-                                fontSize: FontSize.s9,
-                                fontWeight: FontWeight.w500,
-                                color: CommonColors.blackColor,
+                          SizedBox(width: 3.w),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                _dashboardC.toController.value.text,
+                                textScaler: const TextScaler.linear(1.0),
+                                style: GoogleFonts.poppins(
+                                  fontSize: FontSize.s9,
+                                  fontWeight: FontWeight.w500,
+                                  color: CommonColors.blackColor,
+                                ),
                               ),
-                            ),
-                            Text(
-                              travelData.batchInfo?.startDate ?? '-',
-                              textScaler: const TextScaler.linear(1.0),
-                              style: GoogleFonts.poppins(
-                                fontSize: FontSize.s9,
-                                fontWeight: FontWeight.w400,
-                                color: CommonColors.blackColor,
+                              Text(
+                                _calculateEndDate(
+                                  travelData.batchInfo?.startDate,
+                                  travelData.durationDays,
+                                ),
+                                textScaler: const TextScaler.linear(1.0),
+                                style: GoogleFonts.poppins(
+                                  fontSize: FontSize.s9,
+                                  fontWeight: FontWeight.w400,
+                                  color: CommonColors.blackColor,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(width: 3.w),
-                        Icon(
-                          Icons.arrow_right_alt,
-                          size: 5.w,
-                          color: CommonColors.grey_AEAEAE,
-                        ),
-                        SizedBox(width: 3.w),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              _dashboardC.toController.value.text,
-                              textScaler: const TextScaler.linear(1.0),
-                              style: GoogleFonts.poppins(
-                                fontSize: FontSize.s9,
-                                fontWeight: FontWeight.w500,
-                                color: CommonColors.blackColor,
-                              ),
-                            ),
-                            Text(
-                              _calculateEndDate(
-                                travelData.batchInfo?.startDate,
-                                travelData.durationDays,
-                              ),
-                              textScaler: const TextScaler.linear(1.0),
-                              style: GoogleFonts.poppins(
-                                fontSize: FontSize.s9,
-                                fontWeight: FontWeight.w400,
-                                color: CommonColors.blackColor,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+                 },
               ),
               SizedBox(height: 3.h),
 
@@ -908,329 +711,329 @@ class _PaymentScreenState extends State<PaymentScreen> {
               _buildCouponSection(),
               SizedBox(height: 3.h),
 
-              // UPI Payment Section
-              Container(
-                margin: EdgeInsets.symmetric(horizontal: 4.w),
-                width: 100.w,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(5.w),
-                  boxShadow: [
-                    BoxShadow(
-                      color: CommonColors.blackColor.withValues(alpha: 0.2),
-                      offset: Offset(2, 2),
-                      blurRadius: 6,
-                      spreadRadius: 2,
-                    ),
-                  ],
-                  color: CommonColors.offWhiteColor2,
-                ),
-                child: Container(
-                  width: 100.w,
-                  margin: EdgeInsets.only(
-                    left: 4.w,
-                    right: 4.w,
-                    top: 1.8.h,
-                    bottom: 1.8.h,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'UPI',
-                        textScaler: const TextScaler.linear(1.0),
-                        style: GoogleFonts.alexandria(
-                          fontSize: FontSize.s14,
-                          fontWeight: FontWeight.w500,
-                          color: CommonColors.blackColor,
-                        ),
-                      ),
-                      SizedBox(height: 2.h),
-
-                      // Razorpay
-                      _buildUPIOption(
-                        icon: PaymentMethods.razorpay,
-                        title: 'Razorpay',
-                        isSelected:
-                            _selectedUPIOption == PaymentMethods.razorpay,
-                        onTap: () {
-                          setState(() {
-                            _selectedUPIOption =
-                                _selectedUPIOption == PaymentMethods.razorpay
-                                ? null
-                                : PaymentMethods.razorpay;
-                          });
-                        },
-                      ),
-                      // Separator
-                      Container(
-                        height: 1,
-                        color: CommonColors.greyColor.withValues(alpha: 0.3),
-                        margin: EdgeInsets.symmetric(vertical: 1.h),
-                      ),
-
-                      // PhonePe UPI (Locked)
-                      Stack(
-                        children: [
-                          Opacity(
-                            opacity: 0.5,
-                            child: _buildUPIOption(
-                              icon: 'phonepe',
-                              title: 'Phonepe UPI',
-                              isSelected: false,
-                              onTap: () {}, // Disabled
-                            ),
-                          ),
-                          Positioned.fill(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: CommonColors.whiteColor.withValues(
-                                  alpha: 0.9,
-                                ),
-                                borderRadius: BorderRadius.circular(2.w),
-                              ),
-                              child: Center(
-                                child: Icon(
-                                  Icons.lock_outline,
-                                  size: 5.w,
-                                  color: CommonColors.blackColor,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      // Separator
-                      Container(
-                        height: 1,
-                        color: CommonColors.greyColor.withValues(alpha: 0.3),
-                        margin: EdgeInsets.symmetric(vertical: 1.h),
-                      ),
-
-                      // Paytm UPI (Locked)
-                      Stack(
-                        children: [
-                          Opacity(
-                            opacity: 0.5,
-                            child: _buildUPIOption(
-                              icon: 'paytm',
-                              title: 'Paytm UPI',
-                              isSelected: false,
-                              onTap: () {}, // Disabled
-                            ),
-                          ),
-                          Positioned.fill(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.7),
-                                borderRadius: BorderRadius.circular(2.w),
-                              ),
-                              child: Center(
-                                child: Icon(
-                                  Icons.lock_outline,
-                                  size: 5.w,
-                                  color: CommonColors.blackColor,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      // Separator
-                      Container(
-                        height: 1,
-                        color: CommonColors.greyColor.withValues(alpha: 0.3),
-                        margin: EdgeInsets.symmetric(vertical: 1.h),
-                      ),
-
-                      // WhatsApp UPI (Locked)
-                      Stack(
-                        children: [
-                          Opacity(
-                            opacity: 0.5,
-                            child: _buildUPIOption(
-                              icon: 'whatsapp',
-                              title: 'WhatsApp UPI',
-                              isSelected: false,
-                              onTap: () {}, // Disabled
-                            ),
-                          ),
-                          Positioned.fill(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.7),
-                                borderRadius: BorderRadius.circular(2.w),
-                              ),
-                              child: Center(
-                                child: Icon(
-                                  Icons.lock_outline,
-                                  size: 5.w,
-                                  color: CommonColors.blackColor,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      // Separator
-                      Container(
-                        height: 1,
-                        color: CommonColors.greyColor.withValues(alpha: 0.3),
-                        margin: EdgeInsets.symmetric(vertical: 1.h),
-                      ),
-
-                      // Add New UPI ID (Locked)
-                      Stack(
-                        children: [
-                          Opacity(opacity: 0.5, child: _buildAddNewUPIOption()),
-                          Positioned.fill(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.7),
-                                borderRadius: BorderRadius.circular(2.w),
-                              ),
-                              child: Center(
-                                child: Icon(
-                                  Icons.lock_outline,
-                                  size: 5.w,
-                                  color: CommonColors.blackColor,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              SizedBox(height: 3.h),
-
-              // Other Payment Methods Section
-              Container(
-                margin: EdgeInsets.symmetric(horizontal: 4.w),
-                width: 100.w,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(5.w),
-                  boxShadow: [
-                    BoxShadow(
-                      color: CommonColors.blackColor.withValues(alpha: 0.2),
-                      offset: Offset(2, 2),
-                      blurRadius: 6,
-                      spreadRadius: 2,
-                    ),
-                  ],
-                  color: CommonColors.offWhiteColor2,
-                ),
-                child: Container(
-                  width: 100.w,
-                  margin: EdgeInsets.only(
-                    left: 4.w,
-                    right: 4.w,
-                    top: 1.8.h,
-                    bottom: 1.8.h,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Add New Card (Locked)
-                      Stack(
-                        children: [
-                          Opacity(
-                            opacity: 0.5,
-                            child: _buildPaymentOption(
-                              icon: CommonImages.cardIcon,
-                              title: 'Add New Card',
-                            ),
-                          ),
-                          Positioned.fill(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.7),
-                                borderRadius: BorderRadius.circular(2.w),
-                              ),
-                              child: Center(
-                                child: Icon(
-                                  Icons.lock_outline,
-                                  size: 5.w,
-                                  color: CommonColors.blackColor,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      // Separator
-                      Container(
-                        height: 1,
-                        color: CommonColors.greyColor.withValues(alpha: 0.3),
-                        margin: EdgeInsets.symmetric(vertical: 1.h),
-                      ),
-
-                      // Wallets (Locked)
-                      Stack(
-                        children: [
-                          Opacity(
-                            opacity: 0.5,
-                            child: _buildPaymentOption(
-                              icon: CommonImages.walletIcon,
-                              title: 'Wallets',
-                            ),
-                          ),
-                          Positioned.fill(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.7),
-                                borderRadius: BorderRadius.circular(2.w),
-                              ),
-                              child: Center(
-                                child: Icon(
-                                  Icons.lock_outline,
-                                  size: 5.w,
-                                  color: CommonColors.blackColor,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      // Separator
-                      Container(
-                        height: 1,
-                        color: CommonColors.greyColor.withValues(alpha: 0.3),
-                        margin: EdgeInsets.symmetric(vertical: 1.h),
-                      ),
-
-                      // Netbanking (Locked)
-                      Stack(
-                        children: [
-                          Opacity(
-                            opacity: 0.5,
-                            child: _buildPaymentOption(
-                              icon: CommonImages.bankIcon,
-                              title: 'Netbanking',
-                            ),
-                          ),
-                          Positioned.fill(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.7),
-                                borderRadius: BorderRadius.circular(2.w),
-                              ),
-                              child: Center(
-                                child: Icon(
-                                  Icons.lock_outline,
-                                  size: 5.w,
-                                  color: CommonColors.blackColor,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              // // UPI Payment Section
+              // Container(
+              //   margin: EdgeInsets.symmetric(horizontal: 4.w),
+              //   width: 100.w,
+              //   decoration: BoxDecoration(
+              //     borderRadius: BorderRadius.circular(5.w),
+              //     boxShadow: [
+              //       BoxShadow(
+              //         color: CommonColors.blackColor.withValues(alpha: 0.2),
+              //         offset: Offset(2, 2),
+              //         blurRadius: 6,
+              //         spreadRadius: 2,
+              //       ),
+              //     ],
+              //     color: CommonColors.offWhiteColor2,
+              //   ),
+              //   child: Container(
+              //     width: 100.w,
+              //     margin: EdgeInsets.only(
+              //       left: 4.w,
+              //       right: 4.w,
+              //       top: 1.8.h,
+              //       bottom: 1.8.h,
+              //     ),
+              //     child: Column(
+              //       crossAxisAlignment: CrossAxisAlignment.start,
+              //       children: [
+              //         Text(
+              //           'UPI',
+              //           textScaler: const TextScaler.linear(1.0),
+              //           style: GoogleFonts.alexandria(
+              //             fontSize: FontSize.s14,
+              //             fontWeight: FontWeight.w500,
+              //             color: CommonColors.blackColor,
+              //           ),
+              //         ),
+              //         SizedBox(height: 2.h),
+              //
+              //         // Razorpay
+              //         _buildUPIOption(
+              //           icon: PaymentMethods.razorpay,
+              //           title: 'Razorpay',
+              //           isSelected:
+              //           _selectedUPIOption == PaymentMethods.razorpay,
+              //           onTap: () {
+              //             setState(() {
+              //               _selectedUPIOption =
+              //               _selectedUPIOption == PaymentMethods.razorpay
+              //                   ? null
+              //                   : PaymentMethods.razorpay;
+              //             });
+              //           },
+              //         ),
+              //         // Separator
+              //         Container(
+              //           height: 1,
+              //           color: CommonColors.greyColor.withValues(alpha: 0.3),
+              //           margin: EdgeInsets.symmetric(vertical: 1.h),
+              //         ),
+              //
+              //         // PhonePe UPI (Locked)
+              //         Stack(
+              //           children: [
+              //             Opacity(
+              //               opacity: 0.5,
+              //               child: _buildUPIOption(
+              //                 icon: 'phonepe',
+              //                 title: 'Phonepe UPI',
+              //                 isSelected: false,
+              //                 onTap: () {}, // Disabled
+              //               ),
+              //             ),
+              //             Positioned.fill(
+              //               child: Container(
+              //                 decoration: BoxDecoration(
+              //                   color: CommonColors.whiteColor.withValues(
+              //                     alpha: 0.9,
+              //                   ),
+              //                   borderRadius: BorderRadius.circular(2.w),
+              //                 ),
+              //                 child: Center(
+              //                   child: Icon(
+              //                     Icons.lock_outline,
+              //                     size: 5.w,
+              //                     color: CommonColors.blackColor,
+              //                   ),
+              //                 ),
+              //               ),
+              //             ),
+              //           ],
+              //         ),
+              //         // Separator
+              //         Container(
+              //           height: 1,
+              //           color: CommonColors.greyColor.withValues(alpha: 0.3),
+              //           margin: EdgeInsets.symmetric(vertical: 1.h),
+              //         ),
+              //
+              //         // Paytm UPI (Locked)
+              //         Stack(
+              //           children: [
+              //             Opacity(
+              //               opacity: 0.5,
+              //               child: _buildUPIOption(
+              //                 icon: 'paytm',
+              //                 title: 'Paytm UPI',
+              //                 isSelected: false,
+              //                 onTap: () {}, // Disabled
+              //               ),
+              //             ),
+              //             Positioned.fill(
+              //               child: Container(
+              //                 decoration: BoxDecoration(
+              //                   color: Colors.white.withValues(alpha: 0.7),
+              //                   borderRadius: BorderRadius.circular(2.w),
+              //                 ),
+              //                 child: Center(
+              //                   child: Icon(
+              //                     Icons.lock_outline,
+              //                     size: 5.w,
+              //                     color: CommonColors.blackColor,
+              //                   ),
+              //                 ),
+              //               ),
+              //             ),
+              //           ],
+              //         ),
+              //         // Separator
+              //         Container(
+              //           height: 1,
+              //           color: CommonColors.greyColor.withValues(alpha: 0.3),
+              //           margin: EdgeInsets.symmetric(vertical: 1.h),
+              //         ),
+              //
+              //         // WhatsApp UPI (Locked)
+              //         Stack(
+              //           children: [
+              //             Opacity(
+              //               opacity: 0.5,
+              //               child: _buildUPIOption(
+              //                 icon: 'whatsapp',
+              //                 title: 'WhatsApp UPI',
+              //                 isSelected: false,
+              //                 onTap: () {}, // Disabled
+              //               ),
+              //             ),
+              //             Positioned.fill(
+              //               child: Container(
+              //                 decoration: BoxDecoration(
+              //                   color: Colors.white.withValues(alpha: 0.7),
+              //                   borderRadius: BorderRadius.circular(2.w),
+              //                 ),
+              //                 child: Center(
+              //                   child: Icon(
+              //                     Icons.lock_outline,
+              //                     size: 5.w,
+              //                     color: CommonColors.blackColor,
+              //                   ),
+              //                 ),
+              //               ),
+              //             ),
+              //           ],
+              //         ),
+              //         // Separator
+              //         Container(
+              //           height: 1,
+              //           color: CommonColors.greyColor.withValues(alpha: 0.3),
+              //           margin: EdgeInsets.symmetric(vertical: 1.h),
+              //         ),
+              //
+              //         // Add New UPI ID (Locked)
+              //         Stack(
+              //           children: [
+              //             Opacity(opacity: 0.5, child: _buildAddNewUPIOption()),
+              //             Positioned.fill(
+              //               child: Container(
+              //                 decoration: BoxDecoration(
+              //                   color: Colors.white.withValues(alpha: 0.7),
+              //                   borderRadius: BorderRadius.circular(2.w),
+              //                 ),
+              //                 child: Center(
+              //                   child: Icon(
+              //                     Icons.lock_outline,
+              //                     size: 5.w,
+              //                     color: CommonColors.blackColor,
+              //                   ),
+              //                 ),
+              //               ),
+              //             ),
+              //           ],
+              //         ),
+              //       ],
+              //     ),
+              //   ),
+              // ),
+              // SizedBox(height: 3.h),
+              //
+              // // Other Payment Methods Section
+              // Container(
+              //   margin: EdgeInsets.symmetric(horizontal: 4.w),
+              //   width: 100.w,
+              //   decoration: BoxDecoration(
+              //     borderRadius: BorderRadius.circular(5.w),
+              //     boxShadow: [
+              //       BoxShadow(
+              //         color: CommonColors.blackColor.withValues(alpha: 0.2),
+              //         offset: Offset(2, 2),
+              //         blurRadius: 6,
+              //         spreadRadius: 2,
+              //       ),
+              //     ],
+              //     color: CommonColors.offWhiteColor2,
+              //   ),
+              //   child: Container(
+              //     width: 100.w,
+              //     margin: EdgeInsets.only(
+              //       left: 4.w,
+              //       right: 4.w,
+              //       top: 1.8.h,
+              //       bottom: 1.8.h,
+              //     ),
+              //     child: Column(
+              //       crossAxisAlignment: CrossAxisAlignment.start,
+              //       children: [
+              //         // Add New Card (Locked)
+              //         Stack(
+              //           children: [
+              //             Opacity(
+              //               opacity: 0.5,
+              //               child: _buildPaymentOption(
+              //                 icon: CommonImages.cardIcon,
+              //                 title: 'Add New Card',
+              //               ),
+              //             ),
+              //             Positioned.fill(
+              //               child: Container(
+              //                 decoration: BoxDecoration(
+              //                   color: Colors.white.withValues(alpha: 0.7),
+              //                   borderRadius: BorderRadius.circular(2.w),
+              //                 ),
+              //                 child: Center(
+              //                   child: Icon(
+              //                     Icons.lock_outline,
+              //                     size: 5.w,
+              //                     color: CommonColors.blackColor,
+              //                   ),
+              //                 ),
+              //               ),
+              //             ),
+              //           ],
+              //         ),
+              //         // Separator
+              //         Container(
+              //           height: 1,
+              //           color: CommonColors.greyColor.withValues(alpha: 0.3),
+              //           margin: EdgeInsets.symmetric(vertical: 1.h),
+              //         ),
+              //
+              //         // Wallets (Locked)
+              //         Stack(
+              //           children: [
+              //             Opacity(
+              //               opacity: 0.5,
+              //               child: _buildPaymentOption(
+              //                 icon: CommonImages.walletIcon,
+              //                 title: 'Wallets',
+              //               ),
+              //             ),
+              //             Positioned.fill(
+              //               child: Container(
+              //                 decoration: BoxDecoration(
+              //                   color: Colors.white.withValues(alpha: 0.7),
+              //                   borderRadius: BorderRadius.circular(2.w),
+              //                 ),
+              //                 child: Center(
+              //                   child: Icon(
+              //                     Icons.lock_outline,
+              //                     size: 5.w,
+              //                     color: CommonColors.blackColor,
+              //                   ),
+              //                 ),
+              //               ),
+              //             ),
+              //           ],
+              //         ),
+              //         // Separator
+              //         Container(
+              //           height: 1,
+              //           color: CommonColors.greyColor.withValues(alpha: 0.3),
+              //           margin: EdgeInsets.symmetric(vertical: 1.h),
+              //         ),
+              //
+              //         // Netbanking (Locked)
+              //         Stack(
+              //           children: [
+              //             Opacity(
+              //               opacity: 0.5,
+              //               child: _buildPaymentOption(
+              //                 icon: CommonImages.bankIcon,
+              //                 title: 'Netbanking',
+              //               ),
+              //             ),
+              //             Positioned.fill(
+              //               child: Container(
+              //                 decoration: BoxDecoration(
+              //                   color: Colors.white.withValues(alpha: 0.7),
+              //                   borderRadius: BorderRadius.circular(2.w),
+              //                 ),
+              //                 child: Center(
+              //                   child: Icon(
+              //                     Icons.lock_outline,
+              //                     size: 5.w,
+              //                     color: CommonColors.blackColor,
+              //                   ),
+              //                 ),
+              //               ),
+              //             ),
+              //           ],
+              //         ),
+              //       ],
+              //     ),
+              //   ),
+              // ),
               SizedBox(height: 3.h),
             ],
           ),
@@ -1247,359 +1050,137 @@ class _PaymentScreenState extends State<PaymentScreen> {
             ),
           ],
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(height: 2.h),
-            // Fare Breakup Modal Button
-            Container(
-              margin: const EdgeInsets.only(left: 27, right: 25),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      showModalBottomSheet(
-                        context: context,
-                        backgroundColor: Colors.transparent,
-                        builder: (context) => TotalFareModal(
-                          baseAmount: _totalBaseFare,
-                          isPartialPayment:
-                              _selectedPaymentOption ==
-                              BookingConstants.partialPayment,
-                          isInsurance:
-                              _selectedInsuranceOption ==
-                              BookingConstants.addInsurance,
-                          isFreeCancellation: _freeCancellation,
-                          adultCount: _adultCount,
-                          onClose: () => Navigator.pop(context),
-                          vendorDiscount: _vendorDiscount,
-                          couponDiscount: _discountAmount,
-                          platformFee: _platformFee,
-                          gst: _gst,
-                        ),
-                      );
-                    },
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              BookingMessages.totalFare,
-                              textScaler: const TextScaler.linear(1.0),
-                              style: GoogleFonts.poppins(
-                                fontSize: FontSize.s9,
-                                fontWeight: FontWeight.w500,
+        child: Obx(() {
+
+          final calculateFareRequestModel = _trekControllerC.calculateFareRequestModel.value;
+          CalculateFareResponseModel? calculateFareResponseModel = _trekControllerC.calculateFareResponseModel.value.maybeWhen(
+              success: (response) => response,
+              orElse: () => null
+          );
+
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(height: 2.h),
+              // Fare Breakup Modal Button
+              Container(
+                margin: const EdgeInsets.only(left: 27, right: 25),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        showModalBottomSheet(
+                          context: context,
+                          backgroundColor: Colors.transparent,
+                          builder: (context) => TotalFareModal(
+                            breakDown: null,
+                            adultCount: calculateFareRequestModel.travelerCount,
+                            onClose: () => Navigator.pop(context),
+                          ),
+                        );
+                      },
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                BookingMessages.totalFare,
+                                textScaler: const TextScaler.linear(1.0),
+                                style: GoogleFonts.poppins(
+                                  fontSize: FontSize.s9,
+                                  fontWeight: FontWeight.w500,
+                                  color: CommonColors.blackColor,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Icon(
+                                Icons.keyboard_arrow_down,
+                                size: 24,
                                 color: CommonColors.blackColor,
                               ),
+                            ],
+                          ),
+                          Text(
+                            BookingMessages.taxIncluded,
+                            textScaler: const TextScaler.linear(1.0),
+                            style: GoogleFonts.poppins(
+                              fontSize: FontSize.s8,
+                              fontWeight: FontWeight.w300,
+                              color: CommonColors.blackColor.withValues(
+                                alpha: 0.6,
+                              ),
                             ),
-                            const SizedBox(width: 8),
-                            Icon(
-                              Icons.keyboard_arrow_down,
-                              size: 24,
-                              color: CommonColors.blackColor,
-                            ),
-                          ],
-                        ),
-                        Text(
-                          BookingMessages.taxIncluded,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        RichText(
                           textScaler: const TextScaler.linear(1.0),
-                          style: GoogleFonts.poppins(
-                            fontSize: FontSize.s8,
-                            fontWeight: FontWeight.w300,
-                            color: CommonColors.blackColor.withValues(
-                              alpha: 0.6,
-                            ),
+                          text: TextSpan(
+                            children: [
+                              TextSpan(
+                                text: '₹ ',
+                                style: GoogleFonts.roboto(
+                                  fontSize: FontSize.s15,
+                                  fontWeight: FontWeight.w600,
+                                  color: CommonColors.softGreen2,
+                                ),
+                              ),
+                              TextSpan(
+                                text:"${calculateFareResponseModel?.breakdown?.amountToPayNow}",
+                                style: GoogleFonts.poppins(
+                                  fontSize: FontSize.s15,
+                                  fontWeight: FontWeight.w600,
+                                  color: CommonColors.softGreen2,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
-                  ),
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      RichText(
-                        textScaler: const TextScaler.linear(1.0),
-                        text: TextSpan(
-                          children: [
-                            TextSpan(
-                              text: '₹ ',
-                              style: GoogleFonts.roboto(
-                                fontSize: FontSize.s15,
-                                fontWeight: FontWeight.w600,
-                                color: CommonColors.softGreen2,
-                              ),
-                            ),
-                            TextSpan(
-                              text: _calculateTotalFare(),
-                              style: GoogleFonts.poppins(
-                                fontSize: FontSize.s15,
-                                fontWeight: FontWeight.w600,
-                                color: CommonColors.softGreen2,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            SizedBox(height: 2.h),
-            Padding(
-              padding: const EdgeInsets.only(left: 41, right: 41, bottom: 20),
-              child: CommonButton(
-                text: BookingMessages.payNow,
-                fontSize: FontSize.s14,
-                fontWeight: FontWeight.w600,
-                fontFamily: 'Poppins',
-                onPressed: () async {
-                  if (_isPaymentValid) {
-                    // Calculate values for API
-                    final remainingAmount = _calculateRemainingAmount();
-                    final finalAmount = _calculateExactFinalAmount();
+              SizedBox(height: 2.h),
+              Padding(
+                padding: const EdgeInsets.only(left: 41, right: 41, bottom: 20),
+                child: CommonButton(
+                  text: BookingMessages.payNow,
+                  fontSize: FontSize.s14,
+                  fontWeight: FontWeight.w600,
+                  fontFamily: 'Poppins',
+                  onPressed: () async {
+                    if (_isPaymentValid) {
 
-                    // Set the correct final amount in TrekController before creating order
-                    _trekControllerC.totalAmount.value = finalAmount;
-
-                    await _trekControllerC.createTrekOrder(
-                      selectedPaymentOption: _selectedPaymentOption,
-                      remainingAmount: remainingAmount,
-                      finalAmount: finalAmount,
-                    );
-                    if (_trekControllerC.orderModal.value.success ?? false) {
-                      _handlePayment();
+                      await _trekControllerC.createTrekOrder();
+                      if (_trekControllerC.orderModal.value.success ?? false) {
+                        _handlePayment(calculateFareResponseModel?.breakdown);
+                      }
                     }
-                  }
-                },
-                gradient: _isPaymentValid
-                    ? CommonColors.filterGradient
-                    : CommonColors.disableBtnGradient,
-                textColor: CommonColors.whiteColor,
-                height: 48,
+                  },
+                  gradient: _isPaymentValid
+                      ? CommonColors.filterGradient
+                      : CommonColors.disableBtnGradient,
+                  textColor: CommonColors.whiteColor,
+                  height: 48,
+                ),
               ),
-            ),
-          ],
+            ],
+          );
+           }
         ),
       ),
     );
   }
 
-  /// Calculates the exact final amount to be charged to Razorpay
-  ///
-  /// Per Payment.md Policy:
-  /// - PARTIAL PAYMENT: Advance + Platform Fee + GST + Add-ons (Pay Now amount)
-  /// - FULL PAYMENT: Complete final amount
-  ///
-  /// Payment.md BASE-001 Example (1 Adult, ₹5,999 fare, no discounts, partial):
-  /// - Net Fare: ₹5,999
-  /// - Advance: ₹999
-  /// - Platform Fee: ₹15
-  /// - GST: ₹299.95 (5% of Net Fare)
-  /// - Pay Now: ₹999 + ₹15 + ₹299.95 = ₹1,313.95 ✓
-  /// - Balance Later: ₹5,999 - ₹999 = ₹5,000 (paid before trek start)
-  ///
-  /// Payment.md COUP-041 Example (1 Adult, ₹5,999 fare, ₹500 coupon, partial):
-  /// - Net Fare: ₹5,499
-  /// - Advance: ₹999
-  /// - Platform Fee: ₹15
-  /// - GST: ₹274.95 (5% of ₹5,499)
-  /// - Pay Now: ₹999 + ₹15 + ₹274.95 = ₹1,288.95 ✓
-  /// - Balance Later: ₹5,499 - ₹999 = ₹4,500 (paid before trek start)
-  ///
-  /// CRITICAL GST COMPLIANCE:
-  /// ========================
-  /// GST is calculated on NET FARE (taxable base after all discounts) ONLY
-  /// NOT on (Net Fare + Platform Fee)
-  /// Reference: Payment.md lines 64, 118-119, 134-138
-  ///
-  /// @returns double - Amount in rupees to charge via Razorpay
-  double _calculateExactFinalAmount() {
-    // === STEP 1: Calculate Add-on Fees ===
-    // Insurance fee (₹80 per person, non-refundable)
-    final insuranceFee =
-        _selectedInsuranceOption == BookingConstants.addInsurance
-        ? (BookingConstants.insuranceFeePerPerson * _adultCount)
-        : 0.0;
-
-    // Free Cancellation fee (₹90 per person)
-    final cancellationFee = _freeCancellation
-        ? (BookingConstants.cancellationFeePerPerson * _adultCount)
-        : 0.0;
-
-    // === STEP 2: Calculate Advance Payment Amount ===
-    // For partial payment: ₹999 per person
-    final totalPartialPayment =
-        BookingConstants.partialPaymentPerPerson * _adultCount;
-
-    // === STEP 3: Calculate NET FARE (Taxable Base) ===
-    // Following Payment.md legal requirements:
-    // GST is calculated on NET FARE (after discounts, BEFORE platform fee)
-
-    // 3a. Start with total base fare
-    double netFare = _totalBaseFare;
-
-    // 3b. Subtract vendor discount (always applied)
-    netFare -= _vendorDiscount;
-
-    // 3c. Subtract coupon discount (for both partial and full payment per Payment.md COUP-041)
-    // Coupon reduces Net Fare, which reduces GST and Balance Later
-    netFare -= _discountAmount;
-
-    // === STEP 4: Calculate GST (CRITICAL - Per Payment.md Legal Requirements) ===
-    // GST = 5% × Net Fare ONLY
-    // NOT: GST = 5% × (Net Fare + Platform Fee)
-    //
-    // Why? Per Indian GST law and Payment.md policy:
-    // - GST is only on the trek service value (Net Fare)
-    // - Platform Fee is a separate service charge
-    // - Discounts reduce the taxable value before GST
-    //
-    // Reference: Payment.md lines 64, 118-119, 134-138
-    final calculatedGst = netFare * BookingConstants.gstRate;
-
-    // === STEP 5: Calculate Complete Final Amount ===
-    // Final Amount = Net Fare + Platform Fee + GST + Insurance + Free Cancellation
-    double amount = netFare;
-    amount += _platformFee;
-    amount += calculatedGst;
-    amount += insuranceFee;
-    amount += cancellationFee;
-
-    // === STEP 6: Return Amount Based on Payment Option ===
-    // Per Payment.md Policy:
-    // PARTIAL PAYMENT: Advance + Platform Fee + GST + Add-ons (NOT just advance!)
-    // FULL PAYMENT: Complete amount
-    final totalAmount =
-        _selectedPaymentOption == BookingConstants.partialPayment
-        ? (totalPartialPayment + _platformFee + calculatedGst + insuranceFee + cancellationFee)
-        : amount;
-
-    return totalAmount;
-  }
-
-  /// Calculates the remaining amount to be paid later (for partial payment)
-  ///
-  /// Per Payment.md Policy:
-  /// - FULL PAYMENT: Remaining = 0
-  /// - PARTIAL PAYMENT: Remaining = Net Fare - Advance Payment
-  ///
-  /// Where Net Fare = Base Fare - Vendor Discount - Coupon Discount
-  ///
-  /// @returns double - Remaining amount in rupees
-  double _calculateRemainingAmount() {
-    // For full payment, remaining amount is always 0
-    if (_selectedPaymentOption != BookingConstants.partialPayment) {
-      return 0.0;
-    }
-
-    // For partial payment, calculate: Net Fare - Advance
-    // Net Fare = Base Fare - All Discounts
-    double netFare = _totalBaseFare;
-    netFare -= _vendorDiscount;
-    netFare -= _discountAmount;
-
-    // Advance payment amount
-    final totalPartialPayment =
-        BookingConstants.partialPaymentPerPerson * _adultCount;
-
-    // Remaining = Net Fare - Advance
-    final remaining = netFare - totalPartialPayment;
-
-    // Ensure remaining is not negative
-    return remaining > 0 ? remaining : 0.0;
-  }
-
-  /// Builds the complete fare breakup object for API requests
-  ///
-  /// All values are calculated dynamically based on current state:
-  /// - totalBasicCost: Base fare for all travelers
-  /// - vendorDiscount: Discount from trek vendor
-  /// - couponDiscount: Discount from applied coupon (both partial and full)
-  /// - couponId: ID of applied coupon (empty if none)
-  /// - platformFees: Fixed platform fee (₹15)
-  /// - gst: 5% on Net Fare (after all discounts)
-  /// - insurance: ₹80 per person if selected
-  /// - freeCancellation: ₹90 per person if selected
-  /// - remainingAmount: Balance to pay later (0 for full payment)
-  /// - finalAmount: Amount charged to Razorpay
-  ///
-  /// @returns Map<String, dynamic> - Complete fare breakup for API
-  Map<String, dynamic> _buildFareBreakup() {
-    // Calculate add-on fees dynamically
-    final insuranceFee = _selectedInsuranceOption == BookingConstants.addInsurance
-        ? (BookingConstants.insuranceFeePerPerson * _adultCount)
-        : 0.0;
-
-    final freeCancellationFee = _freeCancellation
-        ? (BookingConstants.cancellationFeePerPerson * _adultCount)
-        : 0.0;
-
-    // Calculate Net Fare (after all discounts)
-    double netFare = _totalBaseFare - _vendorDiscount - _discountAmount;
-
-    // Calculate GST (5% on Net Fare only, per Payment.md)
-    final calculatedGst = netFare * BookingConstants.gstRate;
-
-    // Get remaining amount dynamically
-    final remainingAmount = _calculateRemainingAmount();
-
-    // Get final amount (what's charged to Razorpay)
-    final finalAmount = _calculateExactFinalAmount();
-
-    return {
-      "totalBasicCost": _totalBaseFare,
-      "vendorDiscount": _vendorDiscount,
-      "couponDiscount": _discountAmount,
-      "couponId": _trekControllerC.appliedCouponId.value,
-      "platformFees": _platformFee,
-      "gst": calculatedGst,
-      "insurance": insuranceFee,
-      "freeCancellation": freeCancellationFee,
-      "remainingAmount": remainingAmount,
-      "finalAmount": finalAmount,
-    };
-  }
-
-  /// Returns the total fare as a formatted string for UI display
-  /// This should match the exact final amount calculation
-  String _calculateTotalFare() {
-    // Use the exact final amount calculation
-    return _calculateExactFinalAmount().toStringAsFixed(0);
-  }
-
-  // Method to get complete fare breakdown for debugging
-  //   String _getFareBreakdownDebug() {
-  //     return '''
-  // Fare Breakdown Debug:
-  // ====================
-  // Base Price: $_basePrice
-  // Adult Count: $_adultCount
-  // Base Fare: $_baseFare
-  // Total Base Fare: $_totalBaseFare
-  // Has Discount: $_hasDiscount
-  // Discount Type: $_discountType
-  // Discount Value: $_discountValue
-  // Vendor Discount: $_vendorDiscount
-  // Fare After Vendor Discount: $_farePriceAfterVendorDiscount
-  // Coupon Discount: $_couponDiscount
-  // Net Fare: $_netFare
-  // Platform Fee: $_platformFee
-  // Subtotal: $_subtotal
-  // GST: $_gst
-  // Insurance Fee: $_insuranceFee
-  // Cancellation Fee: $_cancellationFee
-  // Final Payable: $_finalPayable
-  // Payment Option: $_selectedPaymentOption
-  // Advance Amount: $_advanceAmount
-  // Remaining Amount: $_remainingAmount
-  // Total Amount: $_totalAmount
-  // ''';
-  //   }
 
   /// Validates if payment can proceed
   /// Currently requires Razorpay to be selected
@@ -1619,15 +1200,15 @@ class _PaymentScreenState extends State<PaymentScreen> {
       return selectedTravellers
           .map(
             (traveller) => {
-              'nameController': TextEditingController(
-                text: traveller.name ?? '',
-              ),
-              'ageController': TextEditingController(
-                text: traveller.age?.toString() ?? '',
-              ),
-              'gender': traveller.gender ?? '',
-            },
-          )
+          'nameController': TextEditingController(
+            text: traveller.name ?? '',
+          ),
+          'ageController': TextEditingController(
+            text: traveller.age?.toString() ?? '',
+          ),
+          'gender': traveller.gender ?? '',
+        },
+      )
           .toList();
     } else {
       // Return default traveller if none selected
@@ -1669,7 +1250,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   /// Initiates the payment process by opening Razorpay
-  void _handlePayment() {
-    _openRazorpay();
+  void _handlePayment(BreakDownDataModel? breakdown) {
+    _openRazorpay(breakdown);
   }
 }

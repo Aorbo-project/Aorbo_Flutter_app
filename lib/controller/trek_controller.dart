@@ -1,10 +1,9 @@
 import 'dart:convert';
 
+import 'package:arobo_app/freezed_models/booking/booking_data_model.dart';
 import 'package:arobo_app/freezed_models/treks/treks_model_data.dart';
-import 'package:arobo_app/models/treaks/create_order_modal.dart';
 import 'package:arobo_app/models/treaks/treak_detail_modal.dart';
 import 'package:arobo_app/models/treaks/verify_order_modal.dart';
-import 'package:arobo_app/models/user_profile/user_profile_modal.dart';
 import 'package:arobo_app/models/coupon_code/coupon_code_model.dart';
 import 'package:arobo_app/models/dispute/submit_issue_modal.dart';
 import 'package:arobo_app/utils/custom_snackbar.dart';
@@ -13,6 +12,7 @@ import 'package:arobo_app/widgets/logger.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import '../freezed_models/profile/user_profile_model.dart';
 import '../repository/api_result.dart';
 import '../repository/repository.dart';
 import '../repository/network_url.dart';
@@ -27,6 +27,12 @@ class TrekController extends GetxController {
 
   final treksResponseObserver = const ApiResult<FetchTreksResponseModel>.init().obs;
 
+  final calculateFareRequestModel = CalculateFareRequestModel(batchId: 1, travelerCount: 1, addInsurance: false, addFreeCancellationProtection: false, couponCode: '').obs;
+  final calculateFareResponseModel = const ApiResult<CalculateFareResponseModel>.init().obs;
+
+  final createOrderRequestModel = CreateRazorpayRequestModel(fareToken: "",travelers: []).obs;
+
+
 
   // Trek search results
   RxBool isLoading = false.obs;
@@ -37,10 +43,10 @@ class TrekController extends GetxController {
 
   //region AddTrek
   RxInt trekPersonCount = 0.obs;
-  RxList<Travelers> travellerDetailList = <Travelers>[].obs;
+  RxList<Traveler> travellerDetailList = <Traveler>[].obs;
   RxInt trekBatchId = 0.obs;
-  RxDouble totalAmount = 0.0.obs;
-  Rx<CreateOrderModal> orderModal = CreateOrderModal().obs;
+
+  Rx<BookingResponse> orderModal = BookingResponse().obs;
   Rx<Order> orderData = Order().obs;
   Rx<BookingData> orderBookingData = BookingData().obs;
 
@@ -60,15 +66,9 @@ class TrekController extends GetxController {
 
   //endregion
 
-  //region Coupons
-  Rx<CouponCodeModel> couponModal = CouponCodeModel().obs;
-  RxList<CouponCardData> couponsList = <CouponCardData>[].obs;
-  RxBool isCouponLoading = false.obs;
-  RxString couponErrorMessage = ''.obs;
-  RxBool isCouponValidating = false.obs;
-  RxString appliedCouponCode = ''.obs;
-  RxString appliedCouponId = ''.obs;
-  RxDouble discountAmount = 0.0.obs;
+  final vendorCouponsObserver = const ApiResult<CouponCodeModel>.init().obs;
+
+
 
   //endregion
 
@@ -87,6 +87,36 @@ class TrekController extends GetxController {
   void onClose() {
     reviewController.value.dispose();
     super.onClose();
+  }
+
+
+
+  Future<void> fetchVendorCoupons() async {
+    try {
+      vendorCouponsObserver.value = const ApiResult.loading("");
+      final vendorId = trekDetailData.value.vendorId;
+      if (vendorId == null) {
+        throw Exception('Vendor ID not found');
+      }
+
+      final response = await repository.getApiCall(
+        url: NetworkUrl.couponCode(vendorId.toString()),
+      );
+
+      if (response != null) {
+        final responseData = CouponCodeModel.fromJson(response);
+        if (responseData.success == true) {
+          vendorCouponsObserver.value = ApiResult.success(responseData);
+          return;
+        }
+        throw "${responseData.message}";
+      }
+      throw "Response Body Null";
+    } catch (e) {
+      print("Error On Coupon ${e.toString()}");
+      CustomSnackBar.show(Get.context!, message: e.toString());
+      vendorCouponsObserver.value = ApiResult.error(e.toString());
+    }
   }
 
   static String convertDateYYYYMMDD(String date) {
@@ -129,9 +159,8 @@ class TrekController extends GetxController {
         ),
       );
 
-      final body = response.body;
-      if (response.isOk && body != null) {
-        final responseData = FetchTreksResponseModel.fromJson(body);
+      if (response != null) {
+        final responseData = FetchTreksResponseModel.fromJson(response);
         if (responseData.success == true) {
           treksResponseObserver.value = ApiResult.success(responseData);
           return;
@@ -154,8 +183,7 @@ class TrekController extends GetxController {
       // final selectedDate =
       //     convertDateYYYYMMDD(_dashboardC.dateController.value.text);
       final response = await repository.getApiCall(
-        url:
-            '${NetworkUrl.getTrekDetail}$trekDetailId?batch_id=$batchId&city_id=${_dashboardC.selectedCityId.value}',
+        url: '${NetworkUrl.getTrekDetail}$trekDetailId?batch_id=$batchId&city_id=${_dashboardC.selectedCityId.value}',
       );
 
       if (response != null) {
@@ -178,56 +206,50 @@ class TrekController extends GetxController {
     }
   }
 
-  Future<void> fetchTrekBatches(int trekId) async{
-    try{
 
-      final response = await repository.getApiCall(url: NetworkUrl.getTrekBatches(trekId));
+  Future<void> calculateFare() async {
 
+    try {
+      calculateFareResponseModel.value = ApiResult.loading("");
+      final response = await repository.postApiCall(
+        url: NetworkUrl.calculateFare,
+        body: calculateFareRequestModel.value.toJson()
+      );
 
-    }
-    catch(error){
-
+      if (response != null) {
+        final responseData = CalculateFareResponseModel.fromJson(response);
+        if (responseData.success == true) {
+          calculateFareResponseModel.value = ApiResult.success(responseData);
+          createOrderRequestModel.value = createOrderRequestModel.value.copyWith(fareToken: responseData.fareToken ?? "");
+          return;
+        }
+        throw "${responseData.message}";
+      }
+      throw "Response Body Null";
+    } catch (e) {
+      errorMessage.value = 'Failed to search treks: ${e.toString()}';
+      CustomSnackBar.show(Get.context!, message: errorMessage.value);
+      calculateFareResponseModel.value = ApiResult.error('Failed to search treks: ${e.toString()}');
     }
   }
 
 
-  Future<void> calculateFare() async{
-    try{
 
-    }
-    catch(error){
+  Future<void> createTrekOrder() async {
 
-    }
-  }
 
-  createTrekOrder({
-    required String selectedPaymentOption,
-    required double remainingAmount,
-    required double finalAmount,
-  }) async {
-    logger.d('TrekController createTrekOrder - finalAmount: $finalAmount');
-    String body = json.encode({
-      "trekId": trekDetailId.value,
-      "travelers": travellerDetailList,
-      "batchId": trekBatchId.value,
-      "isAdvanceAmount":
-      selectedPaymentOption == BookingConstants.partialPayment,
-      "remaining_amount": remainingAmount,
-      "finalAmount": finalAmount,
-    });
     try {
       showLoaderDialog();
       final response = await repository.postApiCall(
         url: NetworkUrl.addBooking,
-        body: body,
+        body: createOrderRequestModel.toJson(),
       );
 
       if (response != null) {
         if (response['success']) {
-          orderModal.value = CreateOrderModal.fromJson(response);
+          orderModal.value = BookingResponse.fromJson(response);
           orderData.value = orderModal.value.order ?? Order();
-          orderBookingData.value =
-              orderModal.value.bookingData ?? BookingData();
+          orderBookingData.value = orderModal.value.bookingData ?? BookingData();
 
           logger.d(
             'TrekController createTrekOrder - Server returned finalAmount: ${orderBookingData.value.finalAmount}',
@@ -247,36 +269,20 @@ class TrekController extends GetxController {
   }
 
   verifyTrekOrder({
-    required String selectedPaymentOption,
-    required Map<String, dynamic> fareBreakup,
+    required String razorpayOrderId,
+    required String razorpayPaymentId,
+    required String razorpaySignature,
   }) async {
     showLoaderDialog();
 
-    // Transform traveler field names to camelCase for API
-    List<Map<String, dynamic>> transformedTravelers = travellerDetailList.map((traveler) {
-      return {
-        "id": traveler.id,
-        "customerId": traveler.customerId,
-        "name": traveler.name,
-        "age": traveler.age,
-        "gender": traveler.gender,
-        "isActive": traveler.isActive,
-        "createdAt": traveler.createdAt,
-        "updatedAt": traveler.updatedAt,
-      };
-    }).toList();
+
+
+
 
     String body = json.encode({
-      "orderId": orderId.value,
-      "cityId": _dashboardC.selectedCityId.value,
-      "paymentId": paymentId.value,
-      "signature": signature.value,
-      "travelers": transformedTravelers,
-      "trekId": trekDetailId.value,
-      "batchId": trekBatchId.value,
-      "isPartialAmount":
-      selectedPaymentOption == BookingConstants.partialPayment,
-      "fareBreakup": fareBreakup,
+      "razorpay_order_id": razorpayOrderId,
+      "razorpay_payment_id": razorpayPaymentId,
+      "razorpay_signature": razorpaySignature
     });
     try {
       final response = await repository.postApiCall(
@@ -365,145 +371,7 @@ class TrekController extends GetxController {
     }
   }
 
-  Future<void> getCoupons() async {
-    isCouponLoading.value = true;
-    couponErrorMessage.value = '';
 
-    try {
-      final vendorId = trekDetailData.value.vendorId;
-      if (vendorId == null) {
-        throw Exception('Vendor ID not found');
-      }
-
-      final response = await repository.getApiCall(
-        url: NetworkUrl.couponCode(vendorId.toString()),
-      );
-
-      if (response != null) {
-        if (response['success'] == true) {
-          couponModal.value = CouponCodeModel.fromJson(response);
-          couponsList.value = couponModal.value.data ?? [];
-        } else {
-          couponErrorMessage.value =
-              response['message'] ?? 'Failed to fetch coupons';
-          CustomSnackBar.show(Get.context!, message: couponErrorMessage.value);
-        }
-      }
-    } catch (e) {
-      couponErrorMessage.value = 'Failed to fetch coupons: ${e.toString()}';
-      CustomSnackBar.show(Get.context!, message: couponErrorMessage.value);
-    } finally {
-      isCouponLoading.value = false;
-    }
-  }
-
-  Future<bool> validateCoupon({
-    required String couponCode,
-    required int customerId,
-    required double baseAmount,
-  }) async {
-    isCouponValidating.value = true;
-    couponErrorMessage.value = '';
-
-    String body = json.encode({
-      "code": couponCode,
-      "customer_id": customerId.toString(),
-      "amount": baseAmount.toInt(),
-    });
-
-    try {
-      final response = await repository.postApiCall(
-        url: NetworkUrl.validatedCoupon,
-        body: body,
-      );
-
-      if (response != null) {
-        if (response['success'] == true) {
-          // Store validated coupon details
-          appliedCouponCode.value = couponCode;
-
-          // Extract coupon ID from response
-          if (response['data'] != null && response['data']['id'] != null) {
-            appliedCouponId.value = response['data']['id'].toString();
-          } else {
-            appliedCouponId.value = '';
-          }
-
-          // Extract discount amount from response
-          // Assuming the response contains discount information
-          if (response['data'] != null &&
-              response['data']['discount_amount'] != null) {
-            final discountValue = response['data']['discount_amount'];
-            discountAmount.value =
-                double.tryParse(discountValue.toString()) ?? 0.0;
-          } else if (response['data'] != null &&
-              response['data']['discount_percentage'] != null) {
-            // If percentage is returned, calculate discount amount
-            final percentageValue = response['data']['discount_percentage'];
-            final percentage =
-                double.tryParse(percentageValue.toString()) ?? 0.0;
-            discountAmount.value = (baseAmount * percentage) / 100;
-          }
-
-          // Update total amount with discount applied
-          _updateTotalAmountWithDiscount();
-
-          CustomSnackBar.show(
-            Get.context!,
-            message: 'Coupon applied successfully!',
-          );
-          return true;
-        } else {
-          couponErrorMessage.value =
-              response['message'] ?? 'Invalid coupon code';
-          CustomSnackBar.show(Get.context!, message: couponErrorMessage.value);
-          return false;
-        }
-      }
-    } catch (e) {
-      couponErrorMessage.value = 'Failed to validate coupon: ${e.toString()}';
-      CustomSnackBar.show(Get.context!, message: couponErrorMessage.value);
-    } finally {
-      isCouponValidating.value = false;
-    }
-    return false;
-  }
-
-  void _updateTotalAmountWithDiscount() {
-    // Note: This method only updates the base trek amount for coupon validation
-    // The final comprehensive calculation including GST, insurance, etc.
-    // is handled in the traveller information screen
-
-    // Calculate base amount for the number of travelers
-    final basePricePerPerson = double.parse(
-      trekDetailData.value.basePrice ?? "0.0",
-    );
-    final baseAmount = basePricePerPerson * trekPersonCount.value;
-
-    // Apply discount while maintaining the original fare structure
-    final discountedAmount = baseAmount - discountAmount.value;
-
-    // Ensure total amount doesn't go below 0
-    totalAmount.value = discountedAmount > 0 ? discountedAmount : 0.0;
-    logger.i("TrekController totalAmount updated: ${totalAmount.value}");
-  }
-
-  void removeCoupon() {
-    appliedCouponCode.value = '';
-    appliedCouponId.value = '';
-    discountAmount.value = 0.0;
-
-    // Recalculate total amount without discount
-    final basePricePerPerson = double.parse(
-      trekDetailData.value.basePrice ?? "0.0",
-    );
-    totalAmount.value = basePricePerPerson * trekPersonCount.value;
-
-    logger.i(
-      "Coupon removed - TrekController totalAmount reset: ${totalAmount.value}",
-    );
-    CustomSnackBar.show(Get.context!, message: 'Coupon removed successfully');
-  }
 
   Future<bool> submitIssueReport({
     required String name,
@@ -589,10 +457,9 @@ class TrekController extends GetxController {
     trekPersonCount.value = 0;
     travellerDetailList.clear();
     trekBatchId.value = 0;
-    totalAmount.value = 0.0;
 
     // Clear order data
-    orderModal.value = CreateOrderModal();
+    orderModal.value = BookingResponse();
     orderData.value = Order();
     orderBookingData.value = BookingData();
 
@@ -602,10 +469,6 @@ class TrekController extends GetxController {
     signature.value = '';
     verifyOrderModal.value = VerifyOrderModal();
 
-    // Clear coupon data
-    appliedCouponCode.value = '';
-    appliedCouponId.value = '';
-    discountAmount.value = 0.0;
 
     // Clear review data
     rating.value = 0.0;

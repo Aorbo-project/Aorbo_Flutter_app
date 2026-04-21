@@ -2,7 +2,7 @@ import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 
-import '../models/treaks/booking_history_modal.dart';
+import '../freezed_models/booking/booking_history_model.dart';
 import 'common_colors.dart';
 import 'common_images.dart';
 

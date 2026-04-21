@@ -498,11 +498,18 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
               child: Container(
                 width: 100.w,
                 margin: EdgeInsets.only(top: 2.h, bottom: 1.2.h),
-                child: CommonTrekCard(
-                  trek: _trekControllerC.treksResponseObserver.value.maybeMap(success: (response) => (response as FetchTreksResponseModel).data?.firstWhereOrNull((p0) {
-                    return p0.id == _trekControllerC.trekDetailId.value;
-                  }),orElse: () => null),
-                  showShare: true,
+                child: Obx(() {
+                  List<TrekData>? filteredTreks = _trekControllerC.treksResponseObserver.value.maybeWhen(success: (treksResponse) => (treksResponse as FetchTreksResponseModel).data,error: (sc) => [],orElse: () => [TrekData(),TrekData(),TrekData(),TrekData()]);
+
+
+                  final commonTrekCard = filteredTreks?.firstWhereOrNull((p0) => p0.id == _trekControllerC.trekDetailId.value);
+
+                  return commonTrekCard == null ? SizedBox() : CommonTrekCard(
+                    trek: commonTrekCard,
+                    showShare: true,
+                  );
+
+                }
                 ),
               ),
             ),

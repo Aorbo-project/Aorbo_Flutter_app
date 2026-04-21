@@ -5,5 +5,5 @@ class AppEnv {
 
   String imageUrl = "https://api.aorbotreks.co.in/";
 
-  String razorpayKey = "test_key";
+  String razorpayKey = "rzp_test_SW9tLdKrLyka8y";
 }

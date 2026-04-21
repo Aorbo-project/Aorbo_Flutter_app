@@ -1,7 +1,7 @@
-import 'package:arobo_app/models/treaks/booking_history_modal.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
+import '../freezed_models/booking/booking_history_model.dart';
 import 'common_colors.dart';
 import 'screen_constants.dart';
 import 'common_images.dart';

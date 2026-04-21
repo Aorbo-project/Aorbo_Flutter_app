@@ -1,3 +1,4 @@
+import 'package:arobo_app/freezed_models/booking/booking_data_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -19,17 +20,11 @@ class SlotBookingDetailsModal extends StatelessWidget {
   final String email;
   final String phone;
   final List<Map<String, dynamic>> travellers;
-  final double baseAmount;
-  final double discountAmount;
-  final bool isInsurance;
-  final bool isFreeCancellation;
+  final BreakDownDataModel? breakdown;
 
   // Partial payment specific parameters
   final bool isPartialPayment;
-  final double advanceAmount;
-  final double remainingAmount;
-  final double finalPayable;
-  final double gst;
+
 
   const SlotBookingDetailsModal({
     Key? key,
@@ -42,30 +37,14 @@ class SlotBookingDetailsModal extends StatelessWidget {
     required this.email,
     required this.phone,
     required this.travellers,
-    required this.baseAmount,
-    required this.discountAmount,
-    required this.isInsurance,
-    required this.isFreeCancellation,
+    required this.breakdown,
     required this.isPartialPayment,
-    required this.advanceAmount,
-    required this.remainingAmount,
-    required this.finalPayable,
-    required this.gst,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // Use the values from BookingConstants to ensure consistency
-    // This matches the traveller information screen and Payment.md policy
-    final platformFee = BookingConstants.platformFee; // ₹15 (per Payment.md policy)
-    final insuranceFee = isInsurance ? BookingConstants.insuranceFeePerPerson : 0.0;
-    final cancellationFee = isFreeCancellation
-        ? (BookingConstants.cancellationFeePerPerson * adultCount)
-        : 0.0;
 
-    // For partial payment, show advance and remaining amounts
-    // For full payment, show the complete breakdown
-    final totalAmount = isPartialPayment ? advanceAmount : finalPayable;
+    final totalAmount = breakdown?.amountToPayNow;
 
     // Helper method for calculating end date
     String _calculateEndDate(String startDate, String duration) {
@@ -398,16 +377,16 @@ class SlotBookingDetailsModal extends StatelessWidget {
             // Base Amount (Total Basic Cost)
             _buildFareRow(
               'Total Basic Cost',
-              '₹${baseAmount.toStringAsFixed(2)}',
+              '₹${breakdown?.baseTotal.toStringAsFixed(2)}',
               isTotal: false,
             ),
             SizedBox(height: 12),
 
             // Vendor Discount (if any)
-            if (discountAmount > 0) ...[
+            if ((breakdown?.discount ?? 0) > 0) ...[
               _buildFareRow(
                 'Vendor Discount',
-                '-₹${discountAmount.toStringAsFixed(2)}',
+                '-₹${breakdown?.discount.toStringAsFixed(2)}',
                 textColor: CommonColors.greyColor2,
                 isTotal: false,
               ),
@@ -419,7 +398,7 @@ class SlotBookingDetailsModal extends StatelessWidget {
             // Platform Fee
             _buildFareRow(
               'Platform Fees',
-              '₹${platformFee.toStringAsFixed(2)}',
+              '₹${breakdown?.platformFee.toStringAsFixed(2)}',
               textColor: CommonColors.greyColor2,
               isTotal: false,
             ),
@@ -428,17 +407,17 @@ class SlotBookingDetailsModal extends StatelessWidget {
             // GST
             _buildFareRow(
               'GST (5%)',
-              '₹${gst.toStringAsFixed(2)}',
+              '₹${breakdown?.gst.toStringAsFixed(2)}',
               textColor: CommonColors.greyColor2,
               isTotal: false,
             ),
             SizedBox(height: 12),
 
             // Insurance (if selected)
-            if (isInsurance) ...[
+            if ((breakdown?.insuranceFee ?? 0) > 0) ...[
               _buildFareRow(
                 'Insurance',
-                '₹${insuranceFee.toStringAsFixed(2)}',
+                '₹${breakdown?.insuranceFee.toStringAsFixed(2)}',
                 textColor: CommonColors.greyColor2,
                 isTotal: false,
               ),
@@ -446,10 +425,10 @@ class SlotBookingDetailsModal extends StatelessWidget {
             ],
 
             // Free Cancellation (if selected)
-            if (isFreeCancellation) ...[
+            if ((breakdown?.cancellationFee ?? 0) > 0) ...[
               _buildFareRow(
                 'Free Cancellation',
-                '₹${cancellationFee.toStringAsFixed(2)}',
+                '₹${breakdown?.cancellationFee.toStringAsFixed(2)}',
                 textColor: CommonColors.greyColor2,
                 isTotal: false,
               ),
@@ -474,7 +453,7 @@ class SlotBookingDetailsModal extends StatelessWidget {
 
               _buildFareRow(
                 'Advance Payment (₹999 per person)',
-                '₹${advanceAmount.toStringAsFixed(2)}',
+                '₹${breakdown?.advanceAmount.toStringAsFixed(2)}',
                 textColor: CommonColors.greyColor2,
                 isTotal: false,
               ),
@@ -482,7 +461,7 @@ class SlotBookingDetailsModal extends StatelessWidget {
 
               _buildFareRow(
                 'Remaining Amount',
-                '₹${remainingAmount.toStringAsFixed(2)}',
+                '₹${breakdown?.remainingAmount.toStringAsFixed(2)}',
                 textColor: CommonColors.greyColor2,
                 isTotal: false,
               ),

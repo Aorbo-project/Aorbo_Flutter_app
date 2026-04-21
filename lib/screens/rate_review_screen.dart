@@ -1,5 +1,4 @@
 import 'package:arobo_app/controller/trek_controller.dart';
-import 'package:arobo_app/models/treaks/booking_history_modal.dart';
 import 'package:arobo_app/utils/common_images.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -7,6 +6,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
 import 'package:animated_rating_stars/animated_rating_stars.dart';
+import '../freezed_models/booking/booking_history_model.dart';
 import '../utils/common_colors.dart';
 import '../utils/screen_constants.dart';
 import '../utils/common_btn.dart';

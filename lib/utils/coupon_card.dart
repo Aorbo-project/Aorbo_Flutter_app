@@ -7,7 +7,7 @@ import 'screen_constants.dart';
 import '../models/coupon_code/coupon_code_model.dart';
 
 class CouponCard extends StatelessWidget {
-  final CouponCardData coupon;
+  final CouponCardData? coupon;
   final VoidCallback onApply;
   final bool isApplied;
 
@@ -63,14 +63,14 @@ class CouponCard extends StatelessWidget {
                         ...() {
                           // Create side text from API data
                           String sideText = '';
-                          final discountValue = coupon.discountValue ?? '0';
+                          final discountValue = coupon?.discountValue ?? '0';
                           // Convert to int to remove decimal places
                           final intValue = double.tryParse(discountValue)?.toInt() ?? 0;
 
-                          if (coupon.discountType?.toLowerCase() ==
+                          if (coupon?.discountType?.toLowerCase() ==
                               'percentage') {
                             sideText = 'upto ${intValue}% off';
-                          } else if (coupon.discountType?.toLowerCase() ==
+                          } else if (coupon?.discountType?.toLowerCase() ==
                               'fixed') {
                             sideText = 'Flat ${intValue}/- off';
                           } else {
@@ -187,7 +187,7 @@ class CouponCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      coupon.code ?? '',
+                      coupon?.code ?? '',
                       style: GoogleFonts.poppins(
                         fontSize: FontSize.s12,
                         letterSpacing: 5,
@@ -200,7 +200,7 @@ class CouponCard extends StatelessWidget {
                     Container(
                       margin: EdgeInsets.only(left: 1.w),
                       child: Text(
-                        coupon.title ?? '',
+                        coupon?.title ?? '',
                         style: GoogleFonts.poppins(
                           fontSize: FontSize.s10,
 
@@ -222,7 +222,7 @@ class CouponCard extends StatelessWidget {
                       width: 48.w,
                       child: RichText(
                         text: TextSpan(
-                          text: "${coupon.description ?? ''} ",
+                          text: "${coupon?.description ?? ''} ",
                           style: GoogleFonts.poppins(
                             fontSize: FontSize.s9,
                             fontWeight: FontWeight.w400,
@@ -230,8 +230,8 @@ class CouponCard extends StatelessWidget {
                             height: 1.5,
                           ),
                           children: [
-                            if (coupon.termsAndConditions != null &&
-                                coupon.termsAndConditions!.isNotEmpty)
+                            if (coupon?.termsAndConditions != null &&
+                                coupon?.termsAndConditions!.isNotEmpty == true)
                               TextSpan(
                                 text: "T&C",
                                 style: GoogleFonts.poppins(
@@ -268,7 +268,7 @@ class CouponCard extends StatelessWidget {
               right: 3.w,
               child: GestureDetector(
                 onTap:
-                    ((coupon.isActive ?? false) && !(coupon.isExpired ?? true))
+                    ((coupon?.isActive ?? false) && !(coupon?.isExpired ?? true))
                     ? onApply
                     : null,
                 child: Text(
@@ -279,8 +279,8 @@ class CouponCard extends StatelessWidget {
                     fontWeight: FontWeight.w500,
                     color: isApplied
                         ? CommonColors.softGreen
-                        : ((coupon.isActive ?? false) &&
-                              !(coupon.isExpired ?? true))
+                        : ((coupon?.isActive ?? false) &&
+                              !(coupon?.isExpired ?? true))
                         ? const Color(0xff4A97FF)
                         : Colors.grey,
                   ),
@@ -301,7 +301,7 @@ class CouponCard extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            coupon.code ?? '',
+            coupon?.code ?? '',
             style: GoogleFonts.poppins(
               fontSize: FontSize.s16,
               fontWeight: FontWeight.w700,
@@ -319,7 +319,7 @@ class CouponCard extends StatelessWidget {
             ),
           ),
           SizedBox(height: 2.h),
-          ...coupon.termsAndConditions
+          ...coupon?.termsAndConditions
                   ?.map(
                     (term) => Padding(
                       padding: EdgeInsets.only(bottom: 1.5.h),

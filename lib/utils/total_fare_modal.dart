@@ -1,3 +1,4 @@
+import 'package:arobo_app/freezed_models/booking/booking_data_model.dart';
 import 'package:arobo_app/utils/booking_constants.dart';
 import 'package:arobo_app/utils/common_images.dart';
 import 'package:flutter/material.dart';
@@ -68,131 +69,21 @@ import 'package:arobo_app/utils/screen_constants.dart';
 /// - GST (5% of ₹5,499): ₹274.95
 /// - Final Amount: ₹5,788.95
 class TotalFareModal extends StatelessWidget {
-  final double baseAmount;
-  final bool isPartialPayment;
-  final bool isInsurance;
-  final bool isFreeCancellation;
+  final BreakDownDataModel? breakDown;
   final int adultCount;
   final VoidCallback onClose;
-  final double vendorDiscount;
-  final double couponDiscount;
-  final double platformFee;
-  final double gst;
+
 
   const TotalFareModal({
     Key? key,
-    required this.baseAmount,
-    required this.isPartialPayment,
-    required this.isInsurance,
-    required this.isFreeCancellation,
+    required this.breakDown,
     required this.adultCount,
-    required this.onClose,
-    required this.vendorDiscount,
-    required this.couponDiscount,
-    required this.platformFee,
-    required this.gst,
+    required this.onClose
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // === CONSTANTS ===
-    final insuranceFeePerPerson = 80.0;
-    final cancellationFeePerPerson = 90.0;
-    final partialPaymentPerPerson = 999.0;
 
-    // === STEP 1: Calculate Add-on Fees ===
-    // Insurance: ₹80 per person (non-refundable)
-    final insuranceFee = isInsurance ? (insuranceFeePerPerson * adultCount) : 0.0;
-
-    // Free Cancellation: ₹90 per person (allows advance refund if cancelled >24h)
-    final cancellationFee = isFreeCancellation ? (cancellationFeePerPerson * adultCount) : 0.0;
-
-    // Advance Payment: ₹999 per person (for partial payment option)
-    final totalPartialPayment = partialPaymentPerPerson * adultCount;
-
-    // === STEP 2: Calculate NET FARE (Taxable Base) ===
-    // Following Payment.md legal requirements:
-    // GST is calculated on NET FARE (after all discounts, BEFORE platform fee)
-    //
-    // Formula: Net Fare = Base Amount - Vendor Discount - Coupon Discount
-    //
-    // Why this order?
-    // 1. Start with base amount (total base fare for all adults)
-    // 2. Apply vendor discount (set at trek creation time)
-    // 3. Apply coupon discount (applied at booking time)
-    // 4. Result is the NET FARE = taxable base for GST calculation
-
-    // 2a. Start with base amount
-    double netFare = baseAmount;
-
-    // 2b. Subtract vendor discount from net fare
-    netFare -= vendorDiscount;
-
-    // 2c. Subtract coupon discount from net fare
-    netFare -= couponDiscount;
-
-    // === STEP 3: Calculate GST (CRITICAL - Per Payment.md Legal Requirements) ===
-    // GST = 5% × Net Fare ONLY
-    // NOT: GST = 5% × (Net Fare + Platform Fee)
-    //
-    // Why? Per Indian GST law and Payment.md policy:
-    // - GST is calculated on the taxable base (Net Fare after all discounts)
-    // - Platform Fee is a separate service charge, not part of trek fare
-    // - This ensures proper tax compliance and correct GST reporting
-    //
-    // Reference: Payment.md lines 64, 118-119, 134-138
-    //
-    // Example:
-    // - Net Fare: ₹5,999
-    // - GST: ₹5,999 × 5% = ₹299.95 ✓ CORRECT
-    // - NOT: (₹5,999 + ₹15) × 5% = ₹300.70 ✗ WRONG
-    final calculatedGst = netFare * BookingConstants.gstRate;
-
-    // === STEP 4: Calculate Final Payable Amount ===
-    // Final Amount = Net Fare + Platform Fee + GST + Insurance + Free Cancellation
-    //
-    // Breakdown:
-    // - Net Fare: Trek price after all discounts (taxable base)
-    // - Platform Fee: ₹15 (fixed, non-refundable)
-    // - GST: 5% of Net Fare (refundable if trek not delivered)
-    // - Insurance: ₹80 × Adults (if selected, non-refundable)
-    // - Free Cancellation: ₹90 × Adults (if selected)
-    double amount = netFare;
-    amount += platformFee;
-    amount += calculatedGst;
-    amount += insuranceFee;
-    amount += cancellationFee;
-
-    final finalPayable = amount;
-
-    // === STEP 5: Calculate Remaining Amount (for Partial Payment) ===
-    // Per Payment.md Policy:
-    // Balance Later = Net Fare - Advance (NOT Final Payable - Advance)
-    //
-    // Why? Because Platform Fee, GST, and Add-ons are paid upfront with advance!
-    //
-    // Payment.md BASE-001 Example:
-    // - Net Fare: ₹5,999
-    // - Advance: ₹999
-    // - Balance Later: ₹5,999 - ₹999 = ₹5,000 ✓
-    // - Pay Now: ₹999 + ₹15 + ₹299.95 = ₹1,313.95 (includes Platform Fee + GST)
-    //
-    // Payment.md COUP-041 Example (with ₹500 coupon):
-    // - Net Fare: ₹5,499
-    // - Advance: ₹999
-    // - Balance Later: ₹5,499 - ₹999 = ₹4,500 ✓
-    // - Pay Now: ₹999 + ₹15 + ₹274.95 = ₹1,288.95 (includes Platform Fee + GST)
-    final remainingAmount = netFare - totalPartialPayment;
-
-    // === STEP 6: Determine Amount to Display (Pay Now) ===
-    // For PARTIAL PAYMENT: Advance + Platform Fee + GST + Add-ons
-    // For FULL PAYMENT: Complete final amount
-    //
-    // Per Payment.md BASE-001:
-    // Pay Now = ₹999 + ₹15 + ₹299.95 = ₹1,313.95
-    final totalAmount = isPartialPayment
-        ? (totalPartialPayment + platformFee + calculatedGst + insuranceFee + cancellationFee)
-        : finalPayable;
 
     return Container(
       decoration: BoxDecoration(
@@ -246,16 +137,16 @@ class TotalFareModal extends StatelessWidget {
                 // Base Amount (Total Basic Cost)
                 _buildFareRow(
                   'Total Basic Cost',
-                  '₹${baseAmount.toStringAsFixed(2)}',
+                  '₹${breakDown?.baseTotal.toStringAsFixed(2)}',
                   isTotal: false,
                 ),
                 SizedBox(height: 12),
 
                 // Vendor Discount (if any)
-                if (vendorDiscount > 0) ...[
+                if ((breakDown?.discount ?? 0) > 0) ...[
                   _buildFareRow(
                     'Vendor Discount',
-                    '-₹${vendorDiscount.toStringAsFixed(2)}',
+                    '-₹${breakDown?.discount.toStringAsFixed(2)}',
                     textColor: CommonColors.greyColor2,
                     isTotal: false,
                   ),
@@ -263,10 +154,10 @@ class TotalFareModal extends StatelessWidget {
                 ],
 
                 // Coupon Discount (if any)
-                if (couponDiscount > 0) ...[
+                if ((breakDown?.discount ?? 0) > 0) ...[
                   _buildFareRow(
                     'Coupon Discount',
-                    '-₹${couponDiscount.toStringAsFixed(2)}',
+                    '-₹${breakDown?.discount.toStringAsFixed(2)}',
                     textColor: CommonColors.greyColor2,
                     isTotal: false,
                   ),
@@ -276,7 +167,7 @@ class TotalFareModal extends StatelessWidget {
                 // Platform Fees
                 _buildFareRow(
                   'Platform Fees',
-                  '₹${platformFee.toStringAsFixed(2)}',
+                  '₹${breakDown?.platformFee.toStringAsFixed(2)}',
                   textColor: CommonColors.greyColor2,
                   isTotal: false,
                 ),
@@ -285,17 +176,17 @@ class TotalFareModal extends StatelessWidget {
                 // GST (always show)
                 _buildFareRow(
                   'GST (5%)',
-                  '₹${calculatedGst.toStringAsFixed(2)}',
+                  '₹${breakDown?.gst.toStringAsFixed(2)}',
                   textColor: CommonColors.greyColor2,
                   isTotal: false,
                 ),
                 SizedBox(height: 12),
 
                 // Insurance (if selected)
-                if (isInsurance) ...[
+                if ((breakDown?.insuranceFee ?? 0) > 0) ...[
                   _buildFareRow(
-                    'Insurance (₹${insuranceFeePerPerson.toStringAsFixed(0)} × $adultCount person${adultCount > 1 ? 's' : ''})',
-                    '₹${insuranceFee.toStringAsFixed(2)}',
+                    'Insurance (₹${breakDown?.insuranceFee.toStringAsFixed(0)} × $adultCount person${adultCount > 1 ? 's' : ''})',
+                    '₹${breakDown?.insuranceFee.toStringAsFixed(2)}',
                     textColor: CommonColors.greyColor2,
                     isTotal: false,
                   ),
@@ -303,10 +194,10 @@ class TotalFareModal extends StatelessWidget {
                 ],
 
                 // Free Cancellation (if selected)
-                if (isFreeCancellation) ...[
+                if ((breakDown?.cancellationFee ?? 0) > 0) ...[
                   _buildFareRow(
-                    'Free Cancellation (₹${cancellationFeePerPerson.toStringAsFixed(0)} × $adultCount person${adultCount > 1 ? 's' : ''})',
-                    '₹${cancellationFee.toStringAsFixed(2)}',
+                    'Free Cancellation (₹${breakDown?.cancellationFee.toStringAsFixed(0)} × $adultCount person${adultCount > 1 ? 's' : ''})',
+                    '₹${breakDown?.cancellationFee.toStringAsFixed(2)}',
                     textColor: CommonColors.greyColor2,
                     isTotal: false,
                   ),
@@ -314,19 +205,19 @@ class TotalFareModal extends StatelessWidget {
                 ],
 
                 // For partial payment: Show advance and remaining
-                if (isPartialPayment) ...[
+                if (breakDown?.cancellationPolicyType == 'flexible') ...[
                   Container(height: 1, color: CommonColors.greyColor2),
                   SizedBox(height: 12),
                   _buildFareRow(
                     'Advance Payment (₹999 per person)',
-                    '₹${totalPartialPayment.toStringAsFixed(2)}',
+                    '₹${breakDown?.amountToPayNow.toStringAsFixed(2)}',
                     textColor: CommonColors.greyColor2,
                     isTotal: false,
                   ),
                   SizedBox(height: 12),
                   _buildFareRow(
                     'Remaining Amount',
-                    '₹${remainingAmount.toStringAsFixed(2)}',
+                    '₹${breakDown?.remainingAmount.toStringAsFixed(2)}',
                     textColor: CommonColors.greyColor2,
                     isTotal: false,
                   ),
@@ -337,8 +228,8 @@ class TotalFareModal extends StatelessWidget {
                 Container(height: 1, color: Colors.grey[300]),
                 SizedBox(height: 20),
                 _buildFareRow(
-                  isPartialPayment ? 'Amount Payable Now' : 'Total Amount',
-                  '₹${totalAmount.toStringAsFixed(2)}',
+                  breakDown?.cancellationPolicyType == 'flexible' ? 'Amount Payable Now' : 'Total Amount',
+                  '₹${breakDown?.amountToPayNow.toStringAsFixed(2)}',
                   isTotal: true,
                   textColor: CommonColors.greyColor2,
                 ),

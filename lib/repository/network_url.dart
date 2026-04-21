@@ -54,24 +54,25 @@ class NetworkUrl {
     String destinationId,
     String startDate,
   ) =>
-      'treks';
-      // 'treks?city_id=$cityId&destination_id=$destinationId&start_date=$startDate';
+      'treks?city_id=$cityId&destination_id=$destinationId&start_date=$startDate';
 
   static const String getTrekDetail = 'treks/';
 
   static String getTrekBatches(int trekId) => 'treks/$trekId/batches';
 
+  static String calculateFare = 'bookings/calculate-fare';
+
   //#region User & Bookings
   static const String getUserProfile = 'customer/auth/profile';
   static const String addTraveller = 'customer/travelers';
-  static const String addBooking = 'customer/bookings/create-trek-order';
-  static const String verifyBooking = 'customer/bookings/verify-payment';
+  static const String addBooking = 'bookings/create-order';
+  static const String verifyBooking = 'bookings/verify-payment';
 
   static String bookingHistoryWithStatus({
     required int page,
     String? trekStatus,
   }) =>
-      'customer/bookings?page=$page&limit=10'
+      'bookings?page=$page&limit=10'
       '${trekStatus == null ? '' : "&trek_status=$trekStatus"}';
 
   static const String review = 'ratings';

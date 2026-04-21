@@ -382,34 +382,53 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen> {
             children: [
               Row(
                 children: [
-                  if (_dashboardC.fromController.value.text.isNotEmpty)
-                    Text(
-                      _dashboardC.fromController.value.text,
-                      textScaler: const TextScaler.linear(1.0),
-                      style: TextStyle(
-                        fontSize: FontSize.s11,
-                        fontWeight: FontWeight.w400,
-                        color: CommonColors.blackColor,
-                      ),
-                    ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 6),
-                    child: Icon(
-                      Icons.arrow_forward,
-                      color: Colors.grey[500],
-                      size: 25,
+                  Flexible(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_dashboardC.fromController.value.text.isNotEmpty)
+                          Flexible(
+                            child: Text(
+                              _dashboardC.fromController.value.text,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textScaler: const TextScaler.linear(1.0),
+                              style: TextStyle(
+                                fontSize: FontSize.s11,
+                                fontWeight: FontWeight.w400,
+                                color: CommonColors.blackColor,
+                              ),
+                            ),
+                          ),
+
+                        if (_dashboardC.fromController.value.text.isNotEmpty &&
+                            _dashboardC.toController.value.text.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 6),
+                            child: Icon(
+                              Icons.arrow_forward,
+                              color: Colors.grey[500],
+                              size: 20,
+                            ),
+                          ),
+
+                        if (_dashboardC.toController.value.text.isNotEmpty)
+                          Flexible(
+                            child: Text(
+                              _dashboardC.toController.value.text,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textScaler: const TextScaler.linear(1.0),
+                              style: TextStyle(
+                                fontSize: FontSize.s11,
+                                fontWeight: FontWeight.w400,
+                                color: CommonColors.blackColor,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
-                  if (_dashboardC.toController.value.text.isNotEmpty)
-                    Text(
-                      _dashboardC.toController.value.text,
-                      textScaler: const TextScaler.linear(1.0),
-                      style: TextStyle(
-                        fontSize: FontSize.s11,
-                        fontWeight: FontWeight.w400,
-                        color: CommonColors.blackColor,
-                      ),
-                    ),
                 ],
               ),
               const SizedBox(height: 3),
@@ -524,7 +543,7 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen> {
                           children: [
                             Obx(() {
                               final loading = couponController.adminCouponsObserver.value.maybeWhen(loading: (data) => true,orElse: () => false);
-                              List<CouponCardData>? discountCards = couponController.adminCouponsObserver.value.maybeWhen(success: (couponsResponse) => (couponsResponse as CouponCodeModel).data,orElse: () => [CouponCardData(),CouponCardData(),CouponCardData(),CouponCardData()]);
+                              List<CouponCardData>? discountCards = couponController.adminCouponsObserver.value.maybeWhen(success: (couponsResponse) => (couponsResponse as CouponCodeModel).data,error: (sc) => [],orElse: () => [CouponCardData(),CouponCardData(),CouponCardData(),CouponCardData()]);
                               if(discountCards?.isEmpty == true) return SizedBox();
 
                               return SizedBox(
@@ -559,7 +578,7 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen> {
                                           color: AppTheme.hexToColor(discount?.color ?? "#3B82F6"),
                                           code: discount?.code ?? "",
                                           offerAmount: discount?.discountValue ?? "",
-                                          imagePath: discount?.imagePath ?? '',
+                                          imagePath: discount?.imagePath ?? 'https://i.pinimg.com/originals/86/b5/3d/86b53d90fbd279ea28d04099ff7518f0.png',
                                           imageHeight: 30,
                                           detailedDescription: discount?.description ?? "",
                                           howToApply: "dcc",
@@ -593,8 +612,7 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen> {
                         color: Colors.white,
                         boxShadow: [
                           BoxShadow(
-                            color:
-                                CommonColors.blackColor.withValues(alpha: 0.13),
+                            color: CommonColors.blackColor.withValues(alpha: 0.13),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -621,7 +639,7 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen> {
                 // Trek List Section
                 Obx(() {
                   final treksLoading = _trekControllerC.treksResponseObserver.value.maybeWhen(loading: (data) => true,orElse: () => false);
-                  List<TrekData>? filteredTreks = _trekControllerC.treksResponseObserver.value.maybeWhen(success: (treksResponse) => (treksResponse as FetchTreksResponseModel).data,orElse: () => [TrekData(),TrekData(),TrekData(),TrekData()]);
+                  List<TrekData>? filteredTreks = _trekControllerC.treksResponseObserver.value.maybeWhen(success: (treksResponse) => (treksResponse as FetchTreksResponseModel).data,error: (sc) => [],orElse: () => [TrekData(),TrekData(),TrekData(),TrekData()]);
 
                   return SliverList(
                     delegate: SliverChildBuilderDelegate(
@@ -639,8 +657,7 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen> {
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
-                                  'No treks available for ${getFormattedDate(
-                                      _dashboardC.dateController.value.text)}',
+                                  'No treks available for ${getFormattedDate(_dashboardC.dateController.value.text)}',
                                   textScaler: const TextScaler.linear(1.0),
                                   style: TextStyle(
                                     fontSize: FontSize.s11,
@@ -673,12 +690,12 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen> {
                                 trek: trek,
                                 onTap: () async {
                                   // Set the trek detail ID
-                                  _trekControllerC.trekDetailId.value =
-                                      trek?.id ?? 0;
+                                  _trekControllerC.trekDetailId.value = trek?.id ?? 0;
 
                                   // Call the trek detail API
-                                  await _trekControllerC.trekDetail(
-                                      batchId: trek?.batchInfo?.id ?? 0);
+                                  await _trekControllerC.trekDetail(batchId: trek?.batchInfo?.id ?? 0);
+
+                                  Get.toNamed('/trek-details');
 
                                   // Navigate to trek details screen
                                 },

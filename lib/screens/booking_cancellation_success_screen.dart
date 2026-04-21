@@ -3,8 +3,8 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
 import 'package:shimmer_ai/shimmer_ai.dart';
-import '../models/treaks/booking_history_modal.dart';
 import '../controller/dashboard_controller.dart';
+import '../freezed_models/booking/booking_history_model.dart';
 import '../utils/common_colors.dart';
 import '../utils/common_booked_details_card.dart';
 import '../utils/screen_constants.dart';
@@ -147,8 +147,8 @@ class _BookingCancellationSuccessScreenState
       child: Column(
         children: [
           _buildTableRow(
-            '${booking.travelers?.length ?? 0} Slots',
-            booking.travelers
+            '${booking?.travelers?.length ?? 0} Slots',
+            booking?.travelers
                     ?.map((t) => t.traveler?.name ?? 'Unknown')
                     .join(', ') ??
                 'Unknown',

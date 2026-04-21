@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 
 class CommonColors {
 
-  static const Color primaryColor = Color(0xFFFFEF3E);
-  static const Color secondaryColor = Color(0xFFFDF05F);
+  static const Color primaryColor = Color(0xFFFBFF00);
+  static const Color lightPrimaryColor = Color(0xBBFBFF00);
+  static const Color secondaryColor = Color(0xFFFFD043);
 
 
-  static const Color appYellowColor = Color(0xFFFFEF3E);
+  static const Color appYellowColor = Color(0xFFFBFF00);
 
 
 
@@ -56,7 +57,7 @@ class CommonColors {
   static const Color grey100 = Color(0xFFF5F5F5);
   static const Color grey200 = Color(0xFFEEEEEE);
   static const Color grey300 = Color(0xFFE0E0E0);
-  static const Color grey400 = Color(0xFFBDBDBD);
+  static const Color grey400 = Color(0x96BDBDBD);
   static const Color grey500 = Color(0xFF9E9E9E);
   static const Color grey600 = Color(0xFF757575);
   static const Color grey700 = Color(0xFF616161);

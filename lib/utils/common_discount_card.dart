@@ -1,5 +1,6 @@
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
+import 'package:arobo_app/widgets/custom_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
@@ -141,6 +142,7 @@ class CommonDiscountCard extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Container(
+                              width: 25.w,
                               margin: EdgeInsets.only(top: 2.6.h),
                               padding: EdgeInsets.symmetric(
                                 horizontal: 2.w,
@@ -150,15 +152,24 @@ class CommonDiscountCard extends StatelessWidget {
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(1.5.w),
                               ),
-                              child: Text(
-                                code,
-                                textScaler: const TextScaler.linear(1.0),
-                                style: GoogleFonts.archivoBlack(
-                                  fontWeight: FontWeight.w400,
-                                  color: Colors.black,
-                                  fontSize: 10.sp,
-                                  letterSpacing: 0.3,
-                                ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      code,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      textScaler: const TextScaler.linear(1.0),
+                                      style: GoogleFonts.archivoBlack(
+                                        fontWeight: FontWeight.w400,
+                                        color: Colors.black,
+                                        fontSize: 8.sp,
+                                        letterSpacing: 0.3,
+                                      ),
+                                    ),
+                                  ),
+                                  Icon(Icons.copy,color: CommonColors.blackColor,size: 15)
+                                ],
                               ),
                             ),
                             // const Spacer(),
@@ -171,10 +182,7 @@ class CommonDiscountCard extends StatelessWidget {
                               //   color: Colors.white,
                               //   borderRadius: BorderRadius.circular(6),
                               // ),
-                              child: Image.asset(
-                                imagePath,
-                                fit: BoxFit.contain,
-                              ),
+                              child: CustomNetworkImage(imageUrl: imagePath,fit: BoxFit.cover),
                             ),
                           ],
                         ),

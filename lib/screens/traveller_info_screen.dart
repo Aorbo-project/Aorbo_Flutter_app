@@ -2,13 +2,13 @@ import 'dart:developer';
 
 import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/controller/user_controller.dart';
-import 'package:arobo_app/models/user_profile/user_profile_modal.dart';
 import 'package:arobo_app/models/user_profile/state_list_model.dart';
 import 'package:arobo_app/utils/common_btn.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:sizer/sizer.dart';
+import '../freezed_models/profile/user_profile_model.dart';
 import '../utils/common_colors.dart';
 import '../utils/common_images.dart';
 import '../utils/screen_constants.dart';
@@ -95,7 +95,7 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen> {
     FocusScope.of(context).unfocus();
   }
 
-  void _openTravellerEditor(Travelers traveler, int index) {
+  void _openTravellerEditor(Traveler traveler, int index) {
     _userC.travellerId.value = traveler.id ?? 0;
     _userC.nameControllerTraveller.value.text = traveler.name ?? '';
     _userC.ageControllerTraveller.value.text = traveler.age?.toString() ?? '';
@@ -813,7 +813,7 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen> {
   }
 
   Widget _buildExistingTravellerItem({
-    required Travelers travelData,
+    required Traveler travelData,
     required int index,
   }) {
     final isExpanded = _expandedTravellerIndex == index;
