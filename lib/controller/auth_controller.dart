@@ -171,9 +171,9 @@ class AuthController extends GetxController {
   }
 
   @override
-  void onClose() {
-    phoneNumberLoginTextField.value.dispose();
-    otpTextField.value.dispose();
-    super.onClose();
-  }
+void onClose() {
+  // phoneNumberLoginTextField.value.dispose();  // ❌ COMMENT THIS LINE
+  // otpTextField.value.dispose();              // ❌ COMMENT THIS LINE
+  super.onClose();
+}
 }
