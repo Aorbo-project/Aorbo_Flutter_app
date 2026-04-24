@@ -59,37 +59,10 @@ class KnowMoreCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  // Shadow image (fills the Stack, with offset)
-                  Positioned.fill(
-                    child: Transform.translate(
-                      offset: const Offset(0, 4), // vertical shadow offset
-                      child: ImageFiltered(
-                        imageFilter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-                        child: ColorFiltered(
-                          colorFilter: ColorFilter.mode(
-                            Colors.black.withValues(alpha: 0.45),
-                            BlendMode.srcATop,
-                          ),
-                          child:
-                          CustomNetworkImage(
-                              imageUrl: imagePath,
-                              fit: BoxFit.contain,
-                              height: 10.h,
-                              width: 10.h)
-                        ),
-                      ),
-                    ),
-                  ),
-                  // Main image
-                  CustomNetworkImage(
-                    imageUrl: imagePath,
-                    height: 10.h,
-                    width: 10.h),
-                ],
-              ),
+              CustomNetworkImage(
+                  imageUrl: imagePath,
+                  height: 10.h,
+                  width: 10.h),
               Expanded(
                 child: Container(
                   // width: 100.w,
@@ -104,10 +77,11 @@ class KnowMoreCard extends StatelessWidget {
                         textAlign: TextAlign.end,
                         // textScaler: const TextScaler.linear(1.0),
                         maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.poppins(
-                            fontSize: FontSize.s12,
+                            fontSize: FontSize.s13,
                             // fontSize: 13.sp,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w900,
                             color: textColor ?? CommonColors.blackColor),
                       ),
                       SizedBox(
@@ -116,6 +90,8 @@ class KnowMoreCard extends StatelessWidget {
                       Text(
                         subtitle,
                         textAlign: TextAlign.end,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
                         textScaler: const TextScaler.linear(1.0),
                         style: GoogleFonts.poppins(
                           fontSize: FontSize.s8,

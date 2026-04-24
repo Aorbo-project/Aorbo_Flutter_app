@@ -27,6 +27,8 @@ class TrekController extends GetxController {
 
   final treksResponseObserver = const ApiResult<FetchTreksResponseModel>.init().obs;
 
+
+
   final calculateFareRequestModel = CalculateFareRequestModel(batchId: 1, travelerCount: 1, addInsurance: false, addFreeCancellationProtection: false, couponCode: '').obs;
   final calculateFareResponseModel = const ApiResult<CalculateFareResponseModel>.init().obs;
 
@@ -174,6 +176,10 @@ class TrekController extends GetxController {
       treksResponseObserver.value = ApiResult.error('Failed to search treks: ${e.toString()}');
     }
   }
+
+
+
+
 
   Future<void> trekDetail({required int batchId}) async {
     isLoading.value = true;

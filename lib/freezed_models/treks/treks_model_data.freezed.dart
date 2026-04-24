@@ -14,6 +14,636 @@ T _$identity<T>(T value) => value;
 final _privateConstructorUsedError = UnsupportedError(
     'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#custom-getters-and-methods');
 
+CalenderDatesResponseModel _$CalenderDatesResponseModelFromJson(
+    Map<String, dynamic> json) {
+  return _CalenderDatesResponseModel.fromJson(json);
+}
+
+/// @nodoc
+mixin _$CalenderDatesResponseModel {
+  bool? get success => throw _privateConstructorUsedError;
+  String? get message => throw _privateConstructorUsedError;
+  CalenderDataModel? get data => throw _privateConstructorUsedError;
+  int? get count => throw _privateConstructorUsedError;
+
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+  @JsonKey(ignore: true)
+  $CalenderDatesResponseModelCopyWith<CalenderDatesResponseModel>
+      get copyWith => throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $CalenderDatesResponseModelCopyWith<$Res> {
+  factory $CalenderDatesResponseModelCopyWith(CalenderDatesResponseModel value,
+          $Res Function(CalenderDatesResponseModel) then) =
+      _$CalenderDatesResponseModelCopyWithImpl<$Res,
+          CalenderDatesResponseModel>;
+  @useResult
+  $Res call(
+      {bool? success, String? message, CalenderDataModel? data, int? count});
+
+  $CalenderDataModelCopyWith<$Res>? get data;
+}
+
+/// @nodoc
+class _$CalenderDatesResponseModelCopyWithImpl<$Res,
+        $Val extends CalenderDatesResponseModel>
+    implements $CalenderDatesResponseModelCopyWith<$Res> {
+  _$CalenderDatesResponseModelCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? success = freezed,
+    Object? message = freezed,
+    Object? data = freezed,
+    Object? count = freezed,
+  }) {
+    return _then(_value.copyWith(
+      success: freezed == success
+          ? _value.success
+          : success // ignore: cast_nullable_to_non_nullable
+              as bool?,
+      message: freezed == message
+          ? _value.message
+          : message // ignore: cast_nullable_to_non_nullable
+              as String?,
+      data: freezed == data
+          ? _value.data
+          : data // ignore: cast_nullable_to_non_nullable
+              as CalenderDataModel?,
+      count: freezed == count
+          ? _value.count
+          : count // ignore: cast_nullable_to_non_nullable
+              as int?,
+    ) as $Val);
+  }
+
+  @override
+  @pragma('vm:prefer-inline')
+  $CalenderDataModelCopyWith<$Res>? get data {
+    if (_value.data == null) {
+      return null;
+    }
+
+    return $CalenderDataModelCopyWith<$Res>(_value.data!, (value) {
+      return _then(_value.copyWith(data: value) as $Val);
+    });
+  }
+}
+
+/// @nodoc
+abstract class _$$CalenderDatesResponseModelImplCopyWith<$Res>
+    implements $CalenderDatesResponseModelCopyWith<$Res> {
+  factory _$$CalenderDatesResponseModelImplCopyWith(
+          _$CalenderDatesResponseModelImpl value,
+          $Res Function(_$CalenderDatesResponseModelImpl) then) =
+      __$$CalenderDatesResponseModelImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call(
+      {bool? success, String? message, CalenderDataModel? data, int? count});
+
+  @override
+  $CalenderDataModelCopyWith<$Res>? get data;
+}
+
+/// @nodoc
+class __$$CalenderDatesResponseModelImplCopyWithImpl<$Res>
+    extends _$CalenderDatesResponseModelCopyWithImpl<$Res,
+        _$CalenderDatesResponseModelImpl>
+    implements _$$CalenderDatesResponseModelImplCopyWith<$Res> {
+  __$$CalenderDatesResponseModelImplCopyWithImpl(
+      _$CalenderDatesResponseModelImpl _value,
+      $Res Function(_$CalenderDatesResponseModelImpl) _then)
+      : super(_value, _then);
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? success = freezed,
+    Object? message = freezed,
+    Object? data = freezed,
+    Object? count = freezed,
+  }) {
+    return _then(_$CalenderDatesResponseModelImpl(
+      success: freezed == success
+          ? _value.success
+          : success // ignore: cast_nullable_to_non_nullable
+              as bool?,
+      message: freezed == message
+          ? _value.message
+          : message // ignore: cast_nullable_to_non_nullable
+              as String?,
+      data: freezed == data
+          ? _value.data
+          : data // ignore: cast_nullable_to_non_nullable
+              as CalenderDataModel?,
+      count: freezed == count
+          ? _value.count
+          : count // ignore: cast_nullable_to_non_nullable
+              as int?,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$CalenderDatesResponseModelImpl implements _CalenderDatesResponseModel {
+  const _$CalenderDatesResponseModelImpl(
+      {this.success, this.message, this.data, this.count});
+
+  factory _$CalenderDatesResponseModelImpl.fromJson(
+          Map<String, dynamic> json) =>
+      _$$CalenderDatesResponseModelImplFromJson(json);
+
+  @override
+  final bool? success;
+  @override
+  final String? message;
+  @override
+  final CalenderDataModel? data;
+  @override
+  final int? count;
+
+  @override
+  String toString() {
+    return 'CalenderDatesResponseModel(success: $success, message: $message, data: $data, count: $count)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$CalenderDatesResponseModelImpl &&
+            (identical(other.success, success) || other.success == success) &&
+            (identical(other.message, message) || other.message == message) &&
+            (identical(other.data, data) || other.data == data) &&
+            (identical(other.count, count) || other.count == count));
+  }
+
+  @JsonKey(ignore: true)
+  @override
+  int get hashCode => Object.hash(runtimeType, success, message, data, count);
+
+  @JsonKey(ignore: true)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$CalenderDatesResponseModelImplCopyWith<_$CalenderDatesResponseModelImpl>
+      get copyWith => __$$CalenderDatesResponseModelImplCopyWithImpl<
+          _$CalenderDatesResponseModelImpl>(this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$CalenderDatesResponseModelImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _CalenderDatesResponseModel
+    implements CalenderDatesResponseModel {
+  const factory _CalenderDatesResponseModel(
+      {final bool? success,
+      final String? message,
+      final CalenderDataModel? data,
+      final int? count}) = _$CalenderDatesResponseModelImpl;
+
+  factory _CalenderDatesResponseModel.fromJson(Map<String, dynamic> json) =
+      _$CalenderDatesResponseModelImpl.fromJson;
+
+  @override
+  bool? get success;
+  @override
+  String? get message;
+  @override
+  CalenderDataModel? get data;
+  @override
+  int? get count;
+  @override
+  @JsonKey(ignore: true)
+  _$$CalenderDatesResponseModelImplCopyWith<_$CalenderDatesResponseModelImpl>
+      get copyWith => throw _privateConstructorUsedError;
+}
+
+CalenderDataModel _$CalenderDataModelFromJson(Map<String, dynamic> json) {
+  return _CalenderDataModel.fromJson(json);
+}
+
+/// @nodoc
+mixin _$CalenderDataModel {
+  @JsonKey(name: 'start_date')
+  String? get startDate => throw _privateConstructorUsedError;
+  @JsonKey(name: 'end_date')
+  String? get endDate => throw _privateConstructorUsedError;
+  List<TrekDatesModel>? get dates => throw _privateConstructorUsedError;
+  @JsonKey(name: 'total_dates_with_treks')
+  int? get totalDatesWithTreks => throw _privateConstructorUsedError;
+
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+  @JsonKey(ignore: true)
+  $CalenderDataModelCopyWith<CalenderDataModel> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $CalenderDataModelCopyWith<$Res> {
+  factory $CalenderDataModelCopyWith(
+          CalenderDataModel value, $Res Function(CalenderDataModel) then) =
+      _$CalenderDataModelCopyWithImpl<$Res, CalenderDataModel>;
+  @useResult
+  $Res call(
+      {@JsonKey(name: 'start_date') String? startDate,
+      @JsonKey(name: 'end_date') String? endDate,
+      List<TrekDatesModel>? dates,
+      @JsonKey(name: 'total_dates_with_treks') int? totalDatesWithTreks});
+}
+
+/// @nodoc
+class _$CalenderDataModelCopyWithImpl<$Res, $Val extends CalenderDataModel>
+    implements $CalenderDataModelCopyWith<$Res> {
+  _$CalenderDataModelCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? startDate = freezed,
+    Object? endDate = freezed,
+    Object? dates = freezed,
+    Object? totalDatesWithTreks = freezed,
+  }) {
+    return _then(_value.copyWith(
+      startDate: freezed == startDate
+          ? _value.startDate
+          : startDate // ignore: cast_nullable_to_non_nullable
+              as String?,
+      endDate: freezed == endDate
+          ? _value.endDate
+          : endDate // ignore: cast_nullable_to_non_nullable
+              as String?,
+      dates: freezed == dates
+          ? _value.dates
+          : dates // ignore: cast_nullable_to_non_nullable
+              as List<TrekDatesModel>?,
+      totalDatesWithTreks: freezed == totalDatesWithTreks
+          ? _value.totalDatesWithTreks
+          : totalDatesWithTreks // ignore: cast_nullable_to_non_nullable
+              as int?,
+    ) as $Val);
+  }
+}
+
+/// @nodoc
+abstract class _$$CalenderDataModelImplCopyWith<$Res>
+    implements $CalenderDataModelCopyWith<$Res> {
+  factory _$$CalenderDataModelImplCopyWith(_$CalenderDataModelImpl value,
+          $Res Function(_$CalenderDataModelImpl) then) =
+      __$$CalenderDataModelImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call(
+      {@JsonKey(name: 'start_date') String? startDate,
+      @JsonKey(name: 'end_date') String? endDate,
+      List<TrekDatesModel>? dates,
+      @JsonKey(name: 'total_dates_with_treks') int? totalDatesWithTreks});
+}
+
+/// @nodoc
+class __$$CalenderDataModelImplCopyWithImpl<$Res>
+    extends _$CalenderDataModelCopyWithImpl<$Res, _$CalenderDataModelImpl>
+    implements _$$CalenderDataModelImplCopyWith<$Res> {
+  __$$CalenderDataModelImplCopyWithImpl(_$CalenderDataModelImpl _value,
+      $Res Function(_$CalenderDataModelImpl) _then)
+      : super(_value, _then);
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? startDate = freezed,
+    Object? endDate = freezed,
+    Object? dates = freezed,
+    Object? totalDatesWithTreks = freezed,
+  }) {
+    return _then(_$CalenderDataModelImpl(
+      startDate: freezed == startDate
+          ? _value.startDate
+          : startDate // ignore: cast_nullable_to_non_nullable
+              as String?,
+      endDate: freezed == endDate
+          ? _value.endDate
+          : endDate // ignore: cast_nullable_to_non_nullable
+              as String?,
+      dates: freezed == dates
+          ? _value._dates
+          : dates // ignore: cast_nullable_to_non_nullable
+              as List<TrekDatesModel>?,
+      totalDatesWithTreks: freezed == totalDatesWithTreks
+          ? _value.totalDatesWithTreks
+          : totalDatesWithTreks // ignore: cast_nullable_to_non_nullable
+              as int?,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$CalenderDataModelImpl implements _CalenderDataModel {
+  const _$CalenderDataModelImpl(
+      {@JsonKey(name: 'start_date') this.startDate,
+      @JsonKey(name: 'end_date') this.endDate,
+      final List<TrekDatesModel>? dates,
+      @JsonKey(name: 'total_dates_with_treks') this.totalDatesWithTreks})
+      : _dates = dates;
+
+  factory _$CalenderDataModelImpl.fromJson(Map<String, dynamic> json) =>
+      _$$CalenderDataModelImplFromJson(json);
+
+  @override
+  @JsonKey(name: 'start_date')
+  final String? startDate;
+  @override
+  @JsonKey(name: 'end_date')
+  final String? endDate;
+  final List<TrekDatesModel>? _dates;
+  @override
+  List<TrekDatesModel>? get dates {
+    final value = _dates;
+    if (value == null) return null;
+    if (_dates is EqualUnmodifiableListView) return _dates;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(value);
+  }
+
+  @override
+  @JsonKey(name: 'total_dates_with_treks')
+  final int? totalDatesWithTreks;
+
+  @override
+  String toString() {
+    return 'CalenderDataModel(startDate: $startDate, endDate: $endDate, dates: $dates, totalDatesWithTreks: $totalDatesWithTreks)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$CalenderDataModelImpl &&
+            (identical(other.startDate, startDate) ||
+                other.startDate == startDate) &&
+            (identical(other.endDate, endDate) || other.endDate == endDate) &&
+            const DeepCollectionEquality().equals(other._dates, _dates) &&
+            (identical(other.totalDatesWithTreks, totalDatesWithTreks) ||
+                other.totalDatesWithTreks == totalDatesWithTreks));
+  }
+
+  @JsonKey(ignore: true)
+  @override
+  int get hashCode => Object.hash(runtimeType, startDate, endDate,
+      const DeepCollectionEquality().hash(_dates), totalDatesWithTreks);
+
+  @JsonKey(ignore: true)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$CalenderDataModelImplCopyWith<_$CalenderDataModelImpl> get copyWith =>
+      __$$CalenderDataModelImplCopyWithImpl<_$CalenderDataModelImpl>(
+          this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$CalenderDataModelImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _CalenderDataModel implements CalenderDataModel {
+  const factory _CalenderDataModel(
+      {@JsonKey(name: 'start_date') final String? startDate,
+      @JsonKey(name: 'end_date') final String? endDate,
+      final List<TrekDatesModel>? dates,
+      @JsonKey(name: 'total_dates_with_treks')
+      final int? totalDatesWithTreks}) = _$CalenderDataModelImpl;
+
+  factory _CalenderDataModel.fromJson(Map<String, dynamic> json) =
+      _$CalenderDataModelImpl.fromJson;
+
+  @override
+  @JsonKey(name: 'start_date')
+  String? get startDate;
+  @override
+  @JsonKey(name: 'end_date')
+  String? get endDate;
+  @override
+  List<TrekDatesModel>? get dates;
+  @override
+  @JsonKey(name: 'total_dates_with_treks')
+  int? get totalDatesWithTreks;
+  @override
+  @JsonKey(ignore: true)
+  _$$CalenderDataModelImplCopyWith<_$CalenderDataModelImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+TrekDatesModel _$TrekDatesModelFromJson(Map<String, dynamic> json) {
+  return _TrekDatesModel.fromJson(json);
+}
+
+/// @nodoc
+mixin _$TrekDatesModel {
+  String? get date => throw _privateConstructorUsedError;
+  @JsonKey(name: 'trek_count')
+  int? get trekCount => throw _privateConstructorUsedError;
+  @JsonKey(name: 'has_treks')
+  bool? get available => throw _privateConstructorUsedError;
+
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+  @JsonKey(ignore: true)
+  $TrekDatesModelCopyWith<TrekDatesModel> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $TrekDatesModelCopyWith<$Res> {
+  factory $TrekDatesModelCopyWith(
+          TrekDatesModel value, $Res Function(TrekDatesModel) then) =
+      _$TrekDatesModelCopyWithImpl<$Res, TrekDatesModel>;
+  @useResult
+  $Res call(
+      {String? date,
+      @JsonKey(name: 'trek_count') int? trekCount,
+      @JsonKey(name: 'has_treks') bool? available});
+}
+
+/// @nodoc
+class _$TrekDatesModelCopyWithImpl<$Res, $Val extends TrekDatesModel>
+    implements $TrekDatesModelCopyWith<$Res> {
+  _$TrekDatesModelCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? date = freezed,
+    Object? trekCount = freezed,
+    Object? available = freezed,
+  }) {
+    return _then(_value.copyWith(
+      date: freezed == date
+          ? _value.date
+          : date // ignore: cast_nullable_to_non_nullable
+              as String?,
+      trekCount: freezed == trekCount
+          ? _value.trekCount
+          : trekCount // ignore: cast_nullable_to_non_nullable
+              as int?,
+      available: freezed == available
+          ? _value.available
+          : available // ignore: cast_nullable_to_non_nullable
+              as bool?,
+    ) as $Val);
+  }
+}
+
+/// @nodoc
+abstract class _$$TrekDatesModelImplCopyWith<$Res>
+    implements $TrekDatesModelCopyWith<$Res> {
+  factory _$$TrekDatesModelImplCopyWith(_$TrekDatesModelImpl value,
+          $Res Function(_$TrekDatesModelImpl) then) =
+      __$$TrekDatesModelImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call(
+      {String? date,
+      @JsonKey(name: 'trek_count') int? trekCount,
+      @JsonKey(name: 'has_treks') bool? available});
+}
+
+/// @nodoc
+class __$$TrekDatesModelImplCopyWithImpl<$Res>
+    extends _$TrekDatesModelCopyWithImpl<$Res, _$TrekDatesModelImpl>
+    implements _$$TrekDatesModelImplCopyWith<$Res> {
+  __$$TrekDatesModelImplCopyWithImpl(
+      _$TrekDatesModelImpl _value, $Res Function(_$TrekDatesModelImpl) _then)
+      : super(_value, _then);
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? date = freezed,
+    Object? trekCount = freezed,
+    Object? available = freezed,
+  }) {
+    return _then(_$TrekDatesModelImpl(
+      date: freezed == date
+          ? _value.date
+          : date // ignore: cast_nullable_to_non_nullable
+              as String?,
+      trekCount: freezed == trekCount
+          ? _value.trekCount
+          : trekCount // ignore: cast_nullable_to_non_nullable
+              as int?,
+      available: freezed == available
+          ? _value.available
+          : available // ignore: cast_nullable_to_non_nullable
+              as bool?,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$TrekDatesModelImpl implements _TrekDatesModel {
+  const _$TrekDatesModelImpl(
+      {this.date,
+      @JsonKey(name: 'trek_count') this.trekCount,
+      @JsonKey(name: 'has_treks') this.available});
+
+  factory _$TrekDatesModelImpl.fromJson(Map<String, dynamic> json) =>
+      _$$TrekDatesModelImplFromJson(json);
+
+  @override
+  final String? date;
+  @override
+  @JsonKey(name: 'trek_count')
+  final int? trekCount;
+  @override
+  @JsonKey(name: 'has_treks')
+  final bool? available;
+
+  @override
+  String toString() {
+    return 'TrekDatesModel(date: $date, trekCount: $trekCount, available: $available)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$TrekDatesModelImpl &&
+            (identical(other.date, date) || other.date == date) &&
+            (identical(other.trekCount, trekCount) ||
+                other.trekCount == trekCount) &&
+            (identical(other.available, available) ||
+                other.available == available));
+  }
+
+  @JsonKey(ignore: true)
+  @override
+  int get hashCode => Object.hash(runtimeType, date, trekCount, available);
+
+  @JsonKey(ignore: true)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$TrekDatesModelImplCopyWith<_$TrekDatesModelImpl> get copyWith =>
+      __$$TrekDatesModelImplCopyWithImpl<_$TrekDatesModelImpl>(
+          this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$TrekDatesModelImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _TrekDatesModel implements TrekDatesModel {
+  const factory _TrekDatesModel(
+          {final String? date,
+          @JsonKey(name: 'trek_count') final int? trekCount,
+          @JsonKey(name: 'has_treks') final bool? available}) =
+      _$TrekDatesModelImpl;
+
+  factory _TrekDatesModel.fromJson(Map<String, dynamic> json) =
+      _$TrekDatesModelImpl.fromJson;
+
+  @override
+  String? get date;
+  @override
+  @JsonKey(name: 'trek_count')
+  int? get trekCount;
+  @override
+  @JsonKey(name: 'has_treks')
+  bool? get available;
+  @override
+  @JsonKey(ignore: true)
+  _$$TrekDatesModelImplCopyWith<_$TrekDatesModelImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
 FetchTreksResponseModel _$FetchTreksResponseModelFromJson(
     Map<String, dynamic> json) {
   return _FetchTreksResponseModel.fromJson(json);

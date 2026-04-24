@@ -42,7 +42,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
   List<String> filteredStates = [];
 
   bool _whatsappUpdates = false;
-  String _selectedPaymentOption = "full";
+  String _selectedPaymentOption = "standard";
 
   final GlobalKey _checkboxKey = GlobalKey();
   OverlayEntry? _overlayEntry;
@@ -2338,7 +2338,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                               width: 100.w,
                               decoration: BoxDecoration(
                                 border: Border.all(
-                                  color: _selectedPaymentOption == 'partial'
+                                  color: _selectedPaymentOption == 'flexible'
                                       ? CommonColors.blueColor
                                       : Color(0xFF878787),
                                 ),
@@ -2350,7 +2350,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                                 child: InkWell(
                                   onTap: () {
                                     setState(() {
-                                      _selectedPaymentOption = 'partial';
+                                      _selectedPaymentOption = 'flexible';
                                     });
                                   },
                                   child: Container(
@@ -2431,13 +2431,13 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                                             shape: BoxShape.circle,
                                             gradient:
                                             _selectedPaymentOption ==
-                                                'partial'
+                                                'flexible'
                                                 ? CommonColors
                                                 .radioBtnGradient
                                                 : null,
                                             border:
                                             _selectedPaymentOption ==
-                                                'partial'
+                                                'flexible'
                                                 ? null
                                                 : Border.all(
                                               color:
@@ -2472,7 +2472,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                             width: 100.w,
                             decoration: BoxDecoration(
                               border: Border.all(
-                                color: _selectedPaymentOption == 'full'
+                                color: _selectedPaymentOption == 'standard'
                                     ? CommonColors.blueColor
                                     : Color(0xFF878787),
                               ),
@@ -2484,7 +2484,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                               child: InkWell(
                                 onTap: () {
                                   setState(() {
-                                    _selectedPaymentOption = 'full';
+                                    _selectedPaymentOption = 'standard';
                                   });
                                 },
                                 child: Container(
@@ -2558,11 +2558,11 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                                         decoration: BoxDecoration(
                                           shape: BoxShape.circle,
                                           gradient: _selectedPaymentOption ==
-                                              'full'
+                                              'standard'
                                               ? CommonColors.radioBtnGradient
                                               : null,
                                           border: _selectedPaymentOption ==
-                                              'full'
+                                              'standard'
                                               ? null
                                               : Border.all(
                                             color:
@@ -2572,7 +2572,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                                           color: Colors.white,
                                         ),
                                         child: _selectedPaymentOption ==
-                                            'full'
+                                            'standard'
                                             ? Center(
                                           child: Container(
                                             width: 2.w,

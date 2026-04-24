@@ -5,6 +5,46 @@ part 'treks_model_data.g.dart';
 
 
 @freezed
+class CalenderDatesResponseModel with _$CalenderDatesResponseModel {
+  const factory CalenderDatesResponseModel({
+    bool? success,
+    String? message,
+    CalenderDataModel? data,
+    int? count
+  }) = _CalenderDatesResponseModel;
+
+  factory CalenderDatesResponseModel.fromJson(Map<String, dynamic> json) =>
+      _$CalenderDatesResponseModelFromJson(json);
+}
+
+
+@freezed
+class CalenderDataModel with _$CalenderDataModel {
+  const factory CalenderDataModel({
+    @JsonKey(name: 'start_date') String? startDate,
+    @JsonKey(name: 'end_date') String? endDate,
+    List<TrekDatesModel>? dates,
+    @JsonKey(name: 'total_dates_with_treks') int? totalDatesWithTreks,
+  }) = _CalenderDataModel;
+
+  factory CalenderDataModel.fromJson(Map<String, dynamic> json) =>
+      _$CalenderDataModelFromJson(json);
+}
+
+@freezed
+class TrekDatesModel with _$TrekDatesModel {
+  const factory TrekDatesModel({
+    String? date,
+    @JsonKey(name: 'trek_count') int? trekCount,
+    @JsonKey(name: 'has_treks') bool? available
+  }) = _TrekDatesModel;
+
+  factory TrekDatesModel.fromJson(Map<String, dynamic> json) =>
+      _$TrekDatesModelFromJson(json);
+}
+
+
+@freezed
 class FetchTreksResponseModel with _$FetchTreksResponseModel {
   const factory FetchTreksResponseModel({
     bool? success,

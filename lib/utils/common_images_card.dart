@@ -1,5 +1,5 @@
 import 'package:arobo_app/repository/network_url.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:arobo_app/widgets/custom_network_image.dart';
 import 'package:flutter/material.dart';
 
 class CommonImageCard extends StatelessWidget {
@@ -43,13 +43,10 @@ class CommonImageCard extends StatelessWidget {
   Widget _buildImage(String image) {
     final url =
         '${NetworkUrl.imageUrl}${image.startsWith('/') ? image.substring(1) : image}';
-    return CachedNetworkImage(
+    return CustomNetworkImage(
       imageUrl: url,
       width: width,
-      height: height,
-      fit: fit,
-      placeholder: (context, url) => _buildLoadingPlaceholder(),
-      errorWidget: (context, url, error) => _buildErrorPlaceholder(),
+      height: height
     );
   }
 

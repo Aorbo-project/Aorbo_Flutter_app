@@ -56,6 +56,14 @@ class NetworkUrl {
   ) =>
       'treks?city_id=$cityId&destination_id=$destinationId&start_date=$startDate';
 
+  static String searchCalenderTrekDates(
+      String cityId,
+      String destinationId,
+      String startDate,
+      String endDate
+      ) =>
+      'treks/calendar-dates?start_date=$startDate&end_date=$endDate';
+
   static const String getTrekDetail = 'treks/';
 
   static String getTrekBatches(int trekId) => 'treks/$trekId/batches';
