@@ -19,6 +19,7 @@ import '../utils/common_btn.dart';
 import '../utils/screen_constants.dart';
 import 'dart:math' as math;
 import 'package:intl/intl.dart';
+import '../widgets/cancellation_policy_widget.dart';
 
 import '../widgets/custom_network_image.dart';
 
@@ -910,189 +911,14 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
     );
   }
 
-  Widget _buildCancellationPoliciesTab() {
-    if (_trekControllerC.trekDetailData.value.cancellationPolicy != null &&
-        _trekControllerC
-            .trekDetailData
-            .value
-            .cancellationPolicy!
-            .rules!
-            .isNotEmpty) {
-      return Container(
-        width: 95.w,
-        decoration: BoxDecoration(
-          color: CommonColors.whiteColor,
-          borderRadius: BorderRadius.circular(3.8.w),
-          boxShadow: [
-            BoxShadow(
-              color: CommonColors.blackColor.withValues(alpha: 0.1),
-              spreadRadius: 0,
-              blurRadius: 2.w,
-              offset: Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Container(
-          width: 85.w,
-          margin: EdgeInsets.only(left: 5.w, right: 5.w, top: 2.h, bottom: 2.h),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Cancellation Policy',
-                textScaler: const TextScaler.linear(1.0),
-                style: GoogleFonts.poppins(
-                  fontSize: FontSize.s17,
-                  fontWeight: FontWeight.w600,
-                  color: CommonColors.trek_route_color,
-                ),
-              ),
-              const SizedBox(height: 25),
-
-              // Headers
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Before departure',
-                    textScaler: const TextScaler.linear(1.0),
-                    style: GoogleFonts.poppins(
-                      fontSize: FontSize.s10,
-                      fontWeight: FontWeight.w600,
-                      color: CommonColors.blackColor,
-                    ),
-                  ),
-                  Text(
-                    'Deduction',
-                    textScaler: const TextScaler.linear(1.0),
-                    style: GoogleFonts.poppins(
-                      fontSize: FontSize.s10,
-                      fontWeight: FontWeight.w600,
-                      color: CommonColors.blackColor,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 21),
-
-              // Caifncellation time windows
-              ListView.builder(
-                shrinkWrap: true,
-                itemCount: _trekControllerC
-                    .trekDetailData
-                    .value
-                    .cancellationPolicy
-                    ?.rules
-                    ?.length,
-                physics: NeverScrollableScrollPhysics(),
-                itemBuilder: (context, index) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 24),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            _trekControllerC
-                                    .trekDetailData
-                                    .value
-                                    .cancellationPolicy
-                                    ?.rules?[index]
-                                    .rule ??
-                                '-',
-                            textScaler: const TextScaler.linear(1.0),
-                            style: GoogleFonts.poppins(
-                              fontSize: FontSize.s9,
-                              fontWeight: FontWeight.w500,
-                              color: CommonColors.greyTextColor,
-                            ),
-                          ),
-                        ),
-                        Text(
-                          '${_trekControllerC.trekDetailData.value.cancellationPolicy?.rules?[index].deductionType == 'fixed' ? '₹' : ''}${_trekControllerC.trekDetailData.value.cancellationPolicy?.rules?[index].deduction}${_trekControllerC.trekDetailData.value.cancellationPolicy?.rules?[index].deductionType == 'percentage' ? '%' : ''}',
-                          textScaler: const TextScaler.linear(1.0),
-                          style: GoogleFonts.poppins(
-                            fontSize: FontSize.s9,
-                            fontWeight: FontWeight.w500,
-                            color: CommonColors.greyTextColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: 8),
-
-              // Notes section
-              // ..._trekControllerC.trekDetailData.value.cancellationPolicies!
-              //     .map((note) =>
-              //     .toList(),
-              // if (_trekControllerC.trekDetailData.value.cancellationPolicies !=
-              //         null &&
-              //     _trekControllerC
-              //         .trekDetailData.value.cancellationPolicies!.isNotEmpty)
-              ListView.builder(
-                itemCount: _trekControllerC
-                    .trekDetailData
-                    .value
-                    .cancellationPolicy!
-                    .descriptionPoints!
-                    .length,
-                physics: NeverScrollableScrollPhysics(),
-                shrinkWrap: true,
-                itemBuilder: (context, index) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(top: 2),
-                          child: Icon(
-                            Icons.star,
-                            size: 10,
-                            color: CommonColors.blackColor.withValues(
-                              alpha: 0.6,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 20),
-                        Expanded(
-                          child: Text(
-                            _trekControllerC
-                                    .trekDetailData
-                                    .value
-                                    .cancellationPolicy!
-                                    .descriptionPoints?[index]
-                                    .toString() ??
-                                '-',
-                            textScaler: const TextScaler.linear(1.0),
-                            style: GoogleFonts.poppins(
-                              fontSize: FontSize.s7,
-                              fontWeight: FontWeight.w400,
-                              color: CommonColors.blackColor.withValues(
-                                alpha: 0.7,
-                              ),
-                              height: 1.5,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-    return Container();
-  }
+    Widget _buildCancellationPoliciesTab() {
+  final departure = _trekControllerC.trekDetailData.value.departureDateTimeFromStages;
+  return CancellationPolicyCard(
+    departureDate: departure?.toIso8601String(),
+    basePrice: _trekControllerC.trekDetailData.value.basePrice,
+    bookingType: _trekControllerC.trekDetailData.value.bookingType,
+  );
+}
 
   Widget _buildOtherPoliciesTab() {
     final rules = _trekControllerC.trekDetailData.value.trekkingRules;
