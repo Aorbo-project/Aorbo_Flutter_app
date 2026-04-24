@@ -50,11 +50,10 @@ class NetworkUrl {
 
   // Trek search & detail
   static String searchTrek(
-    String cityId,
-    String destinationId,
-    String startDate,
-  ) =>
-      'treks?city_id=$cityId&destination_id=$destinationId&start_date=$startDate';
+  String cityId,
+  String destinationId,
+  String startDate,
+) => 'treks?city_id=$cityId&to_city_id=$destinationId&start_date=$startDate';
 
   static String searchCalenderTrekDates(
       String cityId,

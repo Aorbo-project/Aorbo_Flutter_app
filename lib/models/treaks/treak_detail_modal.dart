@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart';
 // class TrekDetailModal {
 //   bool? success;
 //   TrekDetailData? data;
@@ -693,7 +694,31 @@ class TrekDetailData {
   CategoryRatings? categoryRatings;
   BatchInfo? batchInfo;
   CancellationPolicy? cancellationPolicy;
+  String? bookingType;   // "standard" or "flexible"
 
+     /// Returns the departure datetime from the first boarding point stage.
+  /// If no boarding stage is found, returns null.
+  DateTime? get departureDateTimeFromStages {
+    // Find the first stage where isBoardingPoint == true
+    for (final stage in trekStages ?? []) {
+      if (stage.isBoardingPoint == true && stage.dateTime != null) {
+        return _parseCustomDateTime(stage.dateTime!);
+      }
+    }
+    return null;
+  }
+
+  DateTime? _parseCustomDateTime(String dateTimeStr) {
+    // Try to parse "yyyy-MM-dd hh:mm a" format (e.g., 2026-05-09 12:00 PM)
+    try {
+      return DateFormat('yyyy-MM-dd hh:mm a').parse(dateTimeStr);
+    } catch (_) {}
+    // Fallback to default parse
+    try {
+      return DateTime.parse(dateTimeStr);
+    } catch (_) {}
+    return null;
+  }
   TrekDetailData(
       {this.cityIds,
       this.inclusions,
@@ -740,7 +765,9 @@ class TrekDetailData {
       this.latestReviews,
       this.categoryRatings,
       this.batchInfo,
-      this.cancellationPolicy});
+      this.cancellationPolicy,
+      this.bookingType
+      });
 
   TrekDetailData.fromJson(Map<String, dynamic> json) {
     cityIds = json['city_ids'].cast<int>();
@@ -833,6 +860,7 @@ class TrekDetailData {
     cancellationPolicy = json['cancellation_policy'] != null
         ? new CancellationPolicy.fromJson(json['cancellation_policy'])
         : null;
+        bookingType = json['booking_type'];
   }
 
   Map<String, dynamic> toJson() {
@@ -912,6 +940,7 @@ class TrekDetailData {
     if (this.cancellationPolicy != null) {
       data['cancellation_policy'] = this.cancellationPolicy!.toJson();
     }
+    data['booking_type'] = bookingType;
     return data;
   }
 }
