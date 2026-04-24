@@ -28,6 +28,9 @@ import 'package:shimmer_ai/shimmer_ai.dart';
 import 'package:sizer/sizer.dart';
 import 'package:arobo_app/utils/custom_snackbar.dart';
 import 'package:ntp/ntp.dart';
+import 'package:table_calendar/table_calendar.dart';
+
+import '../freezed_models/treks/treks_model_data.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
@@ -59,10 +62,15 @@ class _DashboardState extends State<Dashboard>
   bool _isTrekShortsUserInteracting = false;
   Timer? _trekShortsTimer;
   final PageController _trekShortsPageController = PageController(
-    viewportFraction: 0.38, // Balanced for better card visibility
+    viewportFraction: 0.38,
   );
   final DashboardController _dashboardC = Get.find<DashboardController>();
   final TrekController _trekC = Get.find<TrekController>();
+
+  // Calendar variables
+  CalendarFormat _calendarFormat = CalendarFormat.month;
+  DateTime _focusedDay = DateTime.now();
+  DateTime? _selectedDay;
 
   // Add new variables for weekend treks
   List<DateTime> _nearestWeekendDates = [];
@@ -84,6 +92,16 @@ class _DashboardState extends State<Dashboard>
         curve: Curves.easeInOut,
       ),
     );
+
+    // Add listener to refresh UI when calendar dates change
+    ever(_dashboardC.calenderTrekDatesObserver, (value) {
+      if (mounted) {
+        setState(() {
+          // This will trigger a rebuild of the UI
+        });
+      }
+    });
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) _scrollController.jumpTo(0);
       if (_knowMoreController.hasClients) _knowMoreController.jumpTo(0);
@@ -102,6 +120,9 @@ class _DashboardState extends State<Dashboard>
     _dashboardC.fetchTopTreks();
     _dashboardC.fetchShortsTreks();
     _dashboardC.fetchSeasonalForeCasts();
+
+    // Fetch calendar dates after NTP time is initialized
+    _fetchCalendarDates();
   }
 
   @override
@@ -150,11 +171,94 @@ class _DashboardState extends State<Dashboard>
       DateTime ntpTime = await NTP.now();
       setState(() {
         _ntpTime = ntpTime;
+        _focusedDay = ntpTime;
       });
     } catch (e) {
       // Fallback to device time if NTP fails
       setState(() {
         _ntpTime = DateTime.now();
+        _focusedDay = DateTime.now();
+      });
+    }
+  }
+
+  Future<void> _fetchCalendarDates() async {
+    // Wait for NTP time to be initialized
+    if (_ntpTime == null) {
+      await _initializeNTPTime();
+    }
+
+    final DateTime currentDate = _ntpTime ?? DateTime.now();
+    final DateTime threeMonthsLater = currentDate.add(const Duration(days: 90));
+
+    // Format dates for API
+    final String startDateStr = DateFormat('yyyy-MM-dd').format(currentDate);
+    final String endDateStr = DateFormat('yyyy-MM-dd').format(threeMonthsLater);
+
+    // Fetch calendar dates
+    await _dashboardC.fetchCalenderTrekDates(
+      statDate: startDateStr,
+      endDate: endDateStr,
+    );
+
+    // Process available dates from response
+    _dashboardC.calenderTrekDatesObserver.value.when(
+      success: (response) {
+        if (response.data != null && response.data!.dates != null) {
+          _dashboardC.availableDates.clear();
+          for (var dateData in response.data!.dates!) {
+            _dashboardC.availableDates[dateData.date] = dateData.trekCount ?? 0;
+          }
+          _dashboardC.availableDates.refresh(); // Force refresh
+        }
+
+        // After fetching dates, update selected date to first available date if current date has no treks
+        _updateSelectedDateToFirstAvailable();
+        if (mounted) setState(() {}); // Force UI rebuild
+      },
+      error: (error) {
+        log('Error fetching calendar dates: $error');
+      },
+      loading: (data) {},
+      init: () {},
+    );
+  }
+
+  // Helper method to find first available date
+  DateTime? _getFirstAvailableDate(DateTime startDate, DateTime endDate) {
+    for (int i = 0; i <= endDate.difference(startDate).inDays; i++) {
+      DateTime checkDate = startDate.add(Duration(days: i));
+      if (_dashboardC.isDateAvailable(checkDate)) {
+        return checkDate;
+      }
+    }
+    return null;
+  }
+
+  void _updateSelectedDateToFirstAvailable() {
+    if (_ntpTime == null) return;
+
+    final DateTime currentDate = _ntpTime!;
+    final DateTime threeMonthsLater = currentDate.add(const Duration(days: 90));
+
+    // Check if current date has treks
+    if (!_dashboardC.isDateAvailable(currentDate)) {
+      // Find first available date
+      DateTime? firstAvailableDate = _getFirstAvailableDate(currentDate, threeMonthsLater);
+
+      if (firstAvailableDate != null) {
+        setState(() {
+          _dashboardC.selectedDate.value = firstAvailableDate;
+          _dashboardC.dateController.value.text =
+              DateFormat('dd/MM/yyyy').format(firstAvailableDate);
+          _selectedDay = firstAvailableDate;
+          _focusedDay = firstAvailableDate;
+          _updateNearestWeekendDates();
+        });
+      }
+    } else {
+      setState(() {
+        _selectedDay = currentDate;
       });
     }
   }
@@ -173,74 +277,428 @@ class _DashboardState extends State<Dashboard>
       currentTime.day,
     );
 
-    final DateTime? picked = await showDatePicker(
+    final DateTime threeMonthsLater = normalizedCurrentTime.add(const Duration(days: 90));
+
+    // Show custom date picker dialog
+    await _showCustomDatePicker(
+      context,
+      normalizedCurrentTime,
+      threeMonthsLater,
+    );
+  }
+
+  Future<void> _showCustomDatePicker(
+      BuildContext context,
+      DateTime firstDate,
+      DateTime lastDate,
+      ) async {
+    DateTime tempSelectedDate = _dashboardC.selectedDate.value ?? firstDate;
+    DateTime tempFocusedDay = _focusedDay;
+    CalendarFormat tempCalendarFormat = _calendarFormat;
+
+    final result = await showModalBottomSheet<DateTime>(
       context: context,
-      initialDate: _dashboardC.selectedDate.value ?? normalizedCurrentTime,
-      firstDate: normalizedCurrentTime,
-      lastDate: normalizedCurrentTime.add(const Duration(days: 365)),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: CommonColors.appBgColor,
-              onPrimary: CommonColors.whiteColor,
-              onSurface: CommonColors.blackColor,
-            ),
-          ),
-          child: child!,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.85,
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.85,
+                minHeight: 400,
+              ),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Select Departure Date',
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '📅 Green dates have available treks',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Flexible(
+                    flex: 1,
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        return Obx(() {
+                          final isLoading = _dashboardC.calenderTrekDatesObserver.value.maybeWhen(
+                            loading: (data) => true,
+                            orElse: () => false,
+                          );
+
+                          if (isLoading) {
+                            return const Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  CircularProgressIndicator(),
+                                  SizedBox(height: 16),
+                                  Text('Loading available dates...'),
+                                ],
+                              ),
+                            );
+                          }
+
+                          return SingleChildScrollView(
+                            physics: const BouncingScrollPhysics(),
+                            child: Container(
+                              constraints: BoxConstraints(
+                                minHeight: constraints.maxHeight,
+                              ),
+                              child: TableCalendar(
+                                firstDay: firstDate,
+                                lastDay: lastDate,
+                                focusedDay: tempFocusedDay,
+                                calendarFormat: tempCalendarFormat,
+                                availableCalendarFormats: const {
+                                  CalendarFormat.month: 'Month',
+                                },
+                                onFormatChanged: (format) {
+                                  setState(() {
+                                    tempCalendarFormat = format;
+                                  });
+                                },
+                                onDaySelected: (selectedDay, focusedDay) {
+                                  setState(() {
+                                    tempSelectedDate = selectedDay;
+                                    tempFocusedDay = focusedDay;
+                                  });
+                                },
+                                onPageChanged: (focusedDay) {
+                                  tempFocusedDay = focusedDay;
+                                },
+                                calendarStyle: CalendarStyle(
+                                  markersAlignment: Alignment.bottomCenter,
+                                  markerSize: 20,
+                                  defaultDecoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Colors.transparent,
+                                  ),
+                                  selectedDecoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: CommonColors.searchbtn,
+                                  ),
+                                  todayDecoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Colors.blue.shade100,
+                                  ),
+                                  weekendTextStyle: TextStyle(
+                                    color: Colors.red.shade400,
+                                  ),
+                                  defaultTextStyle: TextStyle(
+                                    color: Colors.black87,
+                                  ),
+                                  cellPadding: EdgeInsets.zero,
+                                  cellMargin: EdgeInsets.all(
+                                    MediaQuery.of(context).size.width * 0.01,
+                                  ),
+                                ),
+                                calendarBuilders: CalendarBuilders(
+                                  defaultBuilder: (context, day, focusedDay) {
+                                    final dateStr = DateFormat('yyyy-MM-dd').format(day);
+                                    final trekCount = _dashboardC.availableDates[dateStr];
+                                    final isAvailable = trekCount != null && trekCount > 0;
+
+                                    if (day == tempSelectedDate) {
+                                      return Container(
+                                        margin: EdgeInsets.all(
+                                          MediaQuery.of(context).size.width * 0.01,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: CommonColors.searchbtn,
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            '${day.day}',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: MediaQuery.of(context).size.width * 0.035,
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    }
+
+                                    return Container(
+                                      margin: EdgeInsets.all(
+                                        MediaQuery.of(context).size.width * 0.01,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: isAvailable
+                                            ? Colors.green.shade100
+                                            : Colors.transparent,
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          '${day.day}',
+                                          style: TextStyle(
+                                            color: isAvailable
+                                                ? Colors.green.shade900
+                                                : Colors.black87,
+                                            fontWeight: isAvailable
+                                                ? FontWeight.bold
+                                                : FontWeight.normal,
+                                            fontSize: MediaQuery.of(context).size.width * 0.035,
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  markerBuilder: (context, day, events) {
+                                    final dateStr = DateFormat('yyyy-MM-dd').format(day);
+                                    final trekCount = _dashboardC.availableDates[dateStr];
+
+                                    if (trekCount != null && trekCount > 0 && day != tempSelectedDate) {
+                                      return Positioned(
+                                        bottom: 2,
+                                        child: Container(
+                                          width: MediaQuery.of(context).size.width * 0.045,
+                                          height: MediaQuery.of(context).size.width * 0.036,
+                                          decoration: BoxDecoration(
+                                            color: Colors.green,
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Center(
+                                            child: Text(
+                                              '$trekCount',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: MediaQuery.of(context).size.width * 0.028,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                headerStyle: HeaderStyle(
+                                  formatButtonVisible: true,
+                                  titleCentered: true,
+                                  formatButtonShowsNext: false,
+                                  titleTextStyle: GoogleFonts.poppins(
+                                    fontSize: MediaQuery.of(context).size.width * 0.04,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  formatButtonTextStyle: GoogleFonts.poppins(
+                                    fontSize: MediaQuery.of(context).size.width * 0.032,
+                                    color: CommonColors.searchbtn,
+                                  ),
+                                  leftChevronIcon: Icon(
+                                    Icons.chevron_left,
+                                    color: CommonColors.searchbtn,
+                                    size: MediaQuery.of(context).size.width * 0.06,
+                                  ),
+                                  rightChevronIcon: Icon(
+                                    Icons.chevron_right,
+                                    color: CommonColors.searchbtn,
+                                    size: MediaQuery.of(context).size.width * 0.06,
+                                  ),
+                                  headerPadding: const EdgeInsets.symmetric(vertical: 8),
+                                ),
+                                daysOfWeekStyle: DaysOfWeekStyle(
+                                  weekdayStyle: GoogleFonts.poppins(
+                                    fontSize: MediaQuery.of(context).size.width * 0.032,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                  weekendStyle: GoogleFonts.poppins(
+                                    fontSize: MediaQuery.of(context).size.width * 0.032,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.red.shade400,
+                                  ),
+                                  dowTextFormatter: (date, locale) {
+                                    return DateFormat.E(locale).format(date).substring(0, 2);
+                                  },
+                                ),
+                              ),
+                            ),
+                          );
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Obx(() {
+                    if (_dashboardC.isDateAvailable(tempSelectedDate)) {
+                      int trekCount = _dashboardC.getTrekCountForDate(tempSelectedDate);
+                      return Container(
+                        padding: EdgeInsets.all(
+                          MediaQuery.of(context).size.width * 0.03,
+                        ),
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.green.withOpacity(0.3)),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.check_circle, color: Colors.green, size: 20),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${DateFormat('EEEE, MMM d, yyyy').format(tempSelectedDate)}',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: MediaQuery.of(context).size.width * 0.035,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Text(
+                                    '$trekCount trek${trekCount > 1 ? 's' : ''} available',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: MediaQuery.of(context).size.width * 0.03,
+                                      color: Colors.green[700],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    } else if (tempSelectedDate != _dashboardC.selectedDate.value) {
+                      return Container(
+                        padding: EdgeInsets.all(
+                          MediaQuery.of(context).size.width * 0.03,
+                        ),
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.warning, color: Colors.orange, size: 20),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'No treks available on this date. Please select another date.',
+                                style: GoogleFonts.poppins(
+                                  fontSize: MediaQuery.of(context).size.width * 0.03,
+                                  color: Colors.orange[700],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                    return const SizedBox();
+                  }),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: OutlinedButton.styleFrom(
+                            padding: EdgeInsets.symmetric(
+                              vertical: MediaQuery.of(context).size.height * 0.012,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: Text(
+                            'Cancel',
+                            style: GoogleFonts.poppins(
+                              fontSize: MediaQuery.of(context).size.width * 0.035,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            if (_dashboardC.isDateAvailable(tempSelectedDate)) {
+                              setState(() {
+                                _dashboardC.selectedDate.value = tempSelectedDate;
+                                _dashboardC.dateController.value.text =
+                                    DateFormat('dd/MM/yyyy').format(tempSelectedDate);
+                                _selectedDay = tempSelectedDate;
+                                _focusedDay = tempFocusedDay;
+                                _calendarFormat = tempCalendarFormat;
+                                _updateNearestWeekendDates();
+                              });
+                              Navigator.pop(context, tempSelectedDate);
+                            } else {
+                              CustomSnackBar.show(
+                                context,
+                                message: 'No treks available on this date. Please select another date.',
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: CommonColors.searchbtn,
+                            padding: EdgeInsets.symmetric(
+                              vertical: MediaQuery.of(context).size.height * 0.012,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: Text(
+                            'Select',
+                            style: GoogleFonts.poppins(
+                              fontSize: MediaQuery.of(context).size.width * 0.035,
+                              color: CommonColors.searchbtntext,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
+                ],
+              ),
+            );
+          },
         );
       },
     );
-
-    if (picked != null && picked != _dashboardC.selectedDate.value) {
-      // Normalize picked date to start of day for comparison
-      final DateTime normalizedPicked = DateTime(
-        picked.year,
-        picked.month,
-        picked.day,
-      );
-
-      // Compare normalized dates
-      if (normalizedPicked.isBefore(normalizedCurrentTime)) {
-        CustomSnackBar.show(
-          context,
-          message: 'Please select today or a future date',
-        );
-        return;
-      }
-
-      setState(() {
-        _dashboardC.selectedDate.value = picked;
-        _dashboardC.dateController.value.text =
-            DateFormat('dd/MM/yyyy').format(picked);
-        _updateNearestWeekendDates();
-      });
-    }
   }
-
-  // void _clearFromField() {
-  //   setState(() {
-  //     _fromController.clear();
-  //   });
-  // }
-
-  // void _clearToField() {
-  //   setState(() {
-  //     _toController.clear();
-  //   });
-  // }
 
   Future<void> _selectSourceLocation() async {
     final City? selectedCity = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => SourceLocationScreen(
-          // hintText: "Search Source Location",
-          // title: "Popular Cities",
-          // locationType: LocationType.city,
-          // popularCities: popularCities,
-          // allCities: allCities,
-        ),
+        builder: (context) => SourceLocationScreen(),
       ),
     );
 
@@ -255,13 +713,7 @@ class _DashboardState extends State<Dashboard>
     final dynamic selectedTrek = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => SourceLocationScreen(
-          // hintText: "Search Destination Location",
-          // title: "Popular Treks",
-          // locationType: LocationType.trek,
-          // popularCities: popularTreks.map((t) => City(name: t.name)).toList(),
-          // allCities: allTreks.map((t) => City(name: t.name)).toList(),
-        ),
+        builder: (context) => SourceLocationScreen(),
       ),
     );
 
@@ -313,7 +765,6 @@ class _DashboardState extends State<Dashboard>
           return;
         }
 
-        // Check if the current context is valid and the widget is still visible
         if (ModalRoute.of(context)?.isCurrent ?? false) {
           if (_pageController.hasClients) {
             _pageController.nextPage(
@@ -347,28 +798,23 @@ class _DashboardState extends State<Dashboard>
     });
   }
 
-  // Add method to toggle favorite state
   void _toggleFavorite(String trekTitle) {
     setState(() {
       _favoriteTreks[trekTitle] = !(_favoriteTreks[trekTitle] ?? false);
-
-      // Update the topTreksCardsData list
       final trekIndex =
-          topTreksCardsData.indexWhere((trek) => trek['title'] == trekTitle);
+      topTreksCardsData.indexWhere((trek) => trek['title'] == trekTitle);
       if (trekIndex != -1) {
         topTreksCardsData[trekIndex]['isFavorite'] = _favoriteTreks[trekTitle];
       }
     });
   }
 
-  // Function to get nearest weekend dates
   void _updateNearestWeekendDates() {
     if (_dashboardC.selectedDate.value == null) return;
 
     _nearestWeekendDates.clear();
     DateTime currentDate = _dashboardC.selectedDate.value!;
 
-    // Ensure we're not looking at dates before NTP time
     if (_ntpTime != null) {
       final DateTime normalizedNTPTime = DateTime(
         _ntpTime!.year,
@@ -386,39 +832,22 @@ class _DashboardState extends State<Dashboard>
       }
     }
 
-    // Find the next Thursday, Friday, and Saturday
-    for (int i = 0; i < 7; i++) {
+    // Find the next available Thursday, Friday, and Saturday
+    for (int i = 0; i < 14; i++) {
       DateTime checkDate = currentDate.add(Duration(days: i));
-      // Thursday = 4, Friday = 5, Saturday = 6
       if ([4, 5, 6].contains(checkDate.weekday)) {
-        _nearestWeekendDates.add(checkDate);
+        if (_dashboardC.isDateAvailable(checkDate)) {
+          _nearestWeekendDates.add(checkDate);
+        }
       }
+      if (_nearestWeekendDates.length >= 3) break;
     }
   }
 
   bool get _isFormValid =>
       _dashboardC.fromController.value.text.isNotEmpty &&
-      _dashboardC.toController.value.text.isNotEmpty &&
-      _dashboardC.dateController.value.text.isNotEmpty;
-
-  LinearGradient _getGradientByName(String name) {
-    switch (name) {
-      case 'gradientYellow':
-        return CommonColors.gradientYellow;
-      case 'gradientDarkRed':
-        return CommonColors.gradientDarkRed;
-      case 'gradientTeal':
-        return CommonColors.gradientTeal;
-      case 'gradientOrange':
-        return CommonColors.gradientOrange;
-      case 'gradientBlue':
-        return CommonColors.gradientBlue;
-      case 'gradientGreen':
-        return CommonColors.gradientGreen;
-      default:
-        return CommonColors.gradientYellow;
-    }
-  }
+          _dashboardC.toController.value.text.isNotEmpty &&
+          _dashboardC.dateController.value.text.isNotEmpty;
 
   @override
   Widget build(BuildContext context) {
@@ -435,29 +864,30 @@ class _DashboardState extends State<Dashboard>
               elevation: 2,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(18),
-                    bottomRight: Radius.circular(18)),
+                  bottomLeft: Radius.circular(18),
+                  bottomRight: Radius.circular(18),
+                ),
               ),
               margin: EdgeInsets.only(left: 0, right: 0, top: 0, bottom: 5),
               child: Container(
                 decoration: BoxDecoration(
                   gradient: CommonColors.homeScreenBgGradient,
                   borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(18),
-                      bottomRight: Radius.circular(18)),
+                    bottomLeft: Radius.circular(18),
+                    bottomRight: Radius.circular(18),
+                  ),
                 ),
                 child: SafeArea(
                   bottom: false,
                   child: Padding(
                     padding:
-                        EdgeInsets.symmetric(horizontal: ScreenConstant.size16),
+                    EdgeInsets.symmetric(horizontal: ScreenConstant.size16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         SizedBox(height: ScreenConstant.size20),
                         // Location and Profile Row
                         Container(
-                          // color: Colors.red,
                           margin: EdgeInsets.only(left: 18, right: 18),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -469,24 +899,6 @@ class _DashboardState extends State<Dashboard>
                                     height: 7.h,
                                     width: 30.w,
                                   ),
-                                  // SvgPicture.asset(
-                                  //   CommonImages.logo2,
-                                  //   // colorFilter: ColorFilter.mode(
-                                  //   //     CommonColors.blackColor,
-                                  //   //     BlendMode.srcIn),
-                                  //   height: ScreenConstant.size21,
-                                  //   width: ScreenConstant.size21,
-                                  // ),
-                                  // SizedBox(width: ScreenConstant.size8),
-                                  // Text(
-                                  //   'Hyderabad',
-                                  //   textScaler: const TextScaler.linear(1.0),
-                                  //   style: TextStyle(
-                                  //     color: CommonColors.whiteColor,
-                                  //     fontSize: FontSize.s14,
-                                  //     fontWeight: FontWeight.w500,
-                                  //   ),
-                                  // ),
                                 ],
                               ),
                               GestureDetector(
@@ -509,7 +921,6 @@ class _DashboardState extends State<Dashboard>
                         Center(
                           child: Text(
                             'Hike Beyond Limits with',
-                            // textScaler: const TextScaler.linear(1.0),
                             style: TextStyle(
                               fontSize: FontSize.s14,
                               color: CommonColors.whiteColor,
@@ -520,22 +931,21 @@ class _DashboardState extends State<Dashboard>
                         SizedBox(height: ScreenConstant.size27),
                         // Search Card
                         Container(
-                          // height: 24.h,
-                          // color: Colors.red,
                           margin: EdgeInsets.only(left: 30, right: 30),
                           child: Card(
                             color: CommonColors.whiteColor,
                             shape: RoundedRectangleBorder(
                               borderRadius:
-                                  BorderRadius.circular(ScreenConstant.size20),
+                              BorderRadius.circular(ScreenConstant.size20),
                             ),
                             elevation: 3,
                             child: Padding(
                               padding: EdgeInsets.only(
-                                  left: ScreenConstant.size25,
-                                  right: ScreenConstant.size25,
-                                  top: ScreenConstant.size20,
-                                  bottom: ScreenConstant.size16),
+                                left: ScreenConstant.size25,
+                                right: ScreenConstant.size25,
+                                top: ScreenConstant.size20,
+                                bottom: ScreenConstant.size16,
+                              ),
                               child: Column(
                                 children: [
                                   // From Field
@@ -547,7 +957,7 @@ class _DashboardState extends State<Dashboard>
                                             onTap: _selectSourceLocation,
                                             child: Padding(
                                               padding:
-                                                  EdgeInsets.only(right: 8),
+                                              EdgeInsets.only(right: 8),
                                               child: SvgPicture.asset(
                                                 CommonImages.location3,
                                                 height: ScreenConstant.size24,
@@ -565,32 +975,30 @@ class _DashboardState extends State<Dashboard>
                                                   data: MediaQuery.of(context)
                                                       .copyWith(
                                                     textScaler:
-                                                        const TextScaler.linear(
-                                                            1.0),
+                                                    const TextScaler.linear(
+                                                        1.0),
                                                   ),
                                                   child: TextFormField(
                                                     controller: _dashboardC
                                                         .fromController.value,
                                                     readOnly: true,
                                                     onTap:
-                                                        _selectSourceLocation,
+                                                    _selectSourceLocation,
                                                     decoration: InputDecoration(
                                                       border: InputBorder.none,
                                                       hintText: 'From',
                                                       hintStyle:
-                                                          GoogleFonts.poppins(
+                                                      GoogleFonts.poppins(
                                                         fontSize: FontSize.s14,
                                                         fontWeight:
-                                                            FontWeight.w500,
+                                                        FontWeight.w500,
                                                         color: CommonColors
                                                             .blackColor
-                                                            .withValues(
-                                                          alpha: 0.5,
-                                                        ),
+                                                            .withOpacity(0.5),
                                                       ),
                                                       contentPadding:
-                                                          EdgeInsets.only(
-                                                              right: 36),
+                                                      EdgeInsets.only(
+                                                          right: 36),
                                                     ),
                                                   ),
                                                 ),
@@ -602,7 +1010,7 @@ class _DashboardState extends State<Dashboard>
                                       Positioned.fill(
                                         child: TouchRipple(
                                           rippleColor: CommonColors.blackColor
-                                              .withValues(alpha: 0.1),
+                                              .withOpacity(0.1),
                                           onTap: _selectSourceLocation,
                                           child: Container(
                                             decoration: BoxDecoration(
@@ -623,7 +1031,7 @@ class _DashboardState extends State<Dashboard>
                                             onTap: _selectDestinationTrek,
                                             child: Padding(
                                               padding:
-                                                  EdgeInsets.only(right: 8),
+                                              EdgeInsets.only(right: 8),
                                               child: SvgPicture.asset(
                                                 CommonImages.location2,
                                                 height: ScreenConstant.size24,
@@ -644,32 +1052,30 @@ class _DashboardState extends State<Dashboard>
                                                   data: MediaQuery.of(context)
                                                       .copyWith(
                                                     textScaler:
-                                                        const TextScaler.linear(
-                                                            1.0),
+                                                    const TextScaler.linear(
+                                                        1.0),
                                                   ),
                                                   child: TextFormField(
                                                     controller: _dashboardC
                                                         .toController.value,
                                                     readOnly: true,
                                                     onTap:
-                                                        _selectDestinationTrek,
+                                                    _selectDestinationTrek,
                                                     decoration: InputDecoration(
                                                       border: InputBorder.none,
                                                       hintText: 'To',
                                                       hintStyle:
-                                                          GoogleFonts.poppins(
+                                                      GoogleFonts.poppins(
                                                         fontSize: FontSize.s14,
                                                         fontWeight:
-                                                            FontWeight.w500,
+                                                        FontWeight.w500,
                                                         color: CommonColors
                                                             .blackColor
-                                                            .withValues(
-                                                          alpha: 0.5,
-                                                        ),
+                                                            .withOpacity(0.5),
                                                       ),
                                                       contentPadding:
-                                                          EdgeInsets.only(
-                                                              right: 36),
+                                                      EdgeInsets.only(
+                                                          right: 36),
                                                     ),
                                                   ),
                                                 ),
@@ -681,7 +1087,7 @@ class _DashboardState extends State<Dashboard>
                                       Positioned.fill(
                                         child: TouchRipple(
                                           rippleColor: CommonColors.blackColor
-                                              .withValues(alpha: 0.1),
+                                              .withOpacity(0.1),
                                           onTap: _selectDestinationTrek,
                                           child: Container(
                                             decoration: BoxDecoration(
@@ -698,7 +1104,7 @@ class _DashboardState extends State<Dashboard>
                                     children: [
                                       Row(
                                         crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                        CrossAxisAlignment.start,
                                         children: [
                                           GestureDetector(
                                             onTap: () => _selectDate(context),
@@ -715,70 +1121,231 @@ class _DashboardState extends State<Dashboard>
                                           SizedBox(
                                               width: ScreenConstant.size12),
                                           Expanded(
-                                            child: GestureDetector(
-                                              onTap: () => _selectDate(context),
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  SizedBox(height: 1.h),
-                                                  Text(
-                                                    'Departure Date',
-                                                    textScaler:
-                                                        const TextScaler.linear(
-                                                            1.0),
-                                                    style: GoogleFonts.poppins(
-                                                      color: CommonColors
-                                                          .grey_AEAEAE,
-                                                      fontSize: FontSize.s10,
-                                                    ),
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                SizedBox(height: 1.h),
+                                                Text(
+                                                  'Departure Date',
+                                                  textScaler: const TextScaler.linear(1.0),
+                                                  style: GoogleFonts.poppins(
+                                                    color: CommonColors.grey_AEAEAE,
+                                                    fontSize: FontSize.s10,
                                                   ),
-                                                  SizedBox(height: 0.2.h),
-                                                  Row(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .spaceBetween,
-                                                    children: [
-                                                      Obx(() => Text(
-                                                        _dashboardC
-                                                                .dateController
-                                                                .value
-                                                                .text
-                                                                .isNotEmpty
-                                                            ? _dashboardC
-                                                                .dateController
-                                                                .value
-                                                                .text
-                                                            : 'xx/xx/xxxx',
-                                                        textScaler:
-                                                            const TextScaler
-                                                                .linear(1.0),
-                                                        style: TextStyle(
-                                                          fontSize:
-                                                              FontSize.s10,
-                                                          color: CommonColors
-                                                              .blackColor,
+                                                ),
+                                                SizedBox(height: 0.2.h),
+
+                                                Obx(() {
+                                                  // Force rebuild when these values change
+                                                  final cityId = _dashboardC.selectedCityId.value;
+                                                  final trekId = _dashboardC.selectedTrekId.value;
+                                                  final selectedDateValue = _dashboardC.selectedDate.value;
+                                                  final dateText = _dashboardC.dateController.value.text;
+                                                  final observerState = _dashboardC.calenderTrekDatesObserver.value;
+
+                                                  // Check if city and trek are selected
+                                                  final bool isCityTrekSelected = cityId != 0 && trekId != 0;
+
+                                                  // If city/trek not selected, show placeholder
+                                                  if (!isCityTrekSelected) {
+                                                    return Padding(
+                                                      padding: const EdgeInsets.only(top: 4.0),
+                                                      child: Text(
+                                                        'Select source & destination first',
+                                                        style: GoogleFonts.poppins(
+                                                          fontSize: FontSize.s10,
+                                                          color: CommonColors.grey_AEAEAE,
+                                                          fontStyle: FontStyle.italic,
                                                         ),
-                                                      )),
+                                                      ),
+                                                    );
+                                                  }
+
+                                                  // If date is selected, show the selected date
+                                                  if (dateText.isNotEmpty) {
+                                                    bool isAvailable = selectedDateValue != null &&
+                                                        _dashboardC.isDateAvailable(selectedDateValue);
+
+                                                    return Column(
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      children: [
+                                                        Row(
+                                                          children: [
+                                                            Text(
+                                                              dateText,
+                                                              textScaler: const TextScaler.linear(1.0),
+                                                              style: TextStyle(
+                                                                fontSize: FontSize.s10,
+                                                                color: CommonColors.blackColor,
+                                                              ),
+                                                            ),
+                                                            if (selectedDateValue != null)
+                                                              Padding(
+                                                                padding: const EdgeInsets.only(left: 8.0),
+                                                                child: Icon(
+                                                                  isAvailable ? Icons.check_circle : Icons.warning,
+                                                                  size: 14,
+                                                                  color: isAvailable ? Colors.green : Colors.orange,
+                                                                ),
+                                                              ),
+                                                          ],
+                                                        ),
+                                                        // Show trek count if available
+                                                        if (selectedDateValue != null && _dashboardC.isDateAvailable(selectedDateValue))
+                                                          Padding(
+                                                            padding: const EdgeInsets.only(top: 4.0),
+                                                            child: Text(
+                                                              '${_dashboardC.getTrekCountForDate(selectedDateValue)} trek${_dashboardC.getTrekCountForDate(selectedDateValue) > 1 ? 's' : ''} available',
+                                                              style: GoogleFonts.poppins(
+                                                                fontSize: FontSize.s8,
+                                                                color: Colors.green,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                      ],
+                                                    );
+                                                  }
+
+                                                  // If no date selected, show available dates list
+                                                  final datesLoading = observerState.maybeWhen(
+                                                      loading: (data) => true,
+                                                      orElse: () => false
+                                                  );
+
+                                                  List<TrekDatesModel>? calenderTrekDates = observerState.maybeWhen(
+                                                    success: (calenderResponse) => (calenderResponse as CalenderDatesResponseModel).data?.dates,
+                                                    error: (sc) => [],
+                                                    orElse: () => [],
+                                                  );
+
+                                                  // Filter dates to only show today and future dates
+                                                  final DateTime now = _ntpTime ?? DateTime.now();
+                                                  final today = DateTime(now.year, now.month, now.day);
+
+                                                  List<TrekDatesModel> futureDates = (calenderTrekDates ?? []).where((dateData) {
+                                                    if (dateData.date == null) return false;
+                                                    DateTime date = DateTime.tryParse(dateData.date!) ?? DateTime.now();
+                                                    return date.isAfter(today.subtract(const Duration(days: 1)));
+                                                  }).toList();
+
+                                                  // Take first 10 dates
+                                                  List<TrekDatesModel> first10Dates = futureDates.take(10).toList();
+
+                                                  if (first10Dates.isEmpty) {
+                                                    return Padding(
+                                                      padding: const EdgeInsets.only(top: 8.0),
+                                                      child: Text(
+                                                        'No available dates found',
+                                                        style: GoogleFonts.poppins(
+                                                          fontSize: FontSize.s10,
+                                                          color: Colors.grey,
+                                                        ),
+                                                      ),
+                                                    );
+                                                  }
+
+                                                  return Column(
+                                                    children: [
+                                                      Container(
+                                                        margin: EdgeInsets.only(top: 1.h),
+                                                        height: 5.h,
+                                                        child: ListView.builder(
+                                                          key: ValueKey('date_list_${observerState.hashCode}_${first10Dates.length}'),
+                                                          scrollDirection: Axis.horizontal,
+                                                          physics: const BouncingScrollPhysics(),
+                                                          itemCount: first10Dates.length,
+                                                          itemBuilder: (context, index) {
+                                                            final cardData = first10Dates[index];
+                                                            if (cardData == null) return const SizedBox();
+
+                                                            DateTime date = DateTime.tryParse(cardData.date ?? "") ?? DateTime.now();
+                                                            String formattedDate = DateFormat('d MMM').format(date);
+                                                            bool isSelected = _dashboardC.selectedDate.value == date;
+                                                            bool isDateAvailable = _dashboardC.isDateAvailable(date);
+                                                            int trekCount = _dashboardC.getTrekCountForDate(date);
+
+                                                            return GestureDetector(
+                                                              onTap: () {
+                                                                if (isDateAvailable) {
+                                                                  // Select the date
+                                                                  _dashboardC.selectedDate.value = date;
+                                                                  _dashboardC.dateController.value.text =
+                                                                      DateFormat('dd/MM/yyyy').format(date);
+                                                                  _selectedDay = date;
+                                                                  _focusedDay = date;
+                                                                  _updateNearestWeekendDates();
+
+                                                                  // Force UI update
+                                                                  setState(() {});
+
+                                                                  // Optional: Show success message
+                                                                  CustomSnackBar.show(
+                                                                    context,
+                                                                    message: 'Date selected: $formattedDate',
+                                                                  );
+                                                                } else {
+                                                                  CustomSnackBar.show(
+                                                                    context,
+                                                                    message: 'No treks available on this date',
+                                                                  );
+                                                                }
+                                                              },
+                                                              child: Container(
+                                                                margin: EdgeInsets.only(
+                                                                  left: index == 0 ? 0 : ScreenConstant.size6,
+                                                                  right: index == first10Dates.length - 1 ? 0 : ScreenConstant.size6,
+                                                                ),
+                                                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                                                decoration: BoxDecoration(
+                                                                  border: Border.all(
+                                                                    color: isSelected
+                                                                        ? CommonColors.blueColor
+                                                                        : (isDateAvailable ? Colors.green.shade300 : Colors.grey.shade300),
+                                                                    width: isSelected ? 1.5 : 0.5,
+                                                                  ),
+                                                                  borderRadius: BorderRadius.circular(12),
+                                                                  color: isSelected
+                                                                      ? CommonColors.blueColor.withOpacity(0.1)
+                                                                      : (isDateAvailable ? Colors.green.withOpacity(0.05) : Colors.transparent),
+                                                                ),
+                                                                child: Column(
+                                                                  mainAxisSize: MainAxisSize.min,
+                                                                  children: [
+                                                                    Text(
+                                                                      formattedDate,
+                                                                      style: GoogleFonts.poppins(
+                                                                        fontSize: FontSize.s10,
+                                                                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                                                                        color: isSelected
+                                                                            ? CommonColors.blueColor
+                                                                            : (isDateAvailable ? Colors.green : CommonColors.blackColor),
+                                                                      ),
+                                                                    ),
+                                                                    if (isDateAvailable && trekCount > 0)
+                                                                      Padding(
+                                                                        padding: const EdgeInsets.only(top: 2.0),
+                                                                        child: Text(
+                                                                          '$trekCount',
+                                                                          style: GoogleFonts.poppins(
+                                                                            fontSize: FontSize.s8,
+                                                                            color: Colors.green,
+                                                                          ),
+                                                                        ),
+                                                                      ),
+                                                                  ],
+                                                                ),
+                                                              ).withShimmerAi(loading: datesLoading),
+                                                            );
+                                                          },
+                                                        ),
+                                                      ),
                                                     ],
-                                                  ),
-                                                ],
-                                              ),
+                                                  );
+                                                }),
+                                              ],
                                             ),
                                           ),
                                         ],
-                                      ),
-                                      Positioned.fill(
-                                        child: TouchRipple(
-                                          rippleColor: CommonColors.blackColor
-                                              .withValues(alpha: 0.1),
-                                          onTap: () => _selectDate(context),
-                                          child: Container(
-                                            decoration: BoxDecoration(
-                                              color: Colors.transparent,
-                                            ),
-                                          ),
-                                        ),
                                       ),
                                     ],
                                   ),
@@ -795,7 +1362,7 @@ class _DashboardState extends State<Dashboard>
                             color: CommonColors.whiteColor,
                             shape: RoundedRectangleBorder(
                               borderRadius:
-                                  BorderRadius.circular(ScreenConstant.size12),
+                              BorderRadius.circular(ScreenConstant.size12),
                             ),
                             child: Padding(
                               padding: EdgeInsets.all(ScreenConstant.size15),
@@ -808,7 +1375,7 @@ class _DashboardState extends State<Dashboard>
                                           CustomSnackBar.show(
                                             context,
                                             message:
-                                                'Please provide valid inputs',
+                                            'Please provide valid inputs',
                                           );
                                           return;
                                         }
@@ -817,9 +1384,9 @@ class _DashboardState extends State<Dashboard>
                                         }
                                         await _trekC.searchTrek(
                                           cityId:
-                                              _dashboardC.selectedCityId.value,
+                                          _dashboardC.selectedCityId.value,
                                           trekId:
-                                              _dashboardC.selectedTrekId.value,
+                                          _dashboardC.selectedTrekId.value,
                                           date: _dashboardC
                                               .dateController.value.text,
                                         );
@@ -833,7 +1400,7 @@ class _DashboardState extends State<Dashboard>
                                             'date': _dashboardC
                                                 .dateController.value.text,
                                             'weekendDates':
-                                                _nearestWeekendDates,
+                                            _nearestWeekendDates,
                                           },
                                         );
                                       },
@@ -842,7 +1409,7 @@ class _DashboardState extends State<Dashboard>
                                           Text(
                                             'Weekend Treks',
                                             textScaler:
-                                                const TextScaler.linear(1.0),
+                                            const TextScaler.linear(1.0),
                                             style: TextStyle(
                                               fontSize: FontSize.s10,
                                               fontWeight: FontWeight.w400,
@@ -871,12 +1438,12 @@ class _DashboardState extends State<Dashboard>
                                               child: Text(
                                                 'Next: ${DateFormat('EEE, MMM d').format(_nearestWeekendDates.first)}',
                                                 textScaler:
-                                                    const TextScaler.linear(
-                                                        1.0),
+                                                const TextScaler.linear(
+                                                    1.0),
                                                 style: TextStyle(
                                                   fontSize: FontSize.s8,
                                                   color:
-                                                      CommonColors.blackColor,
+                                                  CommonColors.blackColor,
                                                   fontWeight: FontWeight.w500,
                                                 ),
                                               ),
@@ -897,7 +1464,7 @@ class _DashboardState extends State<Dashboard>
                                           CustomSnackBar.show(
                                             context,
                                             message:
-                                                'Please provide valid inputs',
+                                            'Please provide valid inputs',
                                           );
                                           return;
                                         }
@@ -918,7 +1485,7 @@ class _DashboardState extends State<Dashboard>
                                           Text(
                                             'Personalized Treks',
                                             textScaler:
-                                                const TextScaler.linear(1.0),
+                                            const TextScaler.linear(1.0),
                                             style: TextStyle(
                                               fontSize: FontSize.s10,
                                               fontWeight: FontWeight.w400,
@@ -947,12 +1514,12 @@ class _DashboardState extends State<Dashboard>
                                               child: Text(
                                                 'Unique Trekking Routes',
                                                 textScaler:
-                                                    const TextScaler.linear(
-                                                        1.0),
+                                                const TextScaler.linear(
+                                                    1.0),
                                                 style: TextStyle(
                                                   fontSize: FontSize.s8,
                                                   color:
-                                                      CommonColors.blackColor,
+                                                  CommonColors.blackColor,
                                                   fontWeight: FontWeight.w500,
                                                 ),
                                               ),
@@ -983,7 +1550,7 @@ class _DashboardState extends State<Dashboard>
                                       color: _isPressed
                                           ? Colors.transparent
                                           : CommonColors.searchbtn
-                                              .withValues(alpha: 0.3),
+                                          .withOpacity(0.3),
                                       blurRadius: 8,
                                       offset: Offset(0, 4),
                                     ),
@@ -1016,125 +1583,155 @@ class _DashboardState extends State<Dashboard>
                 spacing: MediaQuery.of(context).size.height / 50,
                 children: [
                   Obx(() {
-                    final knowMoreLoading = _dashboardC.whatsNewObserver.value.maybeWhen(loading: (data) => true,orElse: () => false);
-                    List<KnowMoreData>? knowMoreCardsData = _dashboardC.whatsNewObserver.value.maybeWhen(success: (whatsNewResponse) => (whatsNewResponse as WhatsNewDataResponseModel).data,error: (sc) => [],orElse: () => [KnowMoreData(),KnowMoreData(),KnowMoreData(),KnowMoreData()]);
-                    if(knowMoreCardsData?.isEmpty == true) return SizedBox();
-                   return  Column(
-                     children: [
-                       Padding(
-                         padding: EdgeInsets.only(
-                             left: ScreenConstant.size17,
-                             right: ScreenConstant.size17,
-                             top: ScreenConstant.size10),
-                         child: Row(
-                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                           children: [
-                             Column(
-                               crossAxisAlignment: CrossAxisAlignment.start,
-                               children: [
-                                 Text(
-                                   "What's New",
-                                   textScaler: const TextScaler.linear(1.0),
-                                   style: GoogleFonts.poppins(
-                                     fontSize: FontSize.s12,
-                                     fontWeight: FontWeight.w500,
-                                   ),
-                                 ).withShimmerAi(loading: knowMoreLoading),
-                                 Text(
-                                   'Adventure simplified combo delivers !',
-                                   textScaler: const TextScaler.linear(1.0),
-                                   style: GoogleFonts.poppins(
-                                     fontSize: FontSize.s10,
-                                     color: Colors.grey,
-                                   ),
-                                 ).withShimmerAi(loading: knowMoreLoading),
-                               ],
-                             ),
-                             InkWell(
-                               onTap: () {
-                                 Get.toNamed('/know-more-screen');
-                               },
-                               child: Text(
-                                 'View more',
-                                 style: TextStyle(
-                                   decorationColor: CommonColors.blueColor,
-                                   color: CommonColors.blueColor,
-                                   fontSize: FontSize.s11,
-                                   letterSpacing: 2,
-                                   fontWeight: FontWeight.w600,
-                                 ),
-                               ).withShimmerAi(loading: knowMoreLoading),
-                             ),
-                           ],
-                         ),
-                       ),
-                       // Know More Cards
-                       Container(
-                         margin: EdgeInsets.only(top: 1.h),
-                         height: 22.h,
-                         child: Listener(
-                           onPointerDown: (_) {
-                             _isUserInteracting = true;
-                             _stopAutoScroll();
-                           },
-                           onPointerUp: (_) {
-                             _isUserInteracting = false;
-                             _startAutoScroll();
-                           },
-                           onPointerCancel: (_) {
-                             _isUserInteracting = false;
-                             _startAutoScroll();
-                           },
-                           child: PageView.builder(
-                             controller: _pageController,
-                             itemCount: null,
-                             onPageChanged: (int page) {
-                               _currentPage = page % (knowMoreCardsData?.length ?? 0);
-                             },
-                             physics: const BouncingScrollPhysics(),
-                             itemBuilder: (context, index) {
-                               final cardData = knowMoreCardsData?[index % (knowMoreCardsData.length ?? 0)];
-                               return Container(
-                                 margin: EdgeInsets.only(
-                                   left: ScreenConstant.size0,
-                                   right: ScreenConstant.size6,
-                                 ),
-                                 child: KnowMoreCard(
-                                   customGradient: AppTheme.customGradient(cardData?.customGradient ?? []),
-                                   imagePath: cardData?.imagePath ?? "",
-                                   title: cardData?.title ?? "",
-                                   subtitle: cardData?.subtitle ?? "",
-                                   onKnowMoreTap: cardData?.hasKnowMore == false
-                                       ? null
-                                       : () {
-                                     Get.toNamed(
-                                       '/know-more-details',
-                                       arguments: {
-                                         'knowMoreData': cardData,
-                                       },
-                                     );
-                                   },
-                                   // width: MediaQuery.of(context).size.width * 0.8,
-                                   // height: MediaQuery.of(context).size.height * 0.20,
-                                   textColor: AppTheme.hexToColor(cardData?.textColor),
-                                 ).withShimmerAi(loading: knowMoreLoading),
-                               );
-                             },
-                           ),
-                         ),
-                       ),
-                     ],
-                   );
-                  }
-                  ),
-                  // What's New Section
-                  // Top Treks Section
-                  // Container(),
+                    final knowMoreLoading = _dashboardC.whatsNewObserver.value
+                        .maybeWhen(loading: (data) => true, orElse: () => false);
+                    List<KnowMoreData>? knowMoreCardsData = [
+                      KnowMoreData(title:"Variety of Treks",subtitle: "From Serene trails to thrilling climbs, find treksthat match your vibes !",hasKnowMore: false,imagePath: "https://firebasestorage.googleapis.com/v0/b/sastastay-1d420.firebasestorage.app/o/knowmore1.png?alt=media&token=32b0be2e-958e-4fd5-8e89-72293ed38cfa",textColor: "#000000",customGradient: ["#F7EB68","#FFEF3E","#FFEF3E"]),
+                      KnowMoreData(title:"Countless Organizers",subtitle: "Choose from an extensive  network of trusted trek  organizers, All in one place !",hasKnowMore: false,imagePath: "https://firebasestorage.googleapis.com/v0/b/sastastay-1d420.firebasestorage.app/o/knowmore1.png?alt=media&token=32b0be2e-958e-4fd5-8e89-72293ed38cfa",textColor: "#FFFFFF",customGradient: ["#FFFFFF","#B40000","#B40000"])
+                    ];
+                    // List<KnowMoreData>? knowMoreCardsData = _dashboardC
+                    //     .whatsNewObserver.value
+                    //     .maybeWhen(
+                    //   success: (whatsNewResponse) =>
+                    //   (whatsNewResponse as WhatsNewDataResponseModel)
+                    //       .data,
+                    //   error: (sc) => [],
+                    //   orElse: () => [
+                    //     KnowMoreData(),
+                    //     KnowMoreData(),
+                    //     KnowMoreData(),
+                    //     KnowMoreData()
+                    //   ],
+                    // );
+                    if (knowMoreCardsData?.isEmpty == true) return SizedBox();
+                    return Column(
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.only(
+                              left: ScreenConstant.size17,
+                              right: ScreenConstant.size17,
+                              top: ScreenConstant.size10),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "What's New",
+                                    textScaler: const TextScaler.linear(1.0),
+                                    style: GoogleFonts.poppins(
+                                      fontSize: FontSize.s12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ).withShimmerAi(loading: knowMoreLoading),
+                                  Text(
+                                    'Adventure simplified combo delivers !',
+                                    textScaler: const TextScaler.linear(1.0),
+                                    style: GoogleFonts.poppins(
+                                      fontSize: FontSize.s10,
+                                      color: Colors.grey,
+                                    ),
+                                  ).withShimmerAi(loading: knowMoreLoading),
+                                ],
+                              ),
+                              InkWell(
+                                onTap: () {
+                                  Get.toNamed('/know-more-screen');
+                                },
+                                child: Text(
+                                  'View more',
+                                  style: TextStyle(
+                                    decorationColor: CommonColors.blueColor,
+                                    color: CommonColors.blueColor,
+                                    fontSize: FontSize.s11,
+                                    letterSpacing: 2,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ).withShimmerAi(loading: knowMoreLoading),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          margin: EdgeInsets.only(top: 1.h),
+                          height: 22.h,
+                          child: Listener(
+                            onPointerDown: (_) {
+                              _isUserInteracting = true;
+                              _stopAutoScroll();
+                            },
+                            onPointerUp: (_) {
+                              _isUserInteracting = false;
+                              _startAutoScroll();
+                            },
+                            onPointerCancel: (_) {
+                              _isUserInteracting = false;
+                              _startAutoScroll();
+                            },
+                            child: PageView.builder(
+                              controller: _pageController,
+                              itemCount: null,
+                              onPageChanged: (int page) {
+                                _currentPage =
+                                    page % (knowMoreCardsData?.length ?? 0);
+                              },
+                              physics: const BouncingScrollPhysics(),
+                              itemBuilder: (context, index) {
+                                final cardData = knowMoreCardsData?[
+                                index % (knowMoreCardsData.length ?? 0)];
+                                return Container(
+                                  margin: EdgeInsets.only(
+                                    left: ScreenConstant.size0,
+                                    right: ScreenConstant.size6,
+                                  ),
+                                  child: KnowMoreCard(
+                                    customGradient: AppTheme.customGradient(
+                                        cardData?.customGradient ?? []),
+                                    imagePath: cardData?.imagePath ?? "",
+                                    title: cardData?.title ?? "",
+                                    subtitle: cardData?.subtitle ?? "",
+                                    onKnowMoreTap:
+                                    cardData?.hasKnowMore == false
+                                        ? null
+                                        : () {
+                                      Get.toNamed(
+                                        '/know-more-details',
+                                        arguments: {
+                                          'knowMoreData': cardData,
+                                        },
+                                      );
+                                    },
+                                    textColor: AppTheme.hexToColor(
+                                        cardData?.textColor),
+                                  ).withShimmerAi(loading: knowMoreLoading),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  }),
                   Obx(() {
-                    final topTreksLoading = _dashboardC.topTreksObserver.value.maybeWhen(loading: (data) => true,orElse: () => false);
-                    List<TopTreksData>? topTreksCardsData = _dashboardC.topTreksObserver.value.maybeWhen(success: (topTreksResponse) => (topTreksResponse as TopTreksDataResponseModel).data,error: (sc) => [],orElse: () => [TopTreksData(),TopTreksData(),TopTreksData(),TopTreksData()]);
-                    if(topTreksCardsData?.isEmpty == true) return SizedBox();
-                    return  Column(
+                    final topTreksLoading = _dashboardC.topTreksObserver.value
+                        .maybeWhen(loading: (data) => true, orElse: () => false);
+                    List<TopTreksData>? topTreksCardsData = _dashboardC
+                        .topTreksObserver.value
+                        .maybeWhen(
+                      success: (topTreksResponse) =>
+                      (topTreksResponse as TopTreksDataResponseModel)
+                          .data,
+                      error: (sc) => [],
+                      orElse: () => [
+                        TopTreksData(),
+                        TopTreksData(),
+                        TopTreksData(),
+                        TopTreksData()
+                      ],
+                    );
+                    if (topTreksCardsData?.isEmpty == true) return SizedBox();
+                    return Column(
                       children: [
                         Padding(
                           padding: EdgeInsets.only(
@@ -1171,9 +1768,7 @@ class _DashboardState extends State<Dashboard>
                                 },
                                 child: Text(
                                   'View more',
-                                  // textScaler: const TextScaler.linear(1.0),
                                   style: GoogleFonts.poppins(
-                                    // decoration: TextDecoration.underline,
                                     decorationColor: CommonColors.blueColor,
                                     color: CommonColors.blueColor,
                                     fontSize: FontSize.s11,
@@ -1195,22 +1790,25 @@ class _DashboardState extends State<Dashboard>
                             ),
                             child: Row(
                               children: [
-                                // SizedBox(width: ScreenConstant.size16),
-                                ...(topTreksCardsData ?? []).map((trekData) => Container(
-                                  margin: EdgeInsets.only(
-                                    right: ScreenConstant.size15,
-                                  ),
-                                  child: TopTreksCard(
-                                    gradientEndColor: Colors.transparent,
-                                    imagePath: trekData.imagePath ?? "",
-                                    title: trekData.title ?? "",
-                                    description: trekData.description ?? "",
-                                    customGradient: AppTheme.customGradient(trekData.gradient),
-                                    textColor: CommonColors.blackColor,
-                                    isFavorite: trekData.isFavorite ?? false,
-                                    onFavoriteTap: () => _toggleFavorite(trekData.title ?? ""),
-                                  ),
-                                ).withShimmerAi(loading: topTreksLoading))
+                                ...(topTreksCardsData ?? []).map((trekData) =>
+                                    Container(
+                                      margin: EdgeInsets.only(
+                                        right: ScreenConstant.size15,
+                                      ),
+                                      child: TopTreksCard(
+                                        gradientEndColor: Colors.transparent,
+                                        imagePath: trekData.imagePath ?? "",
+                                        title: trekData.title ?? "",
+                                        description:
+                                        trekData.description ?? "",
+                                        customGradient: AppTheme.customGradient(
+                                            trekData.gradient),
+                                        textColor: CommonColors.blackColor,
+                                        isFavorite: trekData.isFavorite ?? false,
+                                        onFavoriteTap: () => _toggleFavorite(
+                                            trekData.title ?? ""),
+                                      ),
+                                    ).withShimmerAi(loading: topTreksLoading))
                                     .toList(),
                               ],
                             ),
@@ -1218,23 +1816,32 @@ class _DashboardState extends State<Dashboard>
                         ),
                       ],
                     );
-                  }
-                  ),
-
-                  // Top Treks Cards
-                  // Container(),
+                  }),
                   Obx(() {
-                    final shortsLoading = _dashboardC.shortsTreksObserver.value.maybeWhen(loading: (data) => true,orElse: () => false);
-                    List<ShortsTreksData>? shortsTreksCardsData = _dashboardC.shortsTreksObserver.value.maybeWhen(success: (shortsTreksResponse) => (shortsTreksResponse as ShortsTreksDataResponseModel).data,error: (sc) => [],orElse: () => [ShortsTreksData(),ShortsTreksData(),ShortsTreksData(),ShortsTreksData()]);
-                    if(shortsTreksCardsData?.isEmpty == true) return SizedBox();
-                    return  Column(
+                    final shortsLoading = _dashboardC.shortsTreksObserver.value
+                        .maybeWhen(loading: (data) => true, orElse: () => false);
+                    List<ShortsTreksData>? shortsTreksCardsData = _dashboardC
+                        .shortsTreksObserver.value
+                        .maybeWhen(
+                      success: (shortsTreksResponse) =>
+                      (shortsTreksResponse as ShortsTreksDataResponseModel)
+                          .data,
+                      error: (sc) => [],
+                      orElse: () => [
+                        ShortsTreksData(),
+                        ShortsTreksData(),
+                        ShortsTreksData(),
+                        ShortsTreksData()
+                      ],
+                    );
+                    if (shortsTreksCardsData?.isEmpty == true) return SizedBox();
+                    return Column(
                       children: [
                         Padding(
                           padding: EdgeInsets.only(
                             left: ScreenConstant.size17,
                             right: ScreenConstant.size17,
                             top: ScreenConstant.size10,
-                            // bottom: ScreenConstant.size10
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1267,9 +1874,7 @@ class _DashboardState extends State<Dashboard>
                                 },
                                 child: Text(
                                   'View more',
-                                  // textScaler: const TextScaler.linear(1.0),
                                   style: GoogleFonts.poppins(
-                                    // decoration: TextDecoration.underline,
                                     decorationColor: CommonColors.blueColor,
                                     color: CommonColors.blueColor,
                                     fontSize: FontSize.s11,
@@ -1281,13 +1886,12 @@ class _DashboardState extends State<Dashboard>
                             ],
                           ),
                         ),
-                        // Trek Shorts Cards with PageView
                         Container(
                           margin: EdgeInsets.only(
                             left: 1.5.h,
                             top: 1.h,
                           ),
-                          height: 23.h, // Match the height of TrekShorts widget
+                          height: 23.h,
                           child: Listener(
                             onPointerDown: (_) {
                               _isTrekShortsUserInteracting = true;
@@ -1304,12 +1908,12 @@ class _DashboardState extends State<Dashboard>
                             child: PageView.builder(
                               controller: _trekShortsPageController,
                               itemCount: null,
-                              // Infinite scrolling
                               padEnds: false,
                               pageSnapping: true,
                               physics: const BouncingScrollPhysics(),
                               itemBuilder: (context, index) {
-                                final cardData = shortsTreksCardsData?[index % shortsTreksCardsData.length];
+                                final cardData = shortsTreksCardsData?[
+                                index % shortsTreksCardsData.length];
                                 return Align(
                                   alignment: Alignment.center,
                                   child: Padding(
@@ -1327,14 +1931,28 @@ class _DashboardState extends State<Dashboard>
                         ),
                       ],
                     );
-                  }
-                  ),
-
+                  }),
                   Obx(() {
-                    final seasonalForcastLoading = _dashboardC.seasonalForcastObserver.value.maybeWhen(loading: (data) => true,orElse: () => false);
-                    List<SeasonalForecastData>? seasonalForecastData = _dashboardC.seasonalForcastObserver.value.maybeWhen(success: (seasonalForcastResponse) => (seasonalForcastResponse as SeasonalForecastDataResponseModel).data,error: (sc) => [],orElse: () => [SeasonalForecastData(),SeasonalForecastData(),SeasonalForecastData(),SeasonalForecastData()]);
-                    if(seasonalForecastData?.isEmpty == true) return SizedBox();
-                    return  Column(
+                    final seasonalForcastLoading = _dashboardC
+                        .seasonalForcastObserver.value
+                        .maybeWhen(loading: (data) => true, orElse: () => false);
+                    List<SeasonalForecastData>? seasonalForecastData = _dashboardC
+                        .seasonalForcastObserver.value
+                        .maybeWhen(
+                      success: (seasonalForcastResponse) =>
+                      (seasonalForcastResponse
+                      as SeasonalForecastDataResponseModel)
+                          .data,
+                      error: (sc) => [],
+                      orElse: () => [
+                        SeasonalForecastData(),
+                        SeasonalForecastData(),
+                        SeasonalForecastData(),
+                        SeasonalForecastData()
+                      ],
+                    );
+                    if (seasonalForecastData?.isEmpty == true) return SizedBox();
+                    return Column(
                       children: [
                         Padding(
                           padding: EdgeInsets.only(
@@ -1355,7 +1973,8 @@ class _DashboardState extends State<Dashboard>
                                       fontSize: FontSize.s12,
                                       fontWeight: FontWeight.w500,
                                     ),
-                                  ).withShimmerAi(loading: seasonalForcastLoading),
+                                  ).withShimmerAi(
+                                      loading: seasonalForcastLoading),
                                   Text(
                                     "Weather Alerts for Safer Treks!",
                                     textScaler: const TextScaler.linear(1.0),
@@ -1364,7 +1983,8 @@ class _DashboardState extends State<Dashboard>
                                       fontWeight: FontWeight.w400,
                                       color: Colors.grey,
                                     ),
-                                  ).withShimmerAi(loading: seasonalForcastLoading),
+                                  ).withShimmerAi(
+                                      loading: seasonalForcastLoading),
                                 ],
                               ),
                               InkWell(
@@ -1373,9 +1993,7 @@ class _DashboardState extends State<Dashboard>
                                 },
                                 child: Text(
                                   'View more',
-                                  // textScaler: const TextScaler.linear(1.0),
                                   style: TextStyle(
-                                    // decoration: TextDecoration.underline,
                                     letterSpacing: 2,
                                     decorationColor: CommonColors.blueColor,
                                     color: CommonColors.blueColor,
@@ -1403,13 +2021,13 @@ class _DashboardState extends State<Dashboard>
                                   padding: EdgeInsets.only(right: 2.h),
                                   child: SeasonalForecast(
                                     title: cardData.title ?? "",
-                                    description: cardData.description ?? "",
+                                    description:
+                                    cardData.description ?? "",
                                     imagePath: cardData.imagePath ?? "",
-                                    gradientColors: AppTheme.hexToColor(cardData.color),
-                                    // onViewMore: () {
-                                    //   // Handle view more tap
-                                    // },
-                                  ).withShimmerAi(loading: seasonalForcastLoading),
+                                    gradientColors: AppTheme.hexToColor(
+                                        cardData.color),
+                                  ).withShimmerAi(
+                                      loading: seasonalForcastLoading),
                                 ))
                                     .toList(),
                               ],
@@ -1418,16 +2036,8 @@ class _DashboardState extends State<Dashboard>
                         ),
                       ],
                     );
-                  }
-                  ),
-
-
-                  // Container(),
-
-
+                  }),
                   SizedBox(height: ScreenConstant.size20),
-
-                  // ➕ Added this new section right below Seasonal Forecast
                   Padding(
                     padding: const EdgeInsets.only(
                         top: 10.0, bottom: 30.0, left: 0, right: 80.0),
@@ -1438,12 +2048,11 @@ class _DashboardState extends State<Dashboard>
                         Text(
                           'Go Beyond,\nExplore More!',
                           textAlign: TextAlign.start,
-                          // textScaler: const TextScaler.linear(1.0),
                           style: GoogleFonts.sourceSerif4(
                             fontSize: FontSize.s28,
                             fontWeight: FontWeight.bold,
                             color: CommonColors.greyColorf7f7f7
-                                .withValues(alpha: 0.5),
+                                .withOpacity(0.5),
                             height: 1.3,
                             letterSpacing: 1.8,
                           ),
@@ -1478,7 +2087,6 @@ class _DashboardState extends State<Dashboard>
                       ],
                     ),
                   ),
-
                   SizedBox(height: ScreenConstant.size20),
                 ],
               ),

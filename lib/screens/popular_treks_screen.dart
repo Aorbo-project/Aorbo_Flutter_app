@@ -24,24 +24,7 @@ class _PopularTreksScreenState extends State<PopularTreksScreen> {
 
   final _dashboardC = Get.find<DashboardController>();
 
-  LinearGradient _getGradientByName(String name) {
-    switch (name) {
-      case 'gradientYellow':
-        return CommonColors.gradientYellow;
-      case 'gradientDarkRed':
-        return CommonColors.gradientDarkRed;
-      case 'gradientTeal':
-        return CommonColors.gradientTeal;
-      case 'gradientOrange':
-        return CommonColors.gradientOrange;
-      case 'gradientBlue':
-        return CommonColors.gradientBlue;
-      case 'gradientGreen':
-        return CommonColors.gradientGreen;
-      default:
-        return CommonColors.gradientYellow;
-    }
-  }
+
 
   @override
   void initState() {

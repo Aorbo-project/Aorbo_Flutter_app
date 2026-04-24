@@ -12,7 +12,9 @@ import 'package:arobo_app/models/user_profile/state_list_model.dart';
 import 'package:arobo_app/models/refund/refund_detail_modal.dart';
 import 'package:arobo_app/models/dispute/dispute_detail_modal.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import '../freezed_models/booking/booking_history_model.dart';
+import '../freezed_models/treks/treks_model_data.dart';
 import '../models/dashboard/cities_model.dart';
 import '../models/treaks/booking_cancelled_modal.dart';
 import '../repository/api_result.dart';
@@ -29,6 +31,8 @@ class DashboardController extends GetxController {
   final shortsTreksObserver = const ApiResult<ShortsTreksDataResponseModel>.init().obs;
   final seasonalForcastObserver = const ApiResult<SeasonalForecastDataResponseModel>.init().obs;
 
+  RxMap<String, int> availableDates = <String, int>{}.obs;
+  final calenderTrekDatesObserver = const ApiResult<CalenderDatesResponseModel>.init().obs;
 
 
 
@@ -84,15 +88,85 @@ class DashboardController extends GetxController {
     Future.wait([fetchCitiesList(), fetchTrekList(), fetchStateList()]);
   }
 
-  @override
-  void onClose() {
-    fromController.value.dispose();
-    toController.value.dispose();
-    dateController.value.dispose();
-    cancellationReasonController.value.dispose();
-    super.onClose();
+  // @override
+  // void onClose() {
+  //   fromController.value.dispose();
+  //   toController.value.dispose();
+  //   dateController.value.dispose();
+  //   cancellationReasonController.value.dispose();
+  //   super.onClose();
+  // }
+
+  static String convertDateYYYYMMDD(String date) {
+    if (date.isEmpty) return '';
+
+    try {
+      DateFormat inputFormat;
+
+      // Detect the format
+      if (date.contains('/')) {
+        inputFormat = DateFormat('dd/MM/yyyy');
+      } else if (date.contains('-')) {
+        inputFormat = DateFormat('dd-MM-yyyy');
+      } else {
+        throw FormatException('Unknown date separator');
+      }
+
+      final inputDate = inputFormat.parse(date);
+      final outputFormat = DateFormat('yyyy-MM-dd');
+      return outputFormat.format(inputDate);
+    } catch (e) {
+      logger.w('Invalid date format: $e');
+      return '';
+    }
   }
 
+
+  Future<void> fetchCalenderTrekDates({
+    int? cityId,
+    int? trekId,
+    required String statDate,
+    required String endDate,
+  }) async {
+    try {
+      availableDates.clear();
+      calenderTrekDatesObserver.value = ApiResult.loading("");
+      final response = await _repository.getApiCall(
+        url: NetworkUrl.searchCalenderTrekDates(
+          cityId.toString(),
+          trekId.toString(),
+          statDate,
+          endDate,
+        ),
+      );
+
+      if (response != null) {
+        final responseData = CalenderDatesResponseModel.fromJson(response);
+        if (responseData.success == true) {
+          calenderTrekDatesObserver.value = ApiResult.success(responseData);
+          return;
+        }
+        throw "${responseData.message}";
+      }
+      throw "Response Body Null";
+    } catch (e) {
+      CustomSnackBar.show(Get.context!, message: errorMessage.value);
+      calenderTrekDatesObserver.value = ApiResult.error('Failed to search treks: ${e.toString()}');
+    }
+  }
+
+
+  bool isDateAvailable(DateTime? date) {
+    if(date == null) return false;
+    String dateStr = DateFormat('yyyy-MM-dd').format(date);
+    return availableDates.containsKey(dateStr);
+  }
+
+  int getTrekCountForDate(DateTime? date) {
+    if(date == null) return 0;
+    String dateStr = DateFormat('yyyy-MM-dd').format(date);
+    return availableDates[dateStr] ?? 0;
+  }
 
 
   Future<void> fetchWhatsNew() async {

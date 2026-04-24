@@ -6,6 +6,61 @@ part of 'treks_model_data.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
+_$CalenderDatesResponseModelImpl _$$CalenderDatesResponseModelImplFromJson(
+        Map<String, dynamic> json) =>
+    _$CalenderDatesResponseModelImpl(
+      success: json['success'] as bool?,
+      message: json['message'] as String?,
+      data: json['data'] == null
+          ? null
+          : CalenderDataModel.fromJson(json['data'] as Map<String, dynamic>),
+      count: json['count'] as int?,
+    );
+
+Map<String, dynamic> _$$CalenderDatesResponseModelImplToJson(
+        _$CalenderDatesResponseModelImpl instance) =>
+    <String, dynamic>{
+      'success': instance.success,
+      'message': instance.message,
+      'data': instance.data,
+      'count': instance.count,
+    };
+
+_$CalenderDataModelImpl _$$CalenderDataModelImplFromJson(
+        Map<String, dynamic> json) =>
+    _$CalenderDataModelImpl(
+      startDate: json['start_date'] as String?,
+      endDate: json['end_date'] as String?,
+      dates: (json['dates'] as List<dynamic>?)
+          ?.map((e) => TrekDatesModel.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      totalDatesWithTreks: json['total_dates_with_treks'] as int?,
+    );
+
+Map<String, dynamic> _$$CalenderDataModelImplToJson(
+        _$CalenderDataModelImpl instance) =>
+    <String, dynamic>{
+      'start_date': instance.startDate,
+      'end_date': instance.endDate,
+      'dates': instance.dates,
+      'total_dates_with_treks': instance.totalDatesWithTreks,
+    };
+
+_$TrekDatesModelImpl _$$TrekDatesModelImplFromJson(Map<String, dynamic> json) =>
+    _$TrekDatesModelImpl(
+      date: json['date'] as String?,
+      trekCount: json['trek_count'] as int?,
+      available: json['has_treks'] as bool?,
+    );
+
+Map<String, dynamic> _$$TrekDatesModelImplToJson(
+        _$TrekDatesModelImpl instance) =>
+    <String, dynamic>{
+      'date': instance.date,
+      'trek_count': instance.trekCount,
+      'has_treks': instance.available,
+    };
+
 _$FetchTreksResponseModelImpl _$$FetchTreksResponseModelImplFromJson(
         Map<String, dynamic> json) =>
     _$FetchTreksResponseModelImpl(

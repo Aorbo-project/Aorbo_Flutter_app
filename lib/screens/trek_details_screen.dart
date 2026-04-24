@@ -3,7 +3,6 @@ import 'package:arobo_app/controller/trek_controller.dart';
 import 'package:arobo_app/controller/user_controller.dart';
 import 'package:arobo_app/models/treaks/treak_detail_modal.dart';
 import 'package:arobo_app/repository/network_url.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
@@ -20,6 +19,8 @@ import '../utils/common_btn.dart';
 import '../utils/screen_constants.dart';
 import 'dart:math' as math;
 import 'package:intl/intl.dart';
+
+import '../widgets/custom_network_image.dart';
 
 class _StickyTrekDetailsBarDelegate extends SliverPersistentHeaderDelegate {
   final Widget child;
@@ -367,15 +368,12 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                     child: InteractiveViewer(
                       minScale: 0.5,
                       maxScale: 3.0,
-                      child: CachedNetworkImage(
+                      child: CustomNetworkImage(
                         imageUrl:
                             '${NetworkUrl.imageUrl}${images[index].startsWith('/') ? images[index].substring(1) : images[index]}',
                         fit: BoxFit.contain,
                         width: 100.w,
-                        height: 100.h,
-                        errorWidget: (context, url, error) => const Center(
-                          child: Icon(Icons.broken_image, color: Colors.grey),
-                        ),
+                        height: 100.h
                       ),
                     ),
                   ),

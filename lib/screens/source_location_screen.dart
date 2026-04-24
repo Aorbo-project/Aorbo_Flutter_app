@@ -2,9 +2,13 @@ import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:sizer/sizer.dart';
+
+import '../utils/common_images.dart';
 
 class SourceLocationScreen extends StatefulWidget {
   const SourceLocationScreen({super.key});
@@ -80,7 +84,29 @@ class _SourceLocationScreenState extends State<SourceLocationScreen> {
     });
   }
 
+  Future<void> _fetchCalendarDates() async {
+
+    if(_dashboardC.selectedCityId.value == 0 || _dashboardC.selectedTrekId.value == 0) return;
+
+    final DateTime currentDate = DateTime.now();
+    final DateTime threeMonthsLater = currentDate.add(const Duration(days: 90));
+
+    // Format dates for API
+    final String startDateStr = DateFormat('yyyy-MM-dd').format(currentDate);
+    final String endDateStr = DateFormat('yyyy-MM-dd').format(threeMonthsLater);
+
+    // Fetch calendar dates
+    await _dashboardC.fetchCalenderTrekDates(
+      cityId:_dashboardC.selectedCityId.value,
+      trekId: _dashboardC.selectedTrekId.value,
+      statDate: startDateStr,
+      endDate: endDateStr,
+    );
+  }
+
+
   void _onItemTap(String value) {
+    _fetchCalendarDates();
     if (_isFromFocused) {
       final city = _dashboardC.citiesData.value.data
           ?.firstWhere((c) => c.cityName == value);
@@ -156,7 +182,18 @@ class _SourceLocationScreenState extends State<SourceLocationScreen> {
                     color: CommonColors.blackColor,
                   ),
                   decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.location_on),
+                    prefixIcon: Padding(
+                      padding:
+                      EdgeInsets.all(10),
+                      child: SvgPicture.asset(
+                        CommonImages.location3,
+                        height: ScreenConstant.size24,
+                        width: ScreenConstant.size24,
+                        colorFilter: ColorFilter.mode(
+                            CommonColors.grey_AEAEAE,
+                            BlendMode.srcIn),
+                      ),
+                    ),
                     hintText: "From City",
                     border: InputBorder.none,
                     isCollapsed: true,
@@ -192,7 +229,18 @@ class _SourceLocationScreenState extends State<SourceLocationScreen> {
                     color: CommonColors.blackColor,
                   ),
                   decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.terrain),
+                    prefixIcon: Padding(
+                      padding:
+                      EdgeInsets.all(10),
+                      child: SvgPicture.asset(
+                        CommonImages.location2,
+                        height: ScreenConstant.size24,
+                        width: ScreenConstant.size24,
+                        colorFilter: ColorFilter.mode(
+                            CommonColors.grey_AEAEAE,
+                            BlendMode.srcIn),
+                      ),
+                    ),
                     hintText: "Select Trek",
                     border: InputBorder.none,
                     isCollapsed: true,
