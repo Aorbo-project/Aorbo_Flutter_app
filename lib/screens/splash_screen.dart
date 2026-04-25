@@ -745,6 +745,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                         decoration: InputDecoration(
                           hintText: 'Enter your Mobile Number',
                           hintStyle: TextStyle(
+                            fontSize: FontSize.s11,
                             color: CommonColors.greyColor,
                           ),
                           border: InputBorder.none,

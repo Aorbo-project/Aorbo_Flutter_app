@@ -10,6 +10,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
 import 'package:animated_rating_stars/animated_rating_stars.dart';
 import '../freezed_models/treks/treks_model_data.dart';
+import '../models/trek_card.dart';
 import '../utils/common_colors.dart';
 import '../utils/common_images.dart';
 import '../utils/common_trek_card.dart';
@@ -48,13 +49,13 @@ class _StickyTrekDetailsBarDelegate extends SliverPersistentHeaderDelegate {
 }
 
 class TrekDetailsScreen extends StatefulWidget {
-  // final Trek trek;
+  final TrekData? trek;
   // final String fromLocation;
   // final String toLocation;
 
   const TrekDetailsScreen({
     super.key,
-    // required this.trek,
+    required this.trek,
     // required this.fromLocation,
     // required this.toLocation,
   });
@@ -497,18 +498,9 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
               child: Container(
                 width: 100.w,
                 margin: EdgeInsets.only(top: 2.h, bottom: 1.2.h),
-                child: Obx(() {
-                  List<TrekData>? filteredTreks = _trekControllerC.treksResponseObserver.value.maybeWhen(success: (treksResponse) => (treksResponse as FetchTreksResponseModel).data,error: (sc) => [],orElse: () => [TrekData(),TrekData(),TrekData(),TrekData()]);
-
-
-                  final commonTrekCard = filteredTreks?.firstWhereOrNull((p0) => p0.id == _trekControllerC.trekDetailId.value);
-
-                  return commonTrekCard == null ? SizedBox() : CommonTrekCard(
-                    trek: commonTrekCard,
-                    showShare: true,
-                  );
-
-                }
+                child: CommonTrekCard(
+                  trek: widget.trek,
+                  showShare: true,
                 ),
               ),
             ),

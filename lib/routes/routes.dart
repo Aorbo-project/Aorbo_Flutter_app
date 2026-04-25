@@ -48,7 +48,7 @@ final routes = [
   GetPage(name: '/otp', page: () => OTPScreen()),
   GetPage(name: '/dashboard', page: () => const DashboardMain()),
   GetPage(name: '/search', page: () => SearchSummaryScreen()),
-  GetPage(name: '/trek-details', page: () => TrekDetailsScreen()),
+  GetPage(name: '/trek-details', page: () => TrekDetailsScreen(trek: null,)),
   GetPage(name: '/traveller-info', page: () => TravellerInformationScreen()),
   GetPage(
     name: '/personalized-treks',
@@ -63,8 +63,8 @@ final routes = [
     page: () {
       final args = Get.arguments as Map<String, dynamic>;
       return WeekendTreksScreen(
-        city: args['city'] ?? '',
-        trek: args['trek'] ?? '',
+        city: args['city'] ?? 0,
+        trek: args['trek'] ?? 0,
         date: args['date'] ?? '',
         weekendDates: (args['weekendDates'] as List<DateTime>?) ?? [],
       );

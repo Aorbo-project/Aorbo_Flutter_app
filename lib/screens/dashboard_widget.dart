@@ -121,8 +121,6 @@ class _DashboardState extends State<Dashboard>
     _dashboardC.fetchShortsTreks();
     _dashboardC.fetchSeasonalForeCasts();
 
-    // Fetch calendar dates after NTP time is initialized
-    _fetchCalendarDates();
   }
 
   @override
@@ -182,47 +180,6 @@ class _DashboardState extends State<Dashboard>
     }
   }
 
-  Future<void> _fetchCalendarDates() async {
-    // Wait for NTP time to be initialized
-    if (_ntpTime == null) {
-      await _initializeNTPTime();
-    }
-
-    final DateTime currentDate = _ntpTime ?? DateTime.now();
-    final DateTime threeMonthsLater = currentDate.add(const Duration(days: 90));
-
-    // Format dates for API
-    final String startDateStr = DateFormat('yyyy-MM-dd').format(currentDate);
-    final String endDateStr = DateFormat('yyyy-MM-dd').format(threeMonthsLater);
-
-    // Fetch calendar dates
-    await _dashboardC.fetchCalenderTrekDates(
-      statDate: startDateStr,
-      endDate: endDateStr,
-    );
-
-    // Process available dates from response
-    _dashboardC.calenderTrekDatesObserver.value.when(
-      success: (response) {
-        if (response.data != null && response.data!.dates != null) {
-          _dashboardC.availableDates.clear();
-          for (var dateData in response.data!.dates!) {
-            _dashboardC.availableDates[dateData.date] = dateData.trekCount ?? 0;
-          }
-          _dashboardC.availableDates.refresh(); // Force refresh
-        }
-
-        // After fetching dates, update selected date to first available date if current date has no treks
-        _updateSelectedDateToFirstAvailable();
-        if (mounted) setState(() {}); // Force UI rebuild
-      },
-      error: (error) {
-        log('Error fetching calendar dates: $error');
-      },
-      loading: (data) {},
-      init: () {},
-    );
-  }
 
   // Helper method to find first available date
   DateTime? _getFirstAvailableDate(DateTime startDate, DateTime endDate) {
@@ -645,23 +602,15 @@ class _DashboardState extends State<Dashboard>
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () {
-                            if (_dashboardC.isDateAvailable(tempSelectedDate)) {
-                              setState(() {
-                                _dashboardC.selectedDate.value = tempSelectedDate;
-                                _dashboardC.dateController.value.text =
-                                    DateFormat('dd/MM/yyyy').format(tempSelectedDate);
-                                _selectedDay = tempSelectedDate;
-                                _focusedDay = tempFocusedDay;
-                                _calendarFormat = tempCalendarFormat;
-                                _updateNearestWeekendDates();
-                              });
-                              Navigator.pop(context, tempSelectedDate);
-                            } else {
-                              CustomSnackBar.show(
-                                context,
-                                message: 'No treks available on this date. Please select another date.',
-                              );
-                            }
+                            setState(() {
+                              _dashboardC.selectedDate.value = tempSelectedDate;
+                              _dashboardC.dateController.value.text = DateFormat('dd/MM/yyyy').format(tempSelectedDate);
+                              _selectedDay = tempSelectedDate;
+                              _focusedDay = tempFocusedDay;
+                              _calendarFormat = tempCalendarFormat;
+                              _updateNearestWeekendDates();
+                            });
+                            Get.back();
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: CommonColors.searchbtn,
@@ -733,10 +682,11 @@ class _DashboardState extends State<Dashboard>
       return;
     }
     _resetAllScrolls();
-    await _trekC.searchTrek(
+    await _trekC.searchTreks(
       cityId: _dashboardC.selectedCityId.value,
       trekId: _dashboardC.selectedTrekId.value,
       date: _dashboardC.dateController.value.text,
+      refresh: true
     );
     Get.toNamed('/search');
   }
@@ -1382,23 +1332,20 @@ class _DashboardState extends State<Dashboard>
                                         if (_nearestWeekendDates.isEmpty) {
                                           _updateNearestWeekendDates();
                                         }
-                                        await _trekC.searchTrek(
-                                          cityId:
-                                          _dashboardC.selectedCityId.value,
-                                          trekId:
-                                          _dashboardC.selectedTrekId.value,
-                                          date: _dashboardC
-                                              .dateController.value.text,
+                                        await _trekC.fetchWeekendTreks(
+                                          cityId: _dashboardC.selectedCityId.value,
+                                          trekId: _dashboardC.selectedTrekId.value,
+                                          date: _dashboardC.dateController.value.text,
+                                          refresh: true,
                                         );
                                         Get.toNamed(
                                           '/weekend-treks',
                                           arguments: {
                                             'city': _dashboardC
-                                                .fromController.value.text,
+                                                .selectedCityId.value,
                                             'trek': _dashboardC
-                                                .toController.value.text,
-                                            'date': _dashboardC
-                                                .dateController.value.text,
+                                                .selectedTrekId.value,
+                                            'date': _dashboardC.dateController.value.text,
                                             'weekendDates':
                                             _nearestWeekendDates,
                                           },

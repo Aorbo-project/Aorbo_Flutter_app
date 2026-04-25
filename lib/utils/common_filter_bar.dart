@@ -92,15 +92,15 @@ class CommonFilterBarState extends State<CommonFilterBar> {
         final cat = filterCategories.firstWhere((c) => c.title == title,
             orElse: () => filterCategories[0]);
         final found = cat.options
-            .firstWhere((o) => selectedFilters.contains(o), orElse: () => '');
-        shortcutSelections[title] = found.isNotEmpty ? found : null;
+            .firstWhere((o) => selectedFilters.contains(o.title));
+        shortcutSelections[title] = found.title.isNotEmpty ? found.title : null;
       }
     });
   }
 
   void _showFilterBottomSheet([String? categoryTitle]) {
     // Create a temporary list to hold selected filters during modal interaction
-    List<String> tempSelectedFilters = List.from(selectedFilters);
+    List<FilterOptionModel> tempSelectedFilters = List.from(selectedFilters);
     // Track the selected category
     String selectedCategory = categoryTitle ?? 'Sort';
 
@@ -312,7 +312,7 @@ class CommonFilterBarState extends State<CommonFilterBar> {
                                             ),
                                             SizedBox(width: 3.w),
                                             Text(
-                                              option,
+                                              option.title ?? "",
                                               style: GoogleFonts.poppins(
                                                 fontSize: FontSize.s10,
                                                 color: isSelected
@@ -381,10 +381,9 @@ class CommonFilterBarState extends State<CommonFilterBar> {
                               selectedFilters = List.from(tempSelectedFilters);
                               for (final category in filterCategories) {
                                 final found = category.options.firstWhere(
-                                    (o) => selectedFilters.contains(o),
-                                    orElse: () => '');
+                                    (o) => selectedFilters.contains(o.title));
                                 shortcutSelections[category.title] =
-                                    found.isNotEmpty ? found : null;
+                                    found.title.isNotEmpty == true ? found.title : null;
                               }
                             });
                             widget.onFiltersChanged(selectedFilters);

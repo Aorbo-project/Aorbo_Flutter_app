@@ -80,9 +80,9 @@ class _FilterModalState extends State<FilterModal> {
     });
   }
 
-  void _selectOption(String categoryTitle, String option) {
+  void _selectOption(String categoryTitle,FilterOptionModel option) {
     setState(() {
-      selectedOptionsByCategory[categoryTitle] = option;
+      selectedOptionsByCategory[categoryTitle] = option.title;
     });
   }
 
@@ -204,7 +204,7 @@ class _FilterModalState extends State<FilterModal> {
                             contentPadding:
                                 EdgeInsets.symmetric(horizontal: 5.w),
                             title: Text(
-                              option,
+                              option.title,
                               textScaler: const TextScaler.linear(1.0),
                               style: GoogleFonts.poppins(
                                 fontSize: FontSize.s11,

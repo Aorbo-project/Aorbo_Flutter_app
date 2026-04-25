@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:arobo_app/models/know_more_data.dart';
@@ -25,7 +26,6 @@ import '../utils/custom_snackbar.dart';
 class DashboardController extends GetxController {
   final Repository _repository = Repository();
 
-
   final whatsNewObserver = const ApiResult<WhatsNewDataResponseModel>.init().obs;
   final topTreksObserver = const ApiResult<TopTreksDataResponseModel>.init().obs;
   final shortsTreksObserver = const ApiResult<ShortsTreksDataResponseModel>.init().obs;
@@ -33,8 +33,6 @@ class DashboardController extends GetxController {
 
   RxMap<String, int> availableDates = <String, int>{}.obs;
   final calenderTrekDatesObserver = const ApiResult<CalenderDatesResponseModel>.init().obs;
-
-
 
   // Cities list variables
   RxInt selectedCityId = 0.obs;
@@ -52,6 +50,12 @@ class DashboardController extends GetxController {
   RxBool isLoadingTreks = false.obs;
   RxString errorMessage = ''.obs;
   RxInt selectedScreen = 0.obs;
+
+  // Debounce timer for calendar API calls
+  Timer? _calendarDebounceTimer;
+
+  // Track if initial fetch has been attempted
+  bool _hasAttemptedInitialCalendarFetch = false;
 
   //region Booking history
   Rx<BookingHistoryModel> bookingHistoryModal = BookingHistoryModel().obs;
@@ -85,17 +89,107 @@ class DashboardController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    _initializeControllers();
+    _setupObservers();
     Future.wait([fetchCitiesList(), fetchTrekList(), fetchStateList()]);
   }
 
-  // @override
-  // void onClose() {
-  //   fromController.value.dispose();
-  //   toController.value.dispose();
-  //   dateController.value.dispose();
-  //   cancellationReasonController.value.dispose();
-  //   super.onClose();
-  // }
+  void _initializeControllers() {
+    // Initialize controllers if needed
+    if (fromController.value.text.isEmpty) {
+      fromController.value = TextEditingController();
+    }
+    if (toController.value.text.isEmpty) {
+      toController.value = TextEditingController();
+    }
+    if (dateController.value.text.isEmpty) {
+      dateController.value = TextEditingController();
+    }
+  }
+
+  void _setupObservers() {
+    // Listen to city selection changes
+    ever(selectedCityId, (cityId) {
+      logger.d('City ID changed to: $cityId');
+      _onCityOrTrekChanged();
+    });
+
+    // Listen to trek selection changes
+    ever(selectedTrekId, (trekId) {
+      logger.d('Trek ID changed to: $trekId');
+      _onCityOrTrekChanged();
+    });
+  }
+
+  void _onCityOrTrekChanged() {
+    // Cancel previous timer to avoid multiple rapid API calls
+    _calendarDebounceTimer?.cancel();
+
+    // Check if both city and trek are selected
+    if (selectedCityId.value != 0 && selectedTrekId.value != 0) {
+      logger.d('Both city and trek selected, scheduling calendar fetch');
+      // Add debounce to prevent rapid API calls when both values change
+      _calendarDebounceTimer = Timer(const Duration(milliseconds: 500), () {
+        _fetchCalendarDatesForSelection();
+      });
+    } else {
+      // Clear available dates when selection is incomplete
+      logger.d('City or trek not selected, clearing available dates');
+      _clearCalendarData();
+    }
+  }
+
+  void _clearCalendarData() {
+    availableDates.clear();
+    availableDates.refresh();
+    calenderTrekDatesObserver.value = const ApiResult.init();
+    selectedDate.value = null;
+    dateController.value.clear();
+    dateController.refresh();
+  }
+
+  Future<void> _fetchCalendarDatesForSelection() async {
+    if (selectedCityId.value == 0 || selectedTrekId.value == 0) {
+      logger.w('Cannot fetch calendar: city or trek not selected');
+      return;
+    }
+
+    logger.d('Fetching calendar dates for cityId: ${selectedCityId.value}, trekId: ${selectedTrekId.value}');
+
+    final DateTime currentDate = DateTime.now();
+    final DateTime threeMonthsLater = currentDate.add(const Duration(days: 90));
+
+    final String startDateStr = DateFormat('yyyy-MM-dd').format(currentDate);
+    final String endDateStr = DateFormat('yyyy-MM-dd').format(threeMonthsLater);
+
+    await fetchCalenderTrekDates(
+      cityId: selectedCityId.value,
+      trekId: selectedTrekId.value,
+      statDate: startDateStr,
+      endDate: endDateStr,
+    );
+  }
+
+  @override
+  void onClose() {
+    _calendarDebounceTimer?.cancel();
+
+    // Dispose controllers
+    if (fromController.value.text.isNotEmpty) {
+      fromController.value.dispose();
+    }
+    if (toController.value.text.isNotEmpty) {
+      toController.value.dispose();
+    }
+    if (dateController.value.text.isNotEmpty) {
+      dateController.value.dispose();
+    }
+    if (cancellationReasonController.value.text.isNotEmpty) {
+      cancellationReasonController.value.dispose();
+    }
+
+    super.onClose();
+  }
 
   static String convertDateYYYYMMDD(String date) {
     if (date.isEmpty) return '';
@@ -121,16 +215,19 @@ class DashboardController extends GetxController {
     }
   }
 
-
   Future<void> fetchCalenderTrekDates({
-    int? cityId,
-    int? trekId,
+    required int cityId,
+    required int trekId,
     required String statDate,
     required String endDate,
   }) async {
     try {
+      // Clear previous data before new fetch
       availableDates.clear();
-      calenderTrekDatesObserver.value = ApiResult.loading("");
+      calenderTrekDatesObserver.value = ApiResult.loading("Fetching available dates...");
+
+      logger.d('Fetching calendar dates API - City: $cityId, Trek: $trekId, Start: $statDate, End: $endDate');
+
       final response = await _repository.getApiCall(
         url: NetworkUrl.searchCalenderTrekDates(
           cityId.toString(),
@@ -141,49 +238,103 @@ class DashboardController extends GetxController {
       );
 
       if (response != null) {
+        logger.d('Calendar API Response: $response');
         final responseData = CalenderDatesResponseModel.fromJson(response);
+
         if (responseData.success == true) {
+          // Populate availableDates map from response
+          if (responseData.data?.dates != null && responseData.data!.dates!.isNotEmpty) {
+            for (var dateData in responseData.data!.dates!) {
+              if (dateData.date != null) {
+                availableDates[dateData.date!] = dateData.trekCount ?? 0;
+              }
+            }
+            availableDates.refresh();
+            logger.d('Available dates loaded: ${availableDates.length} dates');
+
+            // Auto-select first available date if no date is selected
+            if (selectedDate.value == null && availableDates.isNotEmpty) {
+              _autoSelectFirstAvailableDate();
+            }
+          } else {
+            logger.d('No available dates found in response');
+            availableDates.clear();
+            availableDates.refresh();
+          }
+
           calenderTrekDatesObserver.value = ApiResult.success(responseData);
           return;
         }
-        throw "${responseData.message}";
+        throw responseData.message ?? "Failed to fetch calendar dates";
       }
       throw "Response Body Null";
     } catch (e) {
-      CustomSnackBar.show(Get.context!, message: errorMessage.value);
-      calenderTrekDatesObserver.value = ApiResult.error('Failed to search treks: ${e.toString()}');
+      logger.e('Error fetching calendar dates: $e');
+      errorMessage.value = e.toString();
+      calenderTrekDatesObserver.value = ApiResult.error('Failed to fetch calendar dates: ${e.toString()}');
     }
   }
 
+  void _autoSelectFirstAvailableDate() {
+    if (availableDates.isEmpty) return;
+
+    // Get the first available date from the map
+    final firstDateStr = availableDates.keys.first;
+    final firstDate = DateTime.tryParse(firstDateStr);
+
+    if (firstDate != null) {
+      logger.d('Auto-selecting first available date: $firstDateStr');
+      selectedDate.value = firstDate;
+      dateController.value.text = DateFormat('dd/MM/yyyy').format(firstDate);
+      dateController.refresh();
+    }
+  }
 
   bool isDateAvailable(DateTime? date) {
-    if(date == null) return false;
+    if (date == null) return false;
     String dateStr = DateFormat('yyyy-MM-dd').format(date);
-    return availableDates.containsKey(dateStr);
+    final isAvailable = availableDates.containsKey(dateStr);
+    logger.d('Date $dateStr is available: $isAvailable');
+    return isAvailable;
   }
 
   int getTrekCountForDate(DateTime? date) {
-    if(date == null) return 0;
+    if (date == null) return 0;
     String dateStr = DateFormat('yyyy-MM-dd').format(date);
-    return availableDates[dateStr] ?? 0;
+    final count = availableDates[dateStr] ?? 0;
+    return count;
   }
 
+  // Get upcoming available dates (next 7 days)
+  List<DateTime> getUpcomingAvailableDates() {
+    final now = DateTime.now();
+    final upcomingDates = <DateTime>[];
+
+    for (int i = 0; i < 30 && upcomingDates.length < 7; i++) {
+      final checkDate = now.add(Duration(days: i));
+      if (isDateAvailable(checkDate)) {
+        upcomingDates.add(checkDate);
+      }
+    }
+
+    return upcomingDates;
+  }
 
   Future<void> fetchWhatsNew() async {
     try {
       whatsNewObserver.value = const ApiResult.loading("");
-      final response = await _repository.getApiCall(url:NetworkUrl.fetchWhatsNew);
+      final response = await _repository.getApiCall(url: NetworkUrl.fetchWhatsNew);
       if (response != null) {
         final responseData = WhatsNewDataResponseModel.fromJson(response);
         if (responseData.success == true) {
           whatsNewObserver.value = ApiResult.success(responseData);
           return;
         }
-        throw "${responseData.message}";
+        throw responseData.message ?? "Failed to fetch whats new";
       }
       throw "Response Body Null";
     } catch (e) {
-      CustomSnackBar.show(Get.context!, message: e.toString());
+      logger.e('Error fetching whats new: $e');
       whatsNewObserver.value = ApiResult.error(e.toString());
     }
   }
@@ -191,18 +342,18 @@ class DashboardController extends GetxController {
   Future<void> fetchTopTreks() async {
     try {
       topTreksObserver.value = const ApiResult.loading("");
-      final response = await _repository.getApiCall(url:NetworkUrl.fetchTopTreks);
+      final response = await _repository.getApiCall(url: NetworkUrl.fetchTopTreks);
       if (response != null) {
         final responseData = TopTreksDataResponseModel.fromJson(response);
         if (responseData.success == true) {
           topTreksObserver.value = ApiResult.success(responseData);
           return;
         }
-        throw "${responseData.message}";
+        throw responseData.message ?? "Failed to fetch top treks";
       }
       throw "Response Body Null";
     } catch (e) {
-      CustomSnackBar.show(Get.context!, message: e.toString());
+      logger.e('Error fetching top treks: $e');
       topTreksObserver.value = ApiResult.error(e.toString());
     }
   }
@@ -210,18 +361,18 @@ class DashboardController extends GetxController {
   Future<void> fetchShortsTreks() async {
     try {
       shortsTreksObserver.value = const ApiResult.loading("");
-      final response = await _repository.getApiCall(url:NetworkUrl.fetchShotsTreks);
+      final response = await _repository.getApiCall(url: NetworkUrl.fetchShotsTreks);
       if (response != null) {
         final responseData = ShortsTreksDataResponseModel.fromJson(response);
         if (responseData.success == true) {
           shortsTreksObserver.value = ApiResult.success(responseData);
           return;
         }
-        throw "${responseData.message}";
+        throw responseData.message ?? "Failed to fetch shorts treks";
       }
       throw "Response Body Null";
     } catch (e) {
-      CustomSnackBar.show(Get.context!, message: e.toString());
+      logger.e('Error fetching shorts treks: $e');
       shortsTreksObserver.value = ApiResult.error(e.toString());
     }
   }
@@ -229,23 +380,21 @@ class DashboardController extends GetxController {
   Future<void> fetchSeasonalForeCasts() async {
     try {
       seasonalForcastObserver.value = const ApiResult.loading("");
-      final response = await _repository.getApiCall(url:NetworkUrl.fetchSeasonalForcasts);
+      final response = await _repository.getApiCall(url: NetworkUrl.fetchSeasonalForcasts);
       if (response != null) {
         final responseData = SeasonalForecastDataResponseModel.fromJson(response);
         if (responseData.success == true) {
           seasonalForcastObserver.value = ApiResult.success(responseData);
           return;
         }
-        throw "${responseData.message}";
+        throw responseData.message ?? "Failed to fetch seasonal forecasts";
       }
       throw "Response Body Null";
     } catch (e) {
-      CustomSnackBar.show(Get.context!, message: e.toString());
+      logger.e('Error fetching seasonal forecasts: $e');
       seasonalForcastObserver.value = ApiResult.error(e.toString());
     }
   }
-
-
 
   Future<void> fetchStateList() async {
     isLoadingCities.value = true;
@@ -259,9 +408,11 @@ class DashboardController extends GetxController {
       if (response != null) {
         stateListData.value = StateListModel.fromJson(response);
         stateList.value = stateListData.value.data ?? [];
+        logger.d('States loaded: ${stateList.length}');
       }
     } catch (e) {
       errorMessage.value = 'Failed to load states: ${e.toString()}';
+      logger.e(errorMessage.value);
       CustomSnackBar.show(Get.context!, message: errorMessage.value);
     } finally {
       isLoadingCities.value = false;
@@ -279,9 +430,11 @@ class DashboardController extends GetxController {
 
       if (response != null) {
         citiesData.value = GetCities.fromJson(response);
+        logger.d('Cities loaded: ${citiesData.value.data?.length ?? 0}');
       }
     } catch (e) {
       errorMessage.value = 'Failed to load cities: ${e.toString()}';
+      logger.e(errorMessage.value);
       CustomSnackBar.show(Get.context!, message: errorMessage.value);
     } finally {
       isLoadingCities.value = false;
@@ -299,9 +452,11 @@ class DashboardController extends GetxController {
 
       if (response != null) {
         trekData.value = TrekModal.fromJson(response);
+        logger.d('Treks loaded: ${trekData.value.data?.length ?? 0}');
       }
     } catch (e) {
       errorMessage.value = 'Failed to load treks: ${e.toString()}';
+      logger.e(errorMessage.value);
       CustomSnackBar.show(Get.context!, message: errorMessage.value);
     } finally {
       isLoadingCities.value = false;
@@ -347,17 +502,14 @@ class DashboardController extends GetxController {
             currentBookingPage.value++;
           }
 
-          // Get.forceAppUpdate();
           update();
-        }
-        else {
-          errorMessage.value = response['message'];
+        } else {
+          errorMessage.value = response['message'] ?? 'Failed to load booking history';
           CustomSnackBar.show(Get.context!, message: errorMessage.value);
         }
       }
     } catch (e) {
-      print("Server Error");
-      print(e.toString());
+      logger.e("Error loading booking history: $e");
       errorMessage.value = 'Failed to load booking history: ${e.toString()}';
       CustomSnackBar.show(Get.context!, message: errorMessage.value);
     } finally {
@@ -387,6 +539,7 @@ class DashboardController extends GetxController {
       }
     } catch (e) {
       errorMessage.value = 'Failed to load refund details: ${e.toString()}';
+      logger.e(errorMessage.value);
       CustomSnackBar.show(Get.context!, message: errorMessage.value);
     } finally {
       isLoadingRefundDetail.value = false;
@@ -407,18 +560,16 @@ class DashboardController extends GetxController {
       if (response != null) {
         if (response['success']) {
           disputeDetailModal.value = DisputeDetailModal.fromJson(response);
-
           disputeDetailDataList.value =
               disputeDetailModal.value.data?.disputes ?? [];
         } else {
           errorMessage.value =
               response['message'] ?? 'Failed to load dispute details';
-          // CustomSnackBar.show(Get.context!, message: errorMessage.value);
         }
       }
     } catch (e) {
       errorMessage.value = 'Failed to load dispute details: ${e.toString()}';
-      // Only show error if context is available (user is still on a screen)
+      logger.e(errorMessage.value);
       if (Get.context != null) {
         CustomSnackBar.show(Get.context!, message: errorMessage.value);
       }
@@ -437,7 +588,7 @@ class DashboardController extends GetxController {
       String body = json.encode({
         'booking_id': bookingId,
         'total_refundable_amount':
-            refundDetailData.value.refundCalculation?.refund ?? 0,
+        refundDetailData.value.refundCalculation?.refund ?? 0,
         'reason': cancellationReasonController.value.text,
         'deduction': refundDetailData.value.refundCalculation?.deduction ?? 0,
       });
@@ -463,6 +614,7 @@ class DashboardController extends GetxController {
       }
     } catch (e) {
       errorMessage.value = 'Failed to load refund details: ${e.toString()}';
+      logger.e(errorMessage.value);
       CustomSnackBar.show(Get.context!, message: errorMessage.value);
     } finally {
       cancellationReasonController.value.clear();
@@ -476,12 +628,15 @@ class DashboardController extends GetxController {
     // Clear search filters
     selectedTrekId.value = 0;
     fromController.value.clear();
-    fromController.refresh(); // Notify observers
+    fromController.refresh();
     toController.value.clear();
-    toController.refresh(); // Notify observers
+    toController.refresh();
     dateController.value.clear();
-    dateController.refresh(); // Notify observers that the text has changed
+    dateController.refresh();
     selectedDate.value = null;
+
+    // Clear calendar data
+    _clearCalendarData();
 
     // Clear refund detail data (temporary)
     refundDetailModal.value = RefundDetailModal();
@@ -495,9 +650,6 @@ class DashboardController extends GetxController {
     // Clear dispute detail data (temporary)
     disputeDetailModal.value = DisputeDetailModal();
     disputeDetailDataList.clear();
-
-    // Note: We keep selectedCityId, citiesData, trekData, stateList, bookingList, selectedScreen
-    // as these are user preferences or master data that should persist
 
     logger.d('DashboardController: Search and booking data cleared');
   }

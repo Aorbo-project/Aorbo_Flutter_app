@@ -2352,6 +2352,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                                     setState(() {
                                       _selectedPaymentOption = 'flexible';
                                     });
+                                    _trekControllerC.calculateFareRequestModel.value = _trekControllerC.calculateFareRequestModel.value.copyWith(cancellationPolicyType: "flexible");
                                   },
                                   child: Container(
                                     margin: EdgeInsets.only(
@@ -2447,7 +2448,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                                             color: Colors.white,
                                           ),
                                           child: _selectedPaymentOption ==
-                                              'partial'
+                                              'flexible'
                                               ? Center(
                                             child: Container(
                                               width: 2.w,
@@ -2486,6 +2487,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                                   setState(() {
                                     _selectedPaymentOption = 'standard';
                                   });
+                                  _trekControllerC.calculateFareRequestModel.value = _trekControllerC.calculateFareRequestModel.value.copyWith(cancellationPolicyType: "standard");
                                 },
                                 child: Container(
                                   margin: EdgeInsets.only(
