@@ -653,6 +653,8 @@ FetchTreksResponseModel _$FetchTreksResponseModelFromJson(
 mixin _$FetchTreksResponseModel {
   bool? get success => throw _privateConstructorUsedError;
   String? get message => throw _privateConstructorUsedError;
+  @JsonKey(name: "search_context")
+  SearchContextModel? get searchContext => throw _privateConstructorUsedError;
   List<TrekData>? get data => throw _privateConstructorUsedError;
   int? get count => throw _privateConstructorUsedError;
 
@@ -668,7 +670,14 @@ abstract class $FetchTreksResponseModelCopyWith<$Res> {
           $Res Function(FetchTreksResponseModel) then) =
       _$FetchTreksResponseModelCopyWithImpl<$Res, FetchTreksResponseModel>;
   @useResult
-  $Res call({bool? success, String? message, List<TrekData>? data, int? count});
+  $Res call(
+      {bool? success,
+      String? message,
+      @JsonKey(name: "search_context") SearchContextModel? searchContext,
+      List<TrekData>? data,
+      int? count});
+
+  $SearchContextModelCopyWith<$Res>? get searchContext;
 }
 
 /// @nodoc
@@ -687,6 +696,7 @@ class _$FetchTreksResponseModelCopyWithImpl<$Res,
   $Res call({
     Object? success = freezed,
     Object? message = freezed,
+    Object? searchContext = freezed,
     Object? data = freezed,
     Object? count = freezed,
   }) {
@@ -699,6 +709,10 @@ class _$FetchTreksResponseModelCopyWithImpl<$Res,
           ? _value.message
           : message // ignore: cast_nullable_to_non_nullable
               as String?,
+      searchContext: freezed == searchContext
+          ? _value.searchContext
+          : searchContext // ignore: cast_nullable_to_non_nullable
+              as SearchContextModel?,
       data: freezed == data
           ? _value.data
           : data // ignore: cast_nullable_to_non_nullable
@@ -708,6 +722,18 @@ class _$FetchTreksResponseModelCopyWithImpl<$Res,
           : count // ignore: cast_nullable_to_non_nullable
               as int?,
     ) as $Val);
+  }
+
+  @override
+  @pragma('vm:prefer-inline')
+  $SearchContextModelCopyWith<$Res>? get searchContext {
+    if (_value.searchContext == null) {
+      return null;
+    }
+
+    return $SearchContextModelCopyWith<$Res>(_value.searchContext!, (value) {
+      return _then(_value.copyWith(searchContext: value) as $Val);
+    });
   }
 }
 
@@ -720,7 +746,15 @@ abstract class _$$FetchTreksResponseModelImplCopyWith<$Res>
       __$$FetchTreksResponseModelImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({bool? success, String? message, List<TrekData>? data, int? count});
+  $Res call(
+      {bool? success,
+      String? message,
+      @JsonKey(name: "search_context") SearchContextModel? searchContext,
+      List<TrekData>? data,
+      int? count});
+
+  @override
+  $SearchContextModelCopyWith<$Res>? get searchContext;
 }
 
 /// @nodoc
@@ -738,6 +772,7 @@ class __$$FetchTreksResponseModelImplCopyWithImpl<$Res>
   $Res call({
     Object? success = freezed,
     Object? message = freezed,
+    Object? searchContext = freezed,
     Object? data = freezed,
     Object? count = freezed,
   }) {
@@ -750,6 +785,10 @@ class __$$FetchTreksResponseModelImplCopyWithImpl<$Res>
           ? _value.message
           : message // ignore: cast_nullable_to_non_nullable
               as String?,
+      searchContext: freezed == searchContext
+          ? _value.searchContext
+          : searchContext // ignore: cast_nullable_to_non_nullable
+              as SearchContextModel?,
       data: freezed == data
           ? _value._data
           : data // ignore: cast_nullable_to_non_nullable
@@ -766,7 +805,11 @@ class __$$FetchTreksResponseModelImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$FetchTreksResponseModelImpl implements _FetchTreksResponseModel {
   const _$FetchTreksResponseModelImpl(
-      {this.success, this.message, final List<TrekData>? data, this.count})
+      {this.success,
+      this.message,
+      @JsonKey(name: "search_context") this.searchContext,
+      final List<TrekData>? data,
+      this.count})
       : _data = data;
 
   factory _$FetchTreksResponseModelImpl.fromJson(Map<String, dynamic> json) =>
@@ -776,6 +819,9 @@ class _$FetchTreksResponseModelImpl implements _FetchTreksResponseModel {
   final bool? success;
   @override
   final String? message;
+  @override
+  @JsonKey(name: "search_context")
+  final SearchContextModel? searchContext;
   final List<TrekData>? _data;
   @override
   List<TrekData>? get data {
@@ -791,7 +837,7 @@ class _$FetchTreksResponseModelImpl implements _FetchTreksResponseModel {
 
   @override
   String toString() {
-    return 'FetchTreksResponseModel(success: $success, message: $message, data: $data, count: $count)';
+    return 'FetchTreksResponseModel(success: $success, message: $message, searchContext: $searchContext, data: $data, count: $count)';
   }
 
   @override
@@ -801,13 +847,15 @@ class _$FetchTreksResponseModelImpl implements _FetchTreksResponseModel {
             other is _$FetchTreksResponseModelImpl &&
             (identical(other.success, success) || other.success == success) &&
             (identical(other.message, message) || other.message == message) &&
+            (identical(other.searchContext, searchContext) ||
+                other.searchContext == searchContext) &&
             const DeepCollectionEquality().equals(other._data, _data) &&
             (identical(other.count, count) || other.count == count));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(runtimeType, success, message,
+  int get hashCode => Object.hash(runtimeType, success, message, searchContext,
       const DeepCollectionEquality().hash(_data), count);
 
   @JsonKey(ignore: true)
@@ -829,6 +877,7 @@ abstract class _FetchTreksResponseModel implements FetchTreksResponseModel {
   const factory _FetchTreksResponseModel(
       {final bool? success,
       final String? message,
+      @JsonKey(name: "search_context") final SearchContextModel? searchContext,
       final List<TrekData>? data,
       final int? count}) = _$FetchTreksResponseModelImpl;
 
@@ -840,6 +889,9 @@ abstract class _FetchTreksResponseModel implements FetchTreksResponseModel {
   @override
   String? get message;
   @override
+  @JsonKey(name: "search_context")
+  SearchContextModel? get searchContext;
+  @override
   List<TrekData>? get data;
   @override
   int? get count;
@@ -847,6 +899,254 @@ abstract class _FetchTreksResponseModel implements FetchTreksResponseModel {
   @JsonKey(ignore: true)
   _$$FetchTreksResponseModelImplCopyWith<_$FetchTreksResponseModelImpl>
       get copyWith => throw _privateConstructorUsedError;
+}
+
+SearchContextModel _$SearchContextModelFromJson(Map<String, dynamic> json) {
+  return _SearchContextModel.fromJson(json);
+}
+
+/// @nodoc
+mixin _$SearchContextModel {
+  String? get from => throw _privateConstructorUsedError;
+  String? get to => throw _privateConstructorUsedError;
+  @JsonKey(name: "selected_date")
+  dynamic get selectedDate => throw _privateConstructorUsedError;
+  @JsonKey(name: "weekend_mode")
+  bool? get weekendMode => throw _privateConstructorUsedError;
+  @JsonKey(name: "weekend_days")
+  List<String>? get weekendDates => throw _privateConstructorUsedError;
+
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+  @JsonKey(ignore: true)
+  $SearchContextModelCopyWith<SearchContextModel> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $SearchContextModelCopyWith<$Res> {
+  factory $SearchContextModelCopyWith(
+          SearchContextModel value, $Res Function(SearchContextModel) then) =
+      _$SearchContextModelCopyWithImpl<$Res, SearchContextModel>;
+  @useResult
+  $Res call(
+      {String? from,
+      String? to,
+      @JsonKey(name: "selected_date") dynamic selectedDate,
+      @JsonKey(name: "weekend_mode") bool? weekendMode,
+      @JsonKey(name: "weekend_days") List<String>? weekendDates});
+}
+
+/// @nodoc
+class _$SearchContextModelCopyWithImpl<$Res, $Val extends SearchContextModel>
+    implements $SearchContextModelCopyWith<$Res> {
+  _$SearchContextModelCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? from = freezed,
+    Object? to = freezed,
+    Object? selectedDate = freezed,
+    Object? weekendMode = freezed,
+    Object? weekendDates = freezed,
+  }) {
+    return _then(_value.copyWith(
+      from: freezed == from
+          ? _value.from
+          : from // ignore: cast_nullable_to_non_nullable
+              as String?,
+      to: freezed == to
+          ? _value.to
+          : to // ignore: cast_nullable_to_non_nullable
+              as String?,
+      selectedDate: freezed == selectedDate
+          ? _value.selectedDate
+          : selectedDate // ignore: cast_nullable_to_non_nullable
+              as dynamic,
+      weekendMode: freezed == weekendMode
+          ? _value.weekendMode
+          : weekendMode // ignore: cast_nullable_to_non_nullable
+              as bool?,
+      weekendDates: freezed == weekendDates
+          ? _value.weekendDates
+          : weekendDates // ignore: cast_nullable_to_non_nullable
+              as List<String>?,
+    ) as $Val);
+  }
+}
+
+/// @nodoc
+abstract class _$$SearchContextModelImplCopyWith<$Res>
+    implements $SearchContextModelCopyWith<$Res> {
+  factory _$$SearchContextModelImplCopyWith(_$SearchContextModelImpl value,
+          $Res Function(_$SearchContextModelImpl) then) =
+      __$$SearchContextModelImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call(
+      {String? from,
+      String? to,
+      @JsonKey(name: "selected_date") dynamic selectedDate,
+      @JsonKey(name: "weekend_mode") bool? weekendMode,
+      @JsonKey(name: "weekend_days") List<String>? weekendDates});
+}
+
+/// @nodoc
+class __$$SearchContextModelImplCopyWithImpl<$Res>
+    extends _$SearchContextModelCopyWithImpl<$Res, _$SearchContextModelImpl>
+    implements _$$SearchContextModelImplCopyWith<$Res> {
+  __$$SearchContextModelImplCopyWithImpl(_$SearchContextModelImpl _value,
+      $Res Function(_$SearchContextModelImpl) _then)
+      : super(_value, _then);
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? from = freezed,
+    Object? to = freezed,
+    Object? selectedDate = freezed,
+    Object? weekendMode = freezed,
+    Object? weekendDates = freezed,
+  }) {
+    return _then(_$SearchContextModelImpl(
+      from: freezed == from
+          ? _value.from
+          : from // ignore: cast_nullable_to_non_nullable
+              as String?,
+      to: freezed == to
+          ? _value.to
+          : to // ignore: cast_nullable_to_non_nullable
+              as String?,
+      selectedDate: freezed == selectedDate
+          ? _value.selectedDate
+          : selectedDate // ignore: cast_nullable_to_non_nullable
+              as dynamic,
+      weekendMode: freezed == weekendMode
+          ? _value.weekendMode
+          : weekendMode // ignore: cast_nullable_to_non_nullable
+              as bool?,
+      weekendDates: freezed == weekendDates
+          ? _value._weekendDates
+          : weekendDates // ignore: cast_nullable_to_non_nullable
+              as List<String>?,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$SearchContextModelImpl implements _SearchContextModel {
+  const _$SearchContextModelImpl(
+      {this.from,
+      this.to,
+      @JsonKey(name: "selected_date") this.selectedDate,
+      @JsonKey(name: "weekend_mode") this.weekendMode,
+      @JsonKey(name: "weekend_days") final List<String>? weekendDates})
+      : _weekendDates = weekendDates;
+
+  factory _$SearchContextModelImpl.fromJson(Map<String, dynamic> json) =>
+      _$$SearchContextModelImplFromJson(json);
+
+  @override
+  final String? from;
+  @override
+  final String? to;
+  @override
+  @JsonKey(name: "selected_date")
+  final dynamic selectedDate;
+  @override
+  @JsonKey(name: "weekend_mode")
+  final bool? weekendMode;
+  final List<String>? _weekendDates;
+  @override
+  @JsonKey(name: "weekend_days")
+  List<String>? get weekendDates {
+    final value = _weekendDates;
+    if (value == null) return null;
+    if (_weekendDates is EqualUnmodifiableListView) return _weekendDates;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(value);
+  }
+
+  @override
+  String toString() {
+    return 'SearchContextModel(from: $from, to: $to, selectedDate: $selectedDate, weekendMode: $weekendMode, weekendDates: $weekendDates)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$SearchContextModelImpl &&
+            (identical(other.from, from) || other.from == from) &&
+            (identical(other.to, to) || other.to == to) &&
+            const DeepCollectionEquality()
+                .equals(other.selectedDate, selectedDate) &&
+            (identical(other.weekendMode, weekendMode) ||
+                other.weekendMode == weekendMode) &&
+            const DeepCollectionEquality()
+                .equals(other._weekendDates, _weekendDates));
+  }
+
+  @JsonKey(ignore: true)
+  @override
+  int get hashCode => Object.hash(
+      runtimeType,
+      from,
+      to,
+      const DeepCollectionEquality().hash(selectedDate),
+      weekendMode,
+      const DeepCollectionEquality().hash(_weekendDates));
+
+  @JsonKey(ignore: true)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$SearchContextModelImplCopyWith<_$SearchContextModelImpl> get copyWith =>
+      __$$SearchContextModelImplCopyWithImpl<_$SearchContextModelImpl>(
+          this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$SearchContextModelImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _SearchContextModel implements SearchContextModel {
+  const factory _SearchContextModel(
+          {final String? from,
+          final String? to,
+          @JsonKey(name: "selected_date") final dynamic selectedDate,
+          @JsonKey(name: "weekend_mode") final bool? weekendMode,
+          @JsonKey(name: "weekend_days") final List<String>? weekendDates}) =
+      _$SearchContextModelImpl;
+
+  factory _SearchContextModel.fromJson(Map<String, dynamic> json) =
+      _$SearchContextModelImpl.fromJson;
+
+  @override
+  String? get from;
+  @override
+  String? get to;
+  @override
+  @JsonKey(name: "selected_date")
+  dynamic get selectedDate;
+  @override
+  @JsonKey(name: "weekend_mode")
+  bool? get weekendMode;
+  @override
+  @JsonKey(name: "weekend_days")
+  List<String>? get weekendDates;
+  @override
+  @JsonKey(ignore: true)
+  _$$SearchContextModelImplCopyWith<_$SearchContextModelImpl> get copyWith =>
+      throw _privateConstructorUsedError;
 }
 
 TrekData _$TrekDataFromJson(Map<String, dynamic> json) {

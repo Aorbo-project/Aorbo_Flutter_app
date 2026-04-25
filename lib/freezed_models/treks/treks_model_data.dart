@@ -49,12 +49,27 @@ class FetchTreksResponseModel with _$FetchTreksResponseModel {
   const factory FetchTreksResponseModel({
     bool? success,
     String? message,
+    @JsonKey(name:"search_context") SearchContextModel? searchContext,
     List<TrekData>? data,
     int? count
   }) = _FetchTreksResponseModel;
 
   factory FetchTreksResponseModel.fromJson(Map<String, dynamic> json) =>
       _$FetchTreksResponseModelFromJson(json);
+}
+
+@freezed
+class SearchContextModel with _$SearchContextModel {
+  const factory SearchContextModel({
+    String? from,
+    String? to,
+    @JsonKey(name:"selected_date") dynamic selectedDate,
+    @JsonKey(name:"weekend_mode") bool? weekendMode,
+    @JsonKey(name:"weekend_days") List<String>? weekendDates
+  }) = _SearchContextModel;
+
+  factory SearchContextModel.fromJson(Map<String, dynamic> json) =>
+      _$SearchContextModelFromJson(json);
 }
 
 @freezed

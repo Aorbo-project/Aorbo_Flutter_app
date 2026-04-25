@@ -17,6 +17,7 @@ import '../repository/api_result.dart';
 import '../repository/repository.dart';
 import '../repository/network_url.dart';
 import '../controller/dashboard_controller.dart';
+import '../utils/auth_utils.dart';
 import '../utils/booking_constants.dart';
 // import '../models/trekcard/trek_card_list_model.dart';
 
@@ -25,7 +26,21 @@ class TrekController extends GetxController {
   final DashboardController _dashboardC = Get.find<DashboardController>();
 
 
-  final treksResponseObserver = const ApiResult<FetchTreksResponseModel>.init().obs;
+  final treksResponseObserver = PaginationModel(
+      data: const ApiResult<FetchTreksResponseModel>.init().obs,
+      isLoading: false,
+      isPaginationCompleted: false,
+      page: 1,
+      error: "")
+      .obs;
+
+  final weekendTreksResponseObserver = PaginationModel(
+      data: const ApiResult<FetchTreksResponseModel>.init().obs,
+      isLoading: false,
+      isPaginationCompleted: false,
+      page: 1,
+      error: "")
+      .obs;
 
 
 
@@ -145,26 +160,70 @@ class TrekController extends GetxController {
     }
   }
 
-  Future<void> searchTrek({
-    required int cityId,
+
+
+
+  Future<void> searchTreks({required int cityId,
     required int trekId,
     required String date,
-  }) async {
+    required bool refresh}) async {
+    final observer = treksResponseObserver;
 
     try {
-      treksResponseObserver.value = ApiResult.loading("");
+      if (refresh == true) {
+        observer.value = PaginationModel(
+            data: const ApiResult<FetchTreksResponseModel>.init().obs,
+            isLoading: false,
+            isPaginationCompleted: false,
+            page: 1,
+            error: "");
+      }
+
+      if (observer.value.isPaginationCompleted || observer.value.isLoading == true) {
+        return;
+      }
+
+      if (observer.value.page == 1) {
+        observer.value.data.value = const ApiResult.loading("");
+      } else {
+        observer.value.isLoading = true;
+        observer.refresh();
+      }
+
+      const maxListApiReturns = 20;
+      observer.refresh();
+
       final response = await repository.getApiCall(
         url: NetworkUrl.searchTrek(
-          cityId.toString(),
-          trekId.toString(),
-          convertDateYYYYMMDD(date),
+            cityId.toString(),
+            trekId.toString(),
+            convertDateYYYYMMDD(date),
+            null,
+            observer.value.page,
+            20
         ),
       );
 
-      if (response != null) {
-        final responseData = FetchTreksResponseModel.fromJson(response);
+      final body = response;
+      if (body != null) {
+        final responseData = FetchTreksResponseModel.fromJson(body);
         if (responseData.success == true) {
-          treksResponseObserver.value = ApiResult.success(responseData);
+          observer.value.data.value.maybeWhen(success: (data) {
+            final oldList =
+            (data as FetchTreksResponseModel?)?.data?.toList();
+            oldList?.addAll(responseData.data ?? List.empty());
+            observer.value.data.value =
+                ApiResult.success(responseData.copyWith(data: oldList));
+          }, orElse: () {
+            observer.value.data.value = ApiResult.success(responseData);
+          });
+
+          observer.value.page = observer.value.page + 1;
+          if ((responseData.data?.length ?? 0) < maxListApiReturns) {
+            observer.value.isPaginationCompleted = true;
+          }
+          observer.value.isLoading = false;
+          observer.refresh();
           return;
         }
         throw "${responseData.message}";
@@ -173,7 +232,86 @@ class TrekController extends GetxController {
     } catch (e) {
       errorMessage.value = 'Failed to search treks: ${e.toString()}';
       CustomSnackBar.show(Get.context!, message: errorMessage.value);
-      treksResponseObserver.value = ApiResult.error('Failed to search treks: ${e.toString()}');
+      observer.value.data.value = ApiResult.error(e.toString());
+      observer.value.isLoading = false;
+      observer.refresh();
+    }
+  }
+
+
+  Future<void> fetchWeekendTreks({
+    required int cityId,
+    required int trekId,
+    required String date,
+    required bool refresh}) async {
+    final observer = weekendTreksResponseObserver;
+
+    try {
+      if (refresh == true) {
+        observer.value = PaginationModel(
+            data: const ApiResult<FetchTreksResponseModel>.init().obs,
+            isLoading: false,
+            isPaginationCompleted: false,
+            page: 1,
+            error: "");
+      }
+
+      if (observer.value.isPaginationCompleted || observer.value.isLoading == true) {
+        return;
+      }
+
+      if (observer.value.page == 1) {
+        observer.value.data.value = const ApiResult.loading("");
+      } else {
+        observer.value.isLoading = true;
+        observer.refresh();
+      }
+
+      const maxListApiReturns = 20;
+      observer.refresh();
+
+      final response = await repository.getApiCall(
+        url: NetworkUrl.searchTrek(
+            cityId.toString(),
+            trekId.toString(),
+            convertDateYYYYMMDD(date),
+            true,
+            observer.value.page,
+            20
+        ),
+      );
+
+      final body = response;
+      if (body != null) {
+        final responseData = FetchTreksResponseModel.fromJson(body);
+        if (responseData.success == true) {
+          observer.value.data.value.maybeWhen(success: (data) {
+            final oldList =
+            (data as FetchTreksResponseModel?)?.data?.toList();
+            oldList?.addAll(responseData.data ?? List.empty());
+            observer.value.data.value =
+                ApiResult.success(responseData.copyWith(data: oldList));
+          }, orElse: () {
+            observer.value.data.value = ApiResult.success(responseData);
+          });
+
+          observer.value.page = observer.value.page + 1;
+          if ((responseData.data?.length ?? 0) < maxListApiReturns) {
+            observer.value.isPaginationCompleted = true;
+          }
+          observer.value.isLoading = false;
+          observer.refresh();
+          return;
+        }
+        throw "${responseData.message}";
+      }
+      throw "Response Body Null";
+    } catch (e) {
+      errorMessage.value = 'Failed to search treks: ${e.toString()}';
+      CustomSnackBar.show(Get.context!, message: errorMessage.value);
+      observer.value.data.value = ApiResult.error(e.toString());
+      observer.value.isLoading = false;
+      observer.refresh();
     }
   }
 
@@ -197,7 +335,6 @@ class TrekController extends GetxController {
           trekDetailModal.value = TrekDetailModal.fromJson(response);
           trekDetailData.value = trekDetailModal.value.data ?? TrekDetailData();
           logger.d(trekDetailData.value.latestReviews?.length);
-          Get.toNamed('/trek-details');
         } else {
           errorMessage.value = response['message'];
           CustomSnackBar.show(Get.context!, message: errorMessage.value);

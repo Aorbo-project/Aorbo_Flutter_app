@@ -4,6 +4,22 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'user_profile_model.freezed.dart';
 part 'user_profile_model.g.dart';
 
+class PaginationModel<T>{
+  T data;
+  bool isLoading;
+  bool isPaginationCompleted;
+  int page;
+  String error;
+
+  PaginationModel({
+    required this.data,
+    required this.isLoading,
+    required this.isPaginationCompleted,
+    required this.page,
+    required this.error
+  });
+}
+
 @freezed
 class UserProfileModal with _$UserProfileModal {
   const factory UserProfileModal({

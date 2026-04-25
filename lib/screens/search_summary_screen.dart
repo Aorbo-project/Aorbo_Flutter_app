@@ -1,9 +1,8 @@
 import 'package:arobo_app/controller/coupon_controller.dart';
 import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/controller/trek_controller.dart';
-import 'package:arobo_app/models/trek_model.dart';
+import 'package:arobo_app/screens/trek_details_screen.dart';
 import 'package:arobo_app/utils/app_theme.dart';
-import 'package:arobo_app/utils/common_bottom_nav.dart';
 import 'package:arobo_app/utils/common_trek_card.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:arobo_app/utils/statefullwrapper.dart';
@@ -188,6 +187,7 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen> {
   }
 
   void _applyFilters(List<String> filters) {
+    print(filters.join(","));
     // setState(() {
     //   activeFilters = List.from(filters);
     //
@@ -462,256 +462,263 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen> {
         body: SafeArea(
           child: Container(
             color: CommonColors.whiteColor,
-            child: CustomScrollView(
-              controller: _scrollController,
-              slivers: [
-                // Non-sticky content
-                SliverToBoxAdapter(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 10),
+            child: NotificationListener(
+              onNotification: (ScrollNotification scrollNotification) {
+                if (scrollNotification.metrics.pixels >= scrollNotification.metrics.maxScrollExtent - 200) {
+                  print("Paginate");
+                }
+                return false;
+              },
+              child: CustomScrollView(
+                controller: _scrollController,
+                slivers: [
+                  // Non-sticky content
+                  SliverToBoxAdapter(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 10),
 
-                      // 📌 Booking for Groups Section
-                      Padding(
-                        padding: const EdgeInsets.only(left: 20, right: 20),
-                        child: Container(
-                          width: MediaQuery.of(context).size.width * 0.9,
-                          decoration: BoxDecoration(
-                            color: CommonColors.whiteColor,
-                            borderRadius: BorderRadius.circular(30),
-                            border: Border.all(
-                              color: CommonColors.shimmerBaseColor,
-                              width: 1.5,
+                        // 📌 Booking for Groups Section
+                        Padding(
+                          padding: const EdgeInsets.only(left: 20, right: 20),
+                          child: Container(
+                            width: MediaQuery.of(context).size.width * 0.9,
+                            decoration: BoxDecoration(
+                              color: CommonColors.whiteColor,
+                              borderRadius: BorderRadius.circular(30),
+                              border: Border.all(
+                                color: CommonColors.shimmerBaseColor,
+                                width: 1.5,
+                              ),
                             ),
-                          ),
-                          padding: const EdgeInsets.only(left: 15, right: 6),
-                          child: Row(
-                            children: [
-                              SvgPicture.asset(
-                                CommonImages.group,
-                                width: 21,
-                                height: 21,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  'Booking for Groups',
-                                  textScaler: const TextScaler.linear(1.0),
-                                  style: TextStyle(
-                                    fontSize: FontSize.s10,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                              Text(
-                                'View more',
-                                textScaler: const TextScaler.linear(1.0),
-                                style: TextStyle(
-                                  color: CommonColors.blueColor,
-                                  fontSize: FontSize.s9,
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              ),
-                              Transform.scale(
-                                scale: 0.8,
-                                child: Switch.adaptive(
-                                  activeColor: CommonColors.whiteColor,
-                                  activeTrackColor: CommonColors.blackColor,
-                                  inactiveTrackColor:
-                                      CommonColors.shimmerBaseColor,
-                                  inactiveThumbColor: CommonColors.blackColor,
-                                  value: isGroupBooking,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      isGroupBooking = value;
-                                    });
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-
-                      // 📌 Discount Cards Section
-                      SingleChildScrollView(
-                        physics: const ClampingScrollPhysics(),
-                        controller: _scrollController,
-                        child: Column(
-                          children: [
-                            Obx(() {
-                              final loading = couponController.adminCouponsObserver.value.maybeWhen(loading: (data) => true,orElse: () => false);
-                              List<CouponCardData>? discountCards = couponController.adminCouponsObserver.value.maybeWhen(success: (couponsResponse) => (couponsResponse as CouponCodeModel).data,error: (sc) => [],orElse: () => [CouponCardData(),CouponCardData(),CouponCardData(),CouponCardData()]);
-                              if(discountCards?.isEmpty == true) return SizedBox();
-
-                              return SizedBox(
-                                height: MediaQuery.of(context).size.height * 0.18,
-                                width: MediaQuery.of(context).size.width,
-                                child: Listener(
-                                  onPointerDown: (_) {
-                                    _isDiscountCardsUserInteracting = true;
-                                    _discountCardsTimer?.cancel();
-                                  },
-                                  onPointerUp: (_) {
-                                    _isDiscountCardsUserInteracting = false;
-                                    _startDiscountCardsAutoScroll();
-                                  },
-                                  onPointerCancel: (_) {
-                                    _isDiscountCardsUserInteracting = false;
-                                    _startDiscountCardsAutoScroll();
-                                  },
-                                  child: PageView.builder(
-                                    controller: _discountCardsPageController,
-                                    itemCount: null,
-                                    physics: const BouncingScrollPhysics(),
-                                    itemBuilder: (context, index) {
-                                      final discount = discountCards?[index % (discountCards.length ?? 0)];
-
-                                      return Container(
-                                        margin: const EdgeInsets.symmetric(
-                                            horizontal: 10),
-                                        child: CommonDiscountCard(
-                                          title: discount?.title ?? "",
-                                          subtitle: discount?.description ?? "",
-                                          color: AppTheme.hexToColor(discount?.color ?? "#3B82F6"),
-                                          code: discount?.code ?? "",
-                                          offerAmount: discount?.discountValue ?? "",
-                                          imagePath: discount?.imagePath ?? 'https://i.pinimg.com/originals/86/b5/3d/86b53d90fbd279ea28d04099ff7518f0.png',
-                                          imageHeight: 30,
-                                          detailedDescription: discount?.description ?? "",
-                                          howToApply: "dcc",
-                                          termsAndConditions: discount?.termsAndConditions?.join("\n"),
-                                          footerNote: "efr",
-                                        ).withShimmerAi(loading: loading),
-                                      );
-                                    },
-                                  ),
-                                ),
-                              );
-                            })
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-                  ),
-                ),
-
-                // Sticky Filter Bar
-                SliverPersistentHeader(
-                  pinned: true,
-                  delegate: _StickyFilterBarDelegate(
-                    activeFilters: activeFilters,
-                    onFilterRemoved: _removeFilter,
-                    screenHeight: MediaQuery.of(context).size.height,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        boxShadow: [
-                          BoxShadow(
-                            color: CommonColors.blackColor.withValues(alpha: 0.13),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Center(
-                        child: SizedBox(
-                          height: 4.h,
-                          child: CommonFilterBar(
-                            key: _commonFilterBarKey,
-                            onFiltersChanged: (filters) {
-                              _applyFilters(filters);
-                              if (_scrollController.hasClients) {
-                                _scrollController.jumpTo(0);
-                              }
-                            },
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                // Trek List Section
-                Obx(() {
-                  final treksLoading = _trekControllerC.treksResponseObserver.value.maybeWhen(loading: (data) => true,orElse: () => false);
-                  List<TrekData>? filteredTreks = _trekControllerC.treksResponseObserver.value.maybeWhen(success: (treksResponse) => (treksResponse as FetchTreksResponseModel).data,error: (sc) => [],orElse: () => [TrekData(),TrekData(),TrekData(),TrekData()]);
-
-                  return SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                        if (filteredTreks?.isEmpty == true) {
-                          return Container(
-                            margin: const EdgeInsets.only(top: 40),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                            padding: const EdgeInsets.only(left: 15, right: 6),
+                            child: Row(
                               children: [
-                                Icon(
-                                  Icons.hiking,
-                                  size: 64,
-                                  color: CommonColors.grey_AEAEAE,
+                                SvgPicture.asset(
+                                  CommonImages.group,
+                                  width: 21,
+                                  height: 21,
                                 ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  'No treks available for ${getFormattedDate(_dashboardC.dateController.value.text)}',
-                                  textScaler: const TextScaler.linear(1.0),
-                                  style: TextStyle(
-                                    fontSize: FontSize.s11,
-                                    fontWeight: FontWeight.w500,
-                                    color: CommonColors.blackColor,
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Booking for Groups',
+                                    textScaler: const TextScaler.linear(1.0),
+                                    style: TextStyle(
+                                      fontSize: FontSize.s10,
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                   ),
                                 ),
-                                const SizedBox(height: 8),
                                 Text(
-                                  'Try selecting a different date',
+                                  'View more',
                                   textScaler: const TextScaler.linear(1.0),
                                   style: TextStyle(
+                                    color: CommonColors.blueColor,
                                     fontSize: FontSize.s9,
-                                    color: CommonColors.grey_AEAEAE,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                                Transform.scale(
+                                  scale: 0.8,
+                                  child: Switch.adaptive(
+                                    activeColor: CommonColors.whiteColor,
+                                    activeTrackColor: CommonColors.blackColor,
+                                    inactiveTrackColor:
+                                        CommonColors.shimmerBaseColor,
+                                    inactiveThumbColor: CommonColors.blackColor,
+                                    value: isGroupBooking,
+                                    onChanged: (value) {
+                                      setState(() {
+                                        isGroupBooking = value;
+                                      });
+                                    },
                                   ),
                                 ),
                               ],
                             ),
-                          );
-                        }
-                        final trek = filteredTreks?[index];
-                        return Column(
-                          children: [
-                            Container(
-                              margin: const EdgeInsets.only(
-                                top: 24,
-                              ),
-                              //CommonTrekCard
-                              child: CommonTrekCard(
-                                trek: trek,
-                                onTap: () async {
-                                  // Set the trek detail ID
-                                  _trekControllerC.trekDetailId.value = trek?.id ?? 0;
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        // 📌 Discount Cards Section
+                        SingleChildScrollView(
+                          physics: const ClampingScrollPhysics(),
+                          controller: _scrollController,
+                          child: Column(
+                            children: [
+                              Obx(() {
+                                final loading = couponController.adminCouponsObserver.value.maybeWhen(loading: (data) => true,orElse: () => false);
+                                List<CouponCardData>? discountCards = couponController.adminCouponsObserver.value.maybeWhen(success: (couponsResponse) => (couponsResponse as CouponCodeModel).data,error: (sc) => [],orElse: () => [CouponCardData(),CouponCardData(),CouponCardData(),CouponCardData()]);
+                                if(discountCards?.isEmpty == true) return SizedBox();
 
-                                  // Call the trek detail API
-                                  await _trekControllerC.trekDetail(batchId: trek?.batchInfo?.id ?? 0);
+                                return SizedBox(
+                                  height: MediaQuery.of(context).size.height * 0.18,
+                                  width: MediaQuery.of(context).size.width,
+                                  child: Listener(
+                                    onPointerDown: (_) {
+                                      _isDiscountCardsUserInteracting = true;
+                                      _discountCardsTimer?.cancel();
+                                    },
+                                    onPointerUp: (_) {
+                                      _isDiscountCardsUserInteracting = false;
+                                      _startDiscountCardsAutoScroll();
+                                    },
+                                    onPointerCancel: (_) {
+                                      _isDiscountCardsUserInteracting = false;
+                                      _startDiscountCardsAutoScroll();
+                                    },
+                                    child: PageView.builder(
+                                      controller: _discountCardsPageController,
+                                      itemCount: null,
+                                      physics: const BouncingScrollPhysics(),
+                                      itemBuilder: (context, index) {
+                                        final discount = discountCards?[index % (discountCards.length ?? 0)];
 
-                                  Get.toNamed('/trek-details');
-
-                                  // Navigate to trek details screen
-                                },
-                              ).withShimmerAi(loading: treksLoading),
-                            ),
-                            if (index == ((filteredTreks?.length ?? 0) - 1))
-                              const SizedBox(height: 34),
-                          ],
-                        );
-                      },
-                      childCount: filteredTreks?.isEmpty == true ? 1 : filteredTreks?.length ?? 0,
+                                        return Container(
+                                          margin: const EdgeInsets.symmetric(
+                                              horizontal: 10),
+                                          child: CommonDiscountCard(
+                                            title: discount?.title ?? "",
+                                            subtitle: discount?.description ?? "",
+                                            color: AppTheme.hexToColor(discount?.color ?? "#3B82F6"),
+                                            code: discount?.code ?? "",
+                                            offerAmount: discount?.discountValue ?? "",
+                                            imagePath: discount?.imagePath ?? 'https://i.pinimg.com/originals/86/b5/3d/86b53d90fbd279ea28d04099ff7518f0.png',
+                                            imageHeight: 30,
+                                            detailedDescription: discount?.description ?? "",
+                                            howToApply: "dcc",
+                                            termsAndConditions: discount?.termsAndConditions?.join("\n"),
+                                            footerNote: "efr",
+                                          ).withShimmerAi(loading: loading),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                );
+                              })
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
                     ),
-                  );
-                },
-                ),
-              ],
+                  ),
+
+                  // Sticky Filter Bar
+                  SliverPersistentHeader(
+                    pinned: true,
+                    delegate: _StickyFilterBarDelegate(
+                      activeFilters: activeFilters,
+                      onFilterRemoved: _removeFilter,
+                      screenHeight: MediaQuery.of(context).size.height,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          boxShadow: [
+                            BoxShadow(
+                              color: CommonColors.blackColor.withValues(alpha: 0.13),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Center(
+                          child: SizedBox(
+                            height: 4.h,
+                            child: CommonFilterBar(
+                              key: _commonFilterBarKey,
+                              onFiltersChanged: (filters) {
+                                _applyFilters(filters);
+                                if (_scrollController.hasClients) {
+                                  _scrollController.jumpTo(0);
+                                }
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Trek List Section
+                  Obx(() {
+                    final treksLoading = _trekControllerC.treksResponseObserver.value.data.value.maybeWhen(loading: (data) => true,orElse: () => false);
+                    List<TrekData>? filteredTreks = _trekControllerC.treksResponseObserver.value.data.value.maybeWhen(success: (treksResponse) => (treksResponse as FetchTreksResponseModel).data,error: (sc) => [],orElse: () => [TrekData(),TrekData(),TrekData(),TrekData()]);
+
+                    return SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                          if (filteredTreks?.isEmpty == true) {
+                            return Container(
+                              margin: const EdgeInsets.only(top: 40),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.hiking,
+                                    size: 64,
+                                    color: CommonColors.grey_AEAEAE,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'No treks available for ${getFormattedDate(_dashboardC.dateController.value.text)}',
+                                    textScaler: const TextScaler.linear(1.0),
+                                    style: TextStyle(
+                                      fontSize: FontSize.s11,
+                                      fontWeight: FontWeight.w500,
+                                      color: CommonColors.blackColor,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Try selecting a different date',
+                                    textScaler: const TextScaler.linear(1.0),
+                                    style: TextStyle(
+                                      fontSize: FontSize.s9,
+                                      color: CommonColors.grey_AEAEAE,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+                          final trek = filteredTreks?[index];
+                          return Column(
+                            children: [
+                              Container(
+                                margin: const EdgeInsets.only(
+                                  top: 24,
+                                ),
+                                //CommonTrekCard
+                                child: CommonTrekCard(
+                                  trek: trek,
+                                  onTap: () async {
+                                    // Set the trek detail ID
+                                    _trekControllerC.trekDetailId.value = trek?.id ?? 0;
+
+                                    // Call the trek detail API
+                                    await _trekControllerC.trekDetail(batchId: trek?.batchInfo?.id ?? 0);
+
+                                    Get.to(() => TrekDetailsScreen(trek:trek));
+
+                                    // Navigate to trek details screen
+                                  },
+                                ).withShimmerAi(loading: treksLoading),
+                              ),
+                              if (index == ((filteredTreks?.length ?? 0) - 1))
+                                const SizedBox(height: 34),
+                            ],
+                          );
+                        },
+                        childCount: filteredTreks?.isEmpty == true ? 1 : filteredTreks?.length ?? 0,
+                      ),
+                    );
+                  },
+                  ),
+                ],
+              ),
             ),
           ),
         ),

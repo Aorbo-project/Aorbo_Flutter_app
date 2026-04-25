@@ -66,6 +66,10 @@ _$FetchTreksResponseModelImpl _$$FetchTreksResponseModelImplFromJson(
     _$FetchTreksResponseModelImpl(
       success: json['success'] as bool?,
       message: json['message'] as String?,
+      searchContext: json['search_context'] == null
+          ? null
+          : SearchContextModel.fromJson(
+              json['search_context'] as Map<String, dynamic>),
       data: (json['data'] as List<dynamic>?)
           ?.map((e) => TrekData.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -77,8 +81,31 @@ Map<String, dynamic> _$$FetchTreksResponseModelImplToJson(
     <String, dynamic>{
       'success': instance.success,
       'message': instance.message,
+      'search_context': instance.searchContext,
       'data': instance.data,
       'count': instance.count,
+    };
+
+_$SearchContextModelImpl _$$SearchContextModelImplFromJson(
+        Map<String, dynamic> json) =>
+    _$SearchContextModelImpl(
+      from: json['from'] as String?,
+      to: json['to'] as String?,
+      selectedDate: json['selected_date'],
+      weekendMode: json['weekend_mode'] as bool?,
+      weekendDates: (json['weekend_days'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+    );
+
+Map<String, dynamic> _$$SearchContextModelImplToJson(
+        _$SearchContextModelImpl instance) =>
+    <String, dynamic>{
+      'from': instance.from,
+      'to': instance.to,
+      'selected_date': instance.selectedDate,
+      'weekend_mode': instance.weekendMode,
+      'weekend_days': instance.weekendDates,
     };
 
 _$TrekDataImpl _$$TrekDataImplFromJson(Map<String, dynamic> json) =>
