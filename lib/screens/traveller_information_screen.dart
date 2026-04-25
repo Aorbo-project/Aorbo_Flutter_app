@@ -2333,7 +2333,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                           ),
                           SizedBox(height: 2.5.h),
                           // Pay ₹999 Section - Only show for Flexible cancellation policy (ID = 1)
-                          if (travelData.cancellationPolicy?.id == 1) ...[
+                          if (travelData.cancellationPolicy?.id != 1) ...[
                             Container(
                               width: 100.w,
                               decoration: BoxDecoration(

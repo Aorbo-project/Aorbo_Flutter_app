@@ -334,7 +334,6 @@ class TrekController extends GetxController {
         if (response['success']) {
           trekDetailModal.value = TrekDetailModal.fromJson(response);
           trekDetailData.value = trekDetailModal.value.data ?? TrekDetailData();
-          logger.d(trekDetailData.value.latestReviews?.length);
         } else {
           errorMessage.value = response['message'];
           CustomSnackBar.show(Get.context!, message: errorMessage.value);

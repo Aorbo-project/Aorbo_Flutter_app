@@ -85,6 +85,7 @@ class TrekData with _$TrekData {
     String? duration,
     BatchInfo? batchInfo,
     Badge? badge,
+    String? imageUrl
   }) = _TrekData;
 
   factory TrekData.fromJson(Map<String, dynamic> json) =>

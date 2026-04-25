@@ -1,3 +1,4 @@
+import 'package:arobo_app/utils/auth_utils.dart';
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/common_images.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
@@ -6,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
 
 import '../freezed_models/treks/treks_model_data.dart';
+import '../widgets/custom_network_image.dart';
 
 class CommonTrekCard extends StatelessWidget {
   final TrekData? trek;
@@ -67,17 +69,16 @@ class CommonTrekCard extends StatelessWidget {
   String _calculateDiscountedPrice() {
     // The trek.price already contains the discounted price from the API
     // We don't need to apply discount calculation again here
-    return trek?.price?.replaceAll(',', '') ?? '0.00';
+    return AuthUtils.formatPrice(trek?.price?.replaceAll(',', '') ?? '0.00');
   }
 
   // Method to get original price for strikethrough (calculate from discounted price)
   String _getOriginalPrice() {
     if (trek?.hasDiscount != true || trek?.discountText == null) {
-      return trek?.price?.replaceAll(',', '') ?? '0.00';
+      return AuthUtils.formatPrice(trek?.price?.replaceAll(',', '') ?? '0.00');
     }
 
-    double discountedPrice =
-        double.tryParse(trek?.price?.replaceAll(',', '') ?? '0.00') ?? 0.00;
+    double discountedPrice = double.tryParse(trek?.price?.replaceAll(',', '') ?? '0.00') ?? 0.00;
     String discountText = trek?.discountText ?? '';
 
     // Check if discount is percentage
@@ -87,34 +88,17 @@ class CommonTrekCard extends StatelessWidget {
       double percentage = double.tryParse(percentageStr) ?? 0.0;
       // Calculate original price from discounted price: original = discounted / (1 - percentage/100)
       double originalPrice = discountedPrice / (1 - (percentage / 100));
-      return originalPrice.toStringAsFixed(0);
+      return AuthUtils.formatPrice(originalPrice.toStringAsFixed(0));
     } else {
       // Check if discount is fixed amount
       String amountStr = discountText.replaceAll(RegExp(r'[^\d.]'), '');
       double discountAmount = double.tryParse(amountStr) ?? 0.0;
       double originalPrice = discountedPrice + discountAmount;
-      return originalPrice.toStringAsFixed(0);
+      return AuthUtils.formatPrice(originalPrice.toStringAsFixed(0));
     }
   }
 
-  // Method to format date from "2025-09-05" to "05-09-2025"
-  String _formatDate(String? dateString) {
-    if (dateString == null || dateString.isEmpty) {
-      return '-';
-    }
 
-    try {
-      // Split the date string by '-'
-      List<String> dateParts = dateString.split('-');
-      if (dateParts.length == 3) {
-        // Reorder from YYYY-MM-DD to DD-MM-YYYY
-        return '${dateParts[2]}-${dateParts[1]}-${dateParts[0]}';
-      }
-      return dateString; // Return original if format is unexpected
-    } catch (e) {
-      return dateString; // Return original if parsing fails
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -144,26 +128,34 @@ class CommonTrekCard extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SizedBox(
-                    width: 12.w,
-                    height: 12.w,
-                    child: Image.asset(
+                  Container(
+                    width: 12.5.w,
+                    height: 12.5.w,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: trek?.imageUrl?.isEmpty == true ? Image.asset(
                       CommonImages.logo4,
-                      width: 12.w,
-                      height: 12.w,
+                      fit: BoxFit.cover,
+                    ) : CustomNetworkImage(
+                      imageUrl: trek?.imageUrl ?? "",
+                      fit: BoxFit.cover,
+                      width: 12.5.w,
+                      height: 12.5.w,
                     ),
                   ),
                   SizedBox(width: 3.w),
                   Expanded(
                     child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        SizedBox(height: 0.8.h),
                         Text(
                           trek?.name ?? '-',
                           textScaler: const TextScaler.linear(1.0),
                           style: GoogleFonts.poppins(
-                            fontSize: FontSize.s11,
+                            fontSize: FontSize.s12,
                             fontWeight: FontWeight.w600,
                             color: Colors.black,
                           ),
@@ -238,7 +230,7 @@ class CommonTrekCard extends StatelessWidget {
                             if (trek?.hasDiscount == true) ...[
                               // Show original price with strikethrough
                               Text(
-                                '₹${_getOriginalPrice()}',
+                                '${_getOriginalPrice()}',
                                 textScaler: const TextScaler.linear(1.0),
                                 style: GoogleFonts.roboto(
                                   fontSize: FontSize.s8,
@@ -252,42 +244,23 @@ class CommonTrekCard extends StatelessWidget {
                               // SizedBox(height: 0.2.h),
                             ],
                             // Show discounted price or original price
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '₹ ',
-                                  textScaler: const TextScaler.linear(1.0),
-                                  style: GoogleFonts.roboto(
-                                    fontSize: FontSize.s14,
-                                    fontWeight: FontWeight.w600,
-                                    color: trek?.hasDiscount == true
-                                        ? CommonColors.softGreen3
-                                        : CommonColors.blackColor,
-                                  ),
-                                ),
-                                Text(
-                                  trek?.hasDiscount == true
-                                      ? _calculateDiscountedPrice()
-                                      : (trek?.price ?? '0.00'),
-                                  textScaler: const TextScaler.linear(1.0),
-                                  style: GoogleFonts.roboto(
-                                    fontSize: FontSize.s14,
-                                    fontWeight: FontWeight.w800,
-                                    color: trek?.hasDiscount == true
-                                        ? CommonColors.softGreen3
-                                        : CommonColors.blackColor,
-                                  ),
-                                ),
-                              ],
+                            Text(
+                              '${trek?.hasDiscount == true
+                                  ? _calculateDiscountedPrice()
+                                  : (AuthUtils.formatPrice(trek?.price ?? '0.00'))}',
+                              textScaler: const TextScaler.linear(1.0),
+                              style: GoogleFonts.roboto(
+                                fontSize: FontSize.s14,
+                                fontWeight: FontWeight.w500,
+                                color:  CommonColors.softGreen3,
+                              ),
                             ),
                             Text(
                               'Onwards',
                               textScaler: const TextScaler.linear(1.0),
                               style: GoogleFonts.poppins(
-                                fontSize: FontSize.s9,
-                                fontWeight: FontWeight.w500,
+                                fontSize: FontSize.s7,
+                                fontWeight: FontWeight.w400,
                                 color: CommonColors.blackColor.withValues(
                                   alpha: 0.5,
                                 ),
@@ -311,7 +284,7 @@ class CommonTrekCard extends StatelessWidget {
                           'Trek Duration',
                           textScaler: const TextScaler.linear(1.0),
                           style: GoogleFonts.poppins(
-                            fontSize: FontSize.s10,
+                            fontSize: FontSize.s9,
                             fontWeight: FontWeight.w600,
                             color: Colors.black,
                           ),
@@ -320,7 +293,7 @@ class CommonTrekCard extends StatelessWidget {
                           trek?.duration ?? '-',
                           textScaler: const TextScaler.linear(1.0),
                           style: GoogleFonts.poppins(
-                            fontSize: FontSize.s9,
+                            fontSize: FontSize.s8,
                             fontWeight: FontWeight.w500,
                             color: CommonColors.blackColor.withValues(
                               alpha: 0.5,
@@ -346,7 +319,7 @@ class CommonTrekCard extends StatelessWidget {
                           textScaler: const TextScaler.linear(1.0),
                           style: GoogleFonts.poppins(
                             color: Colors.white,
-                            fontSize: 11.sp,
+                            fontSize: 9.sp,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -367,16 +340,16 @@ class CommonTrekCard extends StatelessWidget {
                           'Departure Date',
                           textScaler: const TextScaler.linear(1.0),
                           style: GoogleFonts.poppins(
-                            fontSize: FontSize.s10,
+                            fontSize: FontSize.s9,
                             fontWeight: FontWeight.w600,
                             color: CommonColors.blackColor,
                           ),
                         ),
                         Text(
-                          _formatDate(trek?.batchInfo?.startDate),
+                          AuthUtils.formatDateTime(trek?.batchInfo?.startDate),
                           textScaler: const TextScaler.linear(1.0),
                           style: GoogleFonts.poppins(
-                            fontSize: FontSize.s9,
+                            fontSize: FontSize.s8,
                             fontWeight: FontWeight.w500,
                             color: CommonColors.blackColor.withValues(
                               alpha: 0.5,
@@ -393,9 +366,9 @@ class CommonTrekCard extends StatelessWidget {
                         '${trek?.batchInfo?.availableSlots} Slots left',
                         textScaler: const TextScaler.linear(1.0),
                         style: GoogleFonts.poppins(
-                          fontSize: FontSize.s9,
+                          fontSize: FontSize.s8,
                           fontWeight: FontWeight.w500,
-                          color: CommonColors.blackColor.withValues(alpha: 0.8),
+                          color: CommonColors.blackColor.withValues(alpha: 0.5),
                         ),
                       ),
                       SizedBox(height: 0.4.h),
@@ -432,7 +405,7 @@ class CommonTrekCard extends StatelessWidget {
                                 'View itinerary',
                                 textScaler: const TextScaler.linear(1.0),
                                 style: GoogleFonts.poppins(
-                                  fontSize: FontSize.s9,
+                                  fontSize: FontSize.s8,
                                   fontWeight: FontWeight.w500,
                                   color: CommonColors.blueColor,
                                 ),

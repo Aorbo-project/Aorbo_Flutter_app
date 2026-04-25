@@ -169,9 +169,10 @@ class _CouponCodeScreenState extends State<CouponCodeScreen> {
                 ),
                 TextButton(
                   onPressed: () async {
-                    // if (_couponController.text.isNotEmpty) {
-                    //   await _validateAndApplyCoupon(_couponController.text);
-                    // }
+                    if (_couponController.text.isNotEmpty) {
+                      _trekController.calculateFareRequestModel.value = _trekController.calculateFareRequestModel.value.copyWith(couponCode: _couponController.text);
+                      Get.back();
+                    }
                   },
                   child: Text(
                     'Apply',
@@ -257,8 +258,9 @@ class _CouponCodeScreenState extends State<CouponCodeScreen> {
                   final coupon = couponsList?[index];
                   return CouponCard(
                     coupon: coupon,
-                    onApply: () async {
-                      // await _validateAndApplyCoupon(coupon.code ?? '');
+                    onApply: () {
+                      _trekController.calculateFareRequestModel.value = _trekController.calculateFareRequestModel.value.copyWith(couponCode: coupon?.code ?? '');
+                      Get.back();
                     },
                     isApplied: false,
                   );

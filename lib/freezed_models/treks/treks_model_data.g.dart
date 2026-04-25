@@ -124,6 +124,7 @@ _$TrekDataImpl _$$TrekDataImplFromJson(Map<String, dynamic> json) =>
       badge: json['badge'] == null
           ? null
           : Badge.fromJson(json['badge'] as Map<String, dynamic>),
+      imageUrl: json['imageUrl'] as String?,
     );
 
 Map<String, dynamic> _$$TrekDataImplToJson(_$TrekDataImpl instance) =>
@@ -138,6 +139,7 @@ Map<String, dynamic> _$$TrekDataImplToJson(_$TrekDataImpl instance) =>
       'duration': instance.duration,
       'batchInfo': instance.batchInfo,
       'badge': instance.badge,
+      'imageUrl': instance.imageUrl,
     };
 
 _$BatchInfoImpl _$$BatchInfoImplFromJson(Map<String, dynamic> json) =>

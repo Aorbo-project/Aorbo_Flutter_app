@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:arobo_app/freezed_models/booking/booking_data_model.dart';
+import 'package:arobo_app/screens/coupon_code_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
@@ -33,7 +36,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
   final TrekController _trekControllerC = Get.find<TrekController>();
   final UserController _userC = Get.find<UserController>();
 
-  bool _isCouponValid = false;
   String? _couponError = null;
 
   // Coupon related state
@@ -44,8 +46,44 @@ class _PaymentScreenState extends State<PaymentScreen> {
   String? _selectedUPIOption = PaymentMethods.razorpay;
 
 
+  static const int _totalTimerSeconds = 5 * 60;
+  RxInt _remainingSeconds = _totalTimerSeconds.obs;
+  bool _isTimerExpired = false;
+  Timer? _timer;
+
   // Payment processing
   late Razorpay _razorpay;
+
+
+  /// Starts the countdown timer
+  void _startTimer() {
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        if (_remainingSeconds.value > 0) {
+          _remainingSeconds.value--;
+        }
+
+        if (_remainingSeconds.value == 0) {
+          _isTimerExpired = true;
+          _timer?.cancel();
+          _handleTimerExpired();
+        }
+      }
+    });
+  }
+
+  /// Handles timer expiration - navigates back and shows message
+  void _handleTimerExpired() {
+    if (mounted) {
+      // Show a snackbar message
+      CustomSnackBar.show(
+        context,
+        message: 'Payment session timed out. Please start over.',
+      );
+
+      Get.back();
+    }
+  }
 
   /// Opens Razorpay payment gateway with calculated amount and order details
   void _openRazorpay(BreakDownDataModel? breakdown) async {
@@ -117,14 +155,81 @@ class _PaymentScreenState extends State<PaymentScreen> {
     _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
     _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
     _couponController.addListener(_handleTextChange);
+    debounce(
+      _trekControllerC.calculateFareRequestModel,
+          (value) {
+        // This will be called after 500ms of no changes
+        print('Searching for: $value');
+        _trekControllerC.calculateFare();
+      },
+      time: Duration(milliseconds: 500),
+    );
+    _startTimer();
   }
 
   @override
   void dispose() {
+    _timer?.cancel();
     _couponController.removeListener(_handleTextChange);
     _couponController.dispose();
     _razorpay.clear();
     super.dispose();
+  }
+
+
+  Widget _buildTimerAndProgress() {
+    return Center(
+      child: Obx((){
+        int minutes = _remainingSeconds.value ~/ 60;
+        int seconds = _remainingSeconds.value % 60;
+
+        final _formattedTime = '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+        final _progressValue = _remainingSeconds.value / _totalTimerSeconds;
+
+        return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            SizedBox(
+              width: 17.w,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.timer_outlined,
+                    size: 4.w,
+                    color: CommonColors.orangeColor,
+                  ),
+                  SizedBox(width: 1.w),
+                  Text(
+                    _formattedTime,
+                    textScaler: const TextScaler.linear(1.0),
+                    style: GoogleFonts.poppins(
+                      fontSize: FontSize.s11,
+                      fontWeight: FontWeight.w600,
+                      color: CommonColors.orangeColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 0.5.h),
+            SizedBox(
+              width: 17.w,
+              height: 0.5.h,
+              child: LinearProgressIndicator(
+                value: _progressValue,
+                backgroundColor: CommonColors.greyColor.withValues(alpha: 0.3),
+                color: CommonColors.orangeColor,
+                minHeight: 0.1.h,
+                borderRadius: BorderRadius.circular(200),
+              ),
+            ),
+          ],
+        );
+        },
+      ),
+    );
   }
 
   void _handleTextChange() {
@@ -218,88 +323,102 @@ class _PaymentScreenState extends State<PaymentScreen> {
                             width: 0.3.w,
                           ),
                         ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () async {
-                                  await Get.toNamed('/coupon-code');
-                                },
-                                child: AbsorbPointer(
-                                  child: TextField(
-                                    controller: _couponController,
-                                    textCapitalization:
-                                    TextCapitalization.characters,
-                                    decoration: InputDecoration(
-                                      hintText: BookingMessages.enterCouponCode,
-                                      hintStyle: GoogleFonts.poppins(
-                                        fontSize: FontSize.s11,
-                                        color: CommonColors.blackColor
-                                            .withValues(alpha: 0.3),
-                                      ),
-                                      border: InputBorder.none,
-                                      contentPadding: EdgeInsets.symmetric(
-                                        horizontal: 4.w,
-                                        vertical: 1.5.h,
-                                      ),
-                                    ),
+                        child: Obx((){
+                          final appliedCoupon = _trekControllerC.calculateFareRequestModel.value.couponCode;
+                          final appliedCouponResponse = _trekControllerC.calculateFareResponseModel.value.maybeWhen(success: (response) => (response as CalculateFareResponseModel).couponDetails,orElse: () => null);
+                          final isCouponValid = appliedCouponResponse != null;
+
+                          return appliedCoupon?.isEmpty == true ? Container(
+                            margin: EdgeInsets.symmetric(horizontal: 7.w, vertical: 1.h),
+                            decoration: BoxDecoration(
+                              color: CommonColors.whiteColor,
+                              borderRadius: BorderRadius.circular(3.w),
+                              border: Border.all(
+                                color: CommonColors.profileColor,
+                                width: 1,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    "Enter Coupon Code",
                                     style: GoogleFonts.poppins(
                                       fontSize: FontSize.s11,
-                                      color: CommonColors.blackColor,
+                                      color: const Color(0xff969696),
                                     ),
-                                    onChanged: (value) {
-
-                                    },
                                   ),
                                 ),
+                                TextButton(
+                                  onPressed: () async {
+                                    Get.to(() => CouponCodeScreen());
+                                  },
+                                  child: Text(
+                                    'Apply',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: FontSize.s11,
+                                      fontWeight: FontWeight.w500,
+                                      color: _couponController.text.isNotEmpty
+                                          ? CommonColors.blueColor
+                                          : const Color(0xff969696),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ) :
+                            Container(
+                            decoration: BoxDecoration(
+                              gradient: isCouponValid
+                                  ? CommonColors.btnGradient
+                                  : (_couponController.text.isNotEmpty
+                                  ? CommonColors.btnGradient
+                                  : CommonColors.disableBtnGradient),
+                              borderRadius: BorderRadius.horizontal(
+                                right: Radius.circular(3.w),
                               ),
                             ),
-                            Container(
-                              decoration: BoxDecoration(
-                                gradient: _isCouponValid
-                                    ? CommonColors.btnGradient
-                                    : (_couponController.text.isNotEmpty
-                                    ? CommonColors.btnGradient
-                                    : CommonColors.disableBtnGradient),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap:(){
+                                  if(isCouponValid == false){
+                                    _trekControllerC.calculateFareRequestModel.value = _trekControllerC.calculateFareRequestModel.value.copyWith(couponCode: "");
+                                  }
+                                  else{
+                                    _trekControllerC.calculateFareRequestModel.value = _trekControllerC.calculateFareRequestModel.value.copyWith(couponCode: "");
+                                  }
+                                },
                                 borderRadius: BorderRadius.horizontal(
                                   right: Radius.circular(3.w),
                                 ),
-                              ),
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  onTap: _isCouponValid
-                                      ? () {
-                                         _trekControllerC.calculateFareRequestModel.value = _trekControllerC.calculateFareRequestModel.value.copyWith(couponCode: "");
-                                      }
-                                      : (_couponController.text.isNotEmpty
-                                      ? () async {
-                                        _trekControllerC.calculateFareRequestModel.value = _trekControllerC.calculateFareRequestModel.value.copyWith(couponCode: _couponController.text);
-                                      }
-                                      : null),
-                                  borderRadius: BorderRadius.horizontal(
-                                    right: Radius.circular(3.w),
+                                child: Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 5.w,
+                                    vertical: 1.5.h,
                                   ),
-                                  child: Padding(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 5.w,
-                                      vertical: 1.5.h,
-                                    ),
-                                    child: Text(
-                                      _isCouponValid
-                                          ? BookingMessages.remove
-                                          : BookingMessages.apply,
-                                      style: GoogleFonts.poppins(
-                                        fontSize: FontSize.s11,
-                                        fontWeight: FontWeight.w500,
-                                        color: CommonColors.whiteColor,
-                                      ),
+                                  child: Text(
+                                    isCouponValid
+                                        ? BookingMessages.remove
+                                        : BookingMessages.apply,
+                                    style: GoogleFonts.poppins(
+                                      fontSize: FontSize.s11,
+                                      fontWeight: FontWeight.w500,
+                                      color: CommonColors.whiteColor,
                                     ),
                                   ),
                                 ),
                               ),
                             ),
-                          ],
+                          );
+                        },
                         ),
                       ),
                       if (_couponError != null) ...[
@@ -545,499 +664,537 @@ class _PaymentScreenState extends State<PaymentScreen> {
             color: CommonColors.blackColor,
           ),
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: _buildTimerAndProgress(),
+          )
+        ],
       ),
-      body: SingleChildScrollView(
-        physics: const ClampingScrollPhysics(),
-        child: Container(
-          width: MediaQuery.of(context).size.width,
-          padding: const EdgeInsets.only(
-            left: 8,
-            right: 8,
-            top: 20,
-            bottom: 15,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Obx(() {
-                final calculateFareRequestModel = _trekControllerC.calculateFareRequestModel.value;
-                BreakDownDataModel? breakdown = _trekControllerC.calculateFareResponseModel.value.maybeWhen(success: (response) => (response as CalculateFareResponseModel).breakdown,orElse: () => null);
-                 return Container(
-                  margin: EdgeInsets.symmetric(horizontal: 4.w),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              "Review booking",
-                              textScaler: const TextScaler.linear(1.0),
-                              style: GoogleFonts.poppins(
-                                fontSize: FontSize.s14,
-                                fontWeight: FontWeight.w500,
-                                color: CommonColors.blackColor,
-                              ),
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              showModalBottomSheet(
-                                context: context,
-                                backgroundColor: Colors.transparent,
-                                builder: (context) => SlotBookingDetailsModal(
-                                  trekName: travelData.title ?? '-',
-                                  adultCount: calculateFareRequestModel.travelerCount,
-                                  fromLocation:
-                                  _dashboardC.fromController.value.text,
-                                  toLocation: _dashboardC.toController.value.text,
-                                  departureDate:
-                                  travelData.batchInfo?.startDate ?? '-',
-                                  duration:
-                                  '${travelData.durationDays}D ${travelData.durationNights}N',
-                                  email: _userC.userProfileData.value.customer?.email ?? '-',
-                                  phone: _userC.userProfileData.value.customer?.phone ?? '-',
-                                  travellers: _getTravellerDetails(),
-                                  breakdown: breakdown,
-                                  isPartialPayment:calculateFareRequestModel.cancellationPolicyType == "partial",
-                                ),
-                              );
-                            },
-                            child: Text(
-                              'View details',
-                              style: GoogleFonts.poppins(
-                                fontSize: FontSize.s10,
-                                fontWeight: FontWeight.w500,
-                                color: CommonColors.blueColor,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 0.5.h),
-                      Row(
-                        children: [
-                          Text(
-                            "${calculateFareRequestModel.travelerCount} Traveller:",
-                            textScaler: const TextScaler.linear(1.0),
-                            style: GoogleFonts.poppins(
-                              fontSize: FontSize.s9,
-                              fontWeight: FontWeight.w600,
-                              color: CommonColors.blackColor,
-                            ),
-                          ),
-                          Text(
-                            " ${calculateFareRequestModel.travelerCount} Adults/ From ${_dashboardC.fromController.value.text}",
-                            textScaler: const TextScaler.linear(1.0),
-                            style: GoogleFonts.poppins(
-                              fontSize: FontSize.s9,
-                              fontWeight: FontWeight.w300,
-                              color: CommonColors.blackColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 2.h),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _dashboardC.fromController.value.text,
-                                textScaler: const TextScaler.linear(1.0),
-                                style: GoogleFonts.poppins(
-                                  fontSize: FontSize.s9,
-                                  fontWeight: FontWeight.w500,
-                                  color: CommonColors.blackColor,
-                                ),
-                              ),
-                              Text(
-                                travelData.batchInfo?.startDate ?? '-',
-                                textScaler: const TextScaler.linear(1.0),
-                                style: GoogleFonts.poppins(
-                                  fontSize: FontSize.s9,
-                                  fontWeight: FontWeight.w400,
-                                  color: CommonColors.blackColor,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(width: 3.w),
-                          Icon(
-                            Icons.arrow_right_alt,
-                            size: 5.w,
-                            color: CommonColors.grey_AEAEAE,
-                          ),
-                          SizedBox(width: 3.w),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                _dashboardC.toController.value.text,
-                                textScaler: const TextScaler.linear(1.0),
-                                style: GoogleFonts.poppins(
-                                  fontSize: FontSize.s9,
-                                  fontWeight: FontWeight.w500,
-                                  color: CommonColors.blackColor,
-                                ),
-                              ),
-                              Text(
-                                _calculateEndDate(
-                                  travelData.batchInfo?.startDate,
-                                  travelData.durationDays,
-                                ),
-                                textScaler: const TextScaler.linear(1.0),
-                                style: GoogleFonts.poppins(
-                                  fontSize: FontSize.s9,
-                                  fontWeight: FontWeight.w400,
-                                  color: CommonColors.blackColor,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                );
-                 },
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            physics: const ClampingScrollPhysics(),
+            child: Container(
+              width: MediaQuery.of(context).size.width,
+              padding: const EdgeInsets.only(
+                left: 8,
+                right: 8,
+                top: 20,
+                bottom: 15,
               ),
-              SizedBox(height: 3.h),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Obx(() {
+                    final calculateFareRequestModel = _trekControllerC.calculateFareRequestModel.value;
+                    BreakDownDataModel? breakdown = _trekControllerC.calculateFareResponseModel.value.maybeWhen(success: (response) => (response as CalculateFareResponseModel).breakdown,orElse: () => null);
+                     return Container(
+                      margin: EdgeInsets.symmetric(horizontal: 4.w),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SlotBookingDetailsModal(
+                            trekName: travelData.title ?? '-',
+                            adultCount: calculateFareRequestModel.travelerCount,
+                            fromLocation:
+                            _dashboardC.fromController.value.text,
+                            toLocation: _dashboardC.toController.value.text,
+                            departureDate:
+                            travelData.batchInfo?.startDate ?? '-',
+                            duration:
+                            '${travelData.durationDays}D ${travelData.durationNights}N',
+                            email: _userC.userProfileData.value.customer?.email ?? '-',
+                            phone: _userC.userProfileData.value.customer?.phone ?? '-',
+                            travellers: _getTravellerDetails(),
+                            breakdown: breakdown,
+                            isPartialPayment:calculateFareRequestModel.cancellationPolicyType == "partial",
+                          ),
 
-              // Coupon Code Section (Available for both partial and full payment per Payment.md)
-              _buildCouponSection(),
-              SizedBox(height: 3.h),
+                          // Row(
+                          //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          //   children: [
+                          //     Expanded(
+                          //       child: Text(
+                          //         "Review booking",
+                          //         textScaler: const TextScaler.linear(1.0),
+                          //         style: GoogleFonts.poppins(
+                          //           fontSize: FontSize.s14,
+                          //           fontWeight: FontWeight.w500,
+                          //           color: CommonColors.blackColor,
+                          //         ),
+                          //       ),
+                          //     ),
+                          //     TextButton(
+                          //       onPressed: () {
+                          //         showModalBottomSheet(
+                          //           context: context,
+                          //           backgroundColor: Colors.transparent,
+                          //           builder: (context) => SlotBookingDetailsModal(
+                          //             trekName: travelData.title ?? '-',
+                          //             adultCount: calculateFareRequestModel.travelerCount,
+                          //             fromLocation:
+                          //             _dashboardC.fromController.value.text,
+                          //             toLocation: _dashboardC.toController.value.text,
+                          //             departureDate:
+                          //             travelData.batchInfo?.startDate ?? '-',
+                          //             duration:
+                          //             '${travelData.durationDays}D ${travelData.durationNights}N',
+                          //             email: _userC.userProfileData.value.customer?.email ?? '-',
+                          //             phone: _userC.userProfileData.value.customer?.phone ?? '-',
+                          //             travellers: _getTravellerDetails(),
+                          //             breakdown: breakdown,
+                          //             isPartialPayment:calculateFareRequestModel.cancellationPolicyType == "partial",
+                          //           ),
+                          //         );
+                          //       },
+                          //       child: Text(
+                          //         'View details',
+                          //         style: GoogleFonts.poppins(
+                          //           fontSize: FontSize.s10,
+                          //           fontWeight: FontWeight.w500,
+                          //           color: CommonColors.blueColor,
+                          //         ),
+                          //       ),
+                          //     ),
+                          //   ],
+                          // ),
+                          // SizedBox(height: 0.5.h),
+                          // Row(
+                          //   children: [
+                          //     Text(
+                          //       "${calculateFareRequestModel.travelerCount} Traveller:",
+                          //       textScaler: const TextScaler.linear(1.0),
+                          //       style: GoogleFonts.poppins(
+                          //         fontSize: FontSize.s9,
+                          //         fontWeight: FontWeight.w600,
+                          //         color: CommonColors.blackColor,
+                          //       ),
+                          //     ),
+                          //     Text(
+                          //       " ${calculateFareRequestModel.travelerCount} Adults/ From ${_dashboardC.fromController.value.text}",
+                          //       textScaler: const TextScaler.linear(1.0),
+                          //       style: GoogleFonts.poppins(
+                          //         fontSize: FontSize.s9,
+                          //         fontWeight: FontWeight.w300,
+                          //         color: CommonColors.blackColor,
+                          //       ),
+                          //     ),
+                          //   ],
+                          // ),
+                          // SizedBox(height: 2.h),
+                          // Row(
+                          //   mainAxisAlignment: MainAxisAlignment.start,
+                          //   children: [
+                          //     Column(
+                          //       crossAxisAlignment: CrossAxisAlignment.start,
+                          //       children: [
+                          //         Text(
+                          //           _dashboardC.fromController.value.text,
+                          //           textScaler: const TextScaler.linear(1.0),
+                          //           style: GoogleFonts.poppins(
+                          //             fontSize: FontSize.s9,
+                          //             fontWeight: FontWeight.w500,
+                          //             color: CommonColors.blackColor,
+                          //           ),
+                          //         ),
+                          //         Text(
+                          //           travelData.batchInfo?.startDate ?? '-',
+                          //           textScaler: const TextScaler.linear(1.0),
+                          //           style: GoogleFonts.poppins(
+                          //             fontSize: FontSize.s9,
+                          //             fontWeight: FontWeight.w400,
+                          //             color: CommonColors.blackColor,
+                          //           ),
+                          //         ),
+                          //       ],
+                          //     ),
+                          //     SizedBox(width: 3.w),
+                          //     Icon(
+                          //       Icons.arrow_right_alt,
+                          //       size: 5.w,
+                          //       color: CommonColors.grey_AEAEAE,
+                          //     ),
+                          //     SizedBox(width: 3.w),
+                          //     Column(
+                          //       crossAxisAlignment: CrossAxisAlignment.end,
+                          //       children: [
+                          //         Text(
+                          //           _dashboardC.toController.value.text,
+                          //           textScaler: const TextScaler.linear(1.0),
+                          //           style: GoogleFonts.poppins(
+                          //             fontSize: FontSize.s9,
+                          //             fontWeight: FontWeight.w500,
+                          //             color: CommonColors.blackColor,
+                          //           ),
+                          //         ),
+                          //         Text(
+                          //           _calculateEndDate(
+                          //             travelData.batchInfo?.startDate,
+                          //             travelData.durationDays,
+                          //           ),
+                          //           textScaler: const TextScaler.linear(1.0),
+                          //           style: GoogleFonts.poppins(
+                          //             fontSize: FontSize.s9,
+                          //             fontWeight: FontWeight.w400,
+                          //             color: CommonColors.blackColor,
+                          //           ),
+                          //         ),
+                          //       ],
+                          //     ),
+                          //   ],
+                          // ),
+                        ],
+                      ),
+                    );
+                     },
+                  ),
+                  SizedBox(height: 3.h),
 
-              // // UPI Payment Section
-              // Container(
-              //   margin: EdgeInsets.symmetric(horizontal: 4.w),
-              //   width: 100.w,
-              //   decoration: BoxDecoration(
-              //     borderRadius: BorderRadius.circular(5.w),
-              //     boxShadow: [
-              //       BoxShadow(
-              //         color: CommonColors.blackColor.withValues(alpha: 0.2),
-              //         offset: Offset(2, 2),
-              //         blurRadius: 6,
-              //         spreadRadius: 2,
-              //       ),
-              //     ],
-              //     color: CommonColors.offWhiteColor2,
-              //   ),
-              //   child: Container(
-              //     width: 100.w,
-              //     margin: EdgeInsets.only(
-              //       left: 4.w,
-              //       right: 4.w,
-              //       top: 1.8.h,
-              //       bottom: 1.8.h,
-              //     ),
-              //     child: Column(
-              //       crossAxisAlignment: CrossAxisAlignment.start,
-              //       children: [
-              //         Text(
-              //           'UPI',
-              //           textScaler: const TextScaler.linear(1.0),
-              //           style: GoogleFonts.alexandria(
-              //             fontSize: FontSize.s14,
-              //             fontWeight: FontWeight.w500,
-              //             color: CommonColors.blackColor,
-              //           ),
-              //         ),
-              //         SizedBox(height: 2.h),
-              //
-              //         // Razorpay
-              //         _buildUPIOption(
-              //           icon: PaymentMethods.razorpay,
-              //           title: 'Razorpay',
-              //           isSelected:
-              //           _selectedUPIOption == PaymentMethods.razorpay,
-              //           onTap: () {
-              //             setState(() {
-              //               _selectedUPIOption =
-              //               _selectedUPIOption == PaymentMethods.razorpay
-              //                   ? null
-              //                   : PaymentMethods.razorpay;
-              //             });
-              //           },
-              //         ),
-              //         // Separator
-              //         Container(
-              //           height: 1,
-              //           color: CommonColors.greyColor.withValues(alpha: 0.3),
-              //           margin: EdgeInsets.symmetric(vertical: 1.h),
-              //         ),
-              //
-              //         // PhonePe UPI (Locked)
-              //         Stack(
-              //           children: [
-              //             Opacity(
-              //               opacity: 0.5,
-              //               child: _buildUPIOption(
-              //                 icon: 'phonepe',
-              //                 title: 'Phonepe UPI',
-              //                 isSelected: false,
-              //                 onTap: () {}, // Disabled
-              //               ),
-              //             ),
-              //             Positioned.fill(
-              //               child: Container(
-              //                 decoration: BoxDecoration(
-              //                   color: CommonColors.whiteColor.withValues(
-              //                     alpha: 0.9,
-              //                   ),
-              //                   borderRadius: BorderRadius.circular(2.w),
-              //                 ),
-              //                 child: Center(
-              //                   child: Icon(
-              //                     Icons.lock_outline,
-              //                     size: 5.w,
-              //                     color: CommonColors.blackColor,
-              //                   ),
-              //                 ),
-              //               ),
-              //             ),
-              //           ],
-              //         ),
-              //         // Separator
-              //         Container(
-              //           height: 1,
-              //           color: CommonColors.greyColor.withValues(alpha: 0.3),
-              //           margin: EdgeInsets.symmetric(vertical: 1.h),
-              //         ),
-              //
-              //         // Paytm UPI (Locked)
-              //         Stack(
-              //           children: [
-              //             Opacity(
-              //               opacity: 0.5,
-              //               child: _buildUPIOption(
-              //                 icon: 'paytm',
-              //                 title: 'Paytm UPI',
-              //                 isSelected: false,
-              //                 onTap: () {}, // Disabled
-              //               ),
-              //             ),
-              //             Positioned.fill(
-              //               child: Container(
-              //                 decoration: BoxDecoration(
-              //                   color: Colors.white.withValues(alpha: 0.7),
-              //                   borderRadius: BorderRadius.circular(2.w),
-              //                 ),
-              //                 child: Center(
-              //                   child: Icon(
-              //                     Icons.lock_outline,
-              //                     size: 5.w,
-              //                     color: CommonColors.blackColor,
-              //                   ),
-              //                 ),
-              //               ),
-              //             ),
-              //           ],
-              //         ),
-              //         // Separator
-              //         Container(
-              //           height: 1,
-              //           color: CommonColors.greyColor.withValues(alpha: 0.3),
-              //           margin: EdgeInsets.symmetric(vertical: 1.h),
-              //         ),
-              //
-              //         // WhatsApp UPI (Locked)
-              //         Stack(
-              //           children: [
-              //             Opacity(
-              //               opacity: 0.5,
-              //               child: _buildUPIOption(
-              //                 icon: 'whatsapp',
-              //                 title: 'WhatsApp UPI',
-              //                 isSelected: false,
-              //                 onTap: () {}, // Disabled
-              //               ),
-              //             ),
-              //             Positioned.fill(
-              //               child: Container(
-              //                 decoration: BoxDecoration(
-              //                   color: Colors.white.withValues(alpha: 0.7),
-              //                   borderRadius: BorderRadius.circular(2.w),
-              //                 ),
-              //                 child: Center(
-              //                   child: Icon(
-              //                     Icons.lock_outline,
-              //                     size: 5.w,
-              //                     color: CommonColors.blackColor,
-              //                   ),
-              //                 ),
-              //               ),
-              //             ),
-              //           ],
-              //         ),
-              //         // Separator
-              //         Container(
-              //           height: 1,
-              //           color: CommonColors.greyColor.withValues(alpha: 0.3),
-              //           margin: EdgeInsets.symmetric(vertical: 1.h),
-              //         ),
-              //
-              //         // Add New UPI ID (Locked)
-              //         Stack(
-              //           children: [
-              //             Opacity(opacity: 0.5, child: _buildAddNewUPIOption()),
-              //             Positioned.fill(
-              //               child: Container(
-              //                 decoration: BoxDecoration(
-              //                   color: Colors.white.withValues(alpha: 0.7),
-              //                   borderRadius: BorderRadius.circular(2.w),
-              //                 ),
-              //                 child: Center(
-              //                   child: Icon(
-              //                     Icons.lock_outline,
-              //                     size: 5.w,
-              //                     color: CommonColors.blackColor,
-              //                   ),
-              //                 ),
-              //               ),
-              //             ),
-              //           ],
-              //         ),
-              //       ],
-              //     ),
-              //   ),
-              // ),
-              // SizedBox(height: 3.h),
-              //
-              // // Other Payment Methods Section
-              // Container(
-              //   margin: EdgeInsets.symmetric(horizontal: 4.w),
-              //   width: 100.w,
-              //   decoration: BoxDecoration(
-              //     borderRadius: BorderRadius.circular(5.w),
-              //     boxShadow: [
-              //       BoxShadow(
-              //         color: CommonColors.blackColor.withValues(alpha: 0.2),
-              //         offset: Offset(2, 2),
-              //         blurRadius: 6,
-              //         spreadRadius: 2,
-              //       ),
-              //     ],
-              //     color: CommonColors.offWhiteColor2,
-              //   ),
-              //   child: Container(
-              //     width: 100.w,
-              //     margin: EdgeInsets.only(
-              //       left: 4.w,
-              //       right: 4.w,
-              //       top: 1.8.h,
-              //       bottom: 1.8.h,
-              //     ),
-              //     child: Column(
-              //       crossAxisAlignment: CrossAxisAlignment.start,
-              //       children: [
-              //         // Add New Card (Locked)
-              //         Stack(
-              //           children: [
-              //             Opacity(
-              //               opacity: 0.5,
-              //               child: _buildPaymentOption(
-              //                 icon: CommonImages.cardIcon,
-              //                 title: 'Add New Card',
-              //               ),
-              //             ),
-              //             Positioned.fill(
-              //               child: Container(
-              //                 decoration: BoxDecoration(
-              //                   color: Colors.white.withValues(alpha: 0.7),
-              //                   borderRadius: BorderRadius.circular(2.w),
-              //                 ),
-              //                 child: Center(
-              //                   child: Icon(
-              //                     Icons.lock_outline,
-              //                     size: 5.w,
-              //                     color: CommonColors.blackColor,
-              //                   ),
-              //                 ),
-              //               ),
-              //             ),
-              //           ],
-              //         ),
-              //         // Separator
-              //         Container(
-              //           height: 1,
-              //           color: CommonColors.greyColor.withValues(alpha: 0.3),
-              //           margin: EdgeInsets.symmetric(vertical: 1.h),
-              //         ),
-              //
-              //         // Wallets (Locked)
-              //         Stack(
-              //           children: [
-              //             Opacity(
-              //               opacity: 0.5,
-              //               child: _buildPaymentOption(
-              //                 icon: CommonImages.walletIcon,
-              //                 title: 'Wallets',
-              //               ),
-              //             ),
-              //             Positioned.fill(
-              //               child: Container(
-              //                 decoration: BoxDecoration(
-              //                   color: Colors.white.withValues(alpha: 0.7),
-              //                   borderRadius: BorderRadius.circular(2.w),
-              //                 ),
-              //                 child: Center(
-              //                   child: Icon(
-              //                     Icons.lock_outline,
-              //                     size: 5.w,
-              //                     color: CommonColors.blackColor,
-              //                   ),
-              //                 ),
-              //               ),
-              //             ),
-              //           ],
-              //         ),
-              //         // Separator
-              //         Container(
-              //           height: 1,
-              //           color: CommonColors.greyColor.withValues(alpha: 0.3),
-              //           margin: EdgeInsets.symmetric(vertical: 1.h),
-              //         ),
-              //
-              //         // Netbanking (Locked)
-              //         Stack(
-              //           children: [
-              //             Opacity(
-              //               opacity: 0.5,
-              //               child: _buildPaymentOption(
-              //                 icon: CommonImages.bankIcon,
-              //                 title: 'Netbanking',
-              //               ),
-              //             ),
-              //             Positioned.fill(
-              //               child: Container(
-              //                 decoration: BoxDecoration(
-              //                   color: Colors.white.withValues(alpha: 0.7),
-              //                   borderRadius: BorderRadius.circular(2.w),
-              //                 ),
-              //                 child: Center(
-              //                   child: Icon(
-              //                     Icons.lock_outline,
-              //                     size: 5.w,
-              //                     color: CommonColors.blackColor,
-              //                   ),
-              //                 ),
-              //               ),
-              //             ),
-              //           ],
-              //         ),
-              //       ],
-              //     ),
-              //   ),
-              // ),
-              SizedBox(height: 3.h),
-            ],
+                  // Coupon Code Section (Available for both partial and full payment per Payment.md)
+                  _buildCouponSection(),
+                  SizedBox(height: 3.h),
+
+                  // // UPI Payment Section
+                  // Container(
+                  //   margin: EdgeInsets.symmetric(horizontal: 4.w),
+                  //   width: 100.w,
+                  //   decoration: BoxDecoration(
+                  //     borderRadius: BorderRadius.circular(5.w),
+                  //     boxShadow: [
+                  //       BoxShadow(
+                  //         color: CommonColors.blackColor.withValues(alpha: 0.2),
+                  //         offset: Offset(2, 2),
+                  //         blurRadius: 6,
+                  //         spreadRadius: 2,
+                  //       ),
+                  //     ],
+                  //     color: CommonColors.offWhiteColor2,
+                  //   ),
+                  //   child: Container(
+                  //     width: 100.w,
+                  //     margin: EdgeInsets.only(
+                  //       left: 4.w,
+                  //       right: 4.w,
+                  //       top: 1.8.h,
+                  //       bottom: 1.8.h,
+                  //     ),
+                  //     child: Column(
+                  //       crossAxisAlignment: CrossAxisAlignment.start,
+                  //       children: [
+                  //         Text(
+                  //           'UPI',
+                  //           textScaler: const TextScaler.linear(1.0),
+                  //           style: GoogleFonts.alexandria(
+                  //             fontSize: FontSize.s14,
+                  //             fontWeight: FontWeight.w500,
+                  //             color: CommonColors.blackColor,
+                  //           ),
+                  //         ),
+                  //         SizedBox(height: 2.h),
+                  //
+                  //         // Razorpay
+                  //         _buildUPIOption(
+                  //           icon: PaymentMethods.razorpay,
+                  //           title: 'Razorpay',
+                  //           isSelected:
+                  //           _selectedUPIOption == PaymentMethods.razorpay,
+                  //           onTap: () {
+                  //             setState(() {
+                  //               _selectedUPIOption =
+                  //               _selectedUPIOption == PaymentMethods.razorpay
+                  //                   ? null
+                  //                   : PaymentMethods.razorpay;
+                  //             });
+                  //           },
+                  //         ),
+                  //         // Separator
+                  //         Container(
+                  //           height: 1,
+                  //           color: CommonColors.greyColor.withValues(alpha: 0.3),
+                  //           margin: EdgeInsets.symmetric(vertical: 1.h),
+                  //         ),
+                  //
+                  //         // PhonePe UPI (Locked)
+                  //         Stack(
+                  //           children: [
+                  //             Opacity(
+                  //               opacity: 0.5,
+                  //               child: _buildUPIOption(
+                  //                 icon: 'phonepe',
+                  //                 title: 'Phonepe UPI',
+                  //                 isSelected: false,
+                  //                 onTap: () {}, // Disabled
+                  //               ),
+                  //             ),
+                  //             Positioned.fill(
+                  //               child: Container(
+                  //                 decoration: BoxDecoration(
+                  //                   color: CommonColors.whiteColor.withValues(
+                  //                     alpha: 0.9,
+                  //                   ),
+                  //                   borderRadius: BorderRadius.circular(2.w),
+                  //                 ),
+                  //                 child: Center(
+                  //                   child: Icon(
+                  //                     Icons.lock_outline,
+                  //                     size: 5.w,
+                  //                     color: CommonColors.blackColor,
+                  //                   ),
+                  //                 ),
+                  //               ),
+                  //             ),
+                  //           ],
+                  //         ),
+                  //         // Separator
+                  //         Container(
+                  //           height: 1,
+                  //           color: CommonColors.greyColor.withValues(alpha: 0.3),
+                  //           margin: EdgeInsets.symmetric(vertical: 1.h),
+                  //         ),
+                  //
+                  //         // Paytm UPI (Locked)
+                  //         Stack(
+                  //           children: [
+                  //             Opacity(
+                  //               opacity: 0.5,
+                  //               child: _buildUPIOption(
+                  //                 icon: 'paytm',
+                  //                 title: 'Paytm UPI',
+                  //                 isSelected: false,
+                  //                 onTap: () {}, // Disabled
+                  //               ),
+                  //             ),
+                  //             Positioned.fill(
+                  //               child: Container(
+                  //                 decoration: BoxDecoration(
+                  //                   color: Colors.white.withValues(alpha: 0.7),
+                  //                   borderRadius: BorderRadius.circular(2.w),
+                  //                 ),
+                  //                 child: Center(
+                  //                   child: Icon(
+                  //                     Icons.lock_outline,
+                  //                     size: 5.w,
+                  //                     color: CommonColors.blackColor,
+                  //                   ),
+                  //                 ),
+                  //               ),
+                  //             ),
+                  //           ],
+                  //         ),
+                  //         // Separator
+                  //         Container(
+                  //           height: 1,
+                  //           color: CommonColors.greyColor.withValues(alpha: 0.3),
+                  //           margin: EdgeInsets.symmetric(vertical: 1.h),
+                  //         ),
+                  //
+                  //         // WhatsApp UPI (Locked)
+                  //         Stack(
+                  //           children: [
+                  //             Opacity(
+                  //               opacity: 0.5,
+                  //               child: _buildUPIOption(
+                  //                 icon: 'whatsapp',
+                  //                 title: 'WhatsApp UPI',
+                  //                 isSelected: false,
+                  //                 onTap: () {}, // Disabled
+                  //               ),
+                  //             ),
+                  //             Positioned.fill(
+                  //               child: Container(
+                  //                 decoration: BoxDecoration(
+                  //                   color: Colors.white.withValues(alpha: 0.7),
+                  //                   borderRadius: BorderRadius.circular(2.w),
+                  //                 ),
+                  //                 child: Center(
+                  //                   child: Icon(
+                  //                     Icons.lock_outline,
+                  //                     size: 5.w,
+                  //                     color: CommonColors.blackColor,
+                  //                   ),
+                  //                 ),
+                  //               ),
+                  //             ),
+                  //           ],
+                  //         ),
+                  //         // Separator
+                  //         Container(
+                  //           height: 1,
+                  //           color: CommonColors.greyColor.withValues(alpha: 0.3),
+                  //           margin: EdgeInsets.symmetric(vertical: 1.h),
+                  //         ),
+                  //
+                  //         // Add New UPI ID (Locked)
+                  //         Stack(
+                  //           children: [
+                  //             Opacity(opacity: 0.5, child: _buildAddNewUPIOption()),
+                  //             Positioned.fill(
+                  //               child: Container(
+                  //                 decoration: BoxDecoration(
+                  //                   color: Colors.white.withValues(alpha: 0.7),
+                  //                   borderRadius: BorderRadius.circular(2.w),
+                  //                 ),
+                  //                 child: Center(
+                  //                   child: Icon(
+                  //                     Icons.lock_outline,
+                  //                     size: 5.w,
+                  //                     color: CommonColors.blackColor,
+                  //                   ),
+                  //                 ),
+                  //               ),
+                  //             ),
+                  //           ],
+                  //         ),
+                  //       ],
+                  //     ),
+                  //   ),
+                  // ),
+                  // SizedBox(height: 3.h),
+                  //
+                  // // Other Payment Methods Section
+                  // Container(
+                  //   margin: EdgeInsets.symmetric(horizontal: 4.w),
+                  //   width: 100.w,
+                  //   decoration: BoxDecoration(
+                  //     borderRadius: BorderRadius.circular(5.w),
+                  //     boxShadow: [
+                  //       BoxShadow(
+                  //         color: CommonColors.blackColor.withValues(alpha: 0.2),
+                  //         offset: Offset(2, 2),
+                  //         blurRadius: 6,
+                  //         spreadRadius: 2,
+                  //       ),
+                  //     ],
+                  //     color: CommonColors.offWhiteColor2,
+                  //   ),
+                  //   child: Container(
+                  //     width: 100.w,
+                  //     margin: EdgeInsets.only(
+                  //       left: 4.w,
+                  //       right: 4.w,
+                  //       top: 1.8.h,
+                  //       bottom: 1.8.h,
+                  //     ),
+                  //     child: Column(
+                  //       crossAxisAlignment: CrossAxisAlignment.start,
+                  //       children: [
+                  //         // Add New Card (Locked)
+                  //         Stack(
+                  //           children: [
+                  //             Opacity(
+                  //               opacity: 0.5,
+                  //               child: _buildPaymentOption(
+                  //                 icon: CommonImages.cardIcon,
+                  //                 title: 'Add New Card',
+                  //               ),
+                  //             ),
+                  //             Positioned.fill(
+                  //               child: Container(
+                  //                 decoration: BoxDecoration(
+                  //                   color: Colors.white.withValues(alpha: 0.7),
+                  //                   borderRadius: BorderRadius.circular(2.w),
+                  //                 ),
+                  //                 child: Center(
+                  //                   child: Icon(
+                  //                     Icons.lock_outline,
+                  //                     size: 5.w,
+                  //                     color: CommonColors.blackColor,
+                  //                   ),
+                  //                 ),
+                  //               ),
+                  //             ),
+                  //           ],
+                  //         ),
+                  //         // Separator
+                  //         Container(
+                  //           height: 1,
+                  //           color: CommonColors.greyColor.withValues(alpha: 0.3),
+                  //           margin: EdgeInsets.symmetric(vertical: 1.h),
+                  //         ),
+                  //
+                  //         // Wallets (Locked)
+                  //         Stack(
+                  //           children: [
+                  //             Opacity(
+                  //               opacity: 0.5,
+                  //               child: _buildPaymentOption(
+                  //                 icon: CommonImages.walletIcon,
+                  //                 title: 'Wallets',
+                  //               ),
+                  //             ),
+                  //             Positioned.fill(
+                  //               child: Container(
+                  //                 decoration: BoxDecoration(
+                  //                   color: Colors.white.withValues(alpha: 0.7),
+                  //                   borderRadius: BorderRadius.circular(2.w),
+                  //                 ),
+                  //                 child: Center(
+                  //                   child: Icon(
+                  //                     Icons.lock_outline,
+                  //                     size: 5.w,
+                  //                     color: CommonColors.blackColor,
+                  //                   ),
+                  //                 ),
+                  //               ),
+                  //             ),
+                  //           ],
+                  //         ),
+                  //         // Separator
+                  //         Container(
+                  //           height: 1,
+                  //           color: CommonColors.greyColor.withValues(alpha: 0.3),
+                  //           margin: EdgeInsets.symmetric(vertical: 1.h),
+                  //         ),
+                  //
+                  //         // Netbanking (Locked)
+                  //         Stack(
+                  //           children: [
+                  //             Opacity(
+                  //               opacity: 0.5,
+                  //               child: _buildPaymentOption(
+                  //                 icon: CommonImages.bankIcon,
+                  //                 title: 'Netbanking',
+                  //               ),
+                  //             ),
+                  //             Positioned.fill(
+                  //               child: Container(
+                  //                 decoration: BoxDecoration(
+                  //                   color: Colors.white.withValues(alpha: 0.7),
+                  //                   borderRadius: BorderRadius.circular(2.w),
+                  //                 ),
+                  //                 child: Center(
+                  //                   child: Icon(
+                  //                     Icons.lock_outline,
+                  //                     size: 5.w,
+                  //                     color: CommonColors.blackColor,
+                  //                   ),
+                  //                 ),
+                  //               ),
+                  //             ),
+                  //           ],
+                  //         ),
+                  //       ],
+                  //     ),
+                  //   ),
+                  // ),
+                  SizedBox(height: 3.h),
+                ],
+              ),
+            ),
           ),
-        ),
+          Obx(() => _trekControllerC.calculateFareResponseModel.value.maybeWhen(
+            loading: (loadingData) => Container(
+              color: CommonColors.grey400,
+              child: Center(
+                child: CircularProgressIndicator(
+                  color: CommonColors.blueColor,
+                ),
+              ),
+            ),
+            orElse: () => const SizedBox(),
+          ))
+        ],
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
@@ -1075,7 +1232,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           context: context,
                           backgroundColor: Colors.transparent,
                           builder: (context) => TotalFareModal(
-                            breakDown: null,
+                            breakDown: calculateFareResponseModel?.breakdown,
                             adultCount: calculateFareRequestModel.travelerCount,
                             onClose: () => Navigator.pop(context),
                           ),
@@ -1134,7 +1291,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                 ),
                               ),
                               TextSpan(
-                                text:"${calculateFareResponseModel?.breakdown?.amountToPayNow}",
+                                text:"${calculateFareResponseModel?.breakdown?.amountToPayNow ?? "--"}",
                                 style: GoogleFonts.poppins(
                                   fontSize: FontSize.s15,
                                   fontWeight: FontWeight.w600,
@@ -1185,8 +1342,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
   /// Validates if payment can proceed
   /// Currently requires Razorpay to be selected
   bool get _isPaymentValid {
+    final validResponse = _trekControllerC.calculateFareResponseModel.value.maybeWhen(success: (response) => true,orElse: () => false);
     // For now, require Razorpay to be selected
-    return _selectedUPIOption == PaymentMethods.razorpay;
+    return _selectedUPIOption == PaymentMethods.razorpay && validResponse;
   }
 
   /// Gets traveller details from trek controller for display in modals

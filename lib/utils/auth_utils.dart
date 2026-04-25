@@ -74,4 +74,30 @@ class AuthUtils {
     return "unknown";
   }
 
+  static String formatPrice(String price) {
+    final number = double.tryParse(price) ?? 0;
+    final formatter = NumberFormat.currency(
+      locale: 'en_IN',
+      symbol: '₹',
+      decimalDigits: 0,
+    );
+    return formatter.format(number);
+  }
+
+  static String formatDateTime(String? dateString) {
+    if (dateString == null || dateString.isEmpty) {
+      return '-';
+    }
+
+    try {
+      // Parse the input (adjust if your format is different)
+      final dateTime = DateTime.parse(dateString);
+
+      // Format: 22/12/2024 03:30 PM
+      return DateFormat('dd/MM/yyyy hh:mm a').format(dateTime);
+    } catch (e) {
+      return dateString;
+    }
+  }
+
 }

@@ -172,18 +172,16 @@ class CommonDiscountCard extends StatelessWidget {
                                 ],
                               ),
                             ),
+                            Visibility(
+                              visible: imagePath.isNotEmpty,
+                              child: CustomNetworkImage(
+                                imageUrl: imagePath ?? "",
+                                fit: BoxFit.cover,
+                                width: 12.5.w,
+                                height: 12.5.w,
+                              ),
+                            )
                             // const Spacer(),
-                            Container(
-                              alignment: FractionalOffset.centerRight,
-                              // height: 75,
-                              margin: EdgeInsets.only(left: 4.w),
-                              width: 24.w,
-                              // decoration: BoxDecoration(
-                              //   color: Colors.white,
-                              //   borderRadius: BorderRadius.circular(6),
-                              // ),
-                              child: CustomNetworkImage(imageUrl: imagePath,fit: BoxFit.cover),
-                            ),
                           ],
                         ),
                       ),

@@ -2,6 +2,7 @@
 
 import 'package:arobo_app/models/discount_card_model.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
+import 'package:arobo_app/widgets/custom_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -56,13 +57,16 @@ class DiscountCardDetailsScreen extends StatelessWidget {
               child: Stack(
                 children: [
                   // Right-side illustration
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Image.asset(
-                      discountCard.imagePath,
-                      height: discountCard.imageHeight ?? 12.h,
-                      fit: BoxFit.contain,
+                  Visibility(
+                    visible: discountCard.imagePath.isNotEmpty,
+                    child: Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: CustomNetworkImage(
+                        imageUrl:discountCard.imagePath,
+                        height: discountCard.imageHeight ?? 12.h,
+                        fit: BoxFit.contain,
+                      ),
                     ),
                   ),
 
