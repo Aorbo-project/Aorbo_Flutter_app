@@ -280,7 +280,7 @@ class TrekController extends GetxController {
             20
         ),
       );
-
+      
       final body = response;
       if (body != null) {
         final responseData = FetchTreksResponseModel.fromJson(body);
