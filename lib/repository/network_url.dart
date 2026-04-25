@@ -54,10 +54,9 @@ class NetworkUrl {
   String destinationId,
   String startDate,
   bool?  weekEndTreks,
-  int page,
-  int limit,
-) =>  weekEndTreks != null ? 'treks?city_id=$cityId&to_city_id=$destinationId&start_date=$startDate&weekend_mode=true&page$page&limit=$limit'  : 'treks?city_id=$cityId&to_city_id=$destinationId&start_date=$startDate&page$page&limit=$limit';
-
+  int page ,
+  int limit ,
+) =>  weekEndTreks != null ? 'treks?city_id=$cityId&to_city_id=$destinationId&start_date=$startDate&weekend_mode=true&page=$page&limit=$limit'  : 'treks?city_id=$cityId&to_city_id=$destinationId&start_date=$startDate&page=$page&limit=$limit';
   static String searchCalenderTrekDates(
       String cityId,
       String destinationId,
