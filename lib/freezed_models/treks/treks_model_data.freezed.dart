@@ -1165,6 +1165,7 @@ mixin _$TrekData {
   String? get duration => throw _privateConstructorUsedError;
   BatchInfo? get batchInfo => throw _privateConstructorUsedError;
   Badge? get badge => throw _privateConstructorUsedError;
+  String? get imageUrl => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -1187,7 +1188,8 @@ abstract class $TrekDataCopyWith<$Res> {
       String? price,
       String? duration,
       BatchInfo? batchInfo,
-      Badge? badge});
+      Badge? badge,
+      String? imageUrl});
 
   $BatchInfoCopyWith<$Res>? get batchInfo;
   $BadgeCopyWith<$Res>? get badge;
@@ -1216,6 +1218,7 @@ class _$TrekDataCopyWithImpl<$Res, $Val extends TrekData>
     Object? duration = freezed,
     Object? batchInfo = freezed,
     Object? badge = freezed,
+    Object? imageUrl = freezed,
   }) {
     return _then(_value.copyWith(
       id: freezed == id
@@ -1258,6 +1261,10 @@ class _$TrekDataCopyWithImpl<$Res, $Val extends TrekData>
           ? _value.badge
           : badge // ignore: cast_nullable_to_non_nullable
               as Badge?,
+      imageUrl: freezed == imageUrl
+          ? _value.imageUrl
+          : imageUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
     ) as $Val);
   }
 
@@ -1304,7 +1311,8 @@ abstract class _$$TrekDataImplCopyWith<$Res>
       String? price,
       String? duration,
       BatchInfo? batchInfo,
-      Badge? badge});
+      Badge? badge,
+      String? imageUrl});
 
   @override
   $BatchInfoCopyWith<$Res>? get batchInfo;
@@ -1333,6 +1341,7 @@ class __$$TrekDataImplCopyWithImpl<$Res>
     Object? duration = freezed,
     Object? batchInfo = freezed,
     Object? badge = freezed,
+    Object? imageUrl = freezed,
   }) {
     return _then(_$TrekDataImpl(
       id: freezed == id
@@ -1375,6 +1384,10 @@ class __$$TrekDataImplCopyWithImpl<$Res>
           ? _value.badge
           : badge // ignore: cast_nullable_to_non_nullable
               as Badge?,
+      imageUrl: freezed == imageUrl
+          ? _value.imageUrl
+          : imageUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -1392,7 +1405,8 @@ class _$TrekDataImpl implements _TrekData {
       this.price,
       this.duration,
       this.batchInfo,
-      this.badge});
+      this.badge,
+      this.imageUrl});
 
   factory _$TrekDataImpl.fromJson(Map<String, dynamic> json) =>
       _$$TrekDataImplFromJson(json);
@@ -1417,10 +1431,12 @@ class _$TrekDataImpl implements _TrekData {
   final BatchInfo? batchInfo;
   @override
   final Badge? badge;
+  @override
+  final String? imageUrl;
 
   @override
   String toString() {
-    return 'TrekData(id: $id, name: $name, vendor: $vendor, hasDiscount: $hasDiscount, discountText: $discountText, rating: $rating, price: $price, duration: $duration, batchInfo: $batchInfo, badge: $badge)';
+    return 'TrekData(id: $id, name: $name, vendor: $vendor, hasDiscount: $hasDiscount, discountText: $discountText, rating: $rating, price: $price, duration: $duration, batchInfo: $batchInfo, badge: $badge, imageUrl: $imageUrl)';
   }
 
   @override
@@ -1441,13 +1457,15 @@ class _$TrekDataImpl implements _TrekData {
                 other.duration == duration) &&
             (identical(other.batchInfo, batchInfo) ||
                 other.batchInfo == batchInfo) &&
-            (identical(other.badge, badge) || other.badge == badge));
+            (identical(other.badge, badge) || other.badge == badge) &&
+            (identical(other.imageUrl, imageUrl) ||
+                other.imageUrl == imageUrl));
   }
 
   @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(runtimeType, id, name, vendor, hasDiscount,
-      discountText, rating, price, duration, batchInfo, badge);
+      discountText, rating, price, duration, batchInfo, badge, imageUrl);
 
   @JsonKey(ignore: true)
   @override
@@ -1474,7 +1492,8 @@ abstract class _TrekData implements TrekData {
       final String? price,
       final String? duration,
       final BatchInfo? batchInfo,
-      final Badge? badge}) = _$TrekDataImpl;
+      final Badge? badge,
+      final String? imageUrl}) = _$TrekDataImpl;
 
   factory _TrekData.fromJson(Map<String, dynamic> json) =
       _$TrekDataImpl.fromJson;
@@ -1499,6 +1518,8 @@ abstract class _TrekData implements TrekData {
   BatchInfo? get batchInfo;
   @override
   Badge? get badge;
+  @override
+  String? get imageUrl;
   @override
   @JsonKey(ignore: true)
   _$$TrekDataImplCopyWith<_$TrekDataImpl> get copyWith =>

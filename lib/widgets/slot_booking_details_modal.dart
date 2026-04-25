@@ -99,35 +99,35 @@ class SlotBookingDetailsModal extends StatelessWidget {
           topRight: Radius.circular(4.w),
         ),
       ),
-      padding: EdgeInsets.all(5.w),
+      padding: EdgeInsets.all(2.w),
       child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Slot Booking Details Header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Slot Booking Details',
-                  style: GoogleFonts.poppins(
-                    fontSize: FontSize.s15,
-                    fontWeight: FontWeight.w500,
-                    color: CommonColors.blackColor,
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: SvgPicture.asset(
-                    CommonImages.close,
-                    width: 6.w,
-                    height: 6.w,
-                  ), // Close icon
-                ),
-              ],
-            ),
-            SizedBox(height: 3.h),
+            // Row(
+            //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            //   children: [
+            //     Text(
+            //       'Slot Booking Details',
+            //       style: GoogleFonts.poppins(
+            //         fontSize: FontSize.s15,
+            //         fontWeight: FontWeight.w500,
+            //         color: CommonColors.blackColor,
+            //       ),
+            //     ),
+            //     GestureDetector(
+            //       onTap: () => Navigator.pop(context),
+            //       child: SvgPicture.asset(
+            //         CommonImages.close,
+            //         width: 6.w,
+            //         height: 6.w,
+            //       ), // Close icon
+            //     ),
+            //   ],
+            // ),
+            // SizedBox(height: 3.h),
 
             // SizedBox(height: 2.h),
 
@@ -363,126 +363,125 @@ class SlotBookingDetailsModal extends StatelessWidget {
             Divider(color: CommonColors.greyColor, thickness: 1),
             SizedBox(height: 1.h),
 
-            // Fare Breakup
-            Text(
-              'Fare Breakup',
-              style: GoogleFonts.poppins(
-                fontSize: FontSize.s15,
-                fontWeight: FontWeight.w500,
-                color: CommonColors.blackColor,
-              ),
-            ),
-            SizedBox(height: 20),
-
-            // Base Amount (Total Basic Cost)
-            _buildFareRow(
-              'Total Basic Cost',
-              '₹${breakdown?.baseTotal.toStringAsFixed(2)}',
-              isTotal: false,
-            ),
-            SizedBox(height: 12),
-
-            // Vendor Discount (if any)
-            if ((breakdown?.discount ?? 0) > 0) ...[
-              _buildFareRow(
-                'Vendor Discount',
-                '-₹${breakdown?.discount.toStringAsFixed(2)}',
-                textColor: CommonColors.greyColor2,
-                isTotal: false,
-              ),
-              SizedBox(height: 12),
-            ],
-
-            // Fare Price After Vendor Discount
-
-            // Platform Fee
-            _buildFareRow(
-              'Platform Fees',
-              '₹${breakdown?.platformFee.toStringAsFixed(2)}',
-              textColor: CommonColors.greyColor2,
-              isTotal: false,
-            ),
-            SizedBox(height: 12),
-
-            // GST
-            _buildFareRow(
-              'GST (5%)',
-              '₹${breakdown?.gst.toStringAsFixed(2)}',
-              textColor: CommonColors.greyColor2,
-              isTotal: false,
-            ),
-            SizedBox(height: 12),
-
-            // Insurance (if selected)
-            if ((breakdown?.insuranceFee ?? 0) > 0) ...[
-              _buildFareRow(
-                'Insurance',
-                '₹${breakdown?.insuranceFee.toStringAsFixed(2)}',
-                textColor: CommonColors.greyColor2,
-                isTotal: false,
-              ),
-              SizedBox(height: 12),
-            ],
-
-            // Free Cancellation (if selected)
-            if ((breakdown?.cancellationFee ?? 0) > 0) ...[
-              _buildFareRow(
-                'Free Cancellation',
-                '₹${breakdown?.cancellationFee.toStringAsFixed(2)}',
-                textColor: CommonColors.greyColor2,
-                isTotal: false,
-              ),
-              SizedBox(height: 12),
-            ],
-
-            // Divider before total
-            Container(
-              height: 1,
-              color: Colors.grey[300],
-            ),
-            SizedBox(height: 20),
-
-            // For partial payment: Show advance and remaining
-            if (isPartialPayment) ...[
-              // Divider before partial payment details
-              Container(
-                height: 1,
-                color: Colors.grey[300],
-              ),
-              SizedBox(height: 20),
-
-              _buildFareRow(
-                'Advance Payment (₹999 per person)',
-                '₹${breakdown?.advanceAmount.toStringAsFixed(2)}',
-                textColor: CommonColors.greyColor2,
-                isTotal: false,
-              ),
-              SizedBox(height: 12),
-
-              _buildFareRow(
-                'Remaining Amount',
-                '₹${breakdown?.remainingAmount.toStringAsFixed(2)}',
-                textColor: CommonColors.greyColor2,
-                isTotal: false,
-              ),
-              SizedBox(height: 12),
-            ],
-
-            // Divider before total
-            Container(
-              height: 1,
-              color: Colors.grey[300],
-            ),
-            SizedBox(height: 20),
-
-            // Total Amount (Advance for partial, Full amount for complete)
-            _buildFareRow(
-              isPartialPayment ? 'Amount Payable Now' : 'Total Amount',
-              '₹${totalAmount.toStringAsFixed(2)}',
-              isTotal: true,
-              textColor: CommonColors.greyColor2,
-            ),
-            SizedBox(height: 20),
+            // // Fare Breakup
+            // Text(
+            //   'Fare Breakup',
+            //   style: GoogleFonts.poppins(
+            //     fontSize: FontSize.s15,
+            //     fontWeight: FontWeight.w500,
+            //     color: CommonColors.blackColor,
+            //   ),
+            // ),
+            // SizedBox(height: 20),
+            //
+            // // Base Amount (Total Basic Cost)
+            // _buildFareRow(
+            //   'Total Basic Cost',
+            //   '₹${breakdown?.baseTotal.toStringAsFixed(2)}',
+            //   isTotal: false,
+            // ),
+            // SizedBox(height: 12),
+            //
+            // // Vendor Discount (if any)
+            // if ((breakdown?.discount ?? 0) > 0) ...[
+            //   _buildFareRow(
+            //     'Vendor Discount',
+            //     '-₹${breakdown?.discount.toStringAsFixed(2)}',
+            //     textColor: CommonColors.greyColor2,
+            //     isTotal: false,
+            //   ),
+            //   SizedBox(height: 12),
+            // ],
+            //
+            // // Fare Price After Vendor Discount
+            //
+            // // Platform Fee
+            // _buildFareRow(
+            //   'Platform Fees',
+            //   '₹${breakdown?.platformFee.toStringAsFixed(2)}',
+            //   textColor: CommonColors.greyColor2,
+            //   isTotal: false,
+            // ),
+            // SizedBox(height: 12),
+            //
+            // // GST
+            // _buildFareRow(
+            //   'GST (5%)',
+            //   '₹${breakdown?.gst.toStringAsFixed(2)}',
+            //   textColor: CommonColors.greyColor2,
+            //   isTotal: false,
+            // ),
+            // SizedBox(height: 12),
+            //
+            // // Insurance (if selected)
+            // if ((breakdown?.insuranceFee ?? 0) > 0) ...[
+            //   _buildFareRow(
+            //     'Insurance',
+            //     '₹${breakdown?.insuranceFee.toStringAsFixed(2)}',
+            //     textColor: CommonColors.greyColor2,
+            //     isTotal: false,
+            //   ),
+            //   SizedBox(height: 12),
+            // ],
+            //
+            // // Free Cancellation (if selected)
+            // if ((breakdown?.cancellationFee ?? 0) > 0) ...[
+            //   _buildFareRow(
+            //     'Free Cancellation',
+            //     '₹${breakdown?.cancellationFee.toStringAsFixed(2)}',
+            //     textColor: CommonColors.greyColor2,
+            //     isTotal: false,
+            //   ),
+            //   SizedBox(height: 12),
+            // ],
+            //
+            // // Divider before total
+            // Container(
+            //   height: 1,
+            //   color: Colors.grey[300],
+            // ),
+            // SizedBox(height: 20),
+            //
+            // // For partial payment: Show advance and remaining
+            // if (isPartialPayment) ...[
+            //   // Divider before partial payment details
+            //   Container(
+            //     height: 1,
+            //     color: Colors.grey[300],
+            //   ),
+            //   SizedBox(height: 20),
+            //
+            //   _buildFareRow(
+            //     'Advance Payment (₹999 per person)',
+            //     '₹${breakdown?.advanceAmount.toStringAsFixed(2)}',
+            //     textColor: CommonColors.greyColor2,
+            //     isTotal: false,
+            //   ),
+            //   SizedBox(height: 12),
+            //
+            //   _buildFareRow(
+            //     'Remaining Amount',
+            //     '₹${breakdown?.remainingAmount.toStringAsFixed(2)}',
+            //     textColor: CommonColors.greyColor2,
+            //     isTotal: false,
+            //   ),
+            //   SizedBox(height: 12),
+            // ],
+            //
+            // // Divider before total
+            // Container(
+            //   height: 1,
+            //   color: Colors.grey[300],
+            // ),
+            // SizedBox(height: 20),
+            //
+            // // Total Amount (Advance for partial, Full amount for complete)
+            // _buildFareRow(
+            //   isPartialPayment ? 'Amount Payable Now' : 'Total Amount',
+            //   '₹${totalAmount.toStringAsFixed(2)}',
+            //   isTotal: true,
+            //   textColor: CommonColors.greyColor2,
+            // ),
           ],
         ),
       ),

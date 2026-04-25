@@ -8,9 +8,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
-import 'package:animated_rating_stars/animated_rating_stars.dart';
 import '../freezed_models/treks/treks_model_data.dart';
-import '../models/trek_card.dart';
 import '../utils/common_colors.dart';
 import '../utils/common_images.dart';
 import '../utils/common_trek_card.dart';
@@ -908,7 +906,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
   return CancellationPolicyCard(
     departureDate: departure?.toIso8601String(),
     basePrice: _trekControllerC.trekDetailData.value.basePrice,
-    bookingType: _trekControllerC.trekDetailData.value.bookingType,
+    bookingType: (_trekControllerC.trekDetailData.value.cancellationPolicy?.id ?? 0) == 1 ? "standard" :"flexible",
   );
 }
 

@@ -16,6 +16,7 @@ class SeasonalForecastDataResponseModel with _$SeasonalForecastDataResponseModel
 
   factory SeasonalForecastDataResponseModel.fromJson(Map<String, dynamic> json) => _$SeasonalForecastDataResponseModelFromJson(json);
 }
+
 @freezed
 class SeasonalForecastData with _$SeasonalForecastData {
   const factory SeasonalForecastData({
@@ -27,12 +28,13 @@ class SeasonalForecastData with _$SeasonalForecastData {
 
   factory SeasonalForecastData.fromJson(Map<String, dynamic> json) => _$SeasonalForecastDataFromJson(json);
 
-  static SeasonalForecastData get dummy => SeasonalForecastData(
-    title: "Everest Base Camp",
-    description: "A breathtaking trek to the base of the world's highest peak.",
-    imagePath: "assets/images/everest.png",
-    color: "#1E3C72"
-  );
+  static SeasonalForecastData get dummy =>
+      SeasonalForecastData(
+          title: "Everest Base Camp",
+          description: "A breathtaking trek to the base of the world's highest peak.",
+          imagePath: "assets/images/everest.png",
+          color: "#1E3C72"
+      );
 }
 
 
