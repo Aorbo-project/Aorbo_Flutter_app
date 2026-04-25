@@ -50,13 +50,13 @@ class NetworkUrl {
 
   // Trek search & detail
   static String searchTrek(
-  String cityId,
-  String destinationId,
-  String startDate,
-  bool?  weekEndTreks,
-  int page,
-  int limit,
-) =>  weekEndTreks != null ? 'treks?city_id=$cityId&destination_id=$destinationId&start_date=$startDate&weekend_mode=true&page$page&limit=$limit'  : 'treks?city_id=$cityId&to_city_id=$destinationId&start_date=$startDate&page$page&limit=$limit';
+      String cityId,
+      String destinationId,
+      String startDate,
+      bool?  weekEndTreks,
+      int page,
+      int limit,
+      ) =>  weekEndTreks != null ? 'treks?city_id=$cityId&destination_id=$destinationId&start_date=$startDate&weekend_mode=true&page$page&limit=$limit'  : 'treks?city_id=$cityId&to_city_id=$destinationId&start_date=$startDate&page$page&limit=$limit';
 
   static String searchCalenderTrekDates(
       String cityId,
@@ -83,7 +83,7 @@ class NetworkUrl {
     String? trekStatus,
   }) =>
       'customer/bookings?page=$page&limit=10'
-      '${trekStatus == null ? '' : "&trek_status=$trekStatus"}';
+          '${trekStatus == null ? '' : "&trek_status=$trekStatus"}';
 
   static const String review = 'ratings';
 
@@ -114,5 +114,5 @@ class NetworkUrl {
       'customer/chats/$chatId/messages';
   static String markMessagesAsRead(int chatId) =>
       'customer/chats/$chatId/read';
-  //#endregion
+//#endregion
 }
