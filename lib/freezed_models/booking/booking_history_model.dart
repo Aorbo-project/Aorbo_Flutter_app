@@ -8,6 +8,7 @@ part 'booking_history_model.g.dart';
 class BookingHistoryModel with _$BookingHistoryModel {
   const factory BookingHistoryModel({
     bool? success,
+    String? message,
     List<BookingHistoryData>? data,
     Pagination? pagination,
     int? count,

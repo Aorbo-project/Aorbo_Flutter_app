@@ -38,8 +38,7 @@ class BookingsScreen extends StatefulWidget {
   State<BookingsScreen> createState() => _BookingsScreenState();
 }
 
-class _BookingsScreenState extends State<BookingsScreen>
-    with SingleTickerProviderStateMixin {
+class _BookingsScreenState extends State<BookingsScreen> with SingleTickerProviderStateMixin {
   // ── ALL ORIGINAL LOGIC UNTOUCHED ─────────────────────────────────────────
   final DashboardController _dashboardC = Get.find<DashboardController>();
   final ScrollController _scrollController = ScrollController();
@@ -79,7 +78,7 @@ class _BookingsScreenState extends State<BookingsScreen>
 
   void _loadInitialData() {
     _dashboardC.bookingList.clear();
-    _dashboardC.getBookingHistory(isRefresh: true);
+    _dashboardC.getBookingHistory(refresh: true);
   }
 
   void _onScroll() {
@@ -94,7 +93,7 @@ class _BookingsScreenState extends State<BookingsScreen>
   Future<void> _loadMoreData() async {
     if (_isLoadingMore) return;
     setState(() => _isLoadingMore = true);
-    await _dashboardC.getBookingHistory();
+    await _dashboardC.getBookingHistory(refresh: false);
     setState(() => _isLoadingMore = false);
   }
 
@@ -344,7 +343,7 @@ class _BookingsScreenState extends State<BookingsScreen>
                     _dashboardC.selectedFilter.value = 'All Bookings';
                     _dashboardC.bookingList.clear();
                   });
-                  _dashboardC.getBookingHistory(isRefresh: true);
+                  _dashboardC.getBookingHistory(refresh: true);
                 },
                 child: Container(
                   padding: EdgeInsets.symmetric(
@@ -608,7 +607,7 @@ class _BookingsScreenState extends State<BookingsScreen>
                       _dashboardC.bookingList.clear();
                     });
                     Navigator.pop(context);
-                    _dashboardC.getBookingHistory(isRefresh: true);
+                    _dashboardC.getBookingHistory(refresh: true);
                   },
                   child: Container(
                     padding: EdgeInsets.symmetric(

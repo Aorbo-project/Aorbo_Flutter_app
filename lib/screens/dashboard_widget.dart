@@ -354,6 +354,10 @@ class _DashboardState extends State<Dashboard>
                                     shape: BoxShape.circle,
                                     color: Colors.transparent,
                                   ),
+                                  selectedTextStyle: TextStyle(
+                                    color: CommonColors.blackColor,
+                                    fontWeight: FontWeight.w700
+                                  ),
                                   selectedDecoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     color: CommonColors.searchbtn,
@@ -387,12 +391,13 @@ class _DashboardState extends State<Dashboard>
                                         decoration: BoxDecoration(
                                           shape: BoxShape.circle,
                                           color: CommonColors.searchbtn,
+                                          border: Border.all(width: 1,color: Colors.black)
                                         ),
                                         child: Center(
                                           child: Text(
                                             '${day.day}',
                                             style: TextStyle(
-                                              color: Colors.white,
+                                              color: Colors.black,
                                               fontWeight: FontWeight.bold,
                                               fontSize: MediaQuery.of(context).size.width * 0.035,
                                             ),
@@ -471,12 +476,12 @@ class _DashboardState extends State<Dashboard>
                                   ),
                                   leftChevronIcon: Icon(
                                     Icons.chevron_left,
-                                    color: CommonColors.searchbtn,
+                                    color: CommonColors.blackColor,
                                     size: MediaQuery.of(context).size.width * 0.06,
                                   ),
                                   rightChevronIcon: Icon(
                                     Icons.chevron_right,
-                                    color: CommonColors.searchbtn,
+                                    color: CommonColors.blackColor,
                                     size: MediaQuery.of(context).size.width * 0.06,
                                   ),
                                   headerPadding: const EdgeInsets.symmetric(vertical: 8),
@@ -1333,8 +1338,10 @@ class _DashboardState extends State<Dashboard>
                                           _updateNearestWeekendDates();
                                         }
                                         await _trekC.fetchWeekendTreks(
-                                          cityId: _dashboardC.selectedCityId.value,
-                                          trekId: _dashboardC.selectedTrekId.value,
+                                          cityId: _dashboardC
+                                              .fromController.value.text,
+                                          trekId: _dashboardC
+                                              .toController.value.text,
                                           date: _dashboardC.dateController.value.text,
                                           refresh: true,
                                         );
@@ -1342,9 +1349,9 @@ class _DashboardState extends State<Dashboard>
                                           '/weekend-treks',
                                           arguments: {
                                             'city': _dashboardC
-                                                .selectedCityId.value,
+                                                .fromController.value.text,
                                             'trek': _dashboardC
-                                                .selectedTrekId.value,
+                                                .toController.value.text,
                                             'date': _dashboardC.dateController.value.text,
                                             'weekendDates':
                                             _nearestWeekendDates,

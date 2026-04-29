@@ -12,6 +12,7 @@ import '../utils/common_colors.dart';
 import '../utils/common_booked_details_card.dart';
 import '../utils/screen_constants.dart';
 import '../utils/custom_snackbar.dart';
+import 'invoice_example_screen.dart';
 
 class BookingsUpcomingScreen extends StatefulWidget {
   const BookingsUpcomingScreen({super.key});
@@ -156,7 +157,8 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen> {
                                     Icons.confirmation_num,
                                     "Ticket",
                                     onTap: () {
-                                      CustomSnackBar.show(context, message: 'Ticket feature coming soon');
+                                      Get.to(() => InvoiceExampleScreen());
+                                      // CustomSnackBar.show(context, message: 'Ticket feature coming soon');
                                     },
                                   ),
 
