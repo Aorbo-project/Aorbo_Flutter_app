@@ -500,7 +500,7 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
                     ),
                   ),
                   Text(
-                    'Get exclusive deals for 10+ members',
+                    'Get exclusive deals for 4+ members',
                     textScaler: const TextScaler.linear(1.0),
                     style: TextStyle(
                       fontFamily: 'Poppins',
