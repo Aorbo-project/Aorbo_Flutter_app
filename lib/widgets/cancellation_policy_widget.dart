@@ -463,10 +463,10 @@ class _SlabRow extends StatelessWidget {
   });
 
   Color get _color {
-    if (slab.isNoRefund || slab.percent == 100) return const Color(0xFFC62828);
-    if (slab.percent >= 70) return const Color(0xFFE65100);
-    if (slab.percent >= 50) return const Color(0xFFF57F17);
-    return const Color(0xFF2E7D32);
+    if (slab.isNoRefund || slab.percent == 100) return const Color(0xFF757575);
+    if (slab.percent >= 70) return const Color(0xFF757575);
+    if (slab.percent >= 50) return const Color(0xFF757575);
+    return const Color(0xFF757575);
   }
 
   String get _badge {
@@ -499,7 +499,7 @@ class _SlabRow extends StatelessWidget {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: slab.isNoRefund
-                          ? const Color(0xFFC62828)
+                          ? const Color(0xFF757575)
                           : CommonColors.trek_route_color,
                     ),
                   ),
@@ -513,7 +513,7 @@ class _SlabRow extends StatelessWidget {
                       fontWeight:
                           slab.isNoRefund ? FontWeight.w600 : FontWeight.w500,
                       color: slab.isNoRefund
-                          ? const Color(0xFFC62828)
+                          ? const Color(0xFF757575)
                           : greyTextColor,
                       height: 1.5,
                     ),
