@@ -21,6 +21,7 @@ BookingHistoryModel _$BookingHistoryModelFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$BookingHistoryModel {
   bool? get success => throw _privateConstructorUsedError;
+  String? get message => throw _privateConstructorUsedError;
   List<BookingHistoryData>? get data => throw _privateConstructorUsedError;
   Pagination? get pagination => throw _privateConstructorUsedError;
   int? get count => throw _privateConstructorUsedError;
@@ -39,6 +40,7 @@ abstract class $BookingHistoryModelCopyWith<$Res> {
   @useResult
   $Res call(
       {bool? success,
+      String? message,
       List<BookingHistoryData>? data,
       Pagination? pagination,
       int? count});
@@ -60,6 +62,7 @@ class _$BookingHistoryModelCopyWithImpl<$Res, $Val extends BookingHistoryModel>
   @override
   $Res call({
     Object? success = freezed,
+    Object? message = freezed,
     Object? data = freezed,
     Object? pagination = freezed,
     Object? count = freezed,
@@ -69,6 +72,10 @@ class _$BookingHistoryModelCopyWithImpl<$Res, $Val extends BookingHistoryModel>
           ? _value.success
           : success // ignore: cast_nullable_to_non_nullable
               as bool?,
+      message: freezed == message
+          ? _value.message
+          : message // ignore: cast_nullable_to_non_nullable
+              as String?,
       data: freezed == data
           ? _value.data
           : data // ignore: cast_nullable_to_non_nullable
@@ -107,6 +114,7 @@ abstract class _$$BookingHistoryModelImplCopyWith<$Res>
   @useResult
   $Res call(
       {bool? success,
+      String? message,
       List<BookingHistoryData>? data,
       Pagination? pagination,
       int? count});
@@ -127,6 +135,7 @@ class __$$BookingHistoryModelImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? success = freezed,
+    Object? message = freezed,
     Object? data = freezed,
     Object? pagination = freezed,
     Object? count = freezed,
@@ -136,6 +145,10 @@ class __$$BookingHistoryModelImplCopyWithImpl<$Res>
           ? _value.success
           : success // ignore: cast_nullable_to_non_nullable
               as bool?,
+      message: freezed == message
+          ? _value.message
+          : message // ignore: cast_nullable_to_non_nullable
+              as String?,
       data: freezed == data
           ? _value._data
           : data // ignore: cast_nullable_to_non_nullable
@@ -157,6 +170,7 @@ class __$$BookingHistoryModelImplCopyWithImpl<$Res>
 class _$BookingHistoryModelImpl implements _BookingHistoryModel {
   const _$BookingHistoryModelImpl(
       {this.success,
+      this.message,
       final List<BookingHistoryData>? data,
       this.pagination,
       this.count})
@@ -167,6 +181,8 @@ class _$BookingHistoryModelImpl implements _BookingHistoryModel {
 
   @override
   final bool? success;
+  @override
+  final String? message;
   final List<BookingHistoryData>? _data;
   @override
   List<BookingHistoryData>? get data {
@@ -184,7 +200,7 @@ class _$BookingHistoryModelImpl implements _BookingHistoryModel {
 
   @override
   String toString() {
-    return 'BookingHistoryModel(success: $success, data: $data, pagination: $pagination, count: $count)';
+    return 'BookingHistoryModel(success: $success, message: $message, data: $data, pagination: $pagination, count: $count)';
   }
 
   @override
@@ -193,6 +209,7 @@ class _$BookingHistoryModelImpl implements _BookingHistoryModel {
         (other.runtimeType == runtimeType &&
             other is _$BookingHistoryModelImpl &&
             (identical(other.success, success) || other.success == success) &&
+            (identical(other.message, message) || other.message == message) &&
             const DeepCollectionEquality().equals(other._data, _data) &&
             (identical(other.pagination, pagination) ||
                 other.pagination == pagination) &&
@@ -201,7 +218,7 @@ class _$BookingHistoryModelImpl implements _BookingHistoryModel {
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(runtimeType, success,
+  int get hashCode => Object.hash(runtimeType, success, message,
       const DeepCollectionEquality().hash(_data), pagination, count);
 
   @JsonKey(ignore: true)
@@ -222,6 +239,7 @@ class _$BookingHistoryModelImpl implements _BookingHistoryModel {
 abstract class _BookingHistoryModel implements BookingHistoryModel {
   const factory _BookingHistoryModel(
       {final bool? success,
+      final String? message,
       final List<BookingHistoryData>? data,
       final Pagination? pagination,
       final int? count}) = _$BookingHistoryModelImpl;
@@ -231,6 +249,8 @@ abstract class _BookingHistoryModel implements BookingHistoryModel {
 
   @override
   bool? get success;
+  @override
+  String? get message;
   @override
   List<BookingHistoryData>? get data;
   @override

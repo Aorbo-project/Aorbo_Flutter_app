@@ -15,6 +15,7 @@ import 'package:arobo_app/models/dispute/dispute_detail_modal.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../freezed_models/booking/booking_history_model.dart';
+import '../freezed_models/profile/user_profile_model.dart';
 import '../freezed_models/treks/treks_model_data.dart';
 import '../models/dashboard/cities_model.dart';
 import '../models/treaks/booking_cancelled_modal.dart';
@@ -30,6 +31,14 @@ class DashboardController extends GetxController {
   final topTreksObserver = const ApiResult<TopTreksDataResponseModel>.init().obs;
   final shortsTreksObserver = const ApiResult<ShortsTreksDataResponseModel>.init().obs;
   final seasonalForcastObserver = const ApiResult<SeasonalForecastDataResponseModel>.init().obs;
+
+  final bookingHistoryObserver = PaginationModel(
+      data: const ApiResult<BookingHistoryModel>.init().obs,
+      isLoading: false,
+      isPaginationCompleted: false,
+      page: 1,
+      error: "")
+      .obs;
 
   RxMap<String, int> availableDates = <String, int>{}.obs;
   final calenderTrekDatesObserver = const ApiResult<CalenderDatesResponseModel>.init().obs;
@@ -243,9 +252,9 @@ class DashboardController extends GetxController {
 
         if (responseData.success == true) {
           // Populate availableDates map from response
-          if (responseData.data?.dates != null && responseData.data!.dates!.isNotEmpty) {
-            for (var dateData in responseData.data!.dates!) {
-              if (dateData.date != null) {
+          if (responseData.data?.dates != null && responseData.data?.dates?.isNotEmpty == true) {
+            for (var dateData in (responseData.data?.dates ?? [])) {
+              if (dateData.date != null && dateData.available == true) {
                 availableDates[dateData.date!] = dateData.trekCount ?? 0;
               }
             }
@@ -463,18 +472,39 @@ class DashboardController extends GetxController {
     }
   }
 
-  getBookingHistory({bool isRefresh = false}) async {
-    if (isRefresh) {
-      currentBookingPage.value = 1;
-      hasMoreBookings.value = true;
-    }
 
-    if (isLoadingBookingHistory.value) return;
 
-    isLoadingBookingHistory.value = true;
-    errorMessage.value = '';
+
+  Future<void> getBookingHistory({
+    required bool refresh}) async {
+
+    final observer = bookingHistoryObserver;
 
     try {
+      if (refresh == true) {
+        observer.value = PaginationModel(
+            data: const ApiResult<BookingHistoryModel>.init().obs,
+            isLoading: false,
+            isPaginationCompleted: false,
+            page: 1,
+            error: "");
+      }
+
+      if (observer.value.isPaginationCompleted || observer.value.isLoading == true) {
+        return;
+      }
+
+      if (observer.value.page == 1) {
+        observer.value.data.value = const ApiResult.loading("");
+      } else {
+        observer.value.isLoading = true;
+        observer.refresh();
+      }
+
+      const maxListApiReturns = 20;
+      observer.refresh();
+
+
       final response = await _repository.getApiCall(
         url: NetworkUrl.bookingHistoryWithStatus(
           page: currentBookingPage.value,
@@ -484,38 +514,42 @@ class DashboardController extends GetxController {
         ),
       );
 
-      if (response != null) {
-        if (response['success']) {
-          bookingHistoryModal.value = BookingHistoryModel.fromJson(response);
-          final newBookings = bookingHistoryModal.value.data ?? [];
+      final body = response;
+      if (body != null) {
+        final responseData = BookingHistoryModel.fromJson(body);
+        if (responseData.success == true) {
+          observer.value.data.value.maybeWhen(success: (data) {
+            final oldList =
+            (data as BookingHistoryModel?)?.data?.toList();
+            oldList?.addAll(responseData.data ?? List.empty());
+            observer.value.data.value =
+                ApiResult.success(responseData.copyWith(data: oldList));
+          }, orElse: () {
+            observer.value.data.value = ApiResult.success(responseData);
+          });
 
-          if (isRefresh || currentBookingPage.value == 1) {
-            bookingList.value = newBookings;
-          } else {
-            bookingList.addAll(newBookings);
+          observer.value.page = observer.value.page + 1;
+          if ((responseData.data?.length ?? 0) < maxListApiReturns) {
+            observer.value.isPaginationCompleted = true;
           }
-
-          final pagination = bookingHistoryModal.value.pagination;
-          hasMoreBookings.value = pagination?.hasNextPage ?? false;
-
-          if (hasMoreBookings.value) {
-            currentBookingPage.value++;
-          }
-
-          update();
-        } else {
-          errorMessage.value = response['message'] ?? 'Failed to load booking history';
-          CustomSnackBar.show(Get.context!, message: errorMessage.value);
+          observer.value.isLoading = false;
+          observer.refresh();
+          return;
         }
+        throw "${responseData.message}";
       }
+      throw "Response Body Null";
     } catch (e) {
-      logger.e("Error loading booking history: $e");
-      errorMessage.value = 'Failed to load booking history: ${e.toString()}';
+      errorMessage.value = 'Failed to search treks: ${e.toString()}';
       CustomSnackBar.show(Get.context!, message: errorMessage.value);
-    } finally {
-      isLoadingBookingHistory.value = false;
+      observer.value.data.value = ApiResult.error(e.toString());
+      observer.value.isLoading = false;
+      observer.refresh();
     }
   }
+
+
+
 
   getRefundDetail(String bookingId) async {
     isLoadingRefundDetail.value = true;

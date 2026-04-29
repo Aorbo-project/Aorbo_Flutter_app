@@ -63,8 +63,8 @@ final routes = [
     page: () {
       final args = Get.arguments as Map<String, dynamic>;
       return WeekendTreksScreen(
-        city: args['city'] ?? 0,
-        trek: args['trek'] ?? 0,
+        city: args['city'] ?? "",
+        trek: args['trek'] ?? "",
         date: args['date'] ?? '',
         weekendDates: (args['weekendDates'] as List<DateTime>?) ?? [],
       );

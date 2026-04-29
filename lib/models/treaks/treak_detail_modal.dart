@@ -1294,6 +1294,7 @@ class BatchInfo {
 
 class CancellationPolicy {
   int? id;
+  String? type;
   String? title;
   String? description;
   List<Rules>? rules;
@@ -1301,6 +1302,7 @@ class CancellationPolicy {
 
   CancellationPolicy(
       {this.id,
+        this.type,
       this.title,
       this.description,
       this.rules,
@@ -1308,6 +1310,7 @@ class CancellationPolicy {
 
   CancellationPolicy.fromJson(Map<String, dynamic> json) {
     id = json['id'];
+    type = json['type'];
     title = json['title'];
     description = json['description'];
     if (json['rules'] != null) {
@@ -1322,6 +1325,7 @@ class CancellationPolicy {
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = new Map<String, dynamic>();
     data['id'] = this.id;
+    data['type'] = this.type;
     data['title'] = this.title;
     data['description'] = this.description;
     if (this.rules != null) {
@@ -1334,7 +1338,7 @@ class CancellationPolicy {
 
 class Rules {
   String? rule;
-  int? deduction;
+  dynamic deduction;
   String? deductionType;
 
   Rules({this.rule, this.deduction, this.deductionType});

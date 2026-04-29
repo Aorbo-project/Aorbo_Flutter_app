@@ -10,6 +10,7 @@ _$BookingHistoryModelImpl _$$BookingHistoryModelImplFromJson(
         Map<String, dynamic> json) =>
     _$BookingHistoryModelImpl(
       success: json['success'] as bool?,
+      message: json['message'] as String?,
       data: (json['data'] as List<dynamic>?)
           ?.map((e) => BookingHistoryData.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -23,6 +24,7 @@ Map<String, dynamic> _$$BookingHistoryModelImplToJson(
         _$BookingHistoryModelImpl instance) =>
     <String, dynamic>{
       'success': instance.success,
+      'message': instance.message,
       'data': instance.data,
       'pagination': instance.pagination,
       'count': instance.count,

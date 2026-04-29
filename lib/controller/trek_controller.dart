@@ -240,10 +240,11 @@ class TrekController extends GetxController {
 
 
   Future<void> fetchWeekendTreks({
-    required int cityId,
-    required int trekId,
+    required String cityId,
+    required String trekId,
     required String date,
     required bool refresh}) async {
+
     final observer = weekendTreksResponseObserver;
 
     try {
@@ -271,11 +272,10 @@ class TrekController extends GetxController {
       observer.refresh();
 
       final response = await repository.getApiCall(
-        url: NetworkUrl.searchTrek(
+        url: NetworkUrl.fetchWeekEndTreks(
             cityId.toString(),
             trekId.toString(),
             convertDateYYYYMMDD(date),
-            true,
             observer.value.page,
             20
         ),
@@ -362,6 +362,8 @@ class TrekController extends GetxController {
         final responseData = CalculateFareResponseModel.fromJson(response);
         if (responseData.success == true) {
           calculateFareResponseModel.value = ApiResult.success(responseData);
+          print("FARE TOKEN");
+          print(responseData.fareToken ?? "");
           createOrderRequestModel.value = createOrderRequestModel.value.copyWith(fareToken: responseData.fareToken ?? "");
           return;
         }
@@ -489,7 +491,7 @@ class TrekController extends GetxController {
 
       if (response != null) {
         if (response['success']) {
-          await _dashboardC.getBookingHistory(isRefresh: true);
+          await _dashboardC.getBookingHistory(refresh: true);
           reviewController.value.clear();
           Get.back();
           Get.back();

@@ -903,11 +903,12 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
 
     Widget _buildCancellationPoliciesTab() {
   final departure = _trekControllerC.trekDetailData.value.departureDateTimeFromStages;
-  return CancellationPolicyCard(
-    departureDate: departure?.toIso8601String(),
-    basePrice: _trekControllerC.trekDetailData.value.basePrice,
-    bookingType: (_trekControllerC.trekDetailData.value.cancellationPolicy?.id ?? 0) == 1 ? "standard" :"flexible",
-  );
+  return CancellationPolicyWidget(policy: _trekControllerC.trekDetailData.value.cancellationPolicy);
+  // return CancellationPolicyCard(
+  //   departureDate: departure?.toIso8601String(),
+  //   basePrice: _trekControllerC.trekDetailData.value.basePrice,
+  //   bookingType: (_trekControllerC.trekDetailData.value.cancellationPolicy?.id ?? 0) == 1 ? "standard" :"flexible",
+  // );
 }
 
   Widget _buildOtherPoliciesTab() {

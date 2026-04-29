@@ -15,8 +15,8 @@ import 'package:sizer/sizer.dart';
 import '../freezed_models/treks/treks_model_data.dart';
 
 class WeekendTreksScreen extends StatefulWidget {
-  final int city;
-  final int trek;
+  final String city;
+  final String trek;
   final String date;
   final List<DateTime> weekendDates;
 

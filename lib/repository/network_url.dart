@@ -56,7 +56,18 @@ class NetworkUrl {
       bool?  weekEndTreks,
       int page,
       int limit,
-      ) =>  weekEndTreks != null ? 'treks?city_id=$cityId&destination_id=$destinationId&start_date=$startDate&weekend_mode=true&page$page&limit=$limit'  : 'treks?city_id=$cityId&to_city_id=$destinationId&start_date=$startDate&page$page&limit=$limit';
+      ) =>  weekEndTreks != null ? 'treks?city_id=$cityId&destination_id=$destinationId&start_date=$startDate&weekend_mode=true&page$page&limit=$limit'  : 'treks?city_id=$cityId&destination_id=$destinationId&start_date=$startDate&page$page&limit=$limit';
+
+
+  static String fetchWeekEndTreks(
+      String fromLocation,
+      String toLocation,
+      String startDate,
+      int page,
+      int limit,
+      ) => 'treks?from_location=$fromLocation&to_location=$toLocation&selected_date=$startDate&weekend_mode=true&page$page&limit=$limit';
+
+
 
   static String searchCalenderTrekDates(
       String cityId,
@@ -64,7 +75,7 @@ class NetworkUrl {
       String startDate,
       String endDate
       ) =>
-      'treks/calendar-dates?start_date=$startDate&end_date=$endDate';
+      cityId.isNotEmpty && destinationId.isNotEmpty ? 'treks/calendar-dates?city_id=$cityId&destination_id=$destinationId&start_date=$startDate&end_date=$endDate' : 'treks/calendar-dates?start_date=$startDate&end_date=$endDate';
 
   static const String getTrekDetail = 'treks/';
 
