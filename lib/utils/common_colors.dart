@@ -450,8 +450,8 @@ class CommonColors {
     transform: GradientRotation(300 * 3.1416 / 180),
     colors: [
       Color(0xFFFFFFFF), // Bottom white
-      Color(0xFF94E0D2), // mid mint green
-      Color(0xFF24BFA2), // Top mint green
+      Color(0xFFFBFF00), // mid mint green
+      Color(0xFFFBFF00), // Top mint green
     ],
   );
 }

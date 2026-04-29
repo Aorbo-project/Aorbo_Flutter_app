@@ -850,7 +850,7 @@ class _DashboardState extends State<Dashboard>
                               Row(
                                 children: [
                                   Image.asset(
-                                    CommonImages.logo2,
+                                    CommonImages.logo1,
                                     height: 7.h,
                                     width: 30.w,
                                   ),
@@ -878,7 +878,7 @@ class _DashboardState extends State<Dashboard>
                             'Hike Beyond Limits with',
                             style: TextStyle(
                               fontSize: FontSize.s14,
-                              color: CommonColors.whiteColor,
+                              color: CommonColors.blackColor,
                               fontWeight: FontWeight.w500,
                             ),
                           ),

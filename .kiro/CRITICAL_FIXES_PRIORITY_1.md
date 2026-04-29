@@ -512,7 +512,7 @@ class CouponError extends CouponState {
 **File**: `lib/screens/traveller_information_screen.dart` (Line 30-32)
 ```dart
 class _TravellerInformationScreenState extends State<TravellerInformationScreen> {
-  final TrekController _trekControllerC = Get.put(TrekController());
+  final TrekController _trekC = Get.put(TrekController());
   final DashboardController _dashboardC = Get.put(DashboardController());
   final UserController _userC = Get.put(UserController());
   // ❌ Creates new instances every time screen builds
@@ -640,7 +640,7 @@ final routes = [
 // lib/screens/traveller_information_screen.dart (REFACTORED)
 class _TravellerInformationScreenState extends State<TravellerInformationScreen> {
   // ✅ Use Get.find() instead of Get.put()
-  late final TrekController _trekControllerC = Get.find<TrekController>();
+  late final TrekController _trekC = Get.find<TrekController>();
   late final DashboardController _dashboardC = Get.find<DashboardController>();
   late final UserController _userC = Get.find<UserController>();
   

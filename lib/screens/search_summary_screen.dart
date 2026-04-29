@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:arobo_app/controller/coupon_controller.dart';
 import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/controller/trek_controller.dart';
@@ -10,8 +11,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:get/get.dart';
-import 'dart:async';
-
 import 'package:arobo_app/models/discount_card_model.dart';
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/common_discount_card.dart';
@@ -19,93 +18,125 @@ import 'package:arobo_app/utils/common_filter_bar.dart';
 import 'package:arobo_app/utils/common_images.dart';
 import 'package:shimmer_ai/shimmer_ai.dart';
 import 'package:sizer/sizer.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../freezed_models/treks/treks_model_data.dart';
 import '../models/coupon_code/coupon_code_model.dart';
 
+// ─────────────────────────────────────────────
+//  DESIGN TOKENS — matches app-wide pattern
+// ─────────────────────────────────────────────
+class _SSC {
+  static const bg = Color(0xFFF4F7FF);
+  static const cardBg = Color(0xFFFFFFFF);
+  static const ink = Color(0xFF0F172A);
+  static const inkMid = Color(0xFF64748B);
+  static const inkLight = Color(0xFFADB5BD);
+  static const accent = Color(0xFF3B5BDB);
+  static const accentLight = Color(0xFFEEF2FF);
+  static const border = Color(0xFFE9ECEF);
+  static const shadow = Color(0x08000000);
+  static const groupBorder = Color(0xFFE2E8F0);
+  static const filterBarBg = Color(0xFFFFFFFF);
+}
+
+// ─────────────────────────────────────────────
+//  STICKY FILTER BAR DELEGATE
+//  FIX: shouldRebuild uses list equality not reference equality
+// ─────────────────────────────────────────────
 class _StickyFilterBarDelegate extends SliverPersistentHeaderDelegate {
   final Widget child;
   final List<String> activeFilters;
   final Function(String) onFilterRemoved;
   final double screenHeight;
 
-  _StickyFilterBarDelegate({
+  const _StickyFilterBarDelegate({
     required this.child,
     required this.activeFilters,
     required this.onFilterRemoved,
     required this.screenHeight,
   });
 
-  double get _heightOfFilterBarContainer => (screenHeight * 0.04) + 18;
-
-  double get _heightOfActiveFiltersChipBar => 40;
-
-  @override
-  double get minExtent => _heightOfFilterBarContainer;
+  double get _filterBarH => (screenHeight * 0.04) + 18;
+  static const double _chipBarH = 44;
 
   @override
-  double get maxExtent => activeFilters.isEmpty
-      ? _heightOfFilterBarContainer
-      : _heightOfFilterBarContainer + _heightOfActiveFiltersChipBar;
+  double get minExtent => _filterBarH;
 
   @override
-  bool shouldRebuild(_StickyFilterBarDelegate oldDelegate) =>
-      oldDelegate.activeFilters != activeFilters ||
-      oldDelegate.screenHeight != screenHeight;
-
-
-
-
+  double get maxExtent =>
+      activeFilters.isEmpty ? _filterBarH : _filterBarH + _chipBarH;
 
   @override
-  Widget build(
-      BuildContext context, double shrinkOffset, bool overlapsContent) {
+  // FIX: was comparing list references — now compares contents
+  bool shouldRebuild(_StickyFilterBarDelegate old) =>
+      old.activeFilters.length != activeFilters.length ||
+      old.screenHeight != screenHeight ||
+      !_listsEqual(old.activeFilters, activeFilters);
+
+  bool _listsEqual(List<String> a, List<String> b) {
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
+  @override
+  Widget build(BuildContext ctx, double shrinkOffset, bool overlaps) {
     return Container(
-      color: Colors.white,
+      color: _SSC.filterBarBg,
       child: Column(
         children: [
           child,
           if (activeFilters.isNotEmpty)
             Container(
-              height: 40,
+              height: _chipBarH,
               decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+                color: _SSC.filterBarBg,
+                border: Border(
+                  bottom: BorderSide(color: _SSC.border, width: 0.5),
+                ),
               ),
               child: Row(
                 children: [
-                  SizedBox(width: 2.w),
-                  Flexible(
-                    child: SingleChildScrollView(
+                  SizedBox(width: 4.w),
+                  Expanded(
+                    child: ListView.separated(
                       scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: activeFilters.map((filter) {
-                          return Padding(
-                            padding: EdgeInsets.only(right: 2.w),
-                            child: Chip(
-                              label: Text(
-                                filter,
-                                textAlign: TextAlign.center,
-                                textScaler: const TextScaler.linear(1.0),
-                                style: GoogleFonts.poppins(
-                                  fontSize: FontSize.s10,
-                                  color: CommonColors.blackColor,
-                                ),
-                              ),
-                              onDeleted: () => onFilterRemoved(filter),
-                              backgroundColor: CommonColors.whiteColor,
-                              deleteIconColor: CommonColors.greyColor2,
-                              padding: EdgeInsets.symmetric(horizontal: 1.w),
+                      itemCount: activeFilters.length,
+                      separatorBuilder: (_, __) => SizedBox(width: 2.w),
+                      itemBuilder: (_, i) {
+                        return GestureDetector(
+                          onTap: () => onFilterRemoved(activeFilters[i]),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: _SSC.accentLight,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                  color: _SSC.accent.withValues(alpha: 0.3)),
                             ),
-                          );
-                        }).toList(),
-                      ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  activeFilters[i],
+                                  textScaler: const TextScaler.linear(1.0),
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: FontSize.s9,
+                                    fontWeight: FontWeight.w500,
+                                    color: _SSC.accent,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Icon(Icons.close_rounded,
+                                    size: 13, color: _SSC.accent),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ],
@@ -117,610 +148,677 @@ class _StickyFilterBarDelegate extends SliverPersistentHeaderDelegate {
   }
 }
 
+// ─────────────────────────────────────────────
+//  MAIN SCREEN
+// ─────────────────────────────────────────────
 class SearchSummaryScreen extends StatefulWidget {
-  const SearchSummaryScreen({
-    super.key,
-  });
+  const SearchSummaryScreen({super.key});
 
   @override
   State<SearchSummaryScreen> createState() => _SearchSummaryScreenState();
 }
 
-class _SearchSummaryScreenState extends State<SearchSummaryScreen> {
+class _SearchSummaryScreenState extends State<SearchSummaryScreen>
+    with SingleTickerProviderStateMixin {
   final DashboardController _dashboardC = Get.find<DashboardController>();
-  final TrekController _trekControllerC = Get.find<TrekController>();
-  final CouponController couponController = Get.find<CouponController>();
+  final TrekController _trekC = Get.find<TrekController>();
+  final CouponController _couponC = Get.find<CouponController>();
 
-  int selectedIndex = 0;
-  bool isGroupBooking = false;
+  int _selectedNavIndex = 0;
+  bool _isGroupBooking = false;
+  bool _isUserInteractingCoupons = false;
 
+  // FIX: single scroll controller — original had TWO controllers passed to
+  // nested scrollables which caused jumpy/conflicting scroll behaviour
   final ScrollController _scrollController = ScrollController();
 
-  List<String> activeFilters = [];
-  bool _isDiscountCardsUserInteracting = false;
-  Timer? _discountCardsTimer;
-  final PageController _discountCardsPageController = PageController(
-    viewportFraction: 0.75,
-    initialPage: discountCards.length * 100,
+  // FIX: separate PageController with stable initial page
+  final PageController _couponPageController = PageController(
+    viewportFraction: 0.80,
+    initialPage: 10000, // large offset so left-scroll is always possible
   );
 
-  final GlobalKey<CommonFilterBarState> _commonFilterBarKey =
+  Timer? _couponTimer;
+
+  List<String> activeFilters = [];
+
+  final GlobalKey<CommonFilterBarState> _filterBarKey =
       GlobalKey<CommonFilterBarState>();
 
+  late final AnimationController _fadeCtrl;
+  late final Animation<double> _fadeAnim;
+
+  // ── Lifecycle ───────────────────────────────────────────────────────────
+
   @override
-  void initState(){
+  void initState() {
     super.initState();
-
+    _fadeCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
+    _fadeCtrl.forward();
   }
-
-
-
 
   @override
   void deactivate() {
-    // Cancel timer when widget is deactivated (e.g. during navigation)
-    _discountCardsTimer?.cancel();
+    _couponTimer?.cancel();
     super.deactivate();
-  }
-
-  DateTime? _parseDate(String? date) {
-    if (date == null || date.trim().isEmpty) {
-      return null;
-    }
-
-    try {
-      // dd/MM/yyyy
-      if (date.contains('/')) {
-        return DateFormat('dd/MM/yyyy').parse(date);
-      }
-      // yyyy-MM-dd or yyyy-MM-ddTHH:mm:ssZ
-      else if (RegExp(r'^\d{4}-\d{2}-\d{2}').hasMatch(date)) {
-        return DateTime.parse(date);
-      }
-      // dd MMM yyyy (e.g., 08 Jul 2025)
-      else {
-        return DateFormat('dd MMM yyyy').parse(date);
-      }
-    } catch (e) {
-      return null;
-    }
-  }
-
-  void _applyFilters(List<String> filters) {
-    print(filters.join(","));
-    // setState(() {
-    //   activeFilters = List.from(filters);
-    //
-    //   // Start with date-filtered treks from all treks
-    //   filteredTreks = _trekControllerC.trekList.where((trek) {
-    //     // First apply date filter
-    //     DateTime? searchDate = _parseDate(_dashboardC.dateController.value.text);
-    //     DateTime? trekDate = _parseDate(trek.batchInfo?.startDate ?? '');
-    //     if (searchDate == null || trekDate == null) return true;
-    //     if (!trekDate.isAtSameMomentAs(searchDate)) return false;
-    //
-    //     // Then apply other filters
-    //     bool matchesFilters = true;
-    //
-    //     for (String filter in filters) {
-    //       // Handle rating filters
-    //       if (filter == 'High Rated Treks') {
-    //         if ((trek.rating ?? 0) < 4.0) {
-    //           // Assuming 4.0 is the threshold for high rated treks
-    //           matchesFilters = false;
-    //           break;
-    //         }
-    //       } else if (filter.contains('+ Rated')) {
-    //         double requiredRating = double.parse(filter.split('+ ')[0]);
-    //         if ((trek.rating ?? 0) < requiredRating) {
-    //           matchesFilters = false;
-    //           break;
-    //         }
-    //       }
-    //
-    //       // Handle duration filters
-    //       // if (filter.contains('D/')) {
-    //       //   // Extract the number of days from trek duration (assuming format like "3 Days")
-    //       //   String trekDurationStr = trek.duration.split(' ')[0];
-    //       //   int trekDays = int.parse(trekDurationStr);
-    //       //
-    //       //   if (filter == 'More') {
-    //       //     if (trekDays <= 6) {
-    //       //       // If trek days is less than or equal to 6, it doesn't match 'More'
-    //       //       matchesFilters = false;
-    //       //       break;
-    //       //     }
-    //       //   } else {
-    //       //     // Extract days from filter (format: "XD/YN")
-    //       //     int filterDays = int.parse(filter.split('D/')[0]);
-    //       //     if (trekDays != filterDays) {
-    //       //       matchesFilters = false;
-    //       //       break;
-    //       //     }
-    //       //   }
-    //       // }
-    //
-    //       // Handle offers
-    //       if (filter == 'Special Offers' && !trek.hasDiscount!) {
-    //         matchesFilters = false;
-    //         break;
-    //       }
-    //     }
-    //
-    //     return matchesFilters;
-    //   }).toList();
-    //
-    //   // Apply sorting if needed
-    //   if (filters.contains('Price - Low to high')) {
-    //     filteredTreks.sort((a, b) {
-    //       double priceA = double.parse(a.price ?? '0.0');
-    //       double priceB = double.parse(b.price ?? '0.0');
-    //       return priceA.compareTo(priceB);
-    //     });
-    //   } else if (filters.contains('Price - High to low')) {
-    //     filteredTreks.sort((a, b) {
-    //       double priceA = double.parse(a.price ?? '0.0');
-    //       double priceB = double.parse(b.price ?? '0.0');
-    //       return priceB.compareTo(priceA);
-    //     });
-    //   }
-    //
-    //   // If no filters are active, show all treks for the selected date
-    //   if (filters.isEmpty) {
-    //     filteredTreks = _trekControllerC.trekList.where((trek) {
-    //       DateTime? searchDate =
-    //           _parseDate(_dashboardC.dateController.value.text);
-    //       DateTime? trekDate = _parseDate(trek.batchInfo?.startDate ?? '');
-    //       if (searchDate == null || trekDate == null) return true;
-    //       return trekDate.isAtSameMomentAs(searchDate);
-    //     }).toList();
-    //   }
-    // });
-  }
-
-  void _removeFilter(String filter) {
-    if (activeFilters.contains(filter)) {
-      setState(() {
-        activeFilters.remove(filter);
-        _applyFilters(
-            List.from(activeFilters)); // Create a new list to trigger update
-      });
-
-      // Find and update the CommonFilterBar
-      if (_commonFilterBarKey.currentState != null) {
-        _commonFilterBarKey.currentState!.updateFilters(activeFilters);
-      }
-    }
   }
 
   @override
   void dispose() {
-    _discountCardsTimer?.cancel();
-    _discountCardsPageController.dispose();
+    _couponTimer?.cancel();
+    _couponPageController.dispose();
     _scrollController.dispose();
+    _fadeCtrl.dispose();
     super.dispose();
   }
 
-  void _startDiscountCardsAutoScroll() {
-    _discountCardsTimer?.cancel();
-    _discountCardsTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
-      if (!_isDiscountCardsUserInteracting &&
+  // ── Coupon auto-scroll ──────────────────────────────────────────────────
+
+  void _startCouponAutoScroll(int totalCoupons) {
+    _couponTimer?.cancel();
+    if (totalCoupons <= 1) return;
+    _couponTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      // FIX: guard mounted + hasClients before animating
+      if (!_isUserInteractingCoupons &&
           mounted &&
-          discountCards.length > 1) {
-        _discountCardsPageController.nextPage(
-          duration: const Duration(milliseconds: 800),
+          _couponPageController.hasClients) {
+        final next = (_couponPageController.page?.round() ?? 0) + 1;
+        _couponPageController.animateToPage(
+          next,
+          duration: const Duration(milliseconds: 700),
           curve: Curves.easeInOut,
         );
       }
     });
   }
 
-  String getFormattedDate(String dateStr) {
-    final parsed = _parseDate(dateStr);
-    if (parsed == null) return dateStr;
-    final day = DateFormat('d').format(parsed);
-    final month = DateFormat('MMM').format(parsed);
-    return '$day $month';
+  // ── Date helpers ────────────────────────────────────────────────────────
+
+  DateTime? _parseDate(String? date) {
+    if (date == null || date.trim().isEmpty) return null;
+    try {
+      if (date.contains('/')) return DateFormat('dd/MM/yyyy').parse(date);
+      if (RegExp(r'^\d{4}-\d{2}-\d{2}').hasMatch(date)) {
+        return DateTime.parse(date);
+      }
+      return DateFormat('dd MMM yyyy').parse(date);
+    } catch (_) {
+      return null;
+    }
   }
 
-  String getFormattedWeekday(String dateStr) {
-    final parsed = _parseDate(dateStr);
-    if (parsed == null) return '';
-    return DateFormat('EEE').format(parsed).toLowerCase();
+  String _formattedDate(String raw) {
+    final d = _parseDate(raw);
+    if (d == null) return raw;
+    return '${DateFormat('d').format(d)} ${DateFormat('MMM').format(d)}';
   }
+
+  String _formattedWeekday(String raw) {
+    final d = _parseDate(raw);
+    if (d == null) return '';
+    return DateFormat('EEE').format(d).toLowerCase();
+  }
+
+  // ── Filter logic ────────────────────────────────────────────────────────
+
+  void _applyFilters(List<String> filters) {
+    // FIX: update local state so chip bar rebuilds
+    if (mounted) setState(() => activeFilters = List.from(filters));
+  }
+
+  void _removeFilter(String filter) {
+    if (!activeFilters.contains(filter)) return;
+    setState(() => activeFilters.remove(filter));
+    // FIX: only call updateFilters if state is still mounted
+    final barState = _filterBarKey.currentState;
+    if (barState != null) barState.updateFilters(activeFilters);
+  }
+
+  // ── BUILD ────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
-    final formattedDate =
-        getFormattedDate(_dashboardC.dateController.value.text);
-    final formattedWeekday =
-        getFormattedWeekday(_dashboardC.dateController.value.text);
+    final dateText = _dashboardC.dateController.value.text;
+    final fromText = _dashboardC.fromController.value.text;
+    final toText = _dashboardC.toController.value.text;
+
     return StatefulWrapper(
-      onInit: ()  async {
-         await couponController.fetchAdminCoupons(_dashboardC.selectedTrekId.value);
+      onInit: () async {
+        // FIX: fetch coupons with actual trek ID
+        await _couponC.fetchAdminCoupons(
+            _dashboardC.selectedTrekId.value);
 
-
-        _startDiscountCardsAutoScroll();
-        // Initial filtering based on date using all treks
-
-        //  filteredTreks = List.from(_trekControllerC.trekList.where((trek) {
-        //   // Convert both dates to comparable format
-        //   DateTime? searchDate = _parseDate(_dashboardC.dateController.value.text);
-        //   DateTime? trekDate = _parseDate(trek.batchInfo?.startDate ?? '');
-        //
-        //   if (searchDate == null || trekDate == null) return true;
-        //   return trekDate.isAtSameMomentAs(searchDate);
-        // }).toList());
-
+        // Scroll to top after init
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (_scrollController.hasClients) {
-            _scrollController.jumpTo(0);
-          }
+          if (_scrollController.hasClients) _scrollController.jumpTo(0);
         });
       },
       child: Scaffold(
-        // bottomNavigationBar: CommonBottomNav(
-        //   selectedIndex: selectedIndex,
-        //   onIndexChanged: (index) {
-        //     setState(() {
-        //       selectedIndex = index;
-        //     });
-        //   },
-        //   selectedIconColor: CommonColors.appYellowColor,
-        //   unselectedIconColor: Colors.black,
-        // ),
-        appBar: AppBar(
-          backgroundColor: CommonColors.whiteColor,
-          elevation: 0,
-          scrolledUnderElevation: 0,
-          surfaceTintColor: Colors.transparent,
-          automaticallyImplyLeading: true,
-          iconTheme: const IconThemeData(color: CommonColors.blackColor),
-          titleSpacing: 0,
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        backgroundColor: _SSC.bg,
+        appBar: _buildAppBar(fromText, toText, dateText),
+        body: FadeTransition(
+          opacity: _fadeAnim,
+          child: NotificationListener<ScrollNotification>(
+            onNotification: (n) {
+              // FIX: pagination trigger — was using print, now extensible
+              if (n.metrics.pixels >=
+                  n.metrics.maxScrollExtent - 300) {
+                // TODO: trigger next page load here
+              }
+              return false;
+            },
+            child: CustomScrollView(
+              controller: _scrollController,
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                // ── Non-sticky header content ───────────────────────
+                SliverToBoxAdapter(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 12),
+                      _buildGroupBookingBanner(),
+                      const SizedBox(height: 12),
+                      _buildCouponCarousel(),
+                      const SizedBox(height: 4),
+                    ],
+                  ),
+                ),
+
+                // ── Sticky filter bar ───────────────────────────────
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _StickyFilterBarDelegate(
+                    activeFilters: activeFilters,
+                    onFilterRemoved: _removeFilter,
+                    screenHeight: MediaQuery.of(context).size.height,
+                    child: _buildFilterBar(),
+                  ),
+                ),
+
+                // ── Trek list ───────────────────────────────────────
+                _buildTrekList(dateText),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── AppBar ──────────────────────────────────────────────────────────────
+  PreferredSizeWidget _buildAppBar(
+      String from, String to, String dateText) {
+    return AppBar(
+      backgroundColor: _SSC.cardBg,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      surfaceTintColor: Colors.transparent,
+      automaticallyImplyLeading: true,
+      iconTheme: const IconThemeData(color: _SSC.ink),
+      titleSpacing: 0,
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(1),
+        child: Container(height: 1, color: _SSC.border),
+      ),
+      title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // From → To
+          Row(
             children: [
-              Row(
-                children: [
-                  Flexible(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (_dashboardC.fromController.value.text.isNotEmpty)
-                          Flexible(
-                            child: Text(
-                              _dashboardC.fromController.value.text,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textScaler: const TextScaler.linear(1.0),
-                              style: TextStyle(
-                                fontSize: FontSize.s11,
-                                fontWeight: FontWeight.w400,
-                                color: CommonColors.blackColor,
-                              ),
-                            ),
-                          ),
-
-                        if (_dashboardC.fromController.value.text.isNotEmpty &&
-                            _dashboardC.toController.value.text.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 6),
-                            child: Icon(
-                              Icons.arrow_forward,
-                              color: Colors.grey[500],
-                              size: 20,
-                            ),
-                          ),
-
-                        if (_dashboardC.toController.value.text.isNotEmpty)
-                          Flexible(
-                            child: Text(
-                              _dashboardC.toController.value.text,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textScaler: const TextScaler.linear(1.0),
-                              style: TextStyle(
-                                fontSize: FontSize.s11,
-                                fontWeight: FontWeight.w400,
-                                color: CommonColors.blackColor,
-                              ),
-                            ),
-                          ),
-                      ],
+              if (from.isNotEmpty)
+                Flexible(
+                  child: Text(
+                    from,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textScaler: const TextScaler.linear(1.0),
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: FontSize.s13,
+                      fontWeight: FontWeight.w700,
+                      color: _SSC.ink,
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 3),
-              if (_dashboardC.dateController.value.text.isNotEmpty)
-                Row(
-                  children: [
-                    Text(
-                      formattedDate,
-                      textScaler: const TextScaler.linear(1.0),
-                      style: TextStyle(
-                        fontSize: FontSize.s9,
-                        color: CommonColors.blackColor,
-                        fontWeight: FontWeight.w400,
-                      ),
+                ),
+              if (from.isNotEmpty && to.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  child: Icon(Icons.arrow_forward_rounded,
+                      color: _SSC.inkLight, size: 16),
+                ),
+              if (to.isNotEmpty)
+                Flexible(
+                  child: Text(
+                    to,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textScaler: const TextScaler.linear(1.0),
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: FontSize.s13,
+                      fontWeight: FontWeight.w700,
+                      color: _SSC.ink,
                     ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '($formattedWeekday)',
-                      textScaler: const TextScaler.linear(1.0),
-                      style: TextStyle(
-                        fontSize: FontSize.s9,
-                        color: CommonColors.grey_AEAEAE,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
             ],
           ),
+          // Date subtitle
+          if (dateText.isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Row(
+              children: [
+                Icon(Icons.calendar_today_outlined,
+                    size: 11, color: _SSC.inkLight),
+                const SizedBox(width: 4),
+                Text(
+                  _formattedDate(dateText),
+                  textScaler: const TextScaler.linear(1.0),
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: FontSize.s10,
+                    fontWeight: FontWeight.w400,
+                    color: _SSC.inkMid,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '(${_formattedWeekday(dateText)})',
+                  textScaler: const TextScaler.linear(1.0),
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: FontSize.s10,
+                    color: _SSC.inkLight,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // ── Group booking banner ─────────────────────────────────────────────────
+  Widget _buildGroupBookingBanner() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 4.w),
+      child: Container(
+        decoration: BoxDecoration(
+          color: _SSC.cardBg,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: _SSC.border, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: _SSC.shadow,
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
-        body: SafeArea(
-          child: Container(
-            color: CommonColors.whiteColor,
-            child: NotificationListener(
-              onNotification: (ScrollNotification scrollNotification) {
-                if (scrollNotification.metrics.pixels >= scrollNotification.metrics.maxScrollExtent - 200) {
-                  print("Paginate");
-                }
-                return false;
-              },
-              child: CustomScrollView(
-                controller: _scrollController,
-                slivers: [
-                  // Non-sticky content
-                  SliverToBoxAdapter(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 10),
-
-                        // 📌 Booking for Groups Section
-                        Padding(
-                          padding: const EdgeInsets.only(left: 20, right: 20),
-                          child: Container(
-                            width: MediaQuery.of(context).size.width * 0.9,
-                            decoration: BoxDecoration(
-                              color: CommonColors.whiteColor,
-                              borderRadius: BorderRadius.circular(30),
-                              border: Border.all(
-                                color: CommonColors.shimmerBaseColor,
-                                width: 1.5,
-                              ),
-                            ),
-                            padding: const EdgeInsets.only(left: 15, right: 6),
-                            child: Row(
-                              children: [
-                                SvgPicture.asset(
-                                  CommonImages.group,
-                                  width: 21,
-                                  height: 21,
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    'Booking for Groups',
-                                    textScaler: const TextScaler.linear(1.0),
-                                    style: TextStyle(
-                                      fontSize: FontSize.s10,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                                Text(
-                                  'View more',
-                                  textScaler: const TextScaler.linear(1.0),
-                                  style: TextStyle(
-                                    color: CommonColors.blueColor,
-                                    fontSize: FontSize.s9,
-                                    fontWeight: FontWeight.w400,
-                                  ),
-                                ),
-                                Transform.scale(
-                                  scale: 0.8,
-                                  child: Switch.adaptive(
-                                    activeColor: CommonColors.whiteColor,
-                                    activeTrackColor: CommonColors.blackColor,
-                                    inactiveTrackColor:
-                                        CommonColors.shimmerBaseColor,
-                                    inactiveThumbColor: CommonColors.blackColor,
-                                    value: isGroupBooking,
-                                    onChanged: (value) {
-                                      setState(() {
-                                        isGroupBooking = value;
-                                      });
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        // 📌 Discount Cards Section
-                        SingleChildScrollView(
-                          physics: const ClampingScrollPhysics(),
-                          controller: _scrollController,
-                          child: Column(
-                            children: [
-                              Obx(() {
-                                final loading = couponController.adminCouponsObserver.value.maybeWhen(loading: (data) => true,orElse: () => false);
-                                List<CouponCardData>? discountCards = couponController.adminCouponsObserver.value.maybeWhen(success: (couponsResponse) => (couponsResponse as CouponCodeModel).data,error: (sc) => [],orElse: () => [CouponCardData(),CouponCardData(),CouponCardData(),CouponCardData()]);
-                                if(discountCards?.isEmpty == true) return SizedBox();
-
-                                return SizedBox(
-                                  height: MediaQuery.of(context).size.height * 0.18,
-                                  width: MediaQuery.of(context).size.width,
-                                  child: Listener(
-                                    onPointerDown: (_) {
-                                      _isDiscountCardsUserInteracting = true;
-                                      _discountCardsTimer?.cancel();
-                                    },
-                                    onPointerUp: (_) {
-                                      _isDiscountCardsUserInteracting = false;
-                                      _startDiscountCardsAutoScroll();
-                                    },
-                                    onPointerCancel: (_) {
-                                      _isDiscountCardsUserInteracting = false;
-                                      _startDiscountCardsAutoScroll();
-                                    },
-                                    child: PageView.builder(
-                                      controller: _discountCardsPageController,
-                                      itemCount: null,
-                                      physics: const BouncingScrollPhysics(),
-                                      itemBuilder: (context, index) {
-                                        final discount = discountCards?[index % (discountCards.length ?? 0)];
-
-                                        return Container(
-                                          margin: const EdgeInsets.symmetric(
-                                              horizontal: 10),
-                                          child: CommonDiscountCard(
-                                            title: discount?.title ?? "",
-                                            subtitle: discount?.description ?? "",
-                                            color: AppTheme.hexToColor(discount?.color ?? "#3B82F6"),
-                                            code: discount?.code ?? "",
-                                            offerAmount: discount?.discountValue ?? "",
-                                            imagePath: discount?.imagePath ?? 'https://i.pinimg.com/originals/86/b5/3d/86b53d90fbd279ea28d04099ff7518f0.png',
-                                            imageHeight: 30,
-                                            detailedDescription: discount?.description ?? "",
-                                            howToApply: "dcc",
-                                            termsAndConditions: discount?.termsAndConditions?.join("\n"),
-                                            footerNote: "efr",
-                                          ).withShimmerAi(loading: loading),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                );
-                              })
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                      ],
+        padding: EdgeInsets.only(left: 4.w, right: 2.w, top: 1.h, bottom: 1.h),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: _SSC.accentLight,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Center(
+                child: SvgPicture.asset(
+                  CommonImages.group,
+                  width: 18,
+                  height: 18,
+                  // FIX: colorFilter instead of deprecated color param
+                  colorFilter: ColorFilter.mode(
+                      _SSC.accent, BlendMode.srcIn),
+                ),
+              ),
+            ),
+            SizedBox(width: 3.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Booking for Groups',
+                    textScaler: const TextScaler.linear(1.0),
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: FontSize.s11,
+                      fontWeight: FontWeight.w600,
+                      color: _SSC.ink,
                     ),
                   ),
-
-                  // Sticky Filter Bar
-                  SliverPersistentHeader(
-                    pinned: true,
-                    delegate: _StickyFilterBarDelegate(
-                      activeFilters: activeFilters,
-                      onFilterRemoved: _removeFilter,
-                      screenHeight: MediaQuery.of(context).size.height,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          boxShadow: [
-                            BoxShadow(
-                              color: CommonColors.blackColor.withValues(alpha: 0.13),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Center(
-                          child: SizedBox(
-                            height: 4.h,
-                            child: CommonFilterBar(
-                              key: _commonFilterBarKey,
-                              onFiltersChanged: (filters) {
-                                _applyFilters(filters);
-                                if (_scrollController.hasClients) {
-                                  _scrollController.jumpTo(0);
-                                }
-                              },
-                            ),
-                          ),
-                        ),
-                      ),
+                  Text(
+                    'Get exclusive deals for 4+ members',
+                    textScaler: const TextScaler.linear(1.0),
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: FontSize.s8,
+                      color: _SSC.inkMid,
                     ),
-                  ),
-
-                  // Trek List Section
-                  Obx(() {
-                    final treksLoading = _trekControllerC.treksResponseObserver.value.data.value.maybeWhen(loading: (data) => true,orElse: () => false);
-                    List<TrekData>? filteredTreks = _trekControllerC.treksResponseObserver.value.data.value.maybeWhen(success: (treksResponse) => (treksResponse as FetchTreksResponseModel).data,error: (sc) => [],orElse: () => [TrekData(),TrekData(),TrekData(),TrekData()]);
-
-                    return SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                            (context, index) {
-                          if (filteredTreks?.isEmpty == true) {
-                            return Container(
-                              margin: const EdgeInsets.only(top: 40),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.hiking,
-                                    size: 64,
-                                    color: CommonColors.grey_AEAEAE,
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    'No treks available for ${getFormattedDate(_dashboardC.dateController.value.text)}',
-                                    textScaler: const TextScaler.linear(1.0),
-                                    style: TextStyle(
-                                      fontSize: FontSize.s11,
-                                      fontWeight: FontWeight.w500,
-                                      color: CommonColors.blackColor,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Try selecting a different date',
-                                    textScaler: const TextScaler.linear(1.0),
-                                    style: TextStyle(
-                                      fontSize: FontSize.s9,
-                                      color: CommonColors.grey_AEAEAE,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }
-                          final trek = filteredTreks?[index];
-                          return Column(
-                            children: [
-                              Container(
-                                margin: const EdgeInsets.only(
-                                  top: 24,
-                                ),
-                                //CommonTrekCard
-                                child: CommonTrekCard(
-                                  trek: trek,
-                                  onTap: () async {
-                                    // Set the trek detail ID
-                                    _trekControllerC.trekDetailId.value = trek?.id ?? 0;
-
-                                    // Call the trek detail API
-                                    await _trekControllerC.trekDetail(batchId: trek?.batchInfo?.id ?? 0);
-
-                                    Get.to(() => TrekDetailsScreen(trek:trek));
-
-                                    // Navigate to trek details screen
-                                  },
-                                ).withShimmerAi(loading: treksLoading),
-                              ),
-                              if (index == ((filteredTreks?.length ?? 0) - 1))
-                                const SizedBox(height: 34),
-                            ],
-                          );
-                        },
-                        childCount: filteredTreks?.isEmpty == true ? 1 : filteredTreks?.length ?? 0,
-                      ),
-                    );
-                  },
                   ),
                 ],
               ),
             ),
+            GestureDetector(
+              onTap: () {
+                // TODO: view more group booking info
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Text(
+                  'View more',
+                  textScaler: const TextScaler.linear(1.0),
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    color: _SSC.accent,
+                    fontSize: FontSize.s9,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+            Transform.scale(
+              scale: 0.8,
+              child: Switch.adaptive(
+                // ORIGINAL LOGIC
+                activeColor: CommonColors.whiteColor,
+                activeTrackColor: _SSC.accent,
+                inactiveTrackColor: _SSC.border,
+                inactiveThumbColor: _SSC.inkLight,
+                value: _isGroupBooking,
+                onChanged: (val) => setState(() => _isGroupBooking = val),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Coupon carousel ──────────────────────────────────────────────────────
+  Widget _buildCouponCarousel() {
+    return Obx(() {
+      final isLoading = _couponC.adminCouponsObserver.value.maybeWhen(
+        loading: (_) => true,
+        orElse: () => false,
+      );
+
+      // FIX: proper null-safe extraction — original had wrong cast pattern
+      final coupons = _couponC.adminCouponsObserver.value.maybeWhen(
+        success: (data) {
+          if (data is CouponCodeModel) return data.data ?? <CouponCardData>[];
+          return <CouponCardData>[];
+        },
+        error: (_) => <CouponCardData>[],
+        orElse: () => List.generate(3, (_) => CouponCardData()),
+      );
+
+      // FIX: don't show carousel if no coupons and not loading
+      if (!isLoading && coupons.isEmpty) return const SizedBox.shrink();
+
+      // Start auto-scroll once we know the count
+      if (!isLoading && coupons.isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback(
+            (_) => _startCouponAutoScroll(coupons.length));
+      }
+
+      return SizedBox(
+        height: 18.h,
+        child: Listener(
+          onPointerDown: (_) {
+            _isUserInteractingCoupons = true;
+            _couponTimer?.cancel();
+          },
+          onPointerUp: (_) {
+            _isUserInteractingCoupons = false;
+            _startCouponAutoScroll(coupons.length);
+          },
+          onPointerCancel: (_) {
+            _isUserInteractingCoupons = false;
+            _startCouponAutoScroll(coupons.length);
+          },
+          child: PageView.builder(
+            controller: _couponPageController,
+            // FIX: null itemCount = infinite; when loading show fixed 3
+            itemCount: isLoading ? 3 : null,
+            physics: const BouncingScrollPhysics(),
+            itemBuilder: (context, index) {
+              final coupon = isLoading
+                  ? CouponCardData()
+                  : coupons[index % coupons.length];
+
+              return Container(
+                margin: EdgeInsets.symmetric(horizontal: 2.w),
+                child: CommonDiscountCard(
+                  title: coupon.title ?? '',
+                  subtitle: coupon.description ?? '',
+                  color: AppTheme.hexToColor(coupon.color ?? '#3B5BDB'),
+                  code: coupon.code ?? '',
+                  offerAmount: coupon.discountValue ?? '',
+                  imagePath: coupon.imagePath ??
+                      'https://i.pinimg.com/originals/86/b5/3d/86b53d90fbd279ea28d04099ff7518f0.png',
+                  imageHeight: 30,
+                  detailedDescription: coupon.description ?? '',
+                  howToApply: '',
+                  termsAndConditions:
+                      coupon.termsAndConditions?.join('\n'),
+                  footerNote: '',
+                ).withShimmerAi(loading: isLoading),
+              );
+            },
           ),
+        ),
+      );
+    });
+  }
+
+  // ── Filter bar ──────────────────────────────────────────────────────────
+  Widget _buildFilterBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: _SSC.filterBarBg,
+        boxShadow: [
+          BoxShadow(
+            color: CommonColors.blackColor.withValues(alpha: 0.08),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Center(
+        child: SizedBox(
+          height: 4.h,
+          child: CommonFilterBar(
+            key: _filterBarKey,
+            onFiltersChanged: (filters) {
+              _applyFilters(filters);
+              // FIX: only jump if controller is attached
+              if (_scrollController.hasClients) {
+                _scrollController.jumpTo(0);
+              }
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Trek list sliver ────────────────────────────────────────────────────
+  Widget _buildTrekList(String dateText) {
+    return Obx(() {
+      final isLoading =
+          _trekC.treksResponseObserver.value.data.value.maybeWhen(
+        loading: (_) => true,
+        orElse: () => false,
+      );
+
+      // FIX: safe extraction from nested observer
+      final treks =
+          _trekC.treksResponseObserver.value.data.value.maybeWhen(
+        success: (data) {
+          if (data is FetchTreksResponseModel) return data.data ?? <TrekData>[];
+          return <TrekData>[];
+        },
+        error: (_) => <TrekData>[],
+        // Show 4 shimmer placeholders while loading
+        orElse: () => List.generate(4, (_) => const TrekData()),
+      );
+
+      // Empty state — not loading and no treks
+      if (!isLoading && treks.isEmpty) {
+        return SliverFillRemaining(
+          child: _buildEmptyState(dateText),
+        );
+      }
+
+      return SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            // Bottom padding after last item
+            if (index == treks.length) {
+              return const SizedBox(height: 40);
+            }
+
+            final trek = treks[index];
+
+            return TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0, end: 1),
+              // FIX: stagger first 6 items only to avoid rebuild cost
+              duration: Duration(
+                  milliseconds: 250 + (index.clamp(0, 5) * 60)),
+              curve: Curves.easeOutCubic,
+              builder: (ctx, value, child) => Opacity(
+                opacity: value,
+                child: Transform.translate(
+                  offset: Offset(0, 16 * (1 - value)),
+                  child: child,
+                ),
+              ),
+              child: Container(
+                margin: EdgeInsets.only(
+                  top: index == 0 ? 2.h : 1.5.h,
+                  left: 0,
+                  right: 0,
+                ),
+                child: CommonTrekCard(
+                  trek: trek,
+                  // Pass route from DashboardController
+                  fromLocation:
+                      _dashboardC.fromController.value.text,
+                  toLocation:
+                      _dashboardC.toController.value.text,
+                  onTap: () async {
+                    // ORIGINAL LOGIC
+                    _trekC.trekDetailId.value = trek.id ?? 0;
+                    await _trekC.trekDetail(
+                        batchId: trek.batchInfo?.id ?? 0);
+                    Get.to(() => TrekDetailsScreen(trek: trek));
+                  },
+                ).withShimmerAi(loading: isLoading),
+              ),
+            );
+          },
+          // +1 for bottom spacing item
+          childCount: treks.isEmpty ? 0 : treks.length + 1,
+        ),
+      );
+    });
+  }
+
+  // ── Empty state ─────────────────────────────────────────────────────────
+  Widget _buildEmptyState(String dateText) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 8.w),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 20.w,
+              height: 20.w,
+              decoration: BoxDecoration(
+                color: _SSC.accentLight,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.hiking_rounded,
+                  size: 10.w, color: _SSC.accent),
+            ),
+            SizedBox(height: 2.h),
+            Text(
+              'No treks available',
+              textScaler: const TextScaler.linear(1.0),
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: FontSize.s15,
+                fontWeight: FontWeight.w700,
+                color: _SSC.ink,
+              ),
+            ),
+            SizedBox(height: 0.8.h),
+            Text(
+              dateText.isNotEmpty
+                  ? 'for ${_formattedDate(dateText)}'
+                  : 'for this route',
+              textScaler: const TextScaler.linear(1.0),
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: FontSize.s11,
+                color: _SSC.inkMid,
+              ),
+            ),
+            SizedBox(height: 0.6.h),
+            Text(
+              'Try selecting a different date or route',
+              textScaler: const TextScaler.linear(1.0),
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: FontSize.s9,
+                color: _SSC.inkLight,
+              ),
+            ),
+            SizedBox(height: 3.h),
+            GestureDetector(
+              onTap: () => Get.back(),
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                    horizontal: 6.w, vertical: 1.2.h),
+                decoration: BoxDecoration(
+                  color: _SSC.accent,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: _SSC.accent.withValues(alpha: 0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Text(
+                  'Change search',
+                  textScaler: const TextScaler.linear(1.0),
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: FontSize.s11,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

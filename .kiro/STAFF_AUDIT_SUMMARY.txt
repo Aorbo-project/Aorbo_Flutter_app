@@ -61,7 +61,7 @@ CRITICAL ISSUES:
 1. GET.PUT() MISUSE
    File: lib/screens/traveller_information_screen.dart (Line 30-32)
    ```dart
-   final TrekController _trekControllerC = Get.put(TrekController());
+   final TrekController _trekC = Get.put(TrekController());
    final DashboardController _dashboardC = Get.put(DashboardController());
    final UserController _userC = Get.put(UserController());
    ```
@@ -171,7 +171,7 @@ CRITICAL ISSUES:
 4. CONTROLLERS NEVER DISPOSED
    File: lib/screens/traveller_information_screen.dart (Line 30-32)
    ```dart
-   final TrekController _trekControllerC = Get.put(TrekController());
+   final TrekController _trekC = Get.put(TrekController());
    // No dispose() call
    ```
    PROBLEM: Controllers persist in memory forever
