@@ -416,10 +416,10 @@ void _openRazorpay() async {
 
   var options = {
     'key': BookingConstants.razorpayTestKey,
-    'order_id': '${_trekControllerC.orderData.value.id}',
+    'order_id': '${_trekC.orderData.value.id}',
     'amount': (finalAmount * 100).toInt(),
-    'name': '${_trekControllerC.trekDetailData.value.title}',
-    'description': '${_trekControllerC.trekDetailData.value.description}',
+    'name': '${_trekC.trekDetailData.value.title}',
+    'description': '${_trekC.trekDetailData.value.description}',
     'prefill': {
       'contact': '${_userC.userProfileData.value.customer?.phone}',
       'email': '${_userC.userProfileData.value.customer?.email}',

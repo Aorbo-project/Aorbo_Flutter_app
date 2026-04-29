@@ -35,7 +35,7 @@ class WeekendTreksScreen extends StatefulWidget {
 class _WeekendTreksScreenState extends State<WeekendTreksScreen> {
   final ScrollController _scrollController = ScrollController();
   int _selectedDateIndex = 0;
-  final TrekController _trekControllerC = Get.find<TrekController>();
+  final TrekController _trekC = Get.find<TrekController>();
 
 
 
@@ -85,11 +85,11 @@ class _WeekendTreksScreenState extends State<WeekendTreksScreen> {
               ),
             ),
             Obx(() {
-              final treksLoading = _trekControllerC.weekendTreksResponseObserver.value.data.value.maybeWhen(loading: (data) => true,orElse: () => false);
-              List<TrekData>? availableTreks = _trekControllerC.weekendTreksResponseObserver.value.data.value.maybeWhen(success: (treksResponse) => (treksResponse as FetchTreksResponseModel).data,error: (sc) => [],orElse: () => [TrekData(),TrekData(),TrekData(),TrekData()]);
-              SearchContextModel? searchContext = _trekControllerC.weekendTreksResponseObserver.value.data.value.maybeWhen(success: (treksResponse) => (treksResponse as FetchTreksResponseModel).searchContext,orElse: () => null);
+              final treksLoading = _trekC.weekendTreksResponseObserver.value.data.value.maybeWhen(loading: (data) => true,orElse: () => false);
+              List<TrekData>? availableTreks = _trekC.weekendTreksResponseObserver.value.data.value.maybeWhen(success: (treksResponse) => (treksResponse as FetchTreksResponseModel).data,error: (sc) => [],orElse: () => [TrekData(),TrekData(),TrekData(),TrekData()]);
+              SearchContextModel? searchContext = _trekC.weekendTreksResponseObserver.value.data.value.maybeWhen(success: (treksResponse) => (treksResponse as FetchTreksResponseModel).searchContext,orElse: () => null);
 
-              final paginating = _trekControllerC.weekendTreksResponseObserver.value.isLoading;
+              final paginating = _trekC.weekendTreksResponseObserver.value.isLoading;
 
               return SliverToBoxAdapter(
                 child: Column(
@@ -223,10 +223,10 @@ class _WeekendTreksScreenState extends State<WeekendTreksScreen> {
                             child: CommonTrekCard(
                               trek: trek,
                               onTap: () async {
-                                _trekControllerC.trekDetailId.value = trek?.id ?? 0;
+                                _trekC.trekDetailId.value = trek?.id ?? 0;
 
                                 // Call the trek detail API
-                                await _trekControllerC.trekDetail(batchId: trek?.batchInfo?.id ?? 0);
+                                await _trekC.trekDetail(batchId: trek?.batchInfo?.id ?? 0);
 
                                 Get.to(() => TrekDetailsScreen(trek:trek));
                               },
@@ -258,9 +258,9 @@ class _WeekendTreksScreenState extends State<WeekendTreksScreen> {
 
 
   Future<void> _addData() async {
-    final observer = _trekControllerC.weekendTreksResponseObserver;
+    final observer = _trekC.weekendTreksResponseObserver;
     if( observer.value.isPaginationCompleted || observer.value.isLoading ) return;
-    _trekControllerC.fetchWeekendTreks(cityId:widget.city, trekId: widget.trek, date: widget.date,refresh: false);
+    _trekC.fetchWeekendTreks(cityId:widget.city, trekId: widget.trek, date: widget.date,refresh: false);
   }
 
 }

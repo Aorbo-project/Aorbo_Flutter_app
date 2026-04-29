@@ -1,11 +1,6 @@
-// ─────────────────────────────────────────────────────────────────────────────
 // cancellation_policy_widget.dart
-// AORBO TREKS — Cancellation Policy Section
-// Renders Standard or Flexible policy — fully dynamic from API
-// ─────────────────────────────────────────────────────────────────────────────
 
 import 'package:flutter/material.dart';
-
 import '../models/invoice/invoice_model.dart';
 import '../models/treaks/treak_detail_modal.dart';
 
@@ -17,7 +12,7 @@ class CancellationPolicyWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20,vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -30,6 +25,7 @@ class CancellationPolicyWidget extends StatelessWidget {
               letterSpacing: 0.1,
             ),
           ),
+
           const SizedBox(height: 12),
 
           // ── Table header
@@ -37,13 +33,14 @@ class CancellationPolicyWidget extends StatelessWidget {
           const Divider(height: 1, thickness: 0.5),
           const SizedBox(height: 4),
 
-          // ── Policy rows — fully dynamic
+          // ── Policy rows
           ...(policy?.rules ?? []).map((row) => _buildPolicyRow(row)),
 
           const SizedBox(height: 16),
 
-          // ── Footnotes — fully dynamic
-          ...(policy?.descriptionPoints ?? []).map((note) => _buildFootnote(note)),
+          // ── Footnotes
+          ...(policy?.descriptionPoints ?? [])
+              .map((note) => _buildFootnote(note)),
 
           const SizedBox(height: 8),
         ],

@@ -283,11 +283,11 @@ mixin _$BookingHistoryData {
   @JsonKey(name: 'total_travelers')
   int? get totalTravelers => throw _privateConstructorUsedError;
   @JsonKey(name: 'total_amount')
-  String? get totalAmount => throw _privateConstructorUsedError;
+  dynamic get totalAmount => throw _privateConstructorUsedError;
   @JsonKey(name: 'discount_amount')
-  String? get discountAmount => throw _privateConstructorUsedError;
+  dynamic get discountAmount => throw _privateConstructorUsedError;
   @JsonKey(name: 'final_amount')
-  String? get finalAmount => throw _privateConstructorUsedError;
+  dynamic get finalAmount => throw _privateConstructorUsedError;
   @JsonKey(name: 'payment_status')
   String? get paymentStatus => throw _privateConstructorUsedError;
   String? get status => throw _privateConstructorUsedError;
@@ -338,9 +338,9 @@ abstract class $BookingHistoryDataCopyWith<$Res> {
       @JsonKey(name: 'batch_id') int? batchId,
       @JsonKey(name: 'coupon_id') int? couponId,
       @JsonKey(name: 'total_travelers') int? totalTravelers,
-      @JsonKey(name: 'total_amount') String? totalAmount,
-      @JsonKey(name: 'discount_amount') String? discountAmount,
-      @JsonKey(name: 'final_amount') String? finalAmount,
+      @JsonKey(name: 'total_amount') dynamic totalAmount,
+      @JsonKey(name: 'discount_amount') dynamic discountAmount,
+      @JsonKey(name: 'final_amount') dynamic finalAmount,
       @JsonKey(name: 'payment_status') String? paymentStatus,
       String? status,
       @JsonKey(name: 'booking_date') String? bookingDate,
@@ -440,15 +440,15 @@ class _$BookingHistoryDataCopyWithImpl<$Res, $Val extends BookingHistoryData>
       totalAmount: freezed == totalAmount
           ? _value.totalAmount
           : totalAmount // ignore: cast_nullable_to_non_nullable
-              as String?,
+              as dynamic,
       discountAmount: freezed == discountAmount
           ? _value.discountAmount
           : discountAmount // ignore: cast_nullable_to_non_nullable
-              as String?,
+              as dynamic,
       finalAmount: freezed == finalAmount
           ? _value.finalAmount
           : finalAmount // ignore: cast_nullable_to_non_nullable
-              as String?,
+              as dynamic,
       paymentStatus: freezed == paymentStatus
           ? _value.paymentStatus
           : paymentStatus // ignore: cast_nullable_to_non_nullable
@@ -577,9 +577,9 @@ abstract class _$$BookingHistoryDataImplCopyWith<$Res>
       @JsonKey(name: 'batch_id') int? batchId,
       @JsonKey(name: 'coupon_id') int? couponId,
       @JsonKey(name: 'total_travelers') int? totalTravelers,
-      @JsonKey(name: 'total_amount') String? totalAmount,
-      @JsonKey(name: 'discount_amount') String? discountAmount,
-      @JsonKey(name: 'final_amount') String? finalAmount,
+      @JsonKey(name: 'total_amount') dynamic totalAmount,
+      @JsonKey(name: 'discount_amount') dynamic discountAmount,
+      @JsonKey(name: 'final_amount') dynamic finalAmount,
       @JsonKey(name: 'payment_status') String? paymentStatus,
       String? status,
       @JsonKey(name: 'booking_date') String? bookingDate,
@@ -680,15 +680,15 @@ class __$$BookingHistoryDataImplCopyWithImpl<$Res>
       totalAmount: freezed == totalAmount
           ? _value.totalAmount
           : totalAmount // ignore: cast_nullable_to_non_nullable
-              as String?,
+              as dynamic,
       discountAmount: freezed == discountAmount
           ? _value.discountAmount
           : discountAmount // ignore: cast_nullable_to_non_nullable
-              as String?,
+              as dynamic,
       finalAmount: freezed == finalAmount
           ? _value.finalAmount
           : finalAmount // ignore: cast_nullable_to_non_nullable
-              as String?,
+              as dynamic,
       paymentStatus: freezed == paymentStatus
           ? _value.paymentStatus
           : paymentStatus // ignore: cast_nullable_to_non_nullable
@@ -825,13 +825,13 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
   final int? totalTravelers;
   @override
   @JsonKey(name: 'total_amount')
-  final String? totalAmount;
+  final dynamic totalAmount;
   @override
   @JsonKey(name: 'discount_amount')
-  final String? discountAmount;
+  final dynamic discountAmount;
   @override
   @JsonKey(name: 'final_amount')
-  final String? finalAmount;
+  final dynamic finalAmount;
   @override
   @JsonKey(name: 'payment_status')
   final String? paymentStatus;
@@ -909,12 +909,12 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
                 other.couponId == couponId) &&
             (identical(other.totalTravelers, totalTravelers) ||
                 other.totalTravelers == totalTravelers) &&
-            (identical(other.totalAmount, totalAmount) ||
-                other.totalAmount == totalAmount) &&
-            (identical(other.discountAmount, discountAmount) ||
-                other.discountAmount == discountAmount) &&
-            (identical(other.finalAmount, finalAmount) ||
-                other.finalAmount == finalAmount) &&
+            const DeepCollectionEquality()
+                .equals(other.totalAmount, totalAmount) &&
+            const DeepCollectionEquality()
+                .equals(other.discountAmount, discountAmount) &&
+            const DeepCollectionEquality()
+                .equals(other.finalAmount, finalAmount) &&
             (identical(other.paymentStatus, paymentStatus) ||
                 other.paymentStatus == paymentStatus) &&
             (identical(other.status, status) || other.status == status) &&
@@ -960,9 +960,9 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
         batchId,
         couponId,
         totalTravelers,
-        totalAmount,
-        discountAmount,
-        finalAmount,
+        const DeepCollectionEquality().hash(totalAmount),
+        const DeepCollectionEquality().hash(discountAmount),
+        const DeepCollectionEquality().hash(finalAmount),
         paymentStatus,
         status,
         bookingDate,
@@ -1007,9 +1007,9 @@ abstract class _BookingHistoryData implements BookingHistoryData {
       @JsonKey(name: 'batch_id') final int? batchId,
       @JsonKey(name: 'coupon_id') final int? couponId,
       @JsonKey(name: 'total_travelers') final int? totalTravelers,
-      @JsonKey(name: 'total_amount') final String? totalAmount,
-      @JsonKey(name: 'discount_amount') final String? discountAmount,
-      @JsonKey(name: 'final_amount') final String? finalAmount,
+      @JsonKey(name: 'total_amount') final dynamic totalAmount,
+      @JsonKey(name: 'discount_amount') final dynamic discountAmount,
+      @JsonKey(name: 'final_amount') final dynamic finalAmount,
       @JsonKey(name: 'payment_status') final String? paymentStatus,
       final String? status,
       @JsonKey(name: 'booking_date') final String? bookingDate,
@@ -1056,13 +1056,13 @@ abstract class _BookingHistoryData implements BookingHistoryData {
   int? get totalTravelers;
   @override
   @JsonKey(name: 'total_amount')
-  String? get totalAmount;
+  dynamic get totalAmount;
   @override
   @JsonKey(name: 'discount_amount')
-  String? get discountAmount;
+  dynamic get discountAmount;
   @override
   @JsonKey(name: 'final_amount')
-  String? get finalAmount;
+  dynamic get finalAmount;
   @override
   @JsonKey(name: 'payment_status')
   String? get paymentStatus;

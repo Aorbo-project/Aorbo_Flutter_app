@@ -61,7 +61,7 @@ class PaymentSuccessPage extends StatefulWidget {
 
 class _PaymentSuccessPageState extends State<PaymentSuccessPage>
     with TickerProviderStateMixin {
-  final TrekController _trekControllerC = Get.find<TrekController>();
+  final TrekController _trekC = Get.find<TrekController>();
   final DashboardController _dashboardC = Get.find<DashboardController>();
 
   double? screenHeight;
@@ -96,7 +96,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
     // Clear all booking data after the widget tree unlocks
     // Using post-frame callback to avoid "setState() called during dispose" error
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _trekControllerC.clearBookingData();
+      _trekC.clearBookingData();
       _dashboardC.clearSearchAndBookingData();
     });
     super.dispose();
@@ -181,7 +181,7 @@ class _TicketCardSection extends StatefulWidget {
 
 class _TicketCardSectionState extends State<_TicketCardSection> {
   Set<int> openSections = {}; // now all sections are collapsed initially
-  final TrekController _trekControllerC = Get.find<TrekController>();
+  final TrekController _trekC = Get.find<TrekController>();
 
   final GlobalKey _dottedKey = GlobalKey();
   final GlobalKey _cardKey = GlobalKey();
@@ -281,7 +281,7 @@ class _TicketCardSectionState extends State<_TicketCardSection> {
           ),
           SizedBox(height: 2.h),
           Text(
-            _trekControllerC.verifyOrderModal.value.data?.trek?.title ?? '-',
+            _trekC.verifyOrderModal.value.data?.trek?.title ?? '-',
             style: TextStyle(
               fontSize: 18.sp,
               fontWeight: FontWeight.w700,
@@ -302,7 +302,7 @@ class _TicketCardSectionState extends State<_TicketCardSection> {
                     Text(
                       DateFormat('E, dd MMM').format(
                         DateTime.parse(
-                          _trekControllerC
+                          _trekC
                                   .verifyOrderModal
                                   .value
                                   .data!
@@ -320,7 +320,7 @@ class _TicketCardSectionState extends State<_TicketCardSection> {
                     ),
                     SizedBox(height: 0.5.h),
                     Text(
-                      _trekControllerC
+                      _trekC
                               .verifyOrderModal
                               .value
                               .data!
@@ -359,7 +359,7 @@ class _TicketCardSectionState extends State<_TicketCardSection> {
                       ],
                     ),
                     child: Text(
-                      (_trekControllerC
+                      (_trekC
                                   .verifyOrderModal
                                   .value
                                   .data
@@ -389,7 +389,7 @@ class _TicketCardSectionState extends State<_TicketCardSection> {
                     Text(
                       DateFormat('E, dd MMM').format(
                         DateTime.parse(
-                          _trekControllerC
+                          _trekC
                                   .verifyOrderModal
                                   .value
                                   .data!
@@ -408,7 +408,7 @@ class _TicketCardSectionState extends State<_TicketCardSection> {
                     ),
                     SizedBox(height: 0.5.h),
                     Text(
-                      _trekControllerC
+                      _trekC
                               .verifyOrderModal
                               .value
                               .data!
@@ -439,18 +439,18 @@ class _TicketCardSectionState extends State<_TicketCardSection> {
               children: [
                 _ticketRow(
                   "Ticket No",
-                  _trekControllerC.orderData.value.receipt ?? '-',
+                  _trekC.orderData.value.receipt ?? '-',
                 ),
                 _ticketRow(
                   "Order ID",
-                  _trekControllerC.verifyOrderModal.value.payment?.orderId ??
+                  _trekC.verifyOrderModal.value.payment?.orderId ??
                       '-',
                 ),
                 _ticketRow(
                   "Date of Booking",
                   DateFormat('E, d MMM hh:mm a').format(
                     DateTime.parse(
-                      _trekControllerC
+                      _trekC
                               .verifyOrderModal
                               .value
                               .data
@@ -529,7 +529,7 @@ class _TicketCardSectionState extends State<_TicketCardSection> {
                     SizedBox(height: 0.5.h),
 
                     // Traveller rows
-                    ...?_trekControllerC.verifyOrderModal.value.data?.travelers!
+                    ...?_trekC.verifyOrderModal.value.data?.travelers!
                         .map((t) {
                           return Padding(
                             padding: EdgeInsets.symmetric(
@@ -596,7 +596,7 @@ class _TicketCardSectionState extends State<_TicketCardSection> {
               children: [
                 _ticketRow(
                   "Trek Operator",
-                  _trekControllerC
+                  _trekC
                           .verifyOrderModal
                           .value
                           .data!
@@ -607,7 +607,7 @@ class _TicketCardSectionState extends State<_TicketCardSection> {
                 ),
                 _ticketRow(
                   "Boarding",
-                  _trekControllerC
+                  _trekC
                           .verifyOrderModal
                           .value
                           .data
@@ -617,7 +617,7 @@ class _TicketCardSectionState extends State<_TicketCardSection> {
                 ),
                 _ticketRow(
                   "Trek Captain",
-                  _trekControllerC
+                  _trekC
                           .verifyOrderModal
                           .value
                           .data!
@@ -628,7 +628,7 @@ class _TicketCardSectionState extends State<_TicketCardSection> {
                 ),
                 _ticketRow(
                   "Captain Contact",
-                  _trekControllerC
+                  _trekC
                           .verifyOrderModal
                           .value
                           .data!
@@ -651,18 +651,18 @@ class _TicketCardSectionState extends State<_TicketCardSection> {
               children: [
                 _ticketRow(
                   "Base Fare",
-                  _trekControllerC.verifyOrderModal.value.data?.trek?.basePrice
+                  _trekC.verifyOrderModal.value.data?.trek?.basePrice
                           .toString() ??
                       '0.00',
                 ),
-                if (_trekControllerC
+                if (_trekC
                     .verifyOrderModal
                     .value
                     .paymentDetails!
                     .isPartialPayment!)
                   _ticketRow(
                     "Remaining Amount",
-                    _trekControllerC
+                    _trekC
                             .verifyOrderModal
                             .value
                             .paymentDetails
@@ -673,7 +673,7 @@ class _TicketCardSectionState extends State<_TicketCardSection> {
                 // _ticketRow("Tax + Fee", "₹385"),
                 _ticketRow(
                   "Total Paid",
-                  _trekControllerC.verifyOrderModal.value.payment?.amount
+                  _trekC.verifyOrderModal.value.payment?.amount
                           .toString() ??
                       '0.00',
                 ),

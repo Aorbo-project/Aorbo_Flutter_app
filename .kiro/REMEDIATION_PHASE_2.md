@@ -123,7 +123,7 @@ void _openRazorpay() async {
 
   var options = {
     'key': BookingConstants.razorpayTestKey,
-    'order_id': '${_trekControllerC.orderData.value.id}',
+    'order_id': '${_trekC.orderData.value.id}',
     'amount': (finalAmount * 100).toInt(),
     // ... rest of options
   };
