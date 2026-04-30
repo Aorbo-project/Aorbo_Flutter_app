@@ -95,9 +95,13 @@ _$TrekDetailDataImpl _$$TrekDetailDataImplFromJson(Map<String, dynamic> json) =>
           ? null
           : CategoryRatings.fromJson(
               json['category_ratings'] as Map<String, dynamic>),
-      batchInfo: json['batch_info'] == null
-          ? null
-          : BatchInfo.fromJson(json['batch_info'] as Map<String, dynamic>),
+      batchId: json['batch_id'] as int?,
+      tbrId: json['tbr_id'] as String?,
+      startDate: json['start_date'] as String?,
+      endDate: json['end_date'] as String?,
+      capacity: json['capacity'] as int?,
+      bookedSlots: json['booked_slots'] as int?,
+      availableSlots: json['available_slots'] as int?,
       cancellationPolicy: json['cancellation_policy'] == null
           ? null
           : CancellationPolicy.fromJson(
@@ -152,7 +156,13 @@ Map<String, dynamic> _$$TrekDetailDataImplToJson(
       'review_comments_count': instance.reviewCommentsCount,
       'latest_reviews': instance.latestReviews,
       'category_ratings': instance.categoryRatings,
-      'batch_info': instance.batchInfo,
+      'batch_id': instance.batchId,
+      'tbr_id': instance.tbrId,
+      'start_date': instance.startDate,
+      'end_date': instance.endDate,
+      'capacity': instance.capacity,
+      'booked_slots': instance.bookedSlots,
+      'available_slots': instance.availableSlots,
       'cancellation_policy': instance.cancellationPolicy,
       'booking_type': instance.bookingType,
     };
@@ -359,22 +369,22 @@ Map<String, dynamic> _$$CategoryRatingsImplToJson(
 _$BatchInfoImpl _$$BatchInfoImplFromJson(Map<String, dynamic> json) =>
     _$BatchInfoImpl(
       id: json['id'] as int?,
-      tbrId: json['tbr_id'] as String?,
-      startDate: json['start_date'] as String?,
-      endDate: json['end_date'] as String?,
-      bookedSlots: json['booked_slots'] as int?,
-      availableSlots: json['available_slots'] as int?,
+      tbrId: json['tbrId'] as String?,
+      startDate: json['startDate'] as String?,
+      endDate: json['endDate'] as String?,
+      bookedSlots: json['bookedSlots'] as int?,
+      availableSlots: json['availableSlots'] as int?,
       capacity: json['capacity'] as int?,
     );
 
 Map<String, dynamic> _$$BatchInfoImplToJson(_$BatchInfoImpl instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'tbr_id': instance.tbrId,
-      'start_date': instance.startDate,
-      'end_date': instance.endDate,
-      'booked_slots': instance.bookedSlots,
-      'available_slots': instance.availableSlots,
+      'tbrId': instance.tbrId,
+      'startDate': instance.startDate,
+      'endDate': instance.endDate,
+      'bookedSlots': instance.bookedSlots,
+      'availableSlots': instance.availableSlots,
       'capacity': instance.capacity,
     };
 

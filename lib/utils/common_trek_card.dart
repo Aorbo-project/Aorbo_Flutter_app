@@ -360,13 +360,11 @@ class CommonTrekCard extends StatelessWidget {
                         // Departure date
                         _buildInfoItem(
                           'Departure Date',
-                          AuthUtils.formatDateTime(
-                              trek?.batchInfo?.startDate),
+                          AuthUtils.formatDateTime(trek?.batchInfo?.startDate),
                         ),
                         // Duration (Days/Nights)
                         _buildInfoItem(
-                          'Duration',
-                          trek?.duration ?? '',   // e.g. "2D/1N"
+                          'Duration', trek?.duration ?? '',   // e.g. "2D/1N"
                         ),
                       ],
                     ),

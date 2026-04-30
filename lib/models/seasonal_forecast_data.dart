@@ -23,18 +23,32 @@ class SeasonalForecastData with _$SeasonalForecastData {
     String? title,
     String? description,
     String? imagePath,
-    String? color
+    List<String>? gradient,
+    String? textColour,
+    StylingModel? styling
   }) = _SeasonalForecastData;
 
   factory SeasonalForecastData.fromJson(Map<String, dynamic> json) => _$SeasonalForecastDataFromJson(json);
+}
 
-  static SeasonalForecastData get dummy =>
-      SeasonalForecastData(
-          title: "Everest Base Camp",
-          description: "A breathtaking trek to the base of the world's highest peak.",
-          imagePath: "assets/images/everest.png",
-          color: "#1E3C72"
-      );
+@freezed
+class StylingModel with _$StylingModel {
+  const factory StylingModel({
+    TitleStylingModel? title
+  }) = _StylingModel;
+
+  factory StylingModel.fromJson(Map<String, dynamic> json) => _$StylingModelFromJson(json);
+}
+
+@freezed
+class TitleStylingModel with _$TitleStylingModel {
+  const factory TitleStylingModel({
+    List<String>? gradient,
+    String? textColour,
+    String? icon
+  }) = _TitleStylingModel;
+
+  factory TitleStylingModel.fromJson(Map<String, dynamic> json) => _$TitleStylingModelFromJson(json);
 }
 
 

@@ -231,6 +231,7 @@ mixin _$TopTreksData {
   String? get description => throw _privateConstructorUsedError;
   String? get imagePath => throw _privateConstructorUsedError;
   List<String>? get gradient => throw _privateConstructorUsedError;
+  String? get textColour => throw _privateConstructorUsedError;
   bool? get isFavorite => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -250,6 +251,7 @@ abstract class $TopTreksDataCopyWith<$Res> {
       String? description,
       String? imagePath,
       List<String>? gradient,
+      String? textColour,
       bool? isFavorite});
 }
 
@@ -270,6 +272,7 @@ class _$TopTreksDataCopyWithImpl<$Res, $Val extends TopTreksData>
     Object? description = freezed,
     Object? imagePath = freezed,
     Object? gradient = freezed,
+    Object? textColour = freezed,
     Object? isFavorite = freezed,
   }) {
     return _then(_value.copyWith(
@@ -289,6 +292,10 @@ class _$TopTreksDataCopyWithImpl<$Res, $Val extends TopTreksData>
           ? _value.gradient
           : gradient // ignore: cast_nullable_to_non_nullable
               as List<String>?,
+      textColour: freezed == textColour
+          ? _value.textColour
+          : textColour // ignore: cast_nullable_to_non_nullable
+              as String?,
       isFavorite: freezed == isFavorite
           ? _value.isFavorite
           : isFavorite // ignore: cast_nullable_to_non_nullable
@@ -310,6 +317,7 @@ abstract class _$$TopTreksDataImplCopyWith<$Res>
       String? description,
       String? imagePath,
       List<String>? gradient,
+      String? textColour,
       bool? isFavorite});
 }
 
@@ -328,6 +336,7 @@ class __$$TopTreksDataImplCopyWithImpl<$Res>
     Object? description = freezed,
     Object? imagePath = freezed,
     Object? gradient = freezed,
+    Object? textColour = freezed,
     Object? isFavorite = freezed,
   }) {
     return _then(_$TopTreksDataImpl(
@@ -347,6 +356,10 @@ class __$$TopTreksDataImplCopyWithImpl<$Res>
           ? _value._gradient
           : gradient // ignore: cast_nullable_to_non_nullable
               as List<String>?,
+      textColour: freezed == textColour
+          ? _value.textColour
+          : textColour // ignore: cast_nullable_to_non_nullable
+              as String?,
       isFavorite: freezed == isFavorite
           ? _value.isFavorite
           : isFavorite // ignore: cast_nullable_to_non_nullable
@@ -363,6 +376,7 @@ class _$TopTreksDataImpl implements _TopTreksData {
       this.description,
       this.imagePath,
       final List<String>? gradient,
+      this.textColour,
       this.isFavorite})
       : _gradient = gradient;
 
@@ -386,11 +400,13 @@ class _$TopTreksDataImpl implements _TopTreksData {
   }
 
   @override
+  final String? textColour;
+  @override
   final bool? isFavorite;
 
   @override
   String toString() {
-    return 'TopTreksData(title: $title, description: $description, imagePath: $imagePath, gradient: $gradient, isFavorite: $isFavorite)';
+    return 'TopTreksData(title: $title, description: $description, imagePath: $imagePath, gradient: $gradient, textColour: $textColour, isFavorite: $isFavorite)';
   }
 
   @override
@@ -404,6 +420,8 @@ class _$TopTreksDataImpl implements _TopTreksData {
             (identical(other.imagePath, imagePath) ||
                 other.imagePath == imagePath) &&
             const DeepCollectionEquality().equals(other._gradient, _gradient) &&
+            (identical(other.textColour, textColour) ||
+                other.textColour == textColour) &&
             (identical(other.isFavorite, isFavorite) ||
                 other.isFavorite == isFavorite));
   }
@@ -411,7 +429,7 @@ class _$TopTreksDataImpl implements _TopTreksData {
   @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(runtimeType, title, description, imagePath,
-      const DeepCollectionEquality().hash(_gradient), isFavorite);
+      const DeepCollectionEquality().hash(_gradient), textColour, isFavorite);
 
   @JsonKey(ignore: true)
   @override
@@ -433,6 +451,7 @@ abstract class _TopTreksData implements TopTreksData {
       final String? description,
       final String? imagePath,
       final List<String>? gradient,
+      final String? textColour,
       final bool? isFavorite}) = _$TopTreksDataImpl;
 
   factory _TopTreksData.fromJson(Map<String, dynamic> json) =
@@ -446,6 +465,8 @@ abstract class _TopTreksData implements TopTreksData {
   String? get imagePath;
   @override
   List<String>? get gradient;
+  @override
+  String? get textColour;
   @override
   bool? get isFavorite;
   @override

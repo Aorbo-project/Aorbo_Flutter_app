@@ -36,7 +36,10 @@ _$CouponCardDataImpl _$$CouponCardDataImplFromJson(Map<String, dynamic> json) =>
       title: json['title'] as String?,
       description: json['description'] as String?,
       imagePath: json['image_url'] as String?,
-      color: json['color'] as String?,
+      gradient: (json['gradient'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+      textColour: json['textColour'] as String?,
       code: json['code'] as String?,
       discountType: json['discount_type'] as String?,
       discountValue: json['discount_value'] as String?,
@@ -54,7 +57,8 @@ Map<String, dynamic> _$$CouponCardDataImplToJson(
       'title': instance.title,
       'description': instance.description,
       'image_url': instance.imagePath,
-      'color': instance.color,
+      'gradient': instance.gradient,
+      'textColour': instance.textColour,
       'code': instance.code,
       'discount_type': instance.discountType,
       'discount_value': instance.discountValue,

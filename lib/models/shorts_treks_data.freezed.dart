@@ -246,6 +246,9 @@ mixin _$ShortsTreksData {
   String? get title => throw _privateConstructorUsedError;
   String? get description => throw _privateConstructorUsedError;
   String? get imagePath => throw _privateConstructorUsedError;
+  String? get videoPath => throw _privateConstructorUsedError;
+  String? get shortVideoPath => throw _privateConstructorUsedError;
+  String? get textColour => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -259,7 +262,13 @@ abstract class $ShortsTreksDataCopyWith<$Res> {
           ShortsTreksData value, $Res Function(ShortsTreksData) then) =
       _$ShortsTreksDataCopyWithImpl<$Res, ShortsTreksData>;
   @useResult
-  $Res call({String? title, String? description, String? imagePath});
+  $Res call(
+      {String? title,
+      String? description,
+      String? imagePath,
+      String? videoPath,
+      String? shortVideoPath,
+      String? textColour});
 }
 
 /// @nodoc
@@ -278,6 +287,9 @@ class _$ShortsTreksDataCopyWithImpl<$Res, $Val extends ShortsTreksData>
     Object? title = freezed,
     Object? description = freezed,
     Object? imagePath = freezed,
+    Object? videoPath = freezed,
+    Object? shortVideoPath = freezed,
+    Object? textColour = freezed,
   }) {
     return _then(_value.copyWith(
       title: freezed == title
@@ -292,6 +304,18 @@ class _$ShortsTreksDataCopyWithImpl<$Res, $Val extends ShortsTreksData>
           ? _value.imagePath
           : imagePath // ignore: cast_nullable_to_non_nullable
               as String?,
+      videoPath: freezed == videoPath
+          ? _value.videoPath
+          : videoPath // ignore: cast_nullable_to_non_nullable
+              as String?,
+      shortVideoPath: freezed == shortVideoPath
+          ? _value.shortVideoPath
+          : shortVideoPath // ignore: cast_nullable_to_non_nullable
+              as String?,
+      textColour: freezed == textColour
+          ? _value.textColour
+          : textColour // ignore: cast_nullable_to_non_nullable
+              as String?,
     ) as $Val);
   }
 }
@@ -304,7 +328,13 @@ abstract class _$$ShortsTreksDataImplCopyWith<$Res>
       __$$ShortsTreksDataImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String? title, String? description, String? imagePath});
+  $Res call(
+      {String? title,
+      String? description,
+      String? imagePath,
+      String? videoPath,
+      String? shortVideoPath,
+      String? textColour});
 }
 
 /// @nodoc
@@ -321,6 +351,9 @@ class __$$ShortsTreksDataImplCopyWithImpl<$Res>
     Object? title = freezed,
     Object? description = freezed,
     Object? imagePath = freezed,
+    Object? videoPath = freezed,
+    Object? shortVideoPath = freezed,
+    Object? textColour = freezed,
   }) {
     return _then(_$ShortsTreksDataImpl(
       title: freezed == title
@@ -335,6 +368,18 @@ class __$$ShortsTreksDataImplCopyWithImpl<$Res>
           ? _value.imagePath
           : imagePath // ignore: cast_nullable_to_non_nullable
               as String?,
+      videoPath: freezed == videoPath
+          ? _value.videoPath
+          : videoPath // ignore: cast_nullable_to_non_nullable
+              as String?,
+      shortVideoPath: freezed == shortVideoPath
+          ? _value.shortVideoPath
+          : shortVideoPath // ignore: cast_nullable_to_non_nullable
+              as String?,
+      textColour: freezed == textColour
+          ? _value.textColour
+          : textColour // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -342,7 +387,13 @@ class __$$ShortsTreksDataImplCopyWithImpl<$Res>
 /// @nodoc
 @JsonSerializable()
 class _$ShortsTreksDataImpl implements _ShortsTreksData {
-  const _$ShortsTreksDataImpl({this.title, this.description, this.imagePath});
+  const _$ShortsTreksDataImpl(
+      {this.title,
+      this.description,
+      this.imagePath,
+      this.videoPath,
+      this.shortVideoPath,
+      this.textColour});
 
   factory _$ShortsTreksDataImpl.fromJson(Map<String, dynamic> json) =>
       _$$ShortsTreksDataImplFromJson(json);
@@ -353,10 +404,16 @@ class _$ShortsTreksDataImpl implements _ShortsTreksData {
   final String? description;
   @override
   final String? imagePath;
+  @override
+  final String? videoPath;
+  @override
+  final String? shortVideoPath;
+  @override
+  final String? textColour;
 
   @override
   String toString() {
-    return 'ShortsTreksData(title: $title, description: $description, imagePath: $imagePath)';
+    return 'ShortsTreksData(title: $title, description: $description, imagePath: $imagePath, videoPath: $videoPath, shortVideoPath: $shortVideoPath, textColour: $textColour)';
   }
 
   @override
@@ -368,12 +425,19 @@ class _$ShortsTreksDataImpl implements _ShortsTreksData {
             (identical(other.description, description) ||
                 other.description == description) &&
             (identical(other.imagePath, imagePath) ||
-                other.imagePath == imagePath));
+                other.imagePath == imagePath) &&
+            (identical(other.videoPath, videoPath) ||
+                other.videoPath == videoPath) &&
+            (identical(other.shortVideoPath, shortVideoPath) ||
+                other.shortVideoPath == shortVideoPath) &&
+            (identical(other.textColour, textColour) ||
+                other.textColour == textColour));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(runtimeType, title, description, imagePath);
+  int get hashCode => Object.hash(runtimeType, title, description, imagePath,
+      videoPath, shortVideoPath, textColour);
 
   @JsonKey(ignore: true)
   @override
@@ -394,7 +458,10 @@ abstract class _ShortsTreksData implements ShortsTreksData {
   const factory _ShortsTreksData(
       {final String? title,
       final String? description,
-      final String? imagePath}) = _$ShortsTreksDataImpl;
+      final String? imagePath,
+      final String? videoPath,
+      final String? shortVideoPath,
+      final String? textColour}) = _$ShortsTreksDataImpl;
 
   factory _ShortsTreksData.fromJson(Map<String, dynamic> json) =
       _$ShortsTreksDataImpl.fromJson;
@@ -405,6 +472,12 @@ abstract class _ShortsTreksData implements ShortsTreksData {
   String? get description;
   @override
   String? get imagePath;
+  @override
+  String? get videoPath;
+  @override
+  String? get shortVideoPath;
+  @override
+  String? get textColour;
   @override
   @JsonKey(ignore: true)
   _$$ShortsTreksDataImplCopyWith<_$ShortsTreksDataImpl> get copyWith =>

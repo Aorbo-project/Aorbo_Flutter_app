@@ -1,6 +1,7 @@
 // DiscountCardDetailsScreen.dart
 
 import 'package:arobo_app/models/discount_card_model.dart';
+import 'package:arobo_app/utils/app_theme.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:arobo_app/widgets/custom_network_image.dart';
 import 'package:flutter/material.dart';
@@ -26,7 +27,7 @@ class DiscountCardDetailsScreen extends StatelessWidget {
         elevation: 0,
         centerTitle: false,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.black),
+          icon: Icon(Icons.close, color: AppTheme.hexToColor(discountCard.textColour),),
           onPressed: () => Get.back(),
         ),
         title: Text(
@@ -34,7 +35,7 @@ class DiscountCardDetailsScreen extends StatelessWidget {
           style: GoogleFonts.poppins(
             fontSize: FontSize.s14,
             fontWeight: FontWeight.w400,
-            color: Colors.black,
+            color: AppTheme.hexToColor(discountCard.textColour),
           ),
         ),
       ),
@@ -52,7 +53,7 @@ class DiscountCardDetailsScreen extends StatelessWidget {
                 bottom: 2.5.h,
               ),
               decoration: BoxDecoration(
-                color: discountCard.color,
+                gradient:AppTheme.customGradient(discountCard.gradient) ,
               ),
               child: Stack(
                 children: [
@@ -65,7 +66,8 @@ class DiscountCardDetailsScreen extends StatelessWidget {
                       child: CustomNetworkImage(
                         imageUrl:discountCard.imagePath,
                         height: discountCard.imageHeight ?? 12.h,
-                        fit: BoxFit.contain,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
                       ),
                     ),
                   ),
@@ -79,7 +81,7 @@ class DiscountCardDetailsScreen extends StatelessWidget {
                         style: GoogleFonts.poppins(
                           fontSize: FontSize.s14,
                           fontWeight: FontWeight.w700,
-                          color: CommonColors.blackColor,
+                          color: AppTheme.hexToColor(discountCard.textColour),
                         ),
                       ),
                       SizedBox(height: 0.8.h),
@@ -87,7 +89,7 @@ class DiscountCardDetailsScreen extends StatelessWidget {
                         discountCard.subtitle,
                         style: GoogleFonts.poppins(
                           fontSize: FontSize.s10,
-                          color: CommonColors.blackColor,
+                          color: AppTheme.hexToColor(discountCard.textColour),
                         ),
                       ),
                       SizedBox(height: 2.h),
@@ -97,7 +99,7 @@ class DiscountCardDetailsScreen extends StatelessWidget {
                             'upto ',
                             style: GoogleFonts.poppins(
                               fontSize: FontSize.s14,
-                              color: CommonColors.blackColor,
+                                color: AppTheme.hexToColor(discountCard.textColour),
                             ),
                           ),
                           Text(
@@ -105,14 +107,14 @@ class DiscountCardDetailsScreen extends StatelessWidget {
                             style: GoogleFonts.poppins(
                               fontSize: FontSize.s14,
                               fontWeight: FontWeight.w700,
-                              color: CommonColors.blackColor,
+                                color: AppTheme.hexToColor(discountCard.textColour),
                             ),
                           ),
                           Text(
                             ' off*',
                             style: GoogleFonts.poppins(
                               fontSize: FontSize.s14,
-                              color: CommonColors.blackColor,
+                                color: AppTheme.hexToColor(discountCard.textColour),
                             ),
                           ),
                         ],
@@ -136,7 +138,7 @@ class DiscountCardDetailsScreen extends StatelessWidget {
                               style: GoogleFonts.archivoBlack(
                                 fontSize: FontSize.s11,
                                 letterSpacing: 0.5,
-                                color: Colors.black,
+                                  color: AppTheme.hexToColor(discountCard.textColour),
                               ),
                             ),
                             SizedBox(width: 2.w),

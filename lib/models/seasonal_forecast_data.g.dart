@@ -34,7 +34,13 @@ _$SeasonalForecastDataImpl _$$SeasonalForecastDataImplFromJson(
       title: json['title'] as String?,
       description: json['description'] as String?,
       imagePath: json['imagePath'] as String?,
-      color: json['color'] as String?,
+      gradient: (json['gradient'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+      textColour: json['textColour'] as String?,
+      styling: json['styling'] == null
+          ? null
+          : StylingModel.fromJson(json['styling'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$$SeasonalForecastDataImplToJson(
@@ -43,5 +49,37 @@ Map<String, dynamic> _$$SeasonalForecastDataImplToJson(
       'title': instance.title,
       'description': instance.description,
       'imagePath': instance.imagePath,
-      'color': instance.color,
+      'gradient': instance.gradient,
+      'textColour': instance.textColour,
+      'styling': instance.styling,
+    };
+
+_$StylingModelImpl _$$StylingModelImplFromJson(Map<String, dynamic> json) =>
+    _$StylingModelImpl(
+      title: json['title'] == null
+          ? null
+          : TitleStylingModel.fromJson(json['title'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$$StylingModelImplToJson(_$StylingModelImpl instance) =>
+    <String, dynamic>{
+      'title': instance.title,
+    };
+
+_$TitleStylingModelImpl _$$TitleStylingModelImplFromJson(
+        Map<String, dynamic> json) =>
+    _$TitleStylingModelImpl(
+      gradient: (json['gradient'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+      textColour: json['textColour'] as String?,
+      icon: json['icon'] as String?,
+    );
+
+Map<String, dynamic> _$$TitleStylingModelImplToJson(
+        _$TitleStylingModelImpl instance) =>
+    <String, dynamic>{
+      'gradient': instance.gradient,
+      'textColour': instance.textColour,
+      'icon': instance.icon,
     };

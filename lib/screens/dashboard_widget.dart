@@ -739,7 +739,7 @@ class _DashboardState extends State<Dashboard>
 
   void _startTrekShortsAutoScroll() {
     _trekShortsTimer?.cancel();
-    _trekShortsTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+    _trekShortsTimer = Timer.periodic(const Duration(seconds: 12), (timer) {
       final route = ModalRoute.of(context);
       if (!_isTrekShortsUserInteracting &&
           mounted &&
@@ -1540,24 +1540,24 @@ class _DashboardState extends State<Dashboard>
                   Obx(() {
                     final knowMoreLoading = _dashboardC.whatsNewObserver.value
                         .maybeWhen(loading: (data) => true, orElse: () => false);
-                    // List<KnowMoreData>? knowMoreCardsData = [
-                    //   KnowMoreData(title:"Variety of Treks",subtitle: "From Serene trails to thrilling climbs, find treksthat match your vibes !",hasKnowMore: false,imagePath: "https://firebasestorage.googleapis.com/v0/b/sastastay-1d420.firebasestorage.app/o/knowmore1.png?alt=media&token=32b0be2e-958e-4fd5-8e89-72293ed38cfa",textColor: "#000000",customGradient: ["#F7EB68","#FFEF3E","#FFEF3E"]),
-                    //   KnowMoreData(title:"Countless Organizers",subtitle: "Choose from an extensive  network of trusted trek  organizers, All in one place !",hasKnowMore: false,imagePath: "https://firebasestorage.googleapis.com/v0/b/sastastay-1d420.firebasestorage.app/o/knowmore1.png?alt=media&token=32b0be2e-958e-4fd5-8e89-72293ed38cfa",textColor: "#FFFFFF",customGradient: ["#FFFFFF","#B40000","#B40000"])
-                    // ];
-                    List<KnowMoreData>? knowMoreCardsData = _dashboardC
-                        .whatsNewObserver.value
-                        .maybeWhen(
-                      success: (whatsNewResponse) =>
-                      (whatsNewResponse as WhatsNewDataResponseModel)
-                          .data,
-                      error: (sc) => [],
-                      orElse: () => [
-                        KnowMoreData(),
-                        KnowMoreData(),
-                        KnowMoreData(),
-                        KnowMoreData()
-                      ],
-                    );
+                    List<KnowMoreData>? knowMoreCardsData = [
+                      KnowMoreData(title:"Variety of Treks",subtitle: "From Serene trails to thrilling climbs, find treksthat match your vibes !",hasKnowMore: false,imagePath: "https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/knowmore1.png?alt=media&token=367dcaa7-f0f6-4bb3-9d73-a67489aa77a8",textColour: "#000000",gradient: ["#F7EB68","#FFEF3E","#FFEF3E"]),
+                      KnowMoreData(title:"Countless Organizers",subtitle: "Choose from an extensive  network of trusted trek  organizers, All in one place !",hasKnowMore: false,imagePath: "https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/knowmore1.png?alt=media&token=367dcaa7-f0f6-4bb3-9d73-a67489aa77a8",textColour: "#FFFFFF",gradient: ["#FFFFFF","#B40000","#B40000"])
+                    ];
+                    // List<KnowMoreData>? knowMoreCardsData = _dashboardC
+                    //     .whatsNewObserver.value
+                    //     .maybeWhen(
+                    //   success: (whatsNewResponse) =>
+                    //   (whatsNewResponse as WhatsNewDataResponseModel)
+                    //       .data,
+                    //   error: (sc) => [],
+                    //   orElse: () => [
+                    //     KnowMoreData(),
+                    //     KnowMoreData(),
+                    //     KnowMoreData(),
+                    //     KnowMoreData()
+                    //   ],
+                    // );
                     if (knowMoreCardsData?.isEmpty == true) return SizedBox();
                     return Column(
                       children: [
@@ -1642,7 +1642,7 @@ class _DashboardState extends State<Dashboard>
                                   ),
                                   child: KnowMoreCard(
                                     customGradient: AppTheme.customGradient(
-                                        cardData?.customGradient ?? []),
+                                        cardData?.gradient ?? []),
                                     imagePath: cardData?.imagePath ?? "",
                                     title: cardData?.title ?? "",
                                     subtitle: cardData?.subtitle ?? "",
@@ -1658,7 +1658,7 @@ class _DashboardState extends State<Dashboard>
                                       );
                                     },
                                     textColor: AppTheme.hexToColor(
-                                        cardData?.textColor),
+                                        cardData?.textColour),
                                   ).withShimmerAi(loading: knowMoreLoading),
                                 );
                               },
@@ -1671,20 +1671,26 @@ class _DashboardState extends State<Dashboard>
                   Obx(() {
                     final topTreksLoading = _dashboardC.topTreksObserver.value
                         .maybeWhen(loading: (data) => true, orElse: () => false);
-                    List<TopTreksData>? topTreksCardsData = _dashboardC
-                        .topTreksObserver.value
-                        .maybeWhen(
-                      success: (topTreksResponse) =>
-                      (topTreksResponse as TopTreksDataResponseModel)
-                          .data,
-                      error: (sc) => [],
-                      orElse: () => [
-                        TopTreksData(),
-                        TopTreksData(),
-                        TopTreksData(),
-                        TopTreksData()
-                      ],
-                    );
+
+                    List<TopTreksData>? topTreksCardsData  = [
+                      TopTreksData(title:"Coorg",description: "From Serene trails to thrilling climbs, find treksthat match your vibes !",imagePath: "https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/coorg%204.png?alt=media&token=354d476c-d3e5-4b9f-a06e-6b787227a608", textColour: "#35323b",gradient: ["#F7EB68","#FFEF3E","#FFEF3E"]),
+                      TopTreksData(title:"Munnar",description: "From Serene trails to thrilling climbs, find treksthat match your vibes !",imagePath: "https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/coorg%204.png?alt=media&token=354d476c-d3e5-4b9f-a06e-6b787227a608",textColour: "#ffffff",gradient: ["#ffffff","#9e87e1","#7a56e1"]),
+                    ];
+
+                    // List<TopTreksData>? topTreksCardsData = _dashboardC
+                    //     .topTreksObserver.value
+                    //     .maybeWhen(
+                    //   success: (topTreksResponse) =>
+                    //   (topTreksResponse as TopTreksDataResponseModel)
+                    //       .data,
+                    //   error: (sc) => [],
+                    //   orElse: () => [
+                    //     TopTreksData(),
+                    //     TopTreksData(),
+                    //     TopTreksData(),
+                    //     TopTreksData()
+                    //   ],
+                    // );
                     if (topTreksCardsData?.isEmpty == true) return SizedBox();
                     return Column(
                       children: [
@@ -1758,7 +1764,7 @@ class _DashboardState extends State<Dashboard>
                                         trekData.description ?? "",
                                         customGradient: AppTheme.customGradient(
                                             trekData.gradient),
-                                        textColor: CommonColors.blackColor,
+                                        textColor: AppTheme.hexToColor(trekData.textColour),
                                         isFavorite: trekData.isFavorite ?? false,
                                         onFavoriteTap: () => _toggleFavorite(
                                             trekData.title ?? ""),
@@ -1775,20 +1781,26 @@ class _DashboardState extends State<Dashboard>
                   Obx(() {
                     final shortsLoading = _dashboardC.shortsTreksObserver.value
                         .maybeWhen(loading: (data) => true, orElse: () => false);
-                    List<ShortsTreksData>? shortsTreksCardsData = _dashboardC
-                        .shortsTreksObserver.value
-                        .maybeWhen(
-                      success: (shortsTreksResponse) =>
-                      (shortsTreksResponse as ShortsTreksDataResponseModel)
-                          .data,
-                      error: (sc) => [],
-                      orElse: () => [
-                        ShortsTreksData(),
-                        ShortsTreksData(),
-                        ShortsTreksData(),
-                        ShortsTreksData()
-                      ],
-                    );
+                    List<ShortsTreksData>? shortsTreksCardsData = [
+                      ShortsTreksData(title: "cvubvghf  gjvhbun",description: "4M",textColour: "#ffffff",imagePath: "https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/image%20(9).png?alt=media&token=a173b677-2c64-47b9-b610-6f8bad60650f",videoPath: "https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/WhatsApp%20Video%202026-04-30%20at%209.47.14%20PM.mp4?alt=media&token=d6f20c28-3369-415b-8859-5a02dad8113a",shortVideoPath: "https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/WhatsApp%20Video%202026-04-30%20at%209.46.02%20PM.mp4?alt=media&token=356e3d97-dfc9-4360-8a98-118a0b60a5c3"),
+                      ShortsTreksData(title: "hgvjhbkjnllbhjg h",description: "5M",textColour: "#35323b",imagePath: "https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/image%20(9).png?alt=media&token=a173b677-2c64-47b9-b610-6f8bad60650f",videoPath: "https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/WhatsApp%20Video%202026-04-30%20at%209.47.14%20PM.mp4?alt=media&token=d6f20c28-3369-415b-8859-5a02dad8113a",shortVideoPath: "https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/WhatsApp%20Video%202026-04-30%20at%209.46.02%20PM.mp4?alt=media&token=356e3d97-dfc9-4360-8a98-118a0b60a5c3"),
+                    ];
+
+                    // List<ShortsTreksData>? shortsTreksCardsData = _dashboardC
+                    //     .shortsTreksObserver.value
+                    //     .maybeWhen(
+                    //   success: (shortsTreksResponse) =>
+                    //   (shortsTreksResponse as ShortsTreksDataResponseModel)
+                    //       .data,
+                    //   error: (sc) => [],
+                    //   orElse: () => [
+                    //     ShortsTreksData(),
+                    //     ShortsTreksData(),
+                    //     ShortsTreksData(),
+                    //     ShortsTreksData()
+                    //   ],
+                    // );
+
                     if (shortsTreksCardsData?.isEmpty == true) return SizedBox();
                     return Column(
                       children: [
@@ -1863,7 +1875,6 @@ class _DashboardState extends State<Dashboard>
                             child: PageView.builder(
                               controller: _trekShortsPageController,
                               itemCount: null,
-                              padEnds: false,
                               pageSnapping: true,
                               physics: const BouncingScrollPhysics(),
                               itemBuilder: (context, index) {
@@ -1873,10 +1884,7 @@ class _DashboardState extends State<Dashboard>
                                   alignment: Alignment.center,
                                   child: Padding(
                                     padding: EdgeInsets.symmetric(horizontal: 1.w),
-                                    child: TrekShorts(
-                                      imagePath: cardData?.imagePath ?? "",
-                                      title: cardData?.description ?? "",
-                                      description: cardData?.title ?? "",
+                                    child: TrekShorts(shortsData: cardData
                                     ).withShimmerAi(loading: shortsLoading),
                                   ),
                                 );
@@ -1891,21 +1899,28 @@ class _DashboardState extends State<Dashboard>
                     final seasonalForcastLoading = _dashboardC
                         .seasonalForcastObserver.value
                         .maybeWhen(loading: (data) => true, orElse: () => false);
-                    List<SeasonalForecastData>? seasonalForecastData = _dashboardC
-                        .seasonalForcastObserver.value
-                        .maybeWhen(
-                      success: (seasonalForcastResponse) =>
-                      (seasonalForcastResponse
-                      as SeasonalForecastDataResponseModel)
-                          .data,
-                      error: (sc) => [],
-                      orElse: () => [
-                        SeasonalForecastData(),
-                        SeasonalForecastData(),
-                        SeasonalForecastData(),
-                        SeasonalForecastData()
-                      ],
-                    );
+
+                    List<SeasonalForecastData>? seasonalForecastData = [
+                    SeasonalForecastData(title:"Puri SUMMER",description: "From Serene trails to thrilling climbs, find treksthat match your vibes !",imagePath: "https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/man%20in%20front%20of%20the%20house%20in%20winter%20forest%20(1).png?alt=media&token=f889af68-4355-4dae-9289-138db1dfb67b", textColour: "#35323b",gradient: ["#F7EB68","#FFEF3E","#FFEF3E"],styling: StylingModel(title: TitleStylingModel(icon:"https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/Winter.png?alt=media&token=e0098e5c-ba45-4af2-8a54-f1eb8d41874f" ,textColour: "#ffffff",gradient: ["#9f88e0","#9e87e1","#7a56e1"]))),
+                    SeasonalForecastData(title:"Munnar",description: "From Serene trails to thrilling climbs, find treksthat match your vibes !",imagePath: "https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/man%20in%20front%20of%20the%20house%20in%20winter%20forest%20(1).png?alt=media&token=f889af68-4355-4dae-9289-138db1dfb67b",textColour: "#000000",gradient: ["#9f88e0","#9e87e1","#7a56e1"],styling: StylingModel(title: TitleStylingModel(icon: "https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/Winter.png?alt=media&token=e0098e5c-ba45-4af2-8a54-f1eb8d41874f", textColour: "#35323b",gradient: ["#F7EB68","#FFEF3E","#FFEF3E"]))),
+                    ];
+
+                    // List<SeasonalForecastData>? seasonalForecastData = _dashboardC
+                    //     .seasonalForcastObserver.value
+                    //     .maybeWhen(
+                    //   success: (seasonalForcastResponse) =>
+                    //   (seasonalForcastResponse
+                    //   as SeasonalForecastDataResponseModel)
+                    //       .data,
+                    //   error: (sc) => [],
+                    //   orElse: () => [
+                    //     SeasonalForecastData(),
+                    //     SeasonalForecastData(),
+                    //     SeasonalForecastData(),
+                    //     SeasonalForecastData()
+                    //   ],
+                    // );
+
                     if (seasonalForecastData?.isEmpty == true) return SizedBox();
                     return Column(
                       children: [
@@ -1979,8 +1994,9 @@ class _DashboardState extends State<Dashboard>
                                     description:
                                     cardData.description ?? "",
                                     imagePath: cardData.imagePath ?? "",
-                                    gradientColors: AppTheme.hexToColor(
-                                        cardData.color),
+                                    gradient: AppTheme.customGradient(cardData.gradient),
+                                    textColour: AppTheme.hexToColor(cardData.textColour),
+                                    titleStylingModel: cardData.styling?.title,
                                   ).withShimmerAi(
                                       loading: seasonalForcastLoading),
                                 ))

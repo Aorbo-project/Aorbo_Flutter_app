@@ -270,8 +270,19 @@ mixin _$TrekDetailData {
   List<LatestReviews>? get latestReviews => throw _privateConstructorUsedError;
   @JsonKey(name: 'category_ratings')
   CategoryRatings? get categoryRatings => throw _privateConstructorUsedError;
-  @JsonKey(name: 'batch_info')
-  BatchInfo? get batchInfo => throw _privateConstructorUsedError;
+  @JsonKey(name: 'batch_id')
+  int? get batchId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'tbr_id')
+  String? get tbrId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'start_date')
+  String? get startDate => throw _privateConstructorUsedError;
+  @JsonKey(name: 'end_date')
+  String? get endDate => throw _privateConstructorUsedError;
+  int? get capacity => throw _privateConstructorUsedError;
+  @JsonKey(name: 'booked_slots')
+  int? get bookedSlots => throw _privateConstructorUsedError;
+  @JsonKey(name: 'available_slots')
+  int? get availableSlots => throw _privateConstructorUsedError;
   @JsonKey(name: 'cancellation_policy')
   CancellationPolicy? get cancellationPolicy =>
       throw _privateConstructorUsedError;
@@ -335,7 +346,13 @@ abstract class $TrekDetailDataCopyWith<$Res> {
       @JsonKey(name: 'review_comments_count') int? reviewCommentsCount,
       @JsonKey(name: 'latest_reviews') List<LatestReviews>? latestReviews,
       @JsonKey(name: 'category_ratings') CategoryRatings? categoryRatings,
-      @JsonKey(name: 'batch_info') BatchInfo? batchInfo,
+      @JsonKey(name: 'batch_id') int? batchId,
+      @JsonKey(name: 'tbr_id') String? tbrId,
+      @JsonKey(name: 'start_date') String? startDate,
+      @JsonKey(name: 'end_date') String? endDate,
+      int? capacity,
+      @JsonKey(name: 'booked_slots') int? bookedSlots,
+      @JsonKey(name: 'available_slots') int? availableSlots,
       @JsonKey(name: 'cancellation_policy')
       CancellationPolicy? cancellationPolicy,
       @JsonKey(name: 'booking_type') String? bookingType});
@@ -344,7 +361,6 @@ abstract class $TrekDetailDataCopyWith<$Res> {
   $ActivitiesCopyWith<$Res>? get destinationData;
   $BadgeCopyWith<$Res>? get badge;
   $CategoryRatingsCopyWith<$Res>? get categoryRatings;
-  $BatchInfoCopyWith<$Res>? get batchInfo;
   $CancellationPolicyCopyWith<$Res>? get cancellationPolicy;
 }
 
@@ -405,7 +421,13 @@ class _$TrekDetailDataCopyWithImpl<$Res, $Val extends TrekDetailData>
     Object? reviewCommentsCount = freezed,
     Object? latestReviews = freezed,
     Object? categoryRatings = freezed,
-    Object? batchInfo = freezed,
+    Object? batchId = freezed,
+    Object? tbrId = freezed,
+    Object? startDate = freezed,
+    Object? endDate = freezed,
+    Object? capacity = freezed,
+    Object? bookedSlots = freezed,
+    Object? availableSlots = freezed,
     Object? cancellationPolicy = freezed,
     Object? bookingType = freezed,
   }) {
@@ -586,10 +608,34 @@ class _$TrekDetailDataCopyWithImpl<$Res, $Val extends TrekDetailData>
           ? _value.categoryRatings
           : categoryRatings // ignore: cast_nullable_to_non_nullable
               as CategoryRatings?,
-      batchInfo: freezed == batchInfo
-          ? _value.batchInfo
-          : batchInfo // ignore: cast_nullable_to_non_nullable
-              as BatchInfo?,
+      batchId: freezed == batchId
+          ? _value.batchId
+          : batchId // ignore: cast_nullable_to_non_nullable
+              as int?,
+      tbrId: freezed == tbrId
+          ? _value.tbrId
+          : tbrId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      startDate: freezed == startDate
+          ? _value.startDate
+          : startDate // ignore: cast_nullable_to_non_nullable
+              as String?,
+      endDate: freezed == endDate
+          ? _value.endDate
+          : endDate // ignore: cast_nullable_to_non_nullable
+              as String?,
+      capacity: freezed == capacity
+          ? _value.capacity
+          : capacity // ignore: cast_nullable_to_non_nullable
+              as int?,
+      bookedSlots: freezed == bookedSlots
+          ? _value.bookedSlots
+          : bookedSlots // ignore: cast_nullable_to_non_nullable
+              as int?,
+      availableSlots: freezed == availableSlots
+          ? _value.availableSlots
+          : availableSlots // ignore: cast_nullable_to_non_nullable
+              as int?,
       cancellationPolicy: freezed == cancellationPolicy
           ? _value.cancellationPolicy
           : cancellationPolicy // ignore: cast_nullable_to_non_nullable
@@ -646,18 +692,6 @@ class _$TrekDetailDataCopyWithImpl<$Res, $Val extends TrekDetailData>
 
     return $CategoryRatingsCopyWith<$Res>(_value.categoryRatings!, (value) {
       return _then(_value.copyWith(categoryRatings: value) as $Val);
-    });
-  }
-
-  @override
-  @pragma('vm:prefer-inline')
-  $BatchInfoCopyWith<$Res>? get batchInfo {
-    if (_value.batchInfo == null) {
-      return null;
-    }
-
-    return $BatchInfoCopyWith<$Res>(_value.batchInfo!, (value) {
-      return _then(_value.copyWith(batchInfo: value) as $Val);
     });
   }
 
@@ -728,7 +762,13 @@ abstract class _$$TrekDetailDataImplCopyWith<$Res>
       @JsonKey(name: 'review_comments_count') int? reviewCommentsCount,
       @JsonKey(name: 'latest_reviews') List<LatestReviews>? latestReviews,
       @JsonKey(name: 'category_ratings') CategoryRatings? categoryRatings,
-      @JsonKey(name: 'batch_info') BatchInfo? batchInfo,
+      @JsonKey(name: 'batch_id') int? batchId,
+      @JsonKey(name: 'tbr_id') String? tbrId,
+      @JsonKey(name: 'start_date') String? startDate,
+      @JsonKey(name: 'end_date') String? endDate,
+      int? capacity,
+      @JsonKey(name: 'booked_slots') int? bookedSlots,
+      @JsonKey(name: 'available_slots') int? availableSlots,
       @JsonKey(name: 'cancellation_policy')
       CancellationPolicy? cancellationPolicy,
       @JsonKey(name: 'booking_type') String? bookingType});
@@ -741,8 +781,6 @@ abstract class _$$TrekDetailDataImplCopyWith<$Res>
   $BadgeCopyWith<$Res>? get badge;
   @override
   $CategoryRatingsCopyWith<$Res>? get categoryRatings;
-  @override
-  $BatchInfoCopyWith<$Res>? get batchInfo;
   @override
   $CancellationPolicyCopyWith<$Res>? get cancellationPolicy;
 }
@@ -802,7 +840,13 @@ class __$$TrekDetailDataImplCopyWithImpl<$Res>
     Object? reviewCommentsCount = freezed,
     Object? latestReviews = freezed,
     Object? categoryRatings = freezed,
-    Object? batchInfo = freezed,
+    Object? batchId = freezed,
+    Object? tbrId = freezed,
+    Object? startDate = freezed,
+    Object? endDate = freezed,
+    Object? capacity = freezed,
+    Object? bookedSlots = freezed,
+    Object? availableSlots = freezed,
     Object? cancellationPolicy = freezed,
     Object? bookingType = freezed,
   }) {
@@ -983,10 +1027,34 @@ class __$$TrekDetailDataImplCopyWithImpl<$Res>
           ? _value.categoryRatings
           : categoryRatings // ignore: cast_nullable_to_non_nullable
               as CategoryRatings?,
-      batchInfo: freezed == batchInfo
-          ? _value.batchInfo
-          : batchInfo // ignore: cast_nullable_to_non_nullable
-              as BatchInfo?,
+      batchId: freezed == batchId
+          ? _value.batchId
+          : batchId // ignore: cast_nullable_to_non_nullable
+              as int?,
+      tbrId: freezed == tbrId
+          ? _value.tbrId
+          : tbrId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      startDate: freezed == startDate
+          ? _value.startDate
+          : startDate // ignore: cast_nullable_to_non_nullable
+              as String?,
+      endDate: freezed == endDate
+          ? _value.endDate
+          : endDate // ignore: cast_nullable_to_non_nullable
+              as String?,
+      capacity: freezed == capacity
+          ? _value.capacity
+          : capacity // ignore: cast_nullable_to_non_nullable
+              as int?,
+      bookedSlots: freezed == bookedSlots
+          ? _value.bookedSlots
+          : bookedSlots // ignore: cast_nullable_to_non_nullable
+              as int?,
+      availableSlots: freezed == availableSlots
+          ? _value.availableSlots
+          : availableSlots // ignore: cast_nullable_to_non_nullable
+              as int?,
       cancellationPolicy: freezed == cancellationPolicy
           ? _value.cancellationPolicy
           : cancellationPolicy // ignore: cast_nullable_to_non_nullable
@@ -1048,7 +1116,13 @@ class _$TrekDetailDataImpl implements _TrekDetailData {
       @JsonKey(name: 'review_comments_count') this.reviewCommentsCount,
       @JsonKey(name: 'latest_reviews') final List<LatestReviews>? latestReviews,
       @JsonKey(name: 'category_ratings') this.categoryRatings,
-      @JsonKey(name: 'batch_info') this.batchInfo,
+      @JsonKey(name: 'batch_id') this.batchId,
+      @JsonKey(name: 'tbr_id') this.tbrId,
+      @JsonKey(name: 'start_date') this.startDate,
+      @JsonKey(name: 'end_date') this.endDate,
+      this.capacity,
+      @JsonKey(name: 'booked_slots') this.bookedSlots,
+      @JsonKey(name: 'available_slots') this.availableSlots,
       @JsonKey(name: 'cancellation_policy') this.cancellationPolicy,
       @JsonKey(name: 'booking_type') this.bookingType})
       : _cityIds = cityIds,
@@ -1257,8 +1331,25 @@ class _$TrekDetailDataImpl implements _TrekDetailData {
   @JsonKey(name: 'category_ratings')
   final CategoryRatings? categoryRatings;
   @override
-  @JsonKey(name: 'batch_info')
-  final BatchInfo? batchInfo;
+  @JsonKey(name: 'batch_id')
+  final int? batchId;
+  @override
+  @JsonKey(name: 'tbr_id')
+  final String? tbrId;
+  @override
+  @JsonKey(name: 'start_date')
+  final String? startDate;
+  @override
+  @JsonKey(name: 'end_date')
+  final String? endDate;
+  @override
+  final int? capacity;
+  @override
+  @JsonKey(name: 'booked_slots')
+  final int? bookedSlots;
+  @override
+  @JsonKey(name: 'available_slots')
+  final int? availableSlots;
   @override
   @JsonKey(name: 'cancellation_policy')
   final CancellationPolicy? cancellationPolicy;
@@ -1268,7 +1359,7 @@ class _$TrekDetailDataImpl implements _TrekDetailData {
 
   @override
   String toString() {
-    return 'TrekDetailData(cityIds: $cityIds, inclusions: $inclusions, exclusions: $exclusions, activities: $activities, id: $id, mtrId: $mtrId, title: $title, description: $description, vendorId: $vendorId, destinationId: $destinationId, captainId: $captainId, duration: $duration, durationDays: $durationDays, durationNights: $durationNights, basePrice: $basePrice, maxParticipants: $maxParticipants, trekkingRules: $trekkingRules, emergencyProtocols: $emergencyProtocols, organizerNotes: $organizerNotes, status: $status, discountValue: $discountValue, discountType: $discountType, hasDiscount: $hasDiscount, badgeId: $badgeId, hasBeenEdited: $hasBeenEdited, safetySecurityCount: $safetySecurityCount, organizerMannerCount: $organizerMannerCount, trekPlanningCount: $trekPlanningCount, womenSafetyCount: $womenSafetyCount, createdAt: $createdAt, updatedAt: $updatedAt, vendor: $vendor, destinationData: $destinationData, badge: $badge, trekStages: $trekStages, accommodations: $accommodations, itineraryItems: $itineraryItems, images: $images, averageRating: $averageRating, totalReviews: $totalReviews, ratingTotal: $ratingTotal, reviewCommentsCount: $reviewCommentsCount, latestReviews: $latestReviews, categoryRatings: $categoryRatings, batchInfo: $batchInfo, cancellationPolicy: $cancellationPolicy, bookingType: $bookingType)';
+    return 'TrekDetailData(cityIds: $cityIds, inclusions: $inclusions, exclusions: $exclusions, activities: $activities, id: $id, mtrId: $mtrId, title: $title, description: $description, vendorId: $vendorId, destinationId: $destinationId, captainId: $captainId, duration: $duration, durationDays: $durationDays, durationNights: $durationNights, basePrice: $basePrice, maxParticipants: $maxParticipants, trekkingRules: $trekkingRules, emergencyProtocols: $emergencyProtocols, organizerNotes: $organizerNotes, status: $status, discountValue: $discountValue, discountType: $discountType, hasDiscount: $hasDiscount, badgeId: $badgeId, hasBeenEdited: $hasBeenEdited, safetySecurityCount: $safetySecurityCount, organizerMannerCount: $organizerMannerCount, trekPlanningCount: $trekPlanningCount, womenSafetyCount: $womenSafetyCount, createdAt: $createdAt, updatedAt: $updatedAt, vendor: $vendor, destinationData: $destinationData, badge: $badge, trekStages: $trekStages, accommodations: $accommodations, itineraryItems: $itineraryItems, images: $images, averageRating: $averageRating, totalReviews: $totalReviews, ratingTotal: $ratingTotal, reviewCommentsCount: $reviewCommentsCount, latestReviews: $latestReviews, categoryRatings: $categoryRatings, batchId: $batchId, tbrId: $tbrId, startDate: $startDate, endDate: $endDate, capacity: $capacity, bookedSlots: $bookedSlots, availableSlots: $availableSlots, cancellationPolicy: $cancellationPolicy, bookingType: $bookingType)';
   }
 
   @override
@@ -1355,8 +1446,17 @@ class _$TrekDetailDataImpl implements _TrekDetailData {
                 .equals(other._latestReviews, _latestReviews) &&
             (identical(other.categoryRatings, categoryRatings) ||
                 other.categoryRatings == categoryRatings) &&
-            (identical(other.batchInfo, batchInfo) ||
-                other.batchInfo == batchInfo) &&
+            (identical(other.batchId, batchId) || other.batchId == batchId) &&
+            (identical(other.tbrId, tbrId) || other.tbrId == tbrId) &&
+            (identical(other.startDate, startDate) ||
+                other.startDate == startDate) &&
+            (identical(other.endDate, endDate) || other.endDate == endDate) &&
+            (identical(other.capacity, capacity) ||
+                other.capacity == capacity) &&
+            (identical(other.bookedSlots, bookedSlots) ||
+                other.bookedSlots == bookedSlots) &&
+            (identical(other.availableSlots, availableSlots) ||
+                other.availableSlots == availableSlots) &&
             (identical(other.cancellationPolicy, cancellationPolicy) ||
                 other.cancellationPolicy == cancellationPolicy) &&
             (identical(other.bookingType, bookingType) ||
@@ -1411,7 +1511,13 @@ class _$TrekDetailDataImpl implements _TrekDetailData {
         reviewCommentsCount,
         const DeepCollectionEquality().hash(_latestReviews),
         categoryRatings,
-        batchInfo,
+        batchId,
+        tbrId,
+        startDate,
+        endDate,
+        capacity,
+        bookedSlots,
+        availableSlots,
         cancellationPolicy,
         bookingType
       ]);
@@ -1478,7 +1584,13 @@ abstract class _TrekDetailData implements TrekDetailData {
       @JsonKey(name: 'review_comments_count') final int? reviewCommentsCount,
       @JsonKey(name: 'latest_reviews') final List<LatestReviews>? latestReviews,
       @JsonKey(name: 'category_ratings') final CategoryRatings? categoryRatings,
-      @JsonKey(name: 'batch_info') final BatchInfo? batchInfo,
+      @JsonKey(name: 'batch_id') final int? batchId,
+      @JsonKey(name: 'tbr_id') final String? tbrId,
+      @JsonKey(name: 'start_date') final String? startDate,
+      @JsonKey(name: 'end_date') final String? endDate,
+      final int? capacity,
+      @JsonKey(name: 'booked_slots') final int? bookedSlots,
+      @JsonKey(name: 'available_slots') final int? availableSlots,
       @JsonKey(name: 'cancellation_policy')
       final CancellationPolicy? cancellationPolicy,
       @JsonKey(name: 'booking_type')
@@ -1608,8 +1720,25 @@ abstract class _TrekDetailData implements TrekDetailData {
   @JsonKey(name: 'category_ratings')
   CategoryRatings? get categoryRatings;
   @override
-  @JsonKey(name: 'batch_info')
-  BatchInfo? get batchInfo;
+  @JsonKey(name: 'batch_id')
+  int? get batchId;
+  @override
+  @JsonKey(name: 'tbr_id')
+  String? get tbrId;
+  @override
+  @JsonKey(name: 'start_date')
+  String? get startDate;
+  @override
+  @JsonKey(name: 'end_date')
+  String? get endDate;
+  @override
+  int? get capacity;
+  @override
+  @JsonKey(name: 'booked_slots')
+  int? get bookedSlots;
+  @override
+  @JsonKey(name: 'available_slots')
+  int? get availableSlots;
   @override
   @JsonKey(name: 'cancellation_policy')
   CancellationPolicy? get cancellationPolicy;
@@ -4083,15 +4212,10 @@ BatchInfo _$BatchInfoFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$BatchInfo {
   int? get id => throw _privateConstructorUsedError;
-  @JsonKey(name: 'tbr_id')
   String? get tbrId => throw _privateConstructorUsedError;
-  @JsonKey(name: 'start_date')
   String? get startDate => throw _privateConstructorUsedError;
-  @JsonKey(name: 'end_date')
   String? get endDate => throw _privateConstructorUsedError;
-  @JsonKey(name: 'booked_slots')
   int? get bookedSlots => throw _privateConstructorUsedError;
-  @JsonKey(name: 'available_slots')
   int? get availableSlots => throw _privateConstructorUsedError;
   int? get capacity => throw _privateConstructorUsedError;
 
@@ -4108,11 +4232,11 @@ abstract class $BatchInfoCopyWith<$Res> {
   @useResult
   $Res call(
       {int? id,
-      @JsonKey(name: 'tbr_id') String? tbrId,
-      @JsonKey(name: 'start_date') String? startDate,
-      @JsonKey(name: 'end_date') String? endDate,
-      @JsonKey(name: 'booked_slots') int? bookedSlots,
-      @JsonKey(name: 'available_slots') int? availableSlots,
+      String? tbrId,
+      String? startDate,
+      String? endDate,
+      int? bookedSlots,
+      int? availableSlots,
       int? capacity});
 }
 
@@ -4180,11 +4304,11 @@ abstract class _$$BatchInfoImplCopyWith<$Res>
   @useResult
   $Res call(
       {int? id,
-      @JsonKey(name: 'tbr_id') String? tbrId,
-      @JsonKey(name: 'start_date') String? startDate,
-      @JsonKey(name: 'end_date') String? endDate,
-      @JsonKey(name: 'booked_slots') int? bookedSlots,
-      @JsonKey(name: 'available_slots') int? availableSlots,
+      String? tbrId,
+      String? startDate,
+      String? endDate,
+      int? bookedSlots,
+      int? availableSlots,
       int? capacity});
 }
 
@@ -4245,11 +4369,11 @@ class __$$BatchInfoImplCopyWithImpl<$Res>
 class _$BatchInfoImpl implements _BatchInfo {
   const _$BatchInfoImpl(
       {this.id,
-      @JsonKey(name: 'tbr_id') this.tbrId,
-      @JsonKey(name: 'start_date') this.startDate,
-      @JsonKey(name: 'end_date') this.endDate,
-      @JsonKey(name: 'booked_slots') this.bookedSlots,
-      @JsonKey(name: 'available_slots') this.availableSlots,
+      this.tbrId,
+      this.startDate,
+      this.endDate,
+      this.bookedSlots,
+      this.availableSlots,
       this.capacity});
 
   factory _$BatchInfoImpl.fromJson(Map<String, dynamic> json) =>
@@ -4258,19 +4382,14 @@ class _$BatchInfoImpl implements _BatchInfo {
   @override
   final int? id;
   @override
-  @JsonKey(name: 'tbr_id')
   final String? tbrId;
   @override
-  @JsonKey(name: 'start_date')
   final String? startDate;
   @override
-  @JsonKey(name: 'end_date')
   final String? endDate;
   @override
-  @JsonKey(name: 'booked_slots')
   final int? bookedSlots;
   @override
-  @JsonKey(name: 'available_slots')
   final int? availableSlots;
   @override
   final int? capacity;
@@ -4320,11 +4439,11 @@ class _$BatchInfoImpl implements _BatchInfo {
 abstract class _BatchInfo implements BatchInfo {
   const factory _BatchInfo(
       {final int? id,
-      @JsonKey(name: 'tbr_id') final String? tbrId,
-      @JsonKey(name: 'start_date') final String? startDate,
-      @JsonKey(name: 'end_date') final String? endDate,
-      @JsonKey(name: 'booked_slots') final int? bookedSlots,
-      @JsonKey(name: 'available_slots') final int? availableSlots,
+      final String? tbrId,
+      final String? startDate,
+      final String? endDate,
+      final int? bookedSlots,
+      final int? availableSlots,
       final int? capacity}) = _$BatchInfoImpl;
 
   factory _BatchInfo.fromJson(Map<String, dynamic> json) =
@@ -4333,19 +4452,14 @@ abstract class _BatchInfo implements BatchInfo {
   @override
   int? get id;
   @override
-  @JsonKey(name: 'tbr_id')
   String? get tbrId;
   @override
-  @JsonKey(name: 'start_date')
   String? get startDate;
   @override
-  @JsonKey(name: 'end_date')
   String? get endDate;
   @override
-  @JsonKey(name: 'booked_slots')
   int? get bookedSlots;
   @override
-  @JsonKey(name: 'available_slots')
   int? get availableSlots;
   @override
   int? get capacity;

@@ -62,7 +62,13 @@ class TrekDetailData with _$TrekDetailData {
     @JsonKey(name: 'review_comments_count') int? reviewCommentsCount,
     @JsonKey(name: 'latest_reviews') List<LatestReviews>? latestReviews,
     @JsonKey(name: 'category_ratings') CategoryRatings? categoryRatings,
-    @JsonKey(name: 'batch_info') BatchInfo? batchInfo,
+    @JsonKey(name: 'batch_id') int? batchId,
+    @JsonKey(name: 'tbr_id') String? tbrId,
+    @JsonKey(name: 'start_date') String? startDate,
+    @JsonKey(name: 'end_date') String? endDate,
+    int? capacity,
+    @JsonKey(name: 'booked_slots') int? bookedSlots,
+    @JsonKey(name: 'available_slots') int? availableSlots,
     @JsonKey(name: 'cancellation_policy') CancellationPolicy? cancellationPolicy,
     @JsonKey(name: 'booking_type') String? bookingType,
   }) = _TrekDetailData;
@@ -254,11 +260,11 @@ class CategoryRatings with _$CategoryRatings {
 class BatchInfo with _$BatchInfo {
   const factory BatchInfo({
     int? id,
-    @JsonKey(name: 'tbr_id') String? tbrId,
-    @JsonKey(name: 'start_date') String? startDate,
-    @JsonKey(name: 'end_date') String? endDate,
-    @JsonKey(name: 'booked_slots') int? bookedSlots,
-    @JsonKey(name: 'available_slots') int? availableSlots,
+    String? tbrId,
+   String? startDate,
+    String? endDate,
+    int? bookedSlots,
+   int? availableSlots,
     int? capacity,
   }) = _BatchInfo;
 
