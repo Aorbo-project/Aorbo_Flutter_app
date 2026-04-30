@@ -18,6 +18,8 @@ class BookingHistoryModel with _$BookingHistoryModel {
       _$BookingHistoryModelFromJson(json);
 }
 
+String? _toString(dynamic value) => value?.toString();
+
 @freezed
 class BookingHistoryData with _$BookingHistoryData {
   const factory BookingHistoryData({
@@ -25,26 +27,41 @@ class BookingHistoryData with _$BookingHistoryData {
     @JsonKey(name: 'customer_id') int? customerId,
     @JsonKey(name: 'trek_id') int? trekId,
     @JsonKey(name: 'vendor_id') int? vendorId,
+    @JsonKey(name: 'VendorId') int? vendorIdAlt, // API extra key
     @JsonKey(name: 'batch_id') int? batchId,
     @JsonKey(name: 'coupon_id') int? couponId,
     @JsonKey(name: 'total_travelers') int? totalTravelers,
-    @JsonKey(name: 'total_amount') String? totalAmount,
-    @JsonKey(name: 'discount_amount') String? discountAmount,
-    @JsonKey(name: 'final_amount') String? finalAmount,
+
+    // ✅ SAFE STRING CONVERSION
+    @JsonKey(name: 'total_amount', fromJson: _toString)
+    String? totalAmount,
+
+    @JsonKey(name: 'discount_amount', fromJson: _toString)
+    String? discountAmount,
+
+    @JsonKey(name: 'final_amount', fromJson: _toString)
+    String? finalAmount,
+
     @JsonKey(name: 'payment_status') String? paymentStatus,
     String? status,
     @JsonKey(name: 'booking_date') String? bookingDate,
     @JsonKey(name: 'special_requests') String? specialRequests,
     @JsonKey(name: 'booking_source') String? bookingSource,
+
     @JsonKey(name: 'primary_contact_traveler_id')
     int? primaryContactTravelerId,
+
     String? createdAt,
     String? updatedAt,
+
     @JsonKey(name: 'user_id') int? userId,
+    @JsonKey(name: 'city_id') int? cityId,
+
     Trek? trek,
     Batch? batch,
-    City? city,
+
     List<TravelersDataModel>? travelers,
+
     @JsonKey(name: 'trek_status') String? trekStatus,
     @JsonKey(name: 'rating_given') bool? ratingGiven,
     @JsonKey(name: 'rating_value') double? ratingValue,
@@ -67,7 +84,7 @@ class Trek with _$Trek {
     @JsonKey(name: 'mtr_id') String? mtrId,
     String? title,
     String? description,
-    @JsonKey(name: 'vendor_id') int? vendorId,
+    @JsonKey(name: 'VendorId') int? vendorId,
     @JsonKey(name: 'destination_id') int? destinationId,
     @JsonKey(name: 'captain_id') int? captainId,
     String? duration,
@@ -106,7 +123,8 @@ class Trek with _$Trek {
 class Vendor with _$Vendor {
   const factory Vendor({
     int? id,
-    @JsonKey(name: 'company_info') CompanyInfo? companyInfo,
+    @JsonKey(name: 'business_name') String? businessName,
+    @JsonKey(name: 'business_logo') String? businessLogo
   }) = _Vendor;
 
   factory Vendor.fromJson(Map<String, dynamic> json) =>

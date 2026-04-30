@@ -10,7 +10,6 @@ import 'package:sizer/sizer.dart';
 import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/controller/trek_controller.dart';
 import 'package:arobo_app/controller/user_controller.dart';
-import 'package:arobo_app/models/treaks/treak_detail_modal.dart';
 import 'package:arobo_app/utils/booking_constants.dart';
 import 'package:arobo_app/utils/common_btn.dart';
 import 'package:arobo_app/utils/common_colors.dart';
@@ -19,6 +18,7 @@ import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:arobo_app/utils/total_fare_modal.dart';
 
 import '../freezed_models/profile/user_profile_model.dart';
+import '../freezed_models/treks/trek_detail_model.dart';
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS — matches TrekDetailsScreen _C
@@ -49,7 +49,6 @@ class _TravellerInformationScreenState
     extends State<TravellerInformationScreen>
     with SingleTickerProviderStateMixin {
 
-  // ── ALL ORIGINAL CONTROLLERS & STATE UNTOUCHED ───────────────────────────
   final TrekController      _trekC = Get.find<TrekController>();
   final DashboardController _dashboardC      = Get.find<DashboardController>();
   final UserController      _userC           = Get.find<UserController>();
@@ -889,8 +888,7 @@ class _TravellerInformationScreenState
                                     _counterBtn(Icons.remove, () {
                                       setState(() {
                                         if (adultCount > 1) {
-                                          _trekC.calculateFareRequestModel.value =
-                                              _trekC.calculateFareRequestModel.value.copyWith(travelerCount: adultCount - 1);
+                                          _trekC.calculateFareRequestModel.value = _trekC.calculateFareRequestModel.value.copyWith(travelerCount: adultCount - 1);
                                           if (selectedTravellers.length > adultCount) {
                                             selectedTravellers = selectedTravellers.take(adultCount).toList();
                                           }

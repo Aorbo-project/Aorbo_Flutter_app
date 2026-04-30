@@ -93,7 +93,7 @@ class NetworkUrl {
     required int page,
     String? trekStatus,
   }) =>
-      'customer/bookings?page=$page&limit=10'
+      'bookings?page=$page&limit=10'
           '${trekStatus == null ? '' : "&trek_status=$trekStatus"}';
 
   static const String review = 'ratings';

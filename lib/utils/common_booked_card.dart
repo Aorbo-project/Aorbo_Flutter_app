@@ -82,7 +82,7 @@ class CommonBookedCard extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            booking.trek?.vendor?.companyInfo?.companyName ??
+                            booking.trek?.vendor?.businessName ??
                                 '-',
                             style: GoogleFonts.poppins(
                               fontSize: FontSize.s9,

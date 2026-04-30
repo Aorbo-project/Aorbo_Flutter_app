@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/controller/trek_controller.dart';
 import 'package:arobo_app/screens/trek_details_screen.dart';
 import 'package:arobo_app/utils/common_colors.dart';
@@ -36,6 +37,7 @@ class _WeekendTreksScreenState extends State<WeekendTreksScreen> {
   final ScrollController _scrollController = ScrollController();
   int _selectedDateIndex = 0;
   final TrekController _trekC = Get.find<TrekController>();
+  final DashboardController _dashboardC = Get.find<DashboardController>();
 
 
 
@@ -89,6 +91,7 @@ class _WeekendTreksScreenState extends State<WeekendTreksScreen> {
               List<TrekData>? availableTreks = _trekC.weekendTreksResponseObserver.value.data.value.maybeWhen(success: (treksResponse) => (treksResponse as FetchTreksResponseModel).data,error: (sc) => [],orElse: () => [TrekData(),TrekData(),TrekData(),TrekData()]);
               SearchContextModel? searchContext = _trekC.weekendTreksResponseObserver.value.data.value.maybeWhen(success: (treksResponse) => (treksResponse as FetchTreksResponseModel).searchContext,orElse: () => null);
 
+              print(searchContext.toString());
               final paginating = _trekC.weekendTreksResponseObserver.value.isLoading;
 
               return SliverToBoxAdapter(
@@ -108,69 +111,81 @@ class _WeekendTreksScreenState extends State<WeekendTreksScreen> {
                       ),
                     ),
                     // Weekend dates selector
-                    Container(
-                      height: 7.h,
-                      margin: EdgeInsets.symmetric(vertical: 2.h),
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        padding: EdgeInsets.symmetric(horizontal: 4.w),
-                        itemCount: searchContext?.weekendDates?.length,
-                        itemBuilder: (context, index) {
-                          final date = searchContext?.weekendDates?[index];
-                          final isSelected = _selectedDateIndex == index;
+                    Visibility(
+                      visible : searchContext != null,
+                      child: Container(
+                        height: 7.h,
+                        margin: EdgeInsets.symmetric(vertical: 2.h),
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          padding: EdgeInsets.symmetric(horizontal: 4.w),
+                          itemCount: searchContext?.weekendDates?.length,
+                          itemBuilder: (context, index) {
+                            final date = searchContext?.weekendDates?[index];
+                            final isSelected = searchContext?.selectedDate == date;
 
-                          return GestureDetector(
-                            onTap: () {
-                              // setState(() {
-                              //   _selectedDateIndex = index;
-                              // });
-                            },
-                            child: Container(
-                              margin: EdgeInsets.only(right: 3.w),
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 4.w,
-                                vertical: 1.h,
-                              ),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? CommonColors.appBgColor
-                                    : Colors.white,
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
+                            return GestureDetector(
+                              onTap: () async {
+                                _dashboardC.dateController.value.text = date ?? "";
+                                await _trekC.fetchWeekendTreks(
+                                  cityId: _dashboardC
+                                      .fromController.value.text,
+                                  trekId: _dashboardC
+                                      .toController.value.text,
+                                  date: _dashboardC.dateController.value.text,
+                                  refresh: true,
+                                );
+                                // setState(() {
+                                //   _selectedDateIndex = index;
+                                // });
+                              },
+                              child: Container(
+                                margin: EdgeInsets.only(right: 3.w),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 4.w,
+                                  vertical: 1.h,
+                                ),
+                                decoration: BoxDecoration(
                                   color: isSelected
                                       ? CommonColors.appBgColor
-                                      : CommonColors.grey_AEAEAE,
+                                      : Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? CommonColors.appBgColor
+                                        : CommonColors.grey_AEAEAE,
+                                  ),
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      date ?? "",
+                                      textScaler: const TextScaler.linear(1.0),
+                                      style: TextStyle(
+                                        color: isSelected
+                                            ? Colors.white
+                                            : CommonColors.blackColor,
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: FontSize.s10,
+                                      ),
+                                    ),
+                                    Text(
+                                      date ?? "",
+                                      textScaler: const TextScaler.linear(1.0),
+                                      style: TextStyle(
+                                        color: isSelected
+                                            ? Colors.white
+                                            : CommonColors.grey_AEAEAE,
+                                        fontSize: FontSize.s9,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    date ?? "",
-                                    textScaler: const TextScaler.linear(1.0),
-                                    style: TextStyle(
-                                      color: isSelected
-                                          ? Colors.white
-                                          : CommonColors.blackColor,
-                                      fontWeight: FontWeight.w500,
-                                      fontSize: FontSize.s10,
-                                    ),
-                                  ),
-                                  Text(
-                                    date ?? "",
-                                    textScaler: const TextScaler.linear(1.0),
-                                    style: TextStyle(
-                                      color: isSelected
-                                          ? Colors.white
-                                          : CommonColors.grey_AEAEAE,
-                                      fontSize: FontSize.s9,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
+                            );
+                          },
+                        ),
                       ),
                     ),
                     // Available treks

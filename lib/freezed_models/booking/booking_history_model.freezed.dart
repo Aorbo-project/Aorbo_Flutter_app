@@ -276,18 +276,21 @@ mixin _$BookingHistoryData {
   int? get trekId => throw _privateConstructorUsedError;
   @JsonKey(name: 'vendor_id')
   int? get vendorId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'VendorId')
+  int? get vendorIdAlt => throw _privateConstructorUsedError; // API extra key
   @JsonKey(name: 'batch_id')
   int? get batchId => throw _privateConstructorUsedError;
   @JsonKey(name: 'coupon_id')
   int? get couponId => throw _privateConstructorUsedError;
   @JsonKey(name: 'total_travelers')
-  int? get totalTravelers => throw _privateConstructorUsedError;
-  @JsonKey(name: 'total_amount')
-  dynamic get totalAmount => throw _privateConstructorUsedError;
-  @JsonKey(name: 'discount_amount')
-  dynamic get discountAmount => throw _privateConstructorUsedError;
-  @JsonKey(name: 'final_amount')
-  dynamic get finalAmount => throw _privateConstructorUsedError;
+  int? get totalTravelers =>
+      throw _privateConstructorUsedError; // ✅ SAFE STRING CONVERSION
+  @JsonKey(name: 'total_amount', fromJson: _toString)
+  String? get totalAmount => throw _privateConstructorUsedError;
+  @JsonKey(name: 'discount_amount', fromJson: _toString)
+  String? get discountAmount => throw _privateConstructorUsedError;
+  @JsonKey(name: 'final_amount', fromJson: _toString)
+  String? get finalAmount => throw _privateConstructorUsedError;
   @JsonKey(name: 'payment_status')
   String? get paymentStatus => throw _privateConstructorUsedError;
   String? get status => throw _privateConstructorUsedError;
@@ -303,9 +306,10 @@ mixin _$BookingHistoryData {
   String? get updatedAt => throw _privateConstructorUsedError;
   @JsonKey(name: 'user_id')
   int? get userId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'city_id')
+  int? get cityId => throw _privateConstructorUsedError;
   Trek? get trek => throw _privateConstructorUsedError;
   Batch? get batch => throw _privateConstructorUsedError;
-  City? get city => throw _privateConstructorUsedError;
   List<TravelersDataModel>? get travelers => throw _privateConstructorUsedError;
   @JsonKey(name: 'trek_status')
   String? get trekStatus => throw _privateConstructorUsedError;
@@ -335,12 +339,14 @@ abstract class $BookingHistoryDataCopyWith<$Res> {
       @JsonKey(name: 'customer_id') int? customerId,
       @JsonKey(name: 'trek_id') int? trekId,
       @JsonKey(name: 'vendor_id') int? vendorId,
+      @JsonKey(name: 'VendorId') int? vendorIdAlt,
       @JsonKey(name: 'batch_id') int? batchId,
       @JsonKey(name: 'coupon_id') int? couponId,
       @JsonKey(name: 'total_travelers') int? totalTravelers,
-      @JsonKey(name: 'total_amount') dynamic totalAmount,
-      @JsonKey(name: 'discount_amount') dynamic discountAmount,
-      @JsonKey(name: 'final_amount') dynamic finalAmount,
+      @JsonKey(name: 'total_amount', fromJson: _toString) String? totalAmount,
+      @JsonKey(name: 'discount_amount', fromJson: _toString)
+      String? discountAmount,
+      @JsonKey(name: 'final_amount', fromJson: _toString) String? finalAmount,
       @JsonKey(name: 'payment_status') String? paymentStatus,
       String? status,
       @JsonKey(name: 'booking_date') String? bookingDate,
@@ -351,9 +357,9 @@ abstract class $BookingHistoryDataCopyWith<$Res> {
       String? createdAt,
       String? updatedAt,
       @JsonKey(name: 'user_id') int? userId,
+      @JsonKey(name: 'city_id') int? cityId,
       Trek? trek,
       Batch? batch,
-      City? city,
       List<TravelersDataModel>? travelers,
       @JsonKey(name: 'trek_status') String? trekStatus,
       @JsonKey(name: 'rating_given') bool? ratingGiven,
@@ -363,7 +369,6 @@ abstract class $BookingHistoryDataCopyWith<$Res> {
 
   $TrekCopyWith<$Res>? get trek;
   $BatchCopyWith<$Res>? get batch;
-  $CityCopyWith<$Res>? get city;
 }
 
 /// @nodoc
@@ -383,6 +388,7 @@ class _$BookingHistoryDataCopyWithImpl<$Res, $Val extends BookingHistoryData>
     Object? customerId = freezed,
     Object? trekId = freezed,
     Object? vendorId = freezed,
+    Object? vendorIdAlt = freezed,
     Object? batchId = freezed,
     Object? couponId = freezed,
     Object? totalTravelers = freezed,
@@ -398,9 +404,9 @@ class _$BookingHistoryDataCopyWithImpl<$Res, $Val extends BookingHistoryData>
     Object? createdAt = freezed,
     Object? updatedAt = freezed,
     Object? userId = freezed,
+    Object? cityId = freezed,
     Object? trek = freezed,
     Object? batch = freezed,
-    Object? city = freezed,
     Object? travelers = freezed,
     Object? trekStatus = freezed,
     Object? ratingGiven = freezed,
@@ -425,6 +431,10 @@ class _$BookingHistoryDataCopyWithImpl<$Res, $Val extends BookingHistoryData>
           ? _value.vendorId
           : vendorId // ignore: cast_nullable_to_non_nullable
               as int?,
+      vendorIdAlt: freezed == vendorIdAlt
+          ? _value.vendorIdAlt
+          : vendorIdAlt // ignore: cast_nullable_to_non_nullable
+              as int?,
       batchId: freezed == batchId
           ? _value.batchId
           : batchId // ignore: cast_nullable_to_non_nullable
@@ -440,15 +450,15 @@ class _$BookingHistoryDataCopyWithImpl<$Res, $Val extends BookingHistoryData>
       totalAmount: freezed == totalAmount
           ? _value.totalAmount
           : totalAmount // ignore: cast_nullable_to_non_nullable
-              as dynamic,
+              as String?,
       discountAmount: freezed == discountAmount
           ? _value.discountAmount
           : discountAmount // ignore: cast_nullable_to_non_nullable
-              as dynamic,
+              as String?,
       finalAmount: freezed == finalAmount
           ? _value.finalAmount
           : finalAmount // ignore: cast_nullable_to_non_nullable
-              as dynamic,
+              as String?,
       paymentStatus: freezed == paymentStatus
           ? _value.paymentStatus
           : paymentStatus // ignore: cast_nullable_to_non_nullable
@@ -485,6 +495,10 @@ class _$BookingHistoryDataCopyWithImpl<$Res, $Val extends BookingHistoryData>
           ? _value.userId
           : userId // ignore: cast_nullable_to_non_nullable
               as int?,
+      cityId: freezed == cityId
+          ? _value.cityId
+          : cityId // ignore: cast_nullable_to_non_nullable
+              as int?,
       trek: freezed == trek
           ? _value.trek
           : trek // ignore: cast_nullable_to_non_nullable
@@ -493,10 +507,6 @@ class _$BookingHistoryDataCopyWithImpl<$Res, $Val extends BookingHistoryData>
           ? _value.batch
           : batch // ignore: cast_nullable_to_non_nullable
               as Batch?,
-      city: freezed == city
-          ? _value.city
-          : city // ignore: cast_nullable_to_non_nullable
-              as City?,
       travelers: freezed == travelers
           ? _value.travelers
           : travelers // ignore: cast_nullable_to_non_nullable
@@ -547,18 +557,6 @@ class _$BookingHistoryDataCopyWithImpl<$Res, $Val extends BookingHistoryData>
       return _then(_value.copyWith(batch: value) as $Val);
     });
   }
-
-  @override
-  @pragma('vm:prefer-inline')
-  $CityCopyWith<$Res>? get city {
-    if (_value.city == null) {
-      return null;
-    }
-
-    return $CityCopyWith<$Res>(_value.city!, (value) {
-      return _then(_value.copyWith(city: value) as $Val);
-    });
-  }
 }
 
 /// @nodoc
@@ -574,12 +572,14 @@ abstract class _$$BookingHistoryDataImplCopyWith<$Res>
       @JsonKey(name: 'customer_id') int? customerId,
       @JsonKey(name: 'trek_id') int? trekId,
       @JsonKey(name: 'vendor_id') int? vendorId,
+      @JsonKey(name: 'VendorId') int? vendorIdAlt,
       @JsonKey(name: 'batch_id') int? batchId,
       @JsonKey(name: 'coupon_id') int? couponId,
       @JsonKey(name: 'total_travelers') int? totalTravelers,
-      @JsonKey(name: 'total_amount') dynamic totalAmount,
-      @JsonKey(name: 'discount_amount') dynamic discountAmount,
-      @JsonKey(name: 'final_amount') dynamic finalAmount,
+      @JsonKey(name: 'total_amount', fromJson: _toString) String? totalAmount,
+      @JsonKey(name: 'discount_amount', fromJson: _toString)
+      String? discountAmount,
+      @JsonKey(name: 'final_amount', fromJson: _toString) String? finalAmount,
       @JsonKey(name: 'payment_status') String? paymentStatus,
       String? status,
       @JsonKey(name: 'booking_date') String? bookingDate,
@@ -590,9 +590,9 @@ abstract class _$$BookingHistoryDataImplCopyWith<$Res>
       String? createdAt,
       String? updatedAt,
       @JsonKey(name: 'user_id') int? userId,
+      @JsonKey(name: 'city_id') int? cityId,
       Trek? trek,
       Batch? batch,
-      City? city,
       List<TravelersDataModel>? travelers,
       @JsonKey(name: 'trek_status') String? trekStatus,
       @JsonKey(name: 'rating_given') bool? ratingGiven,
@@ -604,8 +604,6 @@ abstract class _$$BookingHistoryDataImplCopyWith<$Res>
   $TrekCopyWith<$Res>? get trek;
   @override
   $BatchCopyWith<$Res>? get batch;
-  @override
-  $CityCopyWith<$Res>? get city;
 }
 
 /// @nodoc
@@ -623,6 +621,7 @@ class __$$BookingHistoryDataImplCopyWithImpl<$Res>
     Object? customerId = freezed,
     Object? trekId = freezed,
     Object? vendorId = freezed,
+    Object? vendorIdAlt = freezed,
     Object? batchId = freezed,
     Object? couponId = freezed,
     Object? totalTravelers = freezed,
@@ -638,9 +637,9 @@ class __$$BookingHistoryDataImplCopyWithImpl<$Res>
     Object? createdAt = freezed,
     Object? updatedAt = freezed,
     Object? userId = freezed,
+    Object? cityId = freezed,
     Object? trek = freezed,
     Object? batch = freezed,
-    Object? city = freezed,
     Object? travelers = freezed,
     Object? trekStatus = freezed,
     Object? ratingGiven = freezed,
@@ -665,6 +664,10 @@ class __$$BookingHistoryDataImplCopyWithImpl<$Res>
           ? _value.vendorId
           : vendorId // ignore: cast_nullable_to_non_nullable
               as int?,
+      vendorIdAlt: freezed == vendorIdAlt
+          ? _value.vendorIdAlt
+          : vendorIdAlt // ignore: cast_nullable_to_non_nullable
+              as int?,
       batchId: freezed == batchId
           ? _value.batchId
           : batchId // ignore: cast_nullable_to_non_nullable
@@ -680,15 +683,15 @@ class __$$BookingHistoryDataImplCopyWithImpl<$Res>
       totalAmount: freezed == totalAmount
           ? _value.totalAmount
           : totalAmount // ignore: cast_nullable_to_non_nullable
-              as dynamic,
+              as String?,
       discountAmount: freezed == discountAmount
           ? _value.discountAmount
           : discountAmount // ignore: cast_nullable_to_non_nullable
-              as dynamic,
+              as String?,
       finalAmount: freezed == finalAmount
           ? _value.finalAmount
           : finalAmount // ignore: cast_nullable_to_non_nullable
-              as dynamic,
+              as String?,
       paymentStatus: freezed == paymentStatus
           ? _value.paymentStatus
           : paymentStatus // ignore: cast_nullable_to_non_nullable
@@ -725,6 +728,10 @@ class __$$BookingHistoryDataImplCopyWithImpl<$Res>
           ? _value.userId
           : userId // ignore: cast_nullable_to_non_nullable
               as int?,
+      cityId: freezed == cityId
+          ? _value.cityId
+          : cityId // ignore: cast_nullable_to_non_nullable
+              as int?,
       trek: freezed == trek
           ? _value.trek
           : trek // ignore: cast_nullable_to_non_nullable
@@ -733,10 +740,6 @@ class __$$BookingHistoryDataImplCopyWithImpl<$Res>
           ? _value.batch
           : batch // ignore: cast_nullable_to_non_nullable
               as Batch?,
-      city: freezed == city
-          ? _value.city
-          : city // ignore: cast_nullable_to_non_nullable
-              as City?,
       travelers: freezed == travelers
           ? _value._travelers
           : travelers // ignore: cast_nullable_to_non_nullable
@@ -773,12 +776,14 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
       @JsonKey(name: 'customer_id') this.customerId,
       @JsonKey(name: 'trek_id') this.trekId,
       @JsonKey(name: 'vendor_id') this.vendorId,
+      @JsonKey(name: 'VendorId') this.vendorIdAlt,
       @JsonKey(name: 'batch_id') this.batchId,
       @JsonKey(name: 'coupon_id') this.couponId,
       @JsonKey(name: 'total_travelers') this.totalTravelers,
-      @JsonKey(name: 'total_amount') this.totalAmount,
-      @JsonKey(name: 'discount_amount') this.discountAmount,
-      @JsonKey(name: 'final_amount') this.finalAmount,
+      @JsonKey(name: 'total_amount', fromJson: _toString) this.totalAmount,
+      @JsonKey(name: 'discount_amount', fromJson: _toString)
+      this.discountAmount,
+      @JsonKey(name: 'final_amount', fromJson: _toString) this.finalAmount,
       @JsonKey(name: 'payment_status') this.paymentStatus,
       this.status,
       @JsonKey(name: 'booking_date') this.bookingDate,
@@ -789,9 +794,9 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
       this.createdAt,
       this.updatedAt,
       @JsonKey(name: 'user_id') this.userId,
+      @JsonKey(name: 'city_id') this.cityId,
       this.trek,
       this.batch,
-      this.city,
       final List<TravelersDataModel>? travelers,
       @JsonKey(name: 'trek_status') this.trekStatus,
       @JsonKey(name: 'rating_given') this.ratingGiven,
@@ -815,6 +820,10 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
   @JsonKey(name: 'vendor_id')
   final int? vendorId;
   @override
+  @JsonKey(name: 'VendorId')
+  final int? vendorIdAlt;
+// API extra key
+  @override
   @JsonKey(name: 'batch_id')
   final int? batchId;
   @override
@@ -823,15 +832,16 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
   @override
   @JsonKey(name: 'total_travelers')
   final int? totalTravelers;
+// ✅ SAFE STRING CONVERSION
   @override
-  @JsonKey(name: 'total_amount')
-  final dynamic totalAmount;
+  @JsonKey(name: 'total_amount', fromJson: _toString)
+  final String? totalAmount;
   @override
-  @JsonKey(name: 'discount_amount')
-  final dynamic discountAmount;
+  @JsonKey(name: 'discount_amount', fromJson: _toString)
+  final String? discountAmount;
   @override
-  @JsonKey(name: 'final_amount')
-  final dynamic finalAmount;
+  @JsonKey(name: 'final_amount', fromJson: _toString)
+  final String? finalAmount;
   @override
   @JsonKey(name: 'payment_status')
   final String? paymentStatus;
@@ -857,11 +867,12 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
   @JsonKey(name: 'user_id')
   final int? userId;
   @override
+  @JsonKey(name: 'city_id')
+  final int? cityId;
+  @override
   final Trek? trek;
   @override
   final Batch? batch;
-  @override
-  final City? city;
   final List<TravelersDataModel>? _travelers;
   @override
   List<TravelersDataModel>? get travelers {
@@ -890,7 +901,7 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
 
   @override
   String toString() {
-    return 'BookingHistoryData(id: $id, customerId: $customerId, trekId: $trekId, vendorId: $vendorId, batchId: $batchId, couponId: $couponId, totalTravelers: $totalTravelers, totalAmount: $totalAmount, discountAmount: $discountAmount, finalAmount: $finalAmount, paymentStatus: $paymentStatus, status: $status, bookingDate: $bookingDate, specialRequests: $specialRequests, bookingSource: $bookingSource, primaryContactTravelerId: $primaryContactTravelerId, createdAt: $createdAt, updatedAt: $updatedAt, userId: $userId, trek: $trek, batch: $batch, city: $city, travelers: $travelers, trekStatus: $trekStatus, ratingGiven: $ratingGiven, ratingValue: $ratingValue, trekStageDateTime: $trekStageDateTime, trekStageName: $trekStageName)';
+    return 'BookingHistoryData(id: $id, customerId: $customerId, trekId: $trekId, vendorId: $vendorId, vendorIdAlt: $vendorIdAlt, batchId: $batchId, couponId: $couponId, totalTravelers: $totalTravelers, totalAmount: $totalAmount, discountAmount: $discountAmount, finalAmount: $finalAmount, paymentStatus: $paymentStatus, status: $status, bookingDate: $bookingDate, specialRequests: $specialRequests, bookingSource: $bookingSource, primaryContactTravelerId: $primaryContactTravelerId, createdAt: $createdAt, updatedAt: $updatedAt, userId: $userId, cityId: $cityId, trek: $trek, batch: $batch, travelers: $travelers, trekStatus: $trekStatus, ratingGiven: $ratingGiven, ratingValue: $ratingValue, trekStageDateTime: $trekStageDateTime, trekStageName: $trekStageName)';
   }
 
   @override
@@ -904,17 +915,19 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
             (identical(other.trekId, trekId) || other.trekId == trekId) &&
             (identical(other.vendorId, vendorId) ||
                 other.vendorId == vendorId) &&
+            (identical(other.vendorIdAlt, vendorIdAlt) ||
+                other.vendorIdAlt == vendorIdAlt) &&
             (identical(other.batchId, batchId) || other.batchId == batchId) &&
             (identical(other.couponId, couponId) ||
                 other.couponId == couponId) &&
             (identical(other.totalTravelers, totalTravelers) ||
                 other.totalTravelers == totalTravelers) &&
-            const DeepCollectionEquality()
-                .equals(other.totalAmount, totalAmount) &&
-            const DeepCollectionEquality()
-                .equals(other.discountAmount, discountAmount) &&
-            const DeepCollectionEquality()
-                .equals(other.finalAmount, finalAmount) &&
+            (identical(other.totalAmount, totalAmount) ||
+                other.totalAmount == totalAmount) &&
+            (identical(other.discountAmount, discountAmount) ||
+                other.discountAmount == discountAmount) &&
+            (identical(other.finalAmount, finalAmount) ||
+                other.finalAmount == finalAmount) &&
             (identical(other.paymentStatus, paymentStatus) ||
                 other.paymentStatus == paymentStatus) &&
             (identical(other.status, status) || other.status == status) &&
@@ -932,9 +945,9 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
             (identical(other.updatedAt, updatedAt) ||
                 other.updatedAt == updatedAt) &&
             (identical(other.userId, userId) || other.userId == userId) &&
+            (identical(other.cityId, cityId) || other.cityId == cityId) &&
             (identical(other.trek, trek) || other.trek == trek) &&
             (identical(other.batch, batch) || other.batch == batch) &&
-            (identical(other.city, city) || other.city == city) &&
             const DeepCollectionEquality()
                 .equals(other._travelers, _travelers) &&
             (identical(other.trekStatus, trekStatus) ||
@@ -957,12 +970,13 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
         customerId,
         trekId,
         vendorId,
+        vendorIdAlt,
         batchId,
         couponId,
         totalTravelers,
-        const DeepCollectionEquality().hash(totalAmount),
-        const DeepCollectionEquality().hash(discountAmount),
-        const DeepCollectionEquality().hash(finalAmount),
+        totalAmount,
+        discountAmount,
+        finalAmount,
         paymentStatus,
         status,
         bookingDate,
@@ -972,9 +986,9 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
         createdAt,
         updatedAt,
         userId,
+        cityId,
         trek,
         batch,
-        city,
         const DeepCollectionEquality().hash(_travelers),
         trekStatus,
         ratingGiven,
@@ -1004,12 +1018,16 @@ abstract class _BookingHistoryData implements BookingHistoryData {
       @JsonKey(name: 'customer_id') final int? customerId,
       @JsonKey(name: 'trek_id') final int? trekId,
       @JsonKey(name: 'vendor_id') final int? vendorId,
+      @JsonKey(name: 'VendorId') final int? vendorIdAlt,
       @JsonKey(name: 'batch_id') final int? batchId,
       @JsonKey(name: 'coupon_id') final int? couponId,
       @JsonKey(name: 'total_travelers') final int? totalTravelers,
-      @JsonKey(name: 'total_amount') final dynamic totalAmount,
-      @JsonKey(name: 'discount_amount') final dynamic discountAmount,
-      @JsonKey(name: 'final_amount') final dynamic finalAmount,
+      @JsonKey(name: 'total_amount', fromJson: _toString)
+      final String? totalAmount,
+      @JsonKey(name: 'discount_amount', fromJson: _toString)
+      final String? discountAmount,
+      @JsonKey(name: 'final_amount', fromJson: _toString)
+      final String? finalAmount,
       @JsonKey(name: 'payment_status') final String? paymentStatus,
       final String? status,
       @JsonKey(name: 'booking_date') final String? bookingDate,
@@ -1020,9 +1038,9 @@ abstract class _BookingHistoryData implements BookingHistoryData {
       final String? createdAt,
       final String? updatedAt,
       @JsonKey(name: 'user_id') final int? userId,
+      @JsonKey(name: 'city_id') final int? cityId,
       final Trek? trek,
       final Batch? batch,
-      final City? city,
       final List<TravelersDataModel>? travelers,
       @JsonKey(name: 'trek_status') final String? trekStatus,
       @JsonKey(name: 'rating_given') final bool? ratingGiven,
@@ -1046,6 +1064,9 @@ abstract class _BookingHistoryData implements BookingHistoryData {
   @JsonKey(name: 'vendor_id')
   int? get vendorId;
   @override
+  @JsonKey(name: 'VendorId')
+  int? get vendorIdAlt;
+  @override // API extra key
   @JsonKey(name: 'batch_id')
   int? get batchId;
   @override
@@ -1054,15 +1075,15 @@ abstract class _BookingHistoryData implements BookingHistoryData {
   @override
   @JsonKey(name: 'total_travelers')
   int? get totalTravelers;
+  @override // ✅ SAFE STRING CONVERSION
+  @JsonKey(name: 'total_amount', fromJson: _toString)
+  String? get totalAmount;
   @override
-  @JsonKey(name: 'total_amount')
-  dynamic get totalAmount;
+  @JsonKey(name: 'discount_amount', fromJson: _toString)
+  String? get discountAmount;
   @override
-  @JsonKey(name: 'discount_amount')
-  dynamic get discountAmount;
-  @override
-  @JsonKey(name: 'final_amount')
-  dynamic get finalAmount;
+  @JsonKey(name: 'final_amount', fromJson: _toString)
+  String? get finalAmount;
   @override
   @JsonKey(name: 'payment_status')
   String? get paymentStatus;
@@ -1088,11 +1109,12 @@ abstract class _BookingHistoryData implements BookingHistoryData {
   @JsonKey(name: 'user_id')
   int? get userId;
   @override
+  @JsonKey(name: 'city_id')
+  int? get cityId;
+  @override
   Trek? get trek;
   @override
   Batch? get batch;
-  @override
-  City? get city;
   @override
   List<TravelersDataModel>? get travelers;
   @override
@@ -1132,7 +1154,7 @@ mixin _$Trek {
   String? get mtrId => throw _privateConstructorUsedError;
   String? get title => throw _privateConstructorUsedError;
   String? get description => throw _privateConstructorUsedError;
-  @JsonKey(name: 'vendor_id')
+  @JsonKey(name: 'VendorId')
   int? get vendorId => throw _privateConstructorUsedError;
   @JsonKey(name: 'destination_id')
   int? get destinationId => throw _privateConstructorUsedError;
@@ -1204,7 +1226,7 @@ abstract class $TrekCopyWith<$Res> {
       @JsonKey(name: 'mtr_id') String? mtrId,
       String? title,
       String? description,
-      @JsonKey(name: 'vendor_id') int? vendorId,
+      @JsonKey(name: 'VendorId') int? vendorId,
       @JsonKey(name: 'destination_id') int? destinationId,
       @JsonKey(name: 'captain_id') int? captainId,
       String? duration,
@@ -1488,7 +1510,7 @@ abstract class _$$TrekImplCopyWith<$Res> implements $TrekCopyWith<$Res> {
       @JsonKey(name: 'mtr_id') String? mtrId,
       String? title,
       String? description,
-      @JsonKey(name: 'vendor_id') int? vendorId,
+      @JsonKey(name: 'VendorId') int? vendorId,
       @JsonKey(name: 'destination_id') int? destinationId,
       @JsonKey(name: 'captain_id') int? captainId,
       String? duration,
@@ -1743,7 +1765,7 @@ class _$TrekImpl implements _Trek {
       @JsonKey(name: 'mtr_id') this.mtrId,
       this.title,
       this.description,
-      @JsonKey(name: 'vendor_id') this.vendorId,
+      @JsonKey(name: 'VendorId') this.vendorId,
       @JsonKey(name: 'destination_id') this.destinationId,
       @JsonKey(name: 'captain_id') this.captainId,
       this.duration,
@@ -1832,7 +1854,7 @@ class _$TrekImpl implements _Trek {
   @override
   final String? description;
   @override
-  @JsonKey(name: 'vendor_id')
+  @JsonKey(name: 'VendorId')
   final int? vendorId;
   @override
   @JsonKey(name: 'destination_id')
@@ -2062,7 +2084,7 @@ abstract class _Trek implements Trek {
       @JsonKey(name: 'mtr_id') final String? mtrId,
       final String? title,
       final String? description,
-      @JsonKey(name: 'vendor_id') final int? vendorId,
+      @JsonKey(name: 'VendorId') final int? vendorId,
       @JsonKey(name: 'destination_id') final int? destinationId,
       @JsonKey(name: 'captain_id') final int? captainId,
       final String? duration,
@@ -2114,7 +2136,7 @@ abstract class _Trek implements Trek {
   @override
   String? get description;
   @override
-  @JsonKey(name: 'vendor_id')
+  @JsonKey(name: 'VendorId')
   int? get vendorId;
   @override
   @JsonKey(name: 'destination_id')
@@ -2208,8 +2230,10 @@ Vendor _$VendorFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$Vendor {
   int? get id => throw _privateConstructorUsedError;
-  @JsonKey(name: 'company_info')
-  CompanyInfo? get companyInfo => throw _privateConstructorUsedError;
+  @JsonKey(name: 'business_name')
+  String? get businessName => throw _privateConstructorUsedError;
+  @JsonKey(name: 'business_logo')
+  String? get businessLogo => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -2221,9 +2245,10 @@ abstract class $VendorCopyWith<$Res> {
   factory $VendorCopyWith(Vendor value, $Res Function(Vendor) then) =
       _$VendorCopyWithImpl<$Res, Vendor>;
   @useResult
-  $Res call({int? id, @JsonKey(name: 'company_info') CompanyInfo? companyInfo});
-
-  $CompanyInfoCopyWith<$Res>? get companyInfo;
+  $Res call(
+      {int? id,
+      @JsonKey(name: 'business_name') String? businessName,
+      @JsonKey(name: 'business_logo') String? businessLogo});
 }
 
 /// @nodoc
@@ -2240,30 +2265,23 @@ class _$VendorCopyWithImpl<$Res, $Val extends Vendor>
   @override
   $Res call({
     Object? id = freezed,
-    Object? companyInfo = freezed,
+    Object? businessName = freezed,
+    Object? businessLogo = freezed,
   }) {
     return _then(_value.copyWith(
       id: freezed == id
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
               as int?,
-      companyInfo: freezed == companyInfo
-          ? _value.companyInfo
-          : companyInfo // ignore: cast_nullable_to_non_nullable
-              as CompanyInfo?,
+      businessName: freezed == businessName
+          ? _value.businessName
+          : businessName // ignore: cast_nullable_to_non_nullable
+              as String?,
+      businessLogo: freezed == businessLogo
+          ? _value.businessLogo
+          : businessLogo // ignore: cast_nullable_to_non_nullable
+              as String?,
     ) as $Val);
-  }
-
-  @override
-  @pragma('vm:prefer-inline')
-  $CompanyInfoCopyWith<$Res>? get companyInfo {
-    if (_value.companyInfo == null) {
-      return null;
-    }
-
-    return $CompanyInfoCopyWith<$Res>(_value.companyInfo!, (value) {
-      return _then(_value.copyWith(companyInfo: value) as $Val);
-    });
   }
 }
 
@@ -2274,10 +2292,10 @@ abstract class _$$VendorImplCopyWith<$Res> implements $VendorCopyWith<$Res> {
       __$$VendorImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({int? id, @JsonKey(name: 'company_info') CompanyInfo? companyInfo});
-
-  @override
-  $CompanyInfoCopyWith<$Res>? get companyInfo;
+  $Res call(
+      {int? id,
+      @JsonKey(name: 'business_name') String? businessName,
+      @JsonKey(name: 'business_logo') String? businessLogo});
 }
 
 /// @nodoc
@@ -2292,17 +2310,22 @@ class __$$VendorImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? id = freezed,
-    Object? companyInfo = freezed,
+    Object? businessName = freezed,
+    Object? businessLogo = freezed,
   }) {
     return _then(_$VendorImpl(
       id: freezed == id
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
               as int?,
-      companyInfo: freezed == companyInfo
-          ? _value.companyInfo
-          : companyInfo // ignore: cast_nullable_to_non_nullable
-              as CompanyInfo?,
+      businessName: freezed == businessName
+          ? _value.businessName
+          : businessName // ignore: cast_nullable_to_non_nullable
+              as String?,
+      businessLogo: freezed == businessLogo
+          ? _value.businessLogo
+          : businessLogo // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -2311,7 +2334,9 @@ class __$$VendorImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$VendorImpl implements _Vendor {
   const _$VendorImpl(
-      {this.id, @JsonKey(name: 'company_info') this.companyInfo});
+      {this.id,
+      @JsonKey(name: 'business_name') this.businessName,
+      @JsonKey(name: 'business_logo') this.businessLogo});
 
   factory _$VendorImpl.fromJson(Map<String, dynamic> json) =>
       _$$VendorImplFromJson(json);
@@ -2319,12 +2344,15 @@ class _$VendorImpl implements _Vendor {
   @override
   final int? id;
   @override
-  @JsonKey(name: 'company_info')
-  final CompanyInfo? companyInfo;
+  @JsonKey(name: 'business_name')
+  final String? businessName;
+  @override
+  @JsonKey(name: 'business_logo')
+  final String? businessLogo;
 
   @override
   String toString() {
-    return 'Vendor(id: $id, companyInfo: $companyInfo)';
+    return 'Vendor(id: $id, businessName: $businessName, businessLogo: $businessLogo)';
   }
 
   @override
@@ -2333,13 +2361,15 @@ class _$VendorImpl implements _Vendor {
         (other.runtimeType == runtimeType &&
             other is _$VendorImpl &&
             (identical(other.id, id) || other.id == id) &&
-            (identical(other.companyInfo, companyInfo) ||
-                other.companyInfo == companyInfo));
+            (identical(other.businessName, businessName) ||
+                other.businessName == businessName) &&
+            (identical(other.businessLogo, businessLogo) ||
+                other.businessLogo == businessLogo));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(runtimeType, id, companyInfo);
+  int get hashCode => Object.hash(runtimeType, id, businessName, businessLogo);
 
   @JsonKey(ignore: true)
   @override
@@ -2358,7 +2388,8 @@ class _$VendorImpl implements _Vendor {
 abstract class _Vendor implements Vendor {
   const factory _Vendor(
           {final int? id,
-          @JsonKey(name: 'company_info') final CompanyInfo? companyInfo}) =
+          @JsonKey(name: 'business_name') final String? businessName,
+          @JsonKey(name: 'business_logo') final String? businessLogo}) =
       _$VendorImpl;
 
   factory _Vendor.fromJson(Map<String, dynamic> json) = _$VendorImpl.fromJson;
@@ -2366,8 +2397,11 @@ abstract class _Vendor implements Vendor {
   @override
   int? get id;
   @override
-  @JsonKey(name: 'company_info')
-  CompanyInfo? get companyInfo;
+  @JsonKey(name: 'business_name')
+  String? get businessName;
+  @override
+  @JsonKey(name: 'business_logo')
+  String? get businessLogo;
   @override
   @JsonKey(ignore: true)
   _$$VendorImplCopyWith<_$VendorImpl> get copyWith =>

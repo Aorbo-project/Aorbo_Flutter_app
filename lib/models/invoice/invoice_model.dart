@@ -6,7 +6,7 @@
 
 // ── Enums ────────────────────────────────────────────────────────────────────
 
-import '../treaks/treak_detail_modal.dart';
+import '../../freezed_models/treks/trek_detail_model.dart';
 
 enum InvoiceStatus {
   paid,

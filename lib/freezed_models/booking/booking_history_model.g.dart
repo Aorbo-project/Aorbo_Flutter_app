@@ -37,12 +37,13 @@ _$BookingHistoryDataImpl _$$BookingHistoryDataImplFromJson(
       customerId: json['customer_id'] as int?,
       trekId: json['trek_id'] as int?,
       vendorId: json['vendor_id'] as int?,
+      vendorIdAlt: json['VendorId'] as int?,
       batchId: json['batch_id'] as int?,
       couponId: json['coupon_id'] as int?,
       totalTravelers: json['total_travelers'] as int?,
-      totalAmount: json['total_amount'],
-      discountAmount: json['discount_amount'],
-      finalAmount: json['final_amount'],
+      totalAmount: _toString(json['total_amount']),
+      discountAmount: _toString(json['discount_amount']),
+      finalAmount: _toString(json['final_amount']),
       paymentStatus: json['payment_status'] as String?,
       status: json['status'] as String?,
       bookingDate: json['booking_date'] as String?,
@@ -52,15 +53,13 @@ _$BookingHistoryDataImpl _$$BookingHistoryDataImplFromJson(
       createdAt: json['createdAt'] as String?,
       updatedAt: json['updatedAt'] as String?,
       userId: json['user_id'] as int?,
+      cityId: json['city_id'] as int?,
       trek: json['trek'] == null
           ? null
           : Trek.fromJson(json['trek'] as Map<String, dynamic>),
       batch: json['batch'] == null
           ? null
           : Batch.fromJson(json['batch'] as Map<String, dynamic>),
-      city: json['city'] == null
-          ? null
-          : City.fromJson(json['city'] as Map<String, dynamic>),
       travelers: (json['travelers'] as List<dynamic>?)
           ?.map((e) => TravelersDataModel.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -78,6 +77,7 @@ Map<String, dynamic> _$$BookingHistoryDataImplToJson(
       'customer_id': instance.customerId,
       'trek_id': instance.trekId,
       'vendor_id': instance.vendorId,
+      'VendorId': instance.vendorIdAlt,
       'batch_id': instance.batchId,
       'coupon_id': instance.couponId,
       'total_travelers': instance.totalTravelers,
@@ -93,9 +93,9 @@ Map<String, dynamic> _$$BookingHistoryDataImplToJson(
       'createdAt': instance.createdAt,
       'updatedAt': instance.updatedAt,
       'user_id': instance.userId,
+      'city_id': instance.cityId,
       'trek': instance.trek,
       'batch': instance.batch,
-      'city': instance.city,
       'travelers': instance.travelers,
       'trek_status': instance.trekStatus,
       'rating_given': instance.ratingGiven,
@@ -119,7 +119,7 @@ _$TrekImpl _$$TrekImplFromJson(Map<String, dynamic> json) => _$TrekImpl(
       mtrId: json['mtr_id'] as String?,
       title: json['title'] as String?,
       description: json['description'] as String?,
-      vendorId: json['vendor_id'] as int?,
+      vendorId: json['VendorId'] as int?,
       destinationId: json['destination_id'] as int?,
       captainId: json['captain_id'] as int?,
       duration: json['duration'] as String?,
@@ -165,7 +165,7 @@ Map<String, dynamic> _$$TrekImplToJson(_$TrekImpl instance) =>
       'mtr_id': instance.mtrId,
       'title': instance.title,
       'description': instance.description,
-      'vendor_id': instance.vendorId,
+      'VendorId': instance.vendorId,
       'destination_id': instance.destinationId,
       'captain_id': instance.captainId,
       'duration': instance.duration,
@@ -199,15 +199,15 @@ Map<String, dynamic> _$$TrekImplToJson(_$TrekImpl instance) =>
 
 _$VendorImpl _$$VendorImplFromJson(Map<String, dynamic> json) => _$VendorImpl(
       id: json['id'] as int?,
-      companyInfo: json['company_info'] == null
-          ? null
-          : CompanyInfo.fromJson(json['company_info'] as Map<String, dynamic>),
+      businessName: json['business_name'] as String?,
+      businessLogo: json['business_logo'] as String?,
     );
 
 Map<String, dynamic> _$$VendorImplToJson(_$VendorImpl instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'company_info': instance.companyInfo,
+      'business_name': instance.businessName,
+      'business_logo': instance.businessLogo,
     };
 
 _$CompanyInfoImpl _$$CompanyInfoImplFromJson(Map<String, dynamic> json) =>

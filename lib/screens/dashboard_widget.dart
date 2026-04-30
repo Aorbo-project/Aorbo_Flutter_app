@@ -1203,7 +1203,7 @@ class _DashboardState extends State<Dashboard>
                                                     children: [
                                                       Container(
                                                         margin: EdgeInsets.only(top: 1.h),
-                                                        height: 5.h,
+                                                        height: 6.h,
                                                         child: ListView.builder(
                                                           key: ValueKey('date_list_${observerState.hashCode}_${first10Dates.length}'),
                                                           scrollDirection: Axis.horizontal,
@@ -1265,6 +1265,7 @@ class _DashboardState extends State<Dashboard>
                                                                 ),
                                                                 child: Column(
                                                                   mainAxisSize: MainAxisSize.min,
+                                                                  mainAxisAlignment: MainAxisAlignment.center,
                                                                   children: [
                                                                     Text(
                                                                       formattedDate,

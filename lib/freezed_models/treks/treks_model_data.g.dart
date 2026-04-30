@@ -93,7 +93,7 @@ _$SearchContextModelImpl _$$SearchContextModelImplFromJson(
       to: json['to'] as String?,
       selectedDate: json['selected_date'],
       weekendMode: json['weekend_mode'] as bool?,
-      weekendDates: (json['weekend_days'] as List<dynamic>?)
+      weekendDates: (json['weekend_dates'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
     );
@@ -105,7 +105,7 @@ Map<String, dynamic> _$$SearchContextModelImplToJson(
       'to': instance.to,
       'selected_date': instance.selectedDate,
       'weekend_mode': instance.weekendMode,
-      'weekend_days': instance.weekendDates,
+      'weekend_dates': instance.weekendDates,
     };
 
 _$TrekDataImpl _$$TrekDataImplFromJson(Map<String, dynamic> json) =>
@@ -140,20 +140,6 @@ Map<String, dynamic> _$$TrekDataImplToJson(_$TrekDataImpl instance) =>
       'batchInfo': instance.batchInfo,
       'badge': instance.badge,
       'imageUrl': instance.imageUrl,
-    };
-
-_$BatchInfoImpl _$$BatchInfoImplFromJson(Map<String, dynamic> json) =>
-    _$BatchInfoImpl(
-      id: json['id'] as int?,
-      startDate: json['startDate'] as String?,
-      availableSlots: json['availableSlots'] as int?,
-    );
-
-Map<String, dynamic> _$$BatchInfoImplToJson(_$BatchInfoImpl instance) =>
-    <String, dynamic>{
-      'id': instance.id,
-      'startDate': instance.startDate,
-      'availableSlots': instance.availableSlots,
     };
 
 _$BadgeImpl _$$BadgeImplFromJson(Map<String, dynamic> json) => _$BadgeImpl(
