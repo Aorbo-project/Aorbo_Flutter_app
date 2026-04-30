@@ -81,7 +81,7 @@ class KnowMoreCard extends StatelessWidget {
                         style: GoogleFonts.poppins(
                             fontSize: FontSize.s13,
                             // fontSize: 13.sp,
-                            fontWeight: FontWeight.w900,
+                            fontWeight: FontWeight.w800,
                             color: textColor ?? CommonColors.blackColor),
                       ),
                       SizedBox(

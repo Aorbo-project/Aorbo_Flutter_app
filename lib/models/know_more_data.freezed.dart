@@ -231,8 +231,8 @@ mixin _$KnowMoreData {
   String? get subtitle => throw _privateConstructorUsedError;
   String? get imagePath => throw _privateConstructorUsedError;
   bool? get hasKnowMore => throw _privateConstructorUsedError;
-  List<String>? get customGradient => throw _privateConstructorUsedError;
-  String? get textColor => throw _privateConstructorUsedError;
+  List<String>? get gradient => throw _privateConstructorUsedError;
+  String? get textColour => throw _privateConstructorUsedError;
   String? get detailedTitle => throw _privateConstructorUsedError;
   String? get detailedDescription => throw _privateConstructorUsedError;
   List<BulletPointModel>? get bulletPoints =>
@@ -256,8 +256,8 @@ abstract class $KnowMoreDataCopyWith<$Res> {
       String? subtitle,
       String? imagePath,
       bool? hasKnowMore,
-      List<String>? customGradient,
-      String? textColor,
+      List<String>? gradient,
+      String? textColour,
       String? detailedTitle,
       String? detailedDescription,
       List<BulletPointModel>? bulletPoints,
@@ -281,8 +281,8 @@ class _$KnowMoreDataCopyWithImpl<$Res, $Val extends KnowMoreData>
     Object? subtitle = freezed,
     Object? imagePath = freezed,
     Object? hasKnowMore = freezed,
-    Object? customGradient = freezed,
-    Object? textColor = freezed,
+    Object? gradient = freezed,
+    Object? textColour = freezed,
     Object? detailedTitle = freezed,
     Object? detailedDescription = freezed,
     Object? bulletPoints = freezed,
@@ -305,13 +305,13 @@ class _$KnowMoreDataCopyWithImpl<$Res, $Val extends KnowMoreData>
           ? _value.hasKnowMore
           : hasKnowMore // ignore: cast_nullable_to_non_nullable
               as bool?,
-      customGradient: freezed == customGradient
-          ? _value.customGradient
-          : customGradient // ignore: cast_nullable_to_non_nullable
+      gradient: freezed == gradient
+          ? _value.gradient
+          : gradient // ignore: cast_nullable_to_non_nullable
               as List<String>?,
-      textColor: freezed == textColor
-          ? _value.textColor
-          : textColor // ignore: cast_nullable_to_non_nullable
+      textColour: freezed == textColour
+          ? _value.textColour
+          : textColour // ignore: cast_nullable_to_non_nullable
               as String?,
       detailedTitle: freezed == detailedTitle
           ? _value.detailedTitle
@@ -346,8 +346,8 @@ abstract class _$$KnowMoreDataImplCopyWith<$Res>
       String? subtitle,
       String? imagePath,
       bool? hasKnowMore,
-      List<String>? customGradient,
-      String? textColor,
+      List<String>? gradient,
+      String? textColour,
       String? detailedTitle,
       String? detailedDescription,
       List<BulletPointModel>? bulletPoints,
@@ -369,8 +369,8 @@ class __$$KnowMoreDataImplCopyWithImpl<$Res>
     Object? subtitle = freezed,
     Object? imagePath = freezed,
     Object? hasKnowMore = freezed,
-    Object? customGradient = freezed,
-    Object? textColor = freezed,
+    Object? gradient = freezed,
+    Object? textColour = freezed,
     Object? detailedTitle = freezed,
     Object? detailedDescription = freezed,
     Object? bulletPoints = freezed,
@@ -393,13 +393,13 @@ class __$$KnowMoreDataImplCopyWithImpl<$Res>
           ? _value.hasKnowMore
           : hasKnowMore // ignore: cast_nullable_to_non_nullable
               as bool?,
-      customGradient: freezed == customGradient
-          ? _value._customGradient
-          : customGradient // ignore: cast_nullable_to_non_nullable
+      gradient: freezed == gradient
+          ? _value._gradient
+          : gradient // ignore: cast_nullable_to_non_nullable
               as List<String>?,
-      textColor: freezed == textColor
-          ? _value.textColor
-          : textColor // ignore: cast_nullable_to_non_nullable
+      textColour: freezed == textColour
+          ? _value.textColour
+          : textColour // ignore: cast_nullable_to_non_nullable
               as String?,
       detailedTitle: freezed == detailedTitle
           ? _value.detailedTitle
@@ -429,13 +429,13 @@ class _$KnowMoreDataImpl implements _KnowMoreData {
       this.subtitle,
       this.imagePath,
       this.hasKnowMore,
-      final List<String>? customGradient,
-      this.textColor,
+      final List<String>? gradient,
+      this.textColour,
       this.detailedTitle,
       this.detailedDescription,
       final List<BulletPointModel>? bulletPoints,
       this.callToAction})
-      : _customGradient = customGradient,
+      : _gradient = gradient,
         _bulletPoints = bulletPoints;
 
   factory _$KnowMoreDataImpl.fromJson(Map<String, dynamic> json) =>
@@ -449,18 +449,18 @@ class _$KnowMoreDataImpl implements _KnowMoreData {
   final String? imagePath;
   @override
   final bool? hasKnowMore;
-  final List<String>? _customGradient;
+  final List<String>? _gradient;
   @override
-  List<String>? get customGradient {
-    final value = _customGradient;
+  List<String>? get gradient {
+    final value = _gradient;
     if (value == null) return null;
-    if (_customGradient is EqualUnmodifiableListView) return _customGradient;
+    if (_gradient is EqualUnmodifiableListView) return _gradient;
     // ignore: implicit_dynamic_type
     return EqualUnmodifiableListView(value);
   }
 
   @override
-  final String? textColor;
+  final String? textColour;
   @override
   final String? detailedTitle;
   @override
@@ -480,7 +480,7 @@ class _$KnowMoreDataImpl implements _KnowMoreData {
 
   @override
   String toString() {
-    return 'KnowMoreData(title: $title, subtitle: $subtitle, imagePath: $imagePath, hasKnowMore: $hasKnowMore, customGradient: $customGradient, textColor: $textColor, detailedTitle: $detailedTitle, detailedDescription: $detailedDescription, bulletPoints: $bulletPoints, callToAction: $callToAction)';
+    return 'KnowMoreData(title: $title, subtitle: $subtitle, imagePath: $imagePath, hasKnowMore: $hasKnowMore, gradient: $gradient, textColour: $textColour, detailedTitle: $detailedTitle, detailedDescription: $detailedDescription, bulletPoints: $bulletPoints, callToAction: $callToAction)';
   }
 
   @override
@@ -495,10 +495,9 @@ class _$KnowMoreDataImpl implements _KnowMoreData {
                 other.imagePath == imagePath) &&
             (identical(other.hasKnowMore, hasKnowMore) ||
                 other.hasKnowMore == hasKnowMore) &&
-            const DeepCollectionEquality()
-                .equals(other._customGradient, _customGradient) &&
-            (identical(other.textColor, textColor) ||
-                other.textColor == textColor) &&
+            const DeepCollectionEquality().equals(other._gradient, _gradient) &&
+            (identical(other.textColour, textColour) ||
+                other.textColour == textColour) &&
             (identical(other.detailedTitle, detailedTitle) ||
                 other.detailedTitle == detailedTitle) &&
             (identical(other.detailedDescription, detailedDescription) ||
@@ -517,8 +516,8 @@ class _$KnowMoreDataImpl implements _KnowMoreData {
       subtitle,
       imagePath,
       hasKnowMore,
-      const DeepCollectionEquality().hash(_customGradient),
-      textColor,
+      const DeepCollectionEquality().hash(_gradient),
+      textColour,
       detailedTitle,
       detailedDescription,
       const DeepCollectionEquality().hash(_bulletPoints),
@@ -544,8 +543,8 @@ abstract class _KnowMoreData implements KnowMoreData {
       final String? subtitle,
       final String? imagePath,
       final bool? hasKnowMore,
-      final List<String>? customGradient,
-      final String? textColor,
+      final List<String>? gradient,
+      final String? textColour,
       final String? detailedTitle,
       final String? detailedDescription,
       final List<BulletPointModel>? bulletPoints,
@@ -563,9 +562,9 @@ abstract class _KnowMoreData implements KnowMoreData {
   @override
   bool? get hasKnowMore;
   @override
-  List<String>? get customGradient;
+  List<String>? get gradient;
   @override
-  String? get textColor;
+  String? get textColour;
   @override
   String? get detailedTitle;
   @override

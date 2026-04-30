@@ -421,7 +421,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
         onPressed: () async {
           await _userC.getUserProfile();
           _trekC.trekBatchId.value =
-              _trekC.trekDetailData.value.batchInfo?.id ?? 0;
+              _trekC.trekDetailData.value.batchId ?? 0;
           Get.toNamed('/traveller-info');
         },
         gradient: CommonColors.filterGradient,

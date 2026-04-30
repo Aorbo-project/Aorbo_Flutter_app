@@ -200,39 +200,39 @@ class _TopTreksCardState extends State<TopTreksCard>
                         fit: BoxFit.cover,
                       ),
                     ),
-                    Positioned(
-                      top: 0.5.h,
-                      right: 0.5.h,
-                      child: SizedBox(
-                        width: 4.5.h,
-                        height: 4.5.h,
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: _handleFavoriteTap,
-                            borderRadius: BorderRadius.circular(2.25.h),
-                            child: AnimatedBuilder(
-                              animation: _scaleAnimation,
-                              builder: (context, child) {
-                                return Transform.scale(
-                                  scale: _scaleAnimation.value,
-                                  child: Icon(
-                                    widget.isFavorite
-                                        ? Icons.favorite
-                                        : Icons.favorite_border,
-                                    key: _heartIconKey,
-                                    size: 2.5.h,
-                                    color: widget.isFavorite
-                                        ? CommonColors.favColor
-                                        : CommonColors.whiteColor,
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+                    // Positioned(
+                    //   top: 0.5.h,
+                    //   right: 0.5.h,
+                    //   child: SizedBox(
+                    //     width: 4.5.h,
+                    //     height: 4.5.h,
+                    //     child: Material(
+                    //       color: Colors.transparent,
+                    //       child: InkWell(
+                    //         onTap: _handleFavoriteTap,
+                    //         borderRadius: BorderRadius.circular(2.25.h),
+                    //         child: AnimatedBuilder(
+                    //           animation: _scaleAnimation,
+                    //           builder: (context, child) {
+                    //             return Transform.scale(
+                    //               scale: _scaleAnimation.value,
+                    //               child: Icon(
+                    //                 widget.isFavorite
+                    //                     ? Icons.favorite
+                    //                     : Icons.favorite_border,
+                    //                 key: _heartIconKey,
+                    //                 size: 2.5.h,
+                    //                 color: widget.isFavorite
+                    //                     ? CommonColors.favColor
+                    //                     : CommonColors.whiteColor,
+                    //               ),
+                    //             );
+                    //           },
+                    //         ),
+                    //       ),
+                    //     ),
+                    //   ),
+                    // ),
                   ],
                 ),
               ),
@@ -254,10 +254,10 @@ class _TopTreksCardState extends State<TopTreksCard>
                           textScaler: const TextScaler.linear(1.0),
                           style: widget.titleStyle ??
                               GoogleFonts.poppins(
-                                fontSize: FontSize.s17,
-                                fontWeight: FontWeight.w500,
-                                color:
-                                    widget.textColor ?? CommonColors.blackColor,
+                                  fontSize: FontSize.s13,
+                                  // fontSize: 13.sp,
+                                  fontWeight: FontWeight.w800,
+                                  color: widget.textColor ?? CommonColors.blackColor,
                                 height: 1.2,
                               ),
                           maxLines: 1,
@@ -270,7 +270,7 @@ class _TopTreksCardState extends State<TopTreksCard>
                           textScaler: const TextScaler.linear(1.0),
                           style: widget.descriptionStyle ??
                               TextStyle(
-                                fontSize: FontSize.s7,
+                                fontSize: FontSize.s8,
                                 color:
                                     widget.textColor ?? CommonColors.blackColor,
                                 height: 1.3,

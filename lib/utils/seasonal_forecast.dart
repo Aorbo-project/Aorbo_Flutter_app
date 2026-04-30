@@ -1,3 +1,5 @@
+import 'package:arobo_app/models/seasonal_forecast_data.dart';
+import 'package:arobo_app/utils/app_theme.dart';
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/common_images.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
@@ -11,14 +13,18 @@ class SeasonalForecast extends StatelessWidget {
   final String title;
   final String description;
   final String imagePath;
-  final Color gradientColors;
+  final LinearGradient? gradient;
+  final Color textColour;
+  final TitleStylingModel? titleStylingModel;
 
   const SeasonalForecast({
     super.key,
     required this.title,
     required this.description,
     required this.imagePath,
-    required this.gradientColors,
+    required this.gradient,
+    required this.textColour,
+    required this.titleStylingModel
   });
 
   @override
@@ -50,11 +56,11 @@ class SeasonalForecast extends StatelessWidget {
               top: 1.h,
               bottom: 1.h,
             ),
-            decoration: const BoxDecoration(
-              color: Color(0xFF90CAF9),
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(20),
+            decoration: BoxDecoration(
+              gradient: AppTheme.customGradient(titleStylingModel?.gradient),
+              borderRadius: const BorderRadius.only(
                 topRight: Radius.circular(20),
+                topLeft: Radius.circular(20),
               ),
             ),
             child: Row(
@@ -65,19 +71,17 @@ class SeasonalForecast extends StatelessWidget {
                   margin: EdgeInsets.only(left: 3.w),
                   child: Text(
                     title,
+                    maxLines: 1,overflow: TextOverflow.ellipsis,
                     textScaler: const TextScaler.linear(1.0),
                     style: GoogleFonts.poppins(
                       fontSize: FontSize.s11,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.hexToColor(titleStylingModel?.textColour),
                     ),
                   ),
                 ),
-                SvgPicture.asset(
-                  CommonImages.snow,
-                  height: 2.5.h,
-                  width: 2.5.h,
-                )
+                CustomNetworkImage(imageUrl: titleStylingModel?.icon ?? "",height: 2.5.h,
+                  width: 2.5.h,)
               ],
             ),
           ),
@@ -86,12 +90,7 @@ class SeasonalForecast extends StatelessWidget {
           Container(
             padding: EdgeInsets.all(2.w),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                stops: [0.0, 1],
-                colors: [Colors.white, gradientColors],
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-              ),
+              gradient: gradient,
               borderRadius: const BorderRadius.only(
                 bottomLeft: Radius.circular(20),
                 bottomRight: Radius.circular(20),
@@ -127,11 +126,12 @@ class SeasonalForecast extends StatelessWidget {
                       children: [
                         Text(
                           description,
+                          maxLines: 3,overflow: TextOverflow.ellipsis,
                           textScaler: const TextScaler.linear(1.0),
                           style: GoogleFonts.poppins(
                             fontSize: FontSize.s9,
                             fontWeight: FontWeight.w400,
-                            color: CommonColors.blackColor,
+                            color: textColour,
                             height: 1.6,
                           ),
                         ),

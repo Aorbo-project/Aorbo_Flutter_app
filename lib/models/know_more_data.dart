@@ -23,8 +23,8 @@ class KnowMoreData with _$KnowMoreData {
     String? subtitle,
     String? imagePath,
     bool? hasKnowMore,
-    List<String>? customGradient,
-    String? textColor,
+    List<String>? gradient,
+    String? textColour,
     String? detailedTitle,
     String? detailedDescription,
     List<BulletPointModel>? bulletPoints,
@@ -33,28 +33,7 @@ class KnowMoreData with _$KnowMoreData {
 
   factory KnowMoreData.fromJson(Map<String, dynamic> json) => _$KnowMoreDataFromJson(json);
 
-  static KnowMoreData get dummy => KnowMoreData(
-    title: "New Feature",
-    subtitle: "Check out what's new",
-    imagePath: "assets/images/sample.png",
-    hasKnowMore: true,
-    customGradient: ["#FF5733", "#FFC300"],
-    textColor: "#FFFFFF",
-    detailedTitle: "Amazing Update",
-    detailedDescription:
-    "We’ve introduced new features to improve your experience.",
-    bulletPoints: [
-      BulletPointModel(
-        title: "Fast",
-        description: "Experience faster performance",
-      ),
-      BulletPointModel(
-        title: "Secure",
-        description: "Improved security features",
-      ),
-    ],
-    callToAction: "Explore Now",
-  );
+
 
 }
 

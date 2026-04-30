@@ -38,13 +38,17 @@ class SeasonalForecastScreen extends StatelessWidget {
         final seasonalForcastLoading = _dashboardC
             .seasonalForcastObserver.value
             .maybeWhen(loading: (data) => true, orElse: () => false);
+
         List<SeasonalForecastData>? seasonalForecastData = _dashboardC
             .seasonalForcastObserver.value
             .maybeWhen(
-          success: (seasonalForcastResponse) =>
-          (seasonalForcastResponse
-          as SeasonalForecastDataResponseModel)
-              .data,
+          success: (seasonalForcastResponse) {
+            return [
+              SeasonalForecastData(title:"Puri SUMMER",description: "From Serene trails to thrilling climbs, find treksthat match your vibes !",imagePath: "https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/man%20in%20front%20of%20the%20house%20in%20winter%20forest%20(1).png?alt=media&token=f889af68-4355-4dae-9289-138db1dfb67b", textColour: "#35323b",gradient: ["#F7EB68","#FFEF3E","#FFEF3E"],styling: StylingModel(title: TitleStylingModel(icon:"https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/Winter.png?alt=media&token=e0098e5c-ba45-4af2-8a54-f1eb8d41874f" ,textColour: "#ffffff",gradient: ["#9f88e0","#9e87e1","#7a56e1"]))),
+              SeasonalForecastData(title:"Munnar",description: "From Serene trails to thrilling climbs, find treksthat match your vibes !",imagePath: "https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/man%20in%20front%20of%20the%20house%20in%20winter%20forest%20(1).png?alt=media&token=f889af68-4355-4dae-9289-138db1dfb67b",textColour: "#000000",gradient: ["#9f88e0","#9e87e1","#7a56e1"],styling: StylingModel(title: TitleStylingModel(icon: "https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/Winter.png?alt=media&token=e0098e5c-ba45-4af2-8a54-f1eb8d41874f", textColour: "#35323b",gradient: ["#F7EB68","#FFEF3E","#FFEF3E"]))),
+            ];
+          return (seasonalForcastResponse as SeasonalForecastDataResponseModel).data;
+          },
           error: (sc) => [],
           orElse: () => [
             SeasonalForecastData(),
@@ -53,6 +57,7 @@ class SeasonalForecastScreen extends StatelessWidget {
             SeasonalForecastData()
           ],
         );
+
         if (seasonalForecastData?.isEmpty == true) return SizedBox();
          return ListView.builder(
           padding: EdgeInsets.all(2.h),
@@ -67,7 +72,9 @@ class SeasonalForecastScreen extends StatelessWidget {
                   title: cardData?.title ?? "",
                   description: cardData?.description ?? "",
                   imagePath: cardData?.imagePath ?? "",
-                  gradientColors:AppTheme.hexToColor(cardData?.color),
+                  textColour:AppTheme.hexToColor(cardData?.textColour),
+                  gradient: AppTheme.customGradient(cardData?.gradient),
+                  titleStylingModel: cardData?.styling?.title,
                 ).withShimmerAi(loading: seasonalForcastLoading),
               ),
             );

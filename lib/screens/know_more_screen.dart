@@ -50,7 +50,14 @@ class _KnowMoreScreenState extends State<KnowMoreScreen> {
         ),
       ),
       body: Obx(() {
-        List<KnowMoreData>? knowMoreCardsData = _dashboardC.whatsNewObserver.value.maybeWhen(success: (whatsNewResponse) => (whatsNewResponse as WhatsNewDataResponseModel).data,error: (sc) => [],orElse: () => [KnowMoreData(),KnowMoreData(),KnowMoreData(),KnowMoreData()]);
+         List<KnowMoreData>? knowMoreCardsData = _dashboardC.whatsNewObserver.value.maybeWhen(success: (whatsNewResponse) {
+           return [
+             KnowMoreData(title:"Variety of Treks",subtitle: "From Serene trails to thrilling climbs, find treksthat match your vibes !",hasKnowMore: false,imagePath: "https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/knowmore1.png?alt=media&token=367dcaa7-f0f6-4bb3-9d73-a67489aa77a8",textColour: "#000000",gradient: ["#F7EB68","#FFEF3E","#FFEF3E"]),
+             KnowMoreData(title:"Countless Organizers",subtitle: "Choose from an extensive  network of trusted trek  organizers, All in one place !",hasKnowMore: false,imagePath: "https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/knowmore1.png?alt=media&token=367dcaa7-f0f6-4bb3-9d73-a67489aa77a8",textColour: "#FFFFFF",gradient: ["#FFFFFF","#B40000","#B40000"])
+           ];
+
+           return (whatsNewResponse as WhatsNewDataResponseModel).data;},error: (sc) => [],orElse: () => [KnowMoreData(),KnowMoreData(),KnowMoreData(),KnowMoreData()]);
+
 
          return ListView.builder(
           controller: _scrollController,
@@ -66,7 +73,7 @@ class _KnowMoreScreenState extends State<KnowMoreScreen> {
               ),
               height: 22.h,
               child: KnowMoreCard(
-                customGradient: AppTheme.customGradient(cardData?.customGradient ?? []),
+                customGradient: AppTheme.customGradient(cardData?.gradient ?? []),
                 imagePath: cardData?.imagePath ?? "",
                 title: cardData?.title ?? "",
                 subtitle: cardData?.subtitle ?? "",
@@ -82,7 +89,7 @@ class _KnowMoreScreenState extends State<KnowMoreScreen> {
                 },
                 // width: MediaQuery.of(context).size.width * 0.8,
                 // height: MediaQuery.of(context).size.height * 0.20,
-                textColor: AppTheme.hexToColor(cardData?.textColor),
+                textColor: AppTheme.hexToColor(cardData?.textColour),
               ),
             );
           },

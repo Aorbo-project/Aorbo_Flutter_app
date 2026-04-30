@@ -604,7 +604,8 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
                 child: CommonDiscountCard(
                   title: coupon.title ?? '',
                   subtitle: coupon.description ?? '',
-                  color: AppTheme.hexToColor(coupon.color ?? '#3B5BDB'),
+                  gradient: coupon.gradient,
+                  textColour: coupon.textColour ?? '#3B5BDB',
                   code: coupon.code ?? '',
                   offerAmount: coupon.discountValue ?? '',
                   imagePath: coupon.imagePath ??

@@ -24,6 +24,7 @@ class TopTreksData with _$TopTreksData {
     String? description,
     String? imagePath,
     List<String>? gradient,
+    String? textColour,
     bool? isFavorite
   }) = _TopTreksData;
 

@@ -278,7 +278,8 @@ mixin _$CouponCardData {
   String? get description => throw _privateConstructorUsedError;
   @JsonKey(name: 'image_url')
   String? get imagePath => throw _privateConstructorUsedError;
-  String? get color => throw _privateConstructorUsedError;
+  List<String>? get gradient => throw _privateConstructorUsedError;
+  String? get textColour => throw _privateConstructorUsedError;
   String? get code => throw _privateConstructorUsedError;
   @JsonKey(name: 'discount_type')
   String? get discountType => throw _privateConstructorUsedError;
@@ -308,7 +309,8 @@ abstract class $CouponCardDataCopyWith<$Res> {
       String? title,
       String? description,
       @JsonKey(name: 'image_url') String? imagePath,
-      String? color,
+      List<String>? gradient,
+      String? textColour,
       String? code,
       @JsonKey(name: 'discount_type') String? discountType,
       @JsonKey(name: 'discount_value') String? discountValue,
@@ -334,7 +336,8 @@ class _$CouponCardDataCopyWithImpl<$Res, $Val extends CouponCardData>
     Object? title = freezed,
     Object? description = freezed,
     Object? imagePath = freezed,
-    Object? color = freezed,
+    Object? gradient = freezed,
+    Object? textColour = freezed,
     Object? code = freezed,
     Object? discountType = freezed,
     Object? discountValue = freezed,
@@ -359,9 +362,13 @@ class _$CouponCardDataCopyWithImpl<$Res, $Val extends CouponCardData>
           ? _value.imagePath
           : imagePath // ignore: cast_nullable_to_non_nullable
               as String?,
-      color: freezed == color
-          ? _value.color
-          : color // ignore: cast_nullable_to_non_nullable
+      gradient: freezed == gradient
+          ? _value.gradient
+          : gradient // ignore: cast_nullable_to_non_nullable
+              as List<String>?,
+      textColour: freezed == textColour
+          ? _value.textColour
+          : textColour // ignore: cast_nullable_to_non_nullable
               as String?,
       code: freezed == code
           ? _value.code
@@ -404,7 +411,8 @@ abstract class _$$CouponCardDataImplCopyWith<$Res>
       String? title,
       String? description,
       @JsonKey(name: 'image_url') String? imagePath,
-      String? color,
+      List<String>? gradient,
+      String? textColour,
       String? code,
       @JsonKey(name: 'discount_type') String? discountType,
       @JsonKey(name: 'discount_value') String? discountValue,
@@ -428,7 +436,8 @@ class __$$CouponCardDataImplCopyWithImpl<$Res>
     Object? title = freezed,
     Object? description = freezed,
     Object? imagePath = freezed,
-    Object? color = freezed,
+    Object? gradient = freezed,
+    Object? textColour = freezed,
     Object? code = freezed,
     Object? discountType = freezed,
     Object? discountValue = freezed,
@@ -453,9 +462,13 @@ class __$$CouponCardDataImplCopyWithImpl<$Res>
           ? _value.imagePath
           : imagePath // ignore: cast_nullable_to_non_nullable
               as String?,
-      color: freezed == color
-          ? _value.color
-          : color // ignore: cast_nullable_to_non_nullable
+      gradient: freezed == gradient
+          ? _value._gradient
+          : gradient // ignore: cast_nullable_to_non_nullable
+              as List<String>?,
+      textColour: freezed == textColour
+          ? _value.textColour
+          : textColour // ignore: cast_nullable_to_non_nullable
               as String?,
       code: freezed == code
           ? _value.code
@@ -493,7 +506,8 @@ class _$CouponCardDataImpl implements _CouponCardData {
       this.title,
       this.description,
       @JsonKey(name: 'image_url') this.imagePath,
-      this.color,
+      final List<String>? gradient,
+      this.textColour,
       this.code,
       @JsonKey(name: 'discount_type') this.discountType,
       @JsonKey(name: 'discount_value') this.discountValue,
@@ -501,7 +515,8 @@ class _$CouponCardDataImpl implements _CouponCardData {
       final List<String>? termsAndConditions,
       @JsonKey(name: 'is_expired') this.isExpired,
       @JsonKey(name: 'is_active') this.isActive})
-      : _termsAndConditions = termsAndConditions;
+      : _gradient = gradient,
+        _termsAndConditions = termsAndConditions;
 
   factory _$CouponCardDataImpl.fromJson(Map<String, dynamic> json) =>
       _$$CouponCardDataImplFromJson(json);
@@ -515,8 +530,18 @@ class _$CouponCardDataImpl implements _CouponCardData {
   @override
   @JsonKey(name: 'image_url')
   final String? imagePath;
+  final List<String>? _gradient;
   @override
-  final String? color;
+  List<String>? get gradient {
+    final value = _gradient;
+    if (value == null) return null;
+    if (_gradient is EqualUnmodifiableListView) return _gradient;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(value);
+  }
+
+  @override
+  final String? textColour;
   @override
   final String? code;
   @override
@@ -546,7 +571,7 @@ class _$CouponCardDataImpl implements _CouponCardData {
 
   @override
   String toString() {
-    return 'CouponCardData(id: $id, title: $title, description: $description, imagePath: $imagePath, color: $color, code: $code, discountType: $discountType, discountValue: $discountValue, termsAndConditions: $termsAndConditions, isExpired: $isExpired, isActive: $isActive)';
+    return 'CouponCardData(id: $id, title: $title, description: $description, imagePath: $imagePath, gradient: $gradient, textColour: $textColour, code: $code, discountType: $discountType, discountValue: $discountValue, termsAndConditions: $termsAndConditions, isExpired: $isExpired, isActive: $isActive)';
   }
 
   @override
@@ -560,7 +585,9 @@ class _$CouponCardDataImpl implements _CouponCardData {
                 other.description == description) &&
             (identical(other.imagePath, imagePath) ||
                 other.imagePath == imagePath) &&
-            (identical(other.color, color) || other.color == color) &&
+            const DeepCollectionEquality().equals(other._gradient, _gradient) &&
+            (identical(other.textColour, textColour) ||
+                other.textColour == textColour) &&
             (identical(other.code, code) || other.code == code) &&
             (identical(other.discountType, discountType) ||
                 other.discountType == discountType) &&
@@ -582,7 +609,8 @@ class _$CouponCardDataImpl implements _CouponCardData {
       title,
       description,
       imagePath,
-      color,
+      const DeepCollectionEquality().hash(_gradient),
+      textColour,
       code,
       discountType,
       discountValue,
@@ -611,7 +639,8 @@ abstract class _CouponCardData implements CouponCardData {
       final String? title,
       final String? description,
       @JsonKey(name: 'image_url') final String? imagePath,
-      final String? color,
+      final List<String>? gradient,
+      final String? textColour,
       final String? code,
       @JsonKey(name: 'discount_type') final String? discountType,
       @JsonKey(name: 'discount_value') final String? discountValue,
@@ -633,7 +662,9 @@ abstract class _CouponCardData implements CouponCardData {
   @JsonKey(name: 'image_url')
   String? get imagePath;
   @override
-  String? get color;
+  List<String>? get gradient;
+  @override
+  String? get textColour;
   @override
   String? get code;
   @override

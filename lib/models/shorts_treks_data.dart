@@ -19,7 +19,10 @@ class ShortsTreksData with _$ShortsTreksData {
   const factory ShortsTreksData({
     String? title,
     String? description,
-    String? imagePath
+    String? imagePath,
+    String? videoPath,
+    String? shortVideoPath,
+    String? textColour
   }) = _ShortsTreksData;
 
   factory ShortsTreksData.fromJson(Map<String, dynamic> json) => _$ShortsTreksDataFromJson(json);
@@ -28,6 +31,7 @@ class ShortsTreksData with _$ShortsTreksData {
     title: "Everest Base Camp",
     description: "A breathtaking trek to the base of the world's highest peak.",
     imagePath: "assets/images/everest.png",
+
   );
 }
 

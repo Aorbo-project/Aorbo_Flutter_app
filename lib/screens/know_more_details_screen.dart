@@ -1,5 +1,6 @@
 import 'package:arobo_app/models/know_more_data.dart';
 import 'package:arobo_app/utils/app_theme.dart';
+import 'package:arobo_app/utils/auth_utils.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:arobo_app/widgets/custom_network_image.dart';
 import 'package:flutter/material.dart';
@@ -47,15 +48,8 @@ class KnowMoreDetailsScreen extends StatelessWidget {
               width: double.infinity,
               height: 20.h,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                  // stops: [0.0, 0.5, 1],
-                  colors: (knowMoreData?.customGradient?.isEmpty == true) ? [
-                  Color(0xFFCF6565),
-                    Color(0xFFCF6565),
-                    ] :  (knowMoreData?.customGradient?.map((color) => AppTheme.hexToColor(color)).toList() ?? [])
-                )
+                gradient: AppTheme.customGradient(
+                    knowMoreData?.gradient ?? [])
               ),
               child: Stack(
                 children: [
@@ -120,7 +114,7 @@ class KnowMoreDetailsScreen extends StatelessWidget {
                           style: GoogleFonts.poppins(
                             fontSize: FontSize.s12,
                             fontWeight: FontWeight.w400,
-                            color:AppTheme.hexToColor(knowMoreData?.textColor ?? ""),
+                            color:AppTheme.hexToColor(knowMoreData?.textColour ?? ""),
                           ),
                         ),
                         // SizedBox(height: 1.h),
@@ -129,7 +123,7 @@ class KnowMoreDetailsScreen extends StatelessWidget {
                           style: GoogleFonts.poppins(
                             fontSize: FontSize.s14,
                             fontWeight: FontWeight.w600,
-                            color:AppTheme.hexToColor(knowMoreData?.textColor ?? ""),
+                            color:AppTheme.hexToColor(knowMoreData?.textColour ?? ""),
                           ),
                         ),
                       ],

@@ -77,7 +77,7 @@ class _TravellerInformationScreenState
 
     _trekC.calculateFareRequestModel.value =
         _trekC.calculateFareRequestModel.value.copyWith(
-      batchId: travelData.batchInfo?.id ?? 1,
+      batchId: travelData.batchId ?? 1,
       travelerCount: 1,
       addInsurance: false,
       addFreeCancellationProtection: false,
@@ -800,7 +800,7 @@ class _TravellerInformationScreenState
                                     Text('FROM', textScaler: const TextScaler.linear(1.0),
                                       style: TextStyle(fontFamily: 'Poppins', fontSize: FontSize.s7, fontWeight: FontWeight.w600, color: _TI.inkLight, letterSpacing: 0.8)),
                                     SizedBox(height: 0.3.h),
-                                    Text(_formatDate(travelData.batchInfo?.startDate), textScaler: const TextScaler.linear(1.0),
+                                    Text(_formatDate(travelData?.startDate), textScaler: const TextScaler.linear(1.0),
                                       style: TextStyle(fontFamily: 'Poppins', fontSize: FontSize.s11, fontWeight: FontWeight.w700, color: _TI.ink)),
                                     Text(_dashboardC.fromController.value.text, textScaler: const TextScaler.linear(1.0),
                                       style: TextStyle(fontFamily: 'Poppins', fontSize: FontSize.s9, color: _TI.inkMid)),
@@ -831,7 +831,7 @@ class _TravellerInformationScreenState
                                     Text('TO', textScaler: const TextScaler.linear(1.0),
                                       style: TextStyle(fontFamily: 'Poppins', fontSize: FontSize.s7, fontWeight: FontWeight.w600, color: _TI.inkLight, letterSpacing: 0.8)),
                                     SizedBox(height: 0.3.h),
-                                    Text(_calculateEndDate(travelData.batchInfo?.startDate, travelData.durationDays),
+                                    Text(_calculateEndDate(travelData?.startDate, travelData.durationDays),
                                       textScaler: const TextScaler.linear(1.0),
                                       style: TextStyle(fontFamily: 'Poppins', fontSize: FontSize.s11, fontWeight: FontWeight.w700, color: _TI.ink)),
                                     Text(_dashboardC.toController.value.text, textScaler: const TextScaler.linear(1.0),
@@ -903,18 +903,18 @@ class _TravellerInformationScreenState
                                         style: TextStyle(fontFamily: 'Poppins', fontSize: FontSize.s16, fontWeight: FontWeight.w700, color: _TI.ink)),
                                     ),
                                     _counterBtn(Icons.add, () {
-                                      if (adultCount < (travelData.batchInfo?.availableSlots ?? 0)) {
+                                      if (adultCount < (travelData?.availableSlots ?? 0)) {
                                         _trekC.calculateFareRequestModel.value =
                                             _trekC.calculateFareRequestModel.value.copyWith(travelerCount: adultCount + 1);
                                       } else {
                                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                          content: Text('Maximum available slots reached (${travelData.batchInfo?.availableSlots ?? 0})', textScaler: const TextScaler.linear(1.0)),
+                                          content: Text('Maximum available slots reached (${travelData?.availableSlots ?? 0})', textScaler: const TextScaler.linear(1.0)),
                                           backgroundColor: CommonColors.appRedColor,
                                           duration: const Duration(seconds: 2),
                                         ));
                                       }
                                       _trekC.trekPersonCount.value = adultCount;
-                                    }, active: adultCount < (travelData.batchInfo?.availableSlots ?? 0)),
+                                    }, active: adultCount < (travelData?.availableSlots ?? 0)),
                                   ],
                                 );
                               }),
@@ -1190,7 +1190,7 @@ class _TravellerInformationScreenState
                   SizedBox(height: 2.h),
 
                   // ── Payment Options card ──────────────────────────────
-                  _card(
+                  if (travelData.cancellationPolicy?.id != 1) _card(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -1199,19 +1199,17 @@ class _TravellerInformationScreenState
                         Text("Lock your spot. Adventure's calling!", textScaler: const TextScaler.linear(1.0),
                           style: TextStyle(fontFamily: 'Poppins', fontSize: FontSize.s9, color: _TI.inkMid)),
                         SizedBox(height: 2.h),
-                        if (travelData.cancellationPolicy?.id != 1) ...[
-                          _paymentOption(
-                            title: 'Pay ₹999',
-                            subtitle: _getTotalFareSubtitleText(),
-                            isSelected: _selectedPaymentOption == 'flexible',
-                            onTap: () {
-                              setState(() => _selectedPaymentOption = 'flexible');
-                              _trekC.calculateFareRequestModel.value =
-                                  _trekC.calculateFareRequestModel.value.copyWith(cancellationPolicyType: 'flexible');
-                            },
-                          ),
-                          SizedBox(height: 1.2.h),
-                        ],
+                        _paymentOption(
+                          title: 'Pay ₹999',
+                          subtitle: _getTotalFareSubtitleText(),
+                          isSelected: _selectedPaymentOption == 'flexible',
+                          onTap: () {
+                            setState(() => _selectedPaymentOption = 'flexible');
+                            _trekC.calculateFareRequestModel.value =
+                                _trekC.calculateFareRequestModel.value.copyWith(cancellationPolicyType: 'flexible');
+                          },
+                        ),
+                        SizedBox(height: 1.2.h),
                         _paymentOption(
                           title: 'Pay Full Payment',
                           subtitle: 'Secure your booking with full payment',

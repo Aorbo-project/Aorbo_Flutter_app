@@ -34,6 +34,7 @@ _$TopTreksDataImpl _$$TopTreksDataImplFromJson(Map<String, dynamic> json) =>
       gradient: (json['gradient'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
+      textColour: json['textColour'] as String?,
       isFavorite: json['isFavorite'] as bool?,
     );
 
@@ -43,5 +44,6 @@ Map<String, dynamic> _$$TopTreksDataImplToJson(_$TopTreksDataImpl instance) =>
       'description': instance.description,
       'imagePath': instance.imagePath,
       'gradient': instance.gradient,
+      'textColour': instance.textColour,
       'isFavorite': instance.isFavorite,
     };

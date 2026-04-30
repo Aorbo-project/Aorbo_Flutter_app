@@ -32,6 +32,9 @@ _$ShortsTreksDataImpl _$$ShortsTreksDataImplFromJson(
       title: json['title'] as String?,
       description: json['description'] as String?,
       imagePath: json['imagePath'] as String?,
+      videoPath: json['videoPath'] as String?,
+      shortVideoPath: json['shortVideoPath'] as String?,
+      textColour: json['textColour'] as String?,
     );
 
 Map<String, dynamic> _$$ShortsTreksDataImplToJson(
@@ -40,4 +43,7 @@ Map<String, dynamic> _$$ShortsTreksDataImplToJson(
       'title': instance.title,
       'description': instance.description,
       'imagePath': instance.imagePath,
+      'videoPath': instance.videoPath,
+      'shortVideoPath': instance.shortVideoPath,
+      'textColour': instance.textColour,
     };

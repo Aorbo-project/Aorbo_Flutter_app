@@ -701,7 +701,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                             _dashboardC.fromController.value.text,
                             toLocation: _dashboardC.toController.value.text,
                             departureDate:
-                            travelData.batchInfo?.startDate ?? '-',
+                            travelData?.startDate ?? '-',
                             duration:
                             '${travelData.durationDays}D ${travelData.durationNights}N',
                             email: _userC.userProfileData.value.customer?.email ?? '-',

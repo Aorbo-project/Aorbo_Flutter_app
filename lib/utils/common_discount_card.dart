@@ -1,3 +1,4 @@
+import 'package:arobo_app/utils/app_theme.dart';
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:arobo_app/widgets/custom_network_image.dart';
@@ -10,7 +11,8 @@ import 'package:get/get.dart';
 class CommonDiscountCard extends StatelessWidget {
   final String title;
   final String subtitle;
-  final Color color;
+  final List<String>? gradient;
+  final String textColour;
   final String code;
   final String offerAmount;
   final String imagePath;
@@ -24,7 +26,8 @@ class CommonDiscountCard extends StatelessWidget {
     super.key,
     required this.title,
     required this.subtitle,
-    required this.color,
+    required this.gradient,
+    required this.textColour,
     required this.code,
     required this.offerAmount,
     required this.imagePath,
@@ -45,7 +48,8 @@ class CommonDiscountCard extends StatelessWidget {
             'discountCard': DiscountCardModel(
               title: title,
               subtitle: subtitle,
-              color: color,
+              gradient:gradient,
+              textColour: textColour,
               code: code,
               offerAmount: offerAmount,
               imagePath: imagePath,
@@ -63,7 +67,7 @@ class CommonDiscountCard extends StatelessWidget {
         clipper: TicketClipper(),
         child: Container(
           // height: 180,
-          decoration: BoxDecoration(color: color),
+          decoration: BoxDecoration(gradient: AppTheme.customGradient(gradient)),
           child: Row(
             children: [
               // Vertical Offer Strip
