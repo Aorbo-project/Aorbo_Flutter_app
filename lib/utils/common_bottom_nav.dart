@@ -1,28 +1,15 @@
 import 'package:arobo_app/controller/dashboard_controller.dart';
-import 'package:arobo_app/screens/bookings_history_screen.dart';
-import 'package:arobo_app/screens/dashboard_widget.dart';
-import 'package:arobo_app/screens/my_account_screen.dart';
 import 'package:arobo_app/utils/common_colors.dart';
-import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
-import 'package:get/get.dart';
 
-// Static Bottom Navigation Widget for quick use
-
-// Original customizable widget (keeping the existing implementation)
 class CommonBottomNav extends StatefulWidget {
   final int selectedIndex;
-  final Function(int)? onIndexChanged; // Optional callback for index changes
+  final Function(int)? onIndexChanged;
   final Color? selectedIconColor;
   final Color? unselectedIconColor;
-  final Color? selectedTextColor;
-  final Color? unselectedTextColor;
-  final Color? backgroundColor;
-  final double? iconSize;
-  final double? fontSize;
-  final EdgeInsetsGeometry? padding;
 
   const CommonBottomNav({
     Key? key,
@@ -30,12 +17,6 @@ class CommonBottomNav extends StatefulWidget {
     this.onIndexChanged,
     this.selectedIconColor,
     this.unselectedIconColor,
-    this.selectedTextColor,
-    this.unselectedTextColor,
-    this.backgroundColor,
-    this.iconSize,
-    this.fontSize,
-    this.padding,
   }) : super(key: key);
 
   @override
@@ -45,54 +26,91 @@ class CommonBottomNav extends StatefulWidget {
 class _CommonBottomNavState extends State<CommonBottomNav> {
   final DashboardController _dashboardC = Get.find<DashboardController>();
 
-  // Get current index based on route
   @override
   Widget build(BuildContext context) {
-    // return Container(
-    //   decoration: BoxDecoration(
-    //     color: backgroundColor ?? CommonColors.whiteColor,
-    //     boxShadow: [
-    //       BoxShadow(
-    //         color: CommonColors.greyColor.withValues(alpha: 0.2),
-    //         blurRadius: 2.w,
-    //         offset: Offset(0, -0.5.h),
-    //       ),
-    //     ],
-    //   ),
-    //   child: Padding(
-    //     padding: padding ??
-    //         EdgeInsets.symmetric(
-    //           horizontal: 4.w,
-    //           vertical: 1.5.h,
-    //         ),
-    //     child: Row(
-    //       mainAxisAlignment: MainAxisAlignment.spaceAround,
-    //       children: items.asMap().entries.map((entry) {
-    //         final index = entry.key;
-    //         final item = entry.value;
-    //         return _buildNavItem(
-    //           label: item.label,
-    //           index: index,
-    //           currentIndex: currentIndex,
-    //           filledIcon: item.filledIcon,
-    //           outlinedIcon: item.outlinedIcon,
-    //         );
-    //       }).toList(),
-    //     ),
-    //   ),
-    // );
-    return BottomNavigationBar(
-      backgroundColor: CommonColors.whiteColor,
-      items: const <BottomNavigationBarItem>[
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-        BottomNavigationBarItem(
-            icon: Icon(Icons.event_available_outlined), label: 'My Bookings'),
-        BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline), label: 'My Account'),
-      ],
-      currentIndex: _dashboardC.selectedScreen.value,
-      selectedItemColor: widget.selectedIconColor,
-      onTap: widget.onIndexChanged,
+    return Container(
+      margin: EdgeInsets.only(
+        left: 4.w,
+        right: 4.w,
+        bottom: 2.h,
+      ),
+      padding: EdgeInsets.symmetric(vertical: 1.2.h),
+      decoration: BoxDecoration(
+        color: CommonColors.whiteColor,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 20,
+            spreadRadius: 2,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Obx(() {
+        int currentIndex = _dashboardC.selectedScreen.value;
+
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildItem(Icons.home_rounded, "Home", 0, currentIndex),
+            _buildItem(Icons.event_available_rounded, "Bookings", 1, currentIndex),
+            _buildItem(Icons.person_rounded, "Account", 2, currentIndex),
+          ],
+        );
+      }),
+    );
+  }
+
+  Widget _buildItem(
+    IconData icon,
+    String label,
+    int index,
+    int currentIndex,
+  ) {
+    bool isSelected = index == currentIndex;
+
+    return GestureDetector(
+      onTap: () {
+        if (widget.onIndexChanged != null) {
+          widget.onIndexChanged!(index);
+        }
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        padding: EdgeInsets.symmetric(
+          horizontal: isSelected ? 4.w : 2.w,
+          vertical: 1.h,
+        ),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? CommonColors.blackColor.withValues(alpha: 1)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(30),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: 20.sp,
+              color: isSelected
+                  ? (widget.selectedIconColor ?? CommonColors.primaryColor)
+                  : (widget.unselectedIconColor ?? Colors.grey),
+            ),
+            if (isSelected) ...[
+              SizedBox(width: 2.w),
+              Text(
+                label,
+                style: GoogleFonts.poppins(
+                  fontSize: 11.sp,
+                  fontWeight: FontWeight.w600,
+                  color: widget.selectedIconColor ?? CommonColors.primaryColor,
+                ),
+              ),
+            ]
+          ],
+        ),
+      ),
     );
   }
 }

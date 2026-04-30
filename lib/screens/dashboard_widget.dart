@@ -1540,24 +1540,24 @@ class _DashboardState extends State<Dashboard>
                   Obx(() {
                     final knowMoreLoading = _dashboardC.whatsNewObserver.value
                         .maybeWhen(loading: (data) => true, orElse: () => false);
-                    List<KnowMoreData>? knowMoreCardsData = [
-                      KnowMoreData(title:"Variety of Treks",subtitle: "From Serene trails to thrilling climbs, find treksthat match your vibes !",hasKnowMore: false,imagePath: "https://firebasestorage.googleapis.com/v0/b/sastastay-1d420.firebasestorage.app/o/knowmore1.png?alt=media&token=32b0be2e-958e-4fd5-8e89-72293ed38cfa",textColor: "#000000",customGradient: ["#F7EB68","#FFEF3E","#FFEF3E"]),
-                      KnowMoreData(title:"Countless Organizers",subtitle: "Choose from an extensive  network of trusted trek  organizers, All in one place !",hasKnowMore: false,imagePath: "https://firebasestorage.googleapis.com/v0/b/sastastay-1d420.firebasestorage.app/o/knowmore1.png?alt=media&token=32b0be2e-958e-4fd5-8e89-72293ed38cfa",textColor: "#FFFFFF",customGradient: ["#FFFFFF","#B40000","#B40000"])
-                    ];
-                    // List<KnowMoreData>? knowMoreCardsData = _dashboardC
-                    //     .whatsNewObserver.value
-                    //     .maybeWhen(
-                    //   success: (whatsNewResponse) =>
-                    //   (whatsNewResponse as WhatsNewDataResponseModel)
-                    //       .data,
-                    //   error: (sc) => [],
-                    //   orElse: () => [
-                    //     KnowMoreData(),
-                    //     KnowMoreData(),
-                    //     KnowMoreData(),
-                    //     KnowMoreData()
-                    //   ],
-                    // );
+                    // List<KnowMoreData>? knowMoreCardsData = [
+                    //   KnowMoreData(title:"Variety of Treks",subtitle: "From Serene trails to thrilling climbs, find treksthat match your vibes !",hasKnowMore: false,imagePath: "https://firebasestorage.googleapis.com/v0/b/sastastay-1d420.firebasestorage.app/o/knowmore1.png?alt=media&token=32b0be2e-958e-4fd5-8e89-72293ed38cfa",textColor: "#000000",customGradient: ["#F7EB68","#FFEF3E","#FFEF3E"]),
+                    //   KnowMoreData(title:"Countless Organizers",subtitle: "Choose from an extensive  network of trusted trek  organizers, All in one place !",hasKnowMore: false,imagePath: "https://firebasestorage.googleapis.com/v0/b/sastastay-1d420.firebasestorage.app/o/knowmore1.png?alt=media&token=32b0be2e-958e-4fd5-8e89-72293ed38cfa",textColor: "#FFFFFF",customGradient: ["#FFFFFF","#B40000","#B40000"])
+                    // ];
+                    List<KnowMoreData>? knowMoreCardsData = _dashboardC
+                        .whatsNewObserver.value
+                        .maybeWhen(
+                      success: (whatsNewResponse) =>
+                      (whatsNewResponse as WhatsNewDataResponseModel)
+                          .data,
+                      error: (sc) => [],
+                      orElse: () => [
+                        KnowMoreData(),
+                        KnowMoreData(),
+                        KnowMoreData(),
+                        KnowMoreData()
+                      ],
+                    );
                     if (knowMoreCardsData?.isEmpty == true) return SizedBox();
                     return Column(
                       children: [
