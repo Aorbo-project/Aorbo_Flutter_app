@@ -33,7 +33,7 @@ class PaymentScreen extends StatefulWidget {
 
 class _PaymentScreenState extends State<PaymentScreen> {
   final DashboardController _dashboardC = Get.find<DashboardController>();
-  final TrekController _trekC = Get.find<TrekController>();
+  final TrekController _trekControllerC = Get.find<TrekController>();
   final UserController _userC = Get.find<UserController>();
 
   String? _couponError = null;
@@ -93,10 +93,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
     var options = {
       'key': BookingConstants.razorpayKey,
-      'order_id': '${_trekC.orderData.value.id}',
+      'order_id': '${_trekControllerC.orderData.value.id}',
       'amount': (finalAmount * 100).toInt(), // Razorpay expects amount in paise
-      'name': '${_trekC.trekDetailData.value.title}',
-      'description': '${_trekC.trekDetailData.value.description}',
+      'name': '${_trekControllerC.trekDetailData.value.title}',
+      'description': '${_trekControllerC.trekDetailData.value.description}',
       'prefill': {
         'contact': '${_userC.userProfileData.value.customer?.phone}',
         'email': '${_userC.userProfileData.value.customer?.email}',
@@ -113,9 +113,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
   /// Handles successful payment response from Razorpay
   /// Updates trek controller and verifies the order
   Future<void> _handlePaymentSuccess(PaymentSuccessResponse response) async {
-    _trekC.orderId.value = response.orderId ?? '';
-    _trekC.paymentId.value = response.paymentId ?? '';
-    _trekC.signature.value = response.signature ?? '';
+    _trekControllerC.orderId.value = response.orderId ?? '';
+    _trekControllerC.paymentId.value = response.paymentId ?? '';
+    _trekControllerC.signature.value = response.signature ?? '';
 
     print("Respose orderId  ${response.orderId ?? ''}");
     print("Respose paymentId  ${response.paymentId ?? ''}");
@@ -123,7 +123,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
 
 
-    await _trekC.verifyTrekOrder(
+    await _trekControllerC.verifyTrekOrder(
       razorpayOrderId: response.orderId ?? '',
       razorpayPaymentId: response.paymentId ?? '',
       razorpaySignature: response.signature ?? ''
@@ -156,11 +156,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
     _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
     _couponController.addListener(_handleTextChange);
     debounce(
-      _trekC.calculateFareRequestModel,
+      _trekControllerC.calculateFareRequestModel,
           (value) {
         // This will be called after 500ms of no changes
         print('Searching for: $value');
-        _trekC.calculateFare();
+        _trekControllerC.calculateFare();
       },
       time: Duration(milliseconds: 500),
     );
@@ -324,8 +324,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           ),
                         ),
                         child: Obx((){
-                          final appliedCoupon = _trekC.calculateFareRequestModel.value.couponCode;
-                          final appliedCouponResponse = _trekC.calculateFareResponseModel.value.maybeWhen(success: (response) => (response as CalculateFareResponseModel).couponDetails,orElse: () => null);
+                          final appliedCoupon = _trekControllerC.calculateFareRequestModel.value.couponCode;
+                          final appliedCouponResponse = _trekControllerC.calculateFareResponseModel.value.maybeWhen(success: (response) => (response as CalculateFareResponseModel).couponDetails,orElse: () => null);
                           final isCouponValid = appliedCouponResponse != null;
 
                           return appliedCoupon?.isEmpty == true ? Container(
@@ -390,10 +390,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
                               child: InkWell(
                                 onTap:(){
                                   if(isCouponValid == false){
-                                    _trekC.calculateFareRequestModel.value = _trekC.calculateFareRequestModel.value.copyWith(couponCode: "");
+                                    _trekControllerC.calculateFareRequestModel.value = _trekControllerC.calculateFareRequestModel.value.copyWith(couponCode: "");
                                   }
                                   else{
-                                    _trekC.calculateFareRequestModel.value = _trekC.calculateFareRequestModel.value.copyWith(couponCode: "");
+                                    _trekControllerC.calculateFareRequestModel.value = _trekControllerC.calculateFareRequestModel.value.copyWith(couponCode: "");
                                   }
                                 },
                                 borderRadius: BorderRadius.horizontal(
@@ -640,7 +640,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final travelData = _trekC.trekDetailData.value;
+    final travelData = _trekControllerC.trekDetailData.value;
 
     return Scaffold(
       appBar: AppBar(
@@ -687,8 +687,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Obx(() {
-                    final calculateFareRequestModel = _trekC.calculateFareRequestModel.value;
-                    BreakDownDataModel? breakdown = _trekC.calculateFareResponseModel.value.maybeWhen(success: (response) => (response as CalculateFareResponseModel).breakdown,orElse: () => null);
+                    final calculateFareRequestModel = _trekControllerC.calculateFareRequestModel.value;
+                    BreakDownDataModel? breakdown = _trekControllerC.calculateFareResponseModel.value.maybeWhen(success: (response) => (response as CalculateFareResponseModel).breakdown,orElse: () => null);
                      return Container(
                       margin: EdgeInsets.symmetric(horizontal: 4.w),
                       child: Column(
@@ -1183,7 +1183,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
               ),
             ),
           ),
-          Obx(() => _trekC.calculateFareResponseModel.value.maybeWhen(
+          Obx(() => _trekControllerC.calculateFareResponseModel.value.maybeWhen(
             loading: (loadingData) => Container(
               color: CommonColors.grey400,
               child: Center(
@@ -1209,8 +1209,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
         ),
         child: Obx(() {
 
-          final calculateFareRequestModel = _trekC.calculateFareRequestModel.value;
-          CalculateFareResponseModel? calculateFareResponseModel = _trekC.calculateFareResponseModel.value.maybeWhen(
+          final calculateFareRequestModel = _trekControllerC.calculateFareRequestModel.value;
+          CalculateFareResponseModel? calculateFareResponseModel = _trekControllerC.calculateFareResponseModel.value.maybeWhen(
               success: (response) => response,
               orElse: () => null
           );
@@ -1317,8 +1317,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   onPressed: () async {
                     if (_isPaymentValid) {
 
-                      await _trekC.createTrekOrder();
-                      if (_trekC.orderModal.value.success ?? false) {
+                      await _trekControllerC.createTrekOrder();
+                      if (_trekControllerC.orderModal.value.success ?? false) {
                         _handlePayment(calculateFareResponseModel?.breakdown);
                       }
                     }
@@ -1342,7 +1342,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   /// Validates if payment can proceed
   /// Currently requires Razorpay to be selected
   bool get _isPaymentValid {
-    final validResponse = _trekC.calculateFareResponseModel.value.maybeWhen(success: (response) => true,orElse: () => false);
+    final validResponse = _trekControllerC.calculateFareResponseModel.value.maybeWhen(success: (response) => true,orElse: () => false);
     // For now, require Razorpay to be selected
     return _selectedUPIOption == PaymentMethods.razorpay && validResponse;
   }
@@ -1351,7 +1351,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   /// Returns list of traveller information with controllers for editing
   List<Map<String, dynamic>> _getTravellerDetails() {
     // Get selected travellers from trek controller
-    final selectedTravellers = _trekC.travellerDetailList;
+    final selectedTravellers = _trekControllerC.travellerDetailList;
 
     if (selectedTravellers.isNotEmpty) {
       // Return existing travellers
