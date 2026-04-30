@@ -19,9 +19,10 @@ class UpcomingBookingCard extends StatelessWidget {
   String? _getOriginCity() {
     // You can implement logic to determine origin city based on booking data
     // For now, returning a default or trying to extract from batch/city info
-    if (booking.city?.id != null) {
+    if (booking.cityId != null) {
       // You might want to map cityId to actual city names
-      return booking.city?.cityName; // Replace with actual city mapping logic
+      return "sadsa";
+      // return booking.city?.cityName; // Replace with actual city mapping logic
     }
     return 'Origin City';
   }
@@ -96,7 +97,7 @@ class UpcomingBookingCard extends StatelessWidget {
                     ),
                     SizedBox(height: 0.3.h),
                     Text(
-                      booking.trek?.vendor?.companyInfo?.companyName ??
+                      booking.trek?.vendor?.businessName ??
                           'Unknown Organiser',
                       style: TextStyle(
                         fontSize: FontSize.s10,

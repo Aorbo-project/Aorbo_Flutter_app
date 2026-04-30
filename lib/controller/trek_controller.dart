@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:arobo_app/freezed_models/booking/booking_data_model.dart';
 import 'package:arobo_app/freezed_models/treks/treks_model_data.dart';
-import 'package:arobo_app/models/treaks/treak_detail_modal.dart';
 import 'package:arobo_app/models/treaks/verify_order_modal.dart';
 import 'package:arobo_app/models/coupon_code/coupon_code_model.dart';
 import 'package:arobo_app/models/dispute/submit_issue_modal.dart';
@@ -13,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../freezed_models/profile/user_profile_model.dart';
+import '../freezed_models/treks/trek_detail_model.dart';
 import '../repository/api_result.dart';
 import '../repository/repository.dart';
 import '../repository/network_url.dart';

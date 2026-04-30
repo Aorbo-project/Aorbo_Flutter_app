@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sizer/sizer.dart';
 import 'package:shimmer_ai/shimmer_ai.dart';
+import '../freezed_models/booking/booking_history_model.dart';
 import '../utils/common_colors.dart';
 import '../utils/screen_constants.dart';
 import '../utils/common_booked_card.dart';
@@ -42,7 +43,6 @@ class _BookingsScreenState extends State<BookingsScreen> with SingleTickerProvid
   // ── ALL ORIGINAL LOGIC UNTOUCHED ─────────────────────────────────────────
   final DashboardController _dashboardC = Get.find<DashboardController>();
   final ScrollController _scrollController = ScrollController();
-  bool _isLoadingMore = false;
 
   List<String> get _statusFilters => [
     'All Bookings',
@@ -77,24 +77,17 @@ class _BookingsScreenState extends State<BookingsScreen> with SingleTickerProvid
   }
 
   void _loadInitialData() {
-    _dashboardC.bookingList.clear();
     _dashboardC.getBookingHistory(refresh: true);
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >=
-            _scrollController.position.maxScrollExtent - 200 &&
-        !_isLoadingMore &&
-        _dashboardC.hasMoreBookings.value) {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
       _loadMoreData();
     }
   }
 
   Future<void> _loadMoreData() async {
-    if (_isLoadingMore) return;
-    setState(() => _isLoadingMore = true);
     await _dashboardC.getBookingHistory(refresh: false);
-    setState(() => _isLoadingMore = false);
   }
 
   // ── STATUS HELPERS — ORIGINAL LOGIC ──────────────────────────────────────
@@ -163,13 +156,31 @@ class _BookingsScreenState extends State<BookingsScreen> with SingleTickerProvid
       body: FadeTransition(
         opacity: _fade,
         child: Obx(() {
-          if (_dashboardC.isLoadingBookingHistory.value &&
-              _dashboardC.bookingList.isEmpty) {
+
+          final loading = _dashboardC.bookingHistoryObserver.value.data.value.maybeWhen(loading: (data) => true, orElse: () => false);
+          
+          List<BookingHistoryData>? bookingList = _dashboardC
+              .bookingHistoryObserver.value
+              .data.value.maybeWhen(
+            success: (bookingResponse) =>
+            (bookingResponse as BookingHistoryModel)
+                .data,
+            error: (sc) => [],
+            orElse: () => [
+              BookingHistoryData(),
+              BookingHistoryData(),
+              BookingHistoryData(),
+              BookingHistoryData()
+            ],
+          );
+
+          final isLoadingMore = _dashboardC.bookingHistoryObserver.value.isLoading;
+
+          if (loading) {
             return _buildShimmerLoading();
           }
 
-          if (_dashboardC.bookingList.isEmpty &&
-              !_dashboardC.isLoadingBookingHistory.value) {
+          if (bookingList?.isEmpty == true) {
             return _buildEmptyState();
           }
 
@@ -177,12 +188,12 @@ class _BookingsScreenState extends State<BookingsScreen> with SingleTickerProvid
             controller: _scrollController,
             padding: EdgeInsets.fromLTRB(4.w, 2.h, 4.w, 4.h),
             itemCount:
-                _dashboardC.bookingList.length + (_isLoadingMore ? 1 : 0),
+                (bookingList?.length ?? 0) + (isLoadingMore ? 1 : 0),
             itemBuilder: (context, index) {
-              if (index == _dashboardC.bookingList.length) {
+              if (index == bookingList?.length) {
                 return _buildPaginationLoader();
               }
-              final booking = _dashboardC.bookingList[index];
+              final booking = bookingList?[index];
               return _buildBookingCard(booking, index);
             },
           );
@@ -341,7 +352,6 @@ class _BookingsScreenState extends State<BookingsScreen> with SingleTickerProvid
                 onTap: () {
                   setState(() {
                     _dashboardC.selectedFilter.value = 'All Bookings';
-                    _dashboardC.bookingList.clear();
                   });
                   _dashboardC.getBookingHistory(refresh: true);
                 },
@@ -604,7 +614,6 @@ class _BookingsScreenState extends State<BookingsScreen> with SingleTickerProvid
                   onTap: () async {
                     setState(() {
                       _dashboardC.selectedFilter.value = filter;
-                      _dashboardC.bookingList.clear();
                     });
                     Navigator.pop(context);
                     _dashboardC.getBookingHistory(refresh: true);

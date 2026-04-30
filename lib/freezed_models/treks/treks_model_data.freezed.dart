@@ -913,7 +913,7 @@ mixin _$SearchContextModel {
   dynamic get selectedDate => throw _privateConstructorUsedError;
   @JsonKey(name: "weekend_mode")
   bool? get weekendMode => throw _privateConstructorUsedError;
-  @JsonKey(name: "weekend_days")
+  @JsonKey(name: "weekend_dates")
   List<String>? get weekendDates => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -933,7 +933,7 @@ abstract class $SearchContextModelCopyWith<$Res> {
       String? to,
       @JsonKey(name: "selected_date") dynamic selectedDate,
       @JsonKey(name: "weekend_mode") bool? weekendMode,
-      @JsonKey(name: "weekend_days") List<String>? weekendDates});
+      @JsonKey(name: "weekend_dates") List<String>? weekendDates});
 }
 
 /// @nodoc
@@ -993,7 +993,7 @@ abstract class _$$SearchContextModelImplCopyWith<$Res>
       String? to,
       @JsonKey(name: "selected_date") dynamic selectedDate,
       @JsonKey(name: "weekend_mode") bool? weekendMode,
-      @JsonKey(name: "weekend_days") List<String>? weekendDates});
+      @JsonKey(name: "weekend_dates") List<String>? weekendDates});
 }
 
 /// @nodoc
@@ -1046,7 +1046,7 @@ class _$SearchContextModelImpl implements _SearchContextModel {
       this.to,
       @JsonKey(name: "selected_date") this.selectedDate,
       @JsonKey(name: "weekend_mode") this.weekendMode,
-      @JsonKey(name: "weekend_days") final List<String>? weekendDates})
+      @JsonKey(name: "weekend_dates") final List<String>? weekendDates})
       : _weekendDates = weekendDates;
 
   factory _$SearchContextModelImpl.fromJson(Map<String, dynamic> json) =>
@@ -1064,7 +1064,7 @@ class _$SearchContextModelImpl implements _SearchContextModel {
   final bool? weekendMode;
   final List<String>? _weekendDates;
   @override
-  @JsonKey(name: "weekend_days")
+  @JsonKey(name: "weekend_dates")
   List<String>? get weekendDates {
     final value = _weekendDates;
     if (value == null) return null;
@@ -1124,7 +1124,7 @@ abstract class _SearchContextModel implements SearchContextModel {
           final String? to,
           @JsonKey(name: "selected_date") final dynamic selectedDate,
           @JsonKey(name: "weekend_mode") final bool? weekendMode,
-          @JsonKey(name: "weekend_days") final List<String>? weekendDates}) =
+          @JsonKey(name: "weekend_dates") final List<String>? weekendDates}) =
       _$SearchContextModelImpl;
 
   factory _SearchContextModel.fromJson(Map<String, dynamic> json) =
@@ -1141,7 +1141,7 @@ abstract class _SearchContextModel implements SearchContextModel {
   @JsonKey(name: "weekend_mode")
   bool? get weekendMode;
   @override
-  @JsonKey(name: "weekend_days")
+  @JsonKey(name: "weekend_dates")
   List<String>? get weekendDates;
   @override
   @JsonKey(ignore: true)
@@ -1523,178 +1523,6 @@ abstract class _TrekData implements TrekData {
   @override
   @JsonKey(ignore: true)
   _$$TrekDataImplCopyWith<_$TrekDataImpl> get copyWith =>
-      throw _privateConstructorUsedError;
-}
-
-BatchInfo _$BatchInfoFromJson(Map<String, dynamic> json) {
-  return _BatchInfo.fromJson(json);
-}
-
-/// @nodoc
-mixin _$BatchInfo {
-  int? get id => throw _privateConstructorUsedError;
-  String? get startDate => throw _privateConstructorUsedError;
-  int? get availableSlots => throw _privateConstructorUsedError;
-
-  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-  @JsonKey(ignore: true)
-  $BatchInfoCopyWith<BatchInfo> get copyWith =>
-      throw _privateConstructorUsedError;
-}
-
-/// @nodoc
-abstract class $BatchInfoCopyWith<$Res> {
-  factory $BatchInfoCopyWith(BatchInfo value, $Res Function(BatchInfo) then) =
-      _$BatchInfoCopyWithImpl<$Res, BatchInfo>;
-  @useResult
-  $Res call({int? id, String? startDate, int? availableSlots});
-}
-
-/// @nodoc
-class _$BatchInfoCopyWithImpl<$Res, $Val extends BatchInfo>
-    implements $BatchInfoCopyWith<$Res> {
-  _$BatchInfoCopyWithImpl(this._value, this._then);
-
-  // ignore: unused_field
-  final $Val _value;
-  // ignore: unused_field
-  final $Res Function($Val) _then;
-
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({
-    Object? id = freezed,
-    Object? startDate = freezed,
-    Object? availableSlots = freezed,
-  }) {
-    return _then(_value.copyWith(
-      id: freezed == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int?,
-      startDate: freezed == startDate
-          ? _value.startDate
-          : startDate // ignore: cast_nullable_to_non_nullable
-              as String?,
-      availableSlots: freezed == availableSlots
-          ? _value.availableSlots
-          : availableSlots // ignore: cast_nullable_to_non_nullable
-              as int?,
-    ) as $Val);
-  }
-}
-
-/// @nodoc
-abstract class _$$BatchInfoImplCopyWith<$Res>
-    implements $BatchInfoCopyWith<$Res> {
-  factory _$$BatchInfoImplCopyWith(
-          _$BatchInfoImpl value, $Res Function(_$BatchInfoImpl) then) =
-      __$$BatchInfoImplCopyWithImpl<$Res>;
-  @override
-  @useResult
-  $Res call({int? id, String? startDate, int? availableSlots});
-}
-
-/// @nodoc
-class __$$BatchInfoImplCopyWithImpl<$Res>
-    extends _$BatchInfoCopyWithImpl<$Res, _$BatchInfoImpl>
-    implements _$$BatchInfoImplCopyWith<$Res> {
-  __$$BatchInfoImplCopyWithImpl(
-      _$BatchInfoImpl _value, $Res Function(_$BatchInfoImpl) _then)
-      : super(_value, _then);
-
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({
-    Object? id = freezed,
-    Object? startDate = freezed,
-    Object? availableSlots = freezed,
-  }) {
-    return _then(_$BatchInfoImpl(
-      id: freezed == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int?,
-      startDate: freezed == startDate
-          ? _value.startDate
-          : startDate // ignore: cast_nullable_to_non_nullable
-              as String?,
-      availableSlots: freezed == availableSlots
-          ? _value.availableSlots
-          : availableSlots // ignore: cast_nullable_to_non_nullable
-              as int?,
-    ));
-  }
-}
-
-/// @nodoc
-@JsonSerializable()
-class _$BatchInfoImpl implements _BatchInfo {
-  const _$BatchInfoImpl({this.id, this.startDate, this.availableSlots});
-
-  factory _$BatchInfoImpl.fromJson(Map<String, dynamic> json) =>
-      _$$BatchInfoImplFromJson(json);
-
-  @override
-  final int? id;
-  @override
-  final String? startDate;
-  @override
-  final int? availableSlots;
-
-  @override
-  String toString() {
-    return 'BatchInfo(id: $id, startDate: $startDate, availableSlots: $availableSlots)';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _$BatchInfoImpl &&
-            (identical(other.id, id) || other.id == id) &&
-            (identical(other.startDate, startDate) ||
-                other.startDate == startDate) &&
-            (identical(other.availableSlots, availableSlots) ||
-                other.availableSlots == availableSlots));
-  }
-
-  @JsonKey(ignore: true)
-  @override
-  int get hashCode => Object.hash(runtimeType, id, startDate, availableSlots);
-
-  @JsonKey(ignore: true)
-  @override
-  @pragma('vm:prefer-inline')
-  _$$BatchInfoImplCopyWith<_$BatchInfoImpl> get copyWith =>
-      __$$BatchInfoImplCopyWithImpl<_$BatchInfoImpl>(this, _$identity);
-
-  @override
-  Map<String, dynamic> toJson() {
-    return _$$BatchInfoImplToJson(
-      this,
-    );
-  }
-}
-
-abstract class _BatchInfo implements BatchInfo {
-  const factory _BatchInfo(
-      {final int? id,
-      final String? startDate,
-      final int? availableSlots}) = _$BatchInfoImpl;
-
-  factory _BatchInfo.fromJson(Map<String, dynamic> json) =
-      _$BatchInfoImpl.fromJson;
-
-  @override
-  int? get id;
-  @override
-  String? get startDate;
-  @override
-  int? get availableSlots;
-  @override
-  @JsonKey(ignore: true)
-  _$$BatchInfoImplCopyWith<_$BatchInfoImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
 

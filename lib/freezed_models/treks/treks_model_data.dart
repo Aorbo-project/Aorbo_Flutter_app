@@ -1,3 +1,4 @@
+import 'package:arobo_app/freezed_models/treks/trek_detail_model.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'treks_model_data.freezed.dart';
@@ -65,7 +66,7 @@ class SearchContextModel with _$SearchContextModel {
     String? to,
     @JsonKey(name:"selected_date") dynamic selectedDate,
     @JsonKey(name:"weekend_mode") bool? weekendMode,
-    @JsonKey(name:"weekend_days") List<String>? weekendDates
+    @JsonKey(name:"weekend_dates") List<String>? weekendDates
   }) = _SearchContextModel;
 
   factory SearchContextModel.fromJson(Map<String, dynamic> json) =>
@@ -92,17 +93,7 @@ class TrekData with _$TrekData {
       _$TrekDataFromJson(json);
 }
 
-@freezed
-class BatchInfo with _$BatchInfo {
-  const factory BatchInfo({
-    int? id,
-    String? startDate,
-    int? availableSlots,
-  }) = _BatchInfo;
 
-  factory BatchInfo.fromJson(Map<String, dynamic> json) =>
-      _$BatchInfoFromJson(json);
-}
 
 @freezed
 class Badge with _$Badge {

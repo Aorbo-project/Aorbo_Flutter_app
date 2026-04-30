@@ -5,8 +5,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 
-import 'package:arobo_app/models/treaks/treak_detail_modal.dart';
 
+import '../../freezed_models/treks/trek_detail_model.dart';
 import 'invoice_model.dart';
 
 // ── Shared sub-objects ────────────────────────────────────────────────────────

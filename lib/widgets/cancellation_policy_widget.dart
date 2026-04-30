@@ -1,8 +1,7 @@
 // cancellation_policy_widget.dart
 
 import 'package:flutter/material.dart';
-import '../models/invoice/invoice_model.dart';
-import '../models/treaks/treak_detail_modal.dart';
+import '../freezed_models/treks/trek_detail_model.dart';
 
 class CancellationPolicyWidget extends StatelessWidget {
   final CancellationPolicy? policy;
