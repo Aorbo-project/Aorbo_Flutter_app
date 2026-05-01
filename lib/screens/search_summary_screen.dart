@@ -724,8 +724,7 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
                   onTap: () async {
                     // ORIGINAL LOGIC
                     _trekC.trekDetailId.value = trek.id ?? 0;
-                    await _trekC.trekDetail(
-                        batchId: trek.batchInfo?.id ?? 0);
+                    await _trekC.trekDetail(batchId: trek.batchInfo?.id ?? 0);
                     Get.to(() => TrekDetailsScreen(trek: trek));
                   },
                 ).withShimmerAi(loading: isLoading),

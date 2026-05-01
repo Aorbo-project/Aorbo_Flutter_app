@@ -84,6 +84,7 @@ class TrekController extends GetxController {
   //endregion
 
   final vendorCouponsObserver = const ApiResult<CouponCodeModel>.init().obs;
+  final validateCouponObserver = const ApiResult<ValidateCouponCodeResponseModel>.init().obs;
 
 
 
@@ -135,6 +136,39 @@ class TrekController extends GetxController {
       vendorCouponsObserver.value = ApiResult.error(e.toString());
     }
   }
+
+  Future<void> validateCoupon(String coupon) async {
+    try {
+
+      validateCouponObserver.value = const ApiResult.loading("");
+      final requestModel = ValidateCouponCodeRequestModel(code: coupon, trekId:trekDetailId, bookingAmount: calculateFareResponseModel.value.maybeWhen(success: (response) => (response as CalculateFareResponseModel).breakdown?.amountToPayNow,orElse: () => 0));
+
+      final validateResponse =  AuthUtils.validateRequestFields(["code","trekId","bookingAmount"], requestModel.toJson());
+      if(validateResponse != null) throw validateResponse;
+
+      final response = await repository.postApiCall(
+        url: NetworkUrl.validatedCoupon,
+        body: requestModel.toJson(),
+      );
+
+      if (response != null) {
+        final responseData = ValidateCouponCodeResponseModel.fromJson(response);
+        if (responseData.success == true) {
+          validateCouponObserver.value = ApiResult.success(responseData);
+          calculateFareRequestModel.value = calculateFareRequestModel.value.copyWith(couponCode: coupon ?? '');
+          Get.back();
+          return;
+        }
+        throw "${responseData.message}";
+      }
+      throw "Response Body Null";
+    } catch (e) {
+      print("Error On Coupon ${e.toString()}");
+      CustomSnackBar.show(Get.context!, message: e.toString());
+      validateCouponObserver.value = ApiResult.error(e.toString());
+    }
+  }
+
 
   static String convertDateYYYYMMDD(String date) {
     if (date.isEmpty) return '';
@@ -380,8 +414,6 @@ class TrekController extends GetxController {
 
 
   Future<void> createTrekOrder() async {
-
-
     try {
       showLoaderDialog();
       final response = await repository.postApiCall(
@@ -400,10 +432,12 @@ class TrekController extends GetxController {
           );
         } else {
           errorMessage.value = response['message'];
+          print("ERROR"+errorMessage.value);
           CustomSnackBar.show(Get.context!, message: errorMessage.value);
         }
       }
     } catch (e) {
+      print("ERROR"+'Failed to create booking: ${e.toString()}');
       errorMessage.value = 'Failed to create booking: ${e.toString()}';
       CustomSnackBar.show(Get.context!, message: errorMessage.value);
     } finally {

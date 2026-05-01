@@ -14,6 +14,594 @@ T _$identity<T>(T value) => value;
 final _privateConstructorUsedError = UnsupportedError(
     'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#custom-getters-and-methods');
 
+ValidateCouponCodeRequestModel _$ValidateCouponCodeRequestModelFromJson(
+    Map<String, dynamic> json) {
+  return _ValidateCouponCodeRequestModel.fromJson(json);
+}
+
+/// @nodoc
+mixin _$ValidateCouponCodeRequestModel {
+  String get code => throw _privateConstructorUsedError;
+  dynamic get trekId => throw _privateConstructorUsedError;
+  dynamic get bookingAmount => throw _privateConstructorUsedError;
+
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+  @JsonKey(ignore: true)
+  $ValidateCouponCodeRequestModelCopyWith<ValidateCouponCodeRequestModel>
+      get copyWith => throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $ValidateCouponCodeRequestModelCopyWith<$Res> {
+  factory $ValidateCouponCodeRequestModelCopyWith(
+          ValidateCouponCodeRequestModel value,
+          $Res Function(ValidateCouponCodeRequestModel) then) =
+      _$ValidateCouponCodeRequestModelCopyWithImpl<$Res,
+          ValidateCouponCodeRequestModel>;
+  @useResult
+  $Res call({String code, dynamic trekId, dynamic bookingAmount});
+}
+
+/// @nodoc
+class _$ValidateCouponCodeRequestModelCopyWithImpl<$Res,
+        $Val extends ValidateCouponCodeRequestModel>
+    implements $ValidateCouponCodeRequestModelCopyWith<$Res> {
+  _$ValidateCouponCodeRequestModelCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? code = null,
+    Object? trekId = freezed,
+    Object? bookingAmount = freezed,
+  }) {
+    return _then(_value.copyWith(
+      code: null == code
+          ? _value.code
+          : code // ignore: cast_nullable_to_non_nullable
+              as String,
+      trekId: freezed == trekId
+          ? _value.trekId
+          : trekId // ignore: cast_nullable_to_non_nullable
+              as dynamic,
+      bookingAmount: freezed == bookingAmount
+          ? _value.bookingAmount
+          : bookingAmount // ignore: cast_nullable_to_non_nullable
+              as dynamic,
+    ) as $Val);
+  }
+}
+
+/// @nodoc
+abstract class _$$ValidateCouponCodeRequestModelImplCopyWith<$Res>
+    implements $ValidateCouponCodeRequestModelCopyWith<$Res> {
+  factory _$$ValidateCouponCodeRequestModelImplCopyWith(
+          _$ValidateCouponCodeRequestModelImpl value,
+          $Res Function(_$ValidateCouponCodeRequestModelImpl) then) =
+      __$$ValidateCouponCodeRequestModelImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({String code, dynamic trekId, dynamic bookingAmount});
+}
+
+/// @nodoc
+class __$$ValidateCouponCodeRequestModelImplCopyWithImpl<$Res>
+    extends _$ValidateCouponCodeRequestModelCopyWithImpl<$Res,
+        _$ValidateCouponCodeRequestModelImpl>
+    implements _$$ValidateCouponCodeRequestModelImplCopyWith<$Res> {
+  __$$ValidateCouponCodeRequestModelImplCopyWithImpl(
+      _$ValidateCouponCodeRequestModelImpl _value,
+      $Res Function(_$ValidateCouponCodeRequestModelImpl) _then)
+      : super(_value, _then);
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? code = null,
+    Object? trekId = freezed,
+    Object? bookingAmount = freezed,
+  }) {
+    return _then(_$ValidateCouponCodeRequestModelImpl(
+      code: null == code
+          ? _value.code
+          : code // ignore: cast_nullable_to_non_nullable
+              as String,
+      trekId: freezed == trekId
+          ? _value.trekId
+          : trekId // ignore: cast_nullable_to_non_nullable
+              as dynamic,
+      bookingAmount: freezed == bookingAmount
+          ? _value.bookingAmount
+          : bookingAmount // ignore: cast_nullable_to_non_nullable
+              as dynamic,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$ValidateCouponCodeRequestModelImpl
+    implements _ValidateCouponCodeRequestModel {
+  const _$ValidateCouponCodeRequestModelImpl(
+      {required this.code, required this.trekId, required this.bookingAmount});
+
+  factory _$ValidateCouponCodeRequestModelImpl.fromJson(
+          Map<String, dynamic> json) =>
+      _$$ValidateCouponCodeRequestModelImplFromJson(json);
+
+  @override
+  final String code;
+  @override
+  final dynamic trekId;
+  @override
+  final dynamic bookingAmount;
+
+  @override
+  String toString() {
+    return 'ValidateCouponCodeRequestModel(code: $code, trekId: $trekId, bookingAmount: $bookingAmount)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$ValidateCouponCodeRequestModelImpl &&
+            (identical(other.code, code) || other.code == code) &&
+            const DeepCollectionEquality().equals(other.trekId, trekId) &&
+            const DeepCollectionEquality()
+                .equals(other.bookingAmount, bookingAmount));
+  }
+
+  @JsonKey(ignore: true)
+  @override
+  int get hashCode => Object.hash(
+      runtimeType,
+      code,
+      const DeepCollectionEquality().hash(trekId),
+      const DeepCollectionEquality().hash(bookingAmount));
+
+  @JsonKey(ignore: true)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$ValidateCouponCodeRequestModelImplCopyWith<
+          _$ValidateCouponCodeRequestModelImpl>
+      get copyWith => __$$ValidateCouponCodeRequestModelImplCopyWithImpl<
+          _$ValidateCouponCodeRequestModelImpl>(this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$ValidateCouponCodeRequestModelImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _ValidateCouponCodeRequestModel
+    implements ValidateCouponCodeRequestModel {
+  const factory _ValidateCouponCodeRequestModel(
+          {required final String code,
+          required final dynamic trekId,
+          required final dynamic bookingAmount}) =
+      _$ValidateCouponCodeRequestModelImpl;
+
+  factory _ValidateCouponCodeRequestModel.fromJson(Map<String, dynamic> json) =
+      _$ValidateCouponCodeRequestModelImpl.fromJson;
+
+  @override
+  String get code;
+  @override
+  dynamic get trekId;
+  @override
+  dynamic get bookingAmount;
+  @override
+  @JsonKey(ignore: true)
+  _$$ValidateCouponCodeRequestModelImplCopyWith<
+          _$ValidateCouponCodeRequestModelImpl>
+      get copyWith => throw _privateConstructorUsedError;
+}
+
+ValidateCouponCodeResponseModel _$ValidateCouponCodeResponseModelFromJson(
+    Map<String, dynamic> json) {
+  return _ValidateCouponCodeResponseModel.fromJson(json);
+}
+
+/// @nodoc
+mixin _$ValidateCouponCodeResponseModel {
+  bool? get success => throw _privateConstructorUsedError;
+  String? get message => throw _privateConstructorUsedError;
+  ValidateCouponCodeDataModel? get coupon => throw _privateConstructorUsedError;
+
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+  @JsonKey(ignore: true)
+  $ValidateCouponCodeResponseModelCopyWith<ValidateCouponCodeResponseModel>
+      get copyWith => throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $ValidateCouponCodeResponseModelCopyWith<$Res> {
+  factory $ValidateCouponCodeResponseModelCopyWith(
+          ValidateCouponCodeResponseModel value,
+          $Res Function(ValidateCouponCodeResponseModel) then) =
+      _$ValidateCouponCodeResponseModelCopyWithImpl<$Res,
+          ValidateCouponCodeResponseModel>;
+  @useResult
+  $Res call(
+      {bool? success, String? message, ValidateCouponCodeDataModel? coupon});
+
+  $ValidateCouponCodeDataModelCopyWith<$Res>? get coupon;
+}
+
+/// @nodoc
+class _$ValidateCouponCodeResponseModelCopyWithImpl<$Res,
+        $Val extends ValidateCouponCodeResponseModel>
+    implements $ValidateCouponCodeResponseModelCopyWith<$Res> {
+  _$ValidateCouponCodeResponseModelCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? success = freezed,
+    Object? message = freezed,
+    Object? coupon = freezed,
+  }) {
+    return _then(_value.copyWith(
+      success: freezed == success
+          ? _value.success
+          : success // ignore: cast_nullable_to_non_nullable
+              as bool?,
+      message: freezed == message
+          ? _value.message
+          : message // ignore: cast_nullable_to_non_nullable
+              as String?,
+      coupon: freezed == coupon
+          ? _value.coupon
+          : coupon // ignore: cast_nullable_to_non_nullable
+              as ValidateCouponCodeDataModel?,
+    ) as $Val);
+  }
+
+  @override
+  @pragma('vm:prefer-inline')
+  $ValidateCouponCodeDataModelCopyWith<$Res>? get coupon {
+    if (_value.coupon == null) {
+      return null;
+    }
+
+    return $ValidateCouponCodeDataModelCopyWith<$Res>(_value.coupon!, (value) {
+      return _then(_value.copyWith(coupon: value) as $Val);
+    });
+  }
+}
+
+/// @nodoc
+abstract class _$$ValidateCouponCodeResponseModelImplCopyWith<$Res>
+    implements $ValidateCouponCodeResponseModelCopyWith<$Res> {
+  factory _$$ValidateCouponCodeResponseModelImplCopyWith(
+          _$ValidateCouponCodeResponseModelImpl value,
+          $Res Function(_$ValidateCouponCodeResponseModelImpl) then) =
+      __$$ValidateCouponCodeResponseModelImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call(
+      {bool? success, String? message, ValidateCouponCodeDataModel? coupon});
+
+  @override
+  $ValidateCouponCodeDataModelCopyWith<$Res>? get coupon;
+}
+
+/// @nodoc
+class __$$ValidateCouponCodeResponseModelImplCopyWithImpl<$Res>
+    extends _$ValidateCouponCodeResponseModelCopyWithImpl<$Res,
+        _$ValidateCouponCodeResponseModelImpl>
+    implements _$$ValidateCouponCodeResponseModelImplCopyWith<$Res> {
+  __$$ValidateCouponCodeResponseModelImplCopyWithImpl(
+      _$ValidateCouponCodeResponseModelImpl _value,
+      $Res Function(_$ValidateCouponCodeResponseModelImpl) _then)
+      : super(_value, _then);
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? success = freezed,
+    Object? message = freezed,
+    Object? coupon = freezed,
+  }) {
+    return _then(_$ValidateCouponCodeResponseModelImpl(
+      success: freezed == success
+          ? _value.success
+          : success // ignore: cast_nullable_to_non_nullable
+              as bool?,
+      message: freezed == message
+          ? _value.message
+          : message // ignore: cast_nullable_to_non_nullable
+              as String?,
+      coupon: freezed == coupon
+          ? _value.coupon
+          : coupon // ignore: cast_nullable_to_non_nullable
+              as ValidateCouponCodeDataModel?,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$ValidateCouponCodeResponseModelImpl
+    implements _ValidateCouponCodeResponseModel {
+  const _$ValidateCouponCodeResponseModelImpl(
+      {this.success, this.message, this.coupon});
+
+  factory _$ValidateCouponCodeResponseModelImpl.fromJson(
+          Map<String, dynamic> json) =>
+      _$$ValidateCouponCodeResponseModelImplFromJson(json);
+
+  @override
+  final bool? success;
+  @override
+  final String? message;
+  @override
+  final ValidateCouponCodeDataModel? coupon;
+
+  @override
+  String toString() {
+    return 'ValidateCouponCodeResponseModel(success: $success, message: $message, coupon: $coupon)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$ValidateCouponCodeResponseModelImpl &&
+            (identical(other.success, success) || other.success == success) &&
+            (identical(other.message, message) || other.message == message) &&
+            (identical(other.coupon, coupon) || other.coupon == coupon));
+  }
+
+  @JsonKey(ignore: true)
+  @override
+  int get hashCode => Object.hash(runtimeType, success, message, coupon);
+
+  @JsonKey(ignore: true)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$ValidateCouponCodeResponseModelImplCopyWith<
+          _$ValidateCouponCodeResponseModelImpl>
+      get copyWith => __$$ValidateCouponCodeResponseModelImplCopyWithImpl<
+          _$ValidateCouponCodeResponseModelImpl>(this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$ValidateCouponCodeResponseModelImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _ValidateCouponCodeResponseModel
+    implements ValidateCouponCodeResponseModel {
+  const factory _ValidateCouponCodeResponseModel(
+          {final bool? success,
+          final String? message,
+          final ValidateCouponCodeDataModel? coupon}) =
+      _$ValidateCouponCodeResponseModelImpl;
+
+  factory _ValidateCouponCodeResponseModel.fromJson(Map<String, dynamic> json) =
+      _$ValidateCouponCodeResponseModelImpl.fromJson;
+
+  @override
+  bool? get success;
+  @override
+  String? get message;
+  @override
+  ValidateCouponCodeDataModel? get coupon;
+  @override
+  @JsonKey(ignore: true)
+  _$$ValidateCouponCodeResponseModelImplCopyWith<
+          _$ValidateCouponCodeResponseModelImpl>
+      get copyWith => throw _privateConstructorUsedError;
+}
+
+ValidateCouponCodeDataModel _$ValidateCouponCodeDataModelFromJson(
+    Map<String, dynamic> json) {
+  return _ValidateCouponCodeDataModel.fromJson(json);
+}
+
+/// @nodoc
+mixin _$ValidateCouponCodeDataModel {
+  bool? get valid => throw _privateConstructorUsedError;
+  @JsonKey(name: 'coupon_details')
+  CouponCardData? get couponDetails => throw _privateConstructorUsedError;
+
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+  @JsonKey(ignore: true)
+  $ValidateCouponCodeDataModelCopyWith<ValidateCouponCodeDataModel>
+      get copyWith => throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $ValidateCouponCodeDataModelCopyWith<$Res> {
+  factory $ValidateCouponCodeDataModelCopyWith(
+          ValidateCouponCodeDataModel value,
+          $Res Function(ValidateCouponCodeDataModel) then) =
+      _$ValidateCouponCodeDataModelCopyWithImpl<$Res,
+          ValidateCouponCodeDataModel>;
+  @useResult
+  $Res call(
+      {bool? valid,
+      @JsonKey(name: 'coupon_details') CouponCardData? couponDetails});
+
+  $CouponCardDataCopyWith<$Res>? get couponDetails;
+}
+
+/// @nodoc
+class _$ValidateCouponCodeDataModelCopyWithImpl<$Res,
+        $Val extends ValidateCouponCodeDataModel>
+    implements $ValidateCouponCodeDataModelCopyWith<$Res> {
+  _$ValidateCouponCodeDataModelCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? valid = freezed,
+    Object? couponDetails = freezed,
+  }) {
+    return _then(_value.copyWith(
+      valid: freezed == valid
+          ? _value.valid
+          : valid // ignore: cast_nullable_to_non_nullable
+              as bool?,
+      couponDetails: freezed == couponDetails
+          ? _value.couponDetails
+          : couponDetails // ignore: cast_nullable_to_non_nullable
+              as CouponCardData?,
+    ) as $Val);
+  }
+
+  @override
+  @pragma('vm:prefer-inline')
+  $CouponCardDataCopyWith<$Res>? get couponDetails {
+    if (_value.couponDetails == null) {
+      return null;
+    }
+
+    return $CouponCardDataCopyWith<$Res>(_value.couponDetails!, (value) {
+      return _then(_value.copyWith(couponDetails: value) as $Val);
+    });
+  }
+}
+
+/// @nodoc
+abstract class _$$ValidateCouponCodeDataModelImplCopyWith<$Res>
+    implements $ValidateCouponCodeDataModelCopyWith<$Res> {
+  factory _$$ValidateCouponCodeDataModelImplCopyWith(
+          _$ValidateCouponCodeDataModelImpl value,
+          $Res Function(_$ValidateCouponCodeDataModelImpl) then) =
+      __$$ValidateCouponCodeDataModelImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call(
+      {bool? valid,
+      @JsonKey(name: 'coupon_details') CouponCardData? couponDetails});
+
+  @override
+  $CouponCardDataCopyWith<$Res>? get couponDetails;
+}
+
+/// @nodoc
+class __$$ValidateCouponCodeDataModelImplCopyWithImpl<$Res>
+    extends _$ValidateCouponCodeDataModelCopyWithImpl<$Res,
+        _$ValidateCouponCodeDataModelImpl>
+    implements _$$ValidateCouponCodeDataModelImplCopyWith<$Res> {
+  __$$ValidateCouponCodeDataModelImplCopyWithImpl(
+      _$ValidateCouponCodeDataModelImpl _value,
+      $Res Function(_$ValidateCouponCodeDataModelImpl) _then)
+      : super(_value, _then);
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? valid = freezed,
+    Object? couponDetails = freezed,
+  }) {
+    return _then(_$ValidateCouponCodeDataModelImpl(
+      valid: freezed == valid
+          ? _value.valid
+          : valid // ignore: cast_nullable_to_non_nullable
+              as bool?,
+      couponDetails: freezed == couponDetails
+          ? _value.couponDetails
+          : couponDetails // ignore: cast_nullable_to_non_nullable
+              as CouponCardData?,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$ValidateCouponCodeDataModelImpl
+    implements _ValidateCouponCodeDataModel {
+  const _$ValidateCouponCodeDataModelImpl(
+      {this.valid, @JsonKey(name: 'coupon_details') this.couponDetails});
+
+  factory _$ValidateCouponCodeDataModelImpl.fromJson(
+          Map<String, dynamic> json) =>
+      _$$ValidateCouponCodeDataModelImplFromJson(json);
+
+  @override
+  final bool? valid;
+  @override
+  @JsonKey(name: 'coupon_details')
+  final CouponCardData? couponDetails;
+
+  @override
+  String toString() {
+    return 'ValidateCouponCodeDataModel(valid: $valid, couponDetails: $couponDetails)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$ValidateCouponCodeDataModelImpl &&
+            (identical(other.valid, valid) || other.valid == valid) &&
+            (identical(other.couponDetails, couponDetails) ||
+                other.couponDetails == couponDetails));
+  }
+
+  @JsonKey(ignore: true)
+  @override
+  int get hashCode => Object.hash(runtimeType, valid, couponDetails);
+
+  @JsonKey(ignore: true)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$ValidateCouponCodeDataModelImplCopyWith<_$ValidateCouponCodeDataModelImpl>
+      get copyWith => __$$ValidateCouponCodeDataModelImplCopyWithImpl<
+          _$ValidateCouponCodeDataModelImpl>(this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$ValidateCouponCodeDataModelImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _ValidateCouponCodeDataModel
+    implements ValidateCouponCodeDataModel {
+  const factory _ValidateCouponCodeDataModel(
+      {final bool? valid,
+      @JsonKey(name: 'coupon_details')
+      final CouponCardData? couponDetails}) = _$ValidateCouponCodeDataModelImpl;
+
+  factory _ValidateCouponCodeDataModel.fromJson(Map<String, dynamic> json) =
+      _$ValidateCouponCodeDataModelImpl.fromJson;
+
+  @override
+  bool? get valid;
+  @override
+  @JsonKey(name: 'coupon_details')
+  CouponCardData? get couponDetails;
+  @override
+  @JsonKey(ignore: true)
+  _$$ValidateCouponCodeDataModelImplCopyWith<_$ValidateCouponCodeDataModelImpl>
+      get copyWith => throw _privateConstructorUsedError;
+}
+
 CouponCodeModel _$CouponCodeModelFromJson(Map<String, dynamic> json) {
   return _CouponCodeModel.fromJson(json);
 }

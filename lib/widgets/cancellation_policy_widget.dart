@@ -1,12 +1,14 @@
 // cancellation_policy_widget.dart
 
+import 'package:arobo_app/utils/auth_utils.dart';
 import 'package:flutter/material.dart';
 import '../freezed_models/treks/trek_detail_model.dart';
 
 class CancellationPolicyWidget extends StatelessWidget {
+  final String? departureDate;
   final CancellationPolicy? policy;
 
-  const CancellationPolicyWidget({super.key, required this.policy});
+  const CancellationPolicyWidget({super.key, required this.policy,required this.departureDate});
 
   @override
   Widget build(BuildContext context) {
@@ -81,29 +83,38 @@ class CancellationPolicyWidget extends StatelessWidget {
   Widget _buildPolicyRow(Rules row) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 7),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            flex: 6,
-            child: Text(
-              row.rule ?? "",
-              style: const TextStyle(fontSize: 12, height: 1.4),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            flex: 4,
-            child: Text(
-              "${row.deduction}",
-              textAlign: TextAlign.right,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                height: 1.4,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                flex: 6,
+                child: Text(
+                  row.rule ?? "",
+                  style: const TextStyle(fontSize: 12, height: 1.4),
+                ),
               ),
-            ),
+              const SizedBox(width: 8),
+              Expanded(
+                flex: 4,
+                child: Text(
+                  row.deductionType == "fixed" ? "₹${row.deduction}" : "${row.deduction}%",
+                  textAlign: TextAlign.right,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ],
           ),
+          if(row.hours != 0) Text(
+            "Before " + AuthUtils.formatDateTimeWithHourDecrease(departureDate ?? "",row.hours),
+            style: const TextStyle(fontSize: 12, height: 1.4),
+          )
         ],
       ),
     );

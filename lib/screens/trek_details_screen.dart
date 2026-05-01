@@ -601,8 +601,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                     minScale: 0.5,
                     maxScale: 3.0,
                     child: CustomNetworkImage(
-                      imageUrl:
-                          '${NetworkUrl.imageUrl}${images[i].startsWith('/') ? images[i].substring(1) : images[i]}',
+                      imageUrl: images[i],
                       fit: BoxFit.contain,
                       width: 100.w,
                       height: 100.h,
@@ -619,7 +618,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
 //
     Widget _buildCancellationPoliciesTab() {
   final departure = _trekC.trekDetailData.value.departureDateTimeFromStages;
-  return CancellationPolicyWidget(policy: _trekC.trekDetailData.value.cancellationPolicy);
+  return CancellationPolicyWidget(policy: _trekC.trekDetailData.value.cancellationPolicy,departureDate: departure.toString());
   // return CancellationPolicyCard(
   //   departureDate: departure?.toIso8601String(),
   //   basePrice: _trekC.trekDetailData.value.basePrice,

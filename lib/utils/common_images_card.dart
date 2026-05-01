@@ -41,10 +41,8 @@ class CommonImageCard extends StatelessWidget {
   }
 
   Widget _buildImage(String image) {
-    final url =
-        '${NetworkUrl.imageUrl}${image.startsWith('/') ? image.substring(1) : image}';
     return CustomNetworkImage(
-      imageUrl: url,
+      imageUrl: image,
       width: width,
       height: height
     );

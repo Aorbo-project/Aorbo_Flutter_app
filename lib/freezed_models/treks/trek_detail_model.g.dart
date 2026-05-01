@@ -417,6 +417,7 @@ Map<String, dynamic> _$$CancellationPolicyImplToJson(
 _$RulesImpl _$$RulesImplFromJson(Map<String, dynamic> json) => _$RulesImpl(
       rule: json['rule'] as String?,
       deduction: json['deduction'],
+      hours: json['hours'],
       deductionType: json['deduction_type'] as String?,
     );
 
@@ -424,6 +425,7 @@ Map<String, dynamic> _$$RulesImplToJson(_$RulesImpl instance) =>
     <String, dynamic>{
       'rule': instance.rule,
       'deduction': instance.deduction,
+      'hours': instance.hours,
       'deduction_type': instance.deductionType,
     };
 
