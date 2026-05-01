@@ -88,24 +88,22 @@ class _PaymentScreenState extends State<PaymentScreen> {
   /// Opens Razorpay payment gateway with calculated amount and order details
   void _openRazorpay(BreakDownDataModel? breakdown) async {
     // Calculate the exact final amount using the same logic as TotalFareModal
-    final finalAmount = breakdown?.amountToPayNow;
-    _razorpay.clear();
 
-    var options = {
-      'key': BookingConstants.razorpayKey,
-      'order_id': '${_trekControllerC.orderData.value.id}',
-      'amount': (finalAmount * 100).toInt(), // Razorpay expects amount in paise
-      'name': '${_trekControllerC.trekDetailData.value.title}',
-      'description': '${_trekControllerC.trekDetailData.value.description}',
-      'prefill': {
-        'contact': '${_userC.userProfileData.value.customer?.phone}',
-        'email': '${_userC.userProfileData.value.customer?.email}',
-      },
-    };
-
-    print(options);
 
     try {
+      final finalAmount = breakdown?.amountToPayNow;
+
+      var options = {
+        'key': BookingConstants.razorpayKey,
+        'order_id': '${_trekControllerC.orderData.value.id}',
+        'amount': (finalAmount * 100).toInt(),
+        'name': '${_trekControllerC.trekDetailData.value.title}',
+        'description': '${_trekControllerC.trekDetailData.value.description}',
+        'prefill': {
+          'contact': '${_userC.userProfileData.value.customer?.phone}',
+          'email': '${_userC.userProfileData.value.customer?.email}',
+        },
+      };
       _razorpay.open(options);
     } catch (e) {
       CustomSnackBar.show(context, message: 'Failed to open payment: ${e.toString()}');
@@ -118,11 +116,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
     _trekControllerC.orderId.value = response.orderId ?? '';
     _trekControllerC.paymentId.value = response.paymentId ?? '';
     _trekControllerC.signature.value = response.signature ?? '';
-
-    print("Respose orderId  ${response.orderId ?? ''}");
-    print("Respose paymentId  ${response.paymentId ?? ''}");
-    print("Respose signature  ${response.signature ?? ''}");
-
 
 
     await _trekControllerC.verifyTrekOrder(
@@ -158,15 +151,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
     _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
     _couponController.addListener(_handleTextChange);
     debounce(
-      _trekControllerC.calculateFareRequestModel,
-          (value) {
-        // This will be called after 500ms of no changes
+      _trekControllerC.calculateFareRequestModel, (value) {
         print('Searching for: $value');
         _trekControllerC.calculateFare();
       },
       time: Duration(milliseconds: 500),
     );
-    // _startTimer();
+    _startTimer();
   }
 
   @override

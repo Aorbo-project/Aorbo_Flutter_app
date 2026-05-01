@@ -595,8 +595,7 @@ class _TicketCardSectionState extends State<_TicketCardSection> {
               children: [
                 _ticketRow(
                   "Trek Operator",
-                  _trekC
-                          .verifyOrderModal
+                  _trekC.verifyOrderModal
                           .value
                           .data!
                           .vendor
