@@ -139,15 +139,14 @@ class TrekController extends GetxController {
 
   Future<void> validateCoupon(String coupon) async {
     try {
-
       validateCouponObserver.value = const ApiResult.loading("");
-      final requestModel = ValidateCouponCodeRequestModel(code: coupon, trekId:trekDetailId, bookingAmount: calculateFareResponseModel.value.maybeWhen(success: (response) => (response as CalculateFareResponseModel).breakdown?.amountToPayNow,orElse: () => 0));
+      final requestModel = ValidateCouponCodeRequestModel(code: coupon, trekId:trekDetailId.value, bookingAmount: calculateFareResponseModel.value.maybeWhen(success: (response) => (response as CalculateFareResponseModel).breakdown?.amountToPayNow,orElse: () => "0"));
 
       final validateResponse =  AuthUtils.validateRequestFields(["code","trekId","bookingAmount"], requestModel.toJson());
       if(validateResponse != null) throw validateResponse;
 
       final response = await repository.postApiCall(
-        url: NetworkUrl.validatedCoupon,
+        url: NetworkUrl.validateCoupon,
         body: requestModel.toJson(),
       );
 
@@ -454,14 +453,12 @@ class TrekController extends GetxController {
     showLoaderDialog();
 
 
-
-
-
     String body = json.encode({
       "razorpay_order_id": razorpayOrderId,
       "razorpay_payment_id": razorpayPaymentId,
       "razorpay_signature": razorpaySignature
     });
+
     try {
       final response = await repository.postApiCall(
         url: NetworkUrl.verifyBooking,
