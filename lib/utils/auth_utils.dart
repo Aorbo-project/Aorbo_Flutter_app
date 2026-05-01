@@ -100,4 +100,23 @@ class AuthUtils {
     }
   }
 
+  static String formatDateTimeWithHourDecrease(String? dateString, int hoursToDecrease) {
+    if (dateString == null || dateString.isEmpty) {
+      return '-';
+    }
+
+    try {
+      // Parse the input date string
+      final dateTime = DateTime.parse(dateString);
+
+      // Decrease hours from the dateTime
+      final decreasedDateTime = dateTime.subtract(Duration(hours: hoursToDecrease));
+
+      // Format: 22/12/2024 03:30 PM
+      return DateFormat('dd/MM/yyyy hh:mm a').format(decreasedDateTime);
+    } catch (e) {
+      return dateString;
+    }
+  }
+
 }

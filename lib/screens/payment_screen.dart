@@ -89,7 +89,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   void _openRazorpay(BreakDownDataModel? breakdown) async {
     // Calculate the exact final amount using the same logic as TotalFareModal
     final finalAmount = breakdown?.amountToPayNow;
-
+    _razorpay.clear();
 
     var options = {
       'key': BookingConstants.razorpayKey,
@@ -102,6 +102,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
         'email': '${_userC.userProfileData.value.customer?.email}',
       },
     };
+
+    print(options);
 
     try {
       _razorpay.open(options);
@@ -164,7 +166,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       },
       time: Duration(milliseconds: 500),
     );
-    _startTimer();
+    // _startTimer();
   }
 
   @override
@@ -328,96 +330,121 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           final appliedCouponResponse = _trekControllerC.calculateFareResponseModel.value.maybeWhen(success: (response) => (response as CalculateFareResponseModel).couponDetails,orElse: () => null);
                           final isCouponValid = appliedCouponResponse != null;
 
-                          return appliedCoupon?.isEmpty == true ? Container(
-                            margin: EdgeInsets.symmetric(horizontal: 7.w, vertical: 1.h),
-                            decoration: BoxDecoration(
-                              color: CommonColors.whiteColor,
-                              borderRadius: BorderRadius.circular(3.w),
-                              border: Border.all(
-                                color: CommonColors.profileColor,
-                                width: 1,
+                          return appliedCoupon?.isEmpty == true ? InkWell(
+                            onTap: (){
+                              Get.to(() => CouponCodeScreen());
+                            },
+                            child: Container(
+                              margin: EdgeInsets.symmetric(horizontal: 7.w, vertical: 1.h),
+
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Container(
+                                      height: 50,
+                                      decoration: BoxDecoration(
+                                        color: CommonColors.whiteColor,
+                                        borderRadius: BorderRadius.circular(3.w),
+                                        border: Border.all(
+                                          color: CommonColors.profileColor,
+                                          width: 1,
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(0.05),
+                                            blurRadius: 10,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          "Enter Coupon Code",
+                                          style: GoogleFonts.poppins(
+                                            fontSize: FontSize.s11,
+                                            color: const Color(0xff969696),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  TextButton(
+                                    onPressed: () async {
+                                      Get.to(() => CouponCodeScreen());
+                                    },
+                                    child: Text(
+                                      'Apply',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: FontSize.s11,
+                                        fontWeight: FontWeight.w500,
+                                        color: _couponController.text.isNotEmpty
+                                            ? CommonColors.blueColor
+                                            : const Color(0xff969696),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
                             ),
-                            child: Row(
+                          ) :
+                            Row(
                               children: [
-                                Expanded(
+                                Expanded(child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 20),
                                   child: Text(
-                                    "Enter Coupon Code",
+                                    appliedCoupon ?? "",
                                     style: GoogleFonts.poppins(
                                       fontSize: FontSize.s11,
                                       color: const Color(0xff969696),
                                     ),
                                   ),
+                                )),
+                                Container(
+                                decoration: BoxDecoration(
+                                  gradient: isCouponValid
+                                      ? CommonColors.btnGradient
+                                      : (_couponController.text.isNotEmpty
+                                      ? CommonColors.btnGradient
+                                      : CommonColors.disableBtnGradient),
+                                  borderRadius: BorderRadius.horizontal(
+                                    right: Radius.circular(3.w),
+                                  ),
                                 ),
-                                TextButton(
-                                  onPressed: () async {
-                                    Get.to(() => CouponCodeScreen());
-                                  },
-                                  child: Text(
-                                    'Apply',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: FontSize.s11,
-                                      fontWeight: FontWeight.w500,
-                                      color: _couponController.text.isNotEmpty
-                                          ? CommonColors.blueColor
-                                          : const Color(0xff969696),
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    onTap:(){
+                                      if(isCouponValid == false){
+                                        _trekControllerC.calculateFareRequestModel.value = _trekControllerC.calculateFareRequestModel.value.copyWith(couponCode: "");
+                                      }
+                                      else{
+                                        _trekControllerC.calculateFareRequestModel.value = _trekControllerC.calculateFareRequestModel.value.copyWith(couponCode: "");
+                                      }
+                                    },
+                                    borderRadius: BorderRadius.horizontal(
+                                      right: Radius.circular(3.w),
+                                    ),
+                                    child: Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 5.w,
+                                        vertical: 1.5.h,
+                                      ),
+                                      child: Text(
+                                        isCouponValid
+                                            ? BookingMessages.remove
+                                            : BookingMessages.apply,
+                                        style: GoogleFonts.poppins(
+                                          fontSize: FontSize.s11,
+                                          fontWeight: FontWeight.w500,
+                                          color: CommonColors.whiteColor,
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
+                                                          ),
                               ],
-                            ),
-                          ) :
-                            Container(
-                            decoration: BoxDecoration(
-                              gradient: isCouponValid
-                                  ? CommonColors.btnGradient
-                                  : (_couponController.text.isNotEmpty
-                                  ? CommonColors.btnGradient
-                                  : CommonColors.disableBtnGradient),
-                              borderRadius: BorderRadius.horizontal(
-                                right: Radius.circular(3.w),
-                              ),
-                            ),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                onTap:(){
-                                  if(isCouponValid == false){
-                                    _trekControllerC.calculateFareRequestModel.value = _trekControllerC.calculateFareRequestModel.value.copyWith(couponCode: "");
-                                  }
-                                  else{
-                                    _trekControllerC.calculateFareRequestModel.value = _trekControllerC.calculateFareRequestModel.value.copyWith(couponCode: "");
-                                  }
-                                },
-                                borderRadius: BorderRadius.horizontal(
-                                  right: Radius.circular(3.w),
-                                ),
-                                child: Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 5.w,
-                                    vertical: 1.5.h,
-                                  ),
-                                  child: Text(
-                                    isCouponValid
-                                        ? BookingMessages.remove
-                                        : BookingMessages.apply,
-                                    style: GoogleFonts.poppins(
-                                      fontSize: FontSize.s11,
-                                      fontWeight: FontWeight.w500,
-                                      color: CommonColors.whiteColor,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
+                            );
                         },
                         ),
                       ),
@@ -697,8 +724,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           SlotBookingDetailsModal(
                             trekName: travelData.title ?? '-',
                             adultCount: calculateFareRequestModel.travelerCount,
-                            fromLocation:
-                            _dashboardC.fromController.value.text,
+                            fromLocation: _dashboardC.fromController.value.text,
                             toLocation: _dashboardC.toController.value.text,
                             departureDate:
                             travelData?.startDate ?? '-',

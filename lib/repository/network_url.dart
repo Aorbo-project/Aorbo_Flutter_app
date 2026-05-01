@@ -99,6 +99,7 @@ class NetworkUrl {
   static const String review = 'ratings';
 
   static String couponCode(String vendorId) => 'coupons/vendor/$vendorId';
+  static String validateCoupon = 'coupons/validate';
   static const String validatedCoupon = 'coupons/validate';
 
   // Cancellation & refund

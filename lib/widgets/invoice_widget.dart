@@ -116,6 +116,7 @@ class _InvoiceCard extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: CancellationPolicyWidget(
               policy: invoice.cancellationPolicy,
+              departureDate: "",
             ),
           ),
           _divider(),

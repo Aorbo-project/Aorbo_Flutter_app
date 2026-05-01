@@ -4750,6 +4750,7 @@ Rules _$RulesFromJson(Map<String, dynamic> json) {
 mixin _$Rules {
   String? get rule => throw _privateConstructorUsedError;
   dynamic get deduction => throw _privateConstructorUsedError;
+  dynamic get hours => throw _privateConstructorUsedError;
   @JsonKey(name: 'deduction_type')
   String? get deductionType => throw _privateConstructorUsedError;
 
@@ -4766,6 +4767,7 @@ abstract class $RulesCopyWith<$Res> {
   $Res call(
       {String? rule,
       dynamic deduction,
+      dynamic hours,
       @JsonKey(name: 'deduction_type') String? deductionType});
 }
 
@@ -4784,6 +4786,7 @@ class _$RulesCopyWithImpl<$Res, $Val extends Rules>
   $Res call({
     Object? rule = freezed,
     Object? deduction = freezed,
+    Object? hours = freezed,
     Object? deductionType = freezed,
   }) {
     return _then(_value.copyWith(
@@ -4794,6 +4797,10 @@ class _$RulesCopyWithImpl<$Res, $Val extends Rules>
       deduction: freezed == deduction
           ? _value.deduction
           : deduction // ignore: cast_nullable_to_non_nullable
+              as dynamic,
+      hours: freezed == hours
+          ? _value.hours
+          : hours // ignore: cast_nullable_to_non_nullable
               as dynamic,
       deductionType: freezed == deductionType
           ? _value.deductionType
@@ -4813,6 +4820,7 @@ abstract class _$$RulesImplCopyWith<$Res> implements $RulesCopyWith<$Res> {
   $Res call(
       {String? rule,
       dynamic deduction,
+      dynamic hours,
       @JsonKey(name: 'deduction_type') String? deductionType});
 }
 
@@ -4829,6 +4837,7 @@ class __$$RulesImplCopyWithImpl<$Res>
   $Res call({
     Object? rule = freezed,
     Object? deduction = freezed,
+    Object? hours = freezed,
     Object? deductionType = freezed,
   }) {
     return _then(_$RulesImpl(
@@ -4839,6 +4848,10 @@ class __$$RulesImplCopyWithImpl<$Res>
       deduction: freezed == deduction
           ? _value.deduction
           : deduction // ignore: cast_nullable_to_non_nullable
+              as dynamic,
+      hours: freezed == hours
+          ? _value.hours
+          : hours // ignore: cast_nullable_to_non_nullable
               as dynamic,
       deductionType: freezed == deductionType
           ? _value.deductionType
@@ -4854,6 +4867,7 @@ class _$RulesImpl implements _Rules {
   const _$RulesImpl(
       {this.rule,
       this.deduction,
+      this.hours,
       @JsonKey(name: 'deduction_type') this.deductionType});
 
   factory _$RulesImpl.fromJson(Map<String, dynamic> json) =>
@@ -4864,12 +4878,14 @@ class _$RulesImpl implements _Rules {
   @override
   final dynamic deduction;
   @override
+  final dynamic hours;
+  @override
   @JsonKey(name: 'deduction_type')
   final String? deductionType;
 
   @override
   String toString() {
-    return 'Rules(rule: $rule, deduction: $deduction, deductionType: $deductionType)';
+    return 'Rules(rule: $rule, deduction: $deduction, hours: $hours, deductionType: $deductionType)';
   }
 
   @override
@@ -4879,14 +4895,19 @@ class _$RulesImpl implements _Rules {
             other is _$RulesImpl &&
             (identical(other.rule, rule) || other.rule == rule) &&
             const DeepCollectionEquality().equals(other.deduction, deduction) &&
+            const DeepCollectionEquality().equals(other.hours, hours) &&
             (identical(other.deductionType, deductionType) ||
                 other.deductionType == deductionType));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(runtimeType, rule,
-      const DeepCollectionEquality().hash(deduction), deductionType);
+  int get hashCode => Object.hash(
+      runtimeType,
+      rule,
+      const DeepCollectionEquality().hash(deduction),
+      const DeepCollectionEquality().hash(hours),
+      deductionType);
 
   @JsonKey(ignore: true)
   @override
@@ -4906,6 +4927,7 @@ abstract class _Rules implements Rules {
   const factory _Rules(
           {final String? rule,
           final dynamic deduction,
+          final dynamic hours,
           @JsonKey(name: 'deduction_type') final String? deductionType}) =
       _$RulesImpl;
 
@@ -4915,6 +4937,8 @@ abstract class _Rules implements Rules {
   String? get rule;
   @override
   dynamic get deduction;
+  @override
+  dynamic get hours;
   @override
   @JsonKey(name: 'deduction_type')
   String? get deductionType;

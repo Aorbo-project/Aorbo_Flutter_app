@@ -292,6 +292,7 @@ class Rules with _$Rules {
   const factory Rules({
     String? rule,
     dynamic deduction,
+    dynamic hours,
     @JsonKey(name: 'deduction_type') String? deductionType,
   }) = _Rules;
 

@@ -35,52 +35,7 @@ class _CouponCodeScreenState extends State<CouponCodeScreen> {
     await _trekController.fetchVendorCoupons();
   }
 
-  // Future<void> _validateAndApplyCoupon(String couponCode) async {
-  //   if (couponCode.isEmpty) return;
-  //
-  //   // Get the base amount for validation
-  //   final basePricePerPerson = double.parse(_trekController.trekDetailData.value.basePrice?? "0.0");
-  //   final baseAmount = basePricePerPerson * _trekController.trekPersonCount.value;
-  //   final customerId = sp!.getInt(SpUtil.userID) ?? 0;
-  //
-  //   if (baseAmount <= 0) {
-  //     CustomSnackBar.show(
-  //       context,
-  //       message: 'Unable to validate coupon. Invalid trek amount.',
-  //     );
-  //     return;
-  //   }
-  //
-  //   if (customerId <= 0) {
-  //     CustomSnackBar.show(
-  //       context,
-  //       message: 'Unable to validate coupon. User not found.',
-  //     );
-  //     return;
-  //   }
-  //
-  //   // Show loading state
-  //   setState(() {});
-  //
-  //   try {
-  //     final isValid = await _trekController.validateCoupon(
-  //       couponCode: couponCode,
-  //       customerId: customerId,
-  //       baseAmount: baseAmount,
-  //     );
-  //
-  //     if (isValid) {
-  //       // Coupon is valid, return to previous screen
-  //       Navigator.pop(context, couponCode);
-  //     }
-  //     // If invalid, the error message is already shown in the validateCoupon function
-  //   } catch (e) {
-  //     CustomSnackBar.show(
-  //       context,
-  //       message: 'Failed to validate coupon. Please try again.',
-  //     );
-  //   }
-  // }
+
 
   @override
   void dispose() {
@@ -170,8 +125,7 @@ class _CouponCodeScreenState extends State<CouponCodeScreen> {
                 TextButton(
                   onPressed: () async {
                     if (_couponController.text.isNotEmpty) {
-                      _trekController.calculateFareRequestModel.value = _trekController.calculateFareRequestModel.value.copyWith(couponCode: _couponController.text);
-                      Get.back();
+                      _trekController.validateCoupon(_couponController.text ?? "");
                     }
                   },
                   child: Text(
@@ -259,8 +213,7 @@ class _CouponCodeScreenState extends State<CouponCodeScreen> {
                   return CouponCard(
                     coupon: coupon,
                     onApply: () {
-                      _trekController.calculateFareRequestModel.value = _trekController.calculateFareRequestModel.value.copyWith(couponCode: coupon?.code ?? '');
-                      Get.back();
+                      _trekController.validateCoupon(coupon?.code ?? "");
                     },
                     isApplied: false,
                   );

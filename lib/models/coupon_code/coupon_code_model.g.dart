@@ -6,6 +6,58 @@ part of 'coupon_code_model.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
+_$ValidateCouponCodeRequestModelImpl
+    _$$ValidateCouponCodeRequestModelImplFromJson(Map<String, dynamic> json) =>
+        _$ValidateCouponCodeRequestModelImpl(
+          code: json['code'] as String,
+          trekId: json['trekId'],
+          bookingAmount: json['bookingAmount'],
+        );
+
+Map<String, dynamic> _$$ValidateCouponCodeRequestModelImplToJson(
+        _$ValidateCouponCodeRequestModelImpl instance) =>
+    <String, dynamic>{
+      'code': instance.code,
+      'trekId': instance.trekId,
+      'bookingAmount': instance.bookingAmount,
+    };
+
+_$ValidateCouponCodeResponseModelImpl
+    _$$ValidateCouponCodeResponseModelImplFromJson(Map<String, dynamic> json) =>
+        _$ValidateCouponCodeResponseModelImpl(
+          success: json['success'] as bool?,
+          message: json['message'] as String?,
+          coupon: json['coupon'] == null
+              ? null
+              : ValidateCouponCodeDataModel.fromJson(
+                  json['coupon'] as Map<String, dynamic>),
+        );
+
+Map<String, dynamic> _$$ValidateCouponCodeResponseModelImplToJson(
+        _$ValidateCouponCodeResponseModelImpl instance) =>
+    <String, dynamic>{
+      'success': instance.success,
+      'message': instance.message,
+      'coupon': instance.coupon,
+    };
+
+_$ValidateCouponCodeDataModelImpl _$$ValidateCouponCodeDataModelImplFromJson(
+        Map<String, dynamic> json) =>
+    _$ValidateCouponCodeDataModelImpl(
+      valid: json['valid'] as bool?,
+      couponDetails: json['coupon_details'] == null
+          ? null
+          : CouponCardData.fromJson(
+              json['coupon_details'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$$ValidateCouponCodeDataModelImplToJson(
+        _$ValidateCouponCodeDataModelImpl instance) =>
+    <String, dynamic>{
+      'valid': instance.valid,
+      'coupon_details': instance.couponDetails,
+    };
+
 _$CouponCodeModelImpl _$$CouponCodeModelImplFromJson(
         Map<String, dynamic> json) =>
     _$CouponCodeModelImpl(

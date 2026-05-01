@@ -320,8 +320,7 @@ class _TicketCardSectionState extends State<_TicketCardSection> {
                     ),
                     SizedBox(height: 0.5.h),
                     Text(
-                      _trekC
-                              .verifyOrderModal
+                      _trekC.verifyOrderModal
                               .value
                               .data!
                               .city

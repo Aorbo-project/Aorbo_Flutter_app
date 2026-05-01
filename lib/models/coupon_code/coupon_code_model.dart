@@ -4,6 +4,41 @@ part 'coupon_code_model.freezed.dart';
 part 'coupon_code_model.g.dart';
 
 @freezed
+class ValidateCouponCodeRequestModel with _$ValidateCouponCodeRequestModel {
+  const factory ValidateCouponCodeRequestModel({
+    required String code,
+    required dynamic trekId,
+    required dynamic bookingAmount
+  }) = _ValidateCouponCodeRequestModel;
+
+  factory ValidateCouponCodeRequestModel.fromJson(Map<String, dynamic> json) =>
+      _$ValidateCouponCodeRequestModelFromJson(json);
+}
+
+@freezed
+class ValidateCouponCodeResponseModel with _$ValidateCouponCodeResponseModel {
+  const factory ValidateCouponCodeResponseModel({
+    bool? success,
+    String? message,
+    ValidateCouponCodeDataModel? coupon
+  }) = _ValidateCouponCodeResponseModel;
+
+  factory ValidateCouponCodeResponseModel.fromJson(Map<String, dynamic> json) =>
+      _$ValidateCouponCodeResponseModelFromJson(json);
+}
+
+@freezed
+class ValidateCouponCodeDataModel with _$ValidateCouponCodeDataModel {
+  const factory ValidateCouponCodeDataModel({
+    bool? valid,
+    @JsonKey(name: 'coupon_details') CouponCardData? couponDetails
+  }) = _ValidateCouponCodeDataModel;
+
+  factory ValidateCouponCodeDataModel.fromJson(Map<String, dynamic> json) =>
+      _$ValidateCouponCodeDataModelFromJson(json);
+}
+
+@freezed
 class CouponCodeModel with _$CouponCodeModel {
   const factory CouponCodeModel({
     bool? success,
