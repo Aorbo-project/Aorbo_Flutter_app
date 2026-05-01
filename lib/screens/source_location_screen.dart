@@ -105,39 +105,32 @@ class _SourceLocationScreenState extends State<SourceLocationScreen> {
   }
 
 
-  void _onItemTap(String value) {
-    _fetchCalendarDates();
+  void _onItemTap(String value) async {   // add 'async'
+    // Update selection first (city or trek)
     if (_isFromFocused) {
       final city = _dashboardC.citiesData.value.data
           ?.firstWhere((c) => c.cityName == value);
-
       _dashboardC.selectedCityId.value = city?.id ?? 0;
       _dashboardC.fromController.value.text = value;
-
       _fromController.text = value;
-
-      /// 👉 Move focus to TO automatically (nice UX)
       FocusScope.of(context).requestFocus(_toFocus);
     } else {
       final trek = _dashboardC.trekData.value.data
           ?.firstWhere((t) => t.name == value);
-
       _dashboardC.selectedTrekId.value = trek?.id ?? 0;
       _dashboardC.toController.value.text = value;
-
       _toController.text = value;
-
       _toFocus.unfocus();
     }
 
-    /// ✅ AUTO BACK WHEN BOTH FILLED
-    if (_fromController.text.isNotEmpty &&
-        _toController.text.isNotEmpty) {
-      Future.delayed(const Duration(milliseconds: 200), () {
-        Get.back();
-      });
+    // ✅ Wait for calendar API to finish
+    await _fetchCalendarDates();
+
+    // ✅ Then navigate back
+    if (_fromController.text.isNotEmpty && _toController.text.isNotEmpty) {
+      Get.back();
     }
-  }
+}
 
   @override
   Widget build(BuildContext context) {
