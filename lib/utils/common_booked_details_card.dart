@@ -7,7 +7,7 @@ import 'common_colors.dart';
 import 'common_images.dart';
 
 class UpcomingBookingCard extends StatelessWidget {
-  final BookingHistoryData booking;
+  final BookingHistoryData? booking;
   final VoidCallback? onViewMoreTap;
 
   const UpcomingBookingCard({
@@ -19,7 +19,7 @@ class UpcomingBookingCard extends StatelessWidget {
   String? _getOriginCity() {
     // You can implement logic to determine origin city based on booking data
     // For now, returning a default or trying to extract from batch/city info
-    if (booking.cityId != null) {
+    if (booking?.cityId != null) {
       // You might want to map cityId to actual city names
       return "sadsa";
       // return booking.city?.cityName; // Replace with actual city mapping logic
@@ -29,20 +29,20 @@ class UpcomingBookingCard extends StatelessWidget {
 
   String _getDestinationCity() {
     // You can implement logic to determine destination city based on trek data
-    if (booking.trek?.title != null) {
+    if (booking?.trek?.title != null) {
       // Extract destination from trek title or use trek destination info
-      return booking.trek!.title!;
+      return booking?.trek?.title ?? "";
     }
     return 'Destination';
   }
 
   String _getDurationText() {
-    if (booking.trek?.duration != null) {
+    if (booking?.trek?.duration != null) {
       // return booking.trek!.duration!;
 
-      if (booking.trek?.durationDays != null &&
-          booking.trek?.durationNights != null) {
-        return '${booking.trek!.durationDays}D | ${booking.trek!.durationNights}N';
+      if (booking?.trek?.durationDays != null &&
+          booking?.trek?.durationNights != null) {
+        return '${booking?.trek!.durationDays}D | ${booking?.trek!.durationNights}N';
       }
     }
     return 'N/A';
@@ -86,7 +86,7 @@ class UpcomingBookingCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      booking.trek?.title ?? 'Unknown Trek',
+                      booking?.trek?.title ?? 'Unknown Trek',
                       style: TextStyle(
                         fontSize: 13.sp,
                         fontWeight: FontWeight.w600,
@@ -97,7 +97,7 @@ class UpcomingBookingCard extends StatelessWidget {
                     ),
                     SizedBox(height: 0.3.h),
                     Text(
-                      booking.trek?.vendor?.businessName ??
+                      booking?.trek?.vendor?.businessName ??
                           'Unknown Organiser',
                       style: TextStyle(
                         fontSize: FontSize.s10,
@@ -108,7 +108,7 @@ class UpcomingBookingCard extends StatelessWidget {
                 ),
               ),
               Text(
-                "TRB ID : ${booking.batch?.tbrId ?? '00'}",
+                "TRB ID : ${booking?.batch?.tbrId ?? '00'}",
                 style: TextStyle(
                   fontSize: 10.sp,
                   color: CommonColors.greyTextColor,
@@ -180,7 +180,7 @@ class UpcomingBookingCard extends StatelessWidget {
 
           /// Slots
           Text(
-            "Slots : ${booking.totalTravelers ?? 0} Travellers",
+            "Slots : ${booking?.totalTravelers ?? 0} Travellers",
             style: TextStyle(
               fontSize: FontSize.s10,
               color: CommonColors.blackColor,
@@ -191,7 +191,7 @@ class UpcomingBookingCard extends StatelessWidget {
 
           /// Description
           Text(
-            booking.trek?.description ?? 'No description available',
+            booking?.trek?.description ?? 'No description available',
             style: TextStyle(
               fontSize: FontSize.s10,
               color: CommonColors.blackColor,

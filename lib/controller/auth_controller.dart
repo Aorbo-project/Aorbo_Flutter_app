@@ -85,7 +85,10 @@ class AuthController extends GetxController {
       isProfileLoading.value = true;
       await FirebaseAuth.instance.verifyPhoneNumber(
         phoneNumber: formattedPhoneNumber(phoneNumber: phoneNumber),
-        verificationCompleted: (PhoneAuthCredential credential) {},
+        verificationCompleted:  (PhoneAuthCredential credential) {
+          print(credential.toString());
+          print("Auto verified");
+        },
         verificationFailed: (FirebaseAuthException e) {
           isProfileLoading.value = false;
           if (e.code == 'invalid-phone-number') {

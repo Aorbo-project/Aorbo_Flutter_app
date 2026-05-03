@@ -93,7 +93,7 @@ class NetworkUrl {
     required int page,
     String? trekStatus,
   }) =>
-      'bookings?page=$page&limit=10'
+      'bookings?page=$page&limit=20'
           '${trekStatus == null ? '' : "&trek_status=$trekStatus"}';
 
   static const String review = 'ratings';
@@ -110,6 +110,9 @@ class NetworkUrl {
   static const String submitIssue = 'issues/submit';
   static String bookingDispute(String bookingId) =>
       'booking-dispute/$bookingId';
+
+  static String bookingDetails(dynamic bookingId) =>
+      'booking-details/$bookingId';
 
   // Emergency contacts
   static const String emergencyContacts = 'customer/emergency-contacts';

@@ -1,5 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import '../profile/user_profile_model.dart';
+import '../treks/trek_detail_model.dart';
 
 part 'booking_history_model.freezed.dart';
 part 'booking_history_model.g.dart';
@@ -16,6 +17,18 @@ class BookingHistoryModel with _$BookingHistoryModel {
 
   factory BookingHistoryModel.fromJson(Map<String, dynamic> json) =>
       _$BookingHistoryModelFromJson(json);
+}
+
+@freezed
+class BookingDetailsResponseModel with _$BookingDetailsResponseModel {
+  const factory BookingDetailsResponseModel({
+    bool? success,
+    String? message,
+    BookingHistoryData? data
+  }) = _BookingDetailsResponseModel;
+
+  factory BookingDetailsResponseModel.fromJson(Map<String, dynamic> json) =>
+      _$BookingDetailsResponseModelFromJson(json);
 }
 
 String? _toString(dynamic value) => value?.toString();
@@ -35,6 +48,12 @@ class BookingHistoryData with _$BookingHistoryData {
     // ✅ SAFE STRING CONVERSION
     @JsonKey(name: 'total_amount', fromJson: _toString)
     String? totalAmount,
+
+    @JsonKey(name: 'platform_fees', fromJson: _toString)
+    String? platformFees,
+
+    @JsonKey(name: 'gst_amount', fromJson: _toString)
+    String? gstAmount,
 
     @JsonKey(name: 'discount_amount', fromJson: _toString)
     String? discountAmount,
@@ -56,15 +75,24 @@ class BookingHistoryData with _$BookingHistoryData {
 
     @JsonKey(name: 'user_id') int? userId,
     @JsonKey(name: 'city_id') int? cityId,
+    @JsonKey(name: 'cancellation_policy_type') dynamic cancellationPolicyType,
+
+    @JsonKey(name: 'advance_amount', fromJson: _toString)
+    String? advanceAmount,
+
+    @JsonKey(name: 'remaining_amount', fromJson: _toString)
+    String? remainingAmount,
 
     Trek? trek,
     Batch? batch,
 
+
     List<TravelersDataModel>? travelers,
+    @JsonKey(name: 'booking_number') String? bookingNumber,
 
     @JsonKey(name: 'trek_status') String? trekStatus,
     @JsonKey(name: 'rating_given') bool? ratingGiven,
-    @JsonKey(name: 'rating_value') double? ratingValue,
+    @JsonKey(name: 'rating_value') dynamic ratingValue,
     @JsonKey(name: 'trek_stage_date_time') String? trekStageDateTime,
     @JsonKey(name: 'trek_stage_name') String? trekStageName,
   }) = _BookingHistoryData;
@@ -77,8 +105,8 @@ class BookingHistoryData with _$BookingHistoryData {
 class Trek with _$Trek {
   const factory Trek({
     @JsonKey(name: 'city_ids') List<int>? cityIds,
-    List<String>? inclusions,
-    List<String>? exclusions,
+    List<dynamic>? inclusions,
+    List<dynamic>? exclusions,
     List<int>? activities,
     int? id,
     @JsonKey(name: 'mtr_id') String? mtrId,
@@ -90,6 +118,7 @@ class Trek with _$Trek {
     String? duration,
     @JsonKey(name: 'duration_days') int? durationDays,
     @JsonKey(name: 'duration_nights') int? durationNights,
+    String? difficulty,
     @JsonKey(name: 'base_price') String? basePrice,
     @JsonKey(name: 'max_participants') int? maxParticipants,
     @JsonKey(name: 'trekking_rules') String? trekkingRules,
@@ -109,7 +138,9 @@ class Trek with _$Trek {
     String? createdAt,
     String? updatedAt,
     Vendor? vendor,
-    int? rating,
+    Badge? badge,
+    @JsonKey(name: 'trek_stages') List<TrekStages>? trekStages,
+    dynamic rating,
     int? ratingCount,
     Destination? destination,
     @JsonKey(name: 'captain_name') String? captainName,

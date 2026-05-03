@@ -596,7 +596,7 @@ class TrekController extends GetxController {
           // Add a small delay before fetching dispute details to allow backend processing
           Future.delayed(Duration(milliseconds: 500), () {
             try {
-              Get.find<DashboardController>().getDisputeDetail(
+              Get.find<DashboardController>().getBookingDetail(
                 bookingId: bookingId.toString(),
               );
             } catch (e) {

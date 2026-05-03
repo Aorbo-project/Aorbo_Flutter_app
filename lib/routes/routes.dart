@@ -78,10 +78,7 @@ final routes = [
     page: () => const TravellerInfoScreen(),
   ),
   GetPage(name: '/my-bookings', page: () => const BookingsScreen()),
-  GetPage(
-    name: '/bookingsupcoming',
-    page: () => const BookingsUpcomingScreen(),
-  ),
+
   GetPage(name: '/bookingscancel', page: () => const BookingsCancelScreen()),
   GetPage(name: '/safety', page: () => const SafetyScreen()),
   GetPage(name: '/emergency-contacts', page: () => EmergencyContactsScreen()),

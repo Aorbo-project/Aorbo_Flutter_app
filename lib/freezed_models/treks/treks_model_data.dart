@@ -79,6 +79,7 @@ class TrekData with _$TrekData {
     int? id,
     String? name,
     String? vendor,
+    String? vendorLogo,
     bool? hasDiscount,
     String? discountText,
     double? rating,

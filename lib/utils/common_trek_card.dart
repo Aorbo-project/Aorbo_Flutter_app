@@ -231,9 +231,9 @@ class CommonTrekCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(2.5.w),
                     ),
                     clipBehavior: Clip.antiAlias,
-                    child: trek?.imageUrl?.isNotEmpty == true
+                    child: trek?.vendorLogo?.isNotEmpty == true
                         ? CustomNetworkImage(
-                            imageUrl: trek!.imageUrl!,
+                            imageUrl: trek?.vendorLogo ?? "",
                             fit: BoxFit.cover,
                             width: 10.w,
                             height: 10.w,

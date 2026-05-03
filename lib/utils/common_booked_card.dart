@@ -1,3 +1,4 @@
+import 'package:arobo_app/widgets/custom_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 import '../freezed_models/booking/booking_history_model.dart';
@@ -188,23 +189,13 @@ class CommonBookedCard extends StatelessWidget {
               Row(
                 children: [
                   // Vendor logo badge
-                  Container(
-                    width: 10.w,
-                    height: 10.w,
-                    decoration: BoxDecoration(
-                      color: _BC.iconBadge,
-                      borderRadius: BorderRadius.circular(2.5.w),
-                    ),
-                    child: Center(
-                      child: Image.asset(
-                        CommonImages.logo,
-                        width: 6.w,
-                        height: 6.w,
-                        fit: BoxFit.contain,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
+              CustomNetworkImage(
+              imageUrl: booking.trek?.vendor?.businessLogo ?? '',
+                width: 10.w,
+                height: 10.w,
+                fit: BoxFit.contain,
+                color: Colors.white,
+              ),
                   SizedBox(width: 3.w),
 
                   // Vendor name + TBR ID
