@@ -86,11 +86,3 @@ class _InvoiceExampleScreenState extends State<InvoiceExampleScreen> {
   }
 }
 
-// ── Entry point (for isolated testing) ───────────────────────────────────────
-
-void main() {
-  runApp(const MaterialApp(
-    debugShowCheckedModeBanner: false,
-    home: InvoiceExampleScreen(),
-  ));
-}

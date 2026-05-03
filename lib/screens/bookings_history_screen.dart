@@ -1,4 +1,5 @@
 import 'package:arobo_app/controller/dashboard_controller.dart';
+import 'package:arobo_app/screens/booking_upcoming_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sizer/sizer.dart';
@@ -82,6 +83,7 @@ class _BookingsScreenState extends State<BookingsScreen> with SingleTickerProvid
 
   void _onScroll() {
     if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+      print("Load More DAta");
       _loadMoreData();
     }
   }
@@ -288,11 +290,7 @@ class _BookingsScreenState extends State<BookingsScreen> with SingleTickerProvid
         child: CommonBookedCard(
           booking: booking,
           onViewDetailsTap: () {
-            final s = booking.status?.toLowerCase().trim();
-            Get.toNamed(
-              '/bookingsupcoming',
-              arguments: {'booking': booking, 'status': s},
-            );
+            Get.to(() => BookingsUpcomingScreen(bookingId: booking.id));
           },
         ),
       ),

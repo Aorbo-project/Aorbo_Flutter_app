@@ -40,6 +40,8 @@ class DashboardController extends GetxController {
       error: "")
       .obs;
 
+  final bookingDetailsObserver = ApiResult<BookingDetailsResponseModel>.init().obs;
+
   RxMap<String, int> availableDates = <String, int>{}.obs;
   final calenderTrekDatesObserver = const ApiResult<CalenderDatesResponseModel>.init().obs;
 
@@ -481,6 +483,11 @@ class DashboardController extends GetxController {
     final observer = bookingHistoryObserver;
 
     try {
+      print("BOOKIN RESPONSE");
+      print("IS LOADING ${bookingHistoryObserver.value.isLoading}");
+      print("isPaginationCompleted ${bookingHistoryObserver.value.isPaginationCompleted}");
+      print("page ${bookingHistoryObserver.value.page}");
+      print("error ${bookingHistoryObserver.value.error}");
       if (refresh == true) {
         observer.value = PaginationModel(
             data: const ApiResult<BookingHistoryModel>.init().obs,
@@ -507,12 +514,14 @@ class DashboardController extends GetxController {
 
       final response = await _repository.getApiCall(
         url: NetworkUrl.bookingHistoryWithStatus(
-          page: currentBookingPage.value,
+          page: observer.value.page,
           trekStatus: selectedFilter.value == 'All Bookings'
               ? null
               : selectedFilter.value,
         ),
       );
+
+
 
       final body = response;
       if (body != null) {
@@ -582,35 +591,28 @@ class DashboardController extends GetxController {
     return null;
   }
 
-  getDisputeDetail({required String bookingId}) async {
-    isLoadingDisputeDetail.value = true;
-    errorMessage.value = '';
+  getBookingDetail({required dynamic bookingId}) async {
 
     try {
+      bookingDetailsObserver.value = ApiResult.loading("");
       final response = await _repository.getApiCall(
-        url: NetworkUrl.bookingDispute(bookingId),
+        url: NetworkUrl.bookingDetails(bookingId),
       );
 
       if (response != null) {
         if (response['success']) {
-          disputeDetailModal.value = DisputeDetailModal.fromJson(response);
-          disputeDetailDataList.value =
-              disputeDetailModal.value.data?.disputes ?? [];
+          final body = BookingDetailsResponseModel.fromJson(response);
+          bookingDetailsObserver.value = ApiResult.success(body);
         } else {
-          errorMessage.value =
-              response['message'] ?? 'Failed to load dispute details';
+          bookingDetailsObserver.value = ApiResult.error(response['message'] ?? 'Failed to load dispute details');;
         }
       }
     } catch (e) {
-      errorMessage.value = 'Failed to load dispute details: ${e.toString()}';
-      logger.e(errorMessage.value);
+      bookingDetailsObserver.value = ApiResult.error('Failed to load dispute details: ${e.toString()}');
       if (Get.context != null) {
-        CustomSnackBar.show(Get.context!, message: errorMessage.value);
+        CustomSnackBar.show(Get.context!, message: 'Failed to load dispute details: ${e.toString()}');
       }
-    } finally {
-      isLoadingDisputeDetail.value = false;
     }
-
     return null;
   }
 

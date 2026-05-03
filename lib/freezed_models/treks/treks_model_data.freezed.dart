@@ -1158,6 +1158,7 @@ mixin _$TrekData {
   int? get id => throw _privateConstructorUsedError;
   String? get name => throw _privateConstructorUsedError;
   String? get vendor => throw _privateConstructorUsedError;
+  String? get vendorLogo => throw _privateConstructorUsedError;
   bool? get hasDiscount => throw _privateConstructorUsedError;
   String? get discountText => throw _privateConstructorUsedError;
   double? get rating => throw _privateConstructorUsedError;
@@ -1182,6 +1183,7 @@ abstract class $TrekDataCopyWith<$Res> {
       {int? id,
       String? name,
       String? vendor,
+      String? vendorLogo,
       bool? hasDiscount,
       String? discountText,
       double? rating,
@@ -1211,6 +1213,7 @@ class _$TrekDataCopyWithImpl<$Res, $Val extends TrekData>
     Object? id = freezed,
     Object? name = freezed,
     Object? vendor = freezed,
+    Object? vendorLogo = freezed,
     Object? hasDiscount = freezed,
     Object? discountText = freezed,
     Object? rating = freezed,
@@ -1232,6 +1235,10 @@ class _$TrekDataCopyWithImpl<$Res, $Val extends TrekData>
       vendor: freezed == vendor
           ? _value.vendor
           : vendor // ignore: cast_nullable_to_non_nullable
+              as String?,
+      vendorLogo: freezed == vendorLogo
+          ? _value.vendorLogo
+          : vendorLogo // ignore: cast_nullable_to_non_nullable
               as String?,
       hasDiscount: freezed == hasDiscount
           ? _value.hasDiscount
@@ -1305,6 +1312,7 @@ abstract class _$$TrekDataImplCopyWith<$Res>
       {int? id,
       String? name,
       String? vendor,
+      String? vendorLogo,
       bool? hasDiscount,
       String? discountText,
       double? rating,
@@ -1334,6 +1342,7 @@ class __$$TrekDataImplCopyWithImpl<$Res>
     Object? id = freezed,
     Object? name = freezed,
     Object? vendor = freezed,
+    Object? vendorLogo = freezed,
     Object? hasDiscount = freezed,
     Object? discountText = freezed,
     Object? rating = freezed,
@@ -1355,6 +1364,10 @@ class __$$TrekDataImplCopyWithImpl<$Res>
       vendor: freezed == vendor
           ? _value.vendor
           : vendor // ignore: cast_nullable_to_non_nullable
+              as String?,
+      vendorLogo: freezed == vendorLogo
+          ? _value.vendorLogo
+          : vendorLogo // ignore: cast_nullable_to_non_nullable
               as String?,
       hasDiscount: freezed == hasDiscount
           ? _value.hasDiscount
@@ -1399,6 +1412,7 @@ class _$TrekDataImpl implements _TrekData {
       {this.id,
       this.name,
       this.vendor,
+      this.vendorLogo,
       this.hasDiscount,
       this.discountText,
       this.rating,
@@ -1418,6 +1432,8 @@ class _$TrekDataImpl implements _TrekData {
   @override
   final String? vendor;
   @override
+  final String? vendorLogo;
+  @override
   final bool? hasDiscount;
   @override
   final String? discountText;
@@ -1436,7 +1452,7 @@ class _$TrekDataImpl implements _TrekData {
 
   @override
   String toString() {
-    return 'TrekData(id: $id, name: $name, vendor: $vendor, hasDiscount: $hasDiscount, discountText: $discountText, rating: $rating, price: $price, duration: $duration, batchInfo: $batchInfo, badge: $badge, imageUrl: $imageUrl)';
+    return 'TrekData(id: $id, name: $name, vendor: $vendor, vendorLogo: $vendorLogo, hasDiscount: $hasDiscount, discountText: $discountText, rating: $rating, price: $price, duration: $duration, batchInfo: $batchInfo, badge: $badge, imageUrl: $imageUrl)';
   }
 
   @override
@@ -1447,6 +1463,8 @@ class _$TrekDataImpl implements _TrekData {
             (identical(other.id, id) || other.id == id) &&
             (identical(other.name, name) || other.name == name) &&
             (identical(other.vendor, vendor) || other.vendor == vendor) &&
+            (identical(other.vendorLogo, vendorLogo) ||
+                other.vendorLogo == vendorLogo) &&
             (identical(other.hasDiscount, hasDiscount) ||
                 other.hasDiscount == hasDiscount) &&
             (identical(other.discountText, discountText) ||
@@ -1464,8 +1482,20 @@ class _$TrekDataImpl implements _TrekData {
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(runtimeType, id, name, vendor, hasDiscount,
-      discountText, rating, price, duration, batchInfo, badge, imageUrl);
+  int get hashCode => Object.hash(
+      runtimeType,
+      id,
+      name,
+      vendor,
+      vendorLogo,
+      hasDiscount,
+      discountText,
+      rating,
+      price,
+      duration,
+      batchInfo,
+      badge,
+      imageUrl);
 
   @JsonKey(ignore: true)
   @override
@@ -1486,6 +1516,7 @@ abstract class _TrekData implements TrekData {
       {final int? id,
       final String? name,
       final String? vendor,
+      final String? vendorLogo,
       final bool? hasDiscount,
       final String? discountText,
       final double? rating,
@@ -1504,6 +1535,8 @@ abstract class _TrekData implements TrekData {
   String? get name;
   @override
   String? get vendor;
+  @override
+  String? get vendorLogo;
   @override
   bool? get hasDiscount;
   @override

@@ -30,6 +30,24 @@ Map<String, dynamic> _$$BookingHistoryModelImplToJson(
       'count': instance.count,
     };
 
+_$BookingDetailsResponseModelImpl _$$BookingDetailsResponseModelImplFromJson(
+        Map<String, dynamic> json) =>
+    _$BookingDetailsResponseModelImpl(
+      success: json['success'] as bool?,
+      message: json['message'] as String?,
+      data: json['data'] == null
+          ? null
+          : BookingHistoryData.fromJson(json['data'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$$BookingDetailsResponseModelImplToJson(
+        _$BookingDetailsResponseModelImpl instance) =>
+    <String, dynamic>{
+      'success': instance.success,
+      'message': instance.message,
+      'data': instance.data,
+    };
+
 _$BookingHistoryDataImpl _$$BookingHistoryDataImplFromJson(
         Map<String, dynamic> json) =>
     _$BookingHistoryDataImpl(
@@ -42,6 +60,8 @@ _$BookingHistoryDataImpl _$$BookingHistoryDataImplFromJson(
       couponId: json['coupon_id'] as int?,
       totalTravelers: json['total_travelers'] as int?,
       totalAmount: _toString(json['total_amount']),
+      platformFees: _toString(json['platform_fees']),
+      gstAmount: _toString(json['gst_amount']),
       discountAmount: _toString(json['discount_amount']),
       finalAmount: _toString(json['final_amount']),
       paymentStatus: json['payment_status'] as String?,
@@ -54,6 +74,9 @@ _$BookingHistoryDataImpl _$$BookingHistoryDataImplFromJson(
       updatedAt: json['updatedAt'] as String?,
       userId: json['user_id'] as int?,
       cityId: json['city_id'] as int?,
+      cancellationPolicyType: json['cancellation_policy_type'],
+      advanceAmount: _toString(json['advance_amount']),
+      remainingAmount: _toString(json['remaining_amount']),
       trek: json['trek'] == null
           ? null
           : Trek.fromJson(json['trek'] as Map<String, dynamic>),
@@ -63,9 +86,10 @@ _$BookingHistoryDataImpl _$$BookingHistoryDataImplFromJson(
       travelers: (json['travelers'] as List<dynamic>?)
           ?.map((e) => TravelersDataModel.fromJson(e as Map<String, dynamic>))
           .toList(),
+      bookingNumber: json['booking_number'] as String?,
       trekStatus: json['trek_status'] as String?,
       ratingGiven: json['rating_given'] as bool?,
-      ratingValue: (json['rating_value'] as num?)?.toDouble(),
+      ratingValue: json['rating_value'],
       trekStageDateTime: json['trek_stage_date_time'] as String?,
       trekStageName: json['trek_stage_name'] as String?,
     );
@@ -82,6 +106,8 @@ Map<String, dynamic> _$$BookingHistoryDataImplToJson(
       'coupon_id': instance.couponId,
       'total_travelers': instance.totalTravelers,
       'total_amount': instance.totalAmount,
+      'platform_fees': instance.platformFees,
+      'gst_amount': instance.gstAmount,
       'discount_amount': instance.discountAmount,
       'final_amount': instance.finalAmount,
       'payment_status': instance.paymentStatus,
@@ -94,9 +120,13 @@ Map<String, dynamic> _$$BookingHistoryDataImplToJson(
       'updatedAt': instance.updatedAt,
       'user_id': instance.userId,
       'city_id': instance.cityId,
+      'cancellation_policy_type': instance.cancellationPolicyType,
+      'advance_amount': instance.advanceAmount,
+      'remaining_amount': instance.remainingAmount,
       'trek': instance.trek,
       'batch': instance.batch,
       'travelers': instance.travelers,
+      'booking_number': instance.bookingNumber,
       'trek_status': instance.trekStatus,
       'rating_given': instance.ratingGiven,
       'rating_value': instance.ratingValue,
@@ -107,12 +137,8 @@ Map<String, dynamic> _$$BookingHistoryDataImplToJson(
 _$TrekImpl _$$TrekImplFromJson(Map<String, dynamic> json) => _$TrekImpl(
       cityIds:
           (json['city_ids'] as List<dynamic>?)?.map((e) => e as int).toList(),
-      inclusions: (json['inclusions'] as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList(),
-      exclusions: (json['exclusions'] as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList(),
+      inclusions: json['inclusions'] as List<dynamic>?,
+      exclusions: json['exclusions'] as List<dynamic>?,
       activities:
           (json['activities'] as List<dynamic>?)?.map((e) => e as int).toList(),
       id: json['id'] as int?,
@@ -125,6 +151,7 @@ _$TrekImpl _$$TrekImplFromJson(Map<String, dynamic> json) => _$TrekImpl(
       duration: json['duration'] as String?,
       durationDays: json['duration_days'] as int?,
       durationNights: json['duration_nights'] as int?,
+      difficulty: json['difficulty'] as String?,
       basePrice: json['base_price'] as String?,
       maxParticipants: json['max_participants'] as int?,
       trekkingRules: json['trekking_rules'] as String?,
@@ -146,7 +173,13 @@ _$TrekImpl _$$TrekImplFromJson(Map<String, dynamic> json) => _$TrekImpl(
       vendor: json['vendor'] == null
           ? null
           : Vendor.fromJson(json['vendor'] as Map<String, dynamic>),
-      rating: json['rating'] as int?,
+      badge: json['badge'] == null
+          ? null
+          : Badge.fromJson(json['badge'] as Map<String, dynamic>),
+      trekStages: (json['trek_stages'] as List<dynamic>?)
+          ?.map((e) => TrekStages.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      rating: json['rating'],
       ratingCount: json['ratingCount'] as int?,
       destination: json['destination'] == null
           ? null
@@ -171,6 +204,7 @@ Map<String, dynamic> _$$TrekImplToJson(_$TrekImpl instance) =>
       'duration': instance.duration,
       'duration_days': instance.durationDays,
       'duration_nights': instance.durationNights,
+      'difficulty': instance.difficulty,
       'base_price': instance.basePrice,
       'max_participants': instance.maxParticipants,
       'trekking_rules': instance.trekkingRules,
@@ -190,6 +224,8 @@ Map<String, dynamic> _$$TrekImplToJson(_$TrekImpl instance) =>
       'createdAt': instance.createdAt,
       'updatedAt': instance.updatedAt,
       'vendor': instance.vendor,
+      'badge': instance.badge,
+      'trek_stages': instance.trekStages,
       'rating': instance.rating,
       'ratingCount': instance.ratingCount,
       'destination': instance.destination,

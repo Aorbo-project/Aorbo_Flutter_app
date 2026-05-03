@@ -772,9 +772,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                     height: 6.h,
                     onPressed: () {
                       if (isValidPhoneNumber) {
-                        _authC.sendCode(
-                            phoneNumber:
-                                _authC.phoneNumberLoginTextField.value.text);
+                        _authC.sendCode(phoneNumber: _authC.phoneNumberLoginTextField.value.text);
                         setState(() {
                           showOtp = true;
                           _otpC.startTimer();

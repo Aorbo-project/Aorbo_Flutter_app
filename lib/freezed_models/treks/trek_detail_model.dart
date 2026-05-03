@@ -256,6 +256,9 @@ class CategoryRatings with _$CategoryRatings {
       _$CategoryRatingsFromJson(json);
 }
 
+
+
+
 @freezed
 class BatchInfo with _$BatchInfo {
   const factory BatchInfo({
