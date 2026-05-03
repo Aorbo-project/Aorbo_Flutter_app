@@ -474,7 +474,10 @@ mixin _$Order {
   List<dynamic>? get notes => throw _privateConstructorUsedError;
   @JsonKey(name: 'offer_id')
   String? get offerId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'booking_number')
+  String? get bookingNumber => throw _privateConstructorUsedError;
   String? get receipt => throw _privateConstructorUsedError;
+  BatchModel? get batch => throw _privateConstructorUsedError;
   String? get status => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -498,8 +501,12 @@ abstract class $OrderCopyWith<$Res> {
       String? id,
       List<dynamic>? notes,
       @JsonKey(name: 'offer_id') String? offerId,
+      @JsonKey(name: 'booking_number') String? bookingNumber,
       String? receipt,
+      BatchModel? batch,
       String? status});
+
+  $BatchModelCopyWith<$Res>? get batch;
 }
 
 /// @nodoc
@@ -525,7 +532,9 @@ class _$OrderCopyWithImpl<$Res, $Val extends Order>
     Object? id = freezed,
     Object? notes = freezed,
     Object? offerId = freezed,
+    Object? bookingNumber = freezed,
     Object? receipt = freezed,
+    Object? batch = freezed,
     Object? status = freezed,
   }) {
     return _then(_value.copyWith(
@@ -569,15 +578,35 @@ class _$OrderCopyWithImpl<$Res, $Val extends Order>
           ? _value.offerId
           : offerId // ignore: cast_nullable_to_non_nullable
               as String?,
+      bookingNumber: freezed == bookingNumber
+          ? _value.bookingNumber
+          : bookingNumber // ignore: cast_nullable_to_non_nullable
+              as String?,
       receipt: freezed == receipt
           ? _value.receipt
           : receipt // ignore: cast_nullable_to_non_nullable
               as String?,
+      batch: freezed == batch
+          ? _value.batch
+          : batch // ignore: cast_nullable_to_non_nullable
+              as BatchModel?,
       status: freezed == status
           ? _value.status
           : status // ignore: cast_nullable_to_non_nullable
               as String?,
     ) as $Val);
+  }
+
+  @override
+  @pragma('vm:prefer-inline')
+  $BatchModelCopyWith<$Res>? get batch {
+    if (_value.batch == null) {
+      return null;
+    }
+
+    return $BatchModelCopyWith<$Res>(_value.batch!, (value) {
+      return _then(_value.copyWith(batch: value) as $Val);
+    });
   }
 }
 
@@ -599,8 +628,13 @@ abstract class _$$OrderImplCopyWith<$Res> implements $OrderCopyWith<$Res> {
       String? id,
       List<dynamic>? notes,
       @JsonKey(name: 'offer_id') String? offerId,
+      @JsonKey(name: 'booking_number') String? bookingNumber,
       String? receipt,
+      BatchModel? batch,
       String? status});
+
+  @override
+  $BatchModelCopyWith<$Res>? get batch;
 }
 
 /// @nodoc
@@ -624,7 +658,9 @@ class __$$OrderImplCopyWithImpl<$Res>
     Object? id = freezed,
     Object? notes = freezed,
     Object? offerId = freezed,
+    Object? bookingNumber = freezed,
     Object? receipt = freezed,
+    Object? batch = freezed,
     Object? status = freezed,
   }) {
     return _then(_$OrderImpl(
@@ -668,10 +704,18 @@ class __$$OrderImplCopyWithImpl<$Res>
           ? _value.offerId
           : offerId // ignore: cast_nullable_to_non_nullable
               as String?,
+      bookingNumber: freezed == bookingNumber
+          ? _value.bookingNumber
+          : bookingNumber // ignore: cast_nullable_to_non_nullable
+              as String?,
       receipt: freezed == receipt
           ? _value.receipt
           : receipt // ignore: cast_nullable_to_non_nullable
               as String?,
+      batch: freezed == batch
+          ? _value.batch
+          : batch // ignore: cast_nullable_to_non_nullable
+              as BatchModel?,
       status: freezed == status
           ? _value.status
           : status // ignore: cast_nullable_to_non_nullable
@@ -694,7 +738,9 @@ class _$OrderImpl implements _Order {
       this.id,
       final List<dynamic>? notes,
       @JsonKey(name: 'offer_id') this.offerId,
+      @JsonKey(name: 'booking_number') this.bookingNumber,
       this.receipt,
+      this.batch,
       this.status})
       : _notes = notes;
 
@@ -734,13 +780,18 @@ class _$OrderImpl implements _Order {
   @JsonKey(name: 'offer_id')
   final String? offerId;
   @override
+  @JsonKey(name: 'booking_number')
+  final String? bookingNumber;
+  @override
   final String? receipt;
+  @override
+  final BatchModel? batch;
   @override
   final String? status;
 
   @override
   String toString() {
-    return 'Order(amount: $amount, amountDue: $amountDue, amountPaid: $amountPaid, attempts: $attempts, createdAt: $createdAt, currency: $currency, entity: $entity, id: $id, notes: $notes, offerId: $offerId, receipt: $receipt, status: $status)';
+    return 'Order(amount: $amount, amountDue: $amountDue, amountPaid: $amountPaid, attempts: $attempts, createdAt: $createdAt, currency: $currency, entity: $entity, id: $id, notes: $notes, offerId: $offerId, bookingNumber: $bookingNumber, receipt: $receipt, batch: $batch, status: $status)';
   }
 
   @override
@@ -761,7 +812,10 @@ class _$OrderImpl implements _Order {
             (identical(other.id, id) || other.id == id) &&
             const DeepCollectionEquality().equals(other._notes, _notes) &&
             (identical(other.offerId, offerId) || other.offerId == offerId) &&
+            (identical(other.bookingNumber, bookingNumber) ||
+                other.bookingNumber == bookingNumber) &&
             (identical(other.receipt, receipt) || other.receipt == receipt) &&
+            (identical(other.batch, batch) || other.batch == batch) &&
             (identical(other.status, status) || other.status == status));
   }
 
@@ -779,7 +833,9 @@ class _$OrderImpl implements _Order {
       id,
       const DeepCollectionEquality().hash(_notes),
       offerId,
+      bookingNumber,
       receipt,
+      batch,
       status);
 
   @JsonKey(ignore: true)
@@ -808,7 +864,9 @@ abstract class _Order implements Order {
       final String? id,
       final List<dynamic>? notes,
       @JsonKey(name: 'offer_id') final String? offerId,
+      @JsonKey(name: 'booking_number') final String? bookingNumber,
       final String? receipt,
+      final BatchModel? batch,
       final String? status}) = _$OrderImpl;
 
   factory _Order.fromJson(Map<String, dynamic> json) = _$OrderImpl.fromJson;
@@ -838,12 +896,300 @@ abstract class _Order implements Order {
   @JsonKey(name: 'offer_id')
   String? get offerId;
   @override
+  @JsonKey(name: 'booking_number')
+  String? get bookingNumber;
+  @override
   String? get receipt;
+  @override
+  BatchModel? get batch;
   @override
   String? get status;
   @override
   @JsonKey(ignore: true)
   _$$OrderImplCopyWith<_$OrderImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+BatchModel _$BatchModelFromJson(Map<String, dynamic> json) {
+  return _BatchModel.fromJson(json);
+}
+
+/// @nodoc
+mixin _$BatchModel {
+  int? get id => throw _privateConstructorUsedError;
+  @JsonKey(name: 'tbr_id')
+  String? get tbrId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'start_date')
+  String? get startDate => throw _privateConstructorUsedError;
+  @JsonKey(name: 'end_date')
+  String? get endDate => throw _privateConstructorUsedError;
+  @JsonKey(name: 'booked_slots')
+  int? get bookedSlots => throw _privateConstructorUsedError;
+  @JsonKey(name: 'available_slots')
+  int? get availableSlots => throw _privateConstructorUsedError;
+  @JsonKey(name: 'capacity')
+  int? get capacity => throw _privateConstructorUsedError;
+
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+  @JsonKey(ignore: true)
+  $BatchModelCopyWith<BatchModel> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $BatchModelCopyWith<$Res> {
+  factory $BatchModelCopyWith(
+          BatchModel value, $Res Function(BatchModel) then) =
+      _$BatchModelCopyWithImpl<$Res, BatchModel>;
+  @useResult
+  $Res call(
+      {int? id,
+      @JsonKey(name: 'tbr_id') String? tbrId,
+      @JsonKey(name: 'start_date') String? startDate,
+      @JsonKey(name: 'end_date') String? endDate,
+      @JsonKey(name: 'booked_slots') int? bookedSlots,
+      @JsonKey(name: 'available_slots') int? availableSlots,
+      @JsonKey(name: 'capacity') int? capacity});
+}
+
+/// @nodoc
+class _$BatchModelCopyWithImpl<$Res, $Val extends BatchModel>
+    implements $BatchModelCopyWith<$Res> {
+  _$BatchModelCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? id = freezed,
+    Object? tbrId = freezed,
+    Object? startDate = freezed,
+    Object? endDate = freezed,
+    Object? bookedSlots = freezed,
+    Object? availableSlots = freezed,
+    Object? capacity = freezed,
+  }) {
+    return _then(_value.copyWith(
+      id: freezed == id
+          ? _value.id
+          : id // ignore: cast_nullable_to_non_nullable
+              as int?,
+      tbrId: freezed == tbrId
+          ? _value.tbrId
+          : tbrId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      startDate: freezed == startDate
+          ? _value.startDate
+          : startDate // ignore: cast_nullable_to_non_nullable
+              as String?,
+      endDate: freezed == endDate
+          ? _value.endDate
+          : endDate // ignore: cast_nullable_to_non_nullable
+              as String?,
+      bookedSlots: freezed == bookedSlots
+          ? _value.bookedSlots
+          : bookedSlots // ignore: cast_nullable_to_non_nullable
+              as int?,
+      availableSlots: freezed == availableSlots
+          ? _value.availableSlots
+          : availableSlots // ignore: cast_nullable_to_non_nullable
+              as int?,
+      capacity: freezed == capacity
+          ? _value.capacity
+          : capacity // ignore: cast_nullable_to_non_nullable
+              as int?,
+    ) as $Val);
+  }
+}
+
+/// @nodoc
+abstract class _$$BatchModelImplCopyWith<$Res>
+    implements $BatchModelCopyWith<$Res> {
+  factory _$$BatchModelImplCopyWith(
+          _$BatchModelImpl value, $Res Function(_$BatchModelImpl) then) =
+      __$$BatchModelImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call(
+      {int? id,
+      @JsonKey(name: 'tbr_id') String? tbrId,
+      @JsonKey(name: 'start_date') String? startDate,
+      @JsonKey(name: 'end_date') String? endDate,
+      @JsonKey(name: 'booked_slots') int? bookedSlots,
+      @JsonKey(name: 'available_slots') int? availableSlots,
+      @JsonKey(name: 'capacity') int? capacity});
+}
+
+/// @nodoc
+class __$$BatchModelImplCopyWithImpl<$Res>
+    extends _$BatchModelCopyWithImpl<$Res, _$BatchModelImpl>
+    implements _$$BatchModelImplCopyWith<$Res> {
+  __$$BatchModelImplCopyWithImpl(
+      _$BatchModelImpl _value, $Res Function(_$BatchModelImpl) _then)
+      : super(_value, _then);
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? id = freezed,
+    Object? tbrId = freezed,
+    Object? startDate = freezed,
+    Object? endDate = freezed,
+    Object? bookedSlots = freezed,
+    Object? availableSlots = freezed,
+    Object? capacity = freezed,
+  }) {
+    return _then(_$BatchModelImpl(
+      id: freezed == id
+          ? _value.id
+          : id // ignore: cast_nullable_to_non_nullable
+              as int?,
+      tbrId: freezed == tbrId
+          ? _value.tbrId
+          : tbrId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      startDate: freezed == startDate
+          ? _value.startDate
+          : startDate // ignore: cast_nullable_to_non_nullable
+              as String?,
+      endDate: freezed == endDate
+          ? _value.endDate
+          : endDate // ignore: cast_nullable_to_non_nullable
+              as String?,
+      bookedSlots: freezed == bookedSlots
+          ? _value.bookedSlots
+          : bookedSlots // ignore: cast_nullable_to_non_nullable
+              as int?,
+      availableSlots: freezed == availableSlots
+          ? _value.availableSlots
+          : availableSlots // ignore: cast_nullable_to_non_nullable
+              as int?,
+      capacity: freezed == capacity
+          ? _value.capacity
+          : capacity // ignore: cast_nullable_to_non_nullable
+              as int?,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$BatchModelImpl implements _BatchModel {
+  const _$BatchModelImpl(
+      {this.id,
+      @JsonKey(name: 'tbr_id') this.tbrId,
+      @JsonKey(name: 'start_date') this.startDate,
+      @JsonKey(name: 'end_date') this.endDate,
+      @JsonKey(name: 'booked_slots') this.bookedSlots,
+      @JsonKey(name: 'available_slots') this.availableSlots,
+      @JsonKey(name: 'capacity') this.capacity});
+
+  factory _$BatchModelImpl.fromJson(Map<String, dynamic> json) =>
+      _$$BatchModelImplFromJson(json);
+
+  @override
+  final int? id;
+  @override
+  @JsonKey(name: 'tbr_id')
+  final String? tbrId;
+  @override
+  @JsonKey(name: 'start_date')
+  final String? startDate;
+  @override
+  @JsonKey(name: 'end_date')
+  final String? endDate;
+  @override
+  @JsonKey(name: 'booked_slots')
+  final int? bookedSlots;
+  @override
+  @JsonKey(name: 'available_slots')
+  final int? availableSlots;
+  @override
+  @JsonKey(name: 'capacity')
+  final int? capacity;
+
+  @override
+  String toString() {
+    return 'BatchModel(id: $id, tbrId: $tbrId, startDate: $startDate, endDate: $endDate, bookedSlots: $bookedSlots, availableSlots: $availableSlots, capacity: $capacity)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$BatchModelImpl &&
+            (identical(other.id, id) || other.id == id) &&
+            (identical(other.tbrId, tbrId) || other.tbrId == tbrId) &&
+            (identical(other.startDate, startDate) ||
+                other.startDate == startDate) &&
+            (identical(other.endDate, endDate) || other.endDate == endDate) &&
+            (identical(other.bookedSlots, bookedSlots) ||
+                other.bookedSlots == bookedSlots) &&
+            (identical(other.availableSlots, availableSlots) ||
+                other.availableSlots == availableSlots) &&
+            (identical(other.capacity, capacity) ||
+                other.capacity == capacity));
+  }
+
+  @JsonKey(ignore: true)
+  @override
+  int get hashCode => Object.hash(runtimeType, id, tbrId, startDate, endDate,
+      bookedSlots, availableSlots, capacity);
+
+  @JsonKey(ignore: true)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$BatchModelImplCopyWith<_$BatchModelImpl> get copyWith =>
+      __$$BatchModelImplCopyWithImpl<_$BatchModelImpl>(this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$BatchModelImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _BatchModel implements BatchModel {
+  const factory _BatchModel(
+      {final int? id,
+      @JsonKey(name: 'tbr_id') final String? tbrId,
+      @JsonKey(name: 'start_date') final String? startDate,
+      @JsonKey(name: 'end_date') final String? endDate,
+      @JsonKey(name: 'booked_slots') final int? bookedSlots,
+      @JsonKey(name: 'available_slots') final int? availableSlots,
+      @JsonKey(name: 'capacity') final int? capacity}) = _$BatchModelImpl;
+
+  factory _BatchModel.fromJson(Map<String, dynamic> json) =
+      _$BatchModelImpl.fromJson;
+
+  @override
+  int? get id;
+  @override
+  @JsonKey(name: 'tbr_id')
+  String? get tbrId;
+  @override
+  @JsonKey(name: 'start_date')
+  String? get startDate;
+  @override
+  @JsonKey(name: 'end_date')
+  String? get endDate;
+  @override
+  @JsonKey(name: 'booked_slots')
+  int? get bookedSlots;
+  @override
+  @JsonKey(name: 'available_slots')
+  int? get availableSlots;
+  @override
+  @JsonKey(name: 'capacity')
+  int? get capacity;
+  @override
+  @JsonKey(ignore: true)
+  _$$BatchModelImplCopyWith<_$BatchModelImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
