@@ -57,7 +57,11 @@ _$OrderImpl _$$OrderImplFromJson(Map<String, dynamic> json) => _$OrderImpl(
       id: json['id'] as String?,
       notes: json['notes'] as List<dynamic>?,
       offerId: json['offer_id'] as String?,
+      bookingNumber: json['booking_number'] as String?,
       receipt: json['receipt'] as String?,
+      batch: json['batch'] == null
+          ? null
+          : BatchModel.fromJson(json['batch'] as Map<String, dynamic>),
       status: json['status'] as String?,
     );
 
@@ -73,8 +77,32 @@ Map<String, dynamic> _$$OrderImplToJson(_$OrderImpl instance) =>
       'id': instance.id,
       'notes': instance.notes,
       'offer_id': instance.offerId,
+      'booking_number': instance.bookingNumber,
       'receipt': instance.receipt,
+      'batch': instance.batch,
       'status': instance.status,
+    };
+
+_$BatchModelImpl _$$BatchModelImplFromJson(Map<String, dynamic> json) =>
+    _$BatchModelImpl(
+      id: json['id'] as int?,
+      tbrId: json['tbr_id'] as String?,
+      startDate: json['start_date'] as String?,
+      endDate: json['end_date'] as String?,
+      bookedSlots: json['booked_slots'] as int?,
+      availableSlots: json['available_slots'] as int?,
+      capacity: json['capacity'] as int?,
+    );
+
+Map<String, dynamic> _$$BatchModelImplToJson(_$BatchModelImpl instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'tbr_id': instance.tbrId,
+      'start_date': instance.startDate,
+      'end_date': instance.endDate,
+      'booked_slots': instance.bookedSlots,
+      'available_slots': instance.availableSlots,
+      'capacity': instance.capacity,
     };
 
 _$BookingDataImpl _$$BookingDataImplFromJson(Map<String, dynamic> json) =>

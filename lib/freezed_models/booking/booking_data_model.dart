@@ -43,12 +43,30 @@ class Order with _$Order {
     String? id,
     List<dynamic>? notes,
     @JsonKey(name: 'offer_id') String? offerId,
+    @JsonKey(name: 'booking_number') String? bookingNumber,
     String? receipt,
+    BatchModel? batch,
     String? status,
   }) = _Order;
 
   factory Order.fromJson(Map<String, dynamic> json) =>
       _$OrderFromJson(json);
+}
+
+@freezed
+class BatchModel with _$BatchModel {
+  const factory BatchModel({
+    int? id,
+    @JsonKey(name: 'tbr_id') String? tbrId,
+    @JsonKey(name: 'start_date') String? startDate,
+    @JsonKey(name: 'end_date') String? endDate,
+    @JsonKey(name: 'booked_slots') int? bookedSlots,
+    @JsonKey(name: 'available_slots') int? availableSlots,
+    @JsonKey(name: 'capacity') int? capacity,
+  }) = _BatchModel;
+
+  factory BatchModel.fromJson(Map<String, dynamic> json) =>
+      _$BatchModelFromJson(json);
 }
 
 @freezed

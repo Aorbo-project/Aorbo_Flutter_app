@@ -437,12 +437,12 @@ class _TicketCardSectionState extends State<_TicketCardSection> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _ticketRow(
-                  "Ticket No",
-                  _trekC.orderData.value.receipt ?? '-',
+                  "TBR ID",
+                  _trekC.orderData.value.batch?.tbrId ?? '-',
                 ),
                 _ticketRow(
-                  "Order ID",
-                  _trekC.verifyOrderModal.value.payment?.orderId ??
+                  "BOOKING ID",
+                  _trekC.orderData.value.bookingNumber ??
                       '-',
                 ),
                 _ticketRow(

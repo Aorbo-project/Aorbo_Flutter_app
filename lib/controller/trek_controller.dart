@@ -68,7 +68,6 @@ class TrekController extends GetxController {
   Rx<BookingData> orderBookingData = BookingData().obs;
 
 
-
   //endregion
   //region VerifyTrek
   RxString orderId = ''.obs;
