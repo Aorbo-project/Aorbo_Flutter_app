@@ -1,10 +1,28 @@
-import 'package:arobo_app/utils/screen_constants.dart';
+import 'package:arobo_app/widgets/custom_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
-
 import '../freezed_models/booking/booking_history_model.dart';
 import 'common_colors.dart';
 import 'common_images.dart';
+import 'screen_constants.dart';
+
+// ─────────────────────────────────────────────
+//  DESIGN TOKENS — mirrors CommonBookedCard
+// ─────────────────────────────────────────────
+class _UpC {
+  static const bg        = CommonColors.whiteColor;
+  static const ink       = CommonColors.cFF111827;
+  static const inkMid    = CommonColors.cFF6B7280;
+  static const inkLight  = CommonColors.grey_AEAEAE;
+  static const brand     = CommonColors.lightBlueColor3;
+  static const tealSoft  = CommonColors.cFFE6F5F3;
+  static const divider   = CommonColors.trekroutecolorlight;
+
+  static const upcoming  = CommonColors.upcomingColor;
+  static const completed = CommonColors.completedColor2;
+  static const ongoing   = CommonColors.blueColor_367FEE;
+  static const cancelled = CommonColors.cancelledColor;
+}
 
 class UpcomingBookingCard extends StatelessWidget {
   final BookingHistoryData? booking;
@@ -16,210 +34,427 @@ class UpcomingBookingCard extends StatelessWidget {
     this.onViewMoreTap,
   });
 
-  String? _getOriginCity() {
-    // You can implement logic to determine origin city based on booking data
-    // For now, returning a default or trying to extract from batch/city info
+  // ── Status Color Logic ──────────────────────
+
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'upcoming':   return _UpC.upcoming.withValues(alpha: 0.8);
+      case 'completed':  return _UpC.completed.withValues(alpha: 0.8);
+      case 'ongoing':    return _UpC.ongoing;
+      case 'cancelled':  return _UpC.cancelled;
+      default:           return Colors.grey;
+    }
+  }
+
+  // ── Helpers ─────────────────────────────────
+
+    String _getOriginCity() {
     if (booking?.cityId != null) {
-      // You might want to map cityId to actual city names
-      return "sadsa";
-      // return booking.city?.cityName; // Replace with actual city mapping logic
+      // cityId is available but city name mapping requires separate lookup
+      // Using a safe fallback since model doesn't expose city object
+      return 'Origin City';
     }
     return 'Origin City';
   }
 
   String _getDestinationCity() {
-    // You can implement logic to determine destination city based on trek data
     if (booking?.trek?.title != null) {
-      // Extract destination from trek title or use trek destination info
-      return booking?.trek?.title ?? "";
+      return booking?.trek?.destination?.name ?? booking?.trek?.title ?? '';
     }
     return 'Destination';
   }
 
   String _getDurationText() {
-    if (booking?.trek?.duration != null) {
-      // return booking.trek!.duration!;
-
-      if (booking?.trek?.durationDays != null &&
-          booking?.trek?.durationNights != null) {
-        return '${booking?.trek!.durationDays}D | ${booking?.trek!.durationNights}N';
-      }
+    if (booking?.trek?.durationDays != null &&
+        booking?.trek?.durationNights != null) {
+      return '${booking?.trek!.durationDays}D | ${booking?.trek!.durationNights}N';
     }
-    return 'N/A';
+    return booking?.trek?.duration ?? 'N/A';
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(4.w),
-      decoration: BoxDecoration(
-        color: CommonColors.whiteColor,
-        borderRadius: BorderRadius.circular(3.w),
-        boxShadow: [
-          BoxShadow(
-            color: CommonColors.blackColor.withValues(alpha: 0.1),
-            blurRadius: 8,
-            spreadRadius: 1,
-            offset: Offset(0, 2),
+  /// Labeled info column — mirrors _buildInfoItem in CommonBookedCard
+  Widget _infoItem(String label, String value) {
+    if (value.isEmpty || value == '-' || value == 'N/A') {
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      padding: EdgeInsets.only(bottom: 0.5.h),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            textScaler: const TextScaler.linear(1.0),
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: FontSize.s7,
+              fontWeight: FontWeight.w500,
+              color: _UpC.inkMid,
+              letterSpacing: 0.2,
+            ),
+          ),
+          SizedBox(height: 0.1.h),
+          Text(
+            value,
+            textScaler: const TextScaler.linear(1.0),
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: FontSize.s11,
+              fontWeight: FontWeight.w600,
+              color: _UpC.ink,
+            ),
           ),
         ],
       ),
+    );
+  }
+
+  /// Route connector — dotted line with duration pill
+  Widget _routeConnector() {
+    return Expanded(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          /// Top Row - Icon + Title + PNR
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // logo
-              Center(
-                child: Image.asset(
-                  CommonImages.logo,
-                  width: 12.w,
-                  height: 5.h,
-                  fit: BoxFit.contain,
+              Expanded(
+                child: Container(
+                  height: 1,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        _UpC.divider,
+                        _UpC.divider.withOpacity(0.3),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-              SizedBox(width: 2.w),
+              Container(
+                margin: EdgeInsets.symmetric(horizontal: 2.w),
+                padding: EdgeInsets.symmetric(horizontal: 2.5.w, vertical: 0.6.h),
+                decoration: BoxDecoration(
+                  color: _UpC.ink,
+                  borderRadius: BorderRadius.circular(2.h),
+                ),
+                child: Text(
+                  _getDurationText(),
+                  textScaler: const TextScaler.linear(1.0),
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: FontSize.s8,
+                    color: CommonColors.whiteColor,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      booking?.trek?.title ?? 'Unknown Trek',
-                      style: TextStyle(
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.w600,
-                        color: CommonColors.blackColor,
-                      ),
-                      maxLines: 1, // show only one line
-                      overflow: TextOverflow.ellipsis, // add "..."
+                child: Container(
+                  height: 1,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        _UpC.divider.withOpacity(0.3),
+                        _UpC.divider,
+                      ],
                     ),
-                    SizedBox(height: 0.3.h),
-                    Text(
-                      booking?.trek?.vendor?.businessName ??
-                          'Unknown Organiser',
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  //  BUILD
+  // ─────────────────────────────────────────────
+  @override
+  Widget build(BuildContext context) {
+    ScreenConstant.setScreenAwareConstant(context);
+
+    final vendorName  = booking?.trek?.vendor?.businessName ?? '-';
+    final trekTitle   = booking?.trek?.title ?? 'Unknown Trek';
+    final tbrId       = booking?.batch?.tbrId ?? '-';
+    final startDate   = booking?.batch?.startDate ?? '-';
+    final statusRaw   = booking?.trekStatus ?? booking?.status ?? '';
+    final statusLabel = statusRaw.isNotEmpty
+        ? statusRaw[0].toUpperCase() + statusRaw.substring(1)
+        : '-';
+    final bookedSlots = booking?.totalTravelers ?? booking?.batch?.bookedSlots ?? 0;
+
+    return GestureDetector(
+      onTap: onViewMoreTap,
+      child: Container(
+        margin: EdgeInsets.symmetric(horizontal: 1.w, vertical: 0.6.h),
+        decoration: BoxDecoration(
+          color: _UpC.bg,
+          borderRadius: BorderRadius.circular(4.w),
+          border: Border.all(color: _UpC.divider, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: CommonColors.blackColor.withOpacity(0.07),
+              offset: const Offset(0, 3),
+              blurRadius: 10,
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(4.w, 0.8.h, 4.w, 0.8.h),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+
+              // ═══ TOP: Trek title + Status pill ═══
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      trekTitle,
+                      textScaler: const TextScaler.linear(1.0),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: FontSize.s10,
-                        color: CommonColors.greyTextColor,
+                        fontFamily: 'Poppins',
+                        fontSize: FontSize.s13,
+                        fontWeight: FontWeight.w600,
+                        color: _UpC.ink,
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 2.w),
+                  if (statusRaw.isNotEmpty)
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                          horizontal: 2.5.w, vertical: 0.35.h),
+                      decoration: BoxDecoration(
+                        color: _getStatusColor(statusRaw).withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(1.5.w),
+                        border: Border.all(
+                          color: _getStatusColor(statusRaw).withOpacity(0.4),
+                          width: 1,
+                        ),
+                      ),
+                      child: Text(
+                        statusLabel,
+                        textScaler: const TextScaler.linear(1.0),
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: FontSize.s8,
+                          fontWeight: FontWeight.w700,
+                          color: _getStatusColor(statusRaw),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+
+              SizedBox(height: 0.3.h),
+
+              // ═══ VENDOR ROW — mirrors CommonBookedCard ═══
+              Row(
+                children: [
+                  CustomNetworkImage(
+                    imageUrl: booking?.trek?.vendor?.businessLogo ?? '',
+                    width: 10.w,
+                    height: 10.w,
+                    fit: BoxFit.contain,
+                    color: Colors.white,
+                  ),
+                  SizedBox(width: 3.w),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          vendorName,
+                          textScaler: const TextScaler.linear(1.0),
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: FontSize.s12,
+                            fontWeight: FontWeight.w600,
+                            color: _UpC.ink,
+                          ),
+                        ),
+                        SizedBox(height: 0.1.h),
+                        Text(
+                          'TBR ID: $tbrId',
+                          textScaler: const TextScaler.linear(1.0),
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: FontSize.s8,
+                            color: _UpC.inkLight,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
+              SizedBox(height: 0.3.h),
+
+              // ═══ ROUTE ROW: Origin — Duration — Destination ═══
+              Container(
+                padding: EdgeInsets.symmetric(vertical: 0.5.h),
+                child: Row(
+                  children: [
+                    // Origin
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'From',
+                            textScaler: const TextScaler.linear(1.0),
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: FontSize.s7,
+                              fontWeight: FontWeight.w500,
+                              color: _UpC.inkMid,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                          SizedBox(height: 0.1.h),
+                          Text(
+                            _getOriginCity(),
+                            textScaler: const TextScaler.linear(1.0),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: FontSize.s11,
+                              fontWeight: FontWeight.w600,
+                              color: _UpC.ink,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Connector with duration
+                    _routeConnector(),
+
+                    // Destination
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            'To',
+                            textScaler: const TextScaler.linear(1.0),
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: FontSize.s7,
+                              fontWeight: FontWeight.w500,
+                              color: _UpC.inkMid,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                          SizedBox(height: 0.1.h),
+                          Text(
+                            _getDestinationCity(),
+                            textScaler: const TextScaler.linear(1.0),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.right,
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: FontSize.s11,
+                              fontWeight: FontWeight.w600,
+                              color: _UpC.ink,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
-              Text(
-                "TRB ID : ${booking?.batch?.tbrId ?? '00'}",
-                style: TextStyle(
-                  fontSize: 10.sp,
-                  color: CommonColors.greyTextColor,
-                ),
+
+              SizedBox(height: 0.3.h),
+
+              // ═══ INFO ROW: left labels + right slots ═══
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Left — departure date
+                  Expanded(
+                    child: _infoItem('Departure Date', startDate),
+                  ),
+
+                  SizedBox(width: 3.w),
+
+                  // Right — booked slots count
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '$bookedSlots',
+                        textScaler: const TextScaler.linear(1.0),
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: FontSize.s16,
+                          fontWeight: FontWeight.w700,
+                          color: _UpC.ink,
+                        ),
+                      ),
+                      Text(
+                        'travellers',
+                        textScaler: const TextScaler.linear(1.0),
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: FontSize.s8,
+                          color: _UpC.inkMid,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+
+              SizedBox(height: 0.3.h),
+
+              // Divider
+              Container(height: 0.5, color: _UpC.divider),
+
+              SizedBox(height: 0.3.h),
+
+              // ═══ Bottom row: View details CTA ═══
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'View more',
+                        textScaler: const TextScaler.linear(1.0),
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: FontSize.s11,
+                          fontWeight: FontWeight.w600,
+                          color: _UpC.brand,
+                        ),
+                      ),
+                      SizedBox(width: 1.w),
+                      Icon(Icons.arrow_forward_rounded,
+                          size: 4.w, color: _UpC.brand),
+                    ],
+                  ),
+                ],
               ),
             ],
           ),
-
-          SizedBox(height: 1.5.h),
-
-          /// Route Row - From, Duration, To
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    _getOriginCity() ?? 'N/A',
-                    style: TextStyle(
-                      fontSize: FontSize.s10,
-                      fontWeight: FontWeight.w500,
-                      color: CommonColors.blackColor,
-                    ),
-                    maxLines: 1, // show only one line
-                    overflow: TextOverflow.ellipsis, // add "..."
-                  ),
-                ),
-              ),
-              SizedBox(width: 2.w),
-              Align(
-                alignment: Alignment.center,
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 1.h),
-                  decoration: BoxDecoration(
-                    color: CommonColors.greyColor,
-                    borderRadius: BorderRadius.circular(2.h),
-                  ),
-                  child: Text(
-                    _getDurationText(),
-                    style: TextStyle(
-                      fontSize:FontSize.s9,
-                      color: CommonColors.whiteColor,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(width: 2.w),
-              Expanded(
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: Text(
-                    _getDestinationCity(),
-                    style: TextStyle(
-                      fontSize: FontSize.s10,
-                      fontWeight: FontWeight.w500,
-                      color: CommonColors.blackColor,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          SizedBox(height: 1.5.h),
-
-          /// Slots
-          Text(
-            "Slots : ${booking?.totalTravelers ?? 0} Travellers",
-            style: TextStyle(
-              fontSize: FontSize.s10,
-              color: CommonColors.blackColor,
-            ),
-          ),
-
-          SizedBox(height: 1.h),
-
-          /// Description
-          Text(
-            booking?.trek?.description ?? 'No description available',
-            style: TextStyle(
-              fontSize: FontSize.s10,
-              color: CommonColors.blackColor,
-            ),
-          ),
-          SizedBox(height: 0.5.h),
-
-          /// View More
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: onViewMoreTap,
-              style: TextButton.styleFrom(
-                padding: EdgeInsets.zero,
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              child: Text(
-                "View more",
-                style: TextStyle(
-                  fontSize: 11.sp,
-                  color: CommonColors.blueColor,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

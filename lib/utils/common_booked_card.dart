@@ -130,7 +130,7 @@ class CommonBookedCard extends StatelessWidget {
           ],
         ),
         child: Padding(
-          padding: EdgeInsets.fromLTRB(4.w, 0.8.h, 4.w, 0.8.h),
+          padding: EdgeInsets.fromLTRB(4.w, 2.8.h, 4.w, 1.0.h),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
