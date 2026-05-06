@@ -286,7 +286,7 @@ class _BookingsScreenState extends State<BookingsScreen> with SingleTickerProvid
         ),
       ),
       child: Padding(
-        padding: EdgeInsets.only(bottom: 3.w),
+        padding: EdgeInsets.only(bottom: 0.w),
         child: CommonBookedCard(
           booking: booking,
           onViewDetailsTap: () {

@@ -55,7 +55,7 @@ class _StickyFilterBarDelegate extends SliverPersistentHeaderDelegate {
     required this.screenHeight,
   });
 
-  double get _filterBarH => (screenHeight * 0.04) + 18;
+  double get _filterBarH => 90; // ✅ MATCH YOUR UI
   static const double _chipBarH = 44;
 
   @override
@@ -627,35 +627,34 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
 
   // ── Filter bar ──────────────────────────────────────────────────────────
   Widget _buildFilterBar() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      decoration: BoxDecoration(
-        color: _SSC.filterBarBg,
-        boxShadow: [
-          BoxShadow(
-            color: CommonColors.blackColor.withValues(alpha: 0.08),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Center(
-        child: SizedBox(
-          height: 4.h,
-          child: CommonFilterBar(
-            key: _filterBarKey,
-            onFiltersChanged: (filters) {
-              _applyFilters(filters);
-              // FIX: only jump if controller is attached
-              if (_scrollController.hasClients) {
-                _scrollController.jumpTo(0);
-              }
-            },
-          ),
+  return Container(
+    padding: const EdgeInsets.symmetric(vertical: 6),
+    decoration: BoxDecoration(
+      color: _SSC.filterBarBg,
+      boxShadow: [
+        BoxShadow(
+          color: CommonColors.blackColor.withValues(alpha: 0.08),
+          blurRadius: 6,
+          offset: const Offset(0, 2),
         ),
+      ],
+    ),
+    child: Center(
+      child: SizedBox(
+        height: 85, // ✅ FIXED HEIGHT (CRITICAL)
+        child: CommonFilterBar(
+  key: _filterBarKey,
+  onFiltersChanged: (filters) {
+    _applyFilters(filters);
+    if (_scrollController.hasClients) {
+      _scrollController.jumpTo(0);
+    }
+  },
+),
       ),
-    );
-  }
+    ),
+  );
+}
 
   // ── Trek list sliver ────────────────────────────────────────────────────
   Widget _buildTrekList(String dateText) {
