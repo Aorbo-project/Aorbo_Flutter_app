@@ -174,7 +174,7 @@ class CommonTrekCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         width: 92.w,
-        margin: EdgeInsets.symmetric(horizontal: 3.w),
+        margin: EdgeInsets.symmetric(horizontal: 1.w),
         decoration: BoxDecoration(
           color: _TkC.bg,
           borderRadius: BorderRadius.circular(4.w),
