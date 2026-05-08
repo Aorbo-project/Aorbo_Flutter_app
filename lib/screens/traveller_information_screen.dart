@@ -21,7 +21,7 @@ import '../freezed_models/profile/user_profile_model.dart';
 import '../freezed_models/treks/trek_detail_model.dart';
 
 // ─────────────────────────────────────────────
-//  DESIGN TOKENS — matches TrekDetailsScreen _C
+//  DESIGN TOKENS
 // ─────────────────────────────────────────────
 class _TI {
   static const bg        = CommonColors.offWhiteColor;
@@ -35,6 +35,18 @@ class _TI {
   static const iconBadge = CommonColors.cFF111827;
   static const divider   = CommonColors.trekroutecolorlight;
   static const shadow    = CommonColors.c0A000000;
+
+  // Sheet-specific tokens — matched to the main screen
+  static const sheetBg       = Colors.white;
+  static const sheetSurface   = Colors.white;
+  static const sheetBorder    = Color(0xFFE2E8F0);
+  static const sheetInk       = Color(0xFF0F172A);
+  static const sheetInkMid    = Color(0xFF64748B);
+  static const sheetHandle    = Color(0xFFD1D5DB);
+  static const sheetAccent    = Color(0xFF111827);
+  static const sheetSelected  = Color(0xFFE6F5F3);
+  static const sheetYellow    = Color(0xFFFACC15);
+  static const sheetGreen     = Color(0xFF0F7B6C);
 }
 
 class TravellerInformationScreen extends StatefulWidget {
@@ -49,9 +61,9 @@ class _TravellerInformationScreenState
     extends State<TravellerInformationScreen>
     with SingleTickerProviderStateMixin {
 
-  final TrekController      _trekC = Get.find<TrekController>();
-  final DashboardController _dashboardC      = Get.find<DashboardController>();
-  final UserController      _userC           = Get.find<UserController>();
+  final TrekController      _trekC      = Get.find<TrekController>();
+  final DashboardController _dashboardC = Get.find<DashboardController>();
+  final UserController      _userC      = Get.find<UserController>();
   late TrekDetailData travelData;
   final nameNode = FocusNode();
 
@@ -65,6 +77,158 @@ class _TravellerInformationScreenState
   OverlayEntry? _overlayEntry;
 
   List<Traveler> selectedTravellers = [];
+
+  void _showStateSelectionBottomSheet(StateSetter setModalState) {
+  final TextEditingController searchController = TextEditingController();
+
+  setState(() {
+    filteredStates = _dashboardC.stateList.map((e) => e.name!).toList();
+  });
+
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(5.w)),
+    ),
+    builder: (context) => StatefulBuilder(
+      builder: (context, setSheetState) => Container(
+        height: MediaQuery.of(context).size.height * 0.75,
+        decoration: BoxDecoration(
+          color: _TI.sheetBg,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(5.w)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.10),
+              blurRadius: 24,
+              offset: const Offset(0, -6),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+            top: 2.5.h,
+            left: 5.w,
+            right: 5.w,
+          ),
+          child: Column(
+            children: [
+              _sheetHandle(),
+              Text(
+                'Select state of residence',
+                textScaler: const TextScaler.linear(1.0),
+                style: GoogleFonts.poppins(
+                  fontSize: FontSize.s14,
+                  fontWeight: FontWeight.w700,
+                  color: _TI.sheetInk,
+                ),
+              ),
+              SizedBox(height: 2.h),
+              Container(
+                height: 6.h,
+                padding: EdgeInsets.symmetric(horizontal: 3.w),
+                decoration: BoxDecoration(
+                  color: _TI.sheetSurface,
+                  borderRadius: BorderRadius.circular(3.w),
+                  border: Border.all(color: _TI.sheetBorder),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.search, color: _TI.sheetInkMid, size: 5.w),
+                    SizedBox(width: 2.w),
+                    Expanded(
+                      child: TextField(
+                        controller: searchController,
+                        style: GoogleFonts.poppins(
+                          fontSize: FontSize.s11,
+                          color: _TI.sheetInk,
+                        ),
+                        cursorColor: _TI.sheetAccent,
+                        decoration: InputDecoration(
+                          hintText: 'Search state',
+                          border: InputBorder.none,
+                          hintStyle: GoogleFonts.poppins(
+                            fontSize: FontSize.s10,
+                            color: _TI.sheetInkMid,
+                          ),
+                        ),
+                        onChanged: (value) {
+                          setSheetState(() {
+                            filteredStates = _dashboardC.stateList
+                                .map((e) => e.name!)
+                                .where((s) => s
+                                    .toLowerCase()
+                                    .contains(value.toLowerCase()))
+                                .toList();
+                          });
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 1.5.h),
+              Expanded(
+                child: ListView.separated(
+                  itemCount: filteredStates.length,
+                  separatorBuilder: (_, __) =>
+                      Divider(color: _TI.sheetBorder, height: 1),
+                  itemBuilder: (context, index) {
+                    final stateName = filteredStates[index];
+                    final isChosen = stateName == _selectedState;
+
+                    return ListTile(
+                      title: Text(
+                        stateName,
+                        textScaler: const TextScaler.linear(1.0),
+                        style: GoogleFonts.poppins(
+                          fontSize: FontSize.s11,
+                          fontWeight:
+                              isChosen ? FontWeight.w700 : FontWeight.w400,
+                          color: isChosen ? _TI.sheetAccent : _TI.sheetInk,
+                        ),
+                      ),
+                      trailing: isChosen
+                          ? Icon(
+                              Icons.check_circle_rounded,
+                              color: _TI.sheetAccent,
+                              size: 5.w,
+                            )
+                          : null,
+                      onTap: () {
+                        final idx = _dashboardC.stateList.indexWhere(
+                          (e) => e.name == stateName,
+                        );
+
+                        setModalState(() {
+                          _userC.stateUpdateId.value = idx >= 0
+                              ? (_dashboardC.stateList[idx].id ?? 0)
+                              : 0;
+                          _selectedState = stateName;
+                        });
+
+                        Navigator.pop(context);
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  ).whenComplete(() {
+    searchController.dispose();
+    if (mounted) {
+      setState(() {
+        filteredStates = _dashboardC.stateList.map((e) => e.name!).toList();
+      });
+    }
+  });
+}
 
   @override
   void initState() {
@@ -88,9 +252,7 @@ class _TravellerInformationScreenState
 
     debounce(
       _trekC.calculateFareRequestModel,
-      (value) {
-        _trekC.calculateFare();
-      },
+      (value) { _trekC.calculateFare(); },
       time: const Duration(milliseconds: 500),
     );
   }
@@ -150,8 +312,7 @@ class _TravellerInformationScreenState
           ...List.generate(12, (index) {
             final angle = (index * (360 / 12)) * (pi / 180);
             return Positioned(
-              left: cx - 2,
-              top: cy - 2,
+              left: cx - 2, top: cy - 2,
               child: TweenAnimationBuilder<double>(
                 tween: Tween(begin: 0.0, end: 1.0),
                 duration: const Duration(milliseconds: 400),
@@ -160,8 +321,7 @@ class _TravellerInformationScreenState
                   offset: Offset(cos(angle) * (40 * value), sin(angle) * (40 * value)),
                   child: Opacity(opacity: 1 - value,
                     child: Container(width: 4, height: 4,
-                      decoration: BoxDecoration(color: CommonColors.lightBlueColor, shape: BoxShape.circle)),
-                  ),
+                      decoration: BoxDecoration(color: CommonColors.lightBlueColor, shape: BoxShape.circle))),
                 ),
               ),
             );
@@ -170,8 +330,7 @@ class _TravellerInformationScreenState
             final angle = (index * (360 / 6)) * (pi / 180);
             final delay = (index * 100);
             return Positioned(
-              left: cx - 15,
-              top: cy - 15,
+              left: cx - 15, top: cy - 15,
               child: TweenAnimationBuilder<double>(
                 tween: Tween(begin: 0.0, end: 1.0),
                 duration: const Duration(milliseconds: 800),
@@ -189,7 +348,8 @@ class _TravellerInformationScreenState
                         opacity: 1 - delayedValue,
                         child: Container(
                           padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle,
+                          decoration: BoxDecoration(
+                            color: Colors.white, shape: BoxShape.circle,
                             boxShadow: [BoxShadow(color: CommonColors.lightBlueColor, blurRadius: 4, spreadRadius: 1)]),
                           child: Icon(Icons.check, color: CommonColors.lightBlueColor, size: 16),
                         ),
@@ -207,7 +367,7 @@ class _TravellerInformationScreenState
     Overlay.of(context).insert(_overlayEntry!);
   }
 
-  // ── SHARED UI HELPERS — matching TrekDetailsScreen ───────────────────────
+  // ── SHARED UI HELPERS ─────────────────────────────────────────────────────
 
   Widget _card({required Widget child}) {
     return Container(
@@ -234,8 +394,7 @@ class _TravellerInformationScreenState
     return Row(
       children: [
         Container(
-          width: 9.w,
-          height: 9.w,
+          width: 9.w, height: 9.w,
           decoration: BoxDecoration(
             color: _TI.iconBadge,
             borderRadius: BorderRadius.circular(2.5.w),
@@ -263,35 +422,120 @@ class _TravellerInformationScreenState
       child: Row(
         children: [
           Container(
-            width: 8.w,
-            height: 8.w,
+            width: 8.w, height: 8.w,
             decoration: BoxDecoration(
               color: const Color(0xFFF1F5F9),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Center(
-              child: SvgPicture.asset(svgAsset, width: 4.w, height: 4.w),
-            ),
+            child: Center(child: SvgPicture.asset(svgAsset, width: 4.w, height: 4.w)),
           ),
           SizedBox(width: 3.w),
           Expanded(
-            child: Text(
-              value,
+            child: Text(value,
               textScaler: const TextScaler.linear(1.0),
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: FontSize.s11,
-                fontWeight: FontWeight.w500,
-                color: _TI.ink,
-              ),
-            ),
+              style: TextStyle(fontFamily: 'Poppins', fontSize: FontSize.s11, fontWeight: FontWeight.w500, color: _TI.ink)),
           ),
         ],
       ),
     );
   }
 
-  // ── CONTACT BOTTOM SHEET — original logic ────────────────────────────────
+  // ── SHEET HELPERS (themed) ────────────────────────────────────────────────
+
+  /// Dark-themed sheet handle
+  Widget _sheetHandle() {
+    return Center(
+      child: Container(
+        width: 10.w, height: 0.5.h,
+        margin: EdgeInsets.only(bottom: 1.5.h),
+        decoration: BoxDecoration(
+          color: _TI.sheetHandle,
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+    );
+  }
+
+  /// Dark-themed sheet header row
+  Widget _sheetHeader(String title, {VoidCallback? onClose}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title,
+          textScaler: const TextScaler.linear(1.0),
+          style: GoogleFonts.alexandria(
+            fontSize: FontSize.s16,
+            fontWeight: FontWeight.w600,
+            color: _TI.sheetInk,
+          ),
+        ),
+        GestureDetector(
+          onTap: onClose ?? () => Navigator.pop(context),
+          child: Container(
+            width: 8.w, height: 8.w,
+            decoration: BoxDecoration(
+              color: _TI.sheetSurface,
+              shape: BoxShape.circle,
+              border: Border.all(color: _TI.sheetBorder),
+            ),
+            child: Icon(Icons.close, size: 4.5.w, color: _TI.sheetInkMid),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Dark-themed labelled input container
+  Widget _sheetInputContainer({required String label, required Widget child}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: _TI.sheetSurface,
+        border: Border.all(color: _TI.sheetBorder),
+        borderRadius: BorderRadius.circular(2.w),
+      ),
+      padding: EdgeInsets.only(left: 4.w, right: 2.w, top: 0.8.h, bottom: 0.8.h),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label,
+            textScaler: const TextScaler.linear(1.0),
+            style: GoogleFonts.poppins(fontSize: FontSize.s7, color: _TI.sheetInkMid, fontWeight: FontWeight.w400)),
+          SizedBox(height: 0.3.h),
+          child,
+        ],
+      ),
+    );
+  }
+
+  /// Dark-themed text field for sheets
+  Widget _sheetTextField(TextEditingController controller, {
+    TextInputType keyboardType = TextInputType.text,
+    int? maxLength,
+    FocusNode? focusNode,
+    VoidCallback? onChanged,
+  }) {
+    return MediaQuery(
+      data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(1.0)),
+      child: TextField(
+        controller: controller,
+        keyboardType: keyboardType,
+        focusNode: focusNode,
+        maxLength: maxLength,
+        onChanged: (_) => onChanged?.call(),
+        style: GoogleFonts.poppins(fontSize: FontSize.s12, color: _TI.sheetInk),
+        cursorColor: _TI.sheetAccent,
+        decoration: InputDecoration(
+          border: InputBorder.none,
+          counterText: '',
+          isDense: true,
+          contentPadding: EdgeInsets.zero,
+        ),
+      ),
+    );
+  }
+
+  // ── CONTACT BOTTOM SHEET ──────────────────────────────────────────────────
   void _showContactDetailsBottomSheet({bool isEdit = false}) {
     _userC.phoneNumberController.value.text =
         (isEdit && _userC.userProfileData.value.customer?.phone != null)
@@ -315,10 +559,10 @@ class _TravellerInformationScreenState
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.50,
+        height: MediaQuery.of(context).size.height * 0.55,
         margin: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
         decoration: BoxDecoration(
-          color: CommonColors.whiteColor,
+          color: _TI.sheetBg,
           borderRadius: BorderRadius.vertical(top: Radius.circular(5.w)),
         ),
         child: StatefulBuilder(
@@ -327,51 +571,22 @@ class _TravellerInformationScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Handle
-                Center(
-                  child: Container(
-                    width: 10.w, height: 0.5.h,
-                    margin: EdgeInsets.only(bottom: 1.5.h),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFCBD5E1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      isEdit ? 'Edit Contact Details' : 'Add Contact Details',
-                      textScaler: const TextScaler.linear(1.0),
-                      style: GoogleFonts.alexandria(
-                        fontSize: FontSize.s16,
-                        fontWeight: FontWeight.w600,
-                        color: CommonColors.blackColor,
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: Icon(Icons.close, size: 6.w),
-                    ),
-                  ],
-                ),
+                _sheetHandle(),
+                _sheetHeader(isEdit ? 'Edit Contact Details' : 'Add Contact Details'),
                 SizedBox(height: 0.5.h),
                 Text(
                   'Trip ticket details will be provided to',
                   textScaler: const TextScaler.linear(1.0),
-                  style: GoogleFonts.poppins(
-                    fontSize: FontSize.s8,
-                    color: CommonColors.blackColor.withValues(alpha: 0.6),
-                  ),
+                  style: GoogleFonts.poppins(fontSize: FontSize.s8, color: _TI.sheetInkMid),
                 ),
                 SizedBox(height: 2.h),
+
                 // Phone
                 Container(
                   decoration: BoxDecoration(
-                    border: Border.all(color: const Color(0xFF878787)),
+                    color: _TI.sheetSurface,
+                    border: Border.all(color: _TI.sheetBorder),
                     borderRadius: BorderRadius.circular(2.w),
-                    color: Colors.white,
                   ),
                   child: Row(
                     children: [
@@ -379,39 +594,29 @@ class _TravellerInformationScreenState
                         width: 27.w,
                         padding: EdgeInsets.symmetric(vertical: 1.2.h),
                         decoration: BoxDecoration(
-                          border: Border(right: BorderSide(color: const Color(0xFF878787), width: 0.25.w)),
+                          border: Border(right: BorderSide(color: _TI.sheetBorder, width: 1)),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            Text('Country Code', textScaler: const TextScaler.linear(1.0),
-                              style: GoogleFonts.poppins(fontSize: FontSize.s7, color: CommonColors.blackColor, fontWeight: FontWeight.w300)),
+                            Text('Country Code',
+                              textScaler: const TextScaler.linear(1.0),
+                              style: GoogleFonts.poppins(fontSize: FontSize.s7, color: _TI.sheetInkMid, fontWeight: FontWeight.w300)),
                             SizedBox(height: 0.4.h),
-                            Text('+91(IND)', textScaler: const TextScaler.linear(1.0),
-                              style: GoogleFonts.poppins(fontSize: FontSize.s10, fontWeight: FontWeight.w400, color: CommonColors.blackColor)),
+                            Text('+91 (IND)',
+                              textScaler: const TextScaler.linear(1.0),
+                              style: GoogleFonts.poppins(fontSize: FontSize.s10, fontWeight: FontWeight.w600, color: _TI.sheetInk)),
                           ],
                         ),
                       ),
                       Expanded(
-                        child: Padding(
-                          padding: EdgeInsets.only(left: 3.w, right: 3.w, top: 0.8.h, bottom: 0.8.h),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Phone Number', textScaler: const TextScaler.linear(1.0),
-                                style: GoogleFonts.poppins(fontSize: FontSize.s7, color: CommonColors.blackColor, fontWeight: FontWeight.w300)),
-                              MediaQuery(
-                                data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(1.0)),
-                                child: TextField(
-                                  controller: _userC.phoneNumberController.value,
-                                  keyboardType: TextInputType.phone,
-                                  maxLength: 10,
-                                  style: GoogleFonts.poppins(fontSize: FontSize.s10, color: CommonColors.blackColor),
-                                  decoration: const InputDecoration(border: InputBorder.none, counterText: '', isDense: true),
-                                  onChanged: (value) => setModalState(() {}),
-                                ),
-                              ),
-                            ],
+                        child: _sheetInputContainer(
+                          label: 'Phone Number',
+                          child: _sheetTextField(
+                            _userC.phoneNumberController.value,
+                            keyboardType: TextInputType.phone,
+                            maxLength: 10,
+                            onChanged: () => setModalState(() {}),
                           ),
                         ),
                       ),
@@ -419,39 +624,32 @@ class _TravellerInformationScreenState
                   ),
                 ),
                 SizedBox(height: 1.8.h),
+
                 // Email
-                Container(
-                  decoration: BoxDecoration(border: Border.all(color: const Color(0xFF878787)), borderRadius: BorderRadius.circular(2.w), color: Colors.white),
-                  padding: EdgeInsets.only(left: 4.w, top: 0.8.h, bottom: 0.8.h),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Email ID', textScaler: const TextScaler.linear(1.0),
-                        style: GoogleFonts.poppins(fontSize: FontSize.s7, color: CommonColors.blackColor, fontWeight: FontWeight.w300)),
-                      MediaQuery(
-                        data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(1.0)),
-                        child: TextField(
-                          controller: _userC.emailController.value,
-                          keyboardType: TextInputType.emailAddress,
-                          style: GoogleFonts.poppins(fontSize: FontSize.s10, fontWeight: FontWeight.w400, color: CommonColors.blackColor),
-                          decoration: const InputDecoration(border: InputBorder.none, isDense: true),
-                          onChanged: (value) => setModalState(() {}),
-                        ),
-                      ),
-                    ],
+                _sheetInputContainer(
+                  label: 'Email ID',
+                  child: _sheetTextField(
+                    _userC.emailController.value,
+                    keyboardType: TextInputType.emailAddress,
+                    onChanged: () => setModalState(() {}),
                   ),
                 ),
                 SizedBox(height: 1.8.h),
+
                 // State
                 Container(
                   width: double.infinity,
-                  decoration: BoxDecoration(border: Border.all(color: const Color(0xFF878787)), borderRadius: BorderRadius.circular(2.w), color: Colors.white),
+                  decoration: BoxDecoration(
+                    color: _TI.sheetSurface,
+                    border: Border.all(color: _TI.sheetBorder),
+                    borderRadius: BorderRadius.circular(2.w),
+                  ),
                   child: Material(
                     color: Colors.transparent,
                     child: InkWell(
                       onTap: () => _showStateSelectionBottomSheet(setModalState),
                       borderRadius: BorderRadius.circular(2.w),
-                      child: Container(
+                      child: Padding(
                         padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -459,14 +657,16 @@ class _TravellerInformationScreenState
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('State of Residence', textScaler: const TextScaler.linear(1.0),
-                                  style: GoogleFonts.poppins(fontSize: FontSize.s7, color: CommonColors.blackColor, fontWeight: FontWeight.w300)),
+                                Text('State of Residence',
+                                  textScaler: const TextScaler.linear(1.0),
+                                  style: GoogleFonts.poppins(fontSize: FontSize.s7, color: _TI.sheetInkMid, fontWeight: FontWeight.w300)),
                                 SizedBox(height: 0.25.h),
-                                Text(_selectedState, textScaler: const TextScaler.linear(1.0),
-                                  style: GoogleFonts.poppins(fontSize: FontSize.s10, fontWeight: FontWeight.w400, color: CommonColors.blackColor)),
+                                Text(_selectedState,
+                                  textScaler: const TextScaler.linear(1.0),
+                                  style: GoogleFonts.poppins(fontSize: FontSize.s11, fontWeight: FontWeight.w500, color: _TI.sheetInk)),
                               ],
                             ),
-                            Icon(Icons.keyboard_arrow_down, color: Colors.black, size: 6.w),
+                            Icon(Icons.keyboard_arrow_down, color: _TI.sheetInkMid, size: 6.w),
                           ],
                         ),
                       ),
@@ -474,6 +674,7 @@ class _TravellerInformationScreenState
                   ),
                 ),
                 SizedBox(height: 3.h),
+
                 CommonButton(
                   height: 48,
                   gradient: CommonColors.filterGradient,
@@ -485,7 +686,9 @@ class _TravellerInformationScreenState
                       setState(() {});
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text(isEdit ? 'Contact details updated successfully' : 'Contact details saved successfully',
+                        content: Text(isEdit
+                          ? 'Contact details updated successfully'
+                          : 'Contact details saved successfully',
                           textScaler: const TextScaler.linear(1.0)),
                         backgroundColor: CommonColors.completedColor,
                         duration: const Duration(seconds: 2),
@@ -501,7 +704,7 @@ class _TravellerInformationScreenState
     );
   }
 
-  // ── TRAVELLER BOTTOM SHEET — original logic ──────────────────────────────
+  // ── TRAVELLER BOTTOM SHEET ────────────────────────────────────────────────
   void _showTravellerBottomSheet({Traveler? traveller, bool isEdit = false}) {
     if (isEdit && traveller != null) {
       _userC.travellerId.value = traveller.id ?? 0;
@@ -520,10 +723,10 @@ class _TravellerInformationScreenState
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.55,
+        height: MediaQuery.of(context).size.height * 0.58,
         margin: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
         decoration: BoxDecoration(
-          color: CommonColors.whiteColor,
+          color: _TI.sheetBg,
           borderRadius: BorderRadius.vertical(top: Radius.circular(5.w)),
         ),
         child: StatefulBuilder(
@@ -532,36 +735,51 @@ class _TravellerInformationScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Center(
-                  child: Container(
-                    width: 10.w, height: 0.5.h,
-                    margin: EdgeInsets.only(bottom: 1.5.h),
-                    decoration: BoxDecoration(color: const Color(0xFFCBD5E1), borderRadius: BorderRadius.circular(10)),
+                _sheetHandle(),
+                _sheetHeader(isEdit ? 'Edit Traveller' : 'Add New Traveller'),
+                SizedBox(height: 2.h),
+
+                // Name
+                _sheetInputContainer(
+                  label: 'Full Name',
+                  child: _sheetTextField(
+                    _userC.nameControllerTraveller.value,
+                    focusNode: nameNode,
+                    onChanged: () => setModalState(() {}),
                   ),
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(isEdit ? 'Edit Traveller' : 'Add New Traveller',
-                      textScaler: const TextScaler.linear(1.0),
-                      style: GoogleFonts.alexandria(fontSize: FontSize.s16, fontWeight: FontWeight.w600, color: CommonColors.blackColor)),
-                    IconButton(onPressed: () => Navigator.pop(context), icon: Icon(Icons.close, size: 6.w)),
-                  ],
+                SizedBox(height: 1.8.h),
+
+                // Age
+                _sheetInputContainer(
+                  label: 'Age',
+                  child: _sheetTextField(
+                    _userC.ageControllerTraveller.value,
+                    keyboardType: TextInputType.number,
+                    onChanged: () => setModalState(() {}),
+                  ),
                 ),
                 SizedBox(height: 2.h),
-                _buildTextFieldInSheet(_userC.nameControllerTraveller.value, 'Name', focusNode: nameNode, onChanged: () => setModalState(() {})),
-                SizedBox(height: 2.h),
-                _buildTextFieldInSheet(_userC.ageControllerTraveller.value, 'Age', keyboardType: TextInputType.number, onChanged: () => setModalState(() {})),
-                SizedBox(height: 1.7.h),
-                Text('Gender', textScaler: const TextScaler.linear(1.0),
-                  style: GoogleFonts.poppins(fontSize: FontSize.s11, fontWeight: FontWeight.w300, color: CommonColors.blackColor.withValues(alpha: 0.6))),
+
+                // Gender label
+                Text('Gender',
+                  textScaler: const TextScaler.linear(1.0),
+                  style: GoogleFonts.poppins(
+                    fontSize: FontSize.s11,
+                    fontWeight: FontWeight.w400,
+                    color: _TI.sheetInkMid,
+                  ),
+                ),
                 SizedBox(height: 1.h),
+
+                // Gender buttons
                 Row(children: [
                   _buildGenderButtonInSheet('Male', setModalState),
-                  SizedBox(width: 2.w),
+                  SizedBox(width: 3.w),
                   _buildGenderButtonInSheet('Female', setModalState),
                 ]),
                 SizedBox(height: 3.h),
+
                 CommonButton(
                   height: 48,
                   gradient: CommonColors.filterGradient,
@@ -569,11 +787,35 @@ class _TravellerInformationScreenState
                   textColor: CommonColors.whiteColor,
                   onPressed: () async {
                     if (_validateTravellerDetails()) {
-                      if (isEdit) { await _userC.updateTraveler(); } else { await _userC.addTraveler(); }
-                      setState(() {});
+                      if (isEdit) {
+                        await _userC.updateTraveler();
+                      } else {
+                        await _userC.addTraveler();
+                      }
+
+                      // ── AUTO-SELECT newly added traveller ──────────────
+                      if (!isEdit) {
+                        final adultCount = _trekC.calculateFareRequestModel.value.travelerCount;
+                        final travelers = _userC.userProfileData.value.customer?.travelers ?? [];
+                        if (travelers.isNotEmpty) {
+                          final newTraveler = travelers.last;
+                          final alreadySelected = selectedTravellers.any((t) => t.id == newTraveler.id);
+                          if (!alreadySelected && selectedTravellers.length < adultCount) {
+                            setState(() {
+                              selectedTravellers.add(newTraveler);
+                              _trekC.travellerDetailList.value = List.from(selectedTravellers);
+                            });
+                          }
+                        }
+                      } else {
+                        setState(() {});
+                      }
+
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text(isEdit ? 'Traveller updated successfully' : 'Traveller added successfully', textScaler: const TextScaler.linear(1.0)),
+                        content: Text(
+                          isEdit ? 'Traveller updated successfully' : 'Traveller added successfully',
+                          textScaler: const TextScaler.linear(1.0)),
                         backgroundColor: CommonColors.completedColor,
                         duration: const Duration(seconds: 2),
                       ));
@@ -588,60 +830,158 @@ class _TravellerInformationScreenState
     );
   }
 
-  Widget _buildTextFieldInSheet(TextEditingController controller, String hint,
-      {TextInputType keyboardType = TextInputType.text, int? maxLength, FocusNode? focusNode, VoidCallback? onChanged}) {
-    return MediaQuery(
-      data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(1.0)),
-      child: TextField(
-        controller: controller,
-        keyboardType: keyboardType,
-        focusNode: focusNode,
-        maxLength: maxLength,
-        onChanged: (_) => onChanged?.call(),
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: GoogleFonts.poppins(fontSize: FontSize.s11, fontWeight: FontWeight.w300, color: CommonColors.blackColor.withAlpha(153)),
-          counterText: '',
-          contentPadding: const EdgeInsets.only(left: 21, top: 13, bottom: 13),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF878787))),
-          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF878787))),
-          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF90CAF9))),
-          filled: true,
-          fillColor: Colors.white,
-        ),
-        style: GoogleFonts.poppins(fontSize: FontSize.s10, color: CommonColors.blackColor),
-      ),
+
+  List<Traveler> _sortedAvailableTravellers() {
+    final travelers = List<Traveler>.from(
+      _userC.userProfileData.value.customer?.travelers ?? const <Traveler>[],
+    );
+
+    travelers.sort((a, b) {
+      final aSelected = selectedTravellers.any((t) => t.id == a.id);
+      final bSelected = selectedTravellers.any((t) => t.id == b.id);
+
+      if (aSelected == bSelected) return 0;
+      return aSelected ? -1 : 1;
+    });
+
+    return travelers;
+  }
+
+  Future<void> _showTravellerLimitDialog() async {
+    final adultCount = _trekC.calculateFareRequestModel.value.travelerCount;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            children: [
+              Container(
+                width: 11.w,
+                height: 11.w,
+                decoration: BoxDecoration(
+                  color: CommonColors.blackColor,
+                  borderRadius: BorderRadius.circular(3.w),
+                ),
+                child: const Icon(
+                  Icons.groups_rounded,
+                  color: Colors.white,
+                ),
+              ),
+              SizedBox(width: 3.w),
+              Expanded(
+                child: Text(
+                  'Traveller limit reached',
+                  textScaler: const TextScaler.linear(1.0),
+                  style: GoogleFonts.poppins(
+                    fontSize: FontSize.s13,
+                    fontWeight: FontWeight.w700,
+                    color: CommonColors.blackColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            'You can select only $adultCount traveller${adultCount > 1 ? 's' : ''} for this booking.',
+            textScaler: const TextScaler.linear(1.0),
+            style: GoogleFonts.poppins(
+              fontSize: FontSize.s10,
+              color: CommonColors.cFF6B7280,
+              height: 1.45,
+            ),
+          ),
+          actionsPadding: EdgeInsets.fromLTRB(4.w, 0, 4.w, 2.h),
+          actions: [
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: CommonColors.blackColor,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  padding: EdgeInsets.symmetric(vertical: 1.3.h),
+                ),
+                child: Text(
+                  'Okay',
+                  textScaler: const TextScaler.linear(1.0),
+                  style: GoogleFonts.poppins(
+                    fontSize: FontSize.s11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
-  Widget _buildGenderButtonInSheet(String gender, StateSetter setModalState) {
-    final bool isSelected = _userC.selectedGender.value.toLowerCase() == gender.toLowerCase();
+
+  Widget _buildGenderButtonInSheet(
+    String gender,
+    StateSetter setModalState,
+  ) {
+    final bool isSelected =
+        _userC.selectedGender.value.toLowerCase() == gender.toLowerCase();
+
     return Expanded(
       child: GestureDetector(
         onTap: () => setModalState(() => _userC.selectedGender.value = gender),
-        child: Container(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
           height: 5.5.h,
           decoration: BoxDecoration(
-            border: Border.all(color: _userC.selectedGender.value == gender ? CommonColors.blueColor : const Color(0xFF878787)),
-            borderRadius: BorderRadius.circular(8),
-            color: Colors.white,
+            color: isSelected ? _TI.tealSoft : Colors.white,
+            border: Border.all(
+              color: isSelected ? _TI.teal : _TI.sheetBorder,
+              width: isSelected ? 1.5 : 1,
+            ),
+            borderRadius: BorderRadius.circular(3.w),
           ),
-          child: Container(
-            margin: EdgeInsets.only(left: 4.5.w, right: 2.5.w, top: 1.h, bottom: 1.h),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 4.w),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(gender, textScaler: const TextScaler.linear(1.0),
-                  style: GoogleFonts.poppins(fontSize: FontSize.s10, fontWeight: FontWeight.w500, color: CommonColors.blackColor.withValues(alpha: 0.6))),
+                Text(
+                  gender,
+                  textScaler: const TextScaler.linear(1.0),
+                  style: GoogleFonts.poppins(
+                    fontSize: FontSize.s11,
+                    fontWeight: FontWeight.w600,
+                    color: isSelected ? _TI.sheetInk : _TI.sheetInkMid,
+                  ),
+                ),
                 Container(
-                  width: 18, height: 18,
+                  width: 5.w,
+                  height: 5.w,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: isSelected ? CommonColors.radioBtnGradient : null,
-                    border: isSelected ? null : Border.all(color: CommonColors.greyColor585858, width: 2),
-                    color: Colors.white,
+                    color: isSelected ? _TI.teal : Colors.transparent,
+                    border: isSelected
+                        ? null
+                        : Border.all(color: _TI.sheetBorder, width: 1.5),
                   ),
-                  child: isSelected ? Center(child: Container(width: 6, height: 6, decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle))) : null,
+                  child: isSelected
+                      ? const Center(
+                          child: Icon(
+                            Icons.check_rounded,
+                            color: Colors.white,
+                            size: 12,
+                          ),
+                        )
+                      : null,
                 ),
               ],
             ),
@@ -652,110 +992,92 @@ class _TravellerInformationScreenState
   }
 
   bool _validateContactDetails() {
-    String phone = _userC.phoneNumberController.value.text.trim();
-    String email = _userC.emailController.value.text.trim();
+    final String phone = _userC.phoneNumberController.value.text.trim();
+    final String email = _userC.emailController.value.text.trim();
+
     if (phone.length != 10 || !RegExp(r'^[0-9]{10}$').hasMatch(phone)) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Please enter a valid 10-digit phone number'), backgroundColor: CommonColors.appRedColor));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please enter a valid 10-digit phone number'),
+          backgroundColor: CommonColors.appRedColor,
+        ),
+      );
       return false;
     }
-    if (email.isEmpty || !RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Please enter a valid email address'), backgroundColor: CommonColors.appRedColor));
+
+    if (email.isEmpty ||
+        !RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please enter a valid email address'),
+          backgroundColor: CommonColors.appRedColor,
+        ),
+      );
       return false;
     }
-    if (_userC.stateUpdateId.value == 0 || _selectedState.isEmpty || _selectedState == '-') {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Please select your state of residence'), backgroundColor: CommonColors.appRedColor));
+
+    if (_userC.stateUpdateId.value == 0 ||
+        _selectedState.isEmpty ||
+        _selectedState == '-') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please select your state of residence'),
+          backgroundColor: CommonColors.appRedColor,
+        ),
+      );
       return false;
     }
+
     return true;
   }
 
   bool _validateTravellerDetails() {
-    String name   = _userC.nameControllerTraveller.value.text.trim();
-    String age    = _userC.ageControllerTraveller.value.text.trim();
-    String gender = _userC.selectedGender.value;
-    if (name.isEmpty) { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Please enter traveller name'), backgroundColor: CommonColors.appRedColor)); return false; }
-    if (age.isEmpty)  { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Please enter traveller age'), backgroundColor: CommonColors.appRedColor)); return false; }
-    int? ageValue = int.tryParse(age);
-    if (ageValue == null || ageValue <= 0) { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Please enter a valid age'), backgroundColor: CommonColors.appRedColor)); return false; }
-    if (gender.isEmpty) { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Please select gender'), backgroundColor: CommonColors.appRedColor)); return false; }
-    return true;
-  }
+    final String name = _userC.nameControllerTraveller.value.text.trim();
+    final String age = _userC.ageControllerTraveller.value.text.trim();
+    final String gender = _userC.selectedGender.value;
 
-  Future<void> _showStateSelectionBottomSheet(StateSetter setModalState) async {
-    TextEditingController searchController = TextEditingController();
-    setState(() { filteredStates = _dashboardC.stateList.map((e) => e.name!).toList(); });
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: CommonColors.whiteColor,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(5.w))),
-      builder: (context) => StatefulBuilder(
-        builder: (context, setSheetState) => Container(
-          height: MediaQuery.of(context).size.height * 0.75,
-          child: Padding(
-            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom, top: 2.5.h, left: 5.w, right: 5.w),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('Select state of residence', textScaler: const TextScaler.linear(1.0),
-                  style: GoogleFonts.poppins(fontSize: FontSize.s14, fontWeight: FontWeight.w600, color: CommonColors.blackColor)),
-                SizedBox(height: 2.h),
-                Container(
-                  height: 6.h,
-                  padding: EdgeInsets.symmetric(horizontal: 2.5.w),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(colors: [CommonColors.whiteColor, Color(0xFFF8FBFF)]),
-                    borderRadius: BorderRadius.circular(3.75.w),
-                    border: Border.all(color: const Color(0xffd5d5d5), width: 0.8),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.search, color: Colors.grey, size: 6.w),
-                      SizedBox(width: 2.5.w),
-                      Expanded(
-                        child: TextField(
-                          controller: searchController,
-                          decoration: InputDecoration(
-                            hintText: 'Search State',
-                            border: InputBorder.none,
-                            hintStyle: GoogleFonts.poppins(fontSize: FontSize.s10, color: CommonColors.blackColor.withValues(alpha: 0.6)),
-                          ),
-                          style: GoogleFonts.poppins(fontSize: FontSize.s10, color: CommonColors.blackColor),
-                          onChanged: (value) {
-                            setSheetState(() {
-                              filteredStates = _dashboardC.stateList.map((e) => e.name!).toList()
-                                  .where((state) => state.toLowerCase().contains(value.toLowerCase())).toList();
-                            });
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 1.25.h),
-                Expanded(
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: filteredStates.length,
-                    itemBuilder: (context, index) => ListTile(
-                      title: Text(filteredStates[index], textScaler: const TextScaler.linear(1.0),
-                        style: GoogleFonts.poppins(fontSize: FontSize.s10, fontWeight: FontWeight.w500, color: CommonColors.blackColor)),
-                      onTap: () {
-                        setModalState(() {
-                          _userC.stateUpdateId.value = _dashboardC.stateList[_dashboardC.stateList.indexWhere((e) => e.name == filteredStates[index])].id!;
-                          _selectedState = filteredStates[index];
-                        });
-                        Navigator.pop(context);
-                      },
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please enter traveller name'),
+          backgroundColor: CommonColors.appRedColor,
         ),
-      ),
-    ).then((_) => setState(() { filteredStates = _dashboardC.stateList.map((e) => e.name!).toList(); }));
+      );
+      return false;
+    }
+
+    if (age.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please enter traveller age'),
+          backgroundColor: CommonColors.appRedColor,
+        ),
+      );
+      return false;
+    }
+
+    final int? ageValue = int.tryParse(age);
+    if (ageValue == null || ageValue <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please enter a valid age'),
+          backgroundColor: CommonColors.appRedColor,
+        ),
+      );
+      return false;
+    }
+
+    if (gender.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please select gender'),
+          backgroundColor: CommonColors.appRedColor,
+        ),
+      );
+      return false;
+    }
+
+    return true;
   }
 
   // ── BUILD ─────────────────────────────────────────────────────────────────
@@ -782,8 +1104,6 @@ class _TravellerInformationScreenState
                       children: [
                         _sectionHeader('Trip Summary', Icons.route_rounded),
                         SizedBox(height: 2.h),
-
-                        // Route row
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
                           decoration: BoxDecoration(
@@ -800,20 +1120,16 @@ class _TravellerInformationScreenState
                                     Text('FROM', textScaler: const TextScaler.linear(1.0),
                                       style: TextStyle(fontFamily: 'Poppins', fontSize: FontSize.s7, fontWeight: FontWeight.w600, color: _TI.inkLight, letterSpacing: 0.8)),
                                     SizedBox(height: 0.3.h),
-                                    Text(_formatDate(travelData?.startDate), textScaler: const TextScaler.linear(1.0),
+                                    Text(_formatDate(travelData.startDate), textScaler: const TextScaler.linear(1.0),
                                       style: TextStyle(fontFamily: 'Poppins', fontSize: FontSize.s11, fontWeight: FontWeight.w700, color: _TI.ink)),
                                     Text(_dashboardC.fromController.value.text, textScaler: const TextScaler.linear(1.0),
                                       style: TextStyle(fontFamily: 'Poppins', fontSize: FontSize.s9, color: _TI.inkMid)),
                                   ],
                                 ),
                               ),
-                              // Duration pill
                               Container(
                                 padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 0.8.h),
-                                decoration: BoxDecoration(
-                                  color: _TI.brand,
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
+                                decoration: BoxDecoration(color: _TI.brand, borderRadius: BorderRadius.circular(20)),
                                 child: Column(
                                   children: [
                                     Icon(Icons.swap_horiz_rounded, color: Colors.white, size: 4.w),
@@ -831,7 +1147,7 @@ class _TravellerInformationScreenState
                                     Text('TO', textScaler: const TextScaler.linear(1.0),
                                       style: TextStyle(fontFamily: 'Poppins', fontSize: FontSize.s7, fontWeight: FontWeight.w600, color: _TI.inkLight, letterSpacing: 0.8)),
                                     SizedBox(height: 0.3.h),
-                                    Text(_calculateEndDate(travelData?.startDate, travelData.durationDays),
+                                    Text(_calculateEndDate(travelData.startDate, travelData.durationDays),
                                       textScaler: const TextScaler.linear(1.0),
                                       style: TextStyle(fontFamily: 'Poppins', fontSize: FontSize.s11, fontWeight: FontWeight.w700, color: _TI.ink)),
                                     Text(_dashboardC.toController.value.text, textScaler: const TextScaler.linear(1.0),
@@ -842,7 +1158,6 @@ class _TravellerInformationScreenState
                             ],
                           ),
                         ),
-
                         SizedBox(height: 1.5.h),
                         Text(
                           'A round-trip trek covering ${travelData.title ?? '-'}',
@@ -888,9 +1203,10 @@ class _TravellerInformationScreenState
                                     _counterBtn(Icons.remove, () {
                                       setState(() {
                                         if (adultCount > 1) {
-                                          _trekC.calculateFareRequestModel.value = _trekC.calculateFareRequestModel.value.copyWith(travelerCount: adultCount - 1);
-                                          if (selectedTravellers.length > adultCount) {
-                                            selectedTravellers = selectedTravellers.take(adultCount).toList();
+                                          _trekC.calculateFareRequestModel.value =
+                                              _trekC.calculateFareRequestModel.value.copyWith(travelerCount: adultCount - 1);
+                                          if (selectedTravellers.length > adultCount - 1) {
+                                            selectedTravellers = selectedTravellers.take(adultCount - 1).toList();
                                           }
                                         }
                                       });
@@ -903,18 +1219,19 @@ class _TravellerInformationScreenState
                                         style: TextStyle(fontFamily: 'Poppins', fontSize: FontSize.s16, fontWeight: FontWeight.w700, color: _TI.ink)),
                                     ),
                                     _counterBtn(Icons.add, () {
-                                      if (adultCount < (travelData?.availableSlots ?? 0)) {
+                                      if (adultCount < (travelData.availableSlots ?? 0)) {
                                         _trekC.calculateFareRequestModel.value =
                                             _trekC.calculateFareRequestModel.value.copyWith(travelerCount: adultCount + 1);
                                       } else {
                                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                          content: Text('Maximum available slots reached (${travelData?.availableSlots ?? 0})', textScaler: const TextScaler.linear(1.0)),
+                                          content: Text('Maximum available slots reached (${travelData.availableSlots ?? 0})',
+                                            textScaler: const TextScaler.linear(1.0)),
                                           backgroundColor: CommonColors.appRedColor,
                                           duration: const Duration(seconds: 2),
                                         ));
                                       }
                                       _trekC.trekPersonCount.value = adultCount;
-                                    }, active: adultCount < (travelData?.availableSlots ?? 0)),
+                                    }, active: adultCount < (travelData.availableSlots ?? 0)),
                                   ],
                                 );
                               }),
@@ -959,7 +1276,8 @@ class _TravellerInformationScreenState
                           ],
                         ),
                         SizedBox(height: 0.5.h),
-                        Text('Trip ticket details will be provided to', textScaler: const TextScaler.linear(1.0),
+                        Text('Trip ticket details will be provided to',
+                          textScaler: const TextScaler.linear(1.0),
                           style: TextStyle(fontFamily: 'Poppins', fontSize: FontSize.s8, color: _TI.inkMid)),
                         SizedBox(height: 2.h),
                         _infoRow(CommonImages.phone, _userC.userProfileData.value.customer?.phone ?? '-'),
@@ -1039,16 +1357,22 @@ class _TravellerInformationScreenState
                             ),
                           )
                         else
-                          ListView.separated(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: _userC.userProfileData.value.customer?.travelers?.length ?? 0,
-                            separatorBuilder: (_, __) => SizedBox(height: 1.h),
-                            itemBuilder: (context, index) {
-                              final traveler = _userC.userProfileData.value.customer?.travelers?[index];
-                              return _buildExistingTravellerItem(
-                                travelData: traveler!,
-                                isSelected: selectedTravellers.any((t) => t.id == traveler.id),
+                          Builder(
+                            builder: (context) {
+                              final travelers = _sortedAvailableTravellers();
+
+                              return ListView.separated(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: travelers.length,
+                                separatorBuilder: (_, __) => SizedBox(height: 1.h),
+                                itemBuilder: (context, index) {
+                                  final traveler = travelers[index];
+                                  return _buildExistingTravellerItem(
+                                    travelData: traveler,
+                                    isSelected: selectedTravellers.any((t) => t.id == traveler.id),
+                                  );
+                                },
                               );
                             },
                           ),
@@ -1103,8 +1427,7 @@ class _TravellerInformationScreenState
                                     children: [
                                       Container(
                                         key: _checkboxKey,
-                                        width: 6.25.w,
-                                        height: 6.25.w,
+                                        width: 6.25.w, height: 6.25.w,
                                         decoration: BoxDecoration(
                                           border: Border.all(color: CommonColors.lightBlueColor.withValues(alpha: 0.7), width: 0.5.w),
                                           borderRadius: BorderRadius.circular(5),
@@ -1230,7 +1553,7 @@ class _TravellerInformationScreenState
             ),
           ),
 
-          // Loading overlay — original logic
+          // Loading overlay
           Obx(() => _trekC.calculateFareResponseModel.value.maybeWhen(
             loading: (_) => Container(
               color: CommonColors.grey400,
@@ -1280,7 +1603,7 @@ class _TravellerInformationScreenState
     );
   }
 
-  // ── BOTTOM BAR — original logic ───────────────────────────────────────────
+  // ── BOTTOM BAR ────────────────────────────────────────────────────────────
   Widget _buildBottomBar() {
     return Container(
       decoration: BoxDecoration(
@@ -1341,7 +1664,8 @@ class _TravellerInformationScreenState
             Padding(
               padding: const EdgeInsets.only(left: 41, right: 41, bottom: 20),
               child: Obx(() {
-                final isFormValid = _trekC.calculateFareRequestModel.value.travelerCount > 0 &&
+                final isFormValid =
+                    _trekC.calculateFareRequestModel.value.travelerCount > 0 &&
                     _userC.userProfileData.value.customer?.email != null &&
                     _userC.userProfileData.value.customer?.phone != null &&
                     _userC.userProfileData.value.customer?.state?.id != null &&
@@ -1405,7 +1729,8 @@ class _TravellerInformationScreenState
                 border: isSelected ? null : Border.all(color: CommonColors.greyColor585858, width: 0.5.w),
                 color: Colors.white,
               ),
-              child: isSelected ? Center(child: Container(width: 2.w, height: 2.w, decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle))) : null,
+              child: isSelected ? Center(child: Container(width: 2.w, height: 2.w,
+                decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle))) : null,
             ),
             SizedBox(width: 3.w),
             Expanded(
@@ -1446,7 +1771,8 @@ class _TravellerInformationScreenState
                 border: isSelected ? null : Border.all(color: CommonColors.greyColor585858, width: 0.5.w),
                 color: Colors.white,
               ),
-              child: isSelected ? Center(child: Container(width: 2.w, height: 2.w, decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle))) : null,
+              child: isSelected ? Center(child: Container(width: 2.w, height: 2.w,
+                decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle))) : null,
             ),
             SizedBox(width: 3.w),
             Column(
@@ -1464,59 +1790,90 @@ class _TravellerInformationScreenState
     );
   }
 
-  Widget _buildExistingTravellerItem({required Traveler travelData, required bool isSelected}) {
+
+  Widget _buildExistingTravellerItem({
+    required Traveler travelData,
+    required bool isSelected,
+  }) {
     return Obx(() {
       final adultCount = _trekC.calculateFareRequestModel.value.travelerCount;
-      if (selectedTravellers.length > adultCount) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) setState(() { selectedTravellers.clear(); _trekC.travellerDetailList.value = []; });
-        });
-        return const SizedBox.shrink();
-      }
-      final bool isTravellerSelected = selectedTravellers.any((t) => t.id == travelData.id);
-      final bool canSelect = isTravellerSelected || selectedTravellers.length < adultCount;
+      final bool isTravellerSelected =
+          selectedTravellers.any((t) => t.id == travelData.id);
+      final bool hasReachedLimit = selectedTravellers.length >= adultCount;
+      final bool canSelect = isTravellerSelected || !hasReachedLimit;
 
-      return Container(
+      return AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
-          color: isTravellerSelected ? _TI.brand.withOpacity(0.04) : const Color(0xFFF8F9FF),
+          color: isTravellerSelected
+              ? _TI.brand.withOpacity(0.04)
+              : const Color(0xFFF8F9FF),
           borderRadius: BorderRadius.circular(3.w),
-          border: Border.all(color: isTravellerSelected ? _TI.brand.withOpacity(0.3) : _TI.divider, width: isTravellerSelected ? 1.5 : 1),
+          border: Border.all(
+            color: isTravellerSelected
+                ? _TI.brand.withOpacity(0.3)
+                : _TI.divider,
+            width: isTravellerSelected ? 1.5 : 1,
+          ),
         ),
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.h),
           child: Row(
             children: [
               SizedBox(
-                width: 24, height: 24,
+                width: 24,
+                height: 24,
                 child: Checkbox(
                   value: isTravellerSelected,
-                  onChanged: canSelect ? (bool? value) {
+                  onChanged: (bool? value) async {
+                    final shouldSelect = value ?? false;
+
+                    if (shouldSelect &&
+                        !isTravellerSelected &&
+                        hasReachedLimit) {
+                      await _showTravellerLimitDialog();
+                      return;
+                    }
+
                     setState(() {
-                      if (value ?? false) {
-                        if (!selectedTravellers.any((t) => t.id == travelData.id)) selectedTravellers.add(travelData);
+                      if (shouldSelect) {
+                        if (!selectedTravellers.any((t) => t.id == travelData.id)) {
+                          selectedTravellers.add(travelData);
+                        }
                       } else {
                         selectedTravellers.removeWhere((t) => t.id == travelData.id);
                       }
-                      _trekC.travellerDetailList.value = List.from(selectedTravellers);
+                      _trekC.travellerDetailList.value =
+                          List.from(selectedTravellers);
                     });
-                  } : null,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                  },
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(4),
+                  ),
                   activeColor: _TI.brand,
                 ),
               ),
               SizedBox(width: 3.w),
-              // Avatar
               Container(
-                width: 9.w, height: 9.w,
+                width: 9.w,
+                height: 9.w,
                 decoration: BoxDecoration(
-                  color: isTravellerSelected ? _TI.brand.withOpacity(0.12) : const Color(0xFFE2E8F0),
+                  color: isTravellerSelected
+                      ? _TI.brand.withOpacity(0.12)
+                      : const Color(0xFFE2E8F0),
                   shape: BoxShape.circle,
                 ),
                 child: Center(
                   child: Text(
-                    (travelData.name?.isNotEmpty == true) ? travelData.name![0].toUpperCase() : '?',
-                    style: TextStyle(fontFamily: 'Poppins', fontSize: FontSize.s12, fontWeight: FontWeight.w700,
-                      color: isTravellerSelected ? _TI.brand : _TI.inkMid),
+                    (travelData.name?.isNotEmpty == true)
+                        ? travelData.name![0].toUpperCase()
+                        : '?',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: FontSize.s12,
+                      fontWeight: FontWeight.w700,
+                      color: isTravellerSelected ? _TI.brand : _TI.inkMid,
+                    ),
                   ),
                 ),
               ),
@@ -1525,17 +1882,33 @@ class _TravellerInformationScreenState
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(travelData.name ?? '-', textScaler: const TextScaler.linear(1.0),
-                      style: TextStyle(fontFamily: 'Poppins', fontSize: FontSize.s11, fontWeight: FontWeight.w600,
-                        color: canSelect ? _TI.ink : _TI.inkLight)),
-                    Text('${travelData.gender ?? ''}, ${travelData.age ?? ''}', textScaler: const TextScaler.linear(1.0),
-                      style: TextStyle(fontFamily: 'Poppins', fontSize: FontSize.s9,
-                        color: canSelect ? _TI.inkMid : _TI.inkLight)),
+                    Text(
+                      travelData.name ?? '-',
+                      textScaler: const TextScaler.linear(1.0),
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: FontSize.s11,
+                        fontWeight: FontWeight.w600,
+                        color: canSelect ? _TI.ink : _TI.inkLight,
+                      ),
+                    ),
+                    Text(
+                      '${travelData.gender ?? ''}, ${travelData.age ?? ''}',
+                      textScaler: const TextScaler.linear(1.0),
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: FontSize.s9,
+                        color: canSelect ? _TI.inkMid : _TI.inkLight,
+                      ),
+                    ),
                   ],
                 ),
               ),
               GestureDetector(
-                onTap: () => _showTravellerBottomSheet(traveller: travelData, isEdit: true),
+                onTap: () => _showTravellerBottomSheet(
+                  traveller: travelData,
+                  isEdit: true,
+                ),
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: 2.5.w, vertical: 0.4.h),
                   decoration: BoxDecoration(
@@ -1543,8 +1916,16 @@ class _TravellerInformationScreenState
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: _TI.brand.withOpacity(0.2)),
                   ),
-                  child: Text('Edit', textScaler: const TextScaler.linear(1.0),
-                    style: TextStyle(fontFamily: 'Poppins', fontSize: FontSize.s9, fontWeight: FontWeight.w600, color: _TI.brand)),
+                  child: Text(
+                    'Edit',
+                    textScaler: const TextScaler.linear(1.0),
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: FontSize.s9,
+                      fontWeight: FontWeight.w600,
+                      color: _TI.brand,
+                    ),
+                  ),
                 ),
               ),
             ],
