@@ -244,410 +244,724 @@ class _DashboardState extends State<Dashboard>
     );
   }
 
-  Future<void> _showCustomDatePicker(
-      BuildContext context,
-      DateTime firstDate,
-      DateTime lastDate,
-      ) async {
-    DateTime tempSelectedDate = _dashboardC.selectedDate.value ?? firstDate;
-    DateTime tempFocusedDay = _focusedDay;
-    CalendarFormat tempCalendarFormat = _calendarFormat;
+Future<void> _showCustomDatePicker(
+  BuildContext context,
+  DateTime firstDate,
+  DateTime lastDate,
+) async {
+  DateTime tempSelectedDate = _dashboardC.selectedDate.value ?? firstDate;
+  DateTime tempFocusedDay = _focusedDay;
+  CalendarFormat tempCalendarFormat = _calendarFormat;
 
-    final result = await showModalBottomSheet<DateTime>(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return Container(
-              height: MediaQuery.of(context).size.height * 0.85,
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height * 0.85,
-                minHeight: 400,
+  const Color _bg = Color(0xFFFFFFFF);
+  const Color _surface = Color(0xFFFFFFFF);
+  const Color _topBar = Color(0xFF111111);
+  const Color _topBar2 = Color(0xFF0A0A0A);
+  const Color _accent = Color(0xFFFFD600);
+  const Color _accentDark = Color(0xFFF5C000);
+  const Color _accentLight = Color(0xFFFFF8DC);
+  const Color _green = Color(0xFF16A34A);
+  const Color _greenLight = Color(0xFFDCFCE7);
+  const Color _ink = Color(0xFF0F0F0F);
+  const Color _inkMid = Color(0xFF6B7280);
+  const Color _inkLight = Color(0xFF9CA3AF);
+  const Color _border = Color(0xFFE5E7EB);
+
+  await showModalBottomSheet<DateTime>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    barrierColor: Colors.black.withOpacity(0.45),
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setSheet) {
+          final screenHeight = MediaQuery.of(context).size.height;
+
+          return TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.0, end: 1.0),
+            duration: const Duration(milliseconds: 380),
+            curve: Curves.easeOutCubic,
+            builder: (context, value, child) => Transform.translate(
+              offset: Offset(0, (1 - value) * 48),
+              child: Opacity(opacity: value, child: child),
+            ),
+            child: Container(
+              height: screenHeight * 0.9,
+              decoration: const BoxDecoration(
+                color: _bg,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Color(0x22000000),
+                    blurRadius: 32,
+                    offset: Offset(0, -8),
+                  ),
+                ],
               ),
-              padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
                   Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(2),
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [_topBar, _topBar2],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                    ),
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 10),
+                        Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.35),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 14, 20, 16),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: _accent.withOpacity(0.14),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: _accent.withOpacity(0.25),
+                                  ),
+                                ),
+                                child: const Icon(
+                                  Icons.calendar_month_rounded,
+                                  color: _accent,
+                                  size: 22,
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Select Departure Date',
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.white,
+                                        letterSpacing: -0.3,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Dates showing trek count are available',
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontSize: 11,
+                                        color: Colors.white.withOpacity(0.75),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () => Navigator.pop(context),
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.12),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white.withOpacity(0.14),
+                                    ),
+                                  ),
+                                  child: const Icon(
+                                    Icons.close_rounded,
+                                    color: Colors.white,
+                                    size: 18,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
+                          child: Row(
+                            children: [
+                              _legendItem(
+                                color: _green,
+                                label: 'Treks available',
+                                hasCount: true,
+                              ),
+                              const SizedBox(width: 18),
+                              _legendItem(
+                                color: _accent,
+                                label: 'Selected',
+                                solid: true,
+                              ),
+                              const SizedBox(width: 18),
+                              _legendItem(
+                                color: Colors.white.withOpacity(0.5),
+                                label: 'Unavailable',
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Select Departure Date',
-                    style: GoogleFonts.poppins(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '📅 Green dates have available treks',
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Flexible(
-                    flex: 1,
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        return Obx(() {
-                          final isLoading = _dashboardC.calenderTrekDatesObserver.value.maybeWhen(
-                            loading: (data) => true,
+                  Expanded(
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(14, 14, 14, 0),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: _surface,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: _border),
+                          boxShadow: [
+                            BoxShadow(
+                              color: _accent.withOpacity(0.05),
+                              blurRadius: 20,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        padding: const EdgeInsets.fromLTRB(6, 8, 6, 14),
+                        child: Obx(() {
+                          final isLoading =
+                              _dashboardC.calenderTrekDatesObserver.value.maybeWhen(
+                            loading: (_) => true,
                             orElse: () => false,
                           );
 
                           if (isLoading) {
-                            return const Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  CircularProgressIndicator(),
-                                  SizedBox(height: 16),
-                                  Text('Loading available dates...'),
-                                ],
+                            return SizedBox(
+                              height: 300,
+                              child: Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    SizedBox(
+                                      width: 32,
+                                      height: 32,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2.5,
+                                        color: _green,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 14),
+                                    Text(
+                                      'Loading available dates…',
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontSize: 12,
+                                        color: _inkMid,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             );
                           }
 
-                          return SingleChildScrollView(
-                            physics: const BouncingScrollPhysics(),
-                            child: Container(
-                              constraints: BoxConstraints(
-                                minHeight: constraints.maxHeight,
+                          return Theme(
+                            data: Theme.of(context).copyWith(
+                              cardColor: _surface,
+                              scaffoldBackgroundColor: _surface,
+                              colorScheme: ColorScheme.fromSeed(
+                                seedColor: _accent,
+                                brightness: Brightness.light,
+                                surface: _surface,
                               ),
-                              child: TableCalendar(
-                                firstDay: firstDate,
-                                lastDay: lastDate,
-                                focusedDay: tempFocusedDay,
-                                calendarFormat: tempCalendarFormat,
-                                availableCalendarFormats: const {
-                                  CalendarFormat.month: 'Month',
-                                },
-                                onFormatChanged: (format) {
-                                  setState(() {
-                                    tempCalendarFormat = format;
-                                  });
-                                },
-                                onDaySelected: (selectedDay, focusedDay) {
-                                  setState(() {
-                                    tempSelectedDate = selectedDay;
-                                    tempFocusedDay = focusedDay;
-                                  });
-                                },
-                                onPageChanged: (focusedDay) {
-                                  tempFocusedDay = focusedDay;
-                                },
-                                calendarStyle: CalendarStyle(
-                                  markersAlignment: Alignment.bottomCenter,
-                                  markerSize: 20,
-                                  defaultDecoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: Colors.transparent,
-                                  ),
-                                  selectedTextStyle: TextStyle(
-                                    color: CommonColors.blackColor,
-                                    fontWeight: FontWeight.w700
-                                  ),
-                                  selectedDecoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: CommonColors.searchbtn,
-                                  ),
-                                  todayDecoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: Colors.blue.shade100,
-                                  ),
-                                  weekendTextStyle: TextStyle(
-                                    color: Colors.red.shade400,
-                                  ),
-                                  defaultTextStyle: TextStyle(
-                                    color: Colors.black87,
-                                  ),
-                                  cellPadding: EdgeInsets.zero,
-                                  cellMargin: EdgeInsets.all(
-                                    MediaQuery.of(context).size.width * 0.01,
-                                  ),
+                            ),
+                            child: TableCalendar(
+                              firstDay: firstDate,
+                              lastDay: lastDate,
+                              focusedDay: tempFocusedDay,
+                              calendarFormat: tempCalendarFormat,
+                              availableCalendarFormats: const {
+                                CalendarFormat.month: 'Month',
+                              },
+                              rowHeight: 54,
+                              daysOfWeekHeight: 30,
+                              onFormatChanged: (f) =>
+                                  setSheet(() => tempCalendarFormat = f),
+                              onDaySelected: (sel, foc) => setSheet(() {
+                                tempSelectedDate = sel;
+                                tempFocusedDay = foc;
+                              }),
+                              onPageChanged: (foc) => tempFocusedDay = foc,
+                              selectedDayPredicate: (d) =>
+                                  isSameDay(d, tempSelectedDate),
+                              calendarStyle: const CalendarStyle(
+                                outsideDaysVisible: false,
+                                cellPadding: EdgeInsets.zero,
+                                cellMargin: EdgeInsets.all(2),
+                                tableBorder: TableBorder.symmetric(
+                                  inside: BorderSide(color: Color(0xFFF3F4F6)),
                                 ),
-                                calendarBuilders: CalendarBuilders(
-                                  defaultBuilder: (context, day, focusedDay) {
-                                    final dateStr = DateFormat('yyyy-MM-dd').format(day);
-                                    final trekCount = _dashboardC.availableDates[dateStr];
-                                    final isAvailable = trekCount != null && trekCount > 0;
-
-                                    if (day == tempSelectedDate) {
-                                      return Container(
-                                        margin: EdgeInsets.all(
-                                          MediaQuery.of(context).size.width * 0.01,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: CommonColors.searchbtn,
-                                          border: Border.all(width: 1,color: Colors.black)
-                                        ),
-                                        child: Center(
-                                          child: Text(
-                                            '${day.day}',
-                                            style: TextStyle(
-                                              color: Colors.black,
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: MediaQuery.of(context).size.width * 0.035,
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    }
-
-                                    return Container(
-                                      margin: EdgeInsets.all(
-                                        MediaQuery.of(context).size.width * 0.01,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: isAvailable
-                                            ? Colors.green.shade100
-                                            : Colors.transparent,
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          '${day.day}',
-                                          style: TextStyle(
-                                            color: isAvailable
-                                                ? Colors.green.shade900
-                                                : Colors.black87,
-                                            fontWeight: isAvailable
-                                                ? FontWeight.bold
-                                                : FontWeight.normal,
-                                            fontSize: MediaQuery.of(context).size.width * 0.035,
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                  markerBuilder: (context, day, events) {
-                                    final dateStr = DateFormat('yyyy-MM-dd').format(day);
-                                    final trekCount = _dashboardC.availableDates[dateStr];
-
-                                    if (trekCount != null && trekCount > 0 && day != tempSelectedDate) {
-                                      return Positioned(
-                                        bottom: 2,
-                                        child: Container(
-                                          width: MediaQuery.of(context).size.width * 0.045,
-                                          height: MediaQuery.of(context).size.width * 0.036,
-                                          decoration: BoxDecoration(
-                                            color: Colors.green,
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Center(
-                                            child: Text(
-                                              '$trekCount',
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: MediaQuery.of(context).size.width * 0.028,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    }
-                                    return null;
-                                  },
+                              ),
+                              calendarBuilders: CalendarBuilders(
+                                defaultBuilder: (ctx, day, _) => _buildDayCell(
+                                  day: day,
+                                  isSelected: false,
+                                  isToday: false,
+                                  accent: _accent,
+                                  green: _green,
+                                  greenLight: _greenLight,
                                 ),
-                                headerStyle: HeaderStyle(
-                                  formatButtonVisible: true,
-                                  titleCentered: true,
-                                  formatButtonShowsNext: false,
-                                  titleTextStyle: GoogleFonts.poppins(
-                                    fontSize: MediaQuery.of(context).size.width * 0.04,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                  formatButtonTextStyle: GoogleFonts.poppins(
-                                    fontSize: MediaQuery.of(context).size.width * 0.032,
-                                    color: CommonColors.searchbtn,
-                                  ),
-                                  leftChevronIcon: Icon(
-                                    Icons.chevron_left,
-                                    color: CommonColors.blackColor,
-                                    size: MediaQuery.of(context).size.width * 0.06,
-                                  ),
-                                  rightChevronIcon: Icon(
-                                    Icons.chevron_right,
-                                    color: CommonColors.blackColor,
-                                    size: MediaQuery.of(context).size.width * 0.06,
-                                  ),
-                                  headerPadding: const EdgeInsets.symmetric(vertical: 8),
+                                todayBuilder: (ctx, day, _) => _buildDayCell(
+                                  day: day,
+                                  isSelected: isSameDay(day, tempSelectedDate),
+                                  isToday: true,
+                                  accent: _accent,
+                                  green: _green,
+                                  greenLight: _greenLight,
                                 ),
-                                daysOfWeekStyle: DaysOfWeekStyle(
-                                  weekdayStyle: GoogleFonts.poppins(
-                                    fontSize: MediaQuery.of(context).size.width * 0.032,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.grey.shade600,
-                                  ),
-                                  weekendStyle: GoogleFonts.poppins(
-                                    fontSize: MediaQuery.of(context).size.width * 0.032,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.red.shade400,
-                                  ),
-                                  dowTextFormatter: (date, locale) {
-                                    return DateFormat.E(locale).format(date).substring(0, 2);
-                                  },
+                                selectedBuilder: (ctx, day, _) => _buildDayCell(
+                                  day: day,
+                                  isSelected: true,
+                                  isToday: isSameDay(day, _ntpTime ?? DateTime.now()),
+                                  accent: _accent,
+                                  green: _green,
+                                  greenLight: _greenLight,
                                 ),
+                                markerBuilder: (_, __, ___) => null,
+                              ),
+                              headerStyle: HeaderStyle(
+                                formatButtonVisible: false,
+                                titleCentered: true,
+                                titleTextStyle: const TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  color: _ink,
+                                  letterSpacing: -0.2,
+                                ),
+                                leftChevronIcon: _chevron(Icons.chevron_left_rounded),
+                                rightChevronIcon: _chevron(Icons.chevron_right_rounded),
+                                headerPadding:
+                                    const EdgeInsets.symmetric(vertical: 10),
+                              ),
+                              daysOfWeekStyle: DaysOfWeekStyle(
+                                weekdayStyle: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: _inkMid,
+                                  letterSpacing: 0.4,
+                                ),
+                                weekendStyle: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFFEF4444).withOpacity(0.65),
+                                  letterSpacing: 0.4,
+                                ),
+                                dowTextFormatter: (date, locale) =>
+                                    DateFormat.E(locale)
+                                        .format(date)
+                                        .substring(0, 1)
+                                        .toUpperCase(),
                               ),
                             ),
                           );
-                        });
-                      },
+                        }),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Obx(() {
-                    if (_dashboardC.isDateAvailable(tempSelectedDate)) {
-                      int trekCount = _dashboardC.getTrekCountForDate(tempSelectedDate);
-                      return Container(
-                        padding: EdgeInsets.all(
-                          MediaQuery.of(context).size.width * 0.03,
-                        ),
-                        margin: const EdgeInsets.only(bottom: 12),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    child: Obx(() {
+                      final isAvailable =
+                          _dashboardC.isDateAvailable(tempSelectedDate);
+                      final trekCount =
+                          _dashboardC.getTrekCountForDate(tempSelectedDate);
+
+                      return AnimatedContainer(
+                        duration: const Duration(milliseconds: 280),
+                        curve: Curves.easeOut,
+                        padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: Colors.green.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.green.withOpacity(0.3)),
+                          gradient: LinearGradient(
+                            colors: isAvailable
+                                ? [
+                                    const Color(0xFFF0FDF4),
+                                    const Color(0xFFDCFCE7),
+                                  ]
+                                : [
+                                    const Color(0xFFFFFBEB),
+                                    const Color(0xFFFEF3C7),
+                                  ],
+                          ),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: isAvailable
+                                ? _green.withOpacity(0.25)
+                                : _accent.withOpacity(0.22),
+                          ),
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.check_circle, color: Colors.green, size: 20),
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: isAvailable ? _green : _accent,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                isAvailable
+                                    ? Icons.check_rounded
+                                    : Icons.info_outline_rounded,
+                                color: Colors.white,
+                                size: 15,
+                              ),
+                            ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    '${DateFormat('EEEE, MMM d, yyyy').format(tempSelectedDate)}',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: MediaQuery.of(context).size.width * 0.035,
-                                      fontWeight: FontWeight.w600,
+                                    DateFormat('EEEE, MMM d, yyyy')
+                                        .format(tempSelectedDate),
+                                    style: TextStyle(
+                                      fontFamily: 'Poppins',
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: _ink,
                                     ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
                                   ),
+                                  const SizedBox(height: 2),
                                   Text(
-                                    '$trekCount trek${trekCount > 1 ? 's' : ''} available',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: MediaQuery.of(context).size.width * 0.03,
-                                      color: Colors.green[700],
+                                    isAvailable
+                                        ? '$trekCount trek${trekCount > 1 ? 's' : ''} available on this date'
+                                        : 'No treks available — try another date',
+                                    style: TextStyle(
+                                      fontFamily: 'Poppins',
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                      color: isAvailable ? _green : _accent,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                          ],
-                        ),
-                      );
-                    } else if (tempSelectedDate != _dashboardC.selectedDate.value) {
-                      return Container(
-                        padding: EdgeInsets.all(
-                          MediaQuery.of(context).size.width * 0.03,
-                        ),
-                        margin: const EdgeInsets.only(bottom: 12),
-                        decoration: BoxDecoration(
-                          color: Colors.orange.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.orange.withOpacity(0.3)),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.warning, color: Colors.orange, size: 20),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                'No treks available on this date. Please select another date.',
-                                style: GoogleFonts.poppins(
-                                  fontSize: MediaQuery.of(context).size.width * 0.03,
-                                  color: Colors.orange[700],
+                            if (isAvailable)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: _green,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  '$trekCount',
+                                  style: const TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.white,
+                                  ),
                                 ),
                               ),
-                            ),
                           ],
                         ),
                       );
-                    }
-                    return const SizedBox();
-                  }),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => Navigator.pop(context),
-                          style: OutlinedButton.styleFrom(
-                            padding: EdgeInsets.symmetric(
-                              vertical: MediaQuery.of(context).size.height * 0.012,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: Text(
-                            'Cancel',
-                            style: GoogleFonts.poppins(
-                              fontSize: MediaQuery.of(context).size.width * 0.035,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              _dashboardC.selectedDate.value = tempSelectedDate;
-                              _dashboardC.dateController.value.text = DateFormat('dd/MM/yyyy').format(tempSelectedDate);
-                              _selectedDay = tempSelectedDate;
-                              _focusedDay = tempFocusedDay;
-                              _calendarFormat = tempCalendarFormat;
-                              _updateNearestWeekendDates();
-                            });
-                            Get.back();
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: CommonColors.searchbtn,
-                            padding: EdgeInsets.symmetric(
-                              vertical: MediaQuery.of(context).size.height * 0.012,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: Text(
-                            'Select',
-                            style: GoogleFonts.poppins(
-                              fontSize: MediaQuery.of(context).size.width * 0.035,
-                              color: CommonColors.searchbtntext,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                    }),
                   ),
-                  SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      14,
+                      12,
+                      14,
+                      14 + MediaQuery.of(context).viewInsets.bottom,
+                    ),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          height: 52,
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.pop(context),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 22),
+                              side: const BorderSide(color: _border, width: 1.2),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              backgroundColor: _surface,
+                            ),
+                            child: const Text(
+                              'Cancel',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w500,
+                                color: _inkMid,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: SizedBox(
+                            height: 52,
+                            child: Obx(() {
+                              final isAvailable =
+                                  _dashboardC.isDateAvailable(tempSelectedDate);
+                              return AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                decoration: BoxDecoration(
+                                  gradient: isAvailable
+                                      ? const LinearGradient(
+                                          colors: [_accent, _accentDark],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        )
+                                      : null,
+                                  color: isAvailable ? null : _border,
+                                  borderRadius: BorderRadius.circular(14),
+                                  boxShadow: isAvailable
+                                      ? [
+                                          BoxShadow(
+                                            color: _accent.withOpacity(0.32),
+                                            blurRadius: 14,
+                                            offset: const Offset(0, 5),
+                                          ),
+                                        ]
+                                      : [],
+                                ),
+                                child: ElevatedButton(
+                                  onPressed: isAvailable
+                                      ? () {
+                                          setState(() {
+                                            _dashboardC.selectedDate.value =
+                                                tempSelectedDate;
+                                            _dashboardC.dateController.value.text =
+                                                DateFormat('dd/MM/yyyy')
+                                                    .format(tempSelectedDate);
+                                            _selectedDay = tempSelectedDate;
+                                            _focusedDay = tempFocusedDay;
+                                            _calendarFormat =
+                                                tempCalendarFormat;
+                                            _updateNearestWeekendDates();
+                                          });
+                                          Get.back();
+                                        }
+                                      : null,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.transparent,
+                                    disabledBackgroundColor: Colors.transparent,
+                                    shadowColor: Colors.transparent,
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        'Confirm Date',
+                                        style: TextStyle(
+                                          fontFamily: 'Poppins',
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w700,
+                                          color: isAvailable
+                                              ? Colors.white
+                                              : _inkLight,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Icon(
+                                        Icons.arrow_forward_rounded,
+                                        size: 17,
+                                        color: isAvailable
+                                            ? Colors.white
+                                            : _inkLight,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
-            );
-          },
-        );
-      },
-    );
-  }
+            ),
+          );
+        },
+      );
+    },
+  );
+}
 
+Widget _legendItem({
+  required Color color,
+  required String label,
+  bool solid = false,
+  bool hasCount = false,
+}) {
+  return Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      hasCount
+          ? Container(
+              width: 20,
+              height: 20,
+              decoration: BoxDecoration(
+                color: const Color(0xFFDCFCE7),
+                borderRadius: BorderRadius.circular(5),
+              ),
+              child: Center(
+                child: Text(
+                  '3',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 9,
+                    fontWeight: FontWeight.w800,
+                    color: color,
+                  ),
+                ),
+              ),
+            )
+          : Container(
+              width: 14,
+              height: 14,
+              decoration: BoxDecoration(
+                color: solid ? color : Colors.transparent,
+                shape: BoxShape.circle,
+                border: solid ? null : Border.all(color: color, width: 1.5),
+              ),
+              child: solid
+                  ? const Icon(Icons.check_rounded,
+                      size: 9, color: Colors.white)
+                  : null,
+            ),
+      const SizedBox(width: 5),
+      Text(
+        label,
+        style: TextStyle(
+          fontFamily: 'Poppins',
+          fontSize: 10,
+          fontWeight: FontWeight.w500,
+          color: Colors.white.withOpacity(0.85),
+        ),
+      ),
+    ],
+  );
+}
+
+Widget _chevron(IconData icon) {
+  return Container(
+    padding: const EdgeInsets.all(6),
+    decoration: const BoxDecoration(
+      color: Color(0xFF2A2A2A),
+      shape: BoxShape.circle,
+    ),
+    child: Icon(icon, size: 20, color: const Color(0xFFFFD600)),
+  );
+}
+
+Widget _buildDayCell({
+  required DateTime day,
+  required bool isSelected,
+  required bool isToday,
+  required Color accent,
+  required Color green,
+  required Color greenLight,
+}) {
+  final dateStr = DateFormat('yyyy-MM-dd').format(day);
+  final trekCount = _dashboardC.availableDates[dateStr] ?? 0;
+  final isAvailable = trekCount > 0;
+  final isWeekend =
+      day.weekday == DateTime.saturday || day.weekday == DateTime.sunday;
+
+  const double cellSize = 42.0;
+  const double radius = 11.0;
+
+  return Center(
+    child: AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOut,
+      width: cellSize,
+      height: cellSize,
+      decoration: BoxDecoration(
+        gradient: isSelected
+            ? const LinearGradient(
+                colors: [Color(0xFFFFD600), Color(0xFFF5C000)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              )
+            : null,
+        color: isSelected
+            ? null
+            : isAvailable
+                ? const Color(0xFFF0FDF4)
+                : Colors.transparent,
+        borderRadius: BorderRadius.circular(radius),
+        border: isToday && !isSelected
+            ? Border.all(color: const Color(0xFFFFD600), width: 1.8)
+            : isAvailable && !isSelected
+                ? Border.all(color: green.withOpacity(0.35), width: 1)
+                : null,
+        boxShadow: isSelected
+            ? [
+                BoxShadow(
+                  color: const Color(0xFFFFD600).withOpacity(0.42),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : [],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            '${day.day}',
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 13,
+              fontWeight:
+                  isSelected || isAvailable ? FontWeight.w700 : FontWeight.w500,
+              color: isSelected
+                  ? const Color(0xFF0F0F0F)
+                  : isAvailable
+                      ? green
+                      : isWeekend
+                          ? const Color(0xFFEF4444).withOpacity(0.7)
+                          : const Color(0xFF555555),
+              height: 1.1,
+            ),
+          ),
+          if (isAvailable) ...[
+            const SizedBox(height: 1),
+            Text(
+              isSelected ? '✓' : '$trekCount',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 8,
+                fontWeight: FontWeight.w800,
+                color: isSelected ? Colors.white.withOpacity(0.85) : green,
+                height: 1.0,
+              ),
+            ),
+          ],
+        ],
+      ),
+    ),
+  );
+}
   Future<void> _selectSourceLocation() async {
     final City? selectedCity = await Navigator.push(
       context,
