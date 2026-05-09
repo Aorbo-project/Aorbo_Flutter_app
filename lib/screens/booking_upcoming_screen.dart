@@ -1,4 +1,5 @@
 import 'package:animated_rating_stars/animated_rating_stars.dart';
+import 'package:arobo_app/controller/trek_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
@@ -78,6 +79,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
     with SingleTickerProviderStateMixin {
 
   final DashboardController _dashboardC = Get.find<DashboardController>();
+  final TrekController _trekC =  Get.find<TrekController>();
   late AnimationController _animationController;
 
   // FIX: Booking Details (index 0) starts open
@@ -1132,65 +1134,190 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
 
             if (isLoading) return _buildShimmerLoading();
 
-            return SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(height: 2.h),
+            return Stack(
+              children: [
+                SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: 2.h),
 
-                  // Ticket Card
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 4.w),
-                    child: _buildTicketCard(booking),
-                  ),
-
-                  SizedBox(height: 2.5.h),
-
-                  // Contact info block
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 4.w),
-                    child: Container(
-                      padding: EdgeInsets.all(4.w),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
+                      // Ticket Card
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 4.w),
+                        child: _buildTicketCard(booking),
                       ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 10.w, height: 10.w,
-                            decoration: BoxDecoration(
-                              color: _TC.tealLight,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Icon(Icons.phone_outlined,
-                                size: 5.w, color: _TC.teal),
+
+                      SizedBox(height: 2.5.h),
+
+                      // Contact info block
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 4.w),
+                        child: Container(
+                          padding: EdgeInsets.all(4.w),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                           ),
-                          SizedBox(width: 3.w),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Trek details via contact',
-                                  style: TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontSize: FontSize.s8,
-                                    color: _TC.inkMid,
-                                  ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 10.w, height: 10.w,
+                                decoration: BoxDecoration(
+                                  color: _TC.tealLight,
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
-                                SizedBox(height: 0.2.h),
-                                if (booking?.trek?.captainName != null)
-                                  Text(
-                                    booking?.trek?.captainName ?? '',
+                                child: Icon(Icons.phone_outlined,
+                                    size: 5.w, color: _TC.teal),
+                              ),
+                              SizedBox(width: 3.w),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Trek details via contact',
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontSize: FontSize.s8,
+                                        color: _TC.inkMid,
+                                      ),
+                                    ),
+                                    SizedBox(height: 0.2.h),
+                                    if (booking?.trek?.captainName != null)
+                                      Text(
+                                        booking?.trek?.captainName ?? '',
+                                        style: TextStyle(
+                                          fontFamily: 'Poppins',
+                                          fontSize: FontSize.s11,
+                                          fontWeight: FontWeight.w600,
+                                          color: _TC.ink,
+                                        ),
+                                      ),
+                                    if (booking?.trek?.captainPhone != null)
+                                      Text(
+                                        booking?.trek?.captainPhone ?? '',
+                                        style: TextStyle(
+                                          fontFamily: 'Poppins',
+                                          fontSize: FontSize.s12,
+                                          fontWeight: FontWeight.w700,
+                                          color: _TC.brand,
+                                        ),
+                                      )
+                                    else
+                                      Text(
+                                        'Contact number not available',
+                                        style: TextStyle(
+                                          fontFamily: 'Poppins',
+                                          fontSize: FontSize.s9,
+                                          color: _TC.inkMid,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      SizedBox(height: 2.5.h),
+
+                      // Action buttons
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 4.w),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: _buildActionButton(
+                                Icons.confirmation_num_outlined,
+                                'Ticket',
+                                onTap: () => Get.to(() => const InvoiceExampleScreen()),
+                              ),
+                            ),
+                            if (status == 'upcoming' ||
+                                status == 'confirmed' ||
+                                status == 'booked') ...[
+                              SizedBox(width: 3.w),
+                              Expanded(
+                                child: _buildActionButton(
+                                  Icons.cancel_outlined,
+                                  'Cancel',
+                                  onTap: () async {
+                                    String? bookingId = booking?.id?.toString();
+                                    if (bookingId != null) {
+                                      final message = await _trekC.fetchCancellationDetails(bookingId);
+                                      if (message != null) {
+                                        SchedulerBinding.instance.addPostFrameCallback((_) {
+                                          CustomSnackBar.show(context, message: message);
+                                        });
+                                        return;
+                                      }
+                                    }
+                                    Get.toNamed('/bookingscancel', arguments: booking);
+                                  },
+                                ),
+                              ),
+                            ],
+                            SizedBox(width: 3.w),
+                            Expanded(
+                              child: _buildActionButton(
+                                Icons.share_outlined,
+                                'Share',
+                                onTap: () => CustomSnackBar.show(context,
+                                    message: 'Share feature coming soon'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      SizedBox(height: 2.5.h),
+
+                      // FAQ Card
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 4.w),
+                        child: GestureDetector(
+                          onTap: () => CustomSnackBar.show(context,
+                              message: 'FAQ coming soon'),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 4.w, vertical: 1.8.h),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: _TC.divider),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.04),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 10.w, height: 10.w,
+                                  decoration: BoxDecoration(
+                                    color: _TC.brandLight,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Icon(Icons.help_outline_rounded,
+                                      size: 5.w, color: _TC.brand),
+                                ),
+                                SizedBox(width: 3.w),
+                                Expanded(
+                                  child: Text(
+                                    'Frequently Asked Questions',
                                     style: TextStyle(
                                       fontFamily: 'Poppins',
                                       fontSize: FontSize.s11,
@@ -1198,201 +1325,85 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                                       color: _TC.ink,
                                     ),
                                   ),
-                                if (booking?.trek?.captainPhone != null)
-                                  Text(
-                                    booking?.trek?.captainPhone ?? '',
-                                    style: TextStyle(
-                                      fontFamily: 'Poppins',
-                                      fontSize: FontSize.s12,
-                                      fontWeight: FontWeight.w700,
-                                      color: _TC.brand,
-                                    ),
-                                  )
-                                else
-                                  Text(
-                                    'Contact number not available',
-                                    style: TextStyle(
-                                      fontFamily: 'Poppins',
-                                      fontSize: FontSize.s9,
-                                      color: _TC.inkMid,
-                                    ),
-                                  ),
+                                ),
+                                Icon(Icons.arrow_forward_ios_rounded,
+                                    size: 4.w, color: _TC.inkLight),
                               ],
                             ),
                           ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ),
 
-                  SizedBox(height: 2.5.h),
+                      SizedBox(height: 2.5.h),
 
-                  // Action buttons
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 4.w),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: _buildActionButton(
-                            Icons.confirmation_num_outlined,
-                            'Ticket',
-                            onTap: () => Get.to(() => const InvoiceExampleScreen()),
-                          ),
+                      // Rating Card
+                      if (status == 'completed' && booking != null)
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 4.w),
+                          child: _buildRatingCard(bookingData: booking),
                         ),
-                        if (status == 'upcoming' ||
-                            status == 'confirmed' ||
-                            status == 'booked') ...[
-                          SizedBox(width: 3.w),
-                          Expanded(
-                            child: _buildActionButton(
-                              Icons.cancel_outlined,
-                              'Cancel',
-                              onTap: () async {
-                                String? bookingId = booking?.id?.toString();
-                                if (bookingId != null) {
-                                  await _dashboardC.getRefundDetail(bookingId);
-                                  if (_dashboardC.refundDetailData.value.canCancel == false) {
-                                    final message = _dashboardC.refundDetailData.value.cancellationMessage ??
-                                        'Cancellation is not allowed for this booking';
-                                    SchedulerBinding.instance.addPostFrameCallback((_) {
-                                      CustomSnackBar.show(context, message: message);
-                                    });
-                                    return;
-                                  }
-                                }
-                                Get.toNamed('/bookingscancel', arguments: booking);
-                              },
-                            ),
-                          ),
-                        ],
-                        SizedBox(width: 3.w),
-                        Expanded(
-                          child: _buildActionButton(
-                            Icons.share_outlined,
-                            'Share',
-                            onTap: () => CustomSnackBar.show(context,
-                                message: 'Share feature coming soon'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
 
-                  SizedBox(height: 2.5.h),
-
-                  // FAQ Card
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 4.w),
-                    child: GestureDetector(
-                      onTap: () => CustomSnackBar.show(context,
-                          message: 'FAQ coming soon'),
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: 4.w, vertical: 1.8.h),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: _TC.divider),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.04),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
+                      // Dispute Card
+                      if (_dashboardC.disputeDetailDataList.isNotEmpty)
+                        Padding(
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 4.w),
+                          child: Obx(() => _buildDisputeCard(
+                                disputeData: _dashboardC.disputeDetailDataList,
+                              )),
                         ),
-                        child: Row(
+
+                      SizedBox(height: 2.h),
+
+                      // Footer
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(6.w, 2.h, 6.w, 5.h),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Container(
-                              width: 10.w, height: 10.w,
-                              decoration: BoxDecoration(
-                                color: _TC.brandLight,
-                                borderRadius: BorderRadius.circular(10),
+                            Text(
+                              'Go Beyond,\nExplore More!',
+                              style: GoogleFonts.sourceSerif4(
+                                fontSize: FontSize.s28,
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFFE2E8F0),
+                                height: 1.2,
                               ),
-                              child: Icon(Icons.help_outline_rounded,
-                                  size: 5.w, color: _TC.brand),
                             ),
-                            SizedBox(width: 3.w),
-                            Expanded(
-                              child: Text(
-                                'Frequently Asked Questions',
+                            SizedBox(height: 1.h),
+                            RichText(
+                              text: TextSpan(
                                 style: TextStyle(
                                   fontFamily: 'Poppins',
-                                  fontSize: FontSize.s11,
-                                  fontWeight: FontWeight.w600,
-                                  color: _TC.ink,
+                                  fontSize: FontSize.s10,
+                                  color: _TC.inkLight,
                                 ),
+                                children: [
+                                  const TextSpan(text: 'Crafted with passion '),
+                                  WidgetSpan(
+                                    alignment: PlaceholderAlignment.middle,
+                                    child: Icon(Icons.favorite,
+                                        color: CommonColors.red_B52424,
+                                        size: FontSize.s10),
+                                  ),
+                                  const TextSpan(text: '\nrooted in Hyderabad.'),
+                                ],
                               ),
                             ),
-                            Icon(Icons.arrow_forward_ios_rounded,
-                                size: 4.w, color: _TC.inkLight),
                           ],
                         ),
                       ),
-                    ),
+                    ],
                   ),
-
-                  SizedBox(height: 2.5.h),
-
-                  // Rating Card
-                  if (status == 'completed' && booking != null)
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 4.w),
-                      child: _buildRatingCard(bookingData: booking),
-                    ),
-
-                  // Dispute Card
-                  if (_dashboardC.disputeDetailDataList.isNotEmpty)
-                    Padding(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 4.w),
-                      child: Obx(() => _buildDisputeCard(
-                            disputeData: _dashboardC.disputeDetailDataList,
-                          )),
-                    ),
-
-                  SizedBox(height: 2.h),
-
-                  // Footer
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(6.w, 2.h, 6.w, 5.h),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Go Beyond,\nExplore More!',
-                          style: GoogleFonts.sourceSerif4(
-                            fontSize: FontSize.s28,
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFFE2E8F0),
-                            height: 1.2,
-                          ),
-                        ),
-                        SizedBox(height: 1.h),
-                        RichText(
-                          text: TextSpan(
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: FontSize.s10,
-                              color: _TC.inkLight,
-                            ),
-                            children: [
-                              const TextSpan(text: 'Crafted with passion '),
-                              WidgetSpan(
-                                alignment: PlaceholderAlignment.middle,
-                                child: Icon(Icons.favorite,
-                                    color: CommonColors.red_B52424,
-                                    size: FontSize.s10),
-                              ),
-                              const TextSpan(text: '\nrooted in Hyderabad.'),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
+                ),
+                Obx(() => _trekC.cancellationDetailsResponseObserver.value.maybeWhen(
+                  loading: (_) => Container(
+                    color: CommonColors.grey400,
+                    child: Center(child: CircularProgressIndicator(color: CommonColors.blueColor)),
                   ),
-                ],
-              ),
+                  orElse: () => const SizedBox(),
+                )),
+              ],
             );
           }),
         );

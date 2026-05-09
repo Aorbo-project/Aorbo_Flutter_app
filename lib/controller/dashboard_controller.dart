@@ -69,7 +69,7 @@ class DashboardController extends GetxController {
   bool _hasAttemptedInitialCalendarFetch = false;
 
   //region Booking history
-  Rx<BookingHistoryModel> bookingHistoryModal = BookingHistoryModel().obs;
+  Rx<BookingHistoryData?> bookingHistoryModal = BookingHistoryData().obs;
   RxList<BookingHistoryData> bookingList = <BookingHistoryData>[].obs;
   RxBool isLoadingBookingHistory = false.obs;
   RxInt currentBookingPage = 1.obs;
@@ -80,13 +80,6 @@ class DashboardController extends GetxController {
 
   //endregion
 
-  //region Refund Detail
-  RxBool isLoadingRefundDetail = false.obs;
-
-  Rx<RefundDetailModal> refundDetailModal = RefundDetailModal().obs;
-  Rx<RefundDetailData> refundDetailData = RefundDetailData().obs;
-  Rx<TextEditingController> cancellationReasonController =
-      TextEditingController().obs;
 
   //endregion
 
@@ -194,9 +187,6 @@ class DashboardController extends GetxController {
     }
     if (dateController.value.text.isNotEmpty) {
       dateController.value.dispose();
-    }
-    if (cancellationReasonController.value.text.isNotEmpty) {
-      cancellationReasonController.value.dispose();
     }
 
     super.onClose();
@@ -483,11 +473,6 @@ class DashboardController extends GetxController {
     final observer = bookingHistoryObserver;
 
     try {
-      print("BOOKIN RESPONSE");
-      print("IS LOADING ${bookingHistoryObserver.value.isLoading}");
-      print("isPaginationCompleted ${bookingHistoryObserver.value.isPaginationCompleted}");
-      print("page ${bookingHistoryObserver.value.page}");
-      print("error ${bookingHistoryObserver.value.error}");
       if (refresh == true) {
         observer.value = PaginationModel(
             data: const ApiResult<BookingHistoryModel>.init().obs,
@@ -528,8 +513,7 @@ class DashboardController extends GetxController {
         final responseData = BookingHistoryModel.fromJson(body);
         if (responseData.success == true) {
           observer.value.data.value.maybeWhen(success: (data) {
-            final oldList =
-            (data as BookingHistoryModel?)?.data?.toList();
+            final oldList = (data as BookingHistoryModel?)?.data?.toList();
             oldList?.addAll(responseData.data ?? List.empty());
             observer.value.data.value =
                 ApiResult.success(responseData.copyWith(data: oldList));
@@ -560,36 +544,6 @@ class DashboardController extends GetxController {
 
 
 
-  getRefundDetail(String bookingId) async {
-    isLoadingRefundDetail.value = true;
-    errorMessage.value = '';
-
-    try {
-      final response = await _repository.getApiCall(
-        url: NetworkUrl.refundDetail(bookingId),
-      );
-
-      if (response != null) {
-        if (response['success']) {
-          refundDetailModal.value = RefundDetailModal.fromJson(response);
-          refundDetailData.value =
-              refundDetailModal.value.data ?? RefundDetailData();
-        } else {
-          errorMessage.value =
-              response['message'] ?? 'Failed to load refund details';
-          CustomSnackBar.show(Get.context!, message: errorMessage.value);
-        }
-      }
-    } catch (e) {
-      errorMessage.value = 'Failed to load refund details: ${e.toString()}';
-      logger.e(errorMessage.value);
-      CustomSnackBar.show(Get.context!, message: errorMessage.value);
-    } finally {
-      isLoadingRefundDetail.value = false;
-    }
-
-    return null;
-  }
 
   getBookingDetail({required dynamic bookingId}) async {
 
@@ -603,6 +557,7 @@ class DashboardController extends GetxController {
         if (response['success']) {
           final body = BookingDetailsResponseModel.fromJson(response);
           bookingDetailsObserver.value = ApiResult.success(body);
+          bookingHistoryModal.value = body.data;
         } else {
           bookingDetailsObserver.value = ApiResult.error(response['message'] ?? 'Failed to load dispute details');;
         }
@@ -614,48 +569,6 @@ class DashboardController extends GetxController {
       }
     }
     return null;
-  }
-
-  reqCancellation({
-    required int bookingId,
-    required BookingHistoryData bookingData,
-  }) async {
-    try {
-      String body = json.encode({
-        'booking_id': bookingId,
-        'total_refundable_amount':
-        refundDetailData.value.refundCalculation?.refund ?? 0,
-        'reason': cancellationReasonController.value.text,
-        'deduction': refundDetailData.value.refundCalculation?.deduction ?? 0,
-      });
-      final response = await _repository.postApiCall(
-        url: NetworkUrl.refund,
-        body: body,
-      );
-
-      if (response != null) {
-        if (response['success']) {
-          bookingCancelledModal.value = BookingCancelledModal.fromJson(
-            response,
-          );
-          bookingCancelledData.value =
-              bookingCancelledModal.value.data ?? BookingCancelledData();
-          Get.toNamed('/booking-cancellation-success', arguments: bookingData);
-        } else {
-          Get.back();
-          errorMessage.value =
-              response['message'] ?? 'Failed to load refund details';
-          CustomSnackBar.show(Get.context!, message: errorMessage.value);
-        }
-      }
-    } catch (e) {
-      errorMessage.value = 'Failed to load refund details: ${e.toString()}';
-      logger.e(errorMessage.value);
-      CustomSnackBar.show(Get.context!, message: errorMessage.value);
-    } finally {
-      cancellationReasonController.value.clear();
-      isLoadingRefundDetail.value = false;
-    }
   }
 
   /// Clears search and temporary booking related data
@@ -674,10 +587,6 @@ class DashboardController extends GetxController {
     // Clear calendar data
     _clearCalendarData();
 
-    // Clear refund detail data (temporary)
-    refundDetailModal.value = RefundDetailModal();
-    refundDetailData.value = RefundDetailData();
-    cancellationReasonController.value.clear();
 
     // Clear booking cancellation data (temporary)
     bookingCancelledModal.value = BookingCancelledModal();
