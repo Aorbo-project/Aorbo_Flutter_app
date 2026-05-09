@@ -1159,6 +1159,7 @@ mixin _$TrekData {
   String? get name => throw _privateConstructorUsedError;
   String? get vendor => throw _privateConstructorUsedError;
   String? get vendorLogo => throw _privateConstructorUsedError;
+  String? get businessName => throw _privateConstructorUsedError;
   bool? get hasDiscount => throw _privateConstructorUsedError;
   String? get discountText => throw _privateConstructorUsedError;
   double? get rating => throw _privateConstructorUsedError;
@@ -1167,6 +1168,8 @@ mixin _$TrekData {
   BatchInfo? get batchInfo => throw _privateConstructorUsedError;
   Badge? get badge => throw _privateConstructorUsedError;
   String? get imageUrl => throw _privateConstructorUsedError;
+  CancellationPolicy? get cancellationPolicy =>
+      throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -1184,6 +1187,7 @@ abstract class $TrekDataCopyWith<$Res> {
       String? name,
       String? vendor,
       String? vendorLogo,
+      String? businessName,
       bool? hasDiscount,
       String? discountText,
       double? rating,
@@ -1191,10 +1195,12 @@ abstract class $TrekDataCopyWith<$Res> {
       String? duration,
       BatchInfo? batchInfo,
       Badge? badge,
-      String? imageUrl});
+      String? imageUrl,
+      CancellationPolicy? cancellationPolicy});
 
   $BatchInfoCopyWith<$Res>? get batchInfo;
   $BadgeCopyWith<$Res>? get badge;
+  $CancellationPolicyCopyWith<$Res>? get cancellationPolicy;
 }
 
 /// @nodoc
@@ -1214,6 +1220,7 @@ class _$TrekDataCopyWithImpl<$Res, $Val extends TrekData>
     Object? name = freezed,
     Object? vendor = freezed,
     Object? vendorLogo = freezed,
+    Object? businessName = freezed,
     Object? hasDiscount = freezed,
     Object? discountText = freezed,
     Object? rating = freezed,
@@ -1222,6 +1229,7 @@ class _$TrekDataCopyWithImpl<$Res, $Val extends TrekData>
     Object? batchInfo = freezed,
     Object? badge = freezed,
     Object? imageUrl = freezed,
+    Object? cancellationPolicy = freezed,
   }) {
     return _then(_value.copyWith(
       id: freezed == id
@@ -1239,6 +1247,10 @@ class _$TrekDataCopyWithImpl<$Res, $Val extends TrekData>
       vendorLogo: freezed == vendorLogo
           ? _value.vendorLogo
           : vendorLogo // ignore: cast_nullable_to_non_nullable
+              as String?,
+      businessName: freezed == businessName
+          ? _value.businessName
+          : businessName // ignore: cast_nullable_to_non_nullable
               as String?,
       hasDiscount: freezed == hasDiscount
           ? _value.hasDiscount
@@ -1272,6 +1284,10 @@ class _$TrekDataCopyWithImpl<$Res, $Val extends TrekData>
           ? _value.imageUrl
           : imageUrl // ignore: cast_nullable_to_non_nullable
               as String?,
+      cancellationPolicy: freezed == cancellationPolicy
+          ? _value.cancellationPolicy
+          : cancellationPolicy // ignore: cast_nullable_to_non_nullable
+              as CancellationPolicy?,
     ) as $Val);
   }
 
@@ -1298,6 +1314,19 @@ class _$TrekDataCopyWithImpl<$Res, $Val extends TrekData>
       return _then(_value.copyWith(badge: value) as $Val);
     });
   }
+
+  @override
+  @pragma('vm:prefer-inline')
+  $CancellationPolicyCopyWith<$Res>? get cancellationPolicy {
+    if (_value.cancellationPolicy == null) {
+      return null;
+    }
+
+    return $CancellationPolicyCopyWith<$Res>(_value.cancellationPolicy!,
+        (value) {
+      return _then(_value.copyWith(cancellationPolicy: value) as $Val);
+    });
+  }
 }
 
 /// @nodoc
@@ -1313,6 +1342,7 @@ abstract class _$$TrekDataImplCopyWith<$Res>
       String? name,
       String? vendor,
       String? vendorLogo,
+      String? businessName,
       bool? hasDiscount,
       String? discountText,
       double? rating,
@@ -1320,12 +1350,15 @@ abstract class _$$TrekDataImplCopyWith<$Res>
       String? duration,
       BatchInfo? batchInfo,
       Badge? badge,
-      String? imageUrl});
+      String? imageUrl,
+      CancellationPolicy? cancellationPolicy});
 
   @override
   $BatchInfoCopyWith<$Res>? get batchInfo;
   @override
   $BadgeCopyWith<$Res>? get badge;
+  @override
+  $CancellationPolicyCopyWith<$Res>? get cancellationPolicy;
 }
 
 /// @nodoc
@@ -1343,6 +1376,7 @@ class __$$TrekDataImplCopyWithImpl<$Res>
     Object? name = freezed,
     Object? vendor = freezed,
     Object? vendorLogo = freezed,
+    Object? businessName = freezed,
     Object? hasDiscount = freezed,
     Object? discountText = freezed,
     Object? rating = freezed,
@@ -1351,6 +1385,7 @@ class __$$TrekDataImplCopyWithImpl<$Res>
     Object? batchInfo = freezed,
     Object? badge = freezed,
     Object? imageUrl = freezed,
+    Object? cancellationPolicy = freezed,
   }) {
     return _then(_$TrekDataImpl(
       id: freezed == id
@@ -1368,6 +1403,10 @@ class __$$TrekDataImplCopyWithImpl<$Res>
       vendorLogo: freezed == vendorLogo
           ? _value.vendorLogo
           : vendorLogo // ignore: cast_nullable_to_non_nullable
+              as String?,
+      businessName: freezed == businessName
+          ? _value.businessName
+          : businessName // ignore: cast_nullable_to_non_nullable
               as String?,
       hasDiscount: freezed == hasDiscount
           ? _value.hasDiscount
@@ -1401,6 +1440,10 @@ class __$$TrekDataImplCopyWithImpl<$Res>
           ? _value.imageUrl
           : imageUrl // ignore: cast_nullable_to_non_nullable
               as String?,
+      cancellationPolicy: freezed == cancellationPolicy
+          ? _value.cancellationPolicy
+          : cancellationPolicy // ignore: cast_nullable_to_non_nullable
+              as CancellationPolicy?,
     ));
   }
 }
@@ -1413,6 +1456,7 @@ class _$TrekDataImpl implements _TrekData {
       this.name,
       this.vendor,
       this.vendorLogo,
+      this.businessName,
       this.hasDiscount,
       this.discountText,
       this.rating,
@@ -1420,7 +1464,8 @@ class _$TrekDataImpl implements _TrekData {
       this.duration,
       this.batchInfo,
       this.badge,
-      this.imageUrl});
+      this.imageUrl,
+      this.cancellationPolicy});
 
   factory _$TrekDataImpl.fromJson(Map<String, dynamic> json) =>
       _$$TrekDataImplFromJson(json);
@@ -1433,6 +1478,8 @@ class _$TrekDataImpl implements _TrekData {
   final String? vendor;
   @override
   final String? vendorLogo;
+  @override
+  final String? businessName;
   @override
   final bool? hasDiscount;
   @override
@@ -1449,10 +1496,12 @@ class _$TrekDataImpl implements _TrekData {
   final Badge? badge;
   @override
   final String? imageUrl;
+  @override
+  final CancellationPolicy? cancellationPolicy;
 
   @override
   String toString() {
-    return 'TrekData(id: $id, name: $name, vendor: $vendor, vendorLogo: $vendorLogo, hasDiscount: $hasDiscount, discountText: $discountText, rating: $rating, price: $price, duration: $duration, batchInfo: $batchInfo, badge: $badge, imageUrl: $imageUrl)';
+    return 'TrekData(id: $id, name: $name, vendor: $vendor, vendorLogo: $vendorLogo, businessName: $businessName, hasDiscount: $hasDiscount, discountText: $discountText, rating: $rating, price: $price, duration: $duration, batchInfo: $batchInfo, badge: $badge, imageUrl: $imageUrl, cancellationPolicy: $cancellationPolicy)';
   }
 
   @override
@@ -1465,6 +1514,8 @@ class _$TrekDataImpl implements _TrekData {
             (identical(other.vendor, vendor) || other.vendor == vendor) &&
             (identical(other.vendorLogo, vendorLogo) ||
                 other.vendorLogo == vendorLogo) &&
+            (identical(other.businessName, businessName) ||
+                other.businessName == businessName) &&
             (identical(other.hasDiscount, hasDiscount) ||
                 other.hasDiscount == hasDiscount) &&
             (identical(other.discountText, discountText) ||
@@ -1477,7 +1528,9 @@ class _$TrekDataImpl implements _TrekData {
                 other.batchInfo == batchInfo) &&
             (identical(other.badge, badge) || other.badge == badge) &&
             (identical(other.imageUrl, imageUrl) ||
-                other.imageUrl == imageUrl));
+                other.imageUrl == imageUrl) &&
+            (identical(other.cancellationPolicy, cancellationPolicy) ||
+                other.cancellationPolicy == cancellationPolicy));
   }
 
   @JsonKey(ignore: true)
@@ -1488,6 +1541,7 @@ class _$TrekDataImpl implements _TrekData {
       name,
       vendor,
       vendorLogo,
+      businessName,
       hasDiscount,
       discountText,
       rating,
@@ -1495,7 +1549,8 @@ class _$TrekDataImpl implements _TrekData {
       duration,
       batchInfo,
       badge,
-      imageUrl);
+      imageUrl,
+      cancellationPolicy);
 
   @JsonKey(ignore: true)
   @override
@@ -1517,6 +1572,7 @@ abstract class _TrekData implements TrekData {
       final String? name,
       final String? vendor,
       final String? vendorLogo,
+      final String? businessName,
       final bool? hasDiscount,
       final String? discountText,
       final double? rating,
@@ -1524,7 +1580,8 @@ abstract class _TrekData implements TrekData {
       final String? duration,
       final BatchInfo? batchInfo,
       final Badge? badge,
-      final String? imageUrl}) = _$TrekDataImpl;
+      final String? imageUrl,
+      final CancellationPolicy? cancellationPolicy}) = _$TrekDataImpl;
 
   factory _TrekData.fromJson(Map<String, dynamic> json) =
       _$TrekDataImpl.fromJson;
@@ -1537,6 +1594,8 @@ abstract class _TrekData implements TrekData {
   String? get vendor;
   @override
   String? get vendorLogo;
+  @override
+  String? get businessName;
   @override
   bool? get hasDiscount;
   @override
@@ -1553,6 +1612,8 @@ abstract class _TrekData implements TrekData {
   Badge? get badge;
   @override
   String? get imageUrl;
+  @override
+  CancellationPolicy? get cancellationPolicy;
   @override
   @JsonKey(ignore: true)
   _$$TrekDataImplCopyWith<_$TrekDataImpl> get copyWith =>

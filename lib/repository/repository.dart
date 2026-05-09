@@ -14,6 +14,9 @@ import 'package:get/get.dart' hide FormData, Response;
 class Repository {
   static final Repository _service = Repository._internal();
 
+  static String token = "";
+
+
   Repository._internal();
 
   factory Repository() {
@@ -124,6 +127,7 @@ class Repository {
   /// avoiding race conditions from mutating shared Dio headers.
   Future<Options> _authOptions({Map<String, dynamic>? extra}) async {
     final String? accessToken = await sp!.getString(SpUtil.accessToken);
+    token = accessToken ?? "";
     return Options(
       headers: accessToken != null
           ? {'Authorization': 'Bearer $accessToken'}

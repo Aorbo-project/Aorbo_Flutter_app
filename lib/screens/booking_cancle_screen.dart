@@ -1052,8 +1052,7 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen> {
                                   .reqCancellation(bookingId);
                               if (message != null) {
                                 Get.close(1);
-                                SchedulerBinding.instance
-                                    .addPostFrameCallback((_) {
+                                SchedulerBinding.instance.addPostFrameCallback((_) {
                                   CustomSnackBar.show(context,
                                       message: message);
                                 });

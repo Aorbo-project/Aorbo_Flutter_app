@@ -265,6 +265,7 @@ class BatchInfo with _$BatchInfo {
     int? id,
     String? tbrId,
    String? startDate,
+    String? startTime,
     String? endDate,
     int? bookedSlots,
    int? availableSlots,
