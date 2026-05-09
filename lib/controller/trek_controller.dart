@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:arobo_app/freezed_models/booking/booking_data_model.dart';
 import 'package:arobo_app/freezed_models/treks/treks_model_data.dart';
+import 'package:arobo_app/models/treaks/booking_cancelled_modal.dart';
 import 'package:arobo_app/models/treaks/verify_order_modal.dart';
 import 'package:arobo_app/models/coupon_code/coupon_code_model.dart';
 import 'package:arobo_app/models/dispute/submit_issue_modal.dart';
@@ -11,6 +12,7 @@ import 'package:arobo_app/widgets/logger.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import '../freezed_models/booking/cancellation_data_model.dart';
 import '../freezed_models/profile/user_profile_model.dart';
 import '../freezed_models/treks/trek_detail_model.dart';
 import '../repository/api_result.dart';
@@ -49,6 +51,11 @@ class TrekController extends GetxController {
 
   final createOrderRequestModel = CreateRazorpayRequestModel(fareToken: "",travelers: []).obs;
 
+  final cancellationDetailsResponseObserver  = const ApiResult<CancellationDetailsResponseModel>.init().obs;
+  final requestCancellationResponseObserver  = const ApiResult<BookingCancelledModal>.init().obs;
+
+  Rx<TextEditingController> cancellationReasonController =
+      TextEditingController().obs;
 
 
   // Trek search results
@@ -103,6 +110,9 @@ class TrekController extends GetxController {
   @override
   void onClose() {
     reviewController.value.dispose();
+    if (cancellationReasonController.value.text.isNotEmpty) {
+      cancellationReasonController.value.dispose();
+    }
     super.onClose();
   }
 
@@ -544,6 +554,76 @@ class TrekController extends GetxController {
       isLoading.value = false;
     }
   }
+
+
+  Future<String?> fetchCancellationDetails(String bookingId) async {
+    try {
+      cancellationDetailsResponseObserver.value = ApiResult.loading("");
+      final response = await repository.getApiCall(url: NetworkUrl.refundDetail(bookingId));
+
+      if (response != null) {
+        final responseData = CancellationDetailsResponseModel.fromJson(response);
+        if (responseData.success == true) {
+          cancellationDetailsResponseObserver.value = ApiResult.success(responseData);
+          return responseData.data?.canCancel == true ? null : responseData.data?.cancellationMessage;
+        }
+        throw "${responseData.message}";
+      }
+      throw "Response Body Null";
+    } catch (e) {
+      CustomSnackBar.show(Get.context!, message: errorMessage.value);
+      cancellationDetailsResponseObserver.value = ApiResult.error('Failed to get calcellation details treks: ${e.toString()}');
+      return e.toString();
+    }
+  }
+
+  Future<String?> reqCancellation(String bookingId) async {
+    try {
+      requestCancellationResponseObserver.value = ApiResult.loading("");
+      final response = await repository.postApiCall(url: NetworkUrl.refund,body: {"booking_id":bookingId,"reason":cancellationReasonController.value.text.toString()});
+
+      if (response != null) {
+        final responseData = BookingCancelledModal.fromJson(response);
+        if (responseData.success == true) {
+          requestCancellationResponseObserver.value = ApiResult.success(responseData);
+          Get.toNamed('/booking-cancellation-success');
+          return null;
+        }
+        throw "${responseData.message}";
+      }
+      throw "Response Body Null";
+    } catch (e) {
+      CustomSnackBar.show(Get.context!, message: errorMessage.value);
+      requestCancellationResponseObserver.value = ApiResult.error('Failed to get calcellation details treks: ${e.toString()}');
+      return e.toString();
+    }
+  }
+
+
+
+  Future<void> confirmCancellation(int bookingId,String reason) async {
+    try {
+      cancellationDetailsResponseObserver.value = ApiResult.loading("");
+      final response = await repository.postApiCall(
+          url: NetworkUrl.calculateFare,
+          body: calculateFareRequestModel.value.toJson()
+      );
+
+      if (response != null) {
+        final responseData = CancellationDetailsResponseModel.fromJson(response);
+        if (responseData.success == true) {
+          cancellationDetailsResponseObserver.value = ApiResult.success(responseData);
+          return;
+        }
+        throw "${responseData.message}";
+      }
+      throw "Response Body Null";
+    } catch (e) {
+      CustomSnackBar.show(Get.context!, message: errorMessage.value);
+      cancellationDetailsResponseObserver.value = ApiResult.error('Failed to search treks: ${e.toString()}');
+    }
+  }
+
 
 
 

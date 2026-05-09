@@ -122,8 +122,4 @@ final routes = [
   GetPage(name: '/rate-review', page: () => const RateReviewScreen()),
   GetPage(name: '/issue-report', page: () => const IssueReportScreen()),
 
-  GetPage(
-    name: '/booking-cancellation-success',
-    page: () => const BookingCancellationSuccessScreen(),
-  ),
 ];

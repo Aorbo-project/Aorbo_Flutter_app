@@ -103,8 +103,10 @@ class NetworkUrl {
 
   // Cancellation & refund
   static String refundDetail(String bookingId) =>
-      'customer/bookings/cancellation-refund/$bookingId';
-  static const String refund = 'customer/bookings/confirm-cancellation';
+      'bookings/cancellation-refund/$bookingId';
+
+
+  static const String refund = 'bookings/confirm-cancellation';
 
   // Dispute / issue reporting
   static const String submitIssue = 'issues/submit';

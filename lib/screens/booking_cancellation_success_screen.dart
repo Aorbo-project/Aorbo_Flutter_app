@@ -10,16 +10,16 @@ import '../utils/common_booked_details_card.dart';
 import '../utils/screen_constants.dart';
 
 class BookingCancellationSuccessScreen extends StatefulWidget {
-  const BookingCancellationSuccessScreen({super.key});
+  final BookingHistoryData? booking;
+  final String refund;
+  const BookingCancellationSuccessScreen({super.key,required this.booking, required this.refund});
 
   @override
   State<BookingCancellationSuccessScreen> createState() =>
       _BookingCancellationSuccessScreenState();
 }
 
-class _BookingCancellationSuccessScreenState
-    extends State<BookingCancellationSuccessScreen> {
-  final BookingHistoryData? booking = Get.arguments;
+class _BookingCancellationSuccessScreenState extends State<BookingCancellationSuccessScreen> {
   final DashboardController dashboardC = Get.find<DashboardController>();
   bool _isLoading = true;
 
@@ -107,15 +107,15 @@ class _BookingCancellationSuccessScreenState
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               // Trek Details Card
-                              UpcomingBookingCard(booking: booking!),
+                              UpcomingBookingCard(booking: widget.booking!),
                               SizedBox(height: 2.h),
 
                               // Traveler Details Table
-                              _buildTravelerDetailsTable(booking!),
+                              _buildTravelerDetailsTable(widget.booking!),
                               SizedBox(height: 2.h),
 
                               // Cancellation Status Card
-                              _buildCancellationStatusCard(booking!, dashboardC),
+                              _buildCancellationStatusCard(widget.booking!, dashboardC),
                               SizedBox(height: 2.h),
                             ],
                           ),
@@ -394,7 +394,7 @@ class _BookingCancellationSuccessScreenState
                         ),
                         Obx(
                           () => Text(
-                            '₹ ${dashboardC.refundDetailData.value.refundCalculation?.refund?.toStringAsFixed(0) ?? '0'}',
+                            '₹ ${widget.refund}',
                             style: GoogleFonts.poppins(
                               fontSize: FontSize.s12,
                               fontWeight: FontWeight.w600,
