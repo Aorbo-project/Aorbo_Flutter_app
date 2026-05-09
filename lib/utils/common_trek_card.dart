@@ -1,3 +1,4 @@
+import 'package:arobo_app/repository/repository.dart';
 import 'package:arobo_app/utils/auth_utils.dart';
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/common_images.dart';
@@ -120,7 +121,7 @@ class CommonTrekCard extends StatelessWidget {
   }
 
   String _vendorInitials() {
-    final name  = trek?.vendor ?? '';
+    final name  = trek?.businessName ?? '';
     final parts = name.trim().split(' ');
     if (parts.isEmpty) return '?';
     if (parts.length == 1) return parts[0][0].toUpperCase();
@@ -213,7 +214,7 @@ class CommonTrekCard extends StatelessWidget {
                     ),
                   ),
                   SizedBox(width: 2.w),
-                  _buildPolicyChip('Flexible'),  // policy next to trek name
+                  _buildPolicyChip(trek?.cancellationPolicy?.type ?? "Flexible"),  // policy next to trek name
                 ],
               ),
 
@@ -233,6 +234,7 @@ class CommonTrekCard extends StatelessWidget {
                     clipBehavior: Clip.antiAlias,
                     child: trek?.vendorLogo?.isNotEmpty == true
                         ? CustomNetworkImage(
+                            accessToken: Repository.token,
                             imageUrl: trek?.vendorLogo ?? "",
                             fit: BoxFit.cover,
                             width: 10.w,
@@ -262,7 +264,7 @@ class CommonTrekCard extends StatelessWidget {
                           children: [
                             Flexible(
                               child: Text(
-                                trek?.vendor ?? '-',
+                                trek?.businessName ?? '-',
                                 textScaler: const TextScaler.linear(1.0),
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
@@ -360,7 +362,7 @@ class CommonTrekCard extends StatelessWidget {
                         // Departure date
                         _buildInfoItem(
                           'Departure Date',
-                          AuthUtils.formatDateTime(trek?.batchInfo?.startDate),
+                          "${trek?.batchInfo?.startDate} ${trek?.batchInfo?.startTime}",
                         ),
                         // Duration (Days/Nights)
                         _buildInfoItem(

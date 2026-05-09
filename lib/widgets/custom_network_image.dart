@@ -7,6 +7,7 @@ import 'dart:ui';
 import '../utils/common_images.dart';
 
 class CustomNetworkImage extends StatelessWidget {
+  final String? accessToken;
   final String imageUrl;
   final BoxFit fit;
   final double? width;
@@ -22,6 +23,7 @@ class CustomNetworkImage extends StatelessWidget {
 
   const CustomNetworkImage({
     super.key,
+    this.accessToken,
     required this.imageUrl,
     this.fit = BoxFit.contain,
     this.width,
@@ -53,9 +55,15 @@ class CustomNetworkImage extends StatelessWidget {
   }
 
   Widget _buildBaseImage() {
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(borderRadius ?? 8),
       child: CachedNetworkImage(
+        httpHeaders: {
+          'Accept': '*/*',
+          'Content-Type': 'application/json',
+          'Authorization' :'Bearer $accessToken'
+        },
         imageUrl: imageUrl,
         fit: fit,
         cacheKey: imageUrl,

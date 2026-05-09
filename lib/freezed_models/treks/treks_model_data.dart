@@ -80,6 +80,7 @@ class TrekData with _$TrekData {
     String? name,
     String? vendor,
     String? vendorLogo,
+    String? businessName,
     bool? hasDiscount,
     String? discountText,
     double? rating,
@@ -87,7 +88,8 @@ class TrekData with _$TrekData {
     String? duration,
     BatchInfo? batchInfo,
     Badge? badge,
-    String? imageUrl
+    String? imageUrl,
+    CancellationPolicy? cancellationPolicy
   }) = _TrekData;
 
   factory TrekData.fromJson(Map<String, dynamic> json) =>

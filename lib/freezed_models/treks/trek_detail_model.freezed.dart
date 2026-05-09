@@ -4214,6 +4214,7 @@ mixin _$BatchInfo {
   int? get id => throw _privateConstructorUsedError;
   String? get tbrId => throw _privateConstructorUsedError;
   String? get startDate => throw _privateConstructorUsedError;
+  String? get startTime => throw _privateConstructorUsedError;
   String? get endDate => throw _privateConstructorUsedError;
   int? get bookedSlots => throw _privateConstructorUsedError;
   int? get availableSlots => throw _privateConstructorUsedError;
@@ -4234,6 +4235,7 @@ abstract class $BatchInfoCopyWith<$Res> {
       {int? id,
       String? tbrId,
       String? startDate,
+      String? startTime,
       String? endDate,
       int? bookedSlots,
       int? availableSlots,
@@ -4256,6 +4258,7 @@ class _$BatchInfoCopyWithImpl<$Res, $Val extends BatchInfo>
     Object? id = freezed,
     Object? tbrId = freezed,
     Object? startDate = freezed,
+    Object? startTime = freezed,
     Object? endDate = freezed,
     Object? bookedSlots = freezed,
     Object? availableSlots = freezed,
@@ -4273,6 +4276,10 @@ class _$BatchInfoCopyWithImpl<$Res, $Val extends BatchInfo>
       startDate: freezed == startDate
           ? _value.startDate
           : startDate // ignore: cast_nullable_to_non_nullable
+              as String?,
+      startTime: freezed == startTime
+          ? _value.startTime
+          : startTime // ignore: cast_nullable_to_non_nullable
               as String?,
       endDate: freezed == endDate
           ? _value.endDate
@@ -4306,6 +4313,7 @@ abstract class _$$BatchInfoImplCopyWith<$Res>
       {int? id,
       String? tbrId,
       String? startDate,
+      String? startTime,
       String? endDate,
       int? bookedSlots,
       int? availableSlots,
@@ -4326,6 +4334,7 @@ class __$$BatchInfoImplCopyWithImpl<$Res>
     Object? id = freezed,
     Object? tbrId = freezed,
     Object? startDate = freezed,
+    Object? startTime = freezed,
     Object? endDate = freezed,
     Object? bookedSlots = freezed,
     Object? availableSlots = freezed,
@@ -4343,6 +4352,10 @@ class __$$BatchInfoImplCopyWithImpl<$Res>
       startDate: freezed == startDate
           ? _value.startDate
           : startDate // ignore: cast_nullable_to_non_nullable
+              as String?,
+      startTime: freezed == startTime
+          ? _value.startTime
+          : startTime // ignore: cast_nullable_to_non_nullable
               as String?,
       endDate: freezed == endDate
           ? _value.endDate
@@ -4371,6 +4384,7 @@ class _$BatchInfoImpl implements _BatchInfo {
       {this.id,
       this.tbrId,
       this.startDate,
+      this.startTime,
       this.endDate,
       this.bookedSlots,
       this.availableSlots,
@@ -4386,6 +4400,8 @@ class _$BatchInfoImpl implements _BatchInfo {
   @override
   final String? startDate;
   @override
+  final String? startTime;
+  @override
   final String? endDate;
   @override
   final int? bookedSlots;
@@ -4396,7 +4412,7 @@ class _$BatchInfoImpl implements _BatchInfo {
 
   @override
   String toString() {
-    return 'BatchInfo(id: $id, tbrId: $tbrId, startDate: $startDate, endDate: $endDate, bookedSlots: $bookedSlots, availableSlots: $availableSlots, capacity: $capacity)';
+    return 'BatchInfo(id: $id, tbrId: $tbrId, startDate: $startDate, startTime: $startTime, endDate: $endDate, bookedSlots: $bookedSlots, availableSlots: $availableSlots, capacity: $capacity)';
   }
 
   @override
@@ -4408,6 +4424,8 @@ class _$BatchInfoImpl implements _BatchInfo {
             (identical(other.tbrId, tbrId) || other.tbrId == tbrId) &&
             (identical(other.startDate, startDate) ||
                 other.startDate == startDate) &&
+            (identical(other.startTime, startTime) ||
+                other.startTime == startTime) &&
             (identical(other.endDate, endDate) || other.endDate == endDate) &&
             (identical(other.bookedSlots, bookedSlots) ||
                 other.bookedSlots == bookedSlots) &&
@@ -4419,8 +4437,8 @@ class _$BatchInfoImpl implements _BatchInfo {
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(runtimeType, id, tbrId, startDate, endDate,
-      bookedSlots, availableSlots, capacity);
+  int get hashCode => Object.hash(runtimeType, id, tbrId, startDate, startTime,
+      endDate, bookedSlots, availableSlots, capacity);
 
   @JsonKey(ignore: true)
   @override
@@ -4441,6 +4459,7 @@ abstract class _BatchInfo implements BatchInfo {
       {final int? id,
       final String? tbrId,
       final String? startDate,
+      final String? startTime,
       final String? endDate,
       final int? bookedSlots,
       final int? availableSlots,
@@ -4455,6 +4474,8 @@ abstract class _BatchInfo implements BatchInfo {
   String? get tbrId;
   @override
   String? get startDate;
+  @override
+  String? get startTime;
   @override
   String? get endDate;
   @override
