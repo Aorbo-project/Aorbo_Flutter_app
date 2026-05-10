@@ -1,0 +1,126 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'coupon_code_model.freezed.dart';
+part 'coupon_code_model.g.dart';
+
+@freezed
+class ValidateCouponCodeRequestModel with _$ValidateCouponCodeRequestModel {
+  const factory ValidateCouponCodeRequestModel({
+    required String code,
+    required dynamic trekId,
+    required dynamic bookingAmount
+  }) = _ValidateCouponCodeRequestModel;
+
+  factory ValidateCouponCodeRequestModel.fromJson(Map<String, dynamic> json) =>
+      _$ValidateCouponCodeRequestModelFromJson(json);
+}
+
+@freezed
+class ValidateCouponCodeResponseModel with _$ValidateCouponCodeResponseModel {
+  const factory ValidateCouponCodeResponseModel({
+    bool? success,
+    String? message,
+    ValidateCouponCodeDataModel? coupon
+  }) = _ValidateCouponCodeResponseModel;
+
+  factory ValidateCouponCodeResponseModel.fromJson(Map<String, dynamic> json) =>
+      _$ValidateCouponCodeResponseModelFromJson(json);
+}
+
+@freezed
+class ValidateCouponCodeDataModel with _$ValidateCouponCodeDataModel {
+  const factory ValidateCouponCodeDataModel({
+    bool? valid,
+    @JsonKey(name: 'coupon_details') CouponCardData? couponDetails
+  }) = _ValidateCouponCodeDataModel;
+
+  factory ValidateCouponCodeDataModel.fromJson(Map<String, dynamic> json) =>
+      _$ValidateCouponCodeDataModelFromJson(json);
+}
+
+@freezed
+class CouponCodeModel with _$CouponCodeModel {
+  const factory CouponCodeModel({
+    bool? success,
+    String? message,
+    List<CouponCardData>? data,
+    int? count,
+    @JsonKey(name: 'vendor_info') VendorInfo? vendorInfo,
+  }) = _CouponCodeModel;
+
+  factory CouponCodeModel.fromJson(Map<String, dynamic> json) =>
+      _$CouponCodeModelFromJson(json);
+}
+
+
+
+
+@freezed
+class CouponCardData with _$CouponCardData {
+  const factory CouponCardData({
+    int? id,
+    String? title,
+    String? description,
+    @JsonKey(name: 'image_url') String? imagePath,
+    List<String>? gradient,
+    String? textColour,
+    String? code,
+    @JsonKey(name: 'discount_type') String? discountType,
+    @JsonKey(name: 'discount_value') String? discountValue,
+
+    @JsonKey(name: 'terms_and_conditions')
+    List<String>? termsAndConditions,
+
+    @JsonKey(name: 'is_expired') bool? isExpired,
+    @JsonKey(name: 'is_active') bool? isActive,
+
+  }) = _CouponCardData;
+
+  factory CouponCardData.fromJson(Map<String, dynamic> json) =>
+      _$CouponCardDataFromJson(json);
+}
+
+
+@freezed
+class Vendor with _$Vendor {
+  const factory Vendor({
+    int? id,
+    @JsonKey(name: 'company_info') String? companyInfo,
+    String? status,
+    User? user,
+  }) = _Vendor;
+
+  factory Vendor.fromJson(Map<String, dynamic> json) =>
+      _$VendorFromJson(json);
+}
+
+
+@freezed
+class User with _$User {
+  const factory User({
+    int? id,
+    String? name,
+    String? email,
+    String? phone,
+  }) = _User;
+
+  factory User.fromJson(Map<String, dynamic> json) =>
+      _$UserFromJson(json);
+}
+
+
+@freezed
+class VendorInfo with _$VendorInfo {
+  const factory VendorInfo({
+    @JsonKey(name: 'vendor_id') String? vendorId,
+    @JsonKey(name: 'total_coupons') int? totalCoupons,
+    @JsonKey(name: 'active_coupons') int? activeCoupons,
+    @JsonKey(name: 'pending_coupons') int? pendingCoupons,
+    @JsonKey(name: 'approved_coupons') int? approvedCoupons,
+    @JsonKey(name: 'rejected_coupons') int? rejectedCoupons,
+    @JsonKey(name: 'expired_coupons') int? expiredCoupons,
+  }) = _VendorInfo;
+
+  factory VendorInfo.fromJson(Map<String, dynamic> json) =>
+      _$VendorInfoFromJson(json);
+}

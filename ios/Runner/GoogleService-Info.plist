@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>API_KEY</key>
+	<string>AIzaSyAPOpAZ4_J-v4O7CR2Ot2IpUO5j4z0-Fqc</string>
+	<key>GCM_SENDER_ID</key>
+	<string>979616910593</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.eclipso.aroboApp</string>
+	<key>PROJECT_ID</key>
+	<string>aorbo-trek-2a7dd</string>
+	<key>STORAGE_BUCKET</key>
+	<string>aorbo-trek-2a7dd.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:979616910593:ios:5f38325b68531c0c9d9f00</string>
+	<key>DATABASE_URL</key>
+	<string>https://aorbo-trek-2a7dd-default-rtdb.asia-southeast1.firebasedatabase.app</string>
+</dict>
+</plist>
