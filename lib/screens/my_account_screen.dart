@@ -8,21 +8,25 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 
 // ─────────────────────────────────────────────
-//  DESIGN TOKENS
+//  DESIGN TOKENS  (matched to Traveller Information theme)
 // ─────────────────────────────────────────────
 class _C {
-  // FIX: bg changed from materialLightBlue → whiteColor (#FEFEFE)
-  // so the page background matches all other white screens
-  static const bg = CommonColors.whiteColor;
-  static const cardBg = CommonColors.whiteColor;
-  static final ink = CommonColors.cFF111827;
-  static final inkMid = CommonColors.cFF6B7280;
-  static final blue = CommonColors.lightBlueColor3;
-  static final orange = CommonColors.cFFEA580C;
-  static final redText = CommonColors.cFFDC2626;
+  static const bg        = CommonColors.offWhiteColor;
+  static const cardBg    = CommonColors.whiteColor;
+  static const ink       = CommonColors.blackColor;
+  static const inkMid    = CommonColors.cFF6B7280;
+  static const inkLight  = CommonColors.grey_AEAEAE;
+  static const brand     = CommonColors.trek_route_color;
+  static const teal      = CommonColors.cFF0F7B6C;
+  static const tealSoft  = CommonColors.cFFE6F5F3;
+  static const iconBadge = CommonColors.cFF111827;
+  static const divider   = CommonColors.trekroutecolorlight;
+  static const shadow    = CommonColors.c0A000000;
+
+  // Accents
+  static final orange    = CommonColors.cFFEA580C;
+  static final redText   = CommonColors.cFFDC2626;
   static final redBorder = CommonColors.cFFFFE4E4;
-  static final divider = CommonColors.cFFF3F4F6;
-  static final shadow = CommonColors.c0A000000;
 }
 
 class MyAccountScreen extends StatefulWidget {
@@ -33,25 +37,109 @@ class MyAccountScreen extends StatefulWidget {
 }
 
 class _MyAccountScreenState extends State<MyAccountScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   final UserController _userC = Get.find<UserController>();
 
   late final AnimationController _fadeCtrl;
   late final Animation<double> _fade;
 
+  late final AnimationController _headerSlideCtrl;
+  late final Animation<Offset> _headerSlide;
+  late final Animation<double> _headerFade;
+
+  // Staggered card controllers
+  late final List<AnimationController> _cardCtrls;
+  late final List<Animation<Offset>> _cardSlides;
+  late final List<Animation<double>> _cardFades;
+
+  late final AnimationController _logoutCtrl;
+  late final Animation<Offset> _logoutSlide;
+  late final Animation<double> _logoutFade;
+
+  static const int _cardCount = 5; // 4 groups + logout
+
   @override
   void initState() {
     super.initState();
+
+    // Page fade
     _fadeCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 400),
     )..forward();
     _fade = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
+
+    // Header slide-down + fade
+    _headerSlideCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _headerSlide = Tween<Offset>(
+      begin: const Offset(0, -0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _headerSlideCtrl,
+      curve: Curves.easeOutCubic,
+    ));
+    _headerFade = CurvedAnimation(
+      parent: _headerSlideCtrl,
+      curve: Curves.easeOut,
+    );
+
+    // Staggered cards (slide-up + fade)
+    _cardCtrls = List.generate(
+      _cardCount,
+      (i) => AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 500),
+      ),
+    );
+    _cardSlides = _cardCtrls
+        .map((c) => Tween<Offset>(
+              begin: const Offset(0, 0.25),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(parent: c, curve: Curves.easeOutCubic)))
+        .toList();
+    _cardFades = _cardCtrls
+        .map((c) => CurvedAnimation(parent: c, curve: Curves.easeOut))
+        .toList();
+
+    // Logout slide-up
+    _logoutCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+    _logoutSlide = Tween<Offset>(
+      begin: const Offset(0, 0.4),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _logoutCtrl, curve: Curves.easeOutCubic));
+    _logoutFade =
+        CurvedAnimation(parent: _logoutCtrl, curve: Curves.easeOut);
+
+    _runStaggeredEntrance();
+  }
+
+  Future<void> _runStaggeredEntrance() async {
+    await Future.delayed(const Duration(milliseconds: 80));
+    _headerSlideCtrl.forward();
+
+    for (int i = 0; i < _cardCount; i++) {
+      await Future.delayed(const Duration(milliseconds: 90));
+      _cardCtrls[i].forward();
+    }
+
+    await Future.delayed(const Duration(milliseconds: 80));
+    _logoutCtrl.forward();
   }
 
   @override
   void dispose() {
     _fadeCtrl.dispose();
+    _headerSlideCtrl.dispose();
+    for (final c in _cardCtrls) {
+      c.dispose();
+    }
+    _logoutCtrl.dispose();
     super.dispose();
   }
 
@@ -65,120 +153,149 @@ class _MyAccountScreenState extends State<MyAccountScreen>
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 4.w),
+            padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(height: 2.h),
-                _buildUserHeader(),
-                SizedBox(height: 3.h),
+                // Animated header
+                SlideTransition(
+                  position: _headerSlide,
+                  child: FadeTransition(
+                    opacity: _headerFade,
+                    child: _buildUserHeader(),
+                  ),
+                ),
+
+                SizedBox(height: 2.5.h),
 
                 // ── GROUP 1: Travel Management ──
-                _buildSectionLabel('TRAVEL MANAGEMENT'),
-                SizedBox(height: 1.h),
-                _buildCard(
-                  children: [
-                    _buildMenuItem(
-                      icon: CommonImages.account,
-                      title: 'Traveller Information',
-                      onTap: () async {
-                        await _userC.getUserProfile();
-                        Get.toNamed('/traveller-information');
-                      },
-                    ),
-                    _buildDivider(),
-                    _buildMenuItem(
-                      icon: CommonImages.appointment,
-                      title: 'My Bookings',
-                      onTap: () => Get.toNamed('/my-bookings'),
-                    ),
-                  ],
+                _buildAnimatedSection(
+                  index: 0,
+                  label: 'TRAVEL MANAGEMENT',
+                  icon: Icons.route_rounded,
+                  child: _buildCard(
+                    children: [
+                      _buildMenuItem(
+                        icon: CommonImages.account,
+                        title: 'Traveller Information',
+                        onTap: () async {
+                          await _userC.getUserProfile();
+                          Get.toNamed('/traveller-information');
+                        },
+                      ),
+                      _buildDivider(),
+                      _buildMenuItem(
+                        icon: CommonImages.appointment,
+                        title: 'My Bookings',
+                        onTap: () => Get.toNamed('/my-bookings'),
+                      ),
+                    ],
+                  ),
                 ),
 
-                SizedBox(height: 2.5.h),
+                SizedBox(height: 2.h),
 
                 // ── GROUP 2: Security & Help ──
-                _buildSectionLabel('SECURITY & HELP'),
-                SizedBox(height: 1.h),
-                _buildCard(
-                  children: [
-                    _buildMenuItem(
-                      icon: CommonImages.safety,
-                      title: 'Safety',
-                      onTap: () => Get.toNamed('/safety'),
-                    ),
-                    _buildDivider(),
-                    _buildMenuItem(
-                      icon: CommonImages.help,
-                      title: 'Help',
-                      onTap: () => Get.toNamed('/help'),
-                    ),
-                    _buildDivider(),
-                    _buildMenuItem(
-                      icon: CommonImages.notification,
-                      title: 'Notifications',
-                      onTap: () => Get.toNamed('/notifications'),
-                    ),
-                  ],
+                _buildAnimatedSection(
+                  index: 1,
+                  label: 'SECURITY & HELP',
+                  icon: Icons.shield_outlined,
+                  child: _buildCard(
+                    children: [
+                      _buildMenuItem(
+                        icon: CommonImages.safety,
+                        title: 'Safety',
+                        onTap: () => Get.toNamed('/safety'),
+                      ),
+                      _buildDivider(),
+                      _buildMenuItem(
+                        icon: CommonImages.help,
+                        title: 'Help',
+                        onTap: () => Get.toNamed('/help'),
+                      ),
+                      _buildDivider(),
+                      _buildMenuItem(
+                        icon: CommonImages.notification,
+                        title: 'Notifications',
+                        onTap: () => Get.toNamed('/notifications'),
+                      ),
+                    ],
+                  ),
                 ),
 
-                SizedBox(height: 2.5.h),
+                SizedBox(height: 2.h),
 
                 // ── GROUP 3: Earnings & Claims ──
-                _buildSectionLabel('EARNINGS & CLAIMS'),
-                SizedBox(height: 1.h),
-                _buildCard(
-                  children: [
-                    _buildMenuItem(
-                      icon: CommonImages.claims,
-                      title: 'Claims',
-                      onTap: () => Get.toNamed('/claim'),
-                      // trailingWidget: const _PendingBadge(
-                      //   amount: '₹4,250 Pending',
-                      // ),
-                    ),
-                    _buildDivider(),
-                    _buildMenuItem(
-                      icon: CommonImages.refer,
-                      title: 'Refer & Earn',
-                      onTap: () => Get.toNamed('/refers'),
-                      trailingWidget: const _GetBadge(label: 'GET ₹500'),
-                    ),
-                  ],
+                _buildAnimatedSection(
+                  index: 2,
+                  label: 'EARNINGS & CLAIMS',
+                  icon: Icons.account_balance_wallet_outlined,
+                  child: _buildCard(
+                    children: [
+                      _buildMenuItem(
+                        icon: CommonImages.claims,
+                        title: 'Claims',
+                        onTap: () {},
+                        isComingSoon: true,
+                        // trailingWidget: const _PendingBadge(
+                        //   amount: '₹4,250 Pending',
+                        // ),
+                      ),
+                      _buildDivider(),
+                      _buildMenuItem(
+                        icon: CommonImages.refer,
+                        title: 'Refer & Earn',
+                        onTap: () => Get.toNamed('/refers'),
+                        // trailingWidget: const _GetBadge(label: 'GET ₹500'),
+                      ),
+                    ],
+                  ),
                 ),
 
-                SizedBox(height: 2.5.h),
+                SizedBox(height: 2.h),
 
                 // ── GROUP 4: More ──
-                _buildSectionLabel('MORE'),
-                SizedBox(height: 1.h),
-                _buildCard(
-                  children: [
-                    _buildMenuItem(
-                      icon: CommonImages.partner,
-                      title: 'Become Partner',
-                      onTap: () {},
-                      isComingSoon: true,
-                    ),
-                    _buildDivider(),
-                    _buildMenuItem(
-                      icon: CommonImages.rate,
-                      title: 'Rate us',
-                      onTap: () {},
-                      isComingSoon: true,
-                    ),
-                    _buildDivider(),
-                    _buildMenuItem(
-                      icon: CommonImages.info,
-                      title: 'About Aorbo Treks',
-                      onTap: () => Get.toNamed('/about-us'),
-                    ),
-                  ],
+                _buildAnimatedSection(
+                  index: 3,
+                  label: 'MORE',
+                  icon: Icons.more_horiz_rounded,
+                  child: _buildCard(
+                    children: [
+                      _buildMenuItem(
+                        icon: CommonImages.partner,
+                        title: 'Become Partner',
+                        onTap: () {},
+                        isComingSoon: true,
+                      ),
+                      _buildDivider(),
+                      _buildMenuItem(
+                        icon: CommonImages.rate,
+                        title: 'Rate us',
+                        onTap: () {},
+                        isComingSoon: true,
+                      ),
+                      _buildDivider(),
+                      _buildMenuItem(
+                        icon: CommonImages.info,
+                        title: 'About Aorbo Treks',
+                        onTap: () => Get.toNamed('/about-us'),
+                      ),
+                    ],
+                  ),
                 ),
 
                 SizedBox(height: 3.h),
-                _buildLogoutButton(),
-                SizedBox(height: 5.h),
+
+                // Animated logout
+                SlideTransition(
+                  position: _logoutSlide,
+                  child: FadeTransition(
+                    opacity: _logoutFade,
+                    child: _buildLogoutButton(),
+                  ),
+                ),
+
+                SizedBox(height: 4.h),
               ],
             ),
           ),
@@ -188,50 +305,93 @@ class _MyAccountScreenState extends State<MyAccountScreen>
   }
 
   // ─────────────────────────────────────────────
-  //  APP BAR
-  //  FIX: backgroundColor changed to whiteColor
-  //  to match the new white page background
+  //  ANIMATED SECTION WRAPPER
+  //  (now mirrors Traveller Info: section header with
+  //   dark icon badge + title, then card below)
+  // ─────────────────────────────────────────────
+  Widget _buildAnimatedSection({
+    required int index,
+    required String label,
+    required IconData icon,
+    required Widget child,
+  }) {
+    return SlideTransition(
+      position: _cardSlides[index],
+      child: FadeTransition(
+        opacity: _cardFades[index],
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSectionHeader(label, icon),
+            SizedBox(height: 1.2.h),
+            child,
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  //  APP BAR  (matched to Traveller Information)
   // ─────────────────────────────────────────────
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      // FIX: white appbar — no blue tint, matches page bg
-      backgroundColor: CommonColors.whiteColor,
+      backgroundColor: _C.cardBg,
       elevation: 0,
       scrolledUnderElevation: 0,
       surfaceTintColor: CommonColors.transparent,
       automaticallyImplyLeading: false,
+      iconTheme: const IconThemeData(color: _C.ink),
       titleSpacing: 4.w,
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(1),
+        child: Container(height: 1, color: _C.divider),
+      ),
       title: Row(
         children: [
           GestureDetector(
             onTap: () => Navigator.of(context).pop(),
-            child: Icon(
+            child: const Icon(
               Icons.arrow_back_ios_new_rounded,
               size: 18,
               color: _C.ink,
             ),
           ),
           SizedBox(width: 2.w),
-          Text(
-            'Profile',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: FontSize.s15,
-              fontWeight: FontWeight.w600,
-              color: CommonColors.cFF111827,
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Profile',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: FontSize.s13,
+                  fontWeight: FontWeight.w700,
+                  color: _C.ink,
+                ),
+              ),
+              Text(
+                'Manage account & preferences',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: FontSize.s9,
+                  color: _C.inkMid,
+                ),
+              ),
+            ],
           ),
         ],
       ),
       actions: [
-        _LanguageChip(),
+        const _LanguageChip(),
         SizedBox(width: 4.w),
       ],
     );
   }
 
   // ─────────────────────────────────────────────
-  //  USER HEADER
+  //  USER HEADER  (themed card-style profile block)
   // ─────────────────────────────────────────────
   Widget _buildUserHeader() {
     return Obx(() {
@@ -242,52 +402,113 @@ class _MyAccountScreenState extends State<MyAccountScreen>
       final subtitle = (customer?.phone?.isNotEmpty == true)
           ? customer!.phone!.replaceFirst('+91', '+91 ')
           : 'Manage your account & preferences';
+      final initial =
+          (customer?.name?.isNotEmpty == true) ? customer!.name![0].toUpperCase() : '?';
 
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            name,
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: FontSize.s24,
-              fontWeight: FontWeight.w700,
-              color: _C.ink,
-              height: 1.1,
+      return Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
+        decoration: BoxDecoration(
+          color: _C.cardBg,
+          borderRadius: BorderRadius.circular(4.w),
+          boxShadow: [
+            BoxShadow(
+              color: CommonColors.blackColor.withOpacity(0.07),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
             ),
-          ),
-          SizedBox(height: 0.5.h),
-          Text(
-            subtitle,
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: FontSize.s9,
-              color: _C.inkMid,
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 14.w,
+              height: 14.w,
+              decoration: BoxDecoration(
+                color: _C.brand.withOpacity(0.10),
+                shape: BoxShape.circle,
+                border: Border.all(color: _C.brand.withOpacity(0.25)),
+              ),
+              child: Center(
+                child: Text(
+                  initial,
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: FontSize.s18,
+                    fontWeight: FontWeight.w700,
+                    color: _C.brand,
+                  ),
+                ),
+              ),
             ),
-          ),
-        ],
+            SizedBox(width: 4.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: FontSize.s16,
+                      fontWeight: FontWeight.w700,
+                      color: _C.ink,
+                      height: 1.15,
+                    ),
+                  ),
+                  SizedBox(height: 0.4.h),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: FontSize.s9,
+                      color: _C.inkMid,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       );
     });
   }
 
   // ─────────────────────────────────────────────
-  //  SECTION LABEL
+  //  SECTION HEADER  (dark icon badge + bold title,
+  //  mirrors _sectionHeader from Traveller Info)
   // ─────────────────────────────────────────────
-  Widget _buildSectionLabel(String label) {
-    return Text(
-      label,
-      style: TextStyle(
-        fontFamily: 'Poppins',
-        fontSize: FontSize.s8,
-        fontWeight: FontWeight.w600,
-        color: _C.inkMid,
-        letterSpacing: 1.2,
-      ),
+  Widget _buildSectionHeader(String title, IconData icon) {
+    return Row(
+      children: [
+        Container(
+          width: 9.w,
+          height: 9.w,
+          decoration: BoxDecoration(
+            color: _C.iconBadge,
+            borderRadius: BorderRadius.circular(2.5.w),
+          ),
+          child: Center(
+            child: Icon(icon, color: Colors.white, size: 4.5.w),
+          ),
+        ),
+        SizedBox(width: 3.w),
+        Text(
+          title,
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: FontSize.s12,
+            fontWeight: FontWeight.w700,
+            color: _C.ink,
+            letterSpacing: 0.4,
+          ),
+        ),
+      ],
     );
   }
 
   // ─────────────────────────────────────────────
-  //  CARD
+  //  CARD  (matched: white bg, rounded 4.w, subtle shadow)
   // ─────────────────────────────────────────────
   Widget _buildCard({required List<Widget> children}) {
     return Container(
@@ -296,10 +517,9 @@ class _MyAccountScreenState extends State<MyAccountScreen>
         borderRadius: BorderRadius.circular(4.w),
         boxShadow: [
           BoxShadow(
-            color: _C.shadow,
-            blurRadius: 12,
-            spreadRadius: 0,
-            offset: Offset(0, 2),
+            color: CommonColors.blackColor.withOpacity(0.07),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -308,7 +528,7 @@ class _MyAccountScreenState extends State<MyAccountScreen>
   }
 
   // ─────────────────────────────────────────────
-  //  MENU ITEM
+  //  MENU ITEM  (with press-scale animation)
   // ─────────────────────────────────────────────
   Widget _buildMenuItem({
     required String icon,
@@ -317,90 +537,17 @@ class _MyAccountScreenState extends State<MyAccountScreen>
     bool isComingSoon = false,
     Widget? trailingWidget,
   }) {
-    return InkWell(
+    return _AnimatedMenuTile(
+      icon: icon,
+      title: title,
       onTap: isComingSoon ? null : onTap,
-      borderRadius: BorderRadius.circular(4.w),
-      splashColor: _C.blue.withValues(alpha: 0.05),
-      highlightColor: _C.blue.withValues(alpha: 0.03),
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 1.8.h),
-        child: Row(
-          children: [
-            Container(
-              width: 9.w,
-              height: 9.w,
-              decoration: BoxDecoration(
-                // FIX: dark near-black badge background for active items
-                color: isComingSoon
-                    ? CommonColors.cFFF3F4F6
-                    : CommonColors.blackColor,
-                borderRadius: BorderRadius.circular(2.5.w),
-              ),
-              child: Center(
-                child: SvgPicture.asset(
-                  icon,
-                  width: 5.w,
-                  height: 5.w,
-                  // FIX: white icon on dark badge (bold, high contrast)
-                  colorFilter: ColorFilter.mode(
-                    isComingSoon ? _C.inkMid : CommonColors.primaryColor,
-                    BlendMode.srcIn,
-                  ),
-                ),
-              ),
-            ),
-            SizedBox(width: 4.w),
-            Expanded(
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: FontSize.s11,
-                  fontWeight: FontWeight.w500,
-                  color: isComingSoon ? _C.inkMid : _C.ink,
-                ),
-              ),
-            ),
-            if (trailingWidget != null) ...[
-              trailingWidget,
-              SizedBox(width: 2.w),
-              Icon(Icons.chevron_right, size: 18, color: _C.inkMid),
-            ] else if (isComingSoon) ...[
-              Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: 2.5.w,
-                  vertical: 0.4.h,
-                ),
-                decoration: BoxDecoration(
-                  color: CommonColors.cFFF3F4F6,
-                  borderRadius: BorderRadius.circular(2.w),
-                ),
-                child: Text(
-                  'Soon',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: FontSize.s7,
-                    fontWeight: FontWeight.w500,
-                    color: _C.inkMid,
-                  ),
-                ),
-              ),
-              SizedBox(width: 1.w),
-              Icon(
-                Icons.lock_outline_rounded,
-                size: 15,
-                color: _C.inkMid,
-              ),
-            ] else
-              Icon(Icons.chevron_right, size: 18, color: _C.inkMid),
-          ],
-        ),
-      ),
+      isComingSoon: isComingSoon,
+      trailingWidget: trailingWidget,
     );
   }
 
   // ─────────────────────────────────────────────
-  //  DIVIDER
+  //  DIVIDER  (matched to Traveller Info divider tone)
   // ─────────────────────────────────────────────
   Widget _buildDivider() {
     return Container(
@@ -414,19 +561,231 @@ class _MyAccountScreenState extends State<MyAccountScreen>
   //  LOGOUT BUTTON
   // ─────────────────────────────────────────────
   Widget _buildLogoutButton() {
-    return GestureDetector(
+    return _AnimatedLogoutButton(
       onTap: () => Get.toNamed('/logout'),
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.symmetric(vertical: 1.8.h),
-        decoration: BoxDecoration(
-          color: _C.cardBg,
-          borderRadius: BorderRadius.circular(4.w),
-          border: Border.all(color: _C.redBorder, width: 1.5),
-          boxShadow: [
-            BoxShadow(color: _C.shadow, blurRadius: 8, offset: Offset(0, 2)),
-          ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+//  ANIMATED MENU TILE
+//  — scales down on press, springs back on release
+// ─────────────────────────────────────────────
+class _AnimatedMenuTile extends StatefulWidget {
+  final String icon;
+  final String title;
+  final VoidCallback? onTap;
+  final bool isComingSoon;
+  final Widget? trailingWidget;
+
+  const _AnimatedMenuTile({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+    required this.isComingSoon,
+    this.trailingWidget,
+  });
+
+  @override
+  State<_AnimatedMenuTile> createState() => _AnimatedMenuTileState();
+}
+
+class _AnimatedMenuTileState extends State<_AnimatedMenuTile>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pressCtrl;
+  late final Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _pressCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+      reverseDuration: const Duration(milliseconds: 200),
+      lowerBound: 0.0,
+      upperBound: 1.0,
+    );
+    _scale = Tween<double>(begin: 1.0, end: 0.97).animate(
+      CurvedAnimation(parent: _pressCtrl, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pressCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: widget.isComingSoon
+          ? null
+          : (_) => _pressCtrl.forward(),
+      onTapUp: widget.isComingSoon
+          ? null
+          : (_) {
+              _pressCtrl.reverse();
+              widget.onTap?.call();
+            },
+      onTapCancel:
+          widget.isComingSoon ? null : () => _pressCtrl.reverse(),
+      child: ScaleTransition(
+        scale: _scale,
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 1.8.h),
+          child: Row(
+            children: [
+              // Icon badge — themed to match Traveller Info iconBadge style
+              Container(
+                width: 9.w,
+                height: 9.w,
+                decoration: BoxDecoration(
+                  color: widget.isComingSoon
+                      ? const Color(0xFFF1F5F9)
+                      : _C.iconBadge,
+                  borderRadius: BorderRadius.circular(2.5.w),
+                ),
+                child: Center(
+                  child: SvgPicture.asset(
+                    widget.icon,
+                    width: 5.w,
+                    height: 5.w,
+                    colorFilter: ColorFilter.mode(
+                      widget.isComingSoon
+                          ? _C.inkMid
+                          : CommonColors.primaryColor,
+                      BlendMode.srcIn,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(width: 4.w),
+              Expanded(
+                child: Text(
+                  widget.title,
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: FontSize.s11,
+                    fontWeight: FontWeight.w500,
+                    color: widget.isComingSoon ? _C.inkMid : _C.ink,
+                  ),
+                ),
+              ),
+              if (widget.trailingWidget != null) ...[
+                widget.trailingWidget!,
+                SizedBox(width: 2.w),
+                Icon(Icons.chevron_right, size: 18, color: _C.inkMid),
+              ] else if (widget.isComingSoon) ...[
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 2.5.w,
+                    vertical: 0.4.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(2.w),
+                  ),
+                  child: Text(
+                    'Soon',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: FontSize.s7,
+                      fontWeight: FontWeight.w500,
+                      color: _C.inkMid,
+                    ),
+                  ),
+                ),
+                SizedBox(width: 1.w),
+                Icon(
+                  Icons.lock_outline_rounded,
+                  size: 15,
+                  color: _C.inkMid,
+                ),
+              ] else
+                Icon(Icons.chevron_right, size: 18, color: _C.inkMid),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+//  ANIMATED LOGOUT BUTTON
+//  — scales + color-pulses on press
+// ─────────────────────────────────────────────
+class _AnimatedLogoutButton extends StatefulWidget {
+  final VoidCallback onTap;
+  const _AnimatedLogoutButton({required this.onTap});
+
+  @override
+  State<_AnimatedLogoutButton> createState() => _AnimatedLogoutButtonState();
+}
+
+class _AnimatedLogoutButtonState extends State<_AnimatedLogoutButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _scale;
+  late final Animation<Color?> _bgColor;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+      reverseDuration: const Duration(milliseconds: 220),
+    );
+    _scale = Tween<double>(begin: 1.0, end: 0.97).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
+    );
+    _bgColor = ColorTween(
+      begin: CommonColors.whiteColor,
+      end: CommonColors.cFFFFE4E4,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => _ctrl.forward(),
+      onTapUp: (_) {
+        _ctrl.reverse();
+        widget.onTap();
+      },
+      onTapCancel: () => _ctrl.reverse(),
+      child: AnimatedBuilder(
+        animation: _ctrl,
+        builder: (context, child) {
+          return Transform.scale(
+            scale: _scale.value,
+            child: Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(vertical: 1.8.h),
+              decoration: BoxDecoration(
+                color: _bgColor.value,
+                borderRadius: BorderRadius.circular(4.w),
+                border: Border.all(color: _C.redBorder, width: 1.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: CommonColors.blackColor.withOpacity(0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: child,
+            ),
+          );
+        },
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -522,30 +881,30 @@ class _PendingBadge extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────
-//  GET BADGE  (GET ₹500)
+//  GET BADGE  (GET ₹500) — commented out / kept for future use
 // ─────────────────────────────────────────────
-class _GetBadge extends StatelessWidget {
-  final String label;
-  const _GetBadge({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 2.5.w, vertical: 0.4.h),
-      decoration: BoxDecoration(
-        color: _C.orange,
-        borderRadius: BorderRadius.circular(2.w),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: FontSize.s8,
-          fontWeight: FontWeight.w700,
-          color: CommonColors.whiteColor,
-          letterSpacing: 0.3,
-        ),
-      ),
-    );
-  }
-}
+// class _GetBadge extends StatelessWidget {
+//   final String label;
+//   const _GetBadge({required this.label});
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return Container(
+//       padding: EdgeInsets.symmetric(horizontal: 2.5.w, vertical: 0.4.h),
+//       decoration: BoxDecoration(
+//         color: _C.orange,
+//         borderRadius: BorderRadius.circular(2.w),
+//       ),
+//       child: Text(
+//         label,
+//         style: TextStyle(
+//           fontFamily: 'Poppins',
+//           fontSize: FontSize.s8,
+//           fontWeight: FontWeight.w700,
+//           color: CommonColors.whiteColor,
+//           letterSpacing: 0.3,
+//         ),
+//       ),
+//     );
+//   }
+// }
