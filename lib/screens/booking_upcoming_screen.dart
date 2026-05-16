@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:sizer/sizer.dart';
 import 'package:shimmer_ai/shimmer_ai.dart';
 import 'package:dotted_line/dotted_line.dart';
+import 'dart:ui';
 import '../freezed_models/booking/booking_history_model.dart';
 import '../models/dispute/dispute_detail_modal.dart';
 import '../controller/dashboard_controller.dart';
@@ -32,6 +33,8 @@ class _TC {
   static const tealLight  = Color(0xFFE6F5F3);
   static const divider    = Color(0xFFE2E8F0);
   static const shadow     = Color(0x0A000000);
+  static const gold       = Color(0xFFFFB800);
+  static const goldDark   = Color(0xFFE89B00);
 }
 
 // ─────────────────────────────────────────────
@@ -65,6 +68,49 @@ class TicketClipper extends CustomClipper<Path> {
 }
 
 // ─────────────────────────────────────────────
+//  ANIMATED GRADIENT BORDER PAINTER
+// ─────────────────────────────────────────────
+class _GradientBorderPainter extends CustomPainter {
+  final double progress;
+  final List<Color> colors;
+  final double strokeWidth;
+  final double borderRadius;
+
+  _GradientBorderPainter({
+    required this.progress,
+    required this.colors,
+    required this.strokeWidth,
+    required this.borderRadius,
+  });
+  
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Rect.fromLTWH(0, 0, size.width, size.height);
+    final rrect = RRect.fromRectAndRadius(rect, Radius.circular(borderRadius));
+
+    final paint = Paint()
+      ..shader = SweepGradient(
+        startAngle: 0,
+        endAngle: 6.28319, // 2π
+        transform: GradientRotation(progress * 6.28319),
+        colors: [
+          ...colors,
+          colors.first,
+        ],
+      ).createShader(rect)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth;
+
+    canvas.drawRRect(rrect, paint);
+  }
+
+  @override
+  bool shouldRepaint(_GradientBorderPainter old) =>
+      old.progress != progress || old.colors != colors;
+}
+
+// ─────────────────────────────────────────────
 //  SCREEN
 // ─────────────────────────────────────────────
 class BookingsUpcomingScreen extends StatefulWidget {
@@ -76,13 +122,34 @@ class BookingsUpcomingScreen extends StatefulWidget {
 }
 
 class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
 
   final DashboardController _dashboardC = Get.find<DashboardController>();
-  final TrekController _trekC =  Get.find<TrekController>();
+  final TrekController _trekC = Get.find<TrekController>();
   late AnimationController _animationController;
 
-  // FIX: Booking Details (index 0) starts open
+  // Floating rating panel controllers
+  late AnimationController _ratingPanelController;
+  late Animation<double> _ratingPanelAnim;
+
+  // Pulse animation for FAB
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnim;
+
+  // Shimmer sweep for FAB
+  late AnimationController _shimmerController;
+
+  // Rotating gradient border
+  late AnimationController _borderRotationController;
+
+  // Glow pulse
+  late AnimationController _glowController;
+  late Animation<double> _glowAnim;
+
+  bool _ratingPanelVisible = false;
+  bool _ratingDismissed = false;
+  bool _isFabPressed = false;
+
   Set<int> openSections = {0};
 
   final GlobalKey _dottedKey = GlobalKey();
@@ -93,13 +160,54 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
   void initState() {
     super.initState();
     _dashboardC.getBookingDetail(bookingId: widget.bookingId ?? '0');
+
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
     _animationController.forward();
 
-    // FIX: Recalculate cutout offset after first frame since section 0 starts open
+    // Rating panel animation
+    _ratingPanelController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 480),
+    );
+    _ratingPanelAnim = CurvedAnimation(
+      parent: _ratingPanelController,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInCubic,
+    );
+
+    // Pulse animation for FAB (subtle breathing effect)
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2200),
+    )..repeat(reverse: true);
+    _pulseAnim = Tween<double>(begin: 1.0, end: 1.035).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+
+    // Shimmer sweep across the FAB
+    _shimmerController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2800),
+    )..repeat();
+
+    // Rotating gradient border
+    _borderRotationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 4000),
+    )..repeat();
+
+    // Glow pulse
+    _glowController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2400),
+    )..repeat(reverse: true);
+    _glowAnim = Tween<double>(begin: 0.35, end: 0.6).animate(
+      CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
+    );
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _updateCutoutOffset();
     });
@@ -108,6 +216,11 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
   @override
   void dispose() {
     _animationController.dispose();
+    _ratingPanelController.dispose();
+    _pulseController.dispose();
+    _shimmerController.dispose();
+    _borderRotationController.dispose();
+    _glowController.dispose();
     super.dispose();
   }
 
@@ -116,8 +229,8 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
       final RenderBox? box     = _dottedKey.currentContext?.findRenderObject() as RenderBox?;
       final RenderBox? cardBox = _cardKey.currentContext?.findRenderObject() as RenderBox?;
       if (box != null && cardBox != null && mounted) {
-        final position   = box.localToGlobal(Offset.zero);
-        final cardTop    = cardBox.localToGlobal(Offset.zero).dy;
+        final position    = box.localToGlobal(Offset.zero);
+        final cardTop     = cardBox.localToGlobal(Offset.zero).dy;
         final localOffset = position.dy - cardTop;
         setState(() => cutoutOffset = localOffset + box.size.height / 2);
       }
@@ -133,6 +246,28 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
       }
     });
     Future.delayed(const Duration(milliseconds: 100), _updateCutoutOffset);
+  }
+
+  void _showRatingPanel() {
+    setState(() => _ratingPanelVisible = true);
+    _ratingPanelController.forward();
+  }
+
+  void _hideRatingPanel() {
+    _ratingPanelController.reverse().then((_) {
+      if (mounted) setState(() => _ratingPanelVisible = false);
+    });
+  }
+
+  void _dismissRatingPanel() {
+    _ratingPanelController.reverse().then((_) {
+      if (mounted) {
+        setState(() {
+          _ratingPanelVisible = false;
+          _ratingDismissed = true;
+        });
+      }
+    });
   }
 
   List<Color> _getStatusGradient(String? status) {
@@ -292,7 +427,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
 
-          // ── HEADER: dark gradient band ───────────────────────────────
+          // ── HEADER ───────────────────────────────────────────────────
           Container(
             width: double.infinity,
             padding: EdgeInsets.fromLTRB(5.w, 2.5.h, 5.w, 2.5.h),
@@ -310,7 +445,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // FIX: Trek name on the left, status badge on the right
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -327,7 +461,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                       ),
                     ),
                     SizedBox(width: 2.w),
-                    // Status pill moved here (top right)
                     Container(
                       padding: EdgeInsets.symmetric(
                           horizontal: 3.w, vertical: 0.5.h),
@@ -367,7 +500,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
             ),
           ),
 
-          // ── DATE ROW ──────────────────────────────────────────────────
+          // ── DATE ROW ─────────────────────────────────────────────────
           Padding(
             padding: EdgeInsets.fromLTRB(5.w, 2.5.h, 5.w, 0),
             child: Row(
@@ -415,9 +548,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                   flex: 3,
                   child: Column(
                     children: [
-                      // FIX: Changed from flight icon to trek-related icon
-                      Icon(Icons.hiking_rounded,
-                          size: 5.w, color: _TC.ink),
+                      Icon(Icons.hiking_rounded, size: 5.w, color: _TC.ink),
                       SizedBox(height: 0.5.h),
                       Container(
                         padding: EdgeInsets.symmetric(
@@ -489,7 +620,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
 
           SizedBox(height: 3.h),
 
-          // ── DOTTED SEPARATOR with cutout notches ──────────────────────
+          // ── DOTTED SEPARATOR ─────────────────────────────────────────
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 1.w),
             child: DottedLine(
@@ -523,8 +654,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                         _ticketRow('TBR ID', batch?.tbrId ?? 'N/A',
                             isHighlight: true),
                         _dividerLine(),
-                        _ticketRow('Booking ID',
-                            booking.bookingNumber ?? 'N/A'),
+                        _ticketRow('Booking ID', booking.bookingNumber ?? 'N/A'),
                         _dividerLine(),
                         _ticketRow(
                           'Booking Date',
@@ -537,7 +667,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                   ),
                   SizedBox(height: 1.5.h),
 
-                  // Traveller Details
                   if (booking.travelers?.isNotEmpty == true) ...[
                     Padding(
                       padding: EdgeInsets.only(bottom: 1.h),
@@ -566,7 +695,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                       ),
                       child: Column(
                         children: [
-                          // Header row
                           Container(
                             padding: EdgeInsets.symmetric(
                                 horizontal: 3.w, vertical: 1.h),
@@ -579,21 +707,12 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                             ),
                             child: Row(
                               children: [
-                                Expanded(
-                                  flex: 5,
-                                  child: Text('Name',
-                                      style: _tableHeaderStyle()),
-                                ),
-                                Expanded(
-                                  flex: 2,
-                                  child: Text('Age',
-                                      style: _tableHeaderStyle()),
-                                ),
-                                Expanded(
-                                  flex: 3,
-                                  child: Text('Gender',
-                                      style: _tableHeaderStyle()),
-                                ),
+                                Expanded(flex: 5,
+                                    child: Text('Name', style: _tableHeaderStyle())),
+                                Expanded(flex: 2,
+                                    child: Text('Age', style: _tableHeaderStyle())),
+                                Expanded(flex: 3,
+                                    child: Text('Gender', style: _tableHeaderStyle())),
                               ],
                             ),
                           ),
@@ -615,37 +734,32 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                                 children: [
                                   Expanded(
                                     flex: 5,
-                                    child: Text(
-                                      t.traveler?.name ?? '-',
-                                      style: TextStyle(
-                                        fontFamily: 'Poppins',
-                                        fontSize: FontSize.s9,
-                                        fontWeight: FontWeight.w600,
-                                        color: _TC.ink,
-                                      ),
-                                    ),
+                                    child: Text(t.traveler?.name ?? '-',
+                                        style: TextStyle(
+                                          fontFamily: 'Poppins',
+                                          fontSize: FontSize.s9,
+                                          fontWeight: FontWeight.w600,
+                                          color: _TC.ink,
+                                        )),
                                   ),
                                   Expanded(
                                     flex: 2,
                                     child: Text(
-                                      t.traveler?.age?.toString() ?? '-',
-                                      style: TextStyle(
-                                        fontFamily: 'Poppins',
-                                        fontSize: FontSize.s9,
-                                        color: _TC.inkMid,
-                                      ),
-                                    ),
+                                        t.traveler?.age?.toString() ?? '-',
+                                        style: TextStyle(
+                                          fontFamily: 'Poppins',
+                                          fontSize: FontSize.s9,
+                                          color: _TC.inkMid,
+                                        )),
                                   ),
                                   Expanded(
                                     flex: 3,
-                                    child: Text(
-                                      t.traveler?.gender ?? '-',
-                                      style: TextStyle(
-                                        fontFamily: 'Poppins',
-                                        fontSize: FontSize.s9,
-                                        color: _TC.inkMid,
-                                      ),
-                                    ),
+                                    child: Text(t.traveler?.gender ?? '-',
+                                        style: TextStyle(
+                                          fontFamily: 'Poppins',
+                                          fontSize: FontSize.s9,
+                                          color: _TC.inkMid,
+                                        )),
                                   ),
                                 ],
                               ),
@@ -675,8 +789,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                             trek?.vendor?.businessName ?? 'N/A'),
                         _dividerLine(),
                         _ticketRow('Boarding Point',
-                            booking.cityId?.toString() ??
-                                'To be announced'),
+                            booking.cityId?.toString() ?? 'To be announced'),
                         _dividerLine(),
                         _ticketRow('Trek Captain',
                             trek?.captainName ?? 'To be announced'),
@@ -684,8 +797,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                         _ticketRow('Captain Contact',
                             trek?.captainPhone ?? 'Not available'),
                         _dividerLine(),
-                        _ticketRow(
-                            'Difficulty', trek?.difficulty ?? 'Moderate'),
+                        _ticketRow('Difficulty', trek?.difficulty ?? 'Moderate'),
                       ],
                     ),
                   ),
@@ -708,8 +820,8 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                         _ticketRow('Total Amount',
                             '₹${booking.totalAmount ?? '0'}'),
                         _dividerLine(),
-                        _ticketRow(
-                            'Discount', '-₹${booking.discountAmount ?? '0'}'),
+                        _ticketRow('Discount',
+                            '-₹${booking.discountAmount ?? '0'}'),
                         _dividerLine(),
                         _ticketRow('Platform Fees',
                             '₹${booking.platformFees ?? '0'}'),
@@ -722,8 +834,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                         _dividerLine(),
                         _ticketRow(
                           'Payment Status',
-                          _getPaymentStatusText(booking.paymentStatus) ??
-                              'N/A',
+                          _getPaymentStatusText(booking.paymentStatus) ?? 'N/A',
                           isHighlight: true,
                         ),
                       ],
@@ -737,7 +848,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
 
           SizedBox(height: 1.5.h),
 
-          // ── TICKET TEAR DOTTED LINE ───────────────────────────────────
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 1.w),
             child: DottedLine(
@@ -750,28 +860,23 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
 
           SizedBox(height: 2.5.h),
 
-          // ── FOOTER ────────────────────────────────────────────────────
+          // ── FOOTER ───────────────────────────────────────────────────
           Padding(
             padding: EdgeInsets.fromLTRB(5.w, 0, 5.w, 3.h),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '"Not Insta-perfect.\nBut soul-perfect...!!"',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: FontSize.s10,
-                          fontWeight: FontWeight.w500,
-                          fontStyle: FontStyle.italic,
-                          color: _TC.inkLight,
-                          height: 1.5,
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    '"Not Insta-perfect.\nBut soul-perfect...!!"',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: FontSize.s10,
+                      fontWeight: FontWeight.w500,
+                      fontStyle: FontStyle.italic,
+                      color: _TC.inkLight,
+                      height: 1.5,
+                    ),
                   ),
                 ),
                 Image.asset(
@@ -875,93 +980,383 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
     );
   }
 
-  // ── RATING CARD ───────────────────────────────────────────────────────────
-  Widget _buildRatingCard({required BookingHistoryData bookingData}) {
-    return Container(
-      padding: EdgeInsets.all(4.w),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding:
-                      EdgeInsets.symmetric(horizontal: 2.5.w, vertical: 0.4.h),
-                  decoration: BoxDecoration(
-                    color: _TC.tealLight,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    bookingData.ratingGiven == true
-                        ? '✓ Reviewed'
-                        : '⭐ Rate your trek',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: FontSize.s8,
-                      fontWeight: FontWeight.w700,
-                      color: _TC.teal,
-                    ),
-                  ),
+  // ─────────────────────────────────────────────
+  //  PREMIUM FLOATING RATING BUTTON
+  // ─────────────────────────────────────────────
+Widget _buildFloatingRatingButton({
+  required BookingHistoryData bookingData,
+}) {
+  final bool isReviewed = bookingData.ratingGiven == true;
+  final double currentRating = (bookingData.ratingValue ?? 0.0).toDouble();
+
+  final Color primary = isReviewed
+      ? const Color(0xFF0F766E)
+      : const Color(0xFF1E3A8A);
+  final Color accent = isReviewed
+      ? const Color(0xFF14B8A6)
+      : const Color(0xFF3B82F6);
+
+  final LinearGradient buttonGradient = LinearGradient(
+    colors: [
+      primary,
+      accent,
+    ],
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+  );
+
+  final Widget panel = ClipRect(
+    child: SizeTransition(
+      sizeFactor: _ratingPanelAnim,
+      axisAlignment: 1.0,
+      child: FadeTransition(
+        opacity: _ratingPanelAnim,
+        child: Padding(
+          padding: EdgeInsets.only(bottom: 1.2.h),
+          child: Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: primary.withOpacity(0.08)),
+              boxShadow: [
+                BoxShadow(
+                  color: primary.withOpacity(0.10),
+                  blurRadius: 26,
+                  offset: const Offset(0, 10),
                 ),
-                SizedBox(height: 1.h),
-                Text(
-                  bookingData.ratingGiven == true
-                      ? 'Thank you for your feedback!'
-                      : 'Share your experience with fellow trekkers',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: FontSize.s10,
-                    fontWeight: FontWeight.w600,
-                    color: _TC.ink,
-                    height: 1.4,
-                  ),
-                ),
-                SizedBox(height: 1.5.h),
-                AnimatedRatingStars(
-                  initialRating: bookingData.ratingValue ?? 0.0,
-                  readOnly: bookingData.ratingGiven == true,
-                  onChanged: (rating) {
-                    if (bookingData.ratingGiven != true) {
-                      Get.toNamed('/rate-review', arguments: bookingData);
-                    }
-                  },
-                  filledColor: CommonColors.completedColor2,
-                  displayRatingValue: false,
-                  interactiveTooltips: true,
-                  customFilledIcon: Icons.star_rounded,
-                  customHalfFilledIcon: Icons.star_half_rounded,
-                  customEmptyIcon: Icons.star_border_rounded,
-                  starSize: 7.w,
-                  animationDuration: const Duration(milliseconds: 500),
-                  animationCurve: Curves.easeInOut,
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.06),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(4.5.w, 2.0.h, 4.5.w, 2.0.h),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 11.w,
+                        height: 11.w,
+                        decoration: BoxDecoration(
+                          color: primary.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Icon(
+                          isReviewed
+                              ? Icons.verified_rounded
+                              : Icons.star_rounded,
+                          color: primary,
+                          size: 5.5.w,
+                        ),
+                      ),
+                      SizedBox(width: 3.w),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              isReviewed ? 'You rated this trek' : 'Rate your trek',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: FontSize.s12,
+                                fontWeight: FontWeight.w800,
+                                color: _TC.ink,
+                                height: 1.1,
+                              ),
+                            ),
+                            SizedBox(height: 0.35.h),
+                            Text(
+                              isReviewed
+                                  ? 'Tap to view your review'
+                                  : 'Help other trekkers with your experience',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: FontSize.s8,
+                                fontWeight: FontWeight.w500,
+                                color: _TC.inkMid,
+                                height: 1.25,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: _hideRatingPanel,
+                        child: Container(
+                          width: 8.5.w,
+                          height: 8.5.w,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: _TC.divider),
+                          ),
+                          child: Icon(
+                            Icons.close_rounded,
+                            size: 4.4.w,
+                            color: _TC.inkMid,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 1.6.h),
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 3.w,
+                      vertical: 1.3.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: primary.withOpacity(0.06)),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 10.w,
+                          height: 10.w,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: Icon(
+                            isReviewed
+                                ? Icons.check_circle_rounded
+                                : Icons.touch_app_rounded,
+                            color: primary,
+                            size: 5.w,
+                          ),
+                        ),
+                        SizedBox(width: 3.w),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                isReviewed ? 'Review saved' : 'Tap a star to rate',
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: FontSize.s10,
+                                  fontWeight: FontWeight.w700,
+                                  color: _TC.ink,
+                                ),
+                              ),
+                              SizedBox(height: 0.2.h),
+                              Text(
+                                isReviewed
+                                    ? '${currentRating.toStringAsFixed(1)} / 5.0'
+                                    : 'Your feedback helps other trekkers',
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: FontSize.s8,
+                                  color: _TC.inkMid,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        AnimatedRatingStars(
+                          initialRating: currentRating,
+                          readOnly: isReviewed,
+                          onChanged: (rating) {
+                            if (!isReviewed) {
+                              Get.toNamed(
+                                '/rate-review',
+                                arguments: {
+                                  'booking': bookingData,
+                                  'preSelectedRating': rating,
+                                },
+                              );
+                            }
+                          },
+                          filledColor: const Color(0xFFFFB800),
+                          displayRatingValue: false,
+                          interactiveTooltips: true,
+                          customFilledIcon: Icons.star_rounded,
+                          customHalfFilledIcon: Icons.star_half_rounded,
+                          customEmptyIcon: Icons.star_border_rounded,
+                          starSize: 7.5.w,
+                          animationDuration: const Duration(milliseconds: 450),
+                          animationCurve: Curves.easeOutBack,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-          SizedBox(width: 2.w),
-          Image.asset(
-            'assets/images/img/womanwithplaque.png',
-            width: 18.w,
-            height: 18.w,
-            fit: BoxFit.contain,
-            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-          ),
-        ],
+        ),
       ),
-    );
-  }
+    ),
+  );
+
+  final Widget button = GestureDetector(
+    onTapDown: (_) => setState(() => _isFabPressed = true),
+    onTapUp: (_) => setState(() => _isFabPressed = false),
+    onTapCancel: () => setState(() => _isFabPressed = false),
+    onTap: _ratingPanelVisible ? _hideRatingPanel : _showRatingPanel,
+    child: AnimatedScale(
+      scale: _isFabPressed ? 0.97 : 1.0,
+      duration: const Duration(milliseconds: 140),
+      curve: Curves.easeOut,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutCubic,
+        height: 7.8.h,
+        width: 88.w,
+        padding: EdgeInsets.symmetric(horizontal: 4.w),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(30),
+          gradient: LinearGradient(
+            colors: isReviewed
+                ? const [
+                    Color(0xFFFFFFFF),
+                    Color(0xFFF0FDFA),
+                  ]
+                : const [
+                    Color(0xFFFFFFFF),
+                    Color(0xFFF6F9FF),
+                  ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          border: Border.all(
+            color: isReviewed
+                ? const Color(0xFF14B8A6).withOpacity(0.18)
+                : const Color(0xFF3B82F6).withOpacity(0.18),
+            width: 1.2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: isReviewed
+                  ? const Color(0xFF14B8A6).withOpacity(0.10)
+                  : const Color(0xFF3B82F6).withOpacity(0.10),
+              blurRadius: 24,
+              offset: const Offset(0, 10),
+            ),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 11.w,
+              height: 11.w,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: isReviewed
+                      ? const [
+                          Color(0xFF0F766E),
+                          Color(0xFF14B8A6),
+                        ]
+                      : const [
+                          Color(0xFF0F172A),
+                          Color(0xFF3B82F6),
+                        ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: (isReviewed
+                            ? const Color(0xFF14B8A6)
+                            : const Color(0xFF3B82F6))
+                        .withOpacity(0.18),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Icon(
+                  isReviewed ? Icons.star_rounded : Icons.star_border_rounded,
+                  color: Colors.white,
+                  size: 5.8.w,
+                ),
+              ),
+            ),
+            SizedBox(width: 3.5.w),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isReviewed ? 'View Your Review' : 'Rate Your Trek',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: FontSize.s11,
+                      fontWeight: FontWeight.w800,
+                      color: _TC.ink,
+                      height: 1.05,
+                    ),
+                  ),
+                  SizedBox(height: 0.2.h),
+                  Text(
+                    isReviewed ? 'Tap to open your feedback' : 'Help other trekkers discover',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: FontSize.s7,
+                      fontWeight: FontWeight.w500,
+                      color: _TC.inkMid,
+                      height: 1.15,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(width: 2.w),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 280),
+              curve: Curves.easeOutCubic,
+              width: 8.5.w,
+              height: 8.5.w,
+              decoration: BoxDecoration(
+                color: (isReviewed
+                        ? const Color(0xFF14B8A6)
+                        : const Color(0xFF3B82F6))
+                    .withOpacity(0.08),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: AnimatedRotation(
+                turns: _ratingPanelVisible ? 0.5 : 0,
+                duration: const Duration(milliseconds: 280),
+                curve: Curves.easeOutCubic,
+                child: Icon(
+                  Icons.keyboard_arrow_up_rounded,
+                  color: isReviewed
+                      ? const Color(0xFF0F766E)
+                      : const Color(0xFF1E3A8A),
+                  size: 5.2.w,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  return Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      if (_ratingPanelVisible) panel,
+      button,
+    ],
+  );
+}
 
   // ── DISPUTE CARD ──────────────────────────────────────────────────────────
   Widget _buildDisputeCard({required List<Disputes> disputeData}) {
@@ -1138,12 +1533,18 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
               children: [
                 SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
+                  padding: EdgeInsets.only(
+                    bottom: (status == 'confirmed' &&
+                            booking != null &&
+                            !_ratingDismissed)
+                        ? 18.h
+                        : 0,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       SizedBox(height: 2.h),
 
-                      // Ticket Card
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: 4.w),
                         child: _buildTicketCard(booking),
@@ -1181,7 +1582,8 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                               SizedBox(width: 3.w),
                               Expanded(
                                 child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       'Trek details via contact',
@@ -1240,7 +1642,8 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                               child: _buildActionButton(
                                 Icons.confirmation_num_outlined,
                                 'Ticket',
-                                onTap: () => Get.to(() => const InvoiceExampleScreen()),
+                                onTap: () => Get.to(
+                                    () => const InvoiceExampleScreen()),
                               ),
                             ),
                             if (status == 'upcoming' ||
@@ -1252,17 +1655,23 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                                   Icons.cancel_outlined,
                                   'Cancel',
                                   onTap: () async {
-                                    String? bookingId = booking?.id?.toString();
+                                    String? bookingId =
+                                        booking?.id?.toString();
                                     if (bookingId != null) {
-                                      final message = await _trekC.fetchCancellationDetails(bookingId);
+                                      final message = await _trekC
+                                          .fetchCancellationDetails(
+                                              bookingId);
                                       if (message != null) {
-                                        SchedulerBinding.instance.addPostFrameCallback((_) {
-                                          CustomSnackBar.show(context, message: message);
+                                        SchedulerBinding.instance
+                                            .addPostFrameCallback((_) {
+                                          CustomSnackBar.show(context,
+                                              message: message);
                                         });
                                         return;
                                       }
                                     }
-                                    Get.toNamed('/bookingscancel', arguments: booking);
+                                    Get.toNamed('/bookingscancel',
+                                        arguments: booking);
                                   },
                                 ),
                               ),
@@ -1334,22 +1743,12 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                         ),
                       ),
 
-                      SizedBox(height: 2.5.h),
-
-                      // Rating Card
-                      if (status == 'completed' && booking != null)
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 4.w),
-                          child: _buildRatingCard(bookingData: booking),
-                        ),
-
-                      // Dispute Card
                       if (_dashboardC.disputeDetailDataList.isNotEmpty)
                         Padding(
-                          padding:
-                              EdgeInsets.symmetric(horizontal: 4.w),
+                          padding: EdgeInsets.fromLTRB(4.w, 2.5.h, 4.w, 0),
                           child: Obx(() => _buildDisputeCard(
-                                disputeData: _dashboardC.disputeDetailDataList,
+                                disputeData:
+                                    _dashboardC.disputeDetailDataList,
                               )),
                         ),
 
@@ -1379,14 +1778,16 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                                   color: _TC.inkLight,
                                 ),
                                 children: [
-                                  const TextSpan(text: 'Crafted with passion '),
+                                  const TextSpan(
+                                      text: 'Crafted with passion '),
                                   WidgetSpan(
                                     alignment: PlaceholderAlignment.middle,
                                     child: Icon(Icons.favorite,
                                         color: CommonColors.red_B52424,
                                         size: FontSize.s10),
                                   ),
-                                  const TextSpan(text: '\nrooted in Hyderabad.'),
+                                  const TextSpan(
+                                      text: '\nrooted in Hyderabad.'),
                                 ],
                               ),
                             ),
@@ -1396,10 +1797,27 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                     ],
                   ),
                 ),
-                Obx(() => _trekC.cancellationDetailsResponseObserver.value.maybeWhen(
+
+                // Floating rating FAB
+                if (status == 'confirmed' &&
+                    booking != null &&
+                    !_ratingDismissed)
+                  Positioned(
+                    left: 4.w,
+                    right: 4.w,
+                    bottom: 3.h,
+                    child: _buildFloatingRatingButton(bookingData: booking),
+                  ),
+
+                // Cancellation loading overlay
+                Obx(() =>
+                    _trekC.cancellationDetailsResponseObserver.value
+                        .maybeWhen(
                   loading: (_) => Container(
                     color: CommonColors.grey400,
-                    child: Center(child: CircularProgressIndicator(color: CommonColors.blueColor)),
+                    child: Center(
+                        child: CircularProgressIndicator(
+                            color: CommonColors.blueColor)),
                   ),
                   orElse: () => const SizedBox(),
                 )),
