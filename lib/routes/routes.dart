@@ -41,6 +41,8 @@ import '../screens/help_screen.dart';
 import '../screens/logout_screen.dart';
 import '../screens/refer&earn_screen.dart';
 import '../screens/rate_review_screen.dart';
+import '../screens/contact_support_screen.dart';
+
 
 final routes = [
   GetPage(name: '/', page: () => const SplashWithLoginScreen()),
@@ -102,6 +104,15 @@ final routes = [
   ),
   GetPage(name: '/about-us', page: () => const AboutUsScreen()),
   GetPage(name: '/help', page: () => const HelpScreen()),
+
+  GetPage(
+  name: '/contact-support',
+  page: () => const ContactSupportScreen(),
+  transition: Transition.rightToLeft,
+  transitionDuration: const Duration(milliseconds: 300),
+),
+
+
   GetPage(name: '/notifications', page: () => const NotificationScreen()),
   GetPage(name: '/logout', page: () => const LogoutScreen()),
   GetPage(name: '/chatboat', page: () => const ChatScreen()),

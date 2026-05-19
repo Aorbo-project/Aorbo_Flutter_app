@@ -402,15 +402,16 @@ class _HelpScreenState extends State<HelpScreen>
                   if (_faqReactions[index] == 'no') ...[
                     SizedBox(height: 1.5.h),
                     CommonButton(
-                      fontSize: FontSize.s11,
-                      width: 43.w,
-                      isFullWidth: false,
-                      textColor: CommonColors.whiteColor,
-                      fontFamily: 'Poppins',
-                      text: 'Chat with us',
-                      onPressed: () => Get.toNamed('/chatboat'),
-                      gradient: CommonColors.filterGradient,
-                    ),
+  fontSize: FontSize.s11,
+  width: 43.w,
+  isFullWidth: false,
+  textColor: CommonColors.whiteColor,
+  fontFamily: 'Poppins',
+  text: 'Contact us',
+  onPressed: () => Get.toNamed('/contact-support'), // ← updated route
+  gradient: CommonColors.filterGradient,
+),
+
                   ],
                 ],
               ),

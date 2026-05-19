@@ -1,6 +1,6 @@
+import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sizer/sizer.dart';
 import 'package:get/get.dart';
 import '../utils/common_colors.dart';
@@ -12,21 +12,30 @@ import '../repository/repository.dart';
 import '../repository/network_url.dart';
 
 // ─────────────────────────────────────────────
-//  DESIGN TOKENS
+//  DESIGN TOKENS — aligned with TravellerInfoScreen
 // ─────────────────────────────────────────────
 class _C {
-  static const bg = Color(0xFFF4F7FF);
-  static const cardBg = Color(0xFFFFFFFF);
-  static const accent = Color(0xFF3B5BDB);
-  static const accentLight = Color(0xFFEEF2FF);
-  static const danger = Color(0xFFE03131);
-  static const dangerLight = Color(0xFFFFF5F5);
-  static const textPrimary = Color(0xFF1A1D2E);
-  static const textSecond = Color(0xFF6C7293);
-  static const textMuted = Color(0xFFADB5BD);
-  static const border = Color(0xFFE9ECEF);
-  static const iconBadge = Color(0xFF111827);
+  static const bg          = Color(0xFFF5F8FF);
+  static const cardBg      = Color(0xFFFFFFFF);
+  static const ink         = Color(0xFF111827);
+  static const inkMid      = Color(0xFF6B7280);
+  static const inkLight    = Color(0xFF9CA3AF);
+  static const teal        = Color(0xFF0F7B6C);
+  static const tealSoft    = Color(0xFFE6F5F3);
+  static const fieldBg     = Color(0xFFF9FAFB);
+  static const fieldBorder = Color(0xFFE5E7EB);
+  static const iconBadgeBg = Color(0xFF111827);
+  static const danger      = Color(0xFFEF4444);
+  static const dangerLight = Color(0xFFFEF2F2);
+  static const divider     = Color(0xFFE5E7EB);
 }
+
+class _NInk {
+  static const ink = Color(0xFF0F172A);
+}
+
+const _kAnimDur   = Duration(milliseconds: 280);
+const _kAnimCurve = Curves.easeOutCubic;
 
 class SelectedEmergencyContactsScreen extends StatefulWidget {
   const SelectedEmergencyContactsScreen({super.key});
@@ -42,15 +51,17 @@ class _SelectedEmergencyContactsScreenState
   List<Contact> selectedContacts = [];
   List<EmergencyContact> apiEmergencyContacts = [];
   bool isLoading = true;
+  bool _isSaving = false;
+
   final Repository _repository = Repository();
-  late AnimationController _animController;
+  late final AnimationController _animController;
 
   @override
   void initState() {
     super.initState();
     _animController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 400),
+      duration: const Duration(milliseconds: 500),
     )..forward();
 
     final arguments = Get.arguments;
@@ -66,47 +77,48 @@ class _SelectedEmergencyContactsScreenState
     super.dispose();
   }
 
-  // ── ALL ORIGINAL LOGIC ──────────────────────
+  // ── Data ────────────────────────────────────────────────────────────────────
+
   Future<void> _loadEmergencyContacts() async {
+    if (!mounted) return;
+    setState(() => isLoading = true);
     try {
-      setState(() => isLoading = true);
       final response = await _repository.getApiCall(
         url: NetworkUrl.emergencyContacts,
       );
-      if (response != null) {
+      if (response != null && mounted) {
         final r = EmergencyContactResponse.fromJson(response);
         if (r.success == true) {
           setState(() => apiEmergencyContacts = r.data ?? []);
         }
       }
     } catch (e) {
-      // Silently fail
+      log('_loadEmergencyContacts failed: $e');
     } finally {
       if (mounted) setState(() => isLoading = false);
     }
   }
 
   Future<void> _saveEmergencyContacts() async {
-    if (selectedContacts.isEmpty) {
-      Get.back();
-      return;
-    }
+    if (_isSaving || selectedContacts.isEmpty) return;
+
+    setState(() => _isSaving = true);
     try {
-      setState(() => isLoading = true);
       int successCount = 0;
       String? errorMessage;
+
       for (final contact in selectedContacts) {
         final phone = contact.phones.isNotEmpty
             ? contact.phones.first.number
             : '';
         final body = {
-          'name': contact.displayName,
-          'phone': phone,
+          'name':         contact.displayName,
+          'phone':        phone,
           'relationship': contact.displayName,
         };
         try {
           final response = await _repository.postApiCall(
-            url: NetworkUrl.emergencyContacts,
+            url:  NetworkUrl.emergencyContacts,
             body: body,
           );
           if (response != null) {
@@ -123,23 +135,35 @@ class _SelectedEmergencyContactsScreenState
           break;
         }
       }
+
+      if (!mounted) return;
+
       if (errorMessage != null) {
         _showSnack(errorMessage, isError: true);
       } else {
         _showSnack('$successCount contact(s) saved successfully');
       }
+
       await _loadEmergencyContacts();
+      if (!mounted) return;
       setState(() => selectedContacts.clear());
 
-      // FIX: after saving, pop all the way back to Safety.
-      // The back-stack is: Safety → Picker → SelectedEmergencyContacts
-      // Get.until pops screens until it reaches the Safety route,
-      // so the user never sees the picker screen on the way back.
-      Get.until((route) => route.settings.name == '/safety');
+      // Pop back to Safety screen. If the named route isn't found,
+      // fall back to a single Get.back() so we never get stuck.
+      final didPop = Get.currentRoute != '/safety';
+      if (didPop) {
+        Get.until((route) {
+          return route.settings.name == '/safety' ||
+              route.isFirst;
+        });
+      } else {
+        Get.back();
+      }
     } catch (e) {
-      _showSnack('Failed to save contacts: ${e.toString()}', isError: true);
+      log('_saveEmergencyContacts failed: $e');
+      if (mounted) _showSnack('Failed to save contacts. Please try again.', isError: true);
     } finally {
-      if (mounted) setState(() => isLoading = false);
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
@@ -148,7 +172,7 @@ class _SelectedEmergencyContactsScreenState
       final response = await _repository.deleteApiCall(
         url: NetworkUrl.deleteEmergencyContact(id),
       );
-      if (response != null) {
+      if (response != null && mounted) {
         final r = EmergencyContactDeleteResponse.fromJson(response);
         _showSnack(
           r.message ?? 'Contact deleted successfully',
@@ -157,127 +181,270 @@ class _SelectedEmergencyContactsScreenState
         if (r.success == true) await _loadEmergencyContacts();
       }
     } catch (e) {
-      _showSnack('Failed to delete: ${e.toString()}', isError: true);
+      log('_deleteEmergencyContact failed: $e');
+      if (mounted) _showSnack('Failed to delete. Please try again.', isError: true);
     }
   }
 
-  void _showSnack(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(
-              isError ? Icons.error_outline : Icons.check_circle_outline,
-              color: Colors.white,
-              size: 18,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                message,
-                style: const TextStyle(fontFamily: 'Poppins', fontSize: 12),
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: isError ? _C.danger : _C.accent,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
-      ),
+  /// Navigate to picker, preserving back-stack.
+  /// Uses Get.toNamed so returning from picker comes back here.
+  Future<void> _addMoreContacts() async {
+    final total = apiEmergencyContacts.length + selectedContacts.length;
+    if (total >= 3) {
+      _showSnack('Maximum 3 emergency contacts allowed.', isError: true);
+      return;
+    }
+    final result = await Get.toNamed(
+      '/emergency-contacts',
+      arguments: selectedContacts,
     );
+    if (result != null && result is List<Contact> && mounted) {
+      setState(() {
+        final existingIds = selectedContacts.map((e) => e.id).toSet();
+        for (final contact in result) {
+          final totalNow =
+              apiEmergencyContacts.length + selectedContacts.length;
+          if (!existingIds.contains(contact.id) && totalNow < 3) {
+            selectedContacts.add(contact);
+          }
+        }
+      });
+    }
   }
+
+  // ── Snack ───────────────────────────────────────────────────────────────────
+
+  void _showSnack(String message, {bool isError = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(
+                isError ? Icons.error_outline : Icons.check_circle_outline,
+                color: Colors.white,
+                size: FontSize.s14,
+              ),
+              SizedBox(width: 2.w),
+              Expanded(
+                child: Text(
+                  message,
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: FontSize.s10,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: isError ? _C.danger : _C.teal,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(2.w),
+          ),
+          margin: EdgeInsets.all(4.w),
+        ),
+      );
+  }
+
+  // ── Delete dialog (themed to match TravellerInfoScreen) ────────────────────
 
   void _showDeleteConfirmation(int id, String contactName) {
     showDialog(
       context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black.withOpacity(0.4),
       builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        child: Container(
+          padding: EdgeInsets.all(6.w),
+          decoration: BoxDecoration(
+            color: _C.cardBg,
+            borderRadius: BorderRadius.circular(5.w),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 24,
+                spreadRadius: 2,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Title row
+              Row(
+                children: [
+                  Container(
+                    width: 11.w,
+                    height: 11.w,
+                    decoration: BoxDecoration(
+                      color: _C.danger.withOpacity(0.10),
+                      borderRadius: BorderRadius.circular(3.w),
+                    ),
+                    child: Center(
+                      child: Icon(
+                        Icons.delete_outline_rounded,
+                        color: _C.danger,
+                        size: FontSize.s14,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 3.w),
+                  Text(
+                    'Delete Contact',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: FontSize.s13,
+                      fontWeight: FontWeight.w700,
+                      color: _C.ink,
+                    ),
+                  ),
+                ],
+              ),
+
+              SizedBox(height: 2.h),
+
+              // Contact chip
               Container(
-                width: 56,
-                height: 56,
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(
+                  horizontal: 4.w,
+                  vertical: 1.4.h,
+                ),
                 decoration: BoxDecoration(
-                  color: _C.dangerLight,
-                  shape: BoxShape.circle,
+                  color: _C.fieldBg,
+                  borderRadius: BorderRadius.circular(2.5.w),
+                  border: Border.all(color: _C.fieldBorder),
                 ),
-                child: const Icon(
-                  Icons.delete_outline_rounded,
-                  color: _C.danger,
-                  size: 28,
+                child: Row(
+                  children: [
+                    Container(
+                      width: 9.w,
+                      height: 9.w,
+                      decoration: const BoxDecoration(
+                        color: _C.tealSoft,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(
+                          contactName.isNotEmpty
+                              ? contactName[0].toUpperCase()
+                              : '?',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: FontSize.s12,
+                            fontWeight: FontWeight.w700,
+                            color: _C.teal,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 3.w),
+                    Expanded(
+                      child: Text(
+                        contactName,
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: FontSize.s10,
+                          fontWeight: FontWeight.w600,
+                          color: _C.ink,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
+
+              SizedBox(height: 1.5.h),
+
               Text(
-                'Delete Contact',
+                'This contact will be permanently removed from your emergency contacts and cannot be recovered.',
                 style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: FontSize.s14,
-                  fontWeight: FontWeight.w700,
-                  color: _C.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Are you sure you want to remove $contactName from your emergency contacts?',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: FontSize.s10,
-                  color: _C.textSecond,
+                  fontSize: FontSize.s9,
+                  color: _C.inkMid,
                   height: 1.5,
                 ),
               ),
-              const SizedBox(height: 24),
+
+              SizedBox(height: 2.5.h),
+
+              // Buttons
               Row(
                 children: [
                   Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.of(ctx).pop(),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                    child: GestureDetector(
+                      onTap: () => Navigator.pop(ctx),
+                      child: Container(
+                        height: 5.5.h,
+                        decoration: BoxDecoration(
+                          color: _C.fieldBg,
+                          borderRadius: BorderRadius.circular(2.w),
+                          border: Border.all(color: _C.fieldBorder),
                         ),
-                        side: const BorderSide(color: _C.border, width: 1.5),
-                      ),
-                      child: Text(
-                        'Cancel',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w600,
-                          color: _C.textSecond,
-                          fontSize: FontSize.s10,
+                        child: Center(
+                          child: Text(
+                            'Cancel',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: FontSize.s10,
+                              fontWeight: FontWeight.w600,
+                              color: _C.inkMid,
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 3.w),
                   Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.of(ctx).pop();
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.pop(ctx);
                         _deleteEmergencyContact(id);
                       },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _C.danger,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        height: 5.5.h,
+                        decoration: BoxDecoration(
+                          color: _C.danger,
+                          borderRadius: BorderRadius.circular(2.w),
+                          boxShadow: [
+                            BoxShadow(
+                              color: _C.danger.withOpacity(0.30),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
-                        elevation: 0,
-                      ),
-                      child: Text(
-                        'Delete',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w700,
-                          fontSize: FontSize.s10,
+                        child: Center(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.delete_outline_rounded,
+                                color: Colors.white,
+                                size: FontSize.s12,
+                              ),
+                              SizedBox(width: 1.5.w),
+                              Text(
+                                'Delete',
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: FontSize.s10,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -294,45 +461,15 @@ class _SelectedEmergencyContactsScreenState
   void _removeContact(Contact contact) =>
       setState(() => selectedContacts.remove(contact));
 
-  // FIX: _addMoreContacts uses Get.toNamed (not Get.offNamed)
-  // so the back-stack stays intact:
-  //   Safety → (Manage) SelectedEmergencyContacts
-  //                       → (Add more) EmergencyContacts picker
-  //                                     ← back returns here
-  // Previously Get.offNamed popped this screen first, so returning
-  // from the picker sent the user all the way back to Safety.
-  Future<void> _addMoreContacts() async {
-    final total = apiEmergencyContacts.length + selectedContacts.length;
-    if (total >= 3) {
-      _showSnack('Maximum 3 emergency contacts allowed', isError: true);
-      return;
-    }
-    final result = await Get.toNamed(
-      '/emergency-contacts',
-      arguments: selectedContacts,
-    );
-    if (result != null && result is List<Contact>) {
-      setState(() {
-        final existingIds = selectedContacts.map((e) => e.id).toSet();
-        for (final contact in result) {
-          final totalAfterAdd =
-              apiEmergencyContacts.length + selectedContacts.length;
-          if (!existingIds.contains(contact.id) && totalAfterAdd < 3) {
-            selectedContacts.add(contact);
-          }
-        }
-      });
-    }
-  }
+  // ── UI helpers ──────────────────────────────────────────────────────────────
 
-  // ── UI helpers ──────────────────────────────
-  Widget _buildAvatar(String name, {Color? bgColor, Color? textColor}) {
+  Widget _buildAvatar(String name) {
     final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
     return Container(
       width: 11.w,
       height: 11.w,
-      decoration: BoxDecoration(
-        color: bgColor ?? _C.accentLight,
+      decoration: const BoxDecoration(
+        color: _C.tealSoft,
         shape: BoxShape.circle,
       ),
       child: Center(
@@ -342,7 +479,7 @@ class _SelectedEmergencyContactsScreenState
             fontFamily: 'Poppins',
             fontSize: FontSize.s14,
             fontWeight: FontWeight.w700,
-            color: textColor ?? _C.accent,
+            color: _C.teal,
           ),
         ),
       ),
@@ -353,13 +490,17 @@ class _SelectedEmergencyContactsScreenState
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 36,
-        height: 36,
+        width: 9.w,
+        height: 9.w,
         decoration: BoxDecoration(
-          color: _C.dangerLight,
+          color: _C.danger.withOpacity(0.08),
           shape: BoxShape.circle,
         ),
-        child: const Icon(Icons.close_rounded, color: _C.danger, size: 18),
+        child: Icon(
+          Icons.close_rounded,
+          color: _C.danger,
+          size: FontSize.s12,
+        ),
       ),
     );
   }
@@ -377,82 +518,82 @@ class _SelectedEmergencyContactsScreenState
         ),
       ),
       child: Container(
-        margin: EdgeInsets.only(bottom: 2.h),
+        margin: EdgeInsets.only(bottom: 1.5.h),
+        padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.4.h),
         decoration: BoxDecoration(
           color: _C.cardBg,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: _C.border, width: 1),
+          borderRadius: BorderRadius.circular(3.w),
+          border: Border.all(color: _C.fieldBorder),
           boxShadow: [
             BoxShadow(
-              color: _C.accent.withValues(alpha: 0.06),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 10,
+              spreadRadius: 1,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
-          child: Row(
-            children: [
-              _buildAvatar(contact.name ?? '?'),
-              SizedBox(width: 3.w),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      contact.name ?? 'Unknown',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: FontSize.s11,
-                        fontWeight: FontWeight.w600,
-                        color: _C.textPrimary,
+        child: Row(
+          children: [
+            _buildAvatar(contact.name ?? '?'),
+            SizedBox(width: 3.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    contact.name ?? 'Unknown',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: FontSize.s11,
+                      fontWeight: FontWeight.w600,
+                      color: _C.ink,
+                    ),
+                  ),
+                  SizedBox(height: 0.3.h),
+                  Text(
+                    contact.phone ?? 'No number',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: FontSize.s9,
+                      color: _C.inkMid,
+                    ),
+                  ),
+                  if (contact.relationship != null &&
+                      contact.relationship!.isNotEmpty) ...[
+                    SizedBox(height: 0.5.h),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 2.w,
+                        vertical: 0.3.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _C.tealSoft,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        contact.relationship!,
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: FontSize.s7,
+                          fontWeight: FontWeight.w600,
+                          color: _C.teal,
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      contact.phone ?? 'No number',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: FontSize.s9,
-                        color: _C.textSecond,
-                      ),
-                    ),
-                    if (contact.relationship != null) ...[
-                      const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _C.accentLight,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          contact.relationship!,
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: FontSize.s7,
-                            fontWeight: FontWeight.w600,
-                            color: _C.accent,
-                          ),
-                        ),
-                      ),
-                    ],
                   ],
-                ),
+                ],
               ),
-              _buildDeleteBtn(() {
-                if (contact.id != null) {
-                  _showDeleteConfirmation(
-                    contact.id!,
-                    contact.name ?? 'this contact',
-                  );
-                }
-              }),
-            ],
-          ),
+            ),
+            _buildDeleteBtn(() {
+              if (contact.id != null) {
+                _showDeleteConfirmation(
+                  contact.id!,
+                  contact.name ?? 'this contact',
+                );
+              }
+            }),
+          ],
         ),
       ),
     );
@@ -477,82 +618,81 @@ class _SelectedEmergencyContactsScreenState
         ),
       ),
       child: Container(
-        margin: EdgeInsets.only(bottom: 2.h),
+        margin: EdgeInsets.only(bottom: 1.5.h),
+        padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.4.h),
         decoration: BoxDecoration(
           color: _C.cardBg,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(3.w),
           border: Border.all(
-            color: _C.accent.withValues(alpha: 0.25),
+            color: _C.teal.withOpacity(0.25),
             width: 1.2,
           ),
           boxShadow: [
             BoxShadow(
-              color: _C.accent.withValues(alpha: 0.08),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+              color: _C.teal.withOpacity(0.06),
+              blurRadius: 10,
+              spreadRadius: 1,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
-          child: Row(
-            children: [
-              _buildAvatar(contact.displayName),
-              SizedBox(width: 3.w),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            contact.displayName,
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: FontSize.s11,
-                              fontWeight: FontWeight.w600,
-                              color: _C.textPrimary,
-                            ),
+        child: Row(
+          children: [
+            _buildAvatar(contact.displayName),
+            SizedBox(width: 3.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          contact.displayName,
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: FontSize.s11,
+                            fontWeight: FontWeight.w600,
+                            color: _C.ink,
                           ),
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFFF3BF),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            'Pending',
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: FontSize.s7,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFFE67700),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      phone,
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: FontSize.s9,
-                        color: _C.textSecond,
                       ),
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 2.w,
+                          vertical: 0.3.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFF3BF),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          'Pending',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: FontSize.s7,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFFE67700),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 0.3.h),
+                  Text(
+                    phone,
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: FontSize.s9,
+                      color: _C.inkMid,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              SizedBox(width: 2.w),
-              _buildDeleteBtn(() => _removeContact(contact)),
-            ],
-          ),
+            ),
+            SizedBox(width: 2.w),
+            _buildDeleteBtn(() => _removeContact(contact)),
+          ],
         ),
       ),
     );
@@ -569,13 +709,13 @@ class _SelectedEmergencyContactsScreenState
               width: 18.w,
               height: 18.w,
               decoration: const BoxDecoration(
-                color: _C.accentLight,
+                color: _C.tealSoft,
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.people_outline_rounded,
                 size: 9.w,
-                color: _C.accent,
+                color: _C.teal,
               ),
             ),
             SizedBox(height: 2.h),
@@ -585,7 +725,7 @@ class _SelectedEmergencyContactsScreenState
                 fontFamily: 'Poppins',
                 fontSize: FontSize.s13,
                 fontWeight: FontWeight.w600,
-                color: _C.textPrimary,
+                color: _C.ink,
               ),
             ),
             SizedBox(height: 0.8.h),
@@ -595,7 +735,7 @@ class _SelectedEmergencyContactsScreenState
               style: TextStyle(
                 fontFamily: 'Poppins',
                 fontSize: FontSize.s9,
-                color: _C.textSecond,
+                color: _C.inkMid,
                 height: 1.6,
               ),
             ),
@@ -609,20 +749,21 @@ class _SelectedEmergencyContactsScreenState
     return GestureDetector(
       onTap: _addMoreContacts,
       child: Container(
-        margin: EdgeInsets.only(bottom: 2.h),
-        padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
+        margin: EdgeInsets.only(bottom: 1.5.h),
+        padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.4.h),
         decoration: BoxDecoration(
           color: _C.cardBg,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(3.w),
           border: Border.all(
-            color: _C.accent.withValues(alpha: 0.3),
+            color: _C.teal.withOpacity(0.3),
             width: 1.5,
           ),
           boxShadow: [
             BoxShadow(
-              color: _C.accent.withValues(alpha: 0.06),
+              color: _C.teal.withOpacity(0.06),
               blurRadius: 10,
-              offset: const Offset(0, 3),
+              spreadRadius: 1,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
@@ -631,8 +772,8 @@ class _SelectedEmergencyContactsScreenState
             Container(
               width: 10.w,
               height: 10.w,
-              decoration: BoxDecoration(
-                color: _C.iconBadge,
+              decoration: const BoxDecoration(
+                color: _C.iconBadgeBg,
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -652,7 +793,7 @@ class _SelectedEmergencyContactsScreenState
                       fontFamily: 'Poppins',
                       fontSize: FontSize.s11,
                       fontWeight: FontWeight.w600,
-                      color: _C.textPrimary,
+                      color: _C.ink,
                     ),
                   ),
                   Text(
@@ -660,27 +801,34 @@ class _SelectedEmergencyContactsScreenState
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontSize: FontSize.s8,
-                      color: _C.textMuted,
+                      color: _C.inkLight,
                     ),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.arrow_forward_ios_rounded, color: _C.accent, size: 4.w),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: _C.teal,
+              size: 4.w,
+            ),
           ],
         ),
       ),
     );
   }
 
+  // ── Build ───────────────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
-    final totalContacts = apiEmergencyContacts.length + selectedContacts.length;
+    final totalContacts =
+        apiEmergencyContacts.length + selectedContacts.length;
 
-    return WillPopScope(
-      onWillPop: () async {
-        Get.back(result: selectedContacts);
-        return true;
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) {
+        if (!didPop) Get.back(result: selectedContacts);
       },
       child: Scaffold(
         backgroundColor: _C.bg,
@@ -689,8 +837,8 @@ class _SelectedEmergencyContactsScreenState
           scrolledUnderElevation: 0,
           elevation: 0,
           centerTitle: true,
-          automaticallyImplyLeading: true,
-          iconTheme: const IconThemeData(color: _C.textPrimary),
+          automaticallyImplyLeading: false,
+          iconTheme: const IconThemeData(color: _C.ink),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_rounded),
             onPressed: () => Get.back(result: selectedContacts),
@@ -701,7 +849,7 @@ class _SelectedEmergencyContactsScreenState
               fontFamily: 'Poppins',
               fontSize: FontSize.s14,
               fontWeight: FontWeight.w700,
-              color: _C.textPrimary,
+              color: _NInk.ink,
             ),
           ),
           actions: [
@@ -709,7 +857,7 @@ class _SelectedEmergencyContactsScreenState
               margin: EdgeInsets.only(right: 4.w),
               child: TextButton(
                 style: TextButton.styleFrom(
-                  backgroundColor: _C.iconBadge,
+                  backgroundColor: _C.iconBadgeBg,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 14,
                     vertical: 6,
@@ -733,18 +881,18 @@ class _SelectedEmergencyContactsScreenState
           ],
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(1),
-            child: Container(
-              height: 1,
-              color: _C.textPrimary.withValues(alpha: 0.06),
-            ),
+            child: Container(height: 1, color: _C.divider),
           ),
         ),
         body: Column(
           children: [
-            // Counter header
+            // ── Counter header ─────────────────────────────────────────
             Container(
               width: double.infinity,
-              padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
+              padding: EdgeInsets.symmetric(
+                horizontal: 5.w,
+                vertical: 2.h,
+              ),
               child: Row(
                 children: [
                   Expanded(
@@ -757,7 +905,7 @@ class _SelectedEmergencyContactsScreenState
                             fontFamily: 'Poppins',
                             fontSize: FontSize.s13,
                             fontWeight: FontWeight.w700,
-                            color: _C.textPrimary,
+                            color: _C.ink,
                           ),
                         ),
                         SizedBox(height: 0.3.h),
@@ -766,21 +914,21 @@ class _SelectedEmergencyContactsScreenState
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontSize: FontSize.s9,
-                            color: _C.textSecond,
+                            color: _C.inkMid,
                           ),
                         ),
                       ],
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 3.w,
+                      vertical: 0.6.h,
                     ),
                     decoration: BoxDecoration(
                       color: totalContacts >= 3
                           ? const Color(0xFFFFF3BF)
-                          : _C.accentLight,
+                          : _C.tealSoft,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
@@ -790,12 +938,12 @@ class _SelectedEmergencyContactsScreenState
                           totalContacts >= 3
                               ? Icons.lock_outline_rounded
                               : Icons.person_outline_rounded,
-                          size: 14,
+                          size: FontSize.s10,
                           color: totalContacts >= 3
                               ? const Color(0xFFE67700)
-                              : _C.accent,
+                              : _C.teal,
                         ),
-                        const SizedBox(width: 4),
+                        SizedBox(width: 1.w),
                         Text(
                           '$totalContacts / 3',
                           style: TextStyle(
@@ -804,7 +952,7 @@ class _SelectedEmergencyContactsScreenState
                             fontWeight: FontWeight.w700,
                             color: totalContacts >= 3
                                 ? const Color(0xFFE67700)
-                                : _C.accent,
+                                : _C.teal,
                           ),
                         ),
                       ],
@@ -814,7 +962,7 @@ class _SelectedEmergencyContactsScreenState
               ),
             ),
 
-            // Progress bar
+            // ── Progress bar ───────────────────────────────────────────
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 5.w),
               child: ClipRRect(
@@ -822,9 +970,11 @@ class _SelectedEmergencyContactsScreenState
                 child: LinearProgressIndicator(
                   value: totalContacts / 3,
                   minHeight: 6,
-                  backgroundColor: _C.border,
+                  backgroundColor: _C.fieldBorder,
                   valueColor: AlwaysStoppedAnimation<Color>(
-                    totalContacts >= 3 ? const Color(0xFFFAB005) : _C.accent,
+                    totalContacts >= 3
+                        ? const Color(0xFFFAB005)
+                        : _C.teal,
                   ),
                 ),
               ),
@@ -832,118 +982,136 @@ class _SelectedEmergencyContactsScreenState
 
             SizedBox(height: 1.5.h),
 
-            // Contact list
+            // ── Contact list ───────────────────────────────────────────
             Expanded(
               child: isLoading
-                  ? Center(
+                  ? const Center(
                       child: CircularProgressIndicator(
-                        color: _C.accent,
-                        strokeWidth: 2.5,
+                        color: _C.teal,
+                        strokeWidth: 2,
                       ),
                     )
-                  : (apiEmergencyContacts.isEmpty && selectedContacts.isEmpty)
-                  ? _buildEmptyState()
-                  : ListView(
-                      padding: EdgeInsets.only(
-                        left: 5.w,
-                        right: 5.w,
-                        top: 1.h,
-                        bottom: selectedContacts.isNotEmpty ? 14.h : 3.h,
-                      ),
-                      children: [
-                        // Saved contacts
-                        if (apiEmergencyContacts.isNotEmpty) ...[
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 10),
-                            child: Text(
-                              'SAVED CONTACTS',
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: FontSize.s8,
-                                fontWeight: FontWeight.w700,
-                                color: _C.textMuted,
-                                letterSpacing: 1.2,
-                              ),
-                            ),
+                  : (apiEmergencyContacts.isEmpty &&
+                          selectedContacts.isEmpty)
+                      ? _buildEmptyState()
+                      : ListView(
+                          padding: EdgeInsets.only(
+                            left: 5.w,
+                            right: 5.w,
+                            top: 1.h,
+                            bottom:
+                                selectedContacts.isNotEmpty ? 14.h : 3.h,
                           ),
-                          ...apiEmergencyContacts.asMap().entries.map(
-                            (e) => _buildApiContactCard(e.value, e.key),
-                          ),
-                        ],
-
-                        // Pending contacts
-                        if (selectedContacts.isNotEmpty) ...[
-                          if (apiEmergencyContacts.isNotEmpty)
-                            Padding(
-                              padding: EdgeInsets.symmetric(vertical: 1.h),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Divider(
-                                      color: _C.border,
-                                      thickness: 1,
-                                    ),
+                          children: [
+                            // Saved contacts
+                            if (apiEmergencyContacts.isNotEmpty) ...[
+                              Padding(
+                                padding:
+                                    EdgeInsets.only(bottom: 1.h),
+                                child: Text(
+                                  'SAVED CONTACTS',
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: FontSize.s8,
+                                    fontWeight: FontWeight.w700,
+                                    color: _C.inkLight,
+                                    letterSpacing: 1.2,
                                   ),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                    ),
-                                    child: Text(
-                                      'TO BE SAVED',
-                                      style: TextStyle(
-                                        fontFamily: 'Poppins',
-                                        fontSize: FontSize.s8,
-                                        fontWeight: FontWeight.w700,
-                                        color: _C.textMuted,
-                                        letterSpacing: 1.2,
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Divider(
-                                      color: _C.border,
-                                      thickness: 1,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            )
-                          else
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 10),
-                              child: Text(
-                                'NEW CONTACTS',
-                                style: TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontSize: FontSize.s8,
-                                  fontWeight: FontWeight.w700,
-                                  color: _C.textMuted,
-                                  letterSpacing: 1.2,
                                 ),
                               ),
-                            ),
-                          ...selectedContacts.asMap().entries.map(
-                            (e) => _buildPendingContactCard(e.value, e.key),
-                          ),
-                        ],
+                              ...apiEmergencyContacts
+                                  .asMap()
+                                  .entries
+                                  .map((e) => _buildApiContactCard(
+                                        e.value,
+                                        e.key,
+                                      )),
+                            ],
 
-                        // Add more button
-                        if (totalContacts < 3) _buildAddMoreButton(),
-                      ],
-                    ),
+                            // Pending contacts
+                            if (selectedContacts.isNotEmpty) ...[
+                              if (apiEmergencyContacts.isNotEmpty)
+                                Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: 1.h,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Divider(
+                                          color: _C.fieldBorder,
+                                          thickness: 1,
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 3.w,
+                                        ),
+                                        child: Text(
+                                          'TO BE SAVED',
+                                          style: TextStyle(
+                                            fontFamily: 'Poppins',
+                                            fontSize: FontSize.s8,
+                                            fontWeight: FontWeight.w700,
+                                            color: _C.inkLight,
+                                            letterSpacing: 1.2,
+                                          ),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        child: Divider(
+                                          color: _C.fieldBorder,
+                                          thickness: 1,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              else
+                                Padding(
+                                  padding:
+                                      EdgeInsets.only(bottom: 1.h),
+                                  child: Text(
+                                    'NEW CONTACTS',
+                                    style: TextStyle(
+                                      fontFamily: 'Poppins',
+                                      fontSize: FontSize.s8,
+                                      fontWeight: FontWeight.w700,
+                                      color: _C.inkLight,
+                                      letterSpacing: 1.2,
+                                    ),
+                                  ),
+                                ),
+                              ...selectedContacts
+                                  .asMap()
+                                  .entries
+                                  .map((e) => _buildPendingContactCard(
+                                        e.value,
+                                        e.key,
+                                      )),
+                            ],
+
+                            // Add more
+                            if (totalContacts < 3)
+                              _buildAddMoreButton(),
+                          ],
+                        ),
             ),
           ],
         ),
 
-        // Floating save button
+        // ── Floating save button ───────────────────────────────────────
         bottomNavigationBar: selectedContacts.isNotEmpty
             ? Container(
-                padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
+                padding: EdgeInsets.symmetric(
+                  horizontal: 5.w,
+                  vertical: 2.h,
+                ),
                 decoration: BoxDecoration(
                   color: _C.cardBg,
                   boxShadow: [
                     BoxShadow(
-                      color: CommonColors.blackColor.withValues(alpha: 0.08),
+                      color: Colors.black.withOpacity(0.08),
                       blurRadius: 20,
                       offset: const Offset(0, -4),
                     ),
@@ -959,9 +1127,9 @@ class _SelectedEmergencyContactsScreenState
                       Container(
                         width: 10.w,
                         height: 4,
-                        margin: const EdgeInsets.only(bottom: 16),
+                        margin: const EdgeInsets.only(bottom: 14),
                         decoration: BoxDecoration(
-                          color: _C.border,
+                          color: _C.fieldBorder,
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
@@ -970,21 +1138,22 @@ class _SelectedEmergencyContactsScreenState
                         style: TextStyle(
                           fontFamily: 'Poppins',
                           fontSize: FontSize.s9,
-                          color: _C.textSecond,
+                          color: _C.inkMid,
                         ),
                       ),
                       SizedBox(height: 1.h),
                       CommonButton(
-                        text: 'Save Emergency Contacts',
-                        onPressed: () {
-                          if (!isLoading) _saveEmergencyContacts();
-                        },
-                        gradient: CommonColors.btnGradient,
+                        text: _isSaving
+                            ? 'Saving...'
+                            : 'Save Emergency Contacts',
+                        onPressed:
+                            _isSaving ? () {} : _saveEmergencyContacts,
+                        gradient: CommonColors.filterGradient,
                         textColor: CommonColors.whiteColor,
                         fontWeight: FontWeight.w700,
                         fontSize: FontSize.s12,
                         height: 6.h,
-                        isDisabled: isLoading,
+                        isDisabled: _isSaving,
                       ),
                     ],
                   ),
