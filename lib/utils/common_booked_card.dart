@@ -5,6 +5,7 @@ import '../freezed_models/booking/booking_history_model.dart';
 import 'common_colors.dart';
 import 'common_images.dart';
 import 'screen_constants.dart';
+import 'package:arobo_app/repository/repository.dart';
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS — mirrors CommonTrekCard _TkC
@@ -102,6 +103,8 @@ class CommonBookedCard extends StatelessWidget {
   Widget build(BuildContext context) {
     ScreenConstant.setScreenAwareConstant(context);
 
+    print("image ${booking.trek?.vendor?.businessLogo ?? ''}");
+
     final vendorName   = booking.trek?.vendor?.businessName ?? '-';
     final trekTitle    = booking.trek?.title ?? '-';
     final tbrId        = booking.batch?.tbrId ?? '-';
@@ -190,6 +193,7 @@ class CommonBookedCard extends StatelessWidget {
                 children: [
                   // Vendor logo badge
               CustomNetworkImage(
+                accessToken: Repository.token,
               imageUrl: booking.trek?.vendor?.businessLogo ?? '',
                 width: 10.w,
                 height: 10.w,

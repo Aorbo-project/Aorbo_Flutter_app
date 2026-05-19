@@ -171,6 +171,7 @@ class CommonTrekCard extends StatelessWidget {
   Widget build(BuildContext context) {
     ScreenConstant.setScreenAwareConstant(context);
 
+    print("policy $trek?.cancellationPolicy?.type");
     return GestureDetector(
       onTap: onTap,
       child: Container(

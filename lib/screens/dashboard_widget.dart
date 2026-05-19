@@ -1193,7 +1193,14 @@ import 'dart:developer';
                 margin: EdgeInsets.only(left: 0, right: 0, top: 0, bottom: 5),
                 child: Container(
                   decoration: BoxDecoration(
-                    gradient: CommonColors.homeScreenBgGradient,
+                    gradient: const LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [
+        Color(0xFFFEF200),
+        Color(0xFFFFA000),
+      ],
+    ),
                     borderRadius: BorderRadius.only(
                       bottomLeft: Radius.circular(18),
                       bottomRight: Radius.circular(18),

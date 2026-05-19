@@ -8,24 +8,23 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 
 // ─────────────────────────────────────────────
-//  DESIGN TOKENS  (matched to Traveller Information theme)
+//  DESIGN TOKENS
 // ─────────────────────────────────────────────
 class _C {
-  static const bg        = CommonColors.offWhiteColor;
-  static const cardBg    = CommonColors.whiteColor;
-  static const ink       = CommonColors.blackColor;
-  static const inkMid    = CommonColors.cFF6B7280;
-  static const inkLight  = CommonColors.grey_AEAEAE;
-  static const brand     = CommonColors.trek_route_color;
-  static const teal      = CommonColors.cFF0F7B6C;
-  static const tealSoft  = CommonColors.cFFE6F5F3;
+  static const bg = CommonColors.offWhiteColor;
+  static const cardBg = CommonColors.whiteColor;
+  static const ink = CommonColors.blackColor;
+  static const inkMid = CommonColors.cFF6B7280;
+  static const inkLight = CommonColors.grey_AEAEAE;
+  static const brand = CommonColors.trek_route_color;
+  static const teal = CommonColors.cFF0F7B6C;
+  static const tealSoft = CommonColors.cFFE6F5F3;
   static const iconBadge = CommonColors.cFF111827;
-  static const divider   = CommonColors.trekroutecolorlight;
-  static const shadow    = CommonColors.c0A000000;
+  static const divider = CommonColors.trekroutecolorlight;
+  static const shadow = CommonColors.c0A000000;
 
-  // Accents
-  static final orange    = CommonColors.cFFEA580C;
-  static final redText   = CommonColors.cFFDC2626;
+  static final orange = CommonColors.cFFEA580C;
+  static final redText = CommonColors.cFFDC2626;
   static final redBorder = CommonColors.cFFFFE4E4;
 }
 
@@ -47,7 +46,6 @@ class _MyAccountScreenState extends State<MyAccountScreen>
   late final Animation<Offset> _headerSlide;
   late final Animation<double> _headerFade;
 
-  // Staggered card controllers
   late final List<AnimationController> _cardCtrls;
   late final List<Animation<Offset>> _cardSlides;
   late final List<Animation<double>> _cardFades;
@@ -56,37 +54,42 @@ class _MyAccountScreenState extends State<MyAccountScreen>
   late final Animation<Offset> _logoutSlide;
   late final Animation<double> _logoutFade;
 
-  static const int _cardCount = 5; // 4 groups + logout
+  static const int _cardCount = 5;
 
   @override
   void initState() {
     super.initState();
 
-    // Page fade
     _fadeCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 400),
     )..forward();
-    _fade = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
 
-    // Header slide-down + fade
+    _fade = CurvedAnimation(
+      parent: _fadeCtrl,
+      curve: Curves.easeOut,
+    );
+
     _headerSlideCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
     );
+
     _headerSlide = Tween<Offset>(
       begin: const Offset(0, -0.3),
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _headerSlideCtrl,
-      curve: Curves.easeOutCubic,
-    ));
+    ).animate(
+      CurvedAnimation(
+        parent: _headerSlideCtrl,
+        curve: Curves.easeOutCubic,
+      ),
+    );
+
     _headerFade = CurvedAnimation(
       parent: _headerSlideCtrl,
       curve: Curves.easeOut,
     );
 
-    // Staggered cards (slide-up + fade)
     _cardCtrls = List.generate(
       _cardCount,
       (i) => AnimationController(
@@ -94,209 +97,234 @@ class _MyAccountScreenState extends State<MyAccountScreen>
         duration: const Duration(milliseconds: 500),
       ),
     );
+
     _cardSlides = _cardCtrls
-        .map((c) => Tween<Offset>(
-              begin: const Offset(0, 0.25),
-              end: Offset.zero,
-            ).animate(CurvedAnimation(parent: c, curve: Curves.easeOutCubic)))
-        .toList();
-    _cardFades = _cardCtrls
-        .map((c) => CurvedAnimation(parent: c, curve: Curves.easeOut))
+        .map(
+          (c) => Tween<Offset>(
+            begin: const Offset(0, 0.25),
+            end: Offset.zero,
+          ).animate(
+            CurvedAnimation(
+              parent: c,
+              curve: Curves.easeOutCubic,
+            ),
+          ),
+        )
         .toList();
 
-    // Logout slide-up
+    _cardFades = _cardCtrls
+        .map(
+          (c) => CurvedAnimation(
+            parent: c,
+            curve: Curves.easeOut,
+          ),
+        )
+        .toList();
+
     _logoutCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
     );
+
     _logoutSlide = Tween<Offset>(
       begin: const Offset(0, 0.4),
       end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _logoutCtrl, curve: Curves.easeOutCubic));
-    _logoutFade =
-        CurvedAnimation(parent: _logoutCtrl, curve: Curves.easeOut);
+    ).animate(
+      CurvedAnimation(
+        parent: _logoutCtrl,
+        curve: Curves.easeOutCubic,
+      ),
+    );
+
+    _logoutFade = CurvedAnimation(
+      parent: _logoutCtrl,
+      curve: Curves.easeOut,
+    );
 
     _runStaggeredEntrance();
   }
 
   Future<void> _runStaggeredEntrance() async {
     await Future.delayed(const Duration(milliseconds: 80));
+
+    if (!mounted) return;
     _headerSlideCtrl.forward();
 
     for (int i = 0; i < _cardCount; i++) {
       await Future.delayed(const Duration(milliseconds: 90));
+      if (!mounted) return;
       _cardCtrls[i].forward();
     }
 
     await Future.delayed(const Duration(milliseconds: 80));
+    if (!mounted) return;
     _logoutCtrl.forward();
+  }
+
+  void _goToDashboard() {
+    Get.offAllNamed('/dashboard');
   }
 
   @override
   void dispose() {
     _fadeCtrl.dispose();
     _headerSlideCtrl.dispose();
+
     for (final c in _cardCtrls) {
       c.dispose();
     }
+
     _logoutCtrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _C.bg,
-      appBar: _buildAppBar(),
-      body: FadeTransition(
-        opacity: _fade,
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Animated header
-                SlideTransition(
-                  position: _headerSlide,
-                  child: FadeTransition(
-                    opacity: _headerFade,
-                    child: _buildUserHeader(),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _goToDashboard();
+      },
+      child: Scaffold(
+        backgroundColor: _C.bg,
+        appBar: _buildAppBar(),
+        body: FadeTransition(
+          opacity: _fade,
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SlideTransition(
+                    position: _headerSlide,
+                    child: FadeTransition(
+                      opacity: _headerFade,
+                      child: _buildUserHeader(),
+                    ),
                   ),
-                ),
 
-                SizedBox(height: 2.5.h),
+                  SizedBox(height: 2.5.h),
 
-                // ── GROUP 1: Travel Management ──
-                _buildAnimatedSection(
-                  index: 0,
-                  label: 'TRAVEL MANAGEMENT',
-                  icon: Icons.route_rounded,
-                  child: _buildCard(
-                    children: [
-                      _buildMenuItem(
-                        icon: CommonImages.account,
-                        title: 'Traveller Information',
-                        onTap: () async {
-                          await _userC.getUserProfile();
-                          Get.toNamed('/traveller-information');
-                        },
-                      ),
-                      _buildDivider(),
-                      _buildMenuItem(
-                        icon: CommonImages.appointment,
-                        title: 'My Bookings',
-                        onTap: () => Get.toNamed('/my-bookings'),
-                      ),
-                    ],
+                  _buildAnimatedSection(
+                    index: 0,
+                    label: 'TRAVEL MANAGEMENT',
+                    child: _buildCard(
+                      children: [
+                        _buildMenuItem(
+                          icon: CommonImages.account,
+                          title: 'Traveller Information',
+                          onTap: () async {
+                            await _userC.getUserProfile();
+                            Get.toNamed('/traveller-information');
+                          },
+                        ),
+                        _buildDivider(),
+                        _buildMenuItem(
+                          icon: CommonImages.appointment,
+                          title: 'My Bookings',
+                          onTap: () => Get.toNamed('/my-bookings'),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
 
-                SizedBox(height: 2.h),
+                  SizedBox(height: 2.h),
 
-                // ── GROUP 2: Security & Help ──
-                _buildAnimatedSection(
-                  index: 1,
-                  label: 'SECURITY & HELP',
-                  icon: Icons.shield_outlined,
-                  child: _buildCard(
-                    children: [
-                      _buildMenuItem(
-                        icon: CommonImages.safety,
-                        title: 'Safety',
-                        onTap: () => Get.toNamed('/safety'),
-                      ),
-                      _buildDivider(),
-                      _buildMenuItem(
-                        icon: CommonImages.help,
-                        title: 'Help',
-                        onTap: () => Get.toNamed('/help'),
-                      ),
-                      _buildDivider(),
-                      _buildMenuItem(
-                        icon: CommonImages.notification,
-                        title: 'Notifications',
-                        onTap: () => Get.toNamed('/notifications'),
-                      ),
-                    ],
+                  _buildAnimatedSection(
+                    index: 1,
+                    label: 'SECURITY & HELP',
+                    child: _buildCard(
+                      children: [
+                        _buildMenuItem(
+                          icon: CommonImages.safety,
+                          title: 'Safety',
+                          onTap: () => Get.toNamed('/safety'),
+                        ),
+                        _buildDivider(),
+                        _buildMenuItem(
+                          icon: CommonImages.help,
+                          title: 'Help',
+                          onTap: () => Get.toNamed('/help'),
+                        ),
+                        _buildDivider(),
+                        _buildMenuItem(
+                          icon: CommonImages.notification,
+                          title: 'Notifications',
+                          onTap: () => Get.toNamed('/notifications'),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
 
-                SizedBox(height: 2.h),
+                  SizedBox(height: 2.h),
 
-                // ── GROUP 3: Earnings & Claims ──
-                _buildAnimatedSection(
-                  index: 2,
-                  label: 'EARNINGS & CLAIMS',
-                  icon: Icons.account_balance_wallet_outlined,
-                  child: _buildCard(
-                    children: [
-                      _buildMenuItem(
-                        icon: CommonImages.claims,
-                        title: 'Claims',
-                        onTap: () {},
-                        isComingSoon: true,
-                        // trailingWidget: const _PendingBadge(
-                        //   amount: '₹4,250 Pending',
-                        // ),
-                      ),
-                      _buildDivider(),
-                      _buildMenuItem(
-                        icon: CommonImages.refer,
-                        title: 'Refer & Earn',
-                        onTap: () => Get.toNamed('/refers'),
-                        // trailingWidget: const _GetBadge(label: 'GET ₹500'),
-                      ),
-                    ],
+                  _buildAnimatedSection(
+                    index: 2,
+                    label: 'EARNINGS & CLAIMS',
+                    child: _buildCard(
+                      children: [
+                        _buildMenuItem(
+                          icon: CommonImages.claims,
+                          title: 'Claims',
+                          onTap: () {},
+                          isComingSoon: true,
+                        ),
+                        _buildDivider(),
+                        _buildMenuItem(
+                          icon: CommonImages.refer,
+                          title: 'Refer & Earn',
+                          onTap: () => Get.toNamed('/refers'),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
 
-                SizedBox(height: 2.h),
+                  SizedBox(height: 2.h),
 
-                // ── GROUP 4: More ──
-                _buildAnimatedSection(
-                  index: 3,
-                  label: 'MORE',
-                  icon: Icons.more_horiz_rounded,
-                  child: _buildCard(
-                    children: [
-                      _buildMenuItem(
-                        icon: CommonImages.partner,
-                        title: 'Become Partner',
-                        onTap: () {},
-                        isComingSoon: true,
-                      ),
-                      _buildDivider(),
-                      _buildMenuItem(
-                        icon: CommonImages.rate,
-                        title: 'Rate us',
-                        onTap: () {},
-                        isComingSoon: true,
-                      ),
-                      _buildDivider(),
-                      _buildMenuItem(
-                        icon: CommonImages.info,
-                        title: 'About Aorbo Treks',
-                        onTap: () => Get.toNamed('/about-us'),
-                      ),
-                    ],
+                  _buildAnimatedSection(
+                    index: 3,
+                    label: 'MORE',
+                    child: _buildCard(
+                      children: [
+                        _buildMenuItem(
+                          icon: CommonImages.partner,
+                          title: 'Become Partner',
+                          onTap: () {},
+                          isComingSoon: true,
+                        ),
+                        _buildDivider(),
+                        _buildMenuItem(
+                          icon: CommonImages.rate,
+                          title: 'Rate us',
+                          onTap: () {},
+                          isComingSoon: true,
+                        ),
+                        _buildDivider(),
+                        _buildMenuItem(
+                          icon: CommonImages.info,
+                          title: 'About Aorbo Treks',
+                          onTap: () => Get.toNamed('/about-us'),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
 
-                SizedBox(height: 3.h),
+                  SizedBox(height: 3.h),
 
-                // Animated logout
-                SlideTransition(
-                  position: _logoutSlide,
-                  child: FadeTransition(
-                    opacity: _logoutFade,
-                    child: _buildLogoutButton(),
+                  SlideTransition(
+                    position: _logoutSlide,
+                    child: FadeTransition(
+                      opacity: _logoutFade,
+                      child: _buildLogoutButton(),
+                    ),
                   ),
-                ),
 
-                SizedBox(height: 4.h),
-              ],
+                  SizedBox(height: 4.h),
+                ],
+              ),
             ),
           ),
         ),
@@ -304,15 +332,9 @@ class _MyAccountScreenState extends State<MyAccountScreen>
     );
   }
 
-  // ─────────────────────────────────────────────
-  //  ANIMATED SECTION WRAPPER
-  //  (now mirrors Traveller Info: section header with
-  //   dark icon badge + title, then card below)
-  // ─────────────────────────────────────────────
   Widget _buildAnimatedSection({
     required int index,
     required String label,
-    required IconData icon,
     required Widget child,
   }) {
     return SlideTransition(
@@ -322,7 +344,7 @@ class _MyAccountScreenState extends State<MyAccountScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSectionHeader(label, icon),
+            _buildSectionHeader(label),
             SizedBox(height: 1.2.h),
             child,
           ],
@@ -331,9 +353,6 @@ class _MyAccountScreenState extends State<MyAccountScreen>
     );
   }
 
-  // ─────────────────────────────────────────────
-  //  APP BAR  (matched to Traveller Information)
-  // ─────────────────────────────────────────────
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
       backgroundColor: _C.cardBg,
@@ -345,12 +364,15 @@ class _MyAccountScreenState extends State<MyAccountScreen>
       titleSpacing: 4.w,
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(1),
-        child: Container(height: 1, color: _C.divider),
+        child: Container(
+          height: 1,
+          color: _C.divider,
+        ),
       ),
       title: Row(
         children: [
           GestureDetector(
-            onTap: () => Navigator.of(context).pop(),
+            onTap: _goToDashboard,
             child: const Icon(
               Icons.arrow_back_ios_new_rounded,
               size: 18,
@@ -390,20 +412,21 @@ class _MyAccountScreenState extends State<MyAccountScreen>
     );
   }
 
-  // ─────────────────────────────────────────────
-  //  USER HEADER  (themed card-style profile block)
-  // ─────────────────────────────────────────────
   Widget _buildUserHeader() {
     return Obx(() {
       final customer = _userC.userProfileData.value.customer;
-      final name = (customer?.name?.isNotEmpty == true)
+
+      final name = customer?.name?.isNotEmpty == true
           ? customer!.name!
           : 'Hey there';
-      final subtitle = (customer?.phone?.isNotEmpty == true)
+
+      final subtitle = customer?.phone?.isNotEmpty == true
           ? customer!.phone!.replaceFirst('+91', '+91 ')
           : 'Manage your account & preferences';
-      final initial =
-          (customer?.name?.isNotEmpty == true) ? customer!.name![0].toUpperCase() : '?';
+
+      final initial = customer?.name?.isNotEmpty == true
+          ? customer!.name![0].toUpperCase()
+          : '?';
 
       return Container(
         width: double.infinity,
@@ -427,7 +450,9 @@ class _MyAccountScreenState extends State<MyAccountScreen>
               decoration: BoxDecoration(
                 color: _C.brand.withOpacity(0.10),
                 shape: BoxShape.circle,
-                border: Border.all(color: _C.brand.withOpacity(0.25)),
+                border: Border.all(
+                  color: _C.brand.withOpacity(0.25),
+                ),
               ),
               child: Center(
                 child: Text(
@@ -474,42 +499,22 @@ class _MyAccountScreenState extends State<MyAccountScreen>
     });
   }
 
-  // ─────────────────────────────────────────────
-  //  SECTION HEADER  (dark icon badge + bold title,
-  //  mirrors _sectionHeader from Traveller Info)
-  // ─────────────────────────────────────────────
-  Widget _buildSectionHeader(String title, IconData icon) {
-    return Row(
-      children: [
-        Container(
-          width: 9.w,
-          height: 9.w,
-          decoration: BoxDecoration(
-            color: _C.iconBadge,
-            borderRadius: BorderRadius.circular(2.5.w),
-          ),
-          child: Center(
-            child: Icon(icon, color: Colors.white, size: 4.5.w),
-          ),
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: EdgeInsets.only(left: 1.w),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontFamily: 'Poppins',
+          fontSize: FontSize.s12,
+          fontWeight: FontWeight.w700,
+          color: _C.ink,
+          letterSpacing: 0.4,
         ),
-        SizedBox(width: 3.w),
-        Text(
-          title,
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: FontSize.s12,
-            fontWeight: FontWeight.w700,
-            color: _C.ink,
-            letterSpacing: 0.4,
-          ),
-        ),
-      ],
+      ),
     );
   }
 
-  // ─────────────────────────────────────────────
-  //  CARD  (matched: white bg, rounded 4.w, subtle shadow)
-  // ─────────────────────────────────────────────
   Widget _buildCard({required List<Widget> children}) {
     return Container(
       decoration: BoxDecoration(
@@ -523,13 +528,13 @@ class _MyAccountScreenState extends State<MyAccountScreen>
           ),
         ],
       ),
-      child: Column(mainAxisSize: MainAxisSize.min, children: children),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: children,
+      ),
     );
   }
 
-  // ─────────────────────────────────────────────
-  //  MENU ITEM  (with press-scale animation)
-  // ─────────────────────────────────────────────
   Widget _buildMenuItem({
     required String icon,
     required String title,
@@ -546,9 +551,6 @@ class _MyAccountScreenState extends State<MyAccountScreen>
     );
   }
 
-  // ─────────────────────────────────────────────
-  //  DIVIDER  (matched to Traveller Info divider tone)
-  // ─────────────────────────────────────────────
   Widget _buildDivider() {
     return Container(
       margin: EdgeInsets.only(left: 18.w),
@@ -557,9 +559,6 @@ class _MyAccountScreenState extends State<MyAccountScreen>
     );
   }
 
-  // ─────────────────────────────────────────────
-  //  LOGOUT BUTTON
-  // ─────────────────────────────────────────────
   Widget _buildLogoutButton() {
     return _AnimatedLogoutButton(
       onTap: () => Get.toNamed('/logout'),
@@ -569,7 +568,6 @@ class _MyAccountScreenState extends State<MyAccountScreen>
 
 // ─────────────────────────────────────────────
 //  ANIMATED MENU TILE
-//  — scales down on press, springs back on release
 // ─────────────────────────────────────────────
 class _AnimatedMenuTile extends StatefulWidget {
   final String icon;
@@ -598,6 +596,7 @@ class _AnimatedMenuTileState extends State<_AnimatedMenuTile>
   @override
   void initState() {
     super.initState();
+
     _pressCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 100),
@@ -605,8 +604,15 @@ class _AnimatedMenuTileState extends State<_AnimatedMenuTile>
       lowerBound: 0.0,
       upperBound: 1.0,
     );
-    _scale = Tween<double>(begin: 1.0, end: 0.97).animate(
-      CurvedAnimation(parent: _pressCtrl, curve: Curves.easeInOut),
+
+    _scale = Tween<double>(
+      begin: 1.0,
+      end: 0.97,
+    ).animate(
+      CurvedAnimation(
+        parent: _pressCtrl,
+        curve: Curves.easeInOut,
+      ),
     );
   }
 
@@ -616,27 +622,35 @@ class _AnimatedMenuTileState extends State<_AnimatedMenuTile>
     super.dispose();
   }
 
+  void _handleTapDown(TapDownDetails details) {
+    if (widget.isComingSoon) return;
+    _pressCtrl.forward();
+  }
+
+  void _handleTapUp(TapUpDetails details) {
+    if (widget.isComingSoon) return;
+    _pressCtrl.reverse();
+    widget.onTap?.call();
+  }
+
+  void _handleTapCancel() {
+    if (widget.isComingSoon) return;
+    _pressCtrl.reverse();
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTapDown: widget.isComingSoon
-          ? null
-          : (_) => _pressCtrl.forward(),
-      onTapUp: widget.isComingSoon
-          ? null
-          : (_) {
-              _pressCtrl.reverse();
-              widget.onTap?.call();
-            },
-      onTapCancel:
-          widget.isComingSoon ? null : () => _pressCtrl.reverse(),
+      behavior: HitTestBehavior.opaque,
+      onTapDown: widget.isComingSoon ? null : _handleTapDown,
+      onTapUp: widget.isComingSoon ? null : _handleTapUp,
+      onTapCancel: widget.isComingSoon ? null : _handleTapCancel,
       child: ScaleTransition(
         scale: _scale,
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 1.8.h),
           child: Row(
             children: [
-              // Icon badge — themed to match Traveller Info iconBadge style
               Container(
                 width: 9.w,
                 height: 9.w,
@@ -675,7 +689,11 @@ class _AnimatedMenuTileState extends State<_AnimatedMenuTile>
               if (widget.trailingWidget != null) ...[
                 widget.trailingWidget!,
                 SizedBox(width: 2.w),
-                Icon(Icons.chevron_right, size: 18, color: _C.inkMid),
+                Icon(
+                  Icons.chevron_right,
+                  size: 18,
+                  color: _C.inkMid,
+                ),
               ] else if (widget.isComingSoon) ...[
                 Container(
                   padding: EdgeInsets.symmetric(
@@ -703,7 +721,11 @@ class _AnimatedMenuTileState extends State<_AnimatedMenuTile>
                   color: _C.inkMid,
                 ),
               ] else
-                Icon(Icons.chevron_right, size: 18, color: _C.inkMid),
+                Icon(
+                  Icons.chevron_right,
+                  size: 18,
+                  color: _C.inkMid,
+                ),
             ],
           ),
         ),
@@ -714,11 +736,13 @@ class _AnimatedMenuTileState extends State<_AnimatedMenuTile>
 
 // ─────────────────────────────────────────────
 //  ANIMATED LOGOUT BUTTON
-//  — scales + color-pulses on press
 // ─────────────────────────────────────────────
 class _AnimatedLogoutButton extends StatefulWidget {
   final VoidCallback onTap;
-  const _AnimatedLogoutButton({required this.onTap});
+
+  const _AnimatedLogoutButton({
+    required this.onTap,
+  });
 
   @override
   State<_AnimatedLogoutButton> createState() => _AnimatedLogoutButtonState();
@@ -733,18 +757,32 @@ class _AnimatedLogoutButtonState extends State<_AnimatedLogoutButton>
   @override
   void initState() {
     super.initState();
+
     _ctrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 100),
       reverseDuration: const Duration(milliseconds: 220),
     );
-    _scale = Tween<double>(begin: 1.0, end: 0.97).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
+
+    _scale = Tween<double>(
+      begin: 1.0,
+      end: 0.97,
+    ).animate(
+      CurvedAnimation(
+        parent: _ctrl,
+        curve: Curves.easeInOut,
+      ),
     );
+
     _bgColor = ColorTween(
       begin: CommonColors.whiteColor,
       end: CommonColors.cFFFFE4E4,
-    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+    ).animate(
+      CurvedAnimation(
+        parent: _ctrl,
+        curve: Curves.easeInOut,
+      ),
+    );
   }
 
   @override
@@ -753,15 +791,26 @@ class _AnimatedLogoutButtonState extends State<_AnimatedLogoutButton>
     super.dispose();
   }
 
+  void _handleTapDown(TapDownDetails details) {
+    _ctrl.forward();
+  }
+
+  void _handleTapUp(TapUpDetails details) {
+    _ctrl.reverse();
+    widget.onTap();
+  }
+
+  void _handleTapCancel() {
+    _ctrl.reverse();
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTapDown: (_) => _ctrl.forward(),
-      onTapUp: (_) {
-        _ctrl.reverse();
-        widget.onTap();
-      },
-      onTapCancel: () => _ctrl.reverse(),
+      behavior: HitTestBehavior.opaque,
+      onTapDown: _handleTapDown,
+      onTapUp: _handleTapUp,
+      onTapCancel: _handleTapCancel,
       child: AnimatedBuilder(
         animation: _ctrl,
         builder: (context, child) {
@@ -773,7 +822,10 @@ class _AnimatedLogoutButtonState extends State<_AnimatedLogoutButton>
               decoration: BoxDecoration(
                 color: _bgColor.value,
                 borderRadius: BorderRadius.circular(4.w),
-                border: Border.all(color: _C.redBorder, width: 1.5),
+                border: Border.all(
+                  color: _C.redBorder,
+                  width: 1.5,
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: CommonColors.blackColor.withOpacity(0.05),
@@ -789,7 +841,11 @@ class _AnimatedLogoutButtonState extends State<_AnimatedLogoutButton>
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.logout_rounded, color: _C.redText, size: 18),
+            Icon(
+              Icons.logout_rounded,
+              color: _C.redText,
+              size: 18,
+            ),
             SizedBox(width: 2.w),
             Text(
               'Logout Account',
@@ -808,7 +864,7 @@ class _AnimatedLogoutButtonState extends State<_AnimatedLogoutButton>
 }
 
 // ─────────────────────────────────────────────
-//  LANGUAGE CHIP  (🌐 ENG ▾)
+//  LANGUAGE CHIP
 // ─────────────────────────────────────────────
 class _LanguageChip extends StatelessWidget {
   const _LanguageChip();
@@ -822,12 +878,19 @@ class _LanguageChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: CommonColors.whiteColor,
           borderRadius: BorderRadius.circular(2.5.w),
-          border: Border.all(color: CommonColors.cFFE5E7EB, width: 1),
+          border: Border.all(
+            color: CommonColors.cFFE5E7EB,
+            width: 1,
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.language_rounded, size: 14, color: _C.inkMid),
+            Icon(
+              Icons.language_rounded,
+              size: 14,
+              color: _C.inkMid,
+            ),
             SizedBox(width: 1.w),
             Text(
               'ENG',
@@ -852,11 +915,14 @@ class _LanguageChip extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────
-//  PENDING BADGE  (₹4,250 Pending)
+//  PENDING BADGE
 // ─────────────────────────────────────────────
 class _PendingBadge extends StatelessWidget {
   final String amount;
-  const _PendingBadge({required this.amount});
+
+  const _PendingBadge({
+    required this.amount,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -865,7 +931,10 @@ class _PendingBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: CommonColors.cFFFFF7ED,
         borderRadius: BorderRadius.circular(2.w),
-        border: Border.all(color: CommonColors.cFFFED7AA, width: 1),
+        border: Border.all(
+          color: CommonColors.cFFFED7AA,
+          width: 1,
+        ),
       ),
       child: Text(
         amount,
@@ -879,32 +948,3 @@ class _PendingBadge extends StatelessWidget {
     );
   }
 }
-
-// ─────────────────────────────────────────────
-//  GET BADGE  (GET ₹500) — commented out / kept for future use
-// ─────────────────────────────────────────────
-// class _GetBadge extends StatelessWidget {
-//   final String label;
-//   const _GetBadge({required this.label});
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return Container(
-//       padding: EdgeInsets.symmetric(horizontal: 2.5.w, vertical: 0.4.h),
-//       decoration: BoxDecoration(
-//         color: _C.orange,
-//         borderRadius: BorderRadius.circular(2.w),
-//       ),
-//       child: Text(
-//         label,
-//         style: TextStyle(
-//           fontFamily: 'Poppins',
-//           fontSize: FontSize.s8,
-//           fontWeight: FontWeight.w700,
-//           color: CommonColors.whiteColor,
-//           letterSpacing: 0.3,
-//         ),
-//       ),
-//     );
-//   }
-// }

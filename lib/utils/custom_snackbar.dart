@@ -87,87 +87,76 @@ class _AnimatedSnackBarContentState extends State<_AnimatedSnackBarContent>
   }
 
   @override
-  Widget build(BuildContext context) {
-    // Calculate the constraints for the message
-    final TextPainter textPainter = TextPainter(
-      text: TextSpan(
-        text: widget.message,
-        style: GoogleFonts.poppins(
-          fontSize: FontSize.s10,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-      maxLines: 2,
-      textDirection: TextDirection.ltr,
-    )..layout(maxWidth: 80.w);
+Widget build(BuildContext context) {
+  // Calculate max available width for the text (excluding icon and padding)
+  final double maxTextWidth = 80.w; // or any value that fits your layout
 
-    // Calculate container width based on text width plus padding and icon
-    final double containerWidth = textPainter.width + widget.height + 8.w;
-    final double finalWidth = containerWidth.clamp(40.w, 92.w);
-
-    return SlideTransition(
-      position: _slideAnimation,
-      child: FadeTransition(
-        opacity: _fadeAnimation,
-        child: Center(
-          child: Container(
-            width: finalWidth,
-            height: widget.height,
-            decoration: BoxDecoration(
-              color: Color(0xFF61D5C7),
-              borderRadius: BorderRadius.circular(widget.height / 2),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 4,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  height: widget.height,
-                  width: widget.height,
-                  padding: EdgeInsets.all(1.5.w),
-                  decoration: BoxDecoration(
-                    color: Color(0xFFFFEB3B),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 4,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Image.asset(
-                    CommonImages.logo3,
-                    fit: BoxFit.contain,
-                  ),
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 3.w),
-                    child: Text(
-                      widget.message,
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.poppins(
-                        fontSize: FontSize.s10,
-                        color: Colors.black87,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+  // The container will now have a minimum height but can grow
+  return SlideTransition(
+    position: _slideAnimation,
+    child: FadeTransition(
+      opacity: _fadeAnimation,
+      child: Center(
+        child: Container(
+          constraints: BoxConstraints(
+            minHeight: widget.height, // keep the original pill height as minimum
+            maxWidth: 92.w,           // prevent it from touching screen edges
+          ),
+          decoration: BoxDecoration(
+            color: Color(0xFF61D5C7),
+            borderRadius: BorderRadius.circular(widget.height / 2),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 4,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                height: widget.height,
+                width: widget.height,
+                padding: EdgeInsets.all(1.5.w),
+                decoration: BoxDecoration(
+                  color: Color(0xFFFFEB3B),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 4,
+                      offset: Offset(0, 2),
                     ),
+                  ],
+                ),
+                child: Image.asset(
+                  CommonImages.logo3,
+                  fit: BoxFit.contain,
+                ),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 2.h),
+                  child: Text(
+                    widget.message,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(
+                      fontSize: FontSize.s10,
+                      color: Colors.black87,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    // *** Removed maxLines and overflow ***
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
