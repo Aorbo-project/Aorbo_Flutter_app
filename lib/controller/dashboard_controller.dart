@@ -193,28 +193,36 @@ class DashboardController extends GetxController {
   }
 
   static String convertDateYYYYMMDD(String date) {
-    if (date.isEmpty) return '';
+  if (date.isEmpty) return '';
 
-    try {
-      DateFormat inputFormat;
+  try {
 
-      // Detect the format
-      if (date.contains('/')) {
-        inputFormat = DateFormat('dd/MM/yyyy');
-      } else if (date.contains('-')) {
-        inputFormat = DateFormat('dd-MM-yyyy');
-      } else {
-        throw FormatException('Unknown date separator');
-      }
-
-      final inputDate = inputFormat.parse(date);
-      final outputFormat = DateFormat('yyyy-MM-dd');
-      return outputFormat.format(inputDate);
-    } catch (e) {
-      logger.w('Invalid date format: $e');
-      return '';
+    // Already correct format
+    if (RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(date)) {
+      return date;
     }
+
+    DateTime parsedDate;
+
+    // dd/MM/yyyy
+    if (date.contains('/')) {
+      parsedDate = DateFormat('dd/MM/yyyy').parseStrict(date);
+
+    // dd-MM-yyyy
+    } else if (date.contains('-')) {
+      parsedDate = DateFormat('dd-MM-yyyy').parseStrict(date);
+
+    } else {
+      throw FormatException('Unknown date format');
+    }
+
+    return DateFormat('yyyy-MM-dd').format(parsedDate);
+
+  } catch (e) {
+    logger.w('Invalid date format: $e');
+    return '';
   }
+}
 
   Future<void> fetchCalenderTrekDates({
     required int cityId,
@@ -247,6 +255,7 @@ class DashboardController extends GetxController {
           if (responseData.data?.dates != null && responseData.data?.dates?.isNotEmpty == true) {
             for (var dateData in (responseData.data?.dates ?? [])) {
               if (dateData.date != null && dateData.available == true) {
+                print('API DATE: ${dateData.date}');
                 availableDates[dateData.date!] = dateData.trekCount ?? 0;
               }
             }
@@ -277,19 +286,25 @@ class DashboardController extends GetxController {
   }
 
   void _autoSelectFirstAvailableDate() {
-    if (availableDates.isEmpty) return;
+  if (availableDates.isEmpty) return;
 
-    // Get the first available date from the map
-    final firstDateStr = availableDates.keys.first;
-    final firstDate = DateTime.tryParse(firstDateStr);
+  final firstDateStr = availableDates.keys.first;
+  final firstDate = DateTime.tryParse(firstDateStr);
 
-    if (firstDate != null) {
-      logger.d('Auto-selecting first available date: $firstDateStr');
-      selectedDate.value = firstDate;
-      dateController.value.text = DateFormat('dd/MM/yyyy').format(firstDate);
-      dateController.refresh();
-    }
+  print('FIRST DATE STRING: $firstDateStr');
+  print('PARSED DATE: $firstDate');
+
+  if (firstDate != null) {
+    logger.d('Auto-selecting first available date: $firstDateStr');
+
+    selectedDate.value = firstDate;
+
+    dateController.value.text =
+        DateFormat('dd/MM/yyyy').format(firstDate);
+
+    dateController.refresh();
   }
+}
 
   bool isDateAvailable(DateTime? date) {
     if (date == null) return false;

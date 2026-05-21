@@ -179,29 +179,36 @@ class TrekController extends GetxController {
 
 
   static String convertDateYYYYMMDD(String date) {
-    if (date.isEmpty) return '';
+  if (date.isEmpty) return '';
 
-    try {
-      DateFormat inputFormat;
+  try {
 
-      // Detect the format
-      if (date.contains('/')) {
-        inputFormat = DateFormat('dd/MM/yyyy');
-      } else if (date.contains('-')) {
-        inputFormat = DateFormat('dd-MM-yyyy');
-      } else {
-        throw FormatException('Unknown date separator');
-      }
-
-      final inputDate = inputFormat.parse(date);
-      final outputFormat = DateFormat('yyyy-MM-dd');
-      return outputFormat.format(inputDate);
-    } catch (e) {
-      logger.w('Invalid date format: $e');
-      return '';
+    // Already correct format
+    if (RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(date)) {
+      return date;
     }
-  }
 
+    DateTime parsedDate;
+
+    // dd/MM/yyyy
+    if (date.contains('/')) {
+      parsedDate = DateFormat('dd/MM/yyyy').parseStrict(date);
+
+    // dd-MM-yyyy
+    } else if (date.contains('-')) {
+      parsedDate = DateFormat('dd-MM-yyyy').parseStrict(date);
+
+    } else {
+      throw FormatException('Unknown date format');
+    }
+
+    return DateFormat('yyyy-MM-dd').format(parsedDate);
+
+  } catch (e) {
+    logger.w('Invalid date format: $e');
+    return '';
+  }
+}
 
 
 
