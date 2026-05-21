@@ -60,13 +60,18 @@ class NetworkUrl {
 
 
   static String fetchWeekEndTreks(
-      String fromLocation,
-      String toLocation,
-      String startDate,
-      int page,
-      int limit,
-      ) => 'treks?from_location=$fromLocation&to_location=$toLocation&selected_date=$startDate&weekend_mode=true&page$page&limit=$limit';
-
+  String fromLocation,
+  String toLocation,
+  String startDate,
+  int page,
+  int limit,
+) =>
+    'treks?from_location=$fromLocation'
+    '&to_location=$toLocation'
+    '&selected_date=$startDate'
+    '&weekend_mode=true'
+    '&page=$page'
+    '&limit=$limit';
 
 
   static String searchCalenderTrekDates(
