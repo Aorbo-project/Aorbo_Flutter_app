@@ -21,29 +21,51 @@ class SeasonalForecastDataResponseModel with _$SeasonalForecastDataResponseModel
 class SeasonalForecastData with _$SeasonalForecastData {
   const factory SeasonalForecastData({
     String? title,
+
     String? description,
+
+    @JsonKey(name: 'imagePath')
     String? imagePath,
-    List<String>? gradient,
+
+    String? color,
+
+    List<dynamic>? gradient,
+
     String? textColour,
-    StylingModel? styling
+
+    StylingModel? styling,
   }) = _SeasonalForecastData;
 
-  factory SeasonalForecastData.fromJson(Map<String, dynamic> json) => _$SeasonalForecastDataFromJson(json);
+  factory SeasonalForecastData.fromJson(Map<String, dynamic> json) =>
+      _$SeasonalForecastDataFromJson(json);
 }
-
+ 
 @freezed
 class StylingModel with _$StylingModel {
   const factory StylingModel({
-    TitleStylingModel? title
+
+    dynamic card,
+
+    dynamic header,
+
+    TitleStylingModel? title,
+
+    dynamic icon,
+
+    BodyStylingModel? body,
+
   }) = _StylingModel;
 
-  factory StylingModel.fromJson(Map<String, dynamic> json) => _$StylingModelFromJson(json);
+  factory StylingModel.fromJson(
+    Map<String, dynamic> json,
+  ) =>
+      _$StylingModelFromJson(json);
 }
 
 @freezed
 class TitleStylingModel with _$TitleStylingModel {
   const factory TitleStylingModel({
-    List<String>? gradient,
+List<dynamic>? gradient,
     String? textColour,
     String? icon
   }) = _TitleStylingModel;
@@ -51,7 +73,45 @@ class TitleStylingModel with _$TitleStylingModel {
   factory TitleStylingModel.fromJson(Map<String, dynamic> json) => _$TitleStylingModelFromJson(json);
 }
 
+@freezed
+class BodyStylingModel with _$BodyStylingModel {
+  const factory BodyStylingModel({
 
+    dynamic padding,
+
+    GradientStylingModel? gradient,
+
+    dynamic borderRadiusBottom,
+
+  }) = _BodyStylingModel;
+
+  factory BodyStylingModel.fromJson(
+    Map<String, dynamic> json,
+  ) =>
+      _$BodyStylingModelFromJson(json);
+}
+
+@freezed
+class GradientStylingModel
+    with _$GradientStylingModel {
+
+  const factory GradientStylingModel({
+
+    List<String>? colors,
+
+    String? direction,
+
+    List<double>? start,
+
+    List<double>? end,
+
+  }) = _GradientStylingModel;
+
+  factory GradientStylingModel.fromJson(
+    Map<String, dynamic> json,
+  ) =>
+      _$GradientStylingModelFromJson(json);
+}
 
 final List<Map<String, dynamic>> seasonalForecastData = [
   {

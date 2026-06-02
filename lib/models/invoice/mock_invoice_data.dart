@@ -4,8 +4,6 @@
 // ⚠️  REMOVE THIS FILE after API integration is complete
 // ─────────────────────────────────────────────────────────────────────────────
 
-
-
 import '../../freezed_models/treks/trek_detail_model.dart';
 import 'invoice_model.dart';
 
@@ -100,7 +98,7 @@ const _mockDisclaimerSection = DisclaimerData(
 final _mockStandardPolicy = CancellationPolicy(
   type: "standard",
   title: 'Cancellation Policy (Standard)',
-  rules:  [
+  rules: [
     Rules(
       rule: 'Cancelled before Thu, 19 Dec 12:00 PM',
       deduction: '20% (₹1,200)',
@@ -132,22 +130,10 @@ final _mockFlexiblePolicy = CancellationPolicy(
   type: "flexible",
   title: 'Flexible Policy',
   rules: [
-    Rules(
-      rule: 'Advance Payment (₹999)',
-      deduction: 'Non-refundable',
-    ),
-    Rules(
-      rule: 'Full Payment Made',
-      deduction: '₹999 hold, refund processed',
-    ),
-    Rules(
-      rule: 'Cancellation Notice',
-      deduction: '1 day(s) before trek',
-    ),
-    Rules(
-      rule: 'Within 24 hours of departure',
-      deduction: '100% (₹4,735)',
-    ),
+    Rules(rule: 'Advance Payment (₹999)', deduction: 'Non-refundable'),
+    Rules(rule: 'Full Payment Made', deduction: '₹999 hold, refund processed'),
+    Rules(rule: 'Cancellation Notice', deduction: '1 day(s) before trek'),
+    Rules(rule: 'Within 24 hours of departure', deduction: '100% (₹4,735)'),
   ],
   descriptionPoints: [
     'GST and taxes are non-refundable. The advance secures your slot and is non-refundable upon cancellation.',
@@ -167,111 +153,111 @@ class MockInvoiceData {
 
   /// Template 1 — Standard Policy, Full Payment, Paid
   static InvoiceModel get standardFullPaid => InvoiceModel(
-        bookingDate: DateTime(2025, 7, 21, 14, 44),
-        vendor: _mockVendor,
-        aorbo: _mockAorbo,
-        banner: TrekBanner(
-          trekName: 'Gokarna & Dandeli',
-          trekSubtitle: 'A round-trip trek covering',
-          bookingId: 'AOB123456789',
-          tbrId: 'TBR987654321',
-          departureCity: 'Hyderabad',
-          departureDateTime: DateTime(2024, 12, 22, 15, 50),
-          returnCity: 'Hyderabad',
-          returnDateTime: DateTime(2024, 12, 25, 17, 45),
-          duration: '3D/2N',
-        ),
-        trekDetails: _mockTrekDetails,
-        travellers: _mockTravellers,
-        payment: const PaymentDetails(
-          baseFare: 6000,
-          couponDiscount: 500,
-          finalBaseFare: 5500,
-          gstRate: 0.05,
-          gstAmount: 275,
-          platformFee: 10,
-          totalAmount: 5984,
-          status: InvoiceStatus.paid,
-          freeCancellation: FreeCancellationAddon(
-            amount: 199,
-            policyId: 'FC-20241222-001',
-          ),
-          travelInsurance: TravelInsuranceAddon(
-            amount: 200,
-            policyId: 'TI-20241222-001',
-          ),
-        ),
-        cancellationPolicy: _mockStandardPolicy,
-        serviceStartTime: '10:00',
-        disclaimer: _mockDisclaimerSection,
-      );
+    bookingDate: DateTime(2025, 7, 21, 14, 44),
+    vendor: _mockVendor,
+    aorbo: _mockAorbo,
+    banner: TrekBanner(
+      trekName: 'Gokarna & Dandeli',
+      trekSubtitle: 'A round-trip trek covering',
+      bookingId: 'AOB123456789',
+      tbrId: 'TBR987654321',
+      departureCity: 'Hyderabad',
+      departureDateTime: DateTime(2024, 12, 22, 15, 50),
+      returnCity: 'Hyderabad',
+      returnDateTime: DateTime(2024, 12, 25, 17, 45),
+      duration: '3D/2N',
+    ),
+    trekDetails: _mockTrekDetails,
+    travellers: _mockTravellers,
+    payment: const PaymentDetails(
+      baseFare: 6000,
+      couponDiscount: 500,
+      finalBaseFare: 5500,
+      gstRate: 0.05,
+      gstAmount: 275,
+      platformFee: 10,
+      totalAmount: 5984,
+      status: InvoiceStatus.paid,
+      freeCancellation: FreeCancellationAddon(
+        amount: 199,
+        policyId: 'FC-20241222-001',
+      ),
+      travelInsurance: TravelInsuranceAddon(
+        amount: 200,
+        policyId: 'TI-20241222-001',
+      ),
+    ),
+    cancellationPolicy: _mockStandardPolicy,
+    serviceStartTime: '10:00',
+    disclaimer: _mockDisclaimerSection,
+  );
 
   /// Template 2 — Flexible Policy, Full Payment, Paid
   static InvoiceModel get flexibleFullPaid => InvoiceModel(
-        bookingDate: DateTime(2025, 7, 21, 14, 44),
-        vendor: _mockVendor,
-        aorbo: _mockAorbo,
-        banner: TrekBanner(
-          trekName: 'Gokarna & Dandeli',
-          trekSubtitle: 'A round-trip trek covering',
-          bookingId: 'AOB123456790',
-          tbrId: 'TBR987654322',
-          departureCity: 'Hyderabad',
-          departureDateTime: DateTime(2024, 12, 22, 15, 50),
-          returnCity: 'Hyderabad',
-          returnDateTime: DateTime(2024, 12, 25, 17, 45),
-          duration: '3D/2N',
-        ),
-        trekDetails: _mockTrekDetails,
-        travellers: _mockTravellers,
-        payment: const PaymentDetails(
-          baseFare: 5000,
-          couponDiscount: 500,
-          finalBaseFare: 4500,
-          gstRate: 0.05,
-          gstAmount: 225,
-          platformFee: 10,
-          totalAmount: 4735,
-          status: InvoiceStatus.paid,
-        ),
-        cancellationPolicy: _mockFlexiblePolicy,
-        serviceStartTime: '10:00',
-        disclaimer: _mockDisclaimerSection,
-      );
+    bookingDate: DateTime(2025, 7, 21, 14, 44),
+    vendor: _mockVendor,
+    aorbo: _mockAorbo,
+    banner: TrekBanner(
+      trekName: 'Gokarna & Dandeli',
+      trekSubtitle: 'A round-trip trek covering',
+      bookingId: 'AOB123456790',
+      tbrId: 'TBR987654322',
+      departureCity: 'Hyderabad',
+      departureDateTime: DateTime(2024, 12, 22, 15, 50),
+      returnCity: 'Hyderabad',
+      returnDateTime: DateTime(2024, 12, 25, 17, 45),
+      duration: '3D/2N',
+    ),
+    trekDetails: _mockTrekDetails,
+    travellers: _mockTravellers,
+    payment: const PaymentDetails(
+      baseFare: 5000,
+      couponDiscount: 500,
+      finalBaseFare: 4500,
+      gstRate: 0.05,
+      gstAmount: 225,
+      platformFee: 10,
+      totalAmount: 4735,
+      status: InvoiceStatus.paid,
+    ),
+    cancellationPolicy: _mockFlexiblePolicy,
+    serviceStartTime: '10:00',
+    disclaimer: _mockDisclaimerSection,
+  );
 
   /// Template 3 — Flexible Policy, Advance Payment, Partially Paid
   static InvoiceModel get flexibleAdvancePaid => InvoiceModel(
-        bookingDate: DateTime(2025, 7, 21, 14, 44),
-        vendor: _mockVendor,
-        aorbo: _mockAorbo,
-        banner: TrekBanner(
-          trekName: 'Gokarna & Dandeli',
-          trekSubtitle: 'A round-trip trek covering',
-          bookingId: 'AOB123456791',
-          tbrId: 'TBR987654323',
-          departureCity: 'Hyderabad',
-          departureDateTime: DateTime(2024, 12, 22, 15, 50),
-          returnCity: 'Hyderabad',
-          returnDateTime: DateTime(2024, 12, 25, 17, 45),
-          duration: '3D/2N',
-        ),
-        trekDetails: _mockTrekDetails,
-        travellers: _mockTravellers,
-        payment: const PaymentDetails(
-          baseFare: 5000,
-          couponDiscount: 500,
-          finalBaseFare: 4500,
-          gstRate: 0.05,
-          gstAmount: 225,
-          platformFee: 10,
-          totalAmount: 4735,
-          status: InvoiceStatus.partiallyPaid,
-          // Trek Advance = ₹999 (admin-config) + GST + PF
-          trekAdvanceAmount: 1234,
-          balanceDue: 3501,
-        ),
-        cancellationPolicy: _mockFlexiblePolicy,
-        serviceStartTime: '10:00',
-        disclaimer: _mockDisclaimerSection,
-      );
+    bookingDate: DateTime(2025, 7, 21, 14, 44),
+    vendor: _mockVendor,
+    aorbo: _mockAorbo,
+    banner: TrekBanner(
+      trekName: 'Gokarna & Dandeli',
+      trekSubtitle: 'A round-trip trek covering',
+      bookingId: 'AOB123456791',
+      tbrId: 'TBR987654323',
+      departureCity: 'Hyderabad',
+      departureDateTime: DateTime(2024, 12, 22, 15, 50),
+      returnCity: 'Hyderabad',
+      returnDateTime: DateTime(2024, 12, 25, 17, 45),
+      duration: '3D/2N',
+    ),
+    trekDetails: _mockTrekDetails,
+    travellers: _mockTravellers,
+    payment: const PaymentDetails(
+      baseFare: 5000,
+      couponDiscount: 500,
+      finalBaseFare: 4500,
+      gstRate: 0.05,
+      gstAmount: 225,
+      platformFee: 10,
+      totalAmount: 4735,
+      status: InvoiceStatus.partiallyPaid,
+      // Trek Advance = ₹999 (admin-config) + GST + PF
+      trekAdvanceAmount: 1234,
+      balanceDue: 3501,
+    ),
+    cancellationPolicy: _mockFlexiblePolicy,
+    serviceStartTime: '10:00',
+    disclaimer: _mockDisclaimerSection,
+  );
 }

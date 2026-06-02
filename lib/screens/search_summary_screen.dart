@@ -406,14 +406,100 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
         orElse: () => false,
       );
 
-      final treks =
-          _trekC.treksResponseObserver.value.data.value.maybeWhen(
-        success: (data) {
-          if (data is FetchTreksResponseModel) {
-            return data.data ?? <TrekData>[];
-          }
-          return <TrekData>[];
-        },
+     final treks =
+    _trekC.treksResponseObserver.value.data.value.maybeWhen(
+  success: (data) {
+    if (data is FetchTreksResponseModel) {
+
+      List<TrekData> filteredTreks =
+          List<TrekData>.from(data.data ?? []);
+
+      // ─────────────────────────────
+      // POLICY FILTER
+      // ─────────────────────────────
+      if (activeFilters.contains('Flexible')) {
+        filteredTreks = filteredTreks.where((trek) {
+          return trek.cancellationPolicy?.title
+                  ?.toLowerCase()
+                  .contains('flexible') ==
+              true;
+        }).toList();
+      }
+
+      if (activeFilters.contains('Standard')) {
+        filteredTreks = filteredTreks.where((trek) {
+          return trek.cancellationPolicy?.title
+                  ?.toLowerCase()
+                  .contains('standard') ==
+              true;
+        }).toList();
+      }
+
+      if (activeFilters.contains('Strict')) {
+        filteredTreks = filteredTreks.where((trek) {
+          return trek.cancellationPolicy?.title
+                  ?.toLowerCase()
+                  .contains('strict') ==
+              true;
+        }).toList();
+      }
+
+      // ─────────────────────────────
+      // RATING FILTER
+      // ─────────────────────────────
+      if (activeFilters.contains('4.5+ Stars')) {
+        filteredTreks = filteredTreks.where((t) {
+          return (t.rating ?? 0) >= 4.5;
+        }).toList();
+      }
+
+      if (activeFilters.contains('4+ Stars')) {
+        filteredTreks = filteredTreks.where((t) {
+          return (t.rating ?? 0) >= 4;
+        }).toList();
+      }
+
+      if (activeFilters.contains('3.5+ Stars')) {
+        filteredTreks = filteredTreks.where((t) {
+          return (t.rating ?? 0) >= 3.5;
+        }).toList();
+      }
+
+      // ─────────────────────────────
+      // SORTING
+      // ─────────────────────────────
+      if (activeFilters.contains('Price: Low → High')) {
+        filteredTreks.sort((a, b) {
+          final aPrice =
+              double.tryParse(a.price ?? '0') ?? 0;
+          final bPrice =
+              double.tryParse(b.price ?? '0') ?? 0;
+          return aPrice.compareTo(bPrice);
+        });
+      }
+
+      if (activeFilters.contains('Price: High → Low')) {
+        filteredTreks.sort((a, b) {
+          final aPrice =
+              double.tryParse(a.price ?? '0') ?? 0;
+          final bPrice =
+              double.tryParse(b.price ?? '0') ?? 0;
+          return bPrice.compareTo(aPrice);
+        });
+      }
+
+      if (activeFilters.contains('Top Rated')) {
+        filteredTreks.sort((a, b) {
+          return (b.rating ?? 0)
+              .compareTo(a.rating ?? 0);
+        });
+      }
+
+      return filteredTreks;
+    }
+
+    return <TrekData>[];
+  },
         error: (_) => <TrekData>[],
         orElse: () => List.generate(4, (_) => const TrekData()),
       );

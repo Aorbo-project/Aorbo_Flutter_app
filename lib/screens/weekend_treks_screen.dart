@@ -6,26 +6,24 @@ import 'package:arobo_app/utils/common_trek_card.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:shimmer_ai/shimmer_ai.dart';
 import 'package:sizer/sizer.dart';
 
 import '../freezed_models/treks/treks_model_data.dart';
 
-// ─────────────────────────────────────────────
-//  DESIGN TOKENS
-// ─────────────────────────────────────────────
 class _W {
-  static const bg          = Color(0xFFF4F7FF);
-  static const cardBg      = CommonColors.whiteColor;
-  static const ink         = CommonColors.cFF111827;
-  static const inkMid      = CommonColors.cFF6B7280;
-  static const inkLight    = CommonColors.grey_AEAEAE;
-  static const teal        = CommonColors.appBgColor;
-  static const tealSoft    = Color(0xFFE6F7F6);
-  static const iconBadge   = CommonColors.cFF111827;
-  static const divider     = CommonColors.trekroutecolorlight;
-  static const shadow      = CommonColors.c0A000000;
-  static const brand       = CommonColors.lightBlueColor3;
+  static const bg        = Color(0xFFF4F7FF);
+  static const cardBg    = CommonColors.whiteColor;
+  static const ink       = CommonColors.cFF111827;
+  static const inkMid    = CommonColors.cFF6B7280;
+  static const inkLight  = CommonColors.grey_AEAEAE;
+  static const teal      = CommonColors.appBgColor;
+  static const tealSoft  = Color(0xFFE6F7F6);
+  static const iconBadge = CommonColors.cFF111827;
+  static const divider   = CommonColors.trekroutecolorlight;
+  static const shadow    = CommonColors.c0A000000;
+  static const brand     = CommonColors.lightBlueColor3;
 }
 
 class WeekendTreksScreen extends StatefulWidget {
@@ -49,7 +47,6 @@ class WeekendTreksScreen extends StatefulWidget {
 class _WeekendTreksScreenState extends State<WeekendTreksScreen>
     with SingleTickerProviderStateMixin {
 
-  // ── Same controllers & state as original ────
   final ScrollController    _scrollController = ScrollController();
   final TrekController      _trekC            = Get.find<TrekController>();
   final DashboardController _dashboardC       = Get.find<DashboardController>();
@@ -57,9 +54,17 @@ class _WeekendTreksScreenState extends State<WeekendTreksScreen>
   late final AnimationController _fadeCtrl;
   late final Animation<double>   _fadeAnim;
 
+  // ── Local selected date — never touched by Obx ──
+  String? _selectedDate;
+
   @override
   void initState() {
     super.initState();
+
+    // Convert the initial date to yyyy-MM-dd so it matches
+    // what the chip displays (same format as DateFormat output below)
+    _selectedDate = TrekController.convertDateYYYYMMDD(widget.date);
+
     _fadeCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 400),
@@ -74,21 +79,20 @@ class _WeekendTreksScreenState extends State<WeekendTreksScreen>
     super.dispose();
   }
 
-  // ── Same pagination logic as original ───────
   Future<void> _addData() async {
     final obs = _trekC.weekendTreksResponseObserver;
     if (obs.value.isPaginationCompleted || obs.value.isLoading) return;
     _trekC.fetchWeekendTreks(
-      cityId: widget.city,
-      trekId: widget.trek,
-      date:   widget.date,
+      cityId:  widget.city,
+      trekId:  widget.trek,
+      date:    widget.date,
       refresh: false,
     );
   }
 
-  // ─────────────────────────────────────────────
-  //  BUILD
-  // ─────────────────────────────────────────────
+  // ── Converts a DateTime to the string the API expects ──
+  String _fmt(DateTime dt) => DateFormat('yyyy-MM-dd').format(dt);
+
   @override
   Widget build(BuildContext context) {
     ScreenConstant.setScreenAwareConstant(context);
@@ -109,31 +113,39 @@ class _WeekendTreksScreenState extends State<WeekendTreksScreen>
             physics: const BouncingScrollPhysics(),
             slivers: [
 
-              // ── App bar ──────────────────────
+              // ── App bar ──────────────────────────────────────
               _buildAppBar(),
 
-              // ── Body ─────────────────────────
+              // ── STABLE HEADER (outside Obx) ──────────────────
+              // Date chips live here so they are NEVER rebuilt
+              // by GetX and never disappear during loading.
+              SliverToBoxAdapter(
+                child: _buildStableDateChips(),
+              ),
+
+              // ── REACTIVE BODY (inside Obx) ───────────────────
+              // Only the trek list + route strip rebuild on API changes.
               Obx(() {
-                final isLoading = _trekC
-                    .weekendTreksResponseObserver.value.data.value
-                    .maybeWhen(loading: (_) => true, orElse: () => false);
+                final state = _trekC
+                    .weekendTreksResponseObserver.value.data.value;
 
-                final treks = _trekC
-                    .weekendTreksResponseObserver.value.data.value
-                    .maybeWhen(
-                      success: (r) =>
-                          (r as FetchTreksResponseModel).data ?? <TrekData>[],
-                      error:   (_) => <TrekData>[],
-                      orElse:  ()  => [TrekData(), TrekData(), TrekData()],
-                    );
+                final isLoading = state.maybeWhen(
+                  loading: (_) => true,
+                  orElse:  ()  => false,
+                );
 
-                final ctx = _trekC
-                    .weekendTreksResponseObserver.value.data.value
-                    .maybeWhen(
-                      success: (r) =>
-                          (r as FetchTreksResponseModel).searchContext,
-                      orElse: () => null,
-                    );
+                final treks = state.maybeWhen(
+                  success: (r) =>
+                      (r as FetchTreksResponseModel).data ?? <TrekData>[],
+                  error:   (_) => <TrekData>[],
+                  orElse:  ()  => [TrekData(), TrekData(), TrekData()],
+                );
+
+                final ctx = state.maybeWhen(
+                  success: (r) =>
+                      (r as FetchTreksResponseModel).searchContext,
+                  orElse: () => null,
+                );
 
                 final isPaginating =
                     _trekC.weekendTreksResponseObserver.value.isLoading;
@@ -143,37 +155,31 @@ class _WeekendTreksScreenState extends State<WeekendTreksScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
 
-                      // ── Route subtitle ────────
+                      // Route strip (only when data is ready)
                       if (ctx?.from != null || ctx?.to != null)
                         _buildRouteStrip(ctx),
 
-                      // ── Weekend date chips ────
-                      if (ctx != null)
-                        _buildDateChips(ctx),
-
-                      // ── Section label ─────────
+                      // Section label
                       _buildSectionLabel(
                         'Available Treks',
                         treks.isEmpty && !isLoading ? 0 : treks.length,
                       ),
 
-                      // ── Trek list ─────────────
+                      // Trek list
                       if (treks.isEmpty && !isLoading)
                         _buildEmptyState()
                       else
                         ListView.builder(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
-                          padding: EdgeInsets.fromLTRB(
-                              4.w, 0, 4.w, 2.h),
+                          padding: EdgeInsets.fromLTRB(4.w, 0, 4.w, 2.h),
                           itemCount: treks.length,
                           itemBuilder: (_, i) {
                             final trek = treks[i];
                             return TweenAnimationBuilder<double>(
                               tween: Tween(begin: 0, end: 1),
                               duration: Duration(
-                                  milliseconds:
-                                      250 + (i.clamp(0, 5) * 60)),
+                                  milliseconds: 250 + (i.clamp(0, 5) * 60)),
                               curve: Curves.easeOutCubic,
                               builder: (_, v, child) => Opacity(
                                 opacity: v,
@@ -186,16 +192,14 @@ class _WeekendTreksScreenState extends State<WeekendTreksScreen>
                                 padding: EdgeInsets.only(bottom: 2.h),
                                 child: CommonTrekCard(
                                   trek: trek,
-                                  fromLocation: _dashboardC
-                                      .fromController.value.text,
-                                  toLocation: _dashboardC
-                                      .toController.value.text,
+                                  fromLocation:
+                                      _dashboardC.fromController.value.text,
+                                  toLocation:
+                                      _dashboardC.toController.value.text,
                                   onTap: () async {
-                                    _trekC.trekDetailId.value =
-                                        trek.id ?? 0;
+                                    _trekC.trekDetailId.value = trek.id ?? 0;
                                     await _trekC.trekDetail(
-                                        batchId:
-                                            trek.batchInfo?.id ?? 0);
+                                        batchId: trek.batchInfo?.id ?? 0);
                                     Get.to(() =>
                                         TrekDetailsScreen(trek: trek));
                                   },
@@ -205,7 +209,7 @@ class _WeekendTreksScreenState extends State<WeekendTreksScreen>
                           },
                         ),
 
-                      // ── Pagination shimmer ────
+                      // Pagination shimmer
                       if (isPaginating)
                         Padding(
                           padding: EdgeInsets.fromLTRB(1.w, 0, 1.w, 1.h),
@@ -224,6 +228,104 @@ class _WeekendTreksScreenState extends State<WeekendTreksScreen>
           ),
         ),
       ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────
+  //  STABLE DATE CHIPS
+  //  Driven by widget.weekendDates (constructor arg, immutable)
+  //  and _selectedDate (local setState) — zero dependency on Obx
+  // ─────────────────────────────────────────────────────────
+  Widget _buildStableDateChips() {
+    if (widget.weekendDates.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.fromLTRB(4.w, 2.h, 4.w, 1.h),
+          child: Text(
+            'SELECT WEEKEND',
+            textScaler: const TextScaler.linear(1.0),
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: FontSize.s8,
+              fontWeight: FontWeight.w700,
+              color: _W.inkLight,
+              letterSpacing: 1.0,
+            ),
+          ),
+        ),
+        SizedBox(
+          height: 6.5.h,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: EdgeInsets.symmetric(horizontal: 4.w),
+            itemCount: widget.weekendDates.length,
+            itemBuilder: (_, i) {
+              final dateStr = _fmt(widget.weekendDates[i]);
+              // ── This is the only thing that drives highlight ──
+              final isSel = _selectedDate == dateStr;
+
+              return GestureDetector(
+                onTap: () async {
+                  // 1. Update highlight instantly via setState
+                  setState(() => _selectedDate = dateStr);
+                  // 2. Then fire the API
+                  _dashboardC.dateController.value.text = dateStr;
+                  await _trekC.fetchWeekendTreks(
+                    cityId:  widget.city,
+                    trekId:  widget.trek,
+                    date:    dateStr,
+                    refresh: true,
+                  );
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  margin: EdgeInsets.only(right: 3.w),
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
+                  decoration: BoxDecoration(
+                    color: isSel ? _W.teal : _W.cardBg,
+                    borderRadius: BorderRadius.circular(3.w),
+                    border: Border.all(
+                      color: isSel ? _W.teal : _W.divider,
+                      width: isSel ? 1.5 : 1,
+                    ),
+                    boxShadow: isSel
+                        ? [
+                            BoxShadow(
+                              color: _W.teal.withOpacity(0.25),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            )
+                          ]
+                        : [
+                            BoxShadow(
+                              color: _W.shadow,
+                              blurRadius: 4,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
+                  ),
+                  child: Center(
+                    child: Text(
+                      dateStr,
+                      textScaler: const TextScaler.linear(1.0),
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: FontSize.s10,
+                        fontWeight: FontWeight.w600,
+                        color: isSel ? Colors.white : _W.ink,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -246,20 +348,6 @@ class _WeekendTreksScreenState extends State<WeekendTreksScreen>
       ),
       title: Row(
         children: [
-          // Dark badge
-          // Container(
-          //   width: 8.w,
-          //   height: 8.w,
-          //   decoration: BoxDecoration(
-          //     color: _W.iconBadge,
-          //     borderRadius: BorderRadius.circular(2.w),
-          //   ),
-          //   child: const Center(
-          //     child: Icon(Icons.hiking_rounded,
-          //         color: Colors.white, size: 14),
-          //   ),
-          // ),
-          // SizedBox(width: 2.5.w),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -315,19 +403,15 @@ class _WeekendTreksScreenState extends State<WeekendTreksScreen>
                 children: [
                   TextSpan(
                     text: ctx?.from ?? '',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: _W.ink,
-                    ),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w600, color: _W.ink),
                   ),
                   if (ctx?.to != null) ...[
                     const TextSpan(text: '  →  '),
                     TextSpan(
                       text: ctx?.to ?? '',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: _W.ink,
-                      ),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w600, color: _W.ink),
                     ),
                   ],
                 ],
@@ -336,101 +420,6 @@ class _WeekendTreksScreenState extends State<WeekendTreksScreen>
           ),
         ],
       ),
-    );
-  }
-
-  // ─────────────────────────────────────────────
-  //  DATE CHIPS
-  //  Same logic as original — tap fetches treks
-  // ─────────────────────────────────────────────
-  Widget _buildDateChips(SearchContextModel ctx) {
-    final dates    = ctx.weekendDates ?? [];
-    final selected = ctx.selectedDate;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: EdgeInsets.fromLTRB(4.w, 2.h, 4.w, 1.h),
-          child: Text(
-            'SELECT WEEKEND',
-            textScaler: const TextScaler.linear(1.0),
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: FontSize.s8,
-              fontWeight: FontWeight.w700,
-              color: _W.inkLight,
-              letterSpacing: 1.0,
-            ),
-          ),
-        ),
-        SizedBox(
-          height: 6.5.h,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: EdgeInsets.symmetric(horizontal: 4.w),
-            itemCount: dates.length,
-            itemBuilder: (_, i) {
-              final date    = dates[i];
-              final isSel   = selected == date;
-              return GestureDetector(
-                onTap: () async {
-                  // ── Same logic as original ──
-                  _dashboardC.dateController.value.text = date ?? '';
-                  await _trekC.fetchWeekendTreks(
-                    cityId:  _dashboardC.fromController.value.text,
-                    trekId:  _dashboardC.toController.value.text,
-                    date:    _dashboardC.dateController.value.text,
-                    refresh: true,
-                  );
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  margin: EdgeInsets.only(right: 3.w),
-                  padding: EdgeInsets.symmetric(
-                      horizontal: 4.w, vertical: 1.h),
-                  decoration: BoxDecoration(
-                    color: isSel ? _W.teal : _W.cardBg,
-                    borderRadius: BorderRadius.circular(3.w),
-                    border: Border.all(
-                      color: isSel ? _W.teal : _W.divider,
-                      width: isSel ? 1.5 : 1,
-                    ),
-                    boxShadow: isSel
-                        ? [
-                            BoxShadow(
-                              color: _W.teal.withOpacity(0.25),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
-                            )
-                          ]
-                        : [
-                            BoxShadow(
-                              color: _W.shadow,
-                              blurRadius: 4,
-                              offset: const Offset(0, 1),
-                            ),
-                          ],
-                  ),
-                  child: Center(
-                    child: Text(
-                      date ?? '',
-                      textScaler: const TextScaler.linear(1.0),
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: FontSize.s10,
-                        fontWeight: FontWeight.w600,
-                        color:
-                            isSel ? Colors.white : _W.ink,
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
     );
   }
 
@@ -450,8 +439,7 @@ class _WeekendTreksScreenState extends State<WeekendTreksScreen>
               borderRadius: BorderRadius.circular(2.w),
             ),
             child: const Center(
-              child: Icon(Icons.terrain_rounded,
-                  color: Colors.white, size: 13),
+              child: Icon(Icons.terrain_rounded, color: Colors.white, size: 13),
             ),
           ),
           SizedBox(width: 2.w),
@@ -468,8 +456,8 @@ class _WeekendTreksScreenState extends State<WeekendTreksScreen>
           const Spacer(),
           if (count > 0)
             Container(
-              padding: EdgeInsets.symmetric(
-                  horizontal: 2.5.w, vertical: 0.3.h),
+              padding:
+                  EdgeInsets.symmetric(horizontal: 2.5.w, vertical: 0.3.h),
               decoration: BoxDecoration(
                 color: _W.tealSoft,
                 borderRadius: BorderRadius.circular(2.w),
@@ -496,8 +484,7 @@ class _WeekendTreksScreenState extends State<WeekendTreksScreen>
   Widget _buildEmptyState() {
     return Center(
       child: Padding(
-        padding: EdgeInsets.symmetric(
-            horizontal: 8.w, vertical: 8.h),
+        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -505,11 +492,9 @@ class _WeekendTreksScreenState extends State<WeekendTreksScreen>
               width: 20.w,
               height: 20.w,
               decoration: BoxDecoration(
-                color: _W.tealSoft,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.hiking_rounded,
-                  size: 10.w, color: _W.teal),
+                  color: _W.tealSoft, shape: BoxShape.circle),
+              child:
+                  Icon(Icons.hiking_rounded, size: 10.w, color: _W.teal),
             ),
             SizedBox(height: 2.h),
             Text(

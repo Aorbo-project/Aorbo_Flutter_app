@@ -14,25 +14,27 @@ class ShortsTreksDataResponseModel with _$ShortsTreksDataResponseModel {
 
   factory ShortsTreksDataResponseModel.fromJson(Map<String, dynamic> json) => _$ShortsTreksDataResponseModelFromJson(json);
 }
+
 @freezed
 class ShortsTreksData with _$ShortsTreksData {
   const factory ShortsTreksData({
     String? title,
+
     String? description,
+
+    @JsonKey(name: 'imagePath')
     String? imagePath,
+
+    @JsonKey(name: 'videoPath')
     String? videoPath,
+
     String? shortVideoPath,
-    String? textColour
+
+    String? textColour,
   }) = _ShortsTreksData;
 
-  factory ShortsTreksData.fromJson(Map<String, dynamic> json) => _$ShortsTreksDataFromJson(json);
-
-  static ShortsTreksData get dummy => ShortsTreksData(
-    title: "Everest Base Camp",
-    description: "A breathtaking trek to the base of the world's highest peak.",
-    imagePath: "assets/images/everest.png",
-
-  );
+  factory ShortsTreksData.fromJson(Map<String, dynamic> json) =>
+      _$ShortsTreksDataFromJson(json);
 }
 
 

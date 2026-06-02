@@ -57,33 +57,49 @@ class SeasonalForecast extends StatelessWidget {
               bottom: 1.h,
             ),
             decoration: BoxDecoration(
-              gradient: AppTheme.customGradient(titleStylingModel?.gradient),
+              gradient: AppTheme.customGradient(
+  (titleStylingModel?.gradient ?? [])
+      .map((e) => e.toString())
+      .toList(),
+),
               borderRadius: const BorderRadius.only(
                 topRight: Radius.circular(20),
                 topLeft: Radius.circular(20),
               ),
             ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Container(
-                  margin: EdgeInsets.only(left: 3.w),
-                  child: Text(
-                    title,
-                    maxLines: 1,overflow: TextOverflow.ellipsis,
-                    textScaler: const TextScaler.linear(1.0),
-                    style: GoogleFonts.poppins(
-                      fontSize: FontSize.s11,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.hexToColor(titleStylingModel?.textColour),
-                    ),
-                  ),
-                ),
-                CustomNetworkImage(imageUrl: titleStylingModel?.icon ?? "",height: 2.5.h,
-                  width: 2.5.h,)
-              ],
+  crossAxisAlignment: CrossAxisAlignment.center,
+  children: [
+
+    Expanded(
+      child: Container(
+        margin: EdgeInsets.only(left: 3.w),
+        child: Text(
+          title,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          textScaler: const TextScaler.linear(1.0),
+          style: GoogleFonts.poppins(
+            fontSize: FontSize.s11,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.hexToColor(
+              titleStylingModel?.textColour,
             ),
+          ),
+        ),
+      ),
+    ),
+
+    SizedBox(width: 2.w),
+
+    CustomNetworkImage(
+      imageUrl:
+          titleStylingModel?.icon ?? "",
+      height: 2.5.h,
+      width: 2.5.h,
+    ),
+  ],
+),
           ),
 
           // Body

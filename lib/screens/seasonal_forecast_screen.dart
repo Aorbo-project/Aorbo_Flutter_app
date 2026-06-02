@@ -73,7 +73,11 @@ class SeasonalForecastScreen extends StatelessWidget {
                   description: cardData?.description ?? "",
                   imagePath: cardData?.imagePath ?? "",
                   textColour:AppTheme.hexToColor(cardData?.textColour),
-                  gradient: AppTheme.customGradient(cardData?.gradient),
+                  gradient:AppTheme.customGradient(
+  (cardData?.gradient ?? [])
+      .map((e) => e.toString())
+      .toList(),
+),
                   titleStylingModel: cardData?.styling?.title,
                 ).withShimmerAi(loading: seasonalForcastLoading),
               ),
