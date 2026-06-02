@@ -90,8 +90,6 @@ _$BookingHistoryDataImpl _$$BookingHistoryDataImplFromJson(
       trekStatus: json['trek_status'] as String?,
       ratingGiven: json['rating_given'] as bool?,
       ratingValue: json['rating_value'],
-      trekStageDateTime: json['trek_stage_date_time'] as String?,
-      trekStageName: json['trek_stage_name'] as String?,
     );
 
 Map<String, dynamic> _$$BookingHistoryDataImplToJson(
@@ -130,113 +128,50 @@ Map<String, dynamic> _$$BookingHistoryDataImplToJson(
       'trek_status': instance.trekStatus,
       'rating_given': instance.ratingGiven,
       'rating_value': instance.ratingValue,
-      'trek_stage_date_time': instance.trekStageDateTime,
-      'trek_stage_name': instance.trekStageName,
     };
 
 _$TrekImpl _$$TrekImplFromJson(Map<String, dynamic> json) => _$TrekImpl(
-      cityIds:
-          (json['city_ids'] as List<dynamic>?)?.map((e) => e as int).toList(),
-      inclusions: json['inclusions'] as List<dynamic>?,
-      exclusions: json['exclusions'] as List<dynamic>?,
-      activities:
-          (json['activities'] as List<dynamic>?)?.map((e) => e as int).toList(),
       id: json['id'] as int?,
-      mtrId: json['mtr_id'] as String?,
       title: json['title'] as String?,
-      description: json['description'] as String?,
-      vendorId: json['VendorId'] as int?,
-      destinationId: json['destination_id'] as int?,
-      captainId: json['captain_id'] as int?,
       duration: json['duration'] as String?,
-      durationDays: json['duration_days'] as int?,
-      durationNights: json['duration_nights'] as int?,
-      difficulty: json['difficulty'] as String?,
       basePrice: json['base_price'] as String?,
-      maxParticipants: json['max_participants'] as int?,
-      trekkingRules: json['trekking_rules'] as String?,
-      emergencyProtocols: json['emergency_protocols'] as String?,
-      organizerNotes: json['organizer_notes'] as String?,
       status: json['status'] as String?,
-      discountValue: json['discount_value'] as String?,
-      discountType: json['discount_type'] as String?,
-      hasDiscount: json['has_discount'] as bool?,
-      cancellationPolicyId: json['cancellation_policy_id'] as int?,
-      badgeId: json['badge_id'] as int?,
-      hasBeenEdited: json['has_been_edited'] as int?,
-      safetySecurityCount: json['safety_security_count'] as int?,
-      organizerMannerCount: json['organizer_manner_count'] as int?,
-      trekPlanningCount: json['trek_planning_count'] as int?,
-      womenSafetyCount: json['women_safety_count'] as int?,
-      createdAt: json['createdAt'] as String?,
-      updatedAt: json['updatedAt'] as String?,
       vendor: json['vendor'] == null
           ? null
           : Vendor.fromJson(json['vendor'] as Map<String, dynamic>),
-      badge: json['badge'] == null
-          ? null
-          : Badge.fromJson(json['badge'] as Map<String, dynamic>),
-      trekStages: (json['trek_stages'] as List<dynamic>?)
-          ?.map((e) => TrekStages.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      rating: json['rating'],
-      ratingCount: json['ratingCount'] as int?,
       destination: json['destination'] == null
           ? null
           : Destination.fromJson(json['destination'] as Map<String, dynamic>),
       captainName: json['captain_name'] as String?,
       captainPhone: json['captain_phone'] as String?,
+      difficulty: json['difficulty'] as String?,
+      durationDays: json['duration_days'] as int?,
+      durationNights: json['duration_nights'] as int?,
     );
 
 Map<String, dynamic> _$$TrekImplToJson(_$TrekImpl instance) =>
     <String, dynamic>{
-      'city_ids': instance.cityIds,
-      'inclusions': instance.inclusions,
-      'exclusions': instance.exclusions,
-      'activities': instance.activities,
       'id': instance.id,
-      'mtr_id': instance.mtrId,
       'title': instance.title,
-      'description': instance.description,
-      'VendorId': instance.vendorId,
-      'destination_id': instance.destinationId,
-      'captain_id': instance.captainId,
       'duration': instance.duration,
-      'duration_days': instance.durationDays,
-      'duration_nights': instance.durationNights,
-      'difficulty': instance.difficulty,
       'base_price': instance.basePrice,
-      'max_participants': instance.maxParticipants,
-      'trekking_rules': instance.trekkingRules,
-      'emergency_protocols': instance.emergencyProtocols,
-      'organizer_notes': instance.organizerNotes,
       'status': instance.status,
-      'discount_value': instance.discountValue,
-      'discount_type': instance.discountType,
-      'has_discount': instance.hasDiscount,
-      'cancellation_policy_id': instance.cancellationPolicyId,
-      'badge_id': instance.badgeId,
-      'has_been_edited': instance.hasBeenEdited,
-      'safety_security_count': instance.safetySecurityCount,
-      'organizer_manner_count': instance.organizerMannerCount,
-      'trek_planning_count': instance.trekPlanningCount,
-      'women_safety_count': instance.womenSafetyCount,
-      'createdAt': instance.createdAt,
-      'updatedAt': instance.updatedAt,
       'vendor': instance.vendor,
-      'badge': instance.badge,
-      'trek_stages': instance.trekStages,
-      'rating': instance.rating,
-      'ratingCount': instance.ratingCount,
       'destination': instance.destination,
       'captain_name': instance.captainName,
       'captain_phone': instance.captainPhone,
+      'difficulty': instance.difficulty,
+      'duration_days': instance.durationDays,
+      'duration_nights': instance.durationNights,
     };
 
 _$VendorImpl _$$VendorImplFromJson(Map<String, dynamic> json) => _$VendorImpl(
       id: json['id'] as int?,
       businessName: json['business_name'] as String?,
-      businessLogo: json['business_logo'] as String?,
+      businessLogo: _parseImageUrl(json['business_logo'] as String?),
+      city: json['city'] as String?,
+      state: json['state'] as String?,
+      address: json['address'] as String?,
     );
 
 Map<String, dynamic> _$$VendorImplToJson(_$VendorImpl instance) =>
@@ -244,36 +179,9 @@ Map<String, dynamic> _$$VendorImplToJson(_$VendorImpl instance) =>
       'id': instance.id,
       'business_name': instance.businessName,
       'business_logo': instance.businessLogo,
-    };
-
-_$CompanyInfoImpl _$$CompanyInfoImplFromJson(Map<String, dynamic> json) =>
-    _$CompanyInfoImpl(
-      companyName: json['company_name'] as String?,
-      contactPerson: json['contact_person'] as String?,
-      phone: json['phone'] as String?,
-      email: json['email'] as String?,
-      address: json['address'] as String?,
-      gstNumber: json['gst_number'] as String?,
-      panNumber: json['pan_number'] as String?,
-      bankName: json['bank_name'] as String?,
-      accountNumber: json['account_number'] as String?,
-      ifscCode: json['ifsc_code'] as String?,
-      commissionRate: json['commission_rate'] as int?,
-    );
-
-Map<String, dynamic> _$$CompanyInfoImplToJson(_$CompanyInfoImpl instance) =>
-    <String, dynamic>{
-      'company_name': instance.companyName,
-      'contact_person': instance.contactPerson,
-      'phone': instance.phone,
-      'email': instance.email,
+      'city': instance.city,
+      'state': instance.state,
       'address': instance.address,
-      'gst_number': instance.gstNumber,
-      'pan_number': instance.panNumber,
-      'bank_name': instance.bankName,
-      'account_number': instance.accountNumber,
-      'ifsc_code': instance.ifscCode,
-      'commission_rate': instance.commissionRate,
     };
 
 _$DestinationImpl _$$DestinationImplFromJson(Map<String, dynamic> json) =>
@@ -293,9 +201,10 @@ _$BatchImpl _$$BatchImplFromJson(Map<String, dynamic> json) => _$BatchImpl(
       tbrId: json['tbr_id'] as String?,
       startDate: json['start_date'] as String?,
       endDate: json['end_date'] as String?,
-      capacity: json['capacity'] as int?,
-      bookedSlots: json['booked_slots'] as int?,
+      startTime: json['start_time'] as String?,
       availableSlots: json['available_slots'] as int?,
+      bookedSlots: json['booked_slots'] as int?,
+      capacity: json['capacity'] as int?,
     );
 
 Map<String, dynamic> _$$BatchImplToJson(_$BatchImpl instance) =>
@@ -304,20 +213,10 @@ Map<String, dynamic> _$$BatchImplToJson(_$BatchImpl instance) =>
       'tbr_id': instance.tbrId,
       'start_date': instance.startDate,
       'end_date': instance.endDate,
-      'capacity': instance.capacity,
-      'booked_slots': instance.bookedSlots,
+      'start_time': instance.startTime,
       'available_slots': instance.availableSlots,
-    };
-
-_$CityImpl _$$CityImplFromJson(Map<String, dynamic> json) => _$CityImpl(
-      id: json['id'] as int?,
-      cityName: json['cityName'] as String?,
-    );
-
-Map<String, dynamic> _$$CityImplToJson(_$CityImpl instance) =>
-    <String, dynamic>{
-      'id': instance.id,
-      'cityName': instance.cityName,
+      'booked_slots': instance.bookedSlots,
+      'capacity': instance.capacity,
     };
 
 _$TravelersDataModelImpl _$$TravelersDataModelImplFromJson(
@@ -327,12 +226,6 @@ _$TravelersDataModelImpl _$$TravelersDataModelImplFromJson(
       bookingId: json['booking_id'] as int?,
       travelerId: json['traveler_id'] as int?,
       isPrimary: json['is_primary'] as bool?,
-      specialRequirements: json['special_requirements'] as String?,
-      accommodationPreference: json['accommodation_preference'] as String?,
-      mealPreference: json['meal_preference'] as String?,
-      status: json['status'] as String?,
-      createdAt: json['createdAt'] as String?,
-      updatedAt: json['updatedAt'] as String?,
       traveler: json['traveler'] == null
           ? null
           : Traveler.fromJson(json['traveler'] as Map<String, dynamic>),
@@ -345,12 +238,6 @@ Map<String, dynamic> _$$TravelersDataModelImplToJson(
       'booking_id': instance.bookingId,
       'traveler_id': instance.travelerId,
       'is_primary': instance.isPrimary,
-      'special_requirements': instance.specialRequirements,
-      'accommodation_preference': instance.accommodationPreference,
-      'meal_preference': instance.mealPreference,
-      'status': instance.status,
-      'createdAt': instance.createdAt,
-      'updatedAt': instance.updatedAt,
       'traveler': instance.traveler,
     };
 
@@ -361,9 +248,6 @@ _$PaginationImpl _$$PaginationImplFromJson(Map<String, dynamic> json) =>
       totalCount: json['totalCount'] as int?,
       limit: json['limit'] as int?,
       hasNextPage: json['hasNextPage'] as bool?,
-      hasPrevPage: json['hasPrevPage'] as bool?,
-      nextPage: json['nextPage'] as int?,
-      prevPage: json['prevPage'] as int?,
     );
 
 Map<String, dynamic> _$$PaginationImplToJson(_$PaginationImpl instance) =>
@@ -373,7 +257,4 @@ Map<String, dynamic> _$$PaginationImplToJson(_$PaginationImpl instance) =>
       'totalCount': instance.totalCount,
       'limit': instance.limit,
       'hasNextPage': instance.hasNextPage,
-      'hasPrevPage': instance.hasPrevPage,
-      'nextPage': instance.nextPage,
-      'prevPage': instance.prevPage,
     };

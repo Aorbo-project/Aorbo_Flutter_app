@@ -32,10 +32,10 @@ _$KnowMoreDataImpl _$$KnowMoreDataImplFromJson(Map<String, dynamic> json) =>
       subtitle: json['subtitle'] as String?,
       imagePath: json['imagePath'] as String?,
       hasKnowMore: json['hasKnowMore'] as bool?,
-      gradient: (json['gradient'] as List<dynamic>?)
+      gradient: (json['customGradient'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
-      textColour: json['textColour'] as String?,
+      textColour: json['textColor'] as String?,
       detailedTitle: json['detailedTitle'] as String?,
       detailedDescription: json['detailedDescription'] as String?,
       bulletPoints: (json['bulletPoints'] as List<dynamic>?)
@@ -50,8 +50,8 @@ Map<String, dynamic> _$$KnowMoreDataImplToJson(_$KnowMoreDataImpl instance) =>
       'subtitle': instance.subtitle,
       'imagePath': instance.imagePath,
       'hasKnowMore': instance.hasKnowMore,
-      'gradient': instance.gradient,
-      'textColour': instance.textColour,
+      'customGradient': instance.gradient,
+      'textColor': instance.textColour,
       'detailedTitle': instance.detailedTitle,
       'detailedDescription': instance.detailedDescription,
       'bulletPoints': instance.bulletPoints,
@@ -61,13 +61,13 @@ Map<String, dynamic> _$$KnowMoreDataImplToJson(_$KnowMoreDataImpl instance) =>
 _$BulletPointModelImpl _$$BulletPointModelImplFromJson(
         Map<String, dynamic> json) =>
     _$BulletPointModelImpl(
-      title: json['title'] as String?,
-      description: json['description'] as String?,
+      icon: json['icon'] as String?,
+      text: json['text'] as String?,
     );
 
 Map<String, dynamic> _$$BulletPointModelImplToJson(
         _$BulletPointModelImpl instance) =>
     <String, dynamic>{
-      'title': instance.title,
-      'description': instance.description,
+      'icon': instance.icon,
+      'text': instance.text,
     };

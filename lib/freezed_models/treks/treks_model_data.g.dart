@@ -114,7 +114,7 @@ _$TrekDataImpl _$$TrekDataImplFromJson(Map<String, dynamic> json) =>
       name: json['name'] as String?,
       vendor: json['vendor'] as String?,
       vendorLogo: json['vendorLogo'] as String?,
-      businessName: json['businessName'] as String?,
+      businessName: json['business_name'] as String?,
       hasDiscount: json['hasDiscount'] as bool?,
       discountText: json['discountText'] as String?,
       rating: (json['rating'] as num?)?.toDouble(),
@@ -127,10 +127,10 @@ _$TrekDataImpl _$$TrekDataImplFromJson(Map<String, dynamic> json) =>
           ? null
           : Badge.fromJson(json['badge'] as Map<String, dynamic>),
       imageUrl: json['imageUrl'] as String?,
-      cancellationPolicy: json['cancellationPolicy'] == null
+      cancellationPolicy: json['cancellation_policy'] == null
           ? null
           : CancellationPolicy.fromJson(
-              json['cancellationPolicy'] as Map<String, dynamic>),
+              json['cancellation_policy'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$$TrekDataImplToJson(_$TrekDataImpl instance) =>
@@ -139,7 +139,7 @@ Map<String, dynamic> _$$TrekDataImplToJson(_$TrekDataImpl instance) =>
       'name': instance.name,
       'vendor': instance.vendor,
       'vendorLogo': instance.vendorLogo,
-      'businessName': instance.businessName,
+      'business_name': instance.businessName,
       'hasDiscount': instance.hasDiscount,
       'discountText': instance.discountText,
       'rating': instance.rating,
@@ -148,7 +148,7 @@ Map<String, dynamic> _$$TrekDataImplToJson(_$TrekDataImpl instance) =>
       'batchInfo': instance.batchInfo,
       'badge': instance.badge,
       'imageUrl': instance.imageUrl,
-      'cancellationPolicy': instance.cancellationPolicy,
+      'cancellation_policy': instance.cancellationPolicy,
     };
 
 _$BadgeImpl _$$BadgeImplFromJson(Map<String, dynamic> json) => _$BadgeImpl(

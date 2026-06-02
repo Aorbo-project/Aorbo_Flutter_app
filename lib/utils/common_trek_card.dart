@@ -121,13 +121,29 @@ class CommonTrekCard extends StatelessWidget {
   }
 
   String _vendorInitials() {
-    final name  = trek?.businessName ?? '';
-    final parts = name.trim().split(' ');
-    if (parts.isEmpty) return '?';
-    if (parts.length == 1) return parts[0][0].toUpperCase();
-    return (parts[0][0] + parts[1][0]).toUpperCase();
+  final name = (trek?.businessName ?? trek?.vendor ?? '').trim();
+
+  if (name.isEmpty) {
+    return '?';
   }
 
+  final parts = name
+      .split(' ')
+      .where((e) => e.trim().isNotEmpty)
+      .toList();
+
+  if (parts.isEmpty) {
+    return '?';
+  }
+
+  if (parts.length == 1) {
+    return parts.first[0].toUpperCase();
+  }
+
+  return (
+    parts[0][0] + parts[1][0]
+  ).toUpperCase();
+}
   // ── Helper for labeled info items ──────────
   Widget _buildInfoItem(String label, String value) {
     if (value.isEmpty) return const SizedBox.shrink();
@@ -215,7 +231,9 @@ class CommonTrekCard extends StatelessWidget {
                     ),
                   ),
                   SizedBox(width: 2.w),
-                  _buildPolicyChip(trek?.cancellationPolicy?.type ?? "Flexible"),  // policy next to trek name
+                 _buildPolicyChip(
+  trek?.cancellationPolicy?.title ?? "Standard Cancellation Policy",
+),  // policy next to trek name
                 ],
               ),
 
@@ -265,7 +283,7 @@ class CommonTrekCard extends StatelessWidget {
                           children: [
                             Flexible(
                               child: Text(
-                                trek?.businessName ?? '-',
+                                trek?.businessName ?? trek?.vendor ?? '-',
                                 textScaler: const TextScaler.linear(1.0),
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
@@ -528,8 +546,8 @@ class CommonTrekCard extends StatelessWidget {
   //  POLICY CHIP (unchanged)
   // ─────────────────────────────────────────────
   Widget _buildPolicyChip(String policy) {
-    final isFlexible =
-        policy.toLowerCase().contains('flex');
+   final isFlexible =
+    policy.toLowerCase().contains('flexible');
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.35.h),
       decoration: BoxDecoration(
@@ -553,7 +571,7 @@ class CommonTrekCard extends StatelessWidget {
           ),
           SizedBox(width: 1.w),
           Text(
-            '$policy Policy',
+            policy,
             textScaler: const TextScaler.linear(1.0),
             style: TextStyle(
               fontFamily: 'Poppins',

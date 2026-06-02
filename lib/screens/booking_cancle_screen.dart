@@ -314,7 +314,13 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
     final isRequesting = _trekC.requestCancellationResponseObserver.value
         .maybeWhen(loading: (_) => true, orElse: () => false);
 
-    final bool busy = isRequesting || _isCancelling;
+    final bool alreadyCancelled =
+    cancellationDataModel?.canCancel == false;
+
+final bool busy =
+    isRequesting ||
+    _isCancelling ||
+    alreadyCancelled;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -377,7 +383,9 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
                           color: Colors.white, size: 18),
                       const SizedBox(width: 8),
                       Text(
-                        'Confirm Cancellation',
+                        alreadyCancelled
+    ? 'Already Cancelled'
+    : 'Confirm Cancellation',
                         textScaler: const TextScaler.linear(1.0),
                         style: TextStyle(
                           fontFamily: 'Poppins',
@@ -1450,40 +1458,77 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
   // ─────────────────────────────────────────────
   //  CANCEL LOGIC
   // ─────────────────────────────────────────────
-  Future<void> _cancelBookingDirect(BookingHistoryData booking,
-      CancellationDataModel? cancellationDataModel) async {
-    if (_isCancelling) return;
-    setState(() => _isCancelling = true);
+  Future<void> _cancelBookingDirect(
+  BookingHistoryData booking,
+  CancellationDataModel? cancellationDataModel,
+) async {
 
-    final String? bookingId = booking.id?.toString();
-    if (bookingId == null) {
+  if (_isCancelling) return;
+
+  setState(() => _isCancelling = true);
+
+  bool isSuccess = false;
+
+  final String? bookingId = booking.id?.toString();
+
+  if (bookingId == null) {
+    setState(() => _isCancelling = false);
+    return;
+  }
+
+  try {
+
+    final String? message =
+        await _trekC.reqCancellation(bookingId);
+
+    if (!mounted) return;
+
+    if (message != null) {
+
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        CustomSnackBar.show(
+          context,
+          message: message,
+        );
+      });
+
       setState(() => _isCancelling = false);
+
       return;
     }
 
-    try {
-      final message = await _trekC.reqCancellation(bookingId);
-      if (!mounted) return;
+    // SUCCESS
+    isSuccess = true;
 
-      if (message != null) {
-        SchedulerBinding.instance.addPostFrameCallback((_) {
-          CustomSnackBar.show(context, message: message);
-        });
-        setState(() => _isCancelling = false);
-        return;
-      }
+    // refresh booking detail
+    await _dashboardC.getBookingDetail(
+      bookingId: bookingId,
+    );
 
-      _dashboardC.getBookingDetail(bookingId: bookingId);
-      Get.to(() => BookingCancellationSuccessScreen(
-            refund: cancellationDataModel?.refundCalculation?.refund
-                    ?.toStringAsFixed(2) ??
-                '0',
-            booking: _dashboardC.bookingHistoryModal.value,
-          ));
-    } finally {
-      if (mounted) setState(() => _isCancelling = false);
+    // navigate
+    Get.off(() => BookingCancellationSuccessScreen(
+          refund: cancellationDataModel
+                  ?.refundCalculation
+                  ?.refund
+                  ?.toStringAsFixed(2) ??
+              '0',
+          booking: _dashboardC.bookingHistoryModal.value,
+        ));
+
+  } catch (e) {
+
+    if (mounted) {
+      setState(() => _isCancelling = false);
+    }
+
+  } finally {
+
+    // ONLY reset if failed
+    if (!isSuccess && mounted) {
+      setState(() => _isCancelling = false);
     }
   }
+}
 
   // ─────────────────────────────────────────────
   //  SHARED PRIMITIVES

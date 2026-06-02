@@ -77,19 +77,42 @@ class SearchContextModel with _$SearchContextModel {
 class TrekData with _$TrekData {
   const factory TrekData({
     int? id,
+
     String? name,
+
+    // BACKEND RETURNS "vendor"
+    @JsonKey(name: 'vendor')
     String? vendor,
+
+    // BACKEND RETURNS "vendorLogo"
+    @JsonKey(name: 'vendorLogo')
     String? vendorLogo,
+
+    // fallback
+    @JsonKey(name: 'business_name')
     String? businessName,
+
+    @JsonKey(name: 'hasDiscount')
     bool? hasDiscount,
+
+    @JsonKey(name: 'discountText')
     String? discountText,
+
     double? rating,
+
     String? price,
+
     String? duration,
+
     BatchInfo? batchInfo,
+
     Badge? badge,
+
+    @JsonKey(name: 'imageUrl')
     String? imageUrl,
-    CancellationPolicy? cancellationPolicy
+
+    @JsonKey(name: 'cancellation_policy')
+    CancellationPolicy? cancellationPolicy,
   }) = _TrekData;
 
   factory TrekData.fromJson(Map<String, dynamic> json) =>

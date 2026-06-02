@@ -245,7 +245,9 @@ ShortsTreksData _$ShortsTreksDataFromJson(Map<String, dynamic> json) {
 mixin _$ShortsTreksData {
   String? get title => throw _privateConstructorUsedError;
   String? get description => throw _privateConstructorUsedError;
+  @JsonKey(name: 'imagePath')
   String? get imagePath => throw _privateConstructorUsedError;
+  @JsonKey(name: 'videoPath')
   String? get videoPath => throw _privateConstructorUsedError;
   String? get shortVideoPath => throw _privateConstructorUsedError;
   String? get textColour => throw _privateConstructorUsedError;
@@ -265,8 +267,8 @@ abstract class $ShortsTreksDataCopyWith<$Res> {
   $Res call(
       {String? title,
       String? description,
-      String? imagePath,
-      String? videoPath,
+      @JsonKey(name: 'imagePath') String? imagePath,
+      @JsonKey(name: 'videoPath') String? videoPath,
       String? shortVideoPath,
       String? textColour});
 }
@@ -331,8 +333,8 @@ abstract class _$$ShortsTreksDataImplCopyWith<$Res>
   $Res call(
       {String? title,
       String? description,
-      String? imagePath,
-      String? videoPath,
+      @JsonKey(name: 'imagePath') String? imagePath,
+      @JsonKey(name: 'videoPath') String? videoPath,
       String? shortVideoPath,
       String? textColour});
 }
@@ -390,8 +392,8 @@ class _$ShortsTreksDataImpl implements _ShortsTreksData {
   const _$ShortsTreksDataImpl(
       {this.title,
       this.description,
-      this.imagePath,
-      this.videoPath,
+      @JsonKey(name: 'imagePath') this.imagePath,
+      @JsonKey(name: 'videoPath') this.videoPath,
       this.shortVideoPath,
       this.textColour});
 
@@ -403,8 +405,10 @@ class _$ShortsTreksDataImpl implements _ShortsTreksData {
   @override
   final String? description;
   @override
+  @JsonKey(name: 'imagePath')
   final String? imagePath;
   @override
+  @JsonKey(name: 'videoPath')
   final String? videoPath;
   @override
   final String? shortVideoPath;
@@ -458,8 +462,8 @@ abstract class _ShortsTreksData implements ShortsTreksData {
   const factory _ShortsTreksData(
       {final String? title,
       final String? description,
-      final String? imagePath,
-      final String? videoPath,
+      @JsonKey(name: 'imagePath') final String? imagePath,
+      @JsonKey(name: 'videoPath') final String? videoPath,
       final String? shortVideoPath,
       final String? textColour}) = _$ShortsTreksDataImpl;
 
@@ -471,8 +475,10 @@ abstract class _ShortsTreksData implements ShortsTreksData {
   @override
   String? get description;
   @override
+  @JsonKey(name: 'imagePath')
   String? get imagePath;
   @override
+  @JsonKey(name: 'videoPath')
   String? get videoPath;
   @override
   String? get shortVideoPath;

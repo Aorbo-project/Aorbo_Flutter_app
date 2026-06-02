@@ -27,6 +27,8 @@ import '../utils/custom_snackbar.dart';
 class DashboardController extends GetxController {
   final Repository _repository = Repository();
 
+  VoidCallback? onDateAutoSelected;
+
   final whatsNewObserver = const ApiResult<WhatsNewDataResponseModel>.init().obs;
   final topTreksObserver = const ApiResult<TopTreksDataResponseModel>.init().obs;
   final shortsTreksObserver = const ApiResult<ShortsTreksDataResponseModel>.init().obs;
@@ -225,70 +227,161 @@ class DashboardController extends GetxController {
 }
 
   Future<void> fetchCalenderTrekDates({
-    required int cityId,
-    required int trekId,
-    required String statDate,
-    required String endDate,
-  }) async {
-    try {
-      // Clear previous data before new fetch
-      availableDates.clear();
-      calenderTrekDatesObserver.value = ApiResult.loading("Fetching available dates...");
+  required int cityId,
+  required int trekId,
+  required String statDate,
+  required String endDate,
+}) async {
+  try {
 
-      logger.d('Fetching calendar dates API - City: $cityId, Trek: $trekId, Start: $statDate, End: $endDate');
+    // Clear previous data
+    availableDates.clear();
 
-      final response = await _repository.getApiCall(
-        url: NetworkUrl.searchCalenderTrekDates(
-          cityId.toString(),
-          trekId.toString(),
-          statDate,
-          endDate,
-        ),
-      );
+    calenderTrekDatesObserver.value =
+        ApiResult.loading("Fetching available dates...");
 
-      if (response != null) {
-        logger.d('Calendar API Response: $response');
-        final responseData = CalenderDatesResponseModel.fromJson(response);
+    logger.d(
+      'Fetching calendar dates API - '
+      'City: $cityId, '
+      'Trek: $trekId, '
+      'Start: $statDate, '
+      'End: $endDate',
+    );
 
-        if (responseData.success == true) {
-          // Populate availableDates map from response
-          if (responseData.data?.dates != null && responseData.data?.dates?.isNotEmpty == true) {
-            for (var dateData in (responseData.data?.dates ?? [])) {
-              if (dateData.date != null && dateData.available == true) {
-                print('API DATE: ${dateData.date}');
-                availableDates[dateData.date!] = dateData.trekCount ?? 0;
-              }
+    final response = await _repository.getApiCall(
+      url: NetworkUrl.searchCalenderTrekDates(
+        cityId.toString(),
+        trekId.toString(),
+        statDate,
+        endDate,
+      ),
+    );
+
+    if (response != null) {
+
+      logger.d('Calendar API Response: $response');
+
+      final responseData =
+          CalenderDatesResponseModel.fromJson(response);
+
+      if (responseData.success == true) {
+
+        if (responseData.data?.dates != null &&
+            responseData.data!.dates!.isNotEmpty) {
+
+          // Sort dates ascending
+          final sortedDates =
+              responseData.data!.dates!.toList()
+                ..sort(
+                  (a, b) =>
+                      (a.date ?? '').compareTo(b.date ?? ''),
+                );
+
+          for (var dateData in sortedDates) {
+
+            // Skip null dates
+            if (dateData.date == null) continue;
+
+            final trekDate =
+                DateTime.tryParse(dateData.date!);
+
+            // Invalid date
+            if (trekDate == null) continue;
+
+            final now = DateTime.now();
+
+            final today = DateTime(
+              now.year,
+              now.month,
+              now.day,
+            );
+
+            // ─────────────────────────────
+            // IMPORTANT FIX
+            // Skip today/past dates because
+            // backend still marks started
+            // treks as available
+            // ─────────────────────────────
+
+            if (!trekDate.isAfter(today)) {
+
+              logger.d(
+                'Skipping started/past trek date: '
+                '${dateData.date}',
+              );
+
+              continue;
             }
-            availableDates.refresh();
-            logger.d('Available dates loaded: ${availableDates.length} dates');
 
-            // Auto-select first available date if no date is selected
-            if (selectedDate.value == null && availableDates.isNotEmpty) {
-              _autoSelectFirstAvailableDate();
+            // Only add truly available dates
+            if (dateData.available == true) {
+
+              logger.d(
+                'Adding available future date: '
+                '${dateData.date}',
+              );
+
+              availableDates[dateData.date!] =
+                  dateData.trekCount ?? 0;
             }
-          } else {
-            logger.d('No available dates found in response');
-            availableDates.clear();
-            availableDates.refresh();
           }
 
-          calenderTrekDatesObserver.value = ApiResult.success(responseData);
-          return;
+          availableDates.refresh();
+
+          logger.d(
+            'Available dates loaded: '
+            '${availableDates.length}',
+          );
+
+          // Auto-select first available date
+          if (selectedDate.value == null &&
+              availableDates.isNotEmpty) {
+
+            _autoSelectFirstAvailableDate();
+          }
+
+        } else {
+
+          logger.d('No available dates found');
+
+          availableDates.clear();
+          availableDates.refresh();
         }
-        throw responseData.message ?? "Failed to fetch calendar dates";
+
+        calenderTrekDatesObserver.value =
+            ApiResult.success(responseData);
+
+        return;
       }
-      throw "Response Body Null";
-    } catch (e) {
-      logger.e('Error fetching calendar dates: $e');
-      errorMessage.value = e.toString();
-      calenderTrekDatesObserver.value = ApiResult.error('Failed to fetch calendar dates: ${e.toString()}');
+
+      throw responseData.message ??
+          "Failed to fetch calendar dates";
     }
+
+    throw "Response Body Null";
+
+  } catch (e) {
+
+    logger.e(
+      'Error fetching calendar dates: $e',
+    );
+
+    errorMessage.value = e.toString();
+
+    calenderTrekDatesObserver.value =
+        ApiResult.error(
+          'Failed to fetch calendar dates: '
+          '${e.toString()}',
+        );
   }
+}
 
   void _autoSelectFirstAvailableDate() {
   if (availableDates.isEmpty) return;
 
-  final firstDateStr = availableDates.keys.first;
+  // ── Sort keys so we always pick the earliest available date ──
+  final sortedDates = availableDates.keys.toList()..sort();
+  final firstDateStr = sortedDates.first;
   final firstDate = DateTime.tryParse(firstDateStr);
 
   print('FIRST DATE STRING: $firstDateStr');
@@ -298,11 +391,11 @@ class DashboardController extends GetxController {
     logger.d('Auto-selecting first available date: $firstDateStr');
 
     selectedDate.value = firstDate;
-
-    dateController.value.text =
-        DateFormat('dd/MM/yyyy').format(firstDate);
-
+    dateController.value.text = DateFormat('dd/MM/yyyy').format(firstDate);
     dateController.refresh();
+
+    // Notify Dashboard to update weekend dates
+    onDateAutoSelected?.call();
   }
 }
 

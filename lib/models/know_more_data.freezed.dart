@@ -229,14 +229,21 @@ KnowMoreData _$KnowMoreDataFromJson(Map<String, dynamic> json) {
 mixin _$KnowMoreData {
   String? get title => throw _privateConstructorUsedError;
   String? get subtitle => throw _privateConstructorUsedError;
+  @JsonKey(name: 'imagePath')
   String? get imagePath => throw _privateConstructorUsedError;
+  @JsonKey(name: 'hasKnowMore')
   bool? get hasKnowMore => throw _privateConstructorUsedError;
+  @JsonKey(name: 'customGradient')
   List<String>? get gradient => throw _privateConstructorUsedError;
+  @JsonKey(name: 'textColor')
   String? get textColour => throw _privateConstructorUsedError;
+  @JsonKey(name: 'detailedTitle')
   String? get detailedTitle => throw _privateConstructorUsedError;
+  @JsonKey(name: 'detailedDescription')
   String? get detailedDescription => throw _privateConstructorUsedError;
   List<BulletPointModel>? get bulletPoints =>
       throw _privateConstructorUsedError;
+  @JsonKey(name: 'callToAction')
   String? get callToAction => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -254,14 +261,14 @@ abstract class $KnowMoreDataCopyWith<$Res> {
   $Res call(
       {String? title,
       String? subtitle,
-      String? imagePath,
-      bool? hasKnowMore,
-      List<String>? gradient,
-      String? textColour,
-      String? detailedTitle,
-      String? detailedDescription,
+      @JsonKey(name: 'imagePath') String? imagePath,
+      @JsonKey(name: 'hasKnowMore') bool? hasKnowMore,
+      @JsonKey(name: 'customGradient') List<String>? gradient,
+      @JsonKey(name: 'textColor') String? textColour,
+      @JsonKey(name: 'detailedTitle') String? detailedTitle,
+      @JsonKey(name: 'detailedDescription') String? detailedDescription,
       List<BulletPointModel>? bulletPoints,
-      String? callToAction});
+      @JsonKey(name: 'callToAction') String? callToAction});
 }
 
 /// @nodoc
@@ -344,14 +351,14 @@ abstract class _$$KnowMoreDataImplCopyWith<$Res>
   $Res call(
       {String? title,
       String? subtitle,
-      String? imagePath,
-      bool? hasKnowMore,
-      List<String>? gradient,
-      String? textColour,
-      String? detailedTitle,
-      String? detailedDescription,
+      @JsonKey(name: 'imagePath') String? imagePath,
+      @JsonKey(name: 'hasKnowMore') bool? hasKnowMore,
+      @JsonKey(name: 'customGradient') List<String>? gradient,
+      @JsonKey(name: 'textColor') String? textColour,
+      @JsonKey(name: 'detailedTitle') String? detailedTitle,
+      @JsonKey(name: 'detailedDescription') String? detailedDescription,
       List<BulletPointModel>? bulletPoints,
-      String? callToAction});
+      @JsonKey(name: 'callToAction') String? callToAction});
 }
 
 /// @nodoc
@@ -427,14 +434,14 @@ class _$KnowMoreDataImpl implements _KnowMoreData {
   const _$KnowMoreDataImpl(
       {this.title,
       this.subtitle,
-      this.imagePath,
-      this.hasKnowMore,
-      final List<String>? gradient,
-      this.textColour,
-      this.detailedTitle,
-      this.detailedDescription,
+      @JsonKey(name: 'imagePath') this.imagePath,
+      @JsonKey(name: 'hasKnowMore') this.hasKnowMore,
+      @JsonKey(name: 'customGradient') final List<String>? gradient,
+      @JsonKey(name: 'textColor') this.textColour,
+      @JsonKey(name: 'detailedTitle') this.detailedTitle,
+      @JsonKey(name: 'detailedDescription') this.detailedDescription,
       final List<BulletPointModel>? bulletPoints,
-      this.callToAction})
+      @JsonKey(name: 'callToAction') this.callToAction})
       : _gradient = gradient,
         _bulletPoints = bulletPoints;
 
@@ -446,11 +453,14 @@ class _$KnowMoreDataImpl implements _KnowMoreData {
   @override
   final String? subtitle;
   @override
+  @JsonKey(name: 'imagePath')
   final String? imagePath;
   @override
+  @JsonKey(name: 'hasKnowMore')
   final bool? hasKnowMore;
   final List<String>? _gradient;
   @override
+  @JsonKey(name: 'customGradient')
   List<String>? get gradient {
     final value = _gradient;
     if (value == null) return null;
@@ -460,10 +470,13 @@ class _$KnowMoreDataImpl implements _KnowMoreData {
   }
 
   @override
+  @JsonKey(name: 'textColor')
   final String? textColour;
   @override
+  @JsonKey(name: 'detailedTitle')
   final String? detailedTitle;
   @override
+  @JsonKey(name: 'detailedDescription')
   final String? detailedDescription;
   final List<BulletPointModel>? _bulletPoints;
   @override
@@ -476,6 +489,7 @@ class _$KnowMoreDataImpl implements _KnowMoreData {
   }
 
   @override
+  @JsonKey(name: 'callToAction')
   final String? callToAction;
 
   @override
@@ -541,13 +555,14 @@ abstract class _KnowMoreData implements KnowMoreData {
   const factory _KnowMoreData(
       {final String? title,
       final String? subtitle,
-      final String? imagePath,
-      final bool? hasKnowMore,
-      final List<String>? gradient,
-      final String? textColour,
-      final String? detailedTitle,
-      final String? detailedDescription,
+      @JsonKey(name: 'imagePath') final String? imagePath,
+      @JsonKey(name: 'hasKnowMore') final bool? hasKnowMore,
+      @JsonKey(name: 'customGradient') final List<String>? gradient,
+      @JsonKey(name: 'textColor') final String? textColour,
+      @JsonKey(name: 'detailedTitle') final String? detailedTitle,
+      @JsonKey(name: 'detailedDescription') final String? detailedDescription,
       final List<BulletPointModel>? bulletPoints,
+      @JsonKey(name: 'callToAction')
       final String? callToAction}) = _$KnowMoreDataImpl;
 
   factory _KnowMoreData.fromJson(Map<String, dynamic> json) =
@@ -558,20 +573,27 @@ abstract class _KnowMoreData implements KnowMoreData {
   @override
   String? get subtitle;
   @override
+  @JsonKey(name: 'imagePath')
   String? get imagePath;
   @override
+  @JsonKey(name: 'hasKnowMore')
   bool? get hasKnowMore;
   @override
+  @JsonKey(name: 'customGradient')
   List<String>? get gradient;
   @override
+  @JsonKey(name: 'textColor')
   String? get textColour;
   @override
+  @JsonKey(name: 'detailedTitle')
   String? get detailedTitle;
   @override
+  @JsonKey(name: 'detailedDescription')
   String? get detailedDescription;
   @override
   List<BulletPointModel>? get bulletPoints;
   @override
+  @JsonKey(name: 'callToAction')
   String? get callToAction;
   @override
   @JsonKey(ignore: true)
@@ -585,8 +607,8 @@ BulletPointModel _$BulletPointModelFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$BulletPointModel {
-  String? get title => throw _privateConstructorUsedError;
-  String? get description => throw _privateConstructorUsedError;
+  String? get icon => throw _privateConstructorUsedError;
+  String? get text => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -600,7 +622,7 @@ abstract class $BulletPointModelCopyWith<$Res> {
           BulletPointModel value, $Res Function(BulletPointModel) then) =
       _$BulletPointModelCopyWithImpl<$Res, BulletPointModel>;
   @useResult
-  $Res call({String? title, String? description});
+  $Res call({String? icon, String? text});
 }
 
 /// @nodoc
@@ -616,17 +638,17 @@ class _$BulletPointModelCopyWithImpl<$Res, $Val extends BulletPointModel>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? title = freezed,
-    Object? description = freezed,
+    Object? icon = freezed,
+    Object? text = freezed,
   }) {
     return _then(_value.copyWith(
-      title: freezed == title
-          ? _value.title
-          : title // ignore: cast_nullable_to_non_nullable
+      icon: freezed == icon
+          ? _value.icon
+          : icon // ignore: cast_nullable_to_non_nullable
               as String?,
-      description: freezed == description
-          ? _value.description
-          : description // ignore: cast_nullable_to_non_nullable
+      text: freezed == text
+          ? _value.text
+          : text // ignore: cast_nullable_to_non_nullable
               as String?,
     ) as $Val);
   }
@@ -640,7 +662,7 @@ abstract class _$$BulletPointModelImplCopyWith<$Res>
       __$$BulletPointModelImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String? title, String? description});
+  $Res call({String? icon, String? text});
 }
 
 /// @nodoc
@@ -654,17 +676,17 @@ class __$$BulletPointModelImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? title = freezed,
-    Object? description = freezed,
+    Object? icon = freezed,
+    Object? text = freezed,
   }) {
     return _then(_$BulletPointModelImpl(
-      title: freezed == title
-          ? _value.title
-          : title // ignore: cast_nullable_to_non_nullable
+      icon: freezed == icon
+          ? _value.icon
+          : icon // ignore: cast_nullable_to_non_nullable
               as String?,
-      description: freezed == description
-          ? _value.description
-          : description // ignore: cast_nullable_to_non_nullable
+      text: freezed == text
+          ? _value.text
+          : text // ignore: cast_nullable_to_non_nullable
               as String?,
     ));
   }
@@ -673,19 +695,19 @@ class __$$BulletPointModelImplCopyWithImpl<$Res>
 /// @nodoc
 @JsonSerializable()
 class _$BulletPointModelImpl implements _BulletPointModel {
-  const _$BulletPointModelImpl({this.title, this.description});
+  const _$BulletPointModelImpl({this.icon, this.text});
 
   factory _$BulletPointModelImpl.fromJson(Map<String, dynamic> json) =>
       _$$BulletPointModelImplFromJson(json);
 
   @override
-  final String? title;
+  final String? icon;
   @override
-  final String? description;
+  final String? text;
 
   @override
   String toString() {
-    return 'BulletPointModel(title: $title, description: $description)';
+    return 'BulletPointModel(icon: $icon, text: $text)';
   }
 
   @override
@@ -693,14 +715,13 @@ class _$BulletPointModelImpl implements _BulletPointModel {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$BulletPointModelImpl &&
-            (identical(other.title, title) || other.title == title) &&
-            (identical(other.description, description) ||
-                other.description == description));
+            (identical(other.icon, icon) || other.icon == icon) &&
+            (identical(other.text, text) || other.text == text));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(runtimeType, title, description);
+  int get hashCode => Object.hash(runtimeType, icon, text);
 
   @JsonKey(ignore: true)
   @override
@@ -718,17 +739,16 @@ class _$BulletPointModelImpl implements _BulletPointModel {
 }
 
 abstract class _BulletPointModel implements BulletPointModel {
-  const factory _BulletPointModel(
-      {final String? title,
-      final String? description}) = _$BulletPointModelImpl;
+  const factory _BulletPointModel({final String? icon, final String? text}) =
+      _$BulletPointModelImpl;
 
   factory _BulletPointModel.fromJson(Map<String, dynamic> json) =
       _$BulletPointModelImpl.fromJson;
 
   @override
-  String? get title;
+  String? get icon;
   @override
-  String? get description;
+  String? get text;
   @override
   @JsonKey(ignore: true)
   _$$BulletPointModelImplCopyWith<_$BulletPointModelImpl> get copyWith =>

@@ -206,8 +206,8 @@ class KnowMoreDetailsScreen extends StatelessWidget {
                     SizedBox(height: 2.h),
                     ...(knowMoreData?.bulletPoints ?? [])
                         .map((point) => _buildBulletPoint(
-                              title: point.title ?? '',
-                              description: point.description ?? '',
+                              title: point.text ?? '',
+description: '',
                             )),
                   ],
                 ),

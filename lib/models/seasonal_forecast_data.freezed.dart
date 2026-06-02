@@ -246,8 +246,10 @@ SeasonalForecastData _$SeasonalForecastDataFromJson(Map<String, dynamic> json) {
 mixin _$SeasonalForecastData {
   String? get title => throw _privateConstructorUsedError;
   String? get description => throw _privateConstructorUsedError;
+  @JsonKey(name: 'imagePath')
   String? get imagePath => throw _privateConstructorUsedError;
-  List<String>? get gradient => throw _privateConstructorUsedError;
+  String? get color => throw _privateConstructorUsedError;
+  List<dynamic>? get gradient => throw _privateConstructorUsedError;
   String? get textColour => throw _privateConstructorUsedError;
   StylingModel? get styling => throw _privateConstructorUsedError;
 
@@ -266,8 +268,9 @@ abstract class $SeasonalForecastDataCopyWith<$Res> {
   $Res call(
       {String? title,
       String? description,
-      String? imagePath,
-      List<String>? gradient,
+      @JsonKey(name: 'imagePath') String? imagePath,
+      String? color,
+      List<dynamic>? gradient,
       String? textColour,
       StylingModel? styling});
 
@@ -291,6 +294,7 @@ class _$SeasonalForecastDataCopyWithImpl<$Res,
     Object? title = freezed,
     Object? description = freezed,
     Object? imagePath = freezed,
+    Object? color = freezed,
     Object? gradient = freezed,
     Object? textColour = freezed,
     Object? styling = freezed,
@@ -308,10 +312,14 @@ class _$SeasonalForecastDataCopyWithImpl<$Res,
           ? _value.imagePath
           : imagePath // ignore: cast_nullable_to_non_nullable
               as String?,
+      color: freezed == color
+          ? _value.color
+          : color // ignore: cast_nullable_to_non_nullable
+              as String?,
       gradient: freezed == gradient
           ? _value.gradient
           : gradient // ignore: cast_nullable_to_non_nullable
-              as List<String>?,
+              as List<dynamic>?,
       textColour: freezed == textColour
           ? _value.textColour
           : textColour // ignore: cast_nullable_to_non_nullable
@@ -347,8 +355,9 @@ abstract class _$$SeasonalForecastDataImplCopyWith<$Res>
   $Res call(
       {String? title,
       String? description,
-      String? imagePath,
-      List<String>? gradient,
+      @JsonKey(name: 'imagePath') String? imagePath,
+      String? color,
+      List<dynamic>? gradient,
       String? textColour,
       StylingModel? styling});
 
@@ -370,6 +379,7 @@ class __$$SeasonalForecastDataImplCopyWithImpl<$Res>
     Object? title = freezed,
     Object? description = freezed,
     Object? imagePath = freezed,
+    Object? color = freezed,
     Object? gradient = freezed,
     Object? textColour = freezed,
     Object? styling = freezed,
@@ -387,10 +397,14 @@ class __$$SeasonalForecastDataImplCopyWithImpl<$Res>
           ? _value.imagePath
           : imagePath // ignore: cast_nullable_to_non_nullable
               as String?,
+      color: freezed == color
+          ? _value.color
+          : color // ignore: cast_nullable_to_non_nullable
+              as String?,
       gradient: freezed == gradient
           ? _value._gradient
           : gradient // ignore: cast_nullable_to_non_nullable
-              as List<String>?,
+              as List<dynamic>?,
       textColour: freezed == textColour
           ? _value.textColour
           : textColour // ignore: cast_nullable_to_non_nullable
@@ -409,8 +423,9 @@ class _$SeasonalForecastDataImpl implements _SeasonalForecastData {
   const _$SeasonalForecastDataImpl(
       {this.title,
       this.description,
-      this.imagePath,
-      final List<String>? gradient,
+      @JsonKey(name: 'imagePath') this.imagePath,
+      this.color,
+      final List<dynamic>? gradient,
       this.textColour,
       this.styling})
       : _gradient = gradient;
@@ -423,10 +438,13 @@ class _$SeasonalForecastDataImpl implements _SeasonalForecastData {
   @override
   final String? description;
   @override
+  @JsonKey(name: 'imagePath')
   final String? imagePath;
-  final List<String>? _gradient;
   @override
-  List<String>? get gradient {
+  final String? color;
+  final List<dynamic>? _gradient;
+  @override
+  List<dynamic>? get gradient {
     final value = _gradient;
     if (value == null) return null;
     if (_gradient is EqualUnmodifiableListView) return _gradient;
@@ -441,7 +459,7 @@ class _$SeasonalForecastDataImpl implements _SeasonalForecastData {
 
   @override
   String toString() {
-    return 'SeasonalForecastData(title: $title, description: $description, imagePath: $imagePath, gradient: $gradient, textColour: $textColour, styling: $styling)';
+    return 'SeasonalForecastData(title: $title, description: $description, imagePath: $imagePath, color: $color, gradient: $gradient, textColour: $textColour, styling: $styling)';
   }
 
   @override
@@ -454,6 +472,7 @@ class _$SeasonalForecastDataImpl implements _SeasonalForecastData {
                 other.description == description) &&
             (identical(other.imagePath, imagePath) ||
                 other.imagePath == imagePath) &&
+            (identical(other.color, color) || other.color == color) &&
             const DeepCollectionEquality().equals(other._gradient, _gradient) &&
             (identical(other.textColour, textColour) ||
                 other.textColour == textColour) &&
@@ -462,8 +481,15 @@ class _$SeasonalForecastDataImpl implements _SeasonalForecastData {
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(runtimeType, title, description, imagePath,
-      const DeepCollectionEquality().hash(_gradient), textColour, styling);
+  int get hashCode => Object.hash(
+      runtimeType,
+      title,
+      description,
+      imagePath,
+      color,
+      const DeepCollectionEquality().hash(_gradient),
+      textColour,
+      styling);
 
   @JsonKey(ignore: true)
   @override
@@ -485,8 +511,9 @@ abstract class _SeasonalForecastData implements SeasonalForecastData {
   const factory _SeasonalForecastData(
       {final String? title,
       final String? description,
-      final String? imagePath,
-      final List<String>? gradient,
+      @JsonKey(name: 'imagePath') final String? imagePath,
+      final String? color,
+      final List<dynamic>? gradient,
       final String? textColour,
       final StylingModel? styling}) = _$SeasonalForecastDataImpl;
 
@@ -498,9 +525,12 @@ abstract class _SeasonalForecastData implements SeasonalForecastData {
   @override
   String? get description;
   @override
+  @JsonKey(name: 'imagePath')
   String? get imagePath;
   @override
-  List<String>? get gradient;
+  String? get color;
+  @override
+  List<dynamic>? get gradient;
   @override
   String? get textColour;
   @override
@@ -517,7 +547,11 @@ StylingModel _$StylingModelFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$StylingModel {
+  dynamic get card => throw _privateConstructorUsedError;
+  dynamic get header => throw _privateConstructorUsedError;
   TitleStylingModel? get title => throw _privateConstructorUsedError;
+  dynamic get icon => throw _privateConstructorUsedError;
+  BodyStylingModel? get body => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -531,9 +565,15 @@ abstract class $StylingModelCopyWith<$Res> {
           StylingModel value, $Res Function(StylingModel) then) =
       _$StylingModelCopyWithImpl<$Res, StylingModel>;
   @useResult
-  $Res call({TitleStylingModel? title});
+  $Res call(
+      {dynamic card,
+      dynamic header,
+      TitleStylingModel? title,
+      dynamic icon,
+      BodyStylingModel? body});
 
   $TitleStylingModelCopyWith<$Res>? get title;
+  $BodyStylingModelCopyWith<$Res>? get body;
 }
 
 /// @nodoc
@@ -549,13 +589,33 @@ class _$StylingModelCopyWithImpl<$Res, $Val extends StylingModel>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
+    Object? card = freezed,
+    Object? header = freezed,
     Object? title = freezed,
+    Object? icon = freezed,
+    Object? body = freezed,
   }) {
     return _then(_value.copyWith(
+      card: freezed == card
+          ? _value.card
+          : card // ignore: cast_nullable_to_non_nullable
+              as dynamic,
+      header: freezed == header
+          ? _value.header
+          : header // ignore: cast_nullable_to_non_nullable
+              as dynamic,
       title: freezed == title
           ? _value.title
           : title // ignore: cast_nullable_to_non_nullable
               as TitleStylingModel?,
+      icon: freezed == icon
+          ? _value.icon
+          : icon // ignore: cast_nullable_to_non_nullable
+              as dynamic,
+      body: freezed == body
+          ? _value.body
+          : body // ignore: cast_nullable_to_non_nullable
+              as BodyStylingModel?,
     ) as $Val);
   }
 
@@ -570,6 +630,18 @@ class _$StylingModelCopyWithImpl<$Res, $Val extends StylingModel>
       return _then(_value.copyWith(title: value) as $Val);
     });
   }
+
+  @override
+  @pragma('vm:prefer-inline')
+  $BodyStylingModelCopyWith<$Res>? get body {
+    if (_value.body == null) {
+      return null;
+    }
+
+    return $BodyStylingModelCopyWith<$Res>(_value.body!, (value) {
+      return _then(_value.copyWith(body: value) as $Val);
+    });
+  }
 }
 
 /// @nodoc
@@ -580,10 +652,17 @@ abstract class _$$StylingModelImplCopyWith<$Res>
       __$$StylingModelImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({TitleStylingModel? title});
+  $Res call(
+      {dynamic card,
+      dynamic header,
+      TitleStylingModel? title,
+      dynamic icon,
+      BodyStylingModel? body});
 
   @override
   $TitleStylingModelCopyWith<$Res>? get title;
+  @override
+  $BodyStylingModelCopyWith<$Res>? get body;
 }
 
 /// @nodoc
@@ -597,13 +676,33 @@ class __$$StylingModelImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
+    Object? card = freezed,
+    Object? header = freezed,
     Object? title = freezed,
+    Object? icon = freezed,
+    Object? body = freezed,
   }) {
     return _then(_$StylingModelImpl(
+      card: freezed == card
+          ? _value.card
+          : card // ignore: cast_nullable_to_non_nullable
+              as dynamic,
+      header: freezed == header
+          ? _value.header
+          : header // ignore: cast_nullable_to_non_nullable
+              as dynamic,
       title: freezed == title
           ? _value.title
           : title // ignore: cast_nullable_to_non_nullable
               as TitleStylingModel?,
+      icon: freezed == icon
+          ? _value.icon
+          : icon // ignore: cast_nullable_to_non_nullable
+              as dynamic,
+      body: freezed == body
+          ? _value.body
+          : body // ignore: cast_nullable_to_non_nullable
+              as BodyStylingModel?,
     ));
   }
 }
@@ -611,17 +710,26 @@ class __$$StylingModelImplCopyWithImpl<$Res>
 /// @nodoc
 @JsonSerializable()
 class _$StylingModelImpl implements _StylingModel {
-  const _$StylingModelImpl({this.title});
+  const _$StylingModelImpl(
+      {this.card, this.header, this.title, this.icon, this.body});
 
   factory _$StylingModelImpl.fromJson(Map<String, dynamic> json) =>
       _$$StylingModelImplFromJson(json);
 
   @override
+  final dynamic card;
+  @override
+  final dynamic header;
+  @override
   final TitleStylingModel? title;
+  @override
+  final dynamic icon;
+  @override
+  final BodyStylingModel? body;
 
   @override
   String toString() {
-    return 'StylingModel(title: $title)';
+    return 'StylingModel(card: $card, header: $header, title: $title, icon: $icon, body: $body)';
   }
 
   @override
@@ -629,12 +737,22 @@ class _$StylingModelImpl implements _StylingModel {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$StylingModelImpl &&
-            (identical(other.title, title) || other.title == title));
+            const DeepCollectionEquality().equals(other.card, card) &&
+            const DeepCollectionEquality().equals(other.header, header) &&
+            (identical(other.title, title) || other.title == title) &&
+            const DeepCollectionEquality().equals(other.icon, icon) &&
+            (identical(other.body, body) || other.body == body));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(runtimeType, title);
+  int get hashCode => Object.hash(
+      runtimeType,
+      const DeepCollectionEquality().hash(card),
+      const DeepCollectionEquality().hash(header),
+      title,
+      const DeepCollectionEquality().hash(icon),
+      body);
 
   @JsonKey(ignore: true)
   @override
@@ -651,14 +769,26 @@ class _$StylingModelImpl implements _StylingModel {
 }
 
 abstract class _StylingModel implements StylingModel {
-  const factory _StylingModel({final TitleStylingModel? title}) =
-      _$StylingModelImpl;
+  const factory _StylingModel(
+      {final dynamic card,
+      final dynamic header,
+      final TitleStylingModel? title,
+      final dynamic icon,
+      final BodyStylingModel? body}) = _$StylingModelImpl;
 
   factory _StylingModel.fromJson(Map<String, dynamic> json) =
       _$StylingModelImpl.fromJson;
 
   @override
+  dynamic get card;
+  @override
+  dynamic get header;
+  @override
   TitleStylingModel? get title;
+  @override
+  dynamic get icon;
+  @override
+  BodyStylingModel? get body;
   @override
   @JsonKey(ignore: true)
   _$$StylingModelImplCopyWith<_$StylingModelImpl> get copyWith =>
@@ -671,7 +801,7 @@ TitleStylingModel _$TitleStylingModelFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$TitleStylingModel {
-  List<String>? get gradient => throw _privateConstructorUsedError;
+  List<dynamic>? get gradient => throw _privateConstructorUsedError;
   String? get textColour => throw _privateConstructorUsedError;
   String? get icon => throw _privateConstructorUsedError;
 
@@ -687,7 +817,7 @@ abstract class $TitleStylingModelCopyWith<$Res> {
           TitleStylingModel value, $Res Function(TitleStylingModel) then) =
       _$TitleStylingModelCopyWithImpl<$Res, TitleStylingModel>;
   @useResult
-  $Res call({List<String>? gradient, String? textColour, String? icon});
+  $Res call({List<dynamic>? gradient, String? textColour, String? icon});
 }
 
 /// @nodoc
@@ -711,7 +841,7 @@ class _$TitleStylingModelCopyWithImpl<$Res, $Val extends TitleStylingModel>
       gradient: freezed == gradient
           ? _value.gradient
           : gradient // ignore: cast_nullable_to_non_nullable
-              as List<String>?,
+              as List<dynamic>?,
       textColour: freezed == textColour
           ? _value.textColour
           : textColour // ignore: cast_nullable_to_non_nullable
@@ -732,7 +862,7 @@ abstract class _$$TitleStylingModelImplCopyWith<$Res>
       __$$TitleStylingModelImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({List<String>? gradient, String? textColour, String? icon});
+  $Res call({List<dynamic>? gradient, String? textColour, String? icon});
 }
 
 /// @nodoc
@@ -754,7 +884,7 @@ class __$$TitleStylingModelImplCopyWithImpl<$Res>
       gradient: freezed == gradient
           ? _value._gradient
           : gradient // ignore: cast_nullable_to_non_nullable
-              as List<String>?,
+              as List<dynamic>?,
       textColour: freezed == textColour
           ? _value.textColour
           : textColour // ignore: cast_nullable_to_non_nullable
@@ -771,15 +901,15 @@ class __$$TitleStylingModelImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$TitleStylingModelImpl implements _TitleStylingModel {
   const _$TitleStylingModelImpl(
-      {final List<String>? gradient, this.textColour, this.icon})
+      {final List<dynamic>? gradient, this.textColour, this.icon})
       : _gradient = gradient;
 
   factory _$TitleStylingModelImpl.fromJson(Map<String, dynamic> json) =>
       _$$TitleStylingModelImplFromJson(json);
 
-  final List<String>? _gradient;
+  final List<dynamic>? _gradient;
   @override
-  List<String>? get gradient {
+  List<dynamic>? get gradient {
     final value = _gradient;
     if (value == null) return null;
     if (_gradient is EqualUnmodifiableListView) return _gradient;
@@ -830,7 +960,7 @@ class _$TitleStylingModelImpl implements _TitleStylingModel {
 
 abstract class _TitleStylingModel implements TitleStylingModel {
   const factory _TitleStylingModel(
-      {final List<String>? gradient,
+      {final List<dynamic>? gradient,
       final String? textColour,
       final String? icon}) = _$TitleStylingModelImpl;
 
@@ -838,7 +968,7 @@ abstract class _TitleStylingModel implements TitleStylingModel {
       _$TitleStylingModelImpl.fromJson;
 
   @override
-  List<String>? get gradient;
+  List<dynamic>? get gradient;
   @override
   String? get textColour;
   @override
@@ -847,4 +977,441 @@ abstract class _TitleStylingModel implements TitleStylingModel {
   @JsonKey(ignore: true)
   _$$TitleStylingModelImplCopyWith<_$TitleStylingModelImpl> get copyWith =>
       throw _privateConstructorUsedError;
+}
+
+BodyStylingModel _$BodyStylingModelFromJson(Map<String, dynamic> json) {
+  return _BodyStylingModel.fromJson(json);
+}
+
+/// @nodoc
+mixin _$BodyStylingModel {
+  dynamic get padding => throw _privateConstructorUsedError;
+  GradientStylingModel? get gradient => throw _privateConstructorUsedError;
+  dynamic get borderRadiusBottom => throw _privateConstructorUsedError;
+
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+  @JsonKey(ignore: true)
+  $BodyStylingModelCopyWith<BodyStylingModel> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $BodyStylingModelCopyWith<$Res> {
+  factory $BodyStylingModelCopyWith(
+          BodyStylingModel value, $Res Function(BodyStylingModel) then) =
+      _$BodyStylingModelCopyWithImpl<$Res, BodyStylingModel>;
+  @useResult
+  $Res call(
+      {dynamic padding,
+      GradientStylingModel? gradient,
+      dynamic borderRadiusBottom});
+
+  $GradientStylingModelCopyWith<$Res>? get gradient;
+}
+
+/// @nodoc
+class _$BodyStylingModelCopyWithImpl<$Res, $Val extends BodyStylingModel>
+    implements $BodyStylingModelCopyWith<$Res> {
+  _$BodyStylingModelCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? padding = freezed,
+    Object? gradient = freezed,
+    Object? borderRadiusBottom = freezed,
+  }) {
+    return _then(_value.copyWith(
+      padding: freezed == padding
+          ? _value.padding
+          : padding // ignore: cast_nullable_to_non_nullable
+              as dynamic,
+      gradient: freezed == gradient
+          ? _value.gradient
+          : gradient // ignore: cast_nullable_to_non_nullable
+              as GradientStylingModel?,
+      borderRadiusBottom: freezed == borderRadiusBottom
+          ? _value.borderRadiusBottom
+          : borderRadiusBottom // ignore: cast_nullable_to_non_nullable
+              as dynamic,
+    ) as $Val);
+  }
+
+  @override
+  @pragma('vm:prefer-inline')
+  $GradientStylingModelCopyWith<$Res>? get gradient {
+    if (_value.gradient == null) {
+      return null;
+    }
+
+    return $GradientStylingModelCopyWith<$Res>(_value.gradient!, (value) {
+      return _then(_value.copyWith(gradient: value) as $Val);
+    });
+  }
+}
+
+/// @nodoc
+abstract class _$$BodyStylingModelImplCopyWith<$Res>
+    implements $BodyStylingModelCopyWith<$Res> {
+  factory _$$BodyStylingModelImplCopyWith(_$BodyStylingModelImpl value,
+          $Res Function(_$BodyStylingModelImpl) then) =
+      __$$BodyStylingModelImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call(
+      {dynamic padding,
+      GradientStylingModel? gradient,
+      dynamic borderRadiusBottom});
+
+  @override
+  $GradientStylingModelCopyWith<$Res>? get gradient;
+}
+
+/// @nodoc
+class __$$BodyStylingModelImplCopyWithImpl<$Res>
+    extends _$BodyStylingModelCopyWithImpl<$Res, _$BodyStylingModelImpl>
+    implements _$$BodyStylingModelImplCopyWith<$Res> {
+  __$$BodyStylingModelImplCopyWithImpl(_$BodyStylingModelImpl _value,
+      $Res Function(_$BodyStylingModelImpl) _then)
+      : super(_value, _then);
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? padding = freezed,
+    Object? gradient = freezed,
+    Object? borderRadiusBottom = freezed,
+  }) {
+    return _then(_$BodyStylingModelImpl(
+      padding: freezed == padding
+          ? _value.padding
+          : padding // ignore: cast_nullable_to_non_nullable
+              as dynamic,
+      gradient: freezed == gradient
+          ? _value.gradient
+          : gradient // ignore: cast_nullable_to_non_nullable
+              as GradientStylingModel?,
+      borderRadiusBottom: freezed == borderRadiusBottom
+          ? _value.borderRadiusBottom
+          : borderRadiusBottom // ignore: cast_nullable_to_non_nullable
+              as dynamic,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$BodyStylingModelImpl implements _BodyStylingModel {
+  const _$BodyStylingModelImpl(
+      {this.padding, this.gradient, this.borderRadiusBottom});
+
+  factory _$BodyStylingModelImpl.fromJson(Map<String, dynamic> json) =>
+      _$$BodyStylingModelImplFromJson(json);
+
+  @override
+  final dynamic padding;
+  @override
+  final GradientStylingModel? gradient;
+  @override
+  final dynamic borderRadiusBottom;
+
+  @override
+  String toString() {
+    return 'BodyStylingModel(padding: $padding, gradient: $gradient, borderRadiusBottom: $borderRadiusBottom)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$BodyStylingModelImpl &&
+            const DeepCollectionEquality().equals(other.padding, padding) &&
+            (identical(other.gradient, gradient) ||
+                other.gradient == gradient) &&
+            const DeepCollectionEquality()
+                .equals(other.borderRadiusBottom, borderRadiusBottom));
+  }
+
+  @JsonKey(ignore: true)
+  @override
+  int get hashCode => Object.hash(
+      runtimeType,
+      const DeepCollectionEquality().hash(padding),
+      gradient,
+      const DeepCollectionEquality().hash(borderRadiusBottom));
+
+  @JsonKey(ignore: true)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$BodyStylingModelImplCopyWith<_$BodyStylingModelImpl> get copyWith =>
+      __$$BodyStylingModelImplCopyWithImpl<_$BodyStylingModelImpl>(
+          this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$BodyStylingModelImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _BodyStylingModel implements BodyStylingModel {
+  const factory _BodyStylingModel(
+      {final dynamic padding,
+      final GradientStylingModel? gradient,
+      final dynamic borderRadiusBottom}) = _$BodyStylingModelImpl;
+
+  factory _BodyStylingModel.fromJson(Map<String, dynamic> json) =
+      _$BodyStylingModelImpl.fromJson;
+
+  @override
+  dynamic get padding;
+  @override
+  GradientStylingModel? get gradient;
+  @override
+  dynamic get borderRadiusBottom;
+  @override
+  @JsonKey(ignore: true)
+  _$$BodyStylingModelImplCopyWith<_$BodyStylingModelImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+GradientStylingModel _$GradientStylingModelFromJson(Map<String, dynamic> json) {
+  return _GradientStylingModel.fromJson(json);
+}
+
+/// @nodoc
+mixin _$GradientStylingModel {
+  List<String>? get colors => throw _privateConstructorUsedError;
+  String? get direction => throw _privateConstructorUsedError;
+  List<double>? get start => throw _privateConstructorUsedError;
+  List<double>? get end => throw _privateConstructorUsedError;
+
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+  @JsonKey(ignore: true)
+  $GradientStylingModelCopyWith<GradientStylingModel> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $GradientStylingModelCopyWith<$Res> {
+  factory $GradientStylingModelCopyWith(GradientStylingModel value,
+          $Res Function(GradientStylingModel) then) =
+      _$GradientStylingModelCopyWithImpl<$Res, GradientStylingModel>;
+  @useResult
+  $Res call(
+      {List<String>? colors,
+      String? direction,
+      List<double>? start,
+      List<double>? end});
+}
+
+/// @nodoc
+class _$GradientStylingModelCopyWithImpl<$Res,
+        $Val extends GradientStylingModel>
+    implements $GradientStylingModelCopyWith<$Res> {
+  _$GradientStylingModelCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? colors = freezed,
+    Object? direction = freezed,
+    Object? start = freezed,
+    Object? end = freezed,
+  }) {
+    return _then(_value.copyWith(
+      colors: freezed == colors
+          ? _value.colors
+          : colors // ignore: cast_nullable_to_non_nullable
+              as List<String>?,
+      direction: freezed == direction
+          ? _value.direction
+          : direction // ignore: cast_nullable_to_non_nullable
+              as String?,
+      start: freezed == start
+          ? _value.start
+          : start // ignore: cast_nullable_to_non_nullable
+              as List<double>?,
+      end: freezed == end
+          ? _value.end
+          : end // ignore: cast_nullable_to_non_nullable
+              as List<double>?,
+    ) as $Val);
+  }
+}
+
+/// @nodoc
+abstract class _$$GradientStylingModelImplCopyWith<$Res>
+    implements $GradientStylingModelCopyWith<$Res> {
+  factory _$$GradientStylingModelImplCopyWith(_$GradientStylingModelImpl value,
+          $Res Function(_$GradientStylingModelImpl) then) =
+      __$$GradientStylingModelImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call(
+      {List<String>? colors,
+      String? direction,
+      List<double>? start,
+      List<double>? end});
+}
+
+/// @nodoc
+class __$$GradientStylingModelImplCopyWithImpl<$Res>
+    extends _$GradientStylingModelCopyWithImpl<$Res, _$GradientStylingModelImpl>
+    implements _$$GradientStylingModelImplCopyWith<$Res> {
+  __$$GradientStylingModelImplCopyWithImpl(_$GradientStylingModelImpl _value,
+      $Res Function(_$GradientStylingModelImpl) _then)
+      : super(_value, _then);
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? colors = freezed,
+    Object? direction = freezed,
+    Object? start = freezed,
+    Object? end = freezed,
+  }) {
+    return _then(_$GradientStylingModelImpl(
+      colors: freezed == colors
+          ? _value._colors
+          : colors // ignore: cast_nullable_to_non_nullable
+              as List<String>?,
+      direction: freezed == direction
+          ? _value.direction
+          : direction // ignore: cast_nullable_to_non_nullable
+              as String?,
+      start: freezed == start
+          ? _value._start
+          : start // ignore: cast_nullable_to_non_nullable
+              as List<double>?,
+      end: freezed == end
+          ? _value._end
+          : end // ignore: cast_nullable_to_non_nullable
+              as List<double>?,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$GradientStylingModelImpl implements _GradientStylingModel {
+  const _$GradientStylingModelImpl(
+      {final List<String>? colors,
+      this.direction,
+      final List<double>? start,
+      final List<double>? end})
+      : _colors = colors,
+        _start = start,
+        _end = end;
+
+  factory _$GradientStylingModelImpl.fromJson(Map<String, dynamic> json) =>
+      _$$GradientStylingModelImplFromJson(json);
+
+  final List<String>? _colors;
+  @override
+  List<String>? get colors {
+    final value = _colors;
+    if (value == null) return null;
+    if (_colors is EqualUnmodifiableListView) return _colors;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(value);
+  }
+
+  @override
+  final String? direction;
+  final List<double>? _start;
+  @override
+  List<double>? get start {
+    final value = _start;
+    if (value == null) return null;
+    if (_start is EqualUnmodifiableListView) return _start;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(value);
+  }
+
+  final List<double>? _end;
+  @override
+  List<double>? get end {
+    final value = _end;
+    if (value == null) return null;
+    if (_end is EqualUnmodifiableListView) return _end;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(value);
+  }
+
+  @override
+  String toString() {
+    return 'GradientStylingModel(colors: $colors, direction: $direction, start: $start, end: $end)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$GradientStylingModelImpl &&
+            const DeepCollectionEquality().equals(other._colors, _colors) &&
+            (identical(other.direction, direction) ||
+                other.direction == direction) &&
+            const DeepCollectionEquality().equals(other._start, _start) &&
+            const DeepCollectionEquality().equals(other._end, _end));
+  }
+
+  @JsonKey(ignore: true)
+  @override
+  int get hashCode => Object.hash(
+      runtimeType,
+      const DeepCollectionEquality().hash(_colors),
+      direction,
+      const DeepCollectionEquality().hash(_start),
+      const DeepCollectionEquality().hash(_end));
+
+  @JsonKey(ignore: true)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$GradientStylingModelImplCopyWith<_$GradientStylingModelImpl>
+      get copyWith =>
+          __$$GradientStylingModelImplCopyWithImpl<_$GradientStylingModelImpl>(
+              this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$GradientStylingModelImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _GradientStylingModel implements GradientStylingModel {
+  const factory _GradientStylingModel(
+      {final List<String>? colors,
+      final String? direction,
+      final List<double>? start,
+      final List<double>? end}) = _$GradientStylingModelImpl;
+
+  factory _GradientStylingModel.fromJson(Map<String, dynamic> json) =
+      _$GradientStylingModelImpl.fromJson;
+
+  @override
+  List<String>? get colors;
+  @override
+  String? get direction;
+  @override
+  List<double>? get start;
+  @override
+  List<double>? get end;
+  @override
+  @JsonKey(ignore: true)
+  _$$GradientStylingModelImplCopyWith<_$GradientStylingModelImpl>
+      get copyWith => throw _privateConstructorUsedError;
 }

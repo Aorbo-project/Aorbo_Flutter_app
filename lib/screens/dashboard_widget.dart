@@ -71,9 +71,6 @@ class _DashboardState extends State<Dashboard>
   late Animation<double> _scaleAnimation;
   bool _isPressed = false;
 
-  // PageController initialPage uses a fixed large number to allow infinite
-  // scrolling in both directions — knowMoreCardsData is local to build so
-  // we cannot reference its length here. 500 is a safe arbitrary offset.
   final PageController _pageController = PageController(
     viewportFraction: 0.85,
     initialPage: 500,
@@ -92,13 +89,36 @@ class _DashboardState extends State<Dashboard>
   final DashboardController _dashboardC = Get.find<DashboardController>();
   final TrekController _trekC = Get.find<TrekController>();
 
-  // Calendar state
   CalendarFormat _calendarFormat = CalendarFormat.month;
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
 
   List<DateTime> _nearestWeekendDates = [];
   Map<String, bool> _favoriteTreks = {};
+
+  // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
+
+  String getFullImageUrl(String? path) {
+    if (path == null || path.isEmpty) return '';
+    if (path.startsWith('http')) return path;
+    return '[api.aorbotreks.co.in$path](https://api.aorbotreks.co.in$path)';
+  }
+
+  List<String> _safeGradient(
+  List<dynamic>? gradient,
+  List<String> fallback,
+) {
+
+  if (gradient == null || gradient.isEmpty) {
+    return fallback;
+  }
+
+  return gradient
+      .map((e) => e.toString())
+      .toList();
+}
 
   // ---------------------------------------------------------------------------
   // Lifecycle
@@ -227,8 +247,9 @@ class _DashboardState extends State<Dashboard>
     if (_dashboardC.selectedDate.value == null) return;
 
     _nearestWeekendDates.clear();
-    DateTime currentDate = _dashboardC.selectedDate.value!;
+    final DateTime selectedDate = _dashboardC.selectedDate.value!;
 
+    DateTime currentDate = selectedDate;
     if (_ntpTime != null) {
       final DateTime normalizedNTP =
           DateTime(_ntpTime!.year, _ntpTime!.month, _ntpTime!.day);
@@ -239,15 +260,25 @@ class _DashboardState extends State<Dashboard>
       }
     }
 
+    const weekendDays = [
+      DateTime.thursday,
+      DateTime.friday,
+      DateTime.saturday,
+    ];
+
+    final bool isSelectedAWeekend = weekendDays.contains(selectedDate.weekday);
+    if (!isSelectedAWeekend && _dashboardC.isDateAvailable(selectedDate)) {
+      _nearestWeekendDates.add(selectedDate);
+    }
+
     for (int i = 0; i < 14; i++) {
       final DateTime check = currentDate.add(Duration(days: i));
-      if ([DateTime.friday, DateTime.saturday, DateTime.sunday]
-          .contains(check.weekday)) {
+      if (weekendDays.contains(check.weekday)) {
         if (_dashboardC.isDateAvailable(check)) {
           _nearestWeekendDates.add(check);
         }
+        if (check.weekday == DateTime.saturday) break;
       }
-      if (_nearestWeekendDates.length >= 3) break;
     }
   }
 
@@ -332,6 +363,13 @@ class _DashboardState extends State<Dashboard>
       CustomSnackBar.show(context, message: 'Please provide valid inputs');
       return;
     }
+    if (_dashboardC.selectedDate.value != null &&
+        !_dashboardC.isDateAvailable(_dashboardC.selectedDate.value!)) {
+      CustomSnackBar.show(context,
+          message:
+              'Selected date has no available treks. Please pick another date.');
+      return;
+    }
     _resetAllScrolls();
     await _trekC.searchTreks(
       cityId: _dashboardC.selectedCityId.value,
@@ -364,7 +402,6 @@ class _DashboardState extends State<Dashboard>
   // ---------------------------------------------------------------------------
 
   Future<void> _selectDate(BuildContext context) async {
-    // Guard: city and trek must be selected first
     final bool isCityTrekSelected = _dashboardC.selectedCityId.value != 0 &&
         _dashboardC.selectedTrekId.value != 0;
 
@@ -571,8 +608,7 @@ class _DashboardState extends State<Dashboard>
                           decoration: BoxDecoration(
                             color: _C.cardBg,
                             borderRadius: BorderRadius.circular(18),
-                            border:
-                                Border.all(color: _C.fieldBorder),
+                            border: Border.all(color: _C.fieldBorder),
                           ),
                           padding:
                               const EdgeInsets.fromLTRB(4, 4, 4, 10),
@@ -637,9 +673,8 @@ class _DashboardState extends State<Dashboard>
                                 rowHeight: 50,
                                 daysOfWeekHeight: 28,
                                 shouldFillViewport: false,
-                                onFormatChanged: (f) =>
-                                    setSheet(() =>
-                                        tempCalendarFormat = f),
+                                onFormatChanged: (f) => setSheet(
+                                    () => tempCalendarFormat = f),
                                 onPageChanged: (foc) =>
                                     tempFocusedDay = foc,
                                 selectedDayPredicate: (d) =>
@@ -657,7 +692,6 @@ class _DashboardState extends State<Dashboard>
                                     return;
                                   }
 
-                                  // Commit to state and close
                                   setState(() {
                                     _dashboardC.selectedDate.value = sel;
                                     _dashboardC.dateController.value
@@ -690,8 +724,8 @@ class _DashboardState extends State<Dashboard>
                                   todayBuilder: (ctx, day, _) =>
                                       _buildDayCell(
                                     day: day,
-                                    isSelected: isSameDay(
-                                        day, tempSelectedDate),
+                                    isSelected:
+                                        isSameDay(day, tempSelectedDate),
                                     isToday: true,
                                   ),
                                   selectedBuilder: (ctx, day, _) =>
@@ -699,8 +733,7 @@ class _DashboardState extends State<Dashboard>
                                     day: day,
                                     isSelected: true,
                                     isToday: isSameDay(
-                                        day,
-                                        _ntpTime ?? DateTime.now()),
+                                        day, _ntpTime ?? DateTime.now()),
                                   ),
                                   markerBuilder: (_, __, ___) => null,
                                 ),
@@ -872,8 +905,7 @@ class _DashboardState extends State<Dashboard>
           border: isToday && !isSelected
               ? Border.all(color: _C.teal, width: 1.6)
               : isAvailable && !isSelected
-                  ? Border.all(
-                      color: _C.teal.withOpacity(0.35), width: 1)
+                  ? Border.all(color: _C.teal.withOpacity(0.35), width: 1)
                   : null,
           boxShadow: isSelected
               ? [
@@ -937,115 +969,6 @@ class _DashboardState extends State<Dashboard>
   Widget build(BuildContext context) {
     ScreenConstant.setScreenAwareConstant(context);
 
-    // Local data — defined here so they are available in both auto-scroll
-    // timers (which now no longer reference them directly) and in the Obx
-    // builders below.
-    final List<KnowMoreData> knowMoreCardsData = [
-      KnowMoreData(
-        title: "Variety of Treks",
-        subtitle:
-            "From Serene trails to thrilling climbs, find treks that match your vibes!",
-        hasKnowMore: false,
-        imagePath:
-            "[firebasestorage.googleapis.com](https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/knowmore1.png?alt=media&token=367dcaa7-f0f6-4bb3-9d73-a67489aa77a8)",
-        textColour: "#000000",
-        gradient: ["#F7EB68", "#FFEF3E", "#FFEF3E"],
-      ),
-      KnowMoreData(
-        title: "Countless Organizers",
-        subtitle:
-            "Choose from an extensive network of trusted trek organizers, all in one place!",
-        hasKnowMore: false,
-        imagePath:
-            "[firebasestorage.googleapis.com](https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/knowmore1.png?alt=media&token=367dcaa7-f0f6-4bb3-9d73-a67489aa77a8)",
-        textColour: "#FFFFFF",
-        gradient: ["#FFFFFF", "#B40000", "#B40000"],
-      ),
-    ];
-
-    final List<TopTreksData> topTreksCardsData = [
-      TopTreksData(
-        title: "Coorg",
-        description:
-            "From Serene trails to thrilling climbs, find treks that match your vibes!",
-        imagePath:
-            "[firebasestorage.googleapis.com](https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/coorg%204.png?alt=media&token=354d476c-d3e5-4b9f-a06e-6b787227a608)",
-        textColour: "#35323b",
-        gradient: ["#F7EB68", "#FFEF3E", "#FFEF3E"],
-      ),
-      TopTreksData(
-        title: "Munnar",
-        description:
-            "From Serene trails to thrilling climbs, find treks that match your vibes!",
-        imagePath:
-            "[firebasestorage.googleapis.com](https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/coorg%204.png?alt=media&token=354d476c-d3e5-4b9f-a06e-6b787227a608)",
-        textColour: "#ffffff",
-        gradient: ["#ffffff", "#9e87e1", "#7a56e1"],
-      ),
-    ];
-
-    final List<ShortsTreksData> shortsTreksCardsData = [
-      ShortsTreksData(
-        title: "cvubvghf gjvhbun",
-        description: "4M",
-        textColour: "#ffffff",
-        imagePath:
-            "[firebasestorage.googleapis.com](https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/image%20(9).png?alt=media&token=a173b677-2c64-47b9-b610-6f8bad60650f)",
-        videoPath:
-            "[firebasestorage.googleapis.com](https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/WhatsApp%20Video%202026-04-30%20at%209.47.14%20PM.mp4?alt=media&token=d6f20c28-3369-415b-8859-5a02dad8113a)",
-        shortVideoPath:
-            "[firebasestorage.googleapis.com](https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/WhatsApp%20Video%202026-04-30%20at%209.46.02%20PM.mp4?alt=media&token=356e3d97-dfc9-4360-8a98-118a0b60a5c3)",
-      ),
-      ShortsTreksData(
-        title: "hgvjhbkjnllbhjg h",
-        description: "5M",
-        textColour: "#35323b",
-        imagePath:
-            "[firebasestorage.googleapis.com](https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/image%20(9).png?alt=media&token=a173b677-2c64-47b9-b610-6f8bad60650f)",
-        videoPath:
-            "[firebasestorage.googleapis.com](https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/WhatsApp%20Video%202026-04-30%20at%209.47.14%20PM.mp4?alt=media&token=d6f20c28-3369-415b-8859-5a02dad8113a)",
-        shortVideoPath:
-            "[firebasestorage.googleapis.com](https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/WhatsApp%20Video%202026-04-30%20at%209.46.02%20PM.mp4?alt=media&token=356e3d97-dfc9-4360-8a98-118a0b60a5c3)",
-      ),
-    ];
-
-    final List<SeasonalForecastData> seasonalForecastData = [
-      SeasonalForecastData(
-        title: "Puri SUMMER",
-        description:
-            "From Serene trails to thrilling climbs, find treks that match your vibes!",
-        imagePath:
-            "[firebasestorage.googleapis.com](https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/man%20in%20front%20of%20the%20house%20in%20winter%20forest%20(1).png?alt=media&token=f889af68-4355-4dae-9289-138db1dfb67b)",
-        textColour: "#35323b",
-        gradient: ["#F7EB68", "#FFEF3E", "#FFEF3E"],
-        styling: StylingModel(
-          title: TitleStylingModel(
-            icon:
-                "[firebasestorage.googleapis.com](https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/Winter.png?alt=media&token=e0098e5c-ba45-4af2-8a54-f1eb8d41874f)",
-            textColour: "#ffffff",
-            gradient: ["#9f88e0", "#9e87e1", "#7a56e1"],
-          ),
-        ),
-      ),
-      SeasonalForecastData(
-        title: "Munnar",
-        description:
-            "From Serene trails to thrilling climbs, find treks that match your vibes!",
-        imagePath:
-            "[firebasestorage.googleapis.com](https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/man%20in%20front%20of%20the%20house%20in%20winter%20forest%20(1).png?alt=media&token=f889af68-4355-4dae-9289-138db1dfb67b)",
-        textColour: "#000000",
-        gradient: ["#9f88e0", "#9e87e1", "#7a56e1"],
-        styling: StylingModel(
-          title: TitleStylingModel(
-            icon:
-                "[firebasestorage.googleapis.com](https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/Winter.png?alt=media&token=e0098e5c-ba45-4af2-8a54-f1eb8d41874f)",
-            textColour: "#35323b",
-            gradient: ["#F7EB68", "#FFEF3E", "#FFEF3E"],
-          ),
-        ),
-      ),
-    ];
-
     return Scaffold(
       body: SingleChildScrollView(
         physics: const ClampingScrollPhysics(),
@@ -1063,14 +986,14 @@ class _DashboardState extends State<Dashboard>
                   bottomRight: Radius.circular(18),
                 ),
               ),
-              margin:
-                  const EdgeInsets.only(left: 0, right: 0, top: 0, bottom: 5),
+              margin: const EdgeInsets.only(
+                  left: 0, right: 0, top: 0, bottom: 5),
               child: Container(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [Color(0xFFFEF200), Color(0xFFFFFF)],
+                    colors: [Color(0xFFFEF200), Color(0xFFFFFFFF)],
                   ),
                   borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(18),
@@ -1155,8 +1078,9 @@ class _DashboardState extends State<Dashboard>
                                           GestureDetector(
                                             onTap: _selectSourceLocation,
                                             child: Padding(
-                                              padding: const EdgeInsets
-                                                  .only(right: 8),
+                                              padding:
+                                                  const EdgeInsets.only(
+                                                      right: 8),
                                               child: SvgPicture.asset(
                                                 CommonImages.location3,
                                                 height:
@@ -1219,7 +1143,8 @@ class _DashboardState extends State<Dashboard>
                                           rippleColor:
                                               _C.teal.withOpacity(0.08),
                                           onTap: _selectSourceLocation,
-                                          child: const SizedBox.expand(),
+                                          child:
+                                              const SizedBox.expand(),
                                         ),
                                       ),
                                     ],
@@ -1234,8 +1159,9 @@ class _DashboardState extends State<Dashboard>
                                           GestureDetector(
                                             onTap: _selectDestinationTrek,
                                             child: Padding(
-                                              padding: const EdgeInsets
-                                                  .only(right: 8),
+                                              padding:
+                                                  const EdgeInsets.only(
+                                                      right: 8),
                                               child: SvgPicture.asset(
                                                 CommonImages.location2,
                                                 height:
@@ -1298,7 +1224,8 @@ class _DashboardState extends State<Dashboard>
                                           rippleColor:
                                               _C.teal.withOpacity(0.08),
                                           onTap: _selectDestinationTrek,
-                                          child: const SizedBox.expand(),
+                                          child:
+                                              const SizedBox.expand(),
                                         ),
                                       ),
                                     ],
@@ -1315,8 +1242,9 @@ class _DashboardState extends State<Dashboard>
                                     highlightColor:
                                         _C.teal.withOpacity(0.04),
                                     child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 4),
+                                      padding:
+                                          const EdgeInsets.symmetric(
+                                              vertical: 4),
                                       child: Row(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
@@ -1328,7 +1256,8 @@ class _DashboardState extends State<Dashboard>
                                               CommonImages.calendar,
                                               height:
                                                   ScreenConstant.size24,
-                                              width: ScreenConstant.size24,
+                                              width:
+                                                  ScreenConstant.size24,
                                               colorFilter:
                                                   const ColorFilter.mode(
                                                       _C.teal,
@@ -1341,7 +1270,8 @@ class _DashboardState extends State<Dashboard>
                                           Expanded(
                                             child: Column(
                                               crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
+                                                  CrossAxisAlignment
+                                                      .start,
                                               children: [
                                                 SizedBox(height: 1.h),
                                                 Text(
@@ -1352,19 +1282,22 @@ class _DashboardState extends State<Dashboard>
                                                   style: TextStyle(
                                                     fontFamily: 'Poppins',
                                                     color: _C.inkLight,
-                                                    fontSize: FontSize.s10,
+                                                    fontSize:
+                                                        FontSize.s10,
                                                     fontWeight:
                                                         FontWeight.w500,
                                                   ),
                                                 ),
                                                 SizedBox(height: 0.2.h),
                                                 Obx(() {
-                                                  final cityId = _dashboardC
-                                                      .selectedCityId
-                                                      .value;
-                                                  final trekId = _dashboardC
-                                                      .selectedTrekId
-                                                      .value;
+                                                  final cityId =
+                                                      _dashboardC
+                                                          .selectedCityId
+                                                          .value;
+                                                  final trekId =
+                                                      _dashboardC
+                                                          .selectedTrekId
+                                                          .value;
                                                   final selectedDateValue =
                                                       _dashboardC
                                                           .selectedDate
@@ -1408,7 +1341,8 @@ class _DashboardState extends State<Dashboard>
                                                   }
 
                                                   if (dateText.isNotEmpty) {
-                                                    final bool isAvailable =
+                                                    final bool
+                                                        isAvailable =
                                                         selectedDateValue !=
                                                                 null &&
                                                             _dashboardC
@@ -1448,13 +1382,15 @@ class _DashboardState extends State<Dashboard>
                                                                     .only(
                                                                     left:
                                                                         8.0),
-                                                                child: Icon(
+                                                                child:
+                                                                    Icon(
                                                                   isAvailable
                                                                       ? Icons
                                                                           .check_circle
                                                                       : Icons
                                                                           .warning,
-                                                                  size: 14,
+                                                                  size:
+                                                                      14,
                                                                   color: isAvailable
                                                                       ? _C.teal
                                                                       : _C.danger,
@@ -1497,7 +1433,8 @@ class _DashboardState extends State<Dashboard>
                                                     orElse: () => false,
                                                   );
 
-                                                  final List<TrekDatesModel>?
+                                                  final List<
+                                                          TrekDatesModel>?
                                                       calenderTrekDates =
                                                       observerState
                                                           .maybeWhen(
@@ -1517,7 +1454,8 @@ class _DashboardState extends State<Dashboard>
                                                       now.month,
                                                       now.day);
 
-                                                  final List<TrekDatesModel>
+                                                  final List<
+                                                          TrekDatesModel>
                                                       first10Dates =
                                                       (calenderTrekDates ??
                                                               [])
@@ -1564,7 +1502,8 @@ class _DashboardState extends State<Dashboard>
                                                     margin: EdgeInsets.only(
                                                         top: 1.h),
                                                     height: 6.h,
-                                                    child: ListView.builder(
+                                                    child:
+                                                        ListView.builder(
                                                       key: ValueKey(
                                                           'date_list_${observerState.hashCode}_${first10Dates.length}'),
                                                       scrollDirection:
@@ -1582,7 +1521,8 @@ class _DashboardState extends State<Dashboard>
                                                         final DateTime?
                                                             date =
                                                             DateTime.tryParse(
-                                                                cardData.date ??
+                                                                cardData
+                                                                        .date ??
                                                                     '');
                                                         if (date == null)
                                                           return const SizedBox();
@@ -1605,7 +1545,8 @@ class _DashboardState extends State<Dashboard>
                                                             _dashboardC
                                                                 .isDateAvailable(
                                                                     date);
-                                                        final int trekCount =
+                                                        final int
+                                                            trekCount =
                                                             _dashboardC
                                                                 .getTrekCountForDate(
                                                                     date);
@@ -1613,34 +1554,30 @@ class _DashboardState extends State<Dashboard>
                                                         return GestureDetector(
                                                           onTap: () {
                                                             if (isDateAvailable) {
-                                                              setState(() {
-                                                                _dashboardC
-                                                                        .selectedDate
-                                                                        .value =
+                                                              setState(
+                                                                  () {
+                                                                _dashboardC.selectedDate.value =
                                                                     date;
                                                                 _dashboardC
-                                                                        .dateController
-                                                                        .value
-                                                                        .text =
-                                                                    DateFormat(
-                                                                            'dd/MM/yyyy')
-                                                                        .format(
-                                                                            date);
+                                                                    .dateController
+                                                                    .value
+                                                                    .text = DateFormat(
+                                                                        'dd/MM/yyyy')
+                                                                    .format(
+                                                                        date);
                                                                 _selectedDay =
                                                                     date;
                                                                 _focusedDay =
                                                                     date;
                                                                 _updateNearestWeekendDates();
                                                               });
-                                                              CustomSnackBar
-                                                                  .show(
+                                                              CustomSnackBar.show(
                                                                 context,
                                                                 message:
                                                                     'Date selected: $formattedDate',
                                                               );
                                                             } else {
-                                                              CustomSnackBar
-                                                                  .show(
+                                                              CustomSnackBar.show(
                                                                 context,
                                                                 message:
                                                                     'No treks available on this date',
@@ -1648,29 +1585,23 @@ class _DashboardState extends State<Dashboard>
                                                             }
                                                           },
                                                           child: Container(
-                                                            margin:
-                                                                EdgeInsets
-                                                                    .only(
-                                                              left: index ==
-                                                                      0
+                                                            margin: EdgeInsets.only(
+                                                              left: index == 0
                                                                   ? 0
                                                                   : ScreenConstant
                                                                       .size6,
                                                               right: index ==
-                                                                      first10Dates
-                                                                              .length -
+                                                                      first10Dates.length -
                                                                           1
                                                                   ? 0
                                                                   : ScreenConstant
                                                                       .size6,
                                                             ),
-                                                            padding:
-                                                                const EdgeInsets
-                                                                    .symmetric(
-                                                                    horizontal:
-                                                                        12,
-                                                                    vertical:
-                                                                        8),
+                                                            padding: const EdgeInsets.symmetric(
+                                                                horizontal:
+                                                                    12,
+                                                                vertical:
+                                                                    8),
                                                             decoration:
                                                                 BoxDecoration(
                                                               border:
@@ -1680,15 +1611,13 @@ class _DashboardState extends State<Dashboard>
                                                                     : isDateAvailable
                                                                         ? _C.teal.withOpacity(0.35)
                                                                         : _C.fieldBorder,
-                                                                width:
-                                                                    isSelected
-                                                                        ? 1.5
-                                                                        : 0.8,
+                                                                width: isSelected
+                                                                    ? 1.5
+                                                                    : 0.8,
                                                               ),
                                                               borderRadius:
-                                                                  BorderRadius
-                                                                      .circular(
-                                                                          12),
+                                                                  BorderRadius.circular(
+                                                                      12),
                                                               color: isSelected
                                                                   ? _C.tealSoft
                                                                   : isDateAvailable
@@ -1710,8 +1639,7 @@ class _DashboardState extends State<Dashboard>
                                                                     fontFamily:
                                                                         'Poppins',
                                                                     fontSize:
-                                                                        FontSize
-                                                                            .s10,
+                                                                        FontSize.s10,
                                                                     fontWeight: isSelected
                                                                         ? FontWeight.w700
                                                                         : FontWeight.w500,
@@ -1726,9 +1654,8 @@ class _DashboardState extends State<Dashboard>
                                                                     trekCount >
                                                                         0)
                                                                   Padding(
-                                                                    padding: const EdgeInsets.only(
-                                                                        top:
-                                                                            2.0),
+                                                                    padding:
+                                                                        const EdgeInsets.only(top: 2.0),
                                                                     child:
                                                                         Text(
                                                                       '$trekCount',
@@ -1780,7 +1707,8 @@ class _DashboardState extends State<Dashboard>
                                   ScreenConstant.size12),
                             ),
                             child: Padding(
-                              padding: EdgeInsets.all(ScreenConstant.size15),
+                              padding:
+                                  EdgeInsets.all(ScreenConstant.size15),
                               child: Row(
                                 children: [
                                   Expanded(
@@ -1807,11 +1735,15 @@ class _DashboardState extends State<Dashboard>
                                         Get.toNamed('/weekend-treks',
                                             arguments: {
                                               'city': _dashboardC
-                                                  .fromController.value.text,
+                                                  .fromController
+                                                  .value
+                                                  .text,
                                               'trek': _dashboardC
                                                   .toController.value.text,
                                               'date': _dashboardC
-                                                  .dateController.value.text,
+                                                  .dateController
+                                                  .value
+                                                  .text,
                                               'weekendDates':
                                                   _nearestWeekendDates,
                                             });
@@ -1850,8 +1782,9 @@ class _DashboardState extends State<Dashboard>
                                               _nearestWeekendDates
                                                   .isNotEmpty)
                                             Padding(
-                                              padding: const EdgeInsets.only(
-                                                  top: 4),
+                                              padding:
+                                                  const EdgeInsets.only(
+                                                      top: 4),
                                               child: Text(
                                                 'Next: ${DateFormat('EEE, MMM d').format(_nearestWeekendDates.first)}',
                                                 textScaler:
@@ -1884,14 +1817,19 @@ class _DashboardState extends State<Dashboard>
                                                   'Please provide valid inputs');
                                           return;
                                         }
-                                        Get.toNamed('/personalized-treks',
+                                        Get.toNamed(
+                                            '/personalized-treks',
                                             arguments: {
                                               'city': _dashboardC
-                                                  .fromController.value.text,
+                                                  .fromController
+                                                  .value
+                                                  .text,
                                               'trek': _dashboardC
                                                   .toController.value.text,
                                               'date': _dashboardC
-                                                  .dateController.value.text,
+                                                  .dateController
+                                                  .value
+                                                  .text,
                                             });
                                       },
                                       child: Column(
@@ -1928,8 +1866,9 @@ class _DashboardState extends State<Dashboard>
                                               _nearestWeekendDates
                                                   .isNotEmpty)
                                             Padding(
-                                              padding: const EdgeInsets.only(
-                                                  top: 4),
+                                              padding:
+                                                  const EdgeInsets.only(
+                                                      top: 4),
                                               child: Text(
                                                 'Unique Trekking Routes',
                                                 textScaler:
@@ -1962,8 +1901,9 @@ class _DashboardState extends State<Dashboard>
                             builder: (context, child) => Transform.scale(
                               scale: _scaleAnimation.value,
                               child: Container(
-                                width: MediaQuery.of(context).size.width *
-                                    0.75,
+                                width:
+                                    MediaQuery.of(context).size.width *
+                                        0.75,
                                 height: ScreenConstant.size44,
                                 decoration: BoxDecoration(
                                   borderRadius:
@@ -2000,21 +1940,49 @@ class _DashboardState extends State<Dashboard>
             ),
 
             // ----------------------------------------------------------------
-            // Content section
+            // Content sections — each Obx parses its own data reactively
             // ----------------------------------------------------------------
             Container(
               color: _C.bg,
               child: Column(
                 spacing: MediaQuery.of(context).size.height / 50,
                 children: [
-                  // What's New
+                  // ── What's New ──
                   Obx(() {
                     final knowMoreLoading = _dashboardC
                         .whatsNewObserver.value
                         .maybeWhen(
                             loading: (_) => true, orElse: () => false);
 
-                    if (knowMoreCardsData.isEmpty) return const SizedBox();
+                    final whatsNewResponse = _dashboardC
+                        .whatsNewObserver.value
+                        .maybeWhen(
+                      success: (data) => data.data ?? [],
+                      orElse: () => [],
+                    );
+
+                    final List<KnowMoreData> knowMoreCardsData =
+                        whatsNewResponse.map<KnowMoreData>((e) {
+                      return KnowMoreData(
+                        title: e.title ?? '',
+                        subtitle: e.subtitle ?? '',
+                        hasKnowMore: e.hasKnowMore ?? false,
+                        imagePath: getFullImageUrl(e.imagePath),
+                        textColour: e.textColour ?? '#FFFFFF',
+                        gradient: _safeGradient(
+                            e.gradient, ['#0F7B6C', '#1AA090']),
+                        detailedTitle: e.detailedTitle,
+                        detailedDescription: e.detailedDescription,
+                        bulletPoints: e.bulletPoints,
+                        callToAction: e.callToAction,
+                      );
+                    }).toList();
+
+                    log('WHATS NEW COUNT => ${knowMoreCardsData.length}');
+
+                    if (!knowMoreLoading && knowMoreCardsData.isEmpty) {
+                      return const SizedBox();
+                    }
 
                     return Column(
                       children: [
@@ -2093,61 +2061,96 @@ class _DashboardState extends State<Dashboard>
                               _isUserInteracting = false;
                               _startAutoScroll();
                             },
-                            child: PageView.builder(
-                              controller: _pageController,
-                              itemCount: null, // infinite scroll
-                              onPageChanged: (page) {
-                                _currentPage =
-                                    page % knowMoreCardsData.length;
-                              },
-                              physics: const BouncingScrollPhysics(),
-                              itemBuilder: (context, index) {
-                                final cardData = knowMoreCardsData[
-                                    index % knowMoreCardsData.length];
-                                return Container(
-                                  margin: EdgeInsets.only(
-                                    right: ScreenConstant.size6,
+                            child: knowMoreLoading
+                                ? _buildShimmerPagePlaceholder()
+                                : PageView.builder(
+                                    controller: _pageController,
+                                    // null = infinite scroll
+                                    itemCount: null,
+                                    onPageChanged: (page) {
+                                      if (knowMoreCardsData.isNotEmpty) {
+                                        _currentPage = page %
+                                            knowMoreCardsData.length;
+                                      }
+                                    },
+                                    physics:
+                                        const BouncingScrollPhysics(),
+                                    itemBuilder: (context, index) {
+                                      if (knowMoreCardsData.isEmpty)
+                                        return const SizedBox();
+                                      final cardData = knowMoreCardsData[
+                                          index %
+                                              knowMoreCardsData.length];
+                                      return Container(
+                                        margin: EdgeInsets.only(
+                                            right: ScreenConstant.size6),
+                                        child: KnowMoreCard(
+                                          customGradient:
+                                              AppTheme.customGradient(
+                                                  cardData.gradient ??
+                                                      []),
+                                          imagePath:
+                                              cardData.imagePath ?? '',
+                                          title: cardData.title ?? '',
+                                          subtitle:
+                                              cardData.subtitle ?? '',
+                                          onKnowMoreTap:
+                                              cardData.hasKnowMore ==
+                                                      false
+                                                  ? null
+                                                  : () {
+                                                      Get.toNamed(
+                                                        '/know-more-details',
+                                                        arguments: {
+                                                          'knowMoreData':
+                                                              cardData,
+                                                        },
+                                                      );
+                                                    },
+                                          textColor: AppTheme.hexToColor(
+                                              cardData.textColour),
+                                        ),
+                                      );
+                                    },
                                   ),
-                                  child: KnowMoreCard(
-                                    customGradient:
-                                        AppTheme.customGradient(
-                                            cardData.gradient ?? []),
-                                    imagePath: cardData.imagePath ?? "",
-                                    title: cardData.title ?? "",
-                                    subtitle: cardData.subtitle ?? "",
-                                    onKnowMoreTap:
-                                        cardData.hasKnowMore == false
-                                            ? null
-                                            : () {
-                                                Get.toNamed(
-                                                  '/know-more-details',
-                                                  arguments: {
-                                                    'knowMoreData':
-                                                        cardData,
-                                                  },
-                                                );
-                                              },
-                                    textColor: AppTheme.hexToColor(
-                                        cardData.textColour),
-                                  ).withShimmerAi(
-                                      loading: knowMoreLoading),
-                                );
-                              },
-                            ),
                           ),
                         ),
                       ],
                     );
                   }),
 
-                  // Top Treks
+                  // ── Top Treks ──
                   Obx(() {
                     final topTreksLoading = _dashboardC
                         .topTreksObserver.value
                         .maybeWhen(
                             loading: (_) => true, orElse: () => false);
 
-                    if (topTreksCardsData.isEmpty) return const SizedBox();
+                    final topTreksResponse = _dashboardC
+                        .topTreksObserver.value
+                        .maybeWhen(
+                      success: (data) => data.data ?? [],
+                      orElse: () => [],
+                    );
+
+                    final List<TopTreksData> topTreksCardsData =
+                        topTreksResponse.map<TopTreksData>((e) {
+                      return TopTreksData(
+                        title: e.title ?? '',
+                        description: e.description ?? '',
+                        imagePath: getFullImageUrl(e.imagePath),
+                        textColour: e.textColour ?? '#FFFFFF',
+                        gradient: _safeGradient(
+                            e.gradient, ['#134E5E', '#71B280']),
+                        isFavorite: e.isFavorite ?? false,
+                      );
+                    }).toList();
+
+                    log('TOP TREKS COUNT => ${topTreksCardsData.length}');
+
+                    if (!topTreksLoading && topTreksCardsData.isEmpty) {
+                      return const SizedBox();
+                    }
 
                     return Column(
                       children: [
@@ -2166,7 +2169,7 @@ class _DashboardState extends State<Dashboard>
                                     CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    "Top Treks",
+                                    'Top Treks',
                                     textScaler:
                                         const TextScaler.linear(1.0),
                                     style: TextStyle(
@@ -2218,56 +2221,85 @@ class _DashboardState extends State<Dashboard>
                               left: ScreenConstant.size10,
                               top: 1.h,
                             ),
-                            child: Row(
-                              children: topTreksCardsData
-                                  .map((trekData) => Container(
-                                        margin: EdgeInsets.only(
-                                          right: ScreenConstant.size15,
-                                        ),
-                                        child: TopTreksCard(
-                                          gradientEndColor:
-                                              Colors.transparent,
-                                          imagePath:
-                                              trekData.imagePath ?? "",
-                                          title: trekData.title ?? "",
-                                          description:
-                                              trekData.description ?? "",
-                                          customGradient:
-                                              AppTheme.customGradient(
-                                                  trekData.gradient),
-                                          textColor: AppTheme.hexToColor(
-                                              trekData.textColour),
-                                          // Use local _favoriteTreks map for
-                                          // reactive state rather than mutating
-                                          // the data list directly.
-                                          isFavorite:
-                                              _favoriteTreks[trekData
-                                                      .title] ??
-                                                  (trekData.isFavorite ??
-                                                      false),
-                                          onFavoriteTap: () =>
-                                              _toggleFavorite(
-                                                  trekData.title ?? ""),
-                                        ),
-                                      ).withShimmerAi(
-                                          loading: topTreksLoading))
-                                  .toList(),
-                            ),
+                            child: topTreksLoading
+                                ? _buildShimmerRowPlaceholder()
+                                : Row(
+                                    children: topTreksCardsData
+                                        .map((trekData) => Container(
+                                              margin: EdgeInsets.only(
+                                                right:
+                                                    ScreenConstant.size15,
+                                              ),
+                                              child: TopTreksCard(
+                                                gradientEndColor:
+                                                    Colors.transparent,
+                                                imagePath:
+                                                    trekData.imagePath ??
+                                                        '',
+                                                title:
+                                                    trekData.title ?? '',
+                                                description: trekData
+                                                        .description ??
+                                                    '',
+                                                customGradient:
+                                                    AppTheme.customGradient(
+                                                        trekData.gradient),
+                                                textColor:
+                                                    AppTheme.hexToColor(
+                                                        trekData
+                                                            .textColour),
+                                                isFavorite:
+                                                    _favoriteTreks[trekData
+                                                            .title] ??
+                                                        (trekData
+                                                                .isFavorite ??
+                                                            false),
+                                                onFavoriteTap: () =>
+                                                    _toggleFavorite(
+                                                        trekData.title ??
+                                                            ''),
+                                              ),
+                                            ))
+                                        .toList(),
+                                  ),
                           ),
                         ),
                       ],
                     );
                   }),
 
-                  // Trek Shorts
+                  // ── Trek Shorts ──
                   Obx(() {
                     final shortsLoading = _dashboardC
                         .shortsTreksObserver.value
                         .maybeWhen(
                             loading: (_) => true, orElse: () => false);
 
-                    if (shortsTreksCardsData.isEmpty)
+                    final shortsResponse = _dashboardC
+                        .shortsTreksObserver.value
+                        .maybeWhen(
+                      success: (data) => data.data ?? [],
+                      orElse: () => [],
+                    );
+
+                    final List<ShortsTreksData> shortsTreksCardsData =
+                        shortsResponse.map<ShortsTreksData>((e) {
+                      return ShortsTreksData(
+                        title: e.title ?? '',
+                        description: e.description ?? '',
+                        textColour: e.textColour ?? '#FFFFFF',
+                        imagePath: getFullImageUrl(e.imagePath),
+                        videoPath: e.videoPath ?? '',
+                        shortVideoPath:
+                            e.shortVideoPath ?? e.videoPath ?? '',
+                      );
+                    }).toList();
+
+                    log('SHORTS COUNT => ${shortsTreksCardsData.length}');
+
+                    if (!shortsLoading && shortsTreksCardsData.isEmpty) {
                       return const SizedBox();
+                    }
 
                     return Column(
                       children: [
@@ -2286,7 +2318,7 @@ class _DashboardState extends State<Dashboard>
                                     CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    "Trek Shorts",
+                                    'Trek Shorts',
                                     textScaler:
                                         const TextScaler.linear(1.0),
                                     style: TextStyle(
@@ -2300,7 +2332,7 @@ class _DashboardState extends State<Dashboard>
                                       loading: shortsLoading),
                                   SizedBox(height: 0.3.h),
                                   Text(
-                                    "Watch the Action Unfold!",
+                                    'Watch the Action Unfold!',
                                     textScaler:
                                         const TextScaler.linear(1.0),
                                     style: TextStyle(
@@ -2350,42 +2382,95 @@ class _DashboardState extends State<Dashboard>
                               _isTrekShortsUserInteracting = false;
                               _startTrekShortsAutoScroll();
                             },
-                            child: PageView.builder(
-                              controller: _trekShortsPageController,
-                              itemCount: null,
-                              pageSnapping: true,
-                              physics: const BouncingScrollPhysics(),
-                              itemBuilder: (context, index) {
-                                final cardData = shortsTreksCardsData[
-                                    index % shortsTreksCardsData.length];
-                                return Align(
-                                  alignment: Alignment.center,
-                                  child: Padding(
-                                    padding: EdgeInsets.symmetric(
-                                        horizontal: 1.w),
-                                    child: TrekShorts(
-                                            shortsData: cardData)
-                                        .withShimmerAi(
-                                            loading: shortsLoading),
+                            child: shortsLoading
+                                ? _buildShimmerPagePlaceholder()
+                                : PageView.builder(
+                                    controller:
+                                        _trekShortsPageController,
+                                    // null = infinite scroll
+                                    itemCount: null,
+                                    pageSnapping: true,
+                                    physics:
+                                        const BouncingScrollPhysics(),
+                                    itemBuilder: (context, index) {
+                                      if (shortsTreksCardsData.isEmpty)
+                                        return const SizedBox();
+                                      final cardData =
+                                          shortsTreksCardsData[index %
+                                              shortsTreksCardsData
+                                                  .length];
+                                      return Align(
+                                        alignment: Alignment.center,
+                                        child: Padding(
+                                          padding: EdgeInsets.symmetric(
+                                              horizontal: 1.w),
+                                          child: TrekShorts(
+                                              shortsData: cardData),
+                                        ),
+                                      );
+                                    },
                                   ),
-                                );
-                              },
-                            ),
                           ),
                         ),
                       ],
                     );
                   }),
 
-                  // Seasonal Forecast
+                  // ── Seasonal Forecast ──
                   Obx(() {
                     final seasonalLoading = _dashboardC
                         .seasonalForcastObserver.value
                         .maybeWhen(
                             loading: (_) => true, orElse: () => false);
 
-                    if (seasonalForecastData.isEmpty)
+                    final seasonalResponse = _dashboardC
+                        .seasonalForcastObserver.value
+                        .maybeWhen(
+                      success: (data) => data.data ?? [],
+                      orElse: () => [],
+                    );
+
+                    final List<SeasonalForecastData> seasonalForecastData =
+                        seasonalResponse.map<SeasonalForecastData>((e) {
+                      // Use body gradient from styling if available,
+                      // otherwise fall back to color field or default blue.
+                      final bodyGradientColors =
+                          e.styling?.body?.gradient?.colors;
+                      final List<String> gradient =
+                          (bodyGradientColors != null &&
+                                  bodyGradientColors.isNotEmpty)
+                              ? List<String>.from(bodyGradientColors)
+                              : (e.color != null && e.color!.isNotEmpty)
+                                  ? [e.color!, e.color!]
+                                  : ['#2196F3', '#2196F3'];
+
+                      return SeasonalForecastData(
+                        title: e.title ?? '',
+                        description: e.description ??
+                            'Best season for trekking adventures.',
+                        imagePath: getFullImageUrl(e.imagePath),
+                        textColour: e.textColour ?? '#000000',
+                        gradient: gradient,
+                        styling: StylingModel(
+                          title: TitleStylingModel(
+                            textColour:
+                                e.styling?.title?.textColour ?? '#000000',
+                            gradient: _safeGradient(
+                                e.styling?.title?.gradient
+                                    ?.map((x) => x.toString())
+                                    .toList(),
+                                gradient),
+                            icon: e.styling?.title?.icon,
+                          ),
+                        ),
+                      );
+                    }).toList();
+
+                    log('SEASONAL COUNT => ${seasonalForecastData.length}');
+
+                    if (!seasonalLoading && seasonalForecastData.isEmpty) {
                       return const SizedBox();
+                    }
 
                     return Column(
                       children: [
@@ -2404,7 +2489,7 @@ class _DashboardState extends State<Dashboard>
                                     CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    "Seasonal Forecast",
+                                    'Seasonal Forecast',
                                     textScaler:
                                         const TextScaler.linear(1.0),
                                     style: TextStyle(
@@ -2418,7 +2503,7 @@ class _DashboardState extends State<Dashboard>
                                       loading: seasonalLoading),
                                   SizedBox(height: 0.3.h),
                                   Text(
-                                    "Weather Alerts for Safer Treks!",
+                                    'Weather Alerts for Safer Treks!',
                                     textScaler:
                                         const TextScaler.linear(1.0),
                                     style: TextStyle(
@@ -2458,31 +2543,37 @@ class _DashboardState extends State<Dashboard>
                               top: 1.h,
                               bottom: ScreenConstant.size15,
                             ),
-                            child: Row(
-                              children: seasonalForecastData
-                                  .map((cardData) => Padding(
-                                        padding: EdgeInsets.only(
-                                            right: 2.h),
-                                        child: SeasonalForecast(
-                                          title: cardData.title ?? "",
-                                          description:
-                                              cardData.description ??
-                                                  "",
-                                          imagePath:
-                                              cardData.imagePath ?? "",
-                                          gradient:
-                                              AppTheme.customGradient(
-                                                  cardData.gradient),
-                                          textColour:
-                                              AppTheme.hexToColor(
-                                                  cardData.textColour),
-                                          titleStylingModel:
-                                              cardData.styling?.title,
-                                        ).withShimmerAi(
-                                            loading: seasonalLoading),
-                                      ))
-                                  .toList(),
-                            ),
+                            child: seasonalLoading
+                                ? _buildShimmerRowPlaceholder()
+                                : Row(
+                                    children: seasonalForecastData
+                                        .map((cardData) => Padding(
+                                              padding: EdgeInsets.only(
+                                                  right: 2.h),
+                                              child: SeasonalForecast(
+                                                title:
+                                                    cardData.title ?? '',
+                                                description: cardData
+                                                        .description ??
+                                                    '',
+                                                imagePath:
+                                                    cardData.imagePath ??
+                                                        '',
+                                                gradient: AppTheme.customGradient(
+  (cardData.gradient ?? [])
+      .map((e) => e.toString())
+      .toList(),
+),
+                                                textColour:
+                                                    AppTheme.hexToColor(
+                                                        cardData
+                                                            .textColour),
+                                                titleStylingModel:
+                                                    cardData.styling?.title,
+                                              ),
+                                            ))
+                                        .toList(),
+                                  ),
                           ),
                         ),
                       ],
@@ -2524,7 +2615,8 @@ class _DashboardState extends State<Dashboard>
                             children: [
                               const TextSpan(text: 'Crafted with passion '),
                               WidgetSpan(
-                                alignment: PlaceholderAlignment.bottom,
+                                alignment:
+                                    PlaceholderAlignment.bottom,
                                 child: Icon(
                                   Icons.favorite,
                                   color: CommonColors.red_B52424,
@@ -2545,6 +2637,42 @@ class _DashboardState extends State<Dashboard>
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Shimmer placeholder helpers
+  // ---------------------------------------------------------------------------
+
+  Widget _buildShimmerPagePlaceholder() {
+    return ListView.builder(
+      scrollDirection: Axis.horizontal,
+      itemCount: 2,
+      itemBuilder: (_, __) => Container(
+        width: MediaQuery.of(context).size.width * 0.82,
+        margin: EdgeInsets.only(right: ScreenConstant.size6),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
+      ).withShimmerAi(loading: true),
+    );
+  }
+
+  Widget _buildShimmerRowPlaceholder() {
+    return Row(
+      children: List.generate(
+        3,
+        (i) => Container(
+          width: 40.w,
+          height: 20.h,
+          margin: EdgeInsets.only(right: ScreenConstant.size15),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ).withShimmerAi(loading: true),
       ),
     );
   }

@@ -8,15 +8,9 @@
 
 import '../../freezed_models/treks/trek_detail_model.dart';
 
-enum InvoiceStatus {
-  paid,
-  partiallyPaid,
-}
+enum InvoiceStatus { paid, partiallyPaid }
 
-enum CancellationPolicyType {
-  standard,
-  flexible,
-}
+enum CancellationPolicyType { standard, flexible }
 
 // Template is derived automatically from policyType + status
 enum InvoiceTemplate {
@@ -58,11 +52,11 @@ class VendorInfo {
   });
 
   factory VendorInfo.fromJson(Map<String, dynamic> json) => VendorInfo(
-        logoUrl: json['logoUrl'] as String,
-        companyName: json['companyName'] as String,
-        address: json['address'] as String,
-        phones: List<String>.from(json['phones'] as List),
-      );
+    logoUrl: json['logoUrl'] as String,
+    companyName: json['companyName'] as String,
+    address: json['address'] as String,
+    phones: List<String>.from(json['phones'] as List),
+  );
 }
 
 class AorboInfo {
@@ -72,15 +66,12 @@ class AorboInfo {
   /// Support/contact email — from API
   final String contactEmail;
 
-  const AorboInfo({
-    required this.logoAsset,
-    required this.contactEmail,
-  });
+  const AorboInfo({required this.logoAsset, required this.contactEmail});
 
   factory AorboInfo.fromJson(Map<String, dynamic> json) => AorboInfo(
-        logoAsset: json['logoAsset'] as String,
-        contactEmail: json['contactEmail'] as String,
-      );
+    logoAsset: json['logoAsset'] as String,
+    contactEmail: json['contactEmail'] as String,
+  );
 }
 
 // ── Trek Banner ───────────────────────────────────────────────────────────────
@@ -111,16 +102,16 @@ class TrekBanner {
   });
 
   factory TrekBanner.fromJson(Map<String, dynamic> json) => TrekBanner(
-        trekName: json['trekName'] as String,
-        trekSubtitle: json['trekSubtitle'] as String,
-        bookingId: json['bookingId'] as String,
-        tbrId: json['tbrId'] as String,
-        departureCity: json['departureCity'] as String,
-        departureDateTime: DateTime.parse(json['departureDateTime'] as String),
-        returnCity: json['returnCity'] as String,
-        returnDateTime: DateTime.parse(json['returnDateTime'] as String),
-        duration: json['duration'] as String,
-      );
+    trekName: json['trekName'] as String,
+    trekSubtitle: json['trekSubtitle'] as String,
+    bookingId: json['bookingId'] as String,
+    tbrId: json['tbrId'] as String,
+    departureCity: json['departureCity'] as String,
+    departureDateTime: DateTime.parse(json['departureDateTime'] as String),
+    returnCity: json['returnCity'] as String,
+    returnDateTime: DateTime.parse(json['returnDateTime'] as String),
+    duration: json['duration'] as String,
+  );
 }
 
 // ── Trek Details ──────────────────────────────────────────────────────────────
@@ -141,12 +132,12 @@ class TrekDetails {
   });
 
   factory TrekDetails.fromJson(Map<String, dynamic> json) => TrekDetails(
-        trekName: json['trekName'] as String,
-        trekOperator: json['trekOperator'] as String,
-        boardingPoint: json['boardingPoint'] as String,
-        trekCaptain: json['trekCaptain'] as String,
-        captainContact: json['captainContact'] as String,
-      );
+    trekName: json['trekName'] as String,
+    trekOperator: json['trekOperator'] as String,
+    boardingPoint: json['boardingPoint'] as String,
+    trekCaptain: json['trekCaptain'] as String,
+    captainContact: json['captainContact'] as String,
+  );
 }
 
 // ── Traveller ─────────────────────────────────────────────────────────────────
@@ -163,10 +154,10 @@ class TravellerInfo {
   });
 
   factory TravellerInfo.fromJson(Map<String, dynamic> json) => TravellerInfo(
-        name: json['name'] as String,
-        age: json['age'] as int,
-        gender: json['gender'] as String,
-      );
+    name: json['name'] as String,
+    age: json['age'] as int,
+    gender: json['gender'] as String,
+  );
 }
 
 // ── Add-ons (Standard policy only) ───────────────────────────────────────────
@@ -175,10 +166,7 @@ class FreeCancellationAddon {
   final double amount;
   final String policyId;
 
-  const FreeCancellationAddon({
-    required this.amount,
-    required this.policyId,
-  });
+  const FreeCancellationAddon({required this.amount, required this.policyId});
 
   factory FreeCancellationAddon.fromJson(Map<String, dynamic> json) =>
       FreeCancellationAddon(
@@ -191,10 +179,7 @@ class TravelInsuranceAddon {
   final double amount;
   final String policyId;
 
-  const TravelInsuranceAddon({
-    required this.amount,
-    required this.policyId,
-  });
+  const TravelInsuranceAddon({required this.amount, required this.policyId});
 
   factory TravelInsuranceAddon.fromJson(Map<String, dynamic> json) =>
       TravelInsuranceAddon(
@@ -248,37 +233,36 @@ class PaymentDetails {
   });
 
   factory PaymentDetails.fromJson(Map<String, dynamic> json) => PaymentDetails(
-        baseFare: (json['baseFare'] as num).toDouble(),
-        finalBaseFare: (json['finalBaseFare'] as num).toDouble(),
-        gstRate: (json['gstRate'] as num).toDouble(),
-        gstAmount: (json['gstAmount'] as num).toDouble(),
-        platformFee: (json['platformFee'] as num).toDouble(),
-        totalAmount: (json['totalAmount'] as num).toDouble(),
-        status: InvoiceStatus.values.firstWhere(
-          (e) => e.name == json['status'],
-        ),
-        couponDiscount: json['couponDiscount'] != null
-            ? (json['couponDiscount'] as num).toDouble()
-            : null,
-        freeCancellation: json['freeCancellation'] != null
-            ? FreeCancellationAddon.fromJson(
-                json['freeCancellation'] as Map<String, dynamic>)
-            : null,
-        travelInsurance: json['travelInsurance'] != null
-            ? TravelInsuranceAddon.fromJson(
-                json['travelInsurance'] as Map<String, dynamic>)
-            : null,
-        trekAdvanceAmount: json['trekAdvanceAmount'] != null
-            ? (json['trekAdvanceAmount'] as num).toDouble()
-            : null,
-        balanceDue: json['balanceDue'] != null
-            ? (json['balanceDue'] as num).toDouble()
-            : null,
-      );
+    baseFare: (json['baseFare'] as num).toDouble(),
+    finalBaseFare: (json['finalBaseFare'] as num).toDouble(),
+    gstRate: (json['gstRate'] as num).toDouble(),
+    gstAmount: (json['gstAmount'] as num).toDouble(),
+    platformFee: (json['platformFee'] as num).toDouble(),
+    totalAmount: (json['totalAmount'] as num).toDouble(),
+    status: InvoiceStatus.values.firstWhere((e) => e.name == json['status']),
+    couponDiscount: json['couponDiscount'] != null
+        ? (json['couponDiscount'] as num).toDouble()
+        : null,
+    freeCancellation: json['freeCancellation'] != null
+        ? FreeCancellationAddon.fromJson(
+            json['freeCancellation'] as Map<String, dynamic>,
+          )
+        : null,
+    travelInsurance: json['travelInsurance'] != null
+        ? TravelInsuranceAddon.fromJson(
+            json['travelInsurance'] as Map<String, dynamic>,
+          )
+        : null,
+    trekAdvanceAmount: json['trekAdvanceAmount'] != null
+        ? (json['trekAdvanceAmount'] as num).toDouble()
+        : null,
+    balanceDue: json['balanceDue'] != null
+        ? (json['balanceDue'] as num).toDouble()
+        : null,
+  );
 }
 
 // ── Cancellation Policy ───────────────────────────────────────────────────────
-
 
 // ── Disclaimer ────────────────────────────────────────────────────────────────
 
@@ -287,17 +271,14 @@ class DisclaimerSection {
   final String? paragraph;
   final List<String>? bullets;
 
-  const DisclaimerSection({
-    required this.title,
-    this.paragraph,
-    this.bullets,
-  });
+  const DisclaimerSection({required this.title, this.paragraph, this.bullets});
 
   factory DisclaimerSection.fromJson(Map<String, dynamic> json) =>
       DisclaimerSection(
         title: json['title'] as String,
-        paragraph:
-            json['paragraph'] != null ? json['paragraph'] as String : null,
+        paragraph: json['paragraph'] != null
+            ? json['paragraph'] as String
+            : null,
         bullets: json['bullets'] != null
             ? List<String>.from(json['bullets'] as List)
             : null,
@@ -314,12 +295,11 @@ class DisclaimerData {
   });
 
   factory DisclaimerData.fromJson(Map<String, dynamic> json) => DisclaimerData(
-        sections: (json['sections'] as List)
-            .map((s) =>
-                DisclaimerSection.fromJson(s as Map<String, dynamic>))
-            .toList(),
-        closingStatement: json['closingStatement'] as String,
-      );
+    sections: (json['sections'] as List)
+        .map((s) => DisclaimerSection.fromJson(s as Map<String, dynamic>))
+        .toList(),
+    closingStatement: json['closingStatement'] as String,
+  );
 }
 
 // ── Root Invoice Model ────────────────────────────────────────────────────────
@@ -338,9 +318,11 @@ class InvoiceModel {
 
   /// Derived — no need to pass manually
   InvoiceTemplate get template => resolveTemplate(
-        policyType: cancellationPolicy?.type == "standard" ? CancellationPolicyType.standard : CancellationPolicyType.flexible ,
-        status: payment.status,
-      );
+    policyType: cancellationPolicy?.type == "standard"
+        ? CancellationPolicyType.standard
+        : CancellationPolicyType.flexible,
+    status: payment.status,
+  );
 
   const InvoiceModel({
     required this.bookingDate,
@@ -356,24 +338,23 @@ class InvoiceModel {
   });
 
   factory InvoiceModel.fromJson(Map<String, dynamic> json) => InvoiceModel(
-        bookingDate: DateTime.parse(json['bookingDate'] as String),
-        vendor:
-            VendorInfo.fromJson(json['vendor'] as Map<String, dynamic>),
-        aorbo: AorboInfo.fromJson(json['aorbo'] as Map<String, dynamic>),
-        banner:
-            TrekBanner.fromJson(json['banner'] as Map<String, dynamic>),
-        trekDetails:
-            TrekDetails.fromJson(json['trekDetails'] as Map<String, dynamic>),
-        travellers: (json['travellers'] as List)
-            .map((t) =>
-                TravellerInfo.fromJson(t as Map<String, dynamic>))
-            .toList(),
-        payment:
-            PaymentDetails.fromJson(json['payment'] as Map<String, dynamic>),
-        cancellationPolicy: CancellationPolicy.fromJson(
-            json['cancellationPolicy'] as Map<String, dynamic>),
-        serviceStartTime: json['serviceStartTime'] as String,
-        disclaimer:
-            DisclaimerData.fromJson(json['disclaimer'] as Map<String, dynamic>),
-      );
+    bookingDate: DateTime.parse(json['bookingDate'] as String),
+    vendor: VendorInfo.fromJson(json['vendor'] as Map<String, dynamic>),
+    aorbo: AorboInfo.fromJson(json['aorbo'] as Map<String, dynamic>),
+    banner: TrekBanner.fromJson(json['banner'] as Map<String, dynamic>),
+    trekDetails: TrekDetails.fromJson(
+      json['trekDetails'] as Map<String, dynamic>,
+    ),
+    travellers: (json['travellers'] as List)
+        .map((t) => TravellerInfo.fromJson(t as Map<String, dynamic>))
+        .toList(),
+    payment: PaymentDetails.fromJson(json['payment'] as Map<String, dynamic>),
+    cancellationPolicy: CancellationPolicy.fromJson(
+      json['cancellationPolicy'] as Map<String, dynamic>,
+    ),
+    serviceStartTime: json['serviceStartTime'] as String,
+    disclaimer: DisclaimerData.fromJson(
+      json['disclaimer'] as Map<String, dynamic>,
+    ),
+  );
 }

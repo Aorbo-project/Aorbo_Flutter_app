@@ -229,9 +229,12 @@ TopTreksData _$TopTreksDataFromJson(Map<String, dynamic> json) {
 mixin _$TopTreksData {
   String? get title => throw _privateConstructorUsedError;
   String? get description => throw _privateConstructorUsedError;
+  @JsonKey(name: 'imagePath')
   String? get imagePath => throw _privateConstructorUsedError;
   List<String>? get gradient => throw _privateConstructorUsedError;
+  @JsonKey(name: 'textColour')
   String? get textColour => throw _privateConstructorUsedError;
+  @JsonKey(name: 'isFavorite')
   bool? get isFavorite => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -249,10 +252,10 @@ abstract class $TopTreksDataCopyWith<$Res> {
   $Res call(
       {String? title,
       String? description,
-      String? imagePath,
+      @JsonKey(name: 'imagePath') String? imagePath,
       List<String>? gradient,
-      String? textColour,
-      bool? isFavorite});
+      @JsonKey(name: 'textColour') String? textColour,
+      @JsonKey(name: 'isFavorite') bool? isFavorite});
 }
 
 /// @nodoc
@@ -315,10 +318,10 @@ abstract class _$$TopTreksDataImplCopyWith<$Res>
   $Res call(
       {String? title,
       String? description,
-      String? imagePath,
+      @JsonKey(name: 'imagePath') String? imagePath,
       List<String>? gradient,
-      String? textColour,
-      bool? isFavorite});
+      @JsonKey(name: 'textColour') String? textColour,
+      @JsonKey(name: 'isFavorite') bool? isFavorite});
 }
 
 /// @nodoc
@@ -374,10 +377,10 @@ class _$TopTreksDataImpl implements _TopTreksData {
   const _$TopTreksDataImpl(
       {this.title,
       this.description,
-      this.imagePath,
+      @JsonKey(name: 'imagePath') this.imagePath,
       final List<String>? gradient,
-      this.textColour,
-      this.isFavorite})
+      @JsonKey(name: 'textColour') this.textColour,
+      @JsonKey(name: 'isFavorite') this.isFavorite})
       : _gradient = gradient;
 
   factory _$TopTreksDataImpl.fromJson(Map<String, dynamic> json) =>
@@ -388,6 +391,7 @@ class _$TopTreksDataImpl implements _TopTreksData {
   @override
   final String? description;
   @override
+  @JsonKey(name: 'imagePath')
   final String? imagePath;
   final List<String>? _gradient;
   @override
@@ -400,8 +404,10 @@ class _$TopTreksDataImpl implements _TopTreksData {
   }
 
   @override
+  @JsonKey(name: 'textColour')
   final String? textColour;
   @override
+  @JsonKey(name: 'isFavorite')
   final bool? isFavorite;
 
   @override
@@ -447,12 +453,13 @@ class _$TopTreksDataImpl implements _TopTreksData {
 
 abstract class _TopTreksData implements TopTreksData {
   const factory _TopTreksData(
-      {final String? title,
-      final String? description,
-      final String? imagePath,
-      final List<String>? gradient,
-      final String? textColour,
-      final bool? isFavorite}) = _$TopTreksDataImpl;
+          {final String? title,
+          final String? description,
+          @JsonKey(name: 'imagePath') final String? imagePath,
+          final List<String>? gradient,
+          @JsonKey(name: 'textColour') final String? textColour,
+          @JsonKey(name: 'isFavorite') final bool? isFavorite}) =
+      _$TopTreksDataImpl;
 
   factory _TopTreksData.fromJson(Map<String, dynamic> json) =
       _$TopTreksDataImpl.fromJson;
@@ -462,12 +469,15 @@ abstract class _TopTreksData implements TopTreksData {
   @override
   String? get description;
   @override
+  @JsonKey(name: 'imagePath')
   String? get imagePath;
   @override
   List<String>? get gradient;
   @override
+  @JsonKey(name: 'textColour')
   String? get textColour;
   @override
+  @JsonKey(name: 'isFavorite')
   bool? get isFavorite;
   @override
   @JsonKey(ignore: true)

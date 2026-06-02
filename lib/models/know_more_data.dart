@@ -20,31 +20,47 @@ class WhatsNewDataResponseModel with _$WhatsNewDataResponseModel {
 class KnowMoreData with _$KnowMoreData {
   const factory KnowMoreData({
     String? title,
+
     String? subtitle,
+
+    @JsonKey(name: 'imagePath')
     String? imagePath,
+
+    @JsonKey(name: 'hasKnowMore')
     bool? hasKnowMore,
+
+    @JsonKey(name: 'customGradient')
     List<String>? gradient,
+
+    @JsonKey(name: 'textColor')
     String? textColour,
+
+    @JsonKey(name: 'detailedTitle')
     String? detailedTitle,
+
+    @JsonKey(name: 'detailedDescription')
     String? detailedDescription,
+
     List<BulletPointModel>? bulletPoints,
+
+    @JsonKey(name: 'callToAction')
     String? callToAction,
   }) = _KnowMoreData;
 
-  factory KnowMoreData.fromJson(Map<String, dynamic> json) => _$KnowMoreDataFromJson(json);
-
-
-
+  factory KnowMoreData.fromJson(Map<String, dynamic> json) =>
+      _$KnowMoreDataFromJson(json);
 }
 
 @freezed
 class BulletPointModel with _$BulletPointModel {
   const factory BulletPointModel({
-    String? title,
-    String? description
+    String? icon,
+
+    String? text,
   }) = _BulletPointModel;
 
-  factory BulletPointModel.fromJson(Map<String, dynamic> json) => _$BulletPointModelFromJson(json);
+  factory BulletPointModel.fromJson(Map<String, dynamic> json) =>
+      _$BulletPointModelFromJson(json);
 }
 
 

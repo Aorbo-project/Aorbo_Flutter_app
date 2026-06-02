@@ -50,15 +50,27 @@ class NetworkUrl {
 
   // Trek search & detail
   static String searchTrek(
-      String cityId,
-      String destinationId,
-      String startDate,
-      bool?  weekEndTreks,
-      int page,
-      int limit,
-      ) =>  weekEndTreks != null ? 'treks?city_id=$cityId&destination_id=$destinationId&start_date=$startDate&weekend_mode=true&page$page&limit=$limit'  : 'treks?city_id=$cityId&destination_id=$destinationId&start_date=$startDate&page$page&limit=$limit';
+  String cityId,
+  String destinationId,
+  String startDate,
+  bool? weekEndTreks,
+  int page,
+  int limit,
+) =>
+    weekEndTreks != null
+        ? 'treks?city_id=$cityId'
+          '&destination_id=$destinationId'
+          '&start_date=$startDate'
+          '&weekend_mode=true'
+          '&page=$page'
+          '&limit=$limit'
+        : 'treks?city_id=$cityId'
+          '&destination_id=$destinationId'
+          '&start_date=$startDate'
+          '&page=$page'
+          '&limit=$limit';
 
-
+          
   static String fetchWeekEndTreks(
   String fromLocation,
   String toLocation,

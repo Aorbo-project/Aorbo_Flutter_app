@@ -1156,18 +1156,27 @@ TrekData _$TrekDataFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$TrekData {
   int? get id => throw _privateConstructorUsedError;
-  String? get name => throw _privateConstructorUsedError;
-  String? get vendor => throw _privateConstructorUsedError;
-  String? get vendorLogo => throw _privateConstructorUsedError;
+  String? get name =>
+      throw _privateConstructorUsedError; // BACKEND RETURNS "vendor"
+  @JsonKey(name: 'vendor')
+  String? get vendor =>
+      throw _privateConstructorUsedError; // BACKEND RETURNS "vendorLogo"
+  @JsonKey(name: 'vendorLogo')
+  String? get vendorLogo => throw _privateConstructorUsedError; // fallback
+  @JsonKey(name: 'business_name')
   String? get businessName => throw _privateConstructorUsedError;
+  @JsonKey(name: 'hasDiscount')
   bool? get hasDiscount => throw _privateConstructorUsedError;
+  @JsonKey(name: 'discountText')
   String? get discountText => throw _privateConstructorUsedError;
   double? get rating => throw _privateConstructorUsedError;
   String? get price => throw _privateConstructorUsedError;
   String? get duration => throw _privateConstructorUsedError;
   BatchInfo? get batchInfo => throw _privateConstructorUsedError;
   Badge? get badge => throw _privateConstructorUsedError;
+  @JsonKey(name: 'imageUrl')
   String? get imageUrl => throw _privateConstructorUsedError;
+  @JsonKey(name: 'cancellation_policy')
   CancellationPolicy? get cancellationPolicy =>
       throw _privateConstructorUsedError;
 
@@ -1185,17 +1194,18 @@ abstract class $TrekDataCopyWith<$Res> {
   $Res call(
       {int? id,
       String? name,
-      String? vendor,
-      String? vendorLogo,
-      String? businessName,
-      bool? hasDiscount,
-      String? discountText,
+      @JsonKey(name: 'vendor') String? vendor,
+      @JsonKey(name: 'vendorLogo') String? vendorLogo,
+      @JsonKey(name: 'business_name') String? businessName,
+      @JsonKey(name: 'hasDiscount') bool? hasDiscount,
+      @JsonKey(name: 'discountText') String? discountText,
       double? rating,
       String? price,
       String? duration,
       BatchInfo? batchInfo,
       Badge? badge,
-      String? imageUrl,
+      @JsonKey(name: 'imageUrl') String? imageUrl,
+      @JsonKey(name: 'cancellation_policy')
       CancellationPolicy? cancellationPolicy});
 
   $BatchInfoCopyWith<$Res>? get batchInfo;
@@ -1340,17 +1350,18 @@ abstract class _$$TrekDataImplCopyWith<$Res>
   $Res call(
       {int? id,
       String? name,
-      String? vendor,
-      String? vendorLogo,
-      String? businessName,
-      bool? hasDiscount,
-      String? discountText,
+      @JsonKey(name: 'vendor') String? vendor,
+      @JsonKey(name: 'vendorLogo') String? vendorLogo,
+      @JsonKey(name: 'business_name') String? businessName,
+      @JsonKey(name: 'hasDiscount') bool? hasDiscount,
+      @JsonKey(name: 'discountText') String? discountText,
       double? rating,
       String? price,
       String? duration,
       BatchInfo? batchInfo,
       Badge? badge,
-      String? imageUrl,
+      @JsonKey(name: 'imageUrl') String? imageUrl,
+      @JsonKey(name: 'cancellation_policy')
       CancellationPolicy? cancellationPolicy});
 
   @override
@@ -1454,18 +1465,18 @@ class _$TrekDataImpl implements _TrekData {
   const _$TrekDataImpl(
       {this.id,
       this.name,
-      this.vendor,
-      this.vendorLogo,
-      this.businessName,
-      this.hasDiscount,
-      this.discountText,
+      @JsonKey(name: 'vendor') this.vendor,
+      @JsonKey(name: 'vendorLogo') this.vendorLogo,
+      @JsonKey(name: 'business_name') this.businessName,
+      @JsonKey(name: 'hasDiscount') this.hasDiscount,
+      @JsonKey(name: 'discountText') this.discountText,
       this.rating,
       this.price,
       this.duration,
       this.batchInfo,
       this.badge,
-      this.imageUrl,
-      this.cancellationPolicy});
+      @JsonKey(name: 'imageUrl') this.imageUrl,
+      @JsonKey(name: 'cancellation_policy') this.cancellationPolicy});
 
   factory _$TrekDataImpl.fromJson(Map<String, dynamic> json) =>
       _$$TrekDataImplFromJson(json);
@@ -1474,15 +1485,23 @@ class _$TrekDataImpl implements _TrekData {
   final int? id;
   @override
   final String? name;
+// BACKEND RETURNS "vendor"
   @override
+  @JsonKey(name: 'vendor')
   final String? vendor;
+// BACKEND RETURNS "vendorLogo"
   @override
+  @JsonKey(name: 'vendorLogo')
   final String? vendorLogo;
+// fallback
   @override
+  @JsonKey(name: 'business_name')
   final String? businessName;
   @override
+  @JsonKey(name: 'hasDiscount')
   final bool? hasDiscount;
   @override
+  @JsonKey(name: 'discountText')
   final String? discountText;
   @override
   final double? rating;
@@ -1495,8 +1514,10 @@ class _$TrekDataImpl implements _TrekData {
   @override
   final Badge? badge;
   @override
+  @JsonKey(name: 'imageUrl')
   final String? imageUrl;
   @override
+  @JsonKey(name: 'cancellation_policy')
   final CancellationPolicy? cancellationPolicy;
 
   @override
@@ -1570,17 +1591,18 @@ abstract class _TrekData implements TrekData {
   const factory _TrekData(
       {final int? id,
       final String? name,
-      final String? vendor,
-      final String? vendorLogo,
-      final String? businessName,
-      final bool? hasDiscount,
-      final String? discountText,
+      @JsonKey(name: 'vendor') final String? vendor,
+      @JsonKey(name: 'vendorLogo') final String? vendorLogo,
+      @JsonKey(name: 'business_name') final String? businessName,
+      @JsonKey(name: 'hasDiscount') final bool? hasDiscount,
+      @JsonKey(name: 'discountText') final String? discountText,
       final double? rating,
       final String? price,
       final String? duration,
       final BatchInfo? batchInfo,
       final Badge? badge,
-      final String? imageUrl,
+      @JsonKey(name: 'imageUrl') final String? imageUrl,
+      @JsonKey(name: 'cancellation_policy')
       final CancellationPolicy? cancellationPolicy}) = _$TrekDataImpl;
 
   factory _TrekData.fromJson(Map<String, dynamic> json) =
@@ -1590,15 +1612,20 @@ abstract class _TrekData implements TrekData {
   int? get id;
   @override
   String? get name;
-  @override
+  @override // BACKEND RETURNS "vendor"
+  @JsonKey(name: 'vendor')
   String? get vendor;
-  @override
+  @override // BACKEND RETURNS "vendorLogo"
+  @JsonKey(name: 'vendorLogo')
   String? get vendorLogo;
-  @override
+  @override // fallback
+  @JsonKey(name: 'business_name')
   String? get businessName;
   @override
+  @JsonKey(name: 'hasDiscount')
   bool? get hasDiscount;
   @override
+  @JsonKey(name: 'discountText')
   String? get discountText;
   @override
   double? get rating;
@@ -1611,8 +1638,10 @@ abstract class _TrekData implements TrekData {
   @override
   Badge? get badge;
   @override
+  @JsonKey(name: 'imageUrl')
   String? get imageUrl;
   @override
+  @JsonKey(name: 'cancellation_policy')
   CancellationPolicy? get cancellationPolicy;
   @override
   @JsonKey(ignore: true)
