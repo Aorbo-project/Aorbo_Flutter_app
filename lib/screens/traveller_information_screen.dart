@@ -99,125 +99,6 @@ class _AnimatedCardState extends State<_AnimatedCard>
 }
 
 // ─────────────────────────────────────────────
-//  TRAVELLER LIMIT BANNER  (slides up from bottom)
-// ─────────────────────────────────────────────
-class _TravellerLimitBanner extends StatefulWidget {
-  final int limit;
-  final VoidCallback onClose;
-
-  const _TravellerLimitBanner({required this.limit, required this.onClose});
-
-  @override
-  State<_TravellerLimitBanner> createState() => _TravellerLimitBannerState();
-}
-
-class _TravellerLimitBannerState extends State<_TravellerLimitBanner>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-  late Animation<Offset> _slide;
-  late Animation<double>  _fade;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 320),
-    );
-    _slide = Tween<Offset>(
-      begin: const Offset(0, 1),
-      end:   Offset.zero,
-    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
-    _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
-    _ctrl.forward();
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  Future<void> _dismiss() async {
-    await _ctrl.reverse();
-    widget.onClose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _fade,
-      child: SlideTransition(
-        position: _slide,
-        child: Container(
-          margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
-          padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.4.h),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1C1C1E),
-            borderRadius: BorderRadius.circular(3.w),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.18),
-                blurRadius: 16,
-                offset: const Offset(0, -4),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 8.w, height: 8.w,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.12),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.groups_rounded,
-                    color: Colors.white, size: 4.5.w),
-              ),
-              SizedBox(width: 3.w),
-              Expanded(
-                child: RichText(
-                  textScaler: const TextScaler.linear(1.0),
-                  text: TextSpan(
-                    style: GoogleFonts.poppins(
-                      fontSize: FontSize.s10,
-                      color: Colors.white.withOpacity(0.85),
-                    ),
-                    children: [
-                      const TextSpan(text: 'Max '),
-                      TextSpan(
-                        text: '${widget.limit} traveller${widget.limit > 1 ? 's' : ''}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const TextSpan(text: ' allowed for this booking.'),
-                    ],
-                  ),
-                ),
-              ),
-              GestureDetector(
-                onTap: _dismiss,
-                child: Container(
-                  width: 7.w, height: 7.w,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.close_rounded,
-                      color: Colors.white.withOpacity(0.8), size: 4.w),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────
 //  MAIN SCREEN
 // ─────────────────────────────────────────────
 class TravellerInformationScreen extends StatefulWidget {
@@ -242,6 +123,9 @@ class _TravellerInformationScreenState
   List<String> filteredStates = [];
 
   bool _whatsappUpdates = false;
+
+  // NOTE: This will be initialized in initState() based on the
+  // actual cancellation policy of the trek.
   String _selectedPaymentOption = 'standard';
 
   final GlobalKey _checkboxKey = GlobalKey();
@@ -249,19 +133,9 @@ class _TravellerInformationScreenState
 
   List<Traveler> selectedTravellers = [];
 
-  // ── Traveller-limit banner state ──────────────────────────────────────────
-  bool _showLimitBanner = false;
-
-  void _showTravellerLimitBanner() {
-    HapticFeedback.mediumImpact();
-    setState(() => _showLimitBanner = true);
-    // Auto-dismiss after 3 s
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted && _showLimitBanner) {
-        setState(() => _showLimitBanner = false);
-      }
-    });
-  }
+  // Helper to know whether this trek supports flexible (partial) payment.
+  // From the logs, flexible policy => cancellationPolicy.id == 1.
+  bool get _isFlexiblePolicy => travelData.cancellationPolicy?.id == 1;
 
   // ─────────────────────────────────────────────────────────────────────────
 
@@ -414,14 +288,26 @@ class _TravellerInformationScreenState
         _dashboardC.stateList.map((element) => element.name!).toList();
     travelData = _trekC.trekDetailData.value;
 
+    // ── Pick the right default payment option based on policy ──────────
+    // If the trek supports a flexible policy, default to 'flexible'
+    // (partial payment). Otherwise, fall back to 'standard' (full payment).
+    final bool flexible = travelData.cancellationPolicy?.id == 1;
+    _selectedPaymentOption = flexible ? 'flexible' : 'standard';
+
+    // Preserve any coupon code the user already applied before reaching this screen.
+    // Resetting couponCode to '' here was the root cause of the discount being
+    // wiped on every calculateFare() call triggered by initState.
+    final existingCoupon = _trekC.calculateFareRequestModel.value.couponCode;
     _trekC.calculateFareRequestModel.value =
         _trekC.calculateFareRequestModel.value.copyWith(
       batchId: travelData.batchId ?? 1,
       travelerCount: 1,
       addInsurance: false,
       addFreeCancellationProtection: false,
-      couponCode: '',
-      cancellationPolicyType: 'standard',
+      couponCode: (existingCoupon != null && existingCoupon.isNotEmpty)
+          ? existingCoupon
+          : '',
+      cancellationPolicyType: _selectedPaymentOption,
     );
     _trekC.calculateFare();
 
@@ -1365,34 +1251,16 @@ class _TravellerInformationScreenState
                                     ),
                                   ),
                                   _counterBtn(Icons.add, () {
-                                    if (adultCount <
-                                        (travelData.availableSlots ??
-                                            0)) {
-                                      _trekC.calculateFareRequestModel
-                                          .value = _trekC
-                                          .calculateFareRequestModel
-                                          .value.copyWith(
-                                              travelerCount:
-                                                  adultCount + 1);
-                                    } else {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(SnackBar(
-                                        content: Text(
-                                          'Maximum available slots '
-                                          'reached (${travelData.availableSlots ?? 0})',
-                                          textScaler: const TextScaler
-                                              .linear(1.0)),
-                                        backgroundColor:
-                                            CommonColors.appRedColor,
-                                        duration:
-                                            const Duration(seconds: 2),
-                                      ));
-                                    }
+                                    _trekC.calculateFareRequestModel
+                                        .value = _trekC
+                                        .calculateFareRequestModel
+                                        .value.copyWith(
+                                            travelerCount:
+                                                adultCount + 1);
                                     _trekC.trekPersonCount.value =
                                         adultCount;
                                   },
-                                  active: adultCount <
-                                      (travelData.availableSlots ?? 0)),
+                                  active: true),
                                 ]);
                               }),
                             ],
@@ -1817,7 +1685,12 @@ class _TravellerInformationScreenState
                   SizedBox(height: 2.h),
 
                   // ── Payment Options ───────────────────────────────────
-                  if (travelData.cancellationPolicy?.id != 1)
+                  // FIX: Show the Payment Options card ONLY when the trek
+                  // has a flexible cancellation policy (id == 1). The
+                  // earlier condition (`!= 1`) hid it for flexible treks,
+                  // so users could never pick the "Pay ₹999" option and
+                  // the API kept receiving "standard".
+                  if (_isFlexiblePolicy)
                     _card(
                       index: 6,
                       child: Column(
@@ -1956,19 +1829,6 @@ class _TravellerInformationScreenState
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-
-            // ── Traveller-limit banner ──────────────────────────────
-            AnimatedSize(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOutCubic,
-              child: _showLimitBanner
-                  ? _TravellerLimitBanner(
-                      limit: fareReqModel.travelerCount,
-                      onClose: () =>
-                          setState(() => _showLimitBanner = false),
-                    )
-                  : const SizedBox.shrink(),
-            ),
 
             if (fareReqModel.travelerCount > 0)
               Container(
@@ -2244,10 +2104,6 @@ class _TravellerInformationScreenState
           _trekC.calculateFareRequestModel.value.travelerCount;
       final bool isTravellerSelected =
           selectedTravellers.any((t) => t.id == travelData.id);
-      final bool hasReachedLimit =
-          selectedTravellers.length >= adultCount;
-      final bool canSelect =
-          isTravellerSelected || !hasReachedLimit;
 
       return AnimatedContainer(
         duration: const Duration(milliseconds: 220),
@@ -2279,12 +2135,6 @@ class _TravellerInformationScreenState
                 value: isTravellerSelected,
                 onChanged: (bool? value) async {
                   final shouldSelect = value ?? false;
-                  if (shouldSelect &&
-                      !isTravellerSelected &&
-                      hasReachedLimit) {
-                    _showTravellerLimitBanner();
-                    return;
-                  }
                   HapticFeedback.selectionClick();
                   setState(() {
                     if (shouldSelect) {
@@ -2336,14 +2186,14 @@ class _TravellerInformationScreenState
                   style: TextStyle(fontFamily:'Poppins',
                     fontSize: FontSize.s11,
                     fontWeight: FontWeight.w600,
-                    color: canSelect ? _TI.ink : _TI.inkLight)),
+                    color: _TI.ink)),
                 Text(
                   '${travelData.gender ?? ''}, '
                   '${travelData.age ?? ''}',
                   textScaler: const TextScaler.linear(1.0),
                   style: TextStyle(fontFamily:'Poppins',
                     fontSize: FontSize.s9,
-                    color: canSelect ? _TI.inkMid : _TI.inkLight)),
+                    color: _TI.inkMid)),
               ],
             )),
             GestureDetector(

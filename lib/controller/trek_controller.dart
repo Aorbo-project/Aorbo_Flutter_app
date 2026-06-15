@@ -121,14 +121,25 @@ class TrekController extends GetxController {
   Future<void> fetchVendorCoupons() async {
     try {
       vendorCouponsObserver.value = const ApiResult.loading("");
-      final vendorId = trekDetailData.value.vendorId;
-      if (vendorId == null) {
-        throw Exception('Vendor ID not found');
+
+      final int currentTrekId = trekDetailId.value;
+      final int currentBatchId = trekBatchId.value;
+
+      if (currentTrekId == 0) {
+        throw Exception('Trek ID not found. Please select a trek first.');
       }
 
-      final response = await repository.getApiCall(
-        url: NetworkUrl.couponCode(vendorId.toString()),
-      );
+      // Use the authenticated customer endpoint that properly filters coupons
+      // by trek/batch assignment. This prevents coupons assigned to other treks
+      // from appearing in the list.
+      final String url = currentBatchId > 0
+          ? NetworkUrl.fetchCouponsForBatch(
+              batchId: currentBatchId,
+              trekId: currentTrekId,
+            )
+          : NetworkUrl.fetchCouponsForTrek(currentTrekId);
+
+      final response = await repository.getApiCall(url: url);
 
       if (response != null) {
         final responseData = CouponCodeModel.fromJson(response);
@@ -149,7 +160,16 @@ class TrekController extends GetxController {
   Future<void> validateCoupon(String coupon) async {
     try {
       validateCouponObserver.value = const ApiResult.loading("");
-      final requestModel = ValidateCouponCodeRequestModel(code: coupon, trekId:trekDetailId.value, bookingAmount: calculateFareResponseModel.value.maybeWhen(success: (response) => (response as CalculateFareResponseModel).breakdown?.amountToPayNow,orElse: () => "0"));
+      final requestModel = ValidateCouponCodeRequestModel(
+        code: coupon,
+        trekId: trekDetailId.value,
+        bookingAmount: calculateFareResponseModel.value.maybeWhen(
+          success: (response) => (response as CalculateFareResponseModel).breakdown?.amountToPayNow,
+          orElse: () => "0",
+        ),
+        // Pass traveler count so the backend can validate group-discount minimum participant rule
+        travelerCount: calculateFareRequestModel.value.travelerCount,
+      );
 
       final validateResponse =  AuthUtils.validateRequestFields(["code","trekId","bookingAmount"], requestModel.toJson());
       if(validateResponse != null) throw validateResponse;
