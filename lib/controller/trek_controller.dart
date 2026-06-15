@@ -593,15 +593,14 @@ class TrekController extends GetxController {
         final responseData = BookingCancelledModal.fromJson(response);
         if (responseData.success == true) {
           requestCancellationResponseObserver.value = ApiResult.success(responseData);
-          Get.toNamed('/booking-cancellation-success');
           return null;
         }
         throw "${responseData.message}";
       }
       throw "Response Body Null";
     } catch (e) {
-      CustomSnackBar.show(Get.context!, message: errorMessage.value);
-      requestCancellationResponseObserver.value = ApiResult.error('Failed to get calcellation details treks: ${e.toString()}');
+      CustomSnackBar.show(Get.context!, message: e.toString());
+      requestCancellationResponseObserver.value = ApiResult.error('Failed to get cancellation details: ${e.toString()}');
       return e.toString();
     }
   }

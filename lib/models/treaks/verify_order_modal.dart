@@ -263,7 +263,7 @@ class Trek {
     exclusions = json['exclusions'].cast<String>();
     activities = json['activities'].cast<int>();
     id = json['id'];
-    mtrId = json['mtr_id'];
+    mtrId = (json['mtr_id'] ?? json['display_trek_id'])?.toString();
     title = json['title'];
     description = json['description'];
     vendorId = json['vendor_id'];
@@ -272,7 +272,7 @@ class Trek {
     duration = json['duration'];
     durationDays = json['duration_days'];
     durationNights = json['duration_nights'];
-    basePrice = json['base_price'];
+    basePrice = json['base_price']?.toString();
     maxParticipants = json['max_participants'];
     trekkingRules = json['trekking_rules'];
     emergencyProtocols = json['emergency_protocols'];
