@@ -15,6 +15,7 @@ import '../repository/repository.dart';
 import '../utils/auth_utils.dart';
 import '../utils/custom_snackbar.dart';
 import '../widgets/logger.dart';
+import '../repository/app_env.dart';
 
 class AuthController extends GetxController {
   Repository repository = Repository();
@@ -27,6 +28,13 @@ class AuthController extends GetxController {
   var resendTokenData = 0.obs;
   RxString idToken = ''.obs;
   RxString verificationIdData = ''.obs;
+
+  bool get isLocalDev {
+    final baseUrlStr = AppEnv().apiBaseUrl;
+    return baseUrlStr.contains('127.0.0.1') ||
+        baseUrlStr.contains('10.0.2.2') ||
+        baseUrlStr.contains('localhost');
+  }
 
   final validaVersionObserver = const ApiResult<ValidateVersionResponseModel>.init().obs;
 
@@ -81,6 +89,35 @@ class AuthController extends GetxController {
   }
 
   sendCode({required String phoneNumber}) async {
+    if (isLocalDev) {
+      try {
+        isProfileLoading.value = true;
+        String body = json.encode({
+          'phone': phoneNumber,
+        });
+        var res = await repository.postApiCall(
+            url: NetworkUrl.loginPath, body: body);
+        isProfileLoading.value = false;
+        if (res != null && res['success'] == true) {
+          verificationIdData.value = "local_dev_bypass";
+          if (res['otp'] != null) {
+            CustomSnackBar.show(Get.context!,
+                message: "OTP sent (Dev Mode): ${res['otp']}");
+          } else {
+            CustomSnackBar.show(Get.context!, message: "OTP sent successfully");
+          }
+        } else {
+          CustomSnackBar.show(Get.context!,
+              message: res?['message'] ?? "Failed to request OTP");
+        }
+      } catch (e) {
+        isProfileLoading.value = false;
+        logger.e("Local OTP request error: $e");
+        CustomSnackBar.show(Get.context!, message: "Failed to request OTP: $e");
+      }
+      return;
+    }
+
     try {
       isProfileLoading.value = true;
       await FirebaseAuth.instance.verifyPhoneNumber(
@@ -118,6 +155,38 @@ class AuthController extends GetxController {
         Get.context!,
         message: "You have tried many times. Please try again after some time.",
       );
+    }
+  }
+
+  Future<bool> verifyLocalOTP({required String phoneNumber, required String otp}) async {
+    isLoading.value = true;
+    String body = json.encode({
+      'phone': phoneNumber,
+      'otp': otp,
+    });
+    try {
+      var res = await repository.postApiCall(url: 'customer/auth/verify-otp', body: body);
+      isLoading.value = false;
+      if (res != null && res['success'] == true) {
+        verifyOtpModal.value = VerifyOtpModal.fromJson(res);
+        final token = verifyOtpModal.value.data?.token;
+        if (token == null || token.isEmpty) {
+          CustomSnackBar.show(Get.context!, message: "Invalid token received");
+          return false;
+        }
+        await sp!.putString(SpUtil.accessToken, token);
+        await sp!.putBool(SpUtil.isLoggedIn, true);
+        await sp!.putInt(SpUtil.userID, verifyOtpModal.value.data?.customer?.id ?? 0);
+        return true;
+      } else {
+        CustomSnackBar.show(Get.context!, message: res?['message'] ?? "Verification failed");
+        return false;
+      }
+    } catch (e) {
+      isLoading.value = false;
+      logger.e("Local OTP verification error: $e");
+      CustomSnackBar.show(Get.context!, message: "Verification failed: $e");
+      return false;
     }
   }
 

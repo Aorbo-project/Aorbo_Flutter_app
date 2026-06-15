@@ -424,18 +424,28 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
             _errorMessage = null;
           });
 
-          PhoneAuthCredential credential = PhoneAuthProvider.credential(verificationId: _authC.verificationIdData.value, smsCode: pin);
-
           try {
-            // First verify with Firebase
-            await FirebaseAuth.instance.signInWithCredential(credential);
+            bool verified;
+            if (_authC.verificationIdData.value == "local_dev_bypass") {
+              verified = await _authC.verifyLocalOTP(
+                phoneNumber: _authC.phoneNumberLoginTextField.value.text,
+                otp: pin,
+              );
+            } else {
+              PhoneAuthCredential credential = PhoneAuthProvider.credential(
+                verificationId: _authC.verificationIdData.value,
+                smsCode: pin,
+              );
+              // First verify with Firebase
+              await FirebaseAuth.instance.signInWithCredential(credential);
 
-            // Get the ID token after successful verification
-            await Get.find<AuthController>().getIdToken();
+              // Get the ID token after successful verification
+              await Get.find<AuthController>().getIdToken();
 
-            // Get the token and verify with backend
-            String firebaseToken = Get.find<AuthController>().idToken.value;
-            bool verified = await Get.find<AuthController>().verifyFirebaseToken(firebaseToken);
+              // Get the token and verify with backend
+              String firebaseToken = Get.find<AuthController>().idToken.value;
+              verified = await Get.find<AuthController>().verifyFirebaseToken(firebaseToken);
+            }
 
             if (!mounted) return;
 
