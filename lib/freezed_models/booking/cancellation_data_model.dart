@@ -59,14 +59,18 @@ class RefundCalculation with _$RefundCalculation {
   const factory RefundCalculation({
     double? refund,
     double? deduction,
+    @JsonKey(name: 'deduction_percent') int? deductionPercent,
     @JsonKey(name: 'policy_type') String? policyType,
     @JsonKey(name: 'policy_name') String? policyName,
+    @JsonKey(name: 'slab_info') String? slabInfo,
     @JsonKey(name: 'time_remaining_hours') double? timeRemainingHours,
     @JsonKey(name: 'within_24_hours') bool? within24Hours,
     @JsonKey(name: 'free_cancellation') bool? freeCancellation,
     @JsonKey(name: 'refund_items') List<RefundItem>? refundItems,
     @JsonKey(name: 'lose_items') List<LoseItem>? loseItems,
     @JsonKey(name: 'total_final_amount') double? totalFinalAmount,
+    String? message,
+    @JsonKey(name: 'trek_price') double? trekPrice,
   }) = _RefundCalculation;
 
   factory RefundCalculation.fromJson(Map<String, dynamic> json) =>

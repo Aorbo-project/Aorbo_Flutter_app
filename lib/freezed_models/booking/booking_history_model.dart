@@ -151,6 +151,8 @@ class Trek with _$Trek {
 
     String? duration,
 
+    String? description,
+
     @JsonKey(name: 'base_price')
     String? basePrice,
 
@@ -173,6 +175,9 @@ class Trek with _$Trek {
 
     @JsonKey(name: 'duration_nights')
     int? durationNights,
+
+    @JsonKey(name: 'boarding_point')
+    String? boardingPoint,
   }) = _Trek;
 
   factory Trek.fromJson(Map<String, dynamic> json) =>
@@ -196,6 +201,8 @@ class Vendor with _$Vendor {
     String? city,
     String? state,
     String? address,
+    String? phone,
+    String? email,
   }) = _Vendor;
 
   factory Vendor.fromJson(Map<String, dynamic> json) =>

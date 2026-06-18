@@ -163,7 +163,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
     );
 
     try {
-      await InvoicePdfService.previewInvoice(policyType: policyType);
+      await InvoicePdfService.previewInvoice(booking: booking, policyType: policyType);
       if (Get.isDialogOpen ?? false) Get.back();
     } catch (e) {
       if (Get.isDialogOpen ?? false) Get.back();
