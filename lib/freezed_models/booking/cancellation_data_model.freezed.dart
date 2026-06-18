@@ -1020,10 +1020,14 @@ RefundCalculation _$RefundCalculationFromJson(Map<String, dynamic> json) {
 mixin _$RefundCalculation {
   double? get refund => throw _privateConstructorUsedError;
   double? get deduction => throw _privateConstructorUsedError;
+  @JsonKey(name: 'deduction_percent')
+  int? get deductionPercent => throw _privateConstructorUsedError;
   @JsonKey(name: 'policy_type')
   String? get policyType => throw _privateConstructorUsedError;
   @JsonKey(name: 'policy_name')
   String? get policyName => throw _privateConstructorUsedError;
+  @JsonKey(name: 'slab_info')
+  String? get slabInfo => throw _privateConstructorUsedError;
   @JsonKey(name: 'time_remaining_hours')
   double? get timeRemainingHours => throw _privateConstructorUsedError;
   @JsonKey(name: 'within_24_hours')
@@ -1036,6 +1040,9 @@ mixin _$RefundCalculation {
   List<LoseItem>? get loseItems => throw _privateConstructorUsedError;
   @JsonKey(name: 'total_final_amount')
   double? get totalFinalAmount => throw _privateConstructorUsedError;
+  String? get message => throw _privateConstructorUsedError;
+  @JsonKey(name: 'trek_price')
+  double? get trekPrice => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -1052,14 +1059,18 @@ abstract class $RefundCalculationCopyWith<$Res> {
   $Res call(
       {double? refund,
       double? deduction,
+      @JsonKey(name: 'deduction_percent') int? deductionPercent,
       @JsonKey(name: 'policy_type') String? policyType,
       @JsonKey(name: 'policy_name') String? policyName,
+      @JsonKey(name: 'slab_info') String? slabInfo,
       @JsonKey(name: 'time_remaining_hours') double? timeRemainingHours,
       @JsonKey(name: 'within_24_hours') bool? within24Hours,
       @JsonKey(name: 'free_cancellation') bool? freeCancellation,
       @JsonKey(name: 'refund_items') List<RefundItem>? refundItems,
       @JsonKey(name: 'lose_items') List<LoseItem>? loseItems,
-      @JsonKey(name: 'total_final_amount') double? totalFinalAmount});
+      @JsonKey(name: 'total_final_amount') double? totalFinalAmount,
+      String? message,
+      @JsonKey(name: 'trek_price') double? trekPrice});
 }
 
 /// @nodoc
@@ -1077,14 +1088,18 @@ class _$RefundCalculationCopyWithImpl<$Res, $Val extends RefundCalculation>
   $Res call({
     Object? refund = freezed,
     Object? deduction = freezed,
+    Object? deductionPercent = freezed,
     Object? policyType = freezed,
     Object? policyName = freezed,
+    Object? slabInfo = freezed,
     Object? timeRemainingHours = freezed,
     Object? within24Hours = freezed,
     Object? freeCancellation = freezed,
     Object? refundItems = freezed,
     Object? loseItems = freezed,
     Object? totalFinalAmount = freezed,
+    Object? message = freezed,
+    Object? trekPrice = freezed,
   }) {
     return _then(_value.copyWith(
       refund: freezed == refund
@@ -1095,6 +1110,10 @@ class _$RefundCalculationCopyWithImpl<$Res, $Val extends RefundCalculation>
           ? _value.deduction
           : deduction // ignore: cast_nullable_to_non_nullable
               as double?,
+      deductionPercent: freezed == deductionPercent
+          ? _value.deductionPercent
+          : deductionPercent // ignore: cast_nullable_to_non_nullable
+              as int?,
       policyType: freezed == policyType
           ? _value.policyType
           : policyType // ignore: cast_nullable_to_non_nullable
@@ -1102,6 +1121,10 @@ class _$RefundCalculationCopyWithImpl<$Res, $Val extends RefundCalculation>
       policyName: freezed == policyName
           ? _value.policyName
           : policyName // ignore: cast_nullable_to_non_nullable
+              as String?,
+      slabInfo: freezed == slabInfo
+          ? _value.slabInfo
+          : slabInfo // ignore: cast_nullable_to_non_nullable
               as String?,
       timeRemainingHours: freezed == timeRemainingHours
           ? _value.timeRemainingHours
@@ -1127,6 +1150,14 @@ class _$RefundCalculationCopyWithImpl<$Res, $Val extends RefundCalculation>
           ? _value.totalFinalAmount
           : totalFinalAmount // ignore: cast_nullable_to_non_nullable
               as double?,
+      message: freezed == message
+          ? _value.message
+          : message // ignore: cast_nullable_to_non_nullable
+              as String?,
+      trekPrice: freezed == trekPrice
+          ? _value.trekPrice
+          : trekPrice // ignore: cast_nullable_to_non_nullable
+              as double?,
     ) as $Val);
   }
 }
@@ -1142,14 +1173,18 @@ abstract class _$$RefundCalculationImplCopyWith<$Res>
   $Res call(
       {double? refund,
       double? deduction,
+      @JsonKey(name: 'deduction_percent') int? deductionPercent,
       @JsonKey(name: 'policy_type') String? policyType,
       @JsonKey(name: 'policy_name') String? policyName,
+      @JsonKey(name: 'slab_info') String? slabInfo,
       @JsonKey(name: 'time_remaining_hours') double? timeRemainingHours,
       @JsonKey(name: 'within_24_hours') bool? within24Hours,
       @JsonKey(name: 'free_cancellation') bool? freeCancellation,
       @JsonKey(name: 'refund_items') List<RefundItem>? refundItems,
       @JsonKey(name: 'lose_items') List<LoseItem>? loseItems,
-      @JsonKey(name: 'total_final_amount') double? totalFinalAmount});
+      @JsonKey(name: 'total_final_amount') double? totalFinalAmount,
+      String? message,
+      @JsonKey(name: 'trek_price') double? trekPrice});
 }
 
 /// @nodoc
@@ -1165,14 +1200,18 @@ class __$$RefundCalculationImplCopyWithImpl<$Res>
   $Res call({
     Object? refund = freezed,
     Object? deduction = freezed,
+    Object? deductionPercent = freezed,
     Object? policyType = freezed,
     Object? policyName = freezed,
+    Object? slabInfo = freezed,
     Object? timeRemainingHours = freezed,
     Object? within24Hours = freezed,
     Object? freeCancellation = freezed,
     Object? refundItems = freezed,
     Object? loseItems = freezed,
     Object? totalFinalAmount = freezed,
+    Object? message = freezed,
+    Object? trekPrice = freezed,
   }) {
     return _then(_$RefundCalculationImpl(
       refund: freezed == refund
@@ -1183,6 +1222,10 @@ class __$$RefundCalculationImplCopyWithImpl<$Res>
           ? _value.deduction
           : deduction // ignore: cast_nullable_to_non_nullable
               as double?,
+      deductionPercent: freezed == deductionPercent
+          ? _value.deductionPercent
+          : deductionPercent // ignore: cast_nullable_to_non_nullable
+              as int?,
       policyType: freezed == policyType
           ? _value.policyType
           : policyType // ignore: cast_nullable_to_non_nullable
@@ -1190,6 +1233,10 @@ class __$$RefundCalculationImplCopyWithImpl<$Res>
       policyName: freezed == policyName
           ? _value.policyName
           : policyName // ignore: cast_nullable_to_non_nullable
+              as String?,
+      slabInfo: freezed == slabInfo
+          ? _value.slabInfo
+          : slabInfo // ignore: cast_nullable_to_non_nullable
               as String?,
       timeRemainingHours: freezed == timeRemainingHours
           ? _value.timeRemainingHours
@@ -1215,6 +1262,14 @@ class __$$RefundCalculationImplCopyWithImpl<$Res>
           ? _value.totalFinalAmount
           : totalFinalAmount // ignore: cast_nullable_to_non_nullable
               as double?,
+      message: freezed == message
+          ? _value.message
+          : message // ignore: cast_nullable_to_non_nullable
+              as String?,
+      trekPrice: freezed == trekPrice
+          ? _value.trekPrice
+          : trekPrice // ignore: cast_nullable_to_non_nullable
+              as double?,
     ));
   }
 }
@@ -1225,14 +1280,18 @@ class _$RefundCalculationImpl implements _RefundCalculation {
   const _$RefundCalculationImpl(
       {this.refund,
       this.deduction,
+      @JsonKey(name: 'deduction_percent') this.deductionPercent,
       @JsonKey(name: 'policy_type') this.policyType,
       @JsonKey(name: 'policy_name') this.policyName,
+      @JsonKey(name: 'slab_info') this.slabInfo,
       @JsonKey(name: 'time_remaining_hours') this.timeRemainingHours,
       @JsonKey(name: 'within_24_hours') this.within24Hours,
       @JsonKey(name: 'free_cancellation') this.freeCancellation,
       @JsonKey(name: 'refund_items') final List<RefundItem>? refundItems,
       @JsonKey(name: 'lose_items') final List<LoseItem>? loseItems,
-      @JsonKey(name: 'total_final_amount') this.totalFinalAmount})
+      @JsonKey(name: 'total_final_amount') this.totalFinalAmount,
+      this.message,
+      @JsonKey(name: 'trek_price') this.trekPrice})
       : _refundItems = refundItems,
         _loseItems = loseItems;
 
@@ -1244,11 +1303,17 @@ class _$RefundCalculationImpl implements _RefundCalculation {
   @override
   final double? deduction;
   @override
+  @JsonKey(name: 'deduction_percent')
+  final int? deductionPercent;
+  @override
   @JsonKey(name: 'policy_type')
   final String? policyType;
   @override
   @JsonKey(name: 'policy_name')
   final String? policyName;
+  @override
+  @JsonKey(name: 'slab_info')
+  final String? slabInfo;
   @override
   @JsonKey(name: 'time_remaining_hours')
   final double? timeRemainingHours;
@@ -1283,10 +1348,15 @@ class _$RefundCalculationImpl implements _RefundCalculation {
   @override
   @JsonKey(name: 'total_final_amount')
   final double? totalFinalAmount;
+  @override
+  final String? message;
+  @override
+  @JsonKey(name: 'trek_price')
+  final double? trekPrice;
 
   @override
   String toString() {
-    return 'RefundCalculation(refund: $refund, deduction: $deduction, policyType: $policyType, policyName: $policyName, timeRemainingHours: $timeRemainingHours, within24Hours: $within24Hours, freeCancellation: $freeCancellation, refundItems: $refundItems, loseItems: $loseItems, totalFinalAmount: $totalFinalAmount)';
+    return 'RefundCalculation(refund: $refund, deduction: $deduction, deductionPercent: $deductionPercent, policyType: $policyType, policyName: $policyName, slabInfo: $slabInfo, timeRemainingHours: $timeRemainingHours, within24Hours: $within24Hours, freeCancellation: $freeCancellation, refundItems: $refundItems, loseItems: $loseItems, totalFinalAmount: $totalFinalAmount, message: $message, trekPrice: $trekPrice)';
   }
 
   @override
@@ -1297,10 +1367,14 @@ class _$RefundCalculationImpl implements _RefundCalculation {
             (identical(other.refund, refund) || other.refund == refund) &&
             (identical(other.deduction, deduction) ||
                 other.deduction == deduction) &&
+            (identical(other.deductionPercent, deductionPercent) ||
+                other.deductionPercent == deductionPercent) &&
             (identical(other.policyType, policyType) ||
                 other.policyType == policyType) &&
             (identical(other.policyName, policyName) ||
                 other.policyName == policyName) &&
+            (identical(other.slabInfo, slabInfo) ||
+                other.slabInfo == slabInfo) &&
             (identical(other.timeRemainingHours, timeRemainingHours) ||
                 other.timeRemainingHours == timeRemainingHours) &&
             (identical(other.within24Hours, within24Hours) ||
@@ -1312,7 +1386,10 @@ class _$RefundCalculationImpl implements _RefundCalculation {
             const DeepCollectionEquality()
                 .equals(other._loseItems, _loseItems) &&
             (identical(other.totalFinalAmount, totalFinalAmount) ||
-                other.totalFinalAmount == totalFinalAmount));
+                other.totalFinalAmount == totalFinalAmount) &&
+            (identical(other.message, message) || other.message == message) &&
+            (identical(other.trekPrice, trekPrice) ||
+                other.trekPrice == trekPrice));
   }
 
   @JsonKey(ignore: true)
@@ -1321,14 +1398,18 @@ class _$RefundCalculationImpl implements _RefundCalculation {
       runtimeType,
       refund,
       deduction,
+      deductionPercent,
       policyType,
       policyName,
+      slabInfo,
       timeRemainingHours,
       within24Hours,
       freeCancellation,
       const DeepCollectionEquality().hash(_refundItems),
       const DeepCollectionEquality().hash(_loseItems),
-      totalFinalAmount);
+      totalFinalAmount,
+      message,
+      trekPrice);
 
   @JsonKey(ignore: true)
   @override
@@ -1349,15 +1430,19 @@ abstract class _RefundCalculation implements RefundCalculation {
   const factory _RefundCalculation(
       {final double? refund,
       final double? deduction,
+      @JsonKey(name: 'deduction_percent') final int? deductionPercent,
       @JsonKey(name: 'policy_type') final String? policyType,
       @JsonKey(name: 'policy_name') final String? policyName,
+      @JsonKey(name: 'slab_info') final String? slabInfo,
       @JsonKey(name: 'time_remaining_hours') final double? timeRemainingHours,
       @JsonKey(name: 'within_24_hours') final bool? within24Hours,
       @JsonKey(name: 'free_cancellation') final bool? freeCancellation,
       @JsonKey(name: 'refund_items') final List<RefundItem>? refundItems,
       @JsonKey(name: 'lose_items') final List<LoseItem>? loseItems,
-      @JsonKey(name: 'total_final_amount')
-      final double? totalFinalAmount}) = _$RefundCalculationImpl;
+      @JsonKey(name: 'total_final_amount') final double? totalFinalAmount,
+      final String? message,
+      @JsonKey(name: 'trek_price')
+      final double? trekPrice}) = _$RefundCalculationImpl;
 
   factory _RefundCalculation.fromJson(Map<String, dynamic> json) =
       _$RefundCalculationImpl.fromJson;
@@ -1367,11 +1452,17 @@ abstract class _RefundCalculation implements RefundCalculation {
   @override
   double? get deduction;
   @override
+  @JsonKey(name: 'deduction_percent')
+  int? get deductionPercent;
+  @override
   @JsonKey(name: 'policy_type')
   String? get policyType;
   @override
   @JsonKey(name: 'policy_name')
   String? get policyName;
+  @override
+  @JsonKey(name: 'slab_info')
+  String? get slabInfo;
   @override
   @JsonKey(name: 'time_remaining_hours')
   double? get timeRemainingHours;
@@ -1390,6 +1481,11 @@ abstract class _RefundCalculation implements RefundCalculation {
   @override
   @JsonKey(name: 'total_final_amount')
   double? get totalFinalAmount;
+  @override
+  String? get message;
+  @override
+  @JsonKey(name: 'trek_price')
+  double? get trekPrice;
   @override
   @JsonKey(ignore: true)
   _$$RefundCalculationImplCopyWith<_$RefundCalculationImpl> get copyWith =>

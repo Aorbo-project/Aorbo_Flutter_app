@@ -26,6 +26,7 @@ class NetworkUrl {
   //#region Auth
   static const String loginPath = 'customer/auth/request-otp';
   static const String firebaseVerify = 'customer/auth/firebase-verify';
+  static const String deviceToken = 'customer/device-token';
 
   //#endregion
 

@@ -1,4 +1,4 @@
-import 'dart:typed_data';
+import 'package:arobo_app/freezed_models/booking/booking_history_model.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
@@ -12,7 +12,6 @@ class InvoicePdfService {
   // ─────────────────────────────────────────────
   static const _ink = PdfColor.fromInt(0xFF0F172A);
   static const _inkMid = PdfColor.fromInt(0xFF64748B);
-  static const _inkLight = PdfColor.fromInt(0xFF94A3B8);
   static const _brand = PdfColor.fromInt(0xFF4271FF);
   static const _green = PdfColor.fromInt(0xFF0F7B6C);
   static const _red = PdfColor.fromInt(0xFFDC2626);
@@ -22,80 +21,114 @@ class InvoicePdfService {
   static const _chipBg = PdfColor.fromInt(0xFFF1F5F9);
 
   // ─────────────────────────────────────────────
-  //  STATIC SAMPLE DATA
+  //  DATE HELPERS
   // ─────────────────────────────────────────────
-  static const String _bookingNumber = 'AOR-2025-00123';
-  static const String _tbrId = 'TBR-998877';
-  static const String _bookingStatus = 'CONFIRMED';
-  static const String _paymentStatus = 'full_paid';
+  static DateTime _parseDate(String? s) =>
+      s != null ? (DateTime.tryParse(s) ?? DateTime.now()) : DateTime.now();
 
-  static final DateTime _bookingDate = DateTime(2025, 11, 12, 14, 30);
-  static final DateTime _startDate = DateTime(2025, 12, 20, 6, 0);
-  static final DateTime _endDate = DateTime(2025, 12, 22, 18, 0);
-
-  // Vendor
-  static const String _vendorName = 'Himalayan Trail Adventures';
-  static const String _vendorAddress =
-      '123, MG Road, Rishikesh, Uttarakhand - 249201';
-  static const String _vendorPhone = '+91 98765 43210';
-  static const String _vendorEmail = 'support@himalayantrails.com';
-  static const String _vendorCity = 'Rishikesh';
-
-  // Trek
-  static const String _trekTitle = 'Kedarkantha Winter Trek';
-  static const String _trekDescription =
-      'A 3-day snow trek through pine forests, frozen lakes and panoramic Himalayan summits.';
-  static const String _trekDuration = '3 Days 2 Nights';
-  static const String _captainName = 'Rohit Sharma';
-  static const String _captainPhone = '+91 91234 56789';
-  static const String _boardingPoint = 'Sankri Base Camp, Uttarakhand';
-
-  // Travelers
-  static const List<Map<String, String>> _travelers = [
-    {'name': 'Aarav Mehta', 'age': '28', 'gender': 'Male'},
-    {'name': 'Priya Sharma', 'age': '26', 'gender': 'Female'},
-    {'name': 'Karan Patel', 'age': '30', 'gender': 'Male'},
-  ];
-
-  // Payment
-  static const String _baseFare = '5500';
-  static const String _insurance = '200';
-  static const String _gst = '299';
-  static const String _discount = '0';
-  static const String _finalAmount = '5999';
-  static const String _paidAmount = '5999';
-  static const String _pendingAmount = '0';
+  // MySQL TIME "HH:MM:SS" → "06:00 AM"
+  static String _formatTime(String? t) {
+    if (t == null || t.isEmpty) return '';
+    try {
+      final p = t.split(':');
+      if (p.length >= 2) {
+        return DateFormat('hh:mm a')
+            .format(DateTime(2000, 1, 1, int.parse(p[0]), int.parse(p[1])));
+      }
+    } catch (_) {}
+    return t;
+  }
 
   // ─────────────────────────────────────────────
   //  PUBLIC: GENERATE PDF
   // ─────────────────────────────────────────────
   static Future<Uint8List> generateInvoice({
-    String policyType = 'standard',
+    required BookingHistoryData booking,
+    String? policyType,
   }) async {
+    // ── Extract data with graceful fallbacks ──────────────────────────────────
+    final bookingNumber = booking.bookingNumber ?? '—';
+    final tbrId        = booking.batch?.tbrId ?? '—';
+    final bookingStatus = (booking.status ?? 'confirmed').toUpperCase();
+    final paymentStatus = booking.paymentStatus ?? 'full_paid';
+
+    final bookingDate = _parseDate(booking.bookingDate ?? booking.createdAt);
+    final startDate   = _parseDate(booking.batch?.startDate);
+    final endDate     = _parseDate(booking.batch?.endDate);
+    final startTimeStr = _formatTime(booking.batch?.startTime);
+
+    final vendorName  = booking.trek?.vendor?.businessName ?? 'Trek Operator';
+    final vendorCity  = booking.trek?.vendor?.city ?? '';
+    final vendorState = booking.trek?.vendor?.state ?? '';
+    final vendorAddress = [
+      if ((booking.trek?.vendor?.address ?? '').isNotEmpty)
+        booking.trek?.vendor?.address ?? '',
+      if (vendorCity.isNotEmpty) vendorCity,
+      if (vendorState.isNotEmpty) vendorState,
+    ].join(', ');
+    final vendorPhone = booking.trek?.vendor?.phone ?? 'Contact via app';
+    final vendorEmail = booking.trek?.vendor?.email ?? '';
+    final vendorLogoUrl = booking.trek?.vendor?.businessLogo ?? '';
+
+    final trekTitle  = booking.trek?.title ?? 'Trek';
+    final trekDesc   = booking.trek?.description ?? '';
+    final durationDays   = booking.trek?.durationDays ?? 0;
+    final durationNights = booking.trek?.durationNights ?? 0;
+    final trekDuration = durationDays > 0
+        ? '$durationDays Days $durationNights Nights'
+        : (booking.trek?.duration ?? '—');
+
+    final captainName  = booking.trek?.captainName ?? '—';
+    final captainPhone = booking.trek?.captainPhone ?? '—';
+    final boardingPoint = booking.trek?.boardingPoint ?? vendorAddress;
+
+    final travelers = (booking.travelers ?? [])
+        .where((t) => t.traveler != null)
+        .map((t) => <String, String>{
+              'name':   t.traveler!.name ?? 'Traveler',
+              'age':    t.traveler!.age?.toString() ?? '—',
+              'gender': t.traveler!.gender ?? '—',
+            })
+        .toList();
+    final displayTravelers = travelers.isEmpty
+        ? [<String, String>{'name': '—', 'age': '—', 'gender': '—'}]
+        : travelers;
+
+    final baseFare     = booking.totalAmount ?? '0';
+    final platformFees = booking.platformFees ?? '0';
+    final gst          = booking.gstAmount ?? '0';
+    final discount     = booking.discountAmount ?? '0';
+    final finalAmount  = booking.finalAmount ?? '0';
+    final paidAmount   = booking.advanceAmount ?? finalAmount;
+    final pendingAmount = booking.remainingAmount ?? '0';
+
+    final resolvedPolicy =
+        policyType ?? booking.cancellationPolicyType?.toString() ?? 'standard';
+
+    // ── PDF setup ─────────────────────────────────────────────────────────────
     final doc = pw.Document(
-      title: 'Aorbo Treks Invoice - $_bookingNumber',
+      title: 'Aorbo Treks Invoice - $bookingNumber',
       author: 'Aorbo Treks',
     );
 
-    final font = await PdfGoogleFonts.poppinsRegular();
-    final fontBold = await PdfGoogleFonts.poppinsBold();
-    final fontSemi = await PdfGoogleFonts.poppinsSemiBold();
+    final font      = await PdfGoogleFonts.poppinsRegular();
+    final fontBold  = await PdfGoogleFonts.poppinsBold();
+    final fontSemi  = await PdfGoogleFonts.poppinsSemiBold();
     final fontItalic = await PdfGoogleFonts.poppinsItalic();
 
     pw.MemoryImage? vendorLogo;
     pw.MemoryImage? aorboLogo;
 
     try {
-      final aorboBytes = await rootBundle.load(
-        'assets/images/img/aorbologo.png',
-      );
+      final aorboBytes = await rootBundle.load('assets/images/img/aorbologo.png');
       aorboLogo = pw.MemoryImage(aorboBytes.buffer.asUint8List());
     } catch (_) {}
 
-    const vendorLogoUrl = '';
     if (vendorLogoUrl.isNotEmpty) {
       try {
-        final response = await http.get(Uri.parse(vendorLogoUrl));
+        final response = await http
+            .get(Uri.parse(vendorLogoUrl))
+            .timeout(const Duration(seconds: 5));
         if (response.statusCode == 200) {
           vendorLogo = pw.MemoryImage(response.bodyBytes);
         }
@@ -115,13 +148,40 @@ class InvoicePdfService {
         margin: const pw.EdgeInsets.all(24),
         build: (context) => [
           _buildInvoiceBody(
-            policyType: policyType,
+            policyType: resolvedPolicy,
             font: font,
             fontBold: fontBold,
             fontSemi: fontSemi,
             fontItalic: fontItalic,
             vendorLogo: vendorLogo,
             aorboLogo: aorboLogo,
+            bookingNumber: bookingNumber,
+            tbrId: tbrId,
+            bookingStatus: bookingStatus,
+            paymentStatus: paymentStatus,
+            bookingDate: bookingDate,
+            startDate: startDate,
+            endDate: endDate,
+            startTimeStr: startTimeStr,
+            vendorName: vendorName,
+            vendorAddress: vendorAddress,
+            vendorCity: vendorCity,
+            vendorPhone: vendorPhone,
+            vendorEmail: vendorEmail,
+            trekTitle: trekTitle,
+            trekDescription: trekDesc,
+            trekDuration: trekDuration,
+            captainName: captainName,
+            captainPhone: captainPhone,
+            boardingPoint: boardingPoint,
+            travelers: displayTravelers,
+            baseFare: baseFare,
+            platformFees: platformFees,
+            gst: gst,
+            discount: discount,
+            finalAmount: finalAmount,
+            paidAmount: paidAmount,
+            pendingAmount: pendingAmount,
           ),
           pw.SizedBox(height: 20),
           _buildDisclaimer(fontBold: fontBold, fontSemi: fontSemi),
@@ -135,18 +195,26 @@ class InvoicePdfService {
   // ─────────────────────────────────────────────
   //  PUBLIC: SHARE / PREVIEW
   // ─────────────────────────────────────────────
-  static Future<void> shareInvoice({String policyType = 'standard'}) async {
-    final bytes = await generateInvoice(policyType: policyType);
+  static Future<void> shareInvoice({
+    required BookingHistoryData booking,
+    String? policyType,
+  }) async {
+    final bytes = await generateInvoice(booking: booking, policyType: policyType);
+    final bookingNumber = booking.bookingNumber ?? 'invoice';
     await Printing.sharePdf(
       bytes: bytes,
-      filename: 'Aorbo_Invoice_$_bookingNumber.pdf',
+      filename: 'Aorbo_Invoice_$bookingNumber.pdf',
     );
   }
 
-  static Future<void> previewInvoice({String policyType = 'standard'}) async {
+  static Future<void> previewInvoice({
+    required BookingHistoryData booking,
+    String? policyType,
+  }) async {
+    final bookingNumber = booking.bookingNumber ?? 'invoice';
     await Printing.layoutPdf(
-      name: 'Aorbo_Invoice_$_bookingNumber.pdf',
-      onLayout: (format) => generateInvoice(policyType: policyType),
+      name: 'Aorbo_Invoice_$bookingNumber.pdf',
+      onLayout: (format) => generateInvoice(booking: booking, policyType: policyType),
     );
   }
 
@@ -161,6 +229,34 @@ class InvoicePdfService {
     required pw.Font fontItalic,
     pw.MemoryImage? vendorLogo,
     pw.MemoryImage? aorboLogo,
+    // Booking data
+    required String bookingNumber,
+    required String tbrId,
+    required String bookingStatus,
+    required String paymentStatus,
+    required DateTime bookingDate,
+    required DateTime startDate,
+    required DateTime endDate,
+    required String startTimeStr,
+    required String vendorName,
+    required String vendorAddress,
+    required String vendorCity,
+    required String vendorPhone,
+    required String vendorEmail,
+    required String trekTitle,
+    required String trekDescription,
+    required String trekDuration,
+    required String captainName,
+    required String captainPhone,
+    required String boardingPoint,
+    required List<Map<String, String>> travelers,
+    required String baseFare,
+    required String platformFees,
+    required String gst,
+    required String discount,
+    required String finalAmount,
+    required String paidAmount,
+    required String pendingAmount,
   }) {
     final isFlexible = policyType.toLowerCase() == 'flexible';
 
@@ -188,9 +284,7 @@ class InvoicePdfService {
                       ),
                     ),
                     pw.TextSpan(
-                      text: DateFormat(
-                        'dd/MM/yyyy hh:mm a',
-                      ).format(_bookingDate),
+                      text: DateFormat('dd/MM/yyyy hh:mm a').format(bookingDate),
                       style: pw.TextStyle(
                         font: fontSemi,
                         fontSize: 9,
@@ -212,7 +306,7 @@ class InvoicePdfService {
                       ),
                     ),
                     pw.TextSpan(
-                      text: _bookingStatus,
+                      text: bookingStatus,
                       style: pw.TextStyle(
                         font: fontBold,
                         fontSize: 9,
@@ -250,7 +344,7 @@ class InvoicePdfService {
                         ),
                         alignment: pw.Alignment.center,
                         child: pw.Text(
-                          _vendorName.substring(0, 1).toUpperCase(),
+                          vendorName.substring(0, 1).toUpperCase(),
                           style: pw.TextStyle(
                             font: fontBold,
                             fontSize: 22,
@@ -265,7 +359,7 @@ class InvoicePdfService {
                   crossAxisAlignment: pw.CrossAxisAlignment.center,
                   children: [
                     pw.Text(
-                      _vendorName.toUpperCase(),
+                      vendorName.toUpperCase(),
                       style: pw.TextStyle(
                         font: fontBold,
                         fontSize: 13,
@@ -273,15 +367,16 @@ class InvoicePdfService {
                       ),
                     ),
                     pw.SizedBox(height: 4),
-                    pw.Text(
-                      _vendorAddress,
-                      textAlign: pw.TextAlign.center,
-                      style: pw.TextStyle(
-                        font: font,
-                        fontSize: 8,
-                        color: _inkMid,
+                    if (vendorAddress.isNotEmpty)
+                      pw.Text(
+                        vendorAddress,
+                        textAlign: pw.TextAlign.center,
+                        style: pw.TextStyle(
+                          font: font,
+                          fontSize: 8,
+                          color: _inkMid,
+                        ),
                       ),
-                    ),
                     pw.SizedBox(height: 3),
                     pw.Row(
                       mainAxisAlignment: pw.MainAxisAlignment.center,
@@ -295,7 +390,7 @@ class InvoicePdfService {
                           ),
                         ),
                         pw.Text(
-                          _vendorPhone,
+                          vendorPhone,
                           style: pw.TextStyle(
                             font: fontSemi,
                             fontSize: 8,
@@ -305,14 +400,15 @@ class InvoicePdfService {
                       ],
                     ),
                     pw.SizedBox(height: 2),
-                    pw.Text(
-                      'Email : $_vendorEmail',
-                      style: pw.TextStyle(
-                        font: font,
-                        fontSize: 8,
-                        color: _inkMid,
+                    if (vendorEmail.isNotEmpty)
+                      pw.Text(
+                        'Email : $vendorEmail',
+                        style: pw.TextStyle(
+                          font: font,
+                          fontSize: 8,
+                          color: _inkMid,
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -360,31 +456,33 @@ class InvoicePdfService {
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
                       pw.Text(
-                        _trekTitle,
+                        trekTitle,
                         style: pw.TextStyle(
                           font: fontBold,
                           fontSize: 14,
                           color: _green,
                         ),
                       ),
-                      pw.SizedBox(height: 2),
-                      pw.Text(
-                        _trekDescription,
-                        style: pw.TextStyle(
-                          font: font,
-                          fontSize: 8,
-                          color: _inkMid,
+                      if (trekDescription.isNotEmpty) ...[
+                        pw.SizedBox(height: 2),
+                        pw.Text(
+                          trekDescription,
+                          style: pw.TextStyle(
+                            font: font,
+                            fontSize: 8,
+                            color: _inkMid,
+                          ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ),
                 pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.end,
                   children: [
-                    _idRow('Ticket ID', _bookingNumber, fontSemi, fontBold),
+                    _idRow('Ticket ID', bookingNumber, fontSemi, fontBold),
                     pw.SizedBox(height: 3),
-                    _idRow('TBR ID', _tbrId, fontSemi, fontBold),
+                    _idRow('TBR ID', tbrId, fontSemi, fontBold),
                   ],
                 ),
               ],
@@ -395,7 +493,8 @@ class InvoicePdfService {
           // DEPARTURE / DAYS / ARRIVAL
           pw.Container(
             width: double.infinity,
-            padding: const pw.EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+            padding:
+                const pw.EdgeInsets.symmetric(vertical: 10, horizontal: 8),
             decoration: const pw.BoxDecoration(color: _yellowBg),
             child: pw.Row(
               children: [
@@ -405,7 +504,9 @@ class InvoicePdfService {
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
                       pw.Text(
-                        '${DateFormat('E, dd MMM').format(_startDate)}   ${DateFormat('hh:mm a').format(_startDate)}',
+                        startTimeStr.isNotEmpty
+                            ? '${DateFormat('E, dd MMM').format(startDate)}   $startTimeStr'
+                            : DateFormat('E, dd MMM').format(startDate),
                         style: pw.TextStyle(
                           font: fontBold,
                           fontSize: 10,
@@ -414,7 +515,7 @@ class InvoicePdfService {
                       ),
                       pw.SizedBox(height: 2),
                       pw.Text(
-                        _vendorCity,
+                        vendorCity,
                         style: pw.TextStyle(
                           font: font,
                           fontSize: 8,
@@ -437,7 +538,7 @@ class InvoicePdfService {
                         borderRadius: pw.BorderRadius.circular(12),
                       ),
                       child: pw.Text(
-                        _trekDuration
+                        trekDuration
                             .replaceAll('Days', 'D')
                             .replaceAll('Nights', 'N'),
                         style: pw.TextStyle(
@@ -455,7 +556,7 @@ class InvoicePdfService {
                     crossAxisAlignment: pw.CrossAxisAlignment.end,
                     children: [
                       pw.Text(
-                        '${DateFormat('E, dd MMM').format(_endDate)}   ${DateFormat('hh:mm a').format(_endDate)}',
+                        DateFormat('E, dd MMM').format(endDate),
                         style: pw.TextStyle(
                           font: fontBold,
                           fontSize: 10,
@@ -464,7 +565,7 @@ class InvoicePdfService {
                       ),
                       pw.SizedBox(height: 2),
                       pw.Text(
-                        _vendorCity,
+                        vendorCity,
                         style: pw.TextStyle(
                           font: font,
                           fontSize: 8,
@@ -489,11 +590,11 @@ class InvoicePdfService {
                   children: [
                     _sectionTitle('TREK DETAILS', fontBold),
                     pw.SizedBox(height: 6),
-                    _kvRow('Trek Name', _trekTitle, font, fontSemi),
-                    _kvRow('Trek Operator', _vendorName, font, fontSemi),
-                    _kvRow('Boarding Point', _boardingPoint, font, fontSemi),
-                    _kvRow('Trek Captain', _captainName, font, fontSemi),
-                    _kvRow('Captain Contact', _captainPhone, font, fontSemi),
+                    _kvRow('Trek Name', trekTitle, font, fontSemi),
+                    _kvRow('Trek Operator', vendorName, font, fontSemi),
+                    _kvRow('Boarding Point', boardingPoint.isNotEmpty ? boardingPoint : '—', font, fontSemi),
+                    _kvRow('Trek Captain', captainName, font, fontSemi),
+                    _kvRow('Captain Contact', captainPhone, font, fontSemi),
                   ],
                 ),
               ),
@@ -504,10 +605,10 @@ class InvoicePdfService {
                   children: [
                     _sectionTitle('TRAVELLER DETAILS', fontBold),
                     pw.SizedBox(height: 6),
-                    _travellersTable(font, fontSemi, fontBold),
+                    _travellersTable(travelers, font, fontSemi, fontBold),
                     pw.SizedBox(height: 6),
                     pw.Text(
-                      'Total NO of Slots: ${_travelers.length}',
+                      'Total NO of Slots: ${travelers.length}',
                       style: pw.TextStyle(
                         font: fontSemi,
                         fontSize: 8,
@@ -528,6 +629,14 @@ class InvoicePdfService {
             font: font,
             fontSemi: fontSemi,
             fontBold: fontBold,
+            paymentStatus: paymentStatus,
+            baseFare: baseFare,
+            platformFees: platformFees,
+            gst: gst,
+            discount: discount,
+            finalAmount: finalAmount,
+            paidAmount: paidAmount,
+            pendingAmount: pendingAmount,
           ),
           pw.SizedBox(height: 14),
           pw.Container(height: 0.6, color: _ink),
@@ -543,6 +652,8 @@ class InvoicePdfService {
             font: font,
             fontSemi: fontSemi,
             fontBold: fontBold,
+            startDate: startDate,
+            finalAmount: finalAmount,
           ),
           pw.SizedBox(height: 12),
           if (isFlexible) ...[
@@ -564,17 +675,18 @@ class InvoicePdfService {
             ),
           ] else ...[
             _policyNote(
-              'Cancellation fees are applied on a per-slot basis. The cancellation charge mentioned above is calculated based on a seat fare of ₹$_finalAmount.',
+              'Cancellation fees are applied on a per-slot basis. The cancellation charge mentioned above is calculated based on a seat fare of ₹$finalAmount.',
               font,
             ),
           ],
           pw.SizedBox(height: 14),
-          pw.Center(
-            child: pw.Text(
-              'Service start time: ${DateFormat('HH:mm').format(_startDate)}',
-              style: pw.TextStyle(font: fontBold, fontSize: 9, color: _ink),
+          if (startTimeStr.isNotEmpty)
+            pw.Center(
+              child: pw.Text(
+                'Service start time: $startTimeStr',
+                style: pw.TextStyle(font: fontBold, fontSize: 9, color: _ink),
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -649,6 +761,7 @@ class InvoicePdfService {
   }
 
   static pw.Widget _travellersTable(
+    List<Map<String, String>> travelers,
     pw.Font font,
     pw.Font fontSemi,
     pw.Font fontBold,
@@ -667,7 +780,7 @@ class InvoicePdfService {
             _tableHeader('Gender', fontSemi),
           ],
         ),
-        ..._travelers.map(
+        ...travelers.map(
           (t) => pw.TableRow(
             children: [
               _tableCell(t['name'] ?? '-', fontSemi),
@@ -705,26 +818,34 @@ class InvoicePdfService {
     required pw.Font font,
     required pw.Font fontSemi,
     required pw.Font fontBold,
+    required String paymentStatus,
+    required String baseFare,
+    required String platformFees,
+    required String gst,
+    required String discount,
+    required String finalAmount,
+    required String paidAmount,
+    required String pendingAmount,
   }) {
-    final isFullyPaid = _paymentStatus == 'full_paid';
+    final isFullyPaid = paymentStatus == 'full_paid';
     final statusText = isFullyPaid
         ? 'Paid'
-        : _paymentStatus == 'partial_paid'
-        ? 'Partially Paid'
-        : 'Pending';
+        : paymentStatus == 'partial_paid'
+            ? 'Partially Paid'
+            : 'Pending';
     final statusColor = isFullyPaid ? _green : _red;
 
     return pw.Column(
       children: [
-        _payRow('Base Fare', '₹$_baseFare', font, fontSemi),
-        _payRow('Traveller Insurance', '₹$_insurance', font, fontSemi),
-        _payRow('Operator GST', '₹$_gst', font, fontSemi),
-        _payRow('Coupon', '- ₹$_discount', font, fontSemi),
-        _payRow('Total Amount', '₹$_finalAmount', font, fontBold),
+        _payRow('Base Fare', '₹$baseFare', font, fontSemi),
+        _payRow('Platform Fee', '₹$platformFees', font, fontSemi),
+        _payRow('Operator GST', '₹$gst', font, fontSemi),
+        _payRow('Coupon Discount', '- ₹$discount', font, fontSemi),
+        _payRow('Total Amount', '₹$finalAmount', font, fontBold),
         _payRow('Status', statusText, font, fontBold, valueColor: statusColor),
         if (isFlexible) ...[
-          _payRow('Amount Paid', '₹$_paidAmount', font, fontSemi),
-          _payRow('Amount to be Paid', '₹$_pendingAmount', font, fontSemi),
+          _payRow('Amount Paid', '₹$paidAmount', font, fontSemi),
+          _payRow('Amount to be Paid', '₹$pendingAmount', font, fontSemi),
         ],
       ],
     );
@@ -765,8 +886,10 @@ class InvoicePdfService {
     required pw.Font font,
     required pw.Font fontSemi,
     required pw.Font fontBold,
+    required DateTime startDate,
+    required String finalAmount,
   }) {
-    final fare = double.tryParse(_finalAmount) ?? 5999;
+    final fare = double.tryParse(finalAmount) ?? 5999;
 
     if (isFlexible) {
       return pw.Table(
@@ -777,7 +900,8 @@ class InvoicePdfService {
         children: [
           pw.TableRow(
             decoration: const pw.BoxDecoration(
-              border: pw.Border(bottom: pw.BorderSide(color: _ink, width: 0.5)),
+              border:
+                  pw.Border(bottom: pw.BorderSide(color: _ink, width: 0.5)),
             ),
             children: [
               _policyHead('Before departure', fontBold),
@@ -806,9 +930,9 @@ class InvoicePdfService {
       );
     }
 
-    final d3Before = _startDate.subtract(const Duration(days: 3));
-    final d1Before12pm = _startDate.subtract(const Duration(days: 1));
-    final dayOf = _startDate;
+    final d3Before    = startDate.subtract(const Duration(days: 3));
+    final d1Before12pm = startDate.subtract(const Duration(days: 1));
+    final dayOf       = startDate;
 
     final r1 = (fare * 0.20).round();
     final r2 = (fare * 0.50).round();
@@ -975,7 +1099,7 @@ class InvoicePdfService {
           pw.SizedBox(height: 8),
           _discHead('Governing Law:', fontBold),
           _discBody(
-            'All matters are governed by Indian law and subject to courts in [Insert Jurisdiction, e.g., Hyderabad, Telangana].',
+            'All matters are governed by Indian law and subject to courts in Hyderabad, Telangana.',
           ),
           pw.SizedBox(height: 12),
           pw.Text(

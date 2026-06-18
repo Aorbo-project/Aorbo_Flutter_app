@@ -15,7 +15,10 @@ import 'package:sizer/sizer.dart';
 
 import 'utils/shared_preferences.dart';
 
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {}
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // Message received while app is terminated/in background — system tray handles display.
+  // No action needed here; navigation is handled in onMessageOpenedApp when user taps.
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -55,6 +58,18 @@ void main() async {
   if (!Platform.isIOS) {
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   }
+
+  // Foreground: system already shows the notification via setForegroundNotificationPresentationOptions.
+  FirebaseMessaging.onMessage.listen((_) {});
+
+  // Tapped from background: navigate to the relevant screen based on payload type.
+  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+    final type = message.data['type'];
+    final id = message.data['id'];
+    if (type == 'booking' && id != null) {
+      Get.toNamed('/booking-upcoming', arguments: {'booking_id': int.tryParse(id.toString())});
+    }
+  });
 
   sp = await SpUtil.getInstance();
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]).then((
