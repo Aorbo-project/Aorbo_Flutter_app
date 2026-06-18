@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:arobo_app/main.dart';
 import 'package:arobo_app/utils/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -121,6 +123,23 @@ class AuthController extends GetxController {
     }
   }
 
+  // Fire-and-forget: register FCM token with backend after successful auth.
+  // Errors are non-fatal — user is already logged in.
+  Future<void> _registerFcmToken() async {
+    try {
+      final fcmToken = await FirebaseMessaging.instance.getToken();
+      if (fcmToken == null) return;
+      final platform = Platform.isIOS ? 'ios' : 'android';
+      await repository.postApiCall(
+        url: NetworkUrl.deviceToken,
+        body: json.encode({'device_token': fcmToken, 'platform': platform}),
+      );
+      logger.d('FCM token registered');
+    } catch (e) {
+      logger.e('FCM token registration failed: $e');
+    }
+  }
+
   Future<bool> verifyFirebaseToken(String firebaseToken) async {
     isLoading.value = true;
 
@@ -147,6 +166,9 @@ class AuthController extends GetxController {
           await sp!.putString(SpUtil.accessToken, token);
           await sp!.putBool(SpUtil.isLoggedIn, true);
           await sp!.putInt(SpUtil.userID, verifyOtpModal.value.data?.customer?.id ?? 0);
+
+          // Register FCM device token now that we have a valid session
+          _registerFcmToken();
 
           return true;
         } catch (parseError) {

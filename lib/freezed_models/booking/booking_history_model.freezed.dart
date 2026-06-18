@@ -1453,6 +1453,7 @@ mixin _$Trek {
   int? get id => throw _privateConstructorUsedError;
   String? get title => throw _privateConstructorUsedError;
   String? get duration => throw _privateConstructorUsedError;
+  String? get description => throw _privateConstructorUsedError;
   @JsonKey(name: 'base_price')
   String? get basePrice => throw _privateConstructorUsedError;
   String? get status => throw _privateConstructorUsedError;
@@ -1467,6 +1468,8 @@ mixin _$Trek {
   int? get durationDays => throw _privateConstructorUsedError;
   @JsonKey(name: 'duration_nights')
   int? get durationNights => throw _privateConstructorUsedError;
+  @JsonKey(name: 'boarding_point')
+  String? get boardingPoint => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -1482,6 +1485,7 @@ abstract class $TrekCopyWith<$Res> {
       {int? id,
       String? title,
       String? duration,
+      String? description,
       @JsonKey(name: 'base_price') String? basePrice,
       String? status,
       Vendor? vendor,
@@ -1490,7 +1494,8 @@ abstract class $TrekCopyWith<$Res> {
       @JsonKey(name: 'captain_phone') String? captainPhone,
       String? difficulty,
       @JsonKey(name: 'duration_days') int? durationDays,
-      @JsonKey(name: 'duration_nights') int? durationNights});
+      @JsonKey(name: 'duration_nights') int? durationNights,
+      @JsonKey(name: 'boarding_point') String? boardingPoint});
 
   $VendorCopyWith<$Res>? get vendor;
   $DestinationCopyWith<$Res>? get destination;
@@ -1512,6 +1517,7 @@ class _$TrekCopyWithImpl<$Res, $Val extends Trek>
     Object? id = freezed,
     Object? title = freezed,
     Object? duration = freezed,
+    Object? description = freezed,
     Object? basePrice = freezed,
     Object? status = freezed,
     Object? vendor = freezed,
@@ -1521,6 +1527,7 @@ class _$TrekCopyWithImpl<$Res, $Val extends Trek>
     Object? difficulty = freezed,
     Object? durationDays = freezed,
     Object? durationNights = freezed,
+    Object? boardingPoint = freezed,
   }) {
     return _then(_value.copyWith(
       id: freezed == id
@@ -1534,6 +1541,10 @@ class _$TrekCopyWithImpl<$Res, $Val extends Trek>
       duration: freezed == duration
           ? _value.duration
           : duration // ignore: cast_nullable_to_non_nullable
+              as String?,
+      description: freezed == description
+          ? _value.description
+          : description // ignore: cast_nullable_to_non_nullable
               as String?,
       basePrice: freezed == basePrice
           ? _value.basePrice
@@ -1571,6 +1582,10 @@ class _$TrekCopyWithImpl<$Res, $Val extends Trek>
           ? _value.durationNights
           : durationNights // ignore: cast_nullable_to_non_nullable
               as int?,
+      boardingPoint: freezed == boardingPoint
+          ? _value.boardingPoint
+          : boardingPoint // ignore: cast_nullable_to_non_nullable
+              as String?,
     ) as $Val);
   }
 
@@ -1610,6 +1625,7 @@ abstract class _$$TrekImplCopyWith<$Res> implements $TrekCopyWith<$Res> {
       {int? id,
       String? title,
       String? duration,
+      String? description,
       @JsonKey(name: 'base_price') String? basePrice,
       String? status,
       Vendor? vendor,
@@ -1618,7 +1634,8 @@ abstract class _$$TrekImplCopyWith<$Res> implements $TrekCopyWith<$Res> {
       @JsonKey(name: 'captain_phone') String? captainPhone,
       String? difficulty,
       @JsonKey(name: 'duration_days') int? durationDays,
-      @JsonKey(name: 'duration_nights') int? durationNights});
+      @JsonKey(name: 'duration_nights') int? durationNights,
+      @JsonKey(name: 'boarding_point') String? boardingPoint});
 
   @override
   $VendorCopyWith<$Res>? get vendor;
@@ -1639,6 +1656,7 @@ class __$$TrekImplCopyWithImpl<$Res>
     Object? id = freezed,
     Object? title = freezed,
     Object? duration = freezed,
+    Object? description = freezed,
     Object? basePrice = freezed,
     Object? status = freezed,
     Object? vendor = freezed,
@@ -1648,6 +1666,7 @@ class __$$TrekImplCopyWithImpl<$Res>
     Object? difficulty = freezed,
     Object? durationDays = freezed,
     Object? durationNights = freezed,
+    Object? boardingPoint = freezed,
   }) {
     return _then(_$TrekImpl(
       id: freezed == id
@@ -1661,6 +1680,10 @@ class __$$TrekImplCopyWithImpl<$Res>
       duration: freezed == duration
           ? _value.duration
           : duration // ignore: cast_nullable_to_non_nullable
+              as String?,
+      description: freezed == description
+          ? _value.description
+          : description // ignore: cast_nullable_to_non_nullable
               as String?,
       basePrice: freezed == basePrice
           ? _value.basePrice
@@ -1698,6 +1721,10 @@ class __$$TrekImplCopyWithImpl<$Res>
           ? _value.durationNights
           : durationNights // ignore: cast_nullable_to_non_nullable
               as int?,
+      boardingPoint: freezed == boardingPoint
+          ? _value.boardingPoint
+          : boardingPoint // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -1709,6 +1736,7 @@ class _$TrekImpl implements _Trek {
       {this.id,
       this.title,
       this.duration,
+      this.description,
       @JsonKey(name: 'base_price') this.basePrice,
       this.status,
       this.vendor,
@@ -1717,7 +1745,8 @@ class _$TrekImpl implements _Trek {
       @JsonKey(name: 'captain_phone') this.captainPhone,
       this.difficulty,
       @JsonKey(name: 'duration_days') this.durationDays,
-      @JsonKey(name: 'duration_nights') this.durationNights});
+      @JsonKey(name: 'duration_nights') this.durationNights,
+      @JsonKey(name: 'boarding_point') this.boardingPoint});
 
   factory _$TrekImpl.fromJson(Map<String, dynamic> json) =>
       _$$TrekImplFromJson(json);
@@ -1728,6 +1757,8 @@ class _$TrekImpl implements _Trek {
   final String? title;
   @override
   final String? duration;
+  @override
+  final String? description;
   @override
   @JsonKey(name: 'base_price')
   final String? basePrice;
@@ -1751,10 +1782,13 @@ class _$TrekImpl implements _Trek {
   @override
   @JsonKey(name: 'duration_nights')
   final int? durationNights;
+  @override
+  @JsonKey(name: 'boarding_point')
+  final String? boardingPoint;
 
   @override
   String toString() {
-    return 'Trek(id: $id, title: $title, duration: $duration, basePrice: $basePrice, status: $status, vendor: $vendor, destination: $destination, captainName: $captainName, captainPhone: $captainPhone, difficulty: $difficulty, durationDays: $durationDays, durationNights: $durationNights)';
+    return 'Trek(id: $id, title: $title, duration: $duration, description: $description, basePrice: $basePrice, status: $status, vendor: $vendor, destination: $destination, captainName: $captainName, captainPhone: $captainPhone, difficulty: $difficulty, durationDays: $durationDays, durationNights: $durationNights, boardingPoint: $boardingPoint)';
   }
 
   @override
@@ -1766,6 +1800,8 @@ class _$TrekImpl implements _Trek {
             (identical(other.title, title) || other.title == title) &&
             (identical(other.duration, duration) ||
                 other.duration == duration) &&
+            (identical(other.description, description) ||
+                other.description == description) &&
             (identical(other.basePrice, basePrice) ||
                 other.basePrice == basePrice) &&
             (identical(other.status, status) || other.status == status) &&
@@ -1781,7 +1817,9 @@ class _$TrekImpl implements _Trek {
             (identical(other.durationDays, durationDays) ||
                 other.durationDays == durationDays) &&
             (identical(other.durationNights, durationNights) ||
-                other.durationNights == durationNights));
+                other.durationNights == durationNights) &&
+            (identical(other.boardingPoint, boardingPoint) ||
+                other.boardingPoint == boardingPoint));
   }
 
   @JsonKey(ignore: true)
@@ -1791,6 +1829,7 @@ class _$TrekImpl implements _Trek {
       id,
       title,
       duration,
+      description,
       basePrice,
       status,
       vendor,
@@ -1799,7 +1838,8 @@ class _$TrekImpl implements _Trek {
       captainPhone,
       difficulty,
       durationDays,
-      durationNights);
+      durationNights,
+      boardingPoint);
 
   @JsonKey(ignore: true)
   @override
@@ -1820,6 +1860,7 @@ abstract class _Trek implements Trek {
           {final int? id,
           final String? title,
           final String? duration,
+          final String? description,
           @JsonKey(name: 'base_price') final String? basePrice,
           final String? status,
           final Vendor? vendor,
@@ -1828,7 +1869,8 @@ abstract class _Trek implements Trek {
           @JsonKey(name: 'captain_phone') final String? captainPhone,
           final String? difficulty,
           @JsonKey(name: 'duration_days') final int? durationDays,
-          @JsonKey(name: 'duration_nights') final int? durationNights}) =
+          @JsonKey(name: 'duration_nights') final int? durationNights,
+          @JsonKey(name: 'boarding_point') final String? boardingPoint}) =
       _$TrekImpl;
 
   factory _Trek.fromJson(Map<String, dynamic> json) = _$TrekImpl.fromJson;
@@ -1839,6 +1881,8 @@ abstract class _Trek implements Trek {
   String? get title;
   @override
   String? get duration;
+  @override
+  String? get description;
   @override
   @JsonKey(name: 'base_price')
   String? get basePrice;
@@ -1863,6 +1907,9 @@ abstract class _Trek implements Trek {
   @JsonKey(name: 'duration_nights')
   int? get durationNights;
   @override
+  @JsonKey(name: 'boarding_point')
+  String? get boardingPoint;
+  @override
   @JsonKey(ignore: true)
   _$$TrekImplCopyWith<_$TrekImpl> get copyWith =>
       throw _privateConstructorUsedError;
@@ -1882,6 +1929,8 @@ mixin _$Vendor {
   String? get city => throw _privateConstructorUsedError;
   String? get state => throw _privateConstructorUsedError;
   String? get address => throw _privateConstructorUsedError;
+  String? get phone => throw _privateConstructorUsedError;
+  String? get email => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -1900,7 +1949,9 @@ abstract class $VendorCopyWith<$Res> {
       String? businessLogo,
       String? city,
       String? state,
-      String? address});
+      String? address,
+      String? phone,
+      String? email});
 }
 
 /// @nodoc
@@ -1922,6 +1973,8 @@ class _$VendorCopyWithImpl<$Res, $Val extends Vendor>
     Object? city = freezed,
     Object? state = freezed,
     Object? address = freezed,
+    Object? phone = freezed,
+    Object? email = freezed,
   }) {
     return _then(_value.copyWith(
       id: freezed == id
@@ -1948,6 +2001,14 @@ class _$VendorCopyWithImpl<$Res, $Val extends Vendor>
           ? _value.address
           : address // ignore: cast_nullable_to_non_nullable
               as String?,
+      phone: freezed == phone
+          ? _value.phone
+          : phone // ignore: cast_nullable_to_non_nullable
+              as String?,
+      email: freezed == email
+          ? _value.email
+          : email // ignore: cast_nullable_to_non_nullable
+              as String?,
     ) as $Val);
   }
 }
@@ -1966,7 +2027,9 @@ abstract class _$$VendorImplCopyWith<$Res> implements $VendorCopyWith<$Res> {
       String? businessLogo,
       String? city,
       String? state,
-      String? address});
+      String? address,
+      String? phone,
+      String? email});
 }
 
 /// @nodoc
@@ -1986,6 +2049,8 @@ class __$$VendorImplCopyWithImpl<$Res>
     Object? city = freezed,
     Object? state = freezed,
     Object? address = freezed,
+    Object? phone = freezed,
+    Object? email = freezed,
   }) {
     return _then(_$VendorImpl(
       id: freezed == id
@@ -2012,6 +2077,14 @@ class __$$VendorImplCopyWithImpl<$Res>
           ? _value.address
           : address // ignore: cast_nullable_to_non_nullable
               as String?,
+      phone: freezed == phone
+          ? _value.phone
+          : phone // ignore: cast_nullable_to_non_nullable
+              as String?,
+      email: freezed == email
+          ? _value.email
+          : email // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -2026,7 +2099,9 @@ class _$VendorImpl implements _Vendor {
       this.businessLogo,
       this.city,
       this.state,
-      this.address});
+      this.address,
+      this.phone,
+      this.email});
 
   factory _$VendorImpl.fromJson(Map<String, dynamic> json) =>
       _$$VendorImplFromJson(json);
@@ -2045,10 +2120,14 @@ class _$VendorImpl implements _Vendor {
   final String? state;
   @override
   final String? address;
+  @override
+  final String? phone;
+  @override
+  final String? email;
 
   @override
   String toString() {
-    return 'Vendor(id: $id, businessName: $businessName, businessLogo: $businessLogo, city: $city, state: $state, address: $address)';
+    return 'Vendor(id: $id, businessName: $businessName, businessLogo: $businessLogo, city: $city, state: $state, address: $address, phone: $phone, email: $email)';
   }
 
   @override
@@ -2063,13 +2142,15 @@ class _$VendorImpl implements _Vendor {
                 other.businessLogo == businessLogo) &&
             (identical(other.city, city) || other.city == city) &&
             (identical(other.state, state) || other.state == state) &&
-            (identical(other.address, address) || other.address == address));
+            (identical(other.address, address) || other.address == address) &&
+            (identical(other.phone, phone) || other.phone == phone) &&
+            (identical(other.email, email) || other.email == email));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(
-      runtimeType, id, businessName, businessLogo, city, state, address);
+  int get hashCode => Object.hash(runtimeType, id, businessName, businessLogo,
+      city, state, address, phone, email);
 
   @JsonKey(ignore: true)
   @override
@@ -2093,7 +2174,9 @@ abstract class _Vendor implements Vendor {
       final String? businessLogo,
       final String? city,
       final String? state,
-      final String? address}) = _$VendorImpl;
+      final String? address,
+      final String? phone,
+      final String? email}) = _$VendorImpl;
 
   factory _Vendor.fromJson(Map<String, dynamic> json) = _$VendorImpl.fromJson;
 
@@ -2111,6 +2194,10 @@ abstract class _Vendor implements Vendor {
   String? get state;
   @override
   String? get address;
+  @override
+  String? get phone;
+  @override
+  String? get email;
   @override
   @JsonKey(ignore: true)
   _$$VendorImplCopyWith<_$VendorImpl> get copyWith =>

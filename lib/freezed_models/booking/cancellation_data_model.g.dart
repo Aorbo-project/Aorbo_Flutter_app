@@ -104,8 +104,10 @@ _$RefundCalculationImpl _$$RefundCalculationImplFromJson(
     _$RefundCalculationImpl(
       refund: (json['refund'] as num?)?.toDouble(),
       deduction: (json['deduction'] as num?)?.toDouble(),
+      deductionPercent: json['deduction_percent'] as int?,
       policyType: json['policy_type'] as String?,
       policyName: json['policy_name'] as String?,
+      slabInfo: json['slab_info'] as String?,
       timeRemainingHours: (json['time_remaining_hours'] as num?)?.toDouble(),
       within24Hours: json['within_24_hours'] as bool?,
       freeCancellation: json['free_cancellation'] as bool?,
@@ -116,6 +118,8 @@ _$RefundCalculationImpl _$$RefundCalculationImplFromJson(
           ?.map((e) => LoseItem.fromJson(e as Map<String, dynamic>))
           .toList(),
       totalFinalAmount: (json['total_final_amount'] as num?)?.toDouble(),
+      message: json['message'] as String?,
+      trekPrice: (json['trek_price'] as num?)?.toDouble(),
     );
 
 Map<String, dynamic> _$$RefundCalculationImplToJson(
@@ -123,14 +127,18 @@ Map<String, dynamic> _$$RefundCalculationImplToJson(
     <String, dynamic>{
       'refund': instance.refund,
       'deduction': instance.deduction,
+      'deduction_percent': instance.deductionPercent,
       'policy_type': instance.policyType,
       'policy_name': instance.policyName,
+      'slab_info': instance.slabInfo,
       'time_remaining_hours': instance.timeRemainingHours,
       'within_24_hours': instance.within24Hours,
       'free_cancellation': instance.freeCancellation,
       'refund_items': instance.refundItems,
       'lose_items': instance.loseItems,
       'total_final_amount': instance.totalFinalAmount,
+      'message': instance.message,
+      'trek_price': instance.trekPrice,
     };
 
 _$RefundItemImpl _$$RefundItemImplFromJson(Map<String, dynamic> json) =>

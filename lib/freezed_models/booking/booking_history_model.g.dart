@@ -134,6 +134,7 @@ _$TrekImpl _$$TrekImplFromJson(Map<String, dynamic> json) => _$TrekImpl(
       id: json['id'] as int?,
       title: json['title'] as String?,
       duration: json['duration'] as String?,
+      description: json['description'] as String?,
       basePrice: json['base_price'] as String?,
       status: json['status'] as String?,
       vendor: json['vendor'] == null
@@ -147,6 +148,7 @@ _$TrekImpl _$$TrekImplFromJson(Map<String, dynamic> json) => _$TrekImpl(
       difficulty: json['difficulty'] as String?,
       durationDays: json['duration_days'] as int?,
       durationNights: json['duration_nights'] as int?,
+      boardingPoint: json['boarding_point'] as String?,
     );
 
 Map<String, dynamic> _$$TrekImplToJson(_$TrekImpl instance) =>
@@ -154,6 +156,7 @@ Map<String, dynamic> _$$TrekImplToJson(_$TrekImpl instance) =>
       'id': instance.id,
       'title': instance.title,
       'duration': instance.duration,
+      'description': instance.description,
       'base_price': instance.basePrice,
       'status': instance.status,
       'vendor': instance.vendor,
@@ -163,6 +166,7 @@ Map<String, dynamic> _$$TrekImplToJson(_$TrekImpl instance) =>
       'difficulty': instance.difficulty,
       'duration_days': instance.durationDays,
       'duration_nights': instance.durationNights,
+      'boarding_point': instance.boardingPoint,
     };
 
 _$VendorImpl _$$VendorImplFromJson(Map<String, dynamic> json) => _$VendorImpl(
@@ -172,6 +176,8 @@ _$VendorImpl _$$VendorImplFromJson(Map<String, dynamic> json) => _$VendorImpl(
       city: json['city'] as String?,
       state: json['state'] as String?,
       address: json['address'] as String?,
+      phone: json['phone'] as String?,
+      email: json['email'] as String?,
     );
 
 Map<String, dynamic> _$$VendorImplToJson(_$VendorImpl instance) =>
@@ -182,6 +188,8 @@ Map<String, dynamic> _$$VendorImplToJson(_$VendorImpl instance) =>
       'city': instance.city,
       'state': instance.state,
       'address': instance.address,
+      'phone': instance.phone,
+      'email': instance.email,
     };
 
 _$DestinationImpl _$$DestinationImplFromJson(Map<String, dynamic> json) =>
