@@ -151,7 +151,7 @@ class TrekController extends GetxController {
       }
       throw "Response Body Null";
     } catch (e) {
-      print("Error On Coupon ${e.toString()}");
+      logger.e('Coupon error: ${e.toString()}');
       CustomSnackBar.show(Get.context!, message: e.toString());
       vendorCouponsObserver.value = ApiResult.error(e.toString());
     }
@@ -191,7 +191,7 @@ class TrekController extends GetxController {
       }
       throw "Response Body Null";
     } catch (e) {
-      print("Error On Coupon ${e.toString()}");
+      logger.e('Coupon error: ${e.toString()}');
       CustomSnackBar.show(Get.context!, message: e.toString());
       validateCouponObserver.value = ApiResult.error(e.toString());
     }
@@ -431,8 +431,7 @@ class TrekController extends GetxController {
         final responseData = CalculateFareResponseModel.fromJson(response);
         if (responseData.success == true) {
           calculateFareResponseModel.value = ApiResult.success(responseData);
-          print("FARE TOKEN");
-          print(responseData.fareToken ?? "");
+          logger.d('fareToken: ${responseData.fareToken ?? ""}');
           createOrderRequestModel.value = createOrderRequestModel.value.copyWith(fareToken: responseData.fareToken ?? "");
           return;
         }
@@ -467,12 +466,11 @@ class TrekController extends GetxController {
           );
         } else {
           errorMessage.value = response['message'];
-          print("ERROR"+errorMessage.value);
+          logger.e(errorMessage.value);
           CustomSnackBar.show(Get.context!, message: errorMessage.value);
         }
       }
     } catch (e) {
-      print("ERROR"+'Failed to create booking: ${e.toString()}');
       errorMessage.value = 'Failed to create booking: ${e.toString()}';
       CustomSnackBar.show(Get.context!, message: errorMessage.value);
     } finally {
@@ -622,31 +620,6 @@ class TrekController extends GetxController {
       CustomSnackBar.show(Get.context!, message: e.toString());
       requestCancellationResponseObserver.value = ApiResult.error('Failed to get cancellation details: ${e.toString()}');
       return e.toString();
-    }
-  }
-
-
-
-  Future<void> confirmCancellation(int bookingId,String reason) async {
-    try {
-      cancellationDetailsResponseObserver.value = ApiResult.loading("");
-      final response = await repository.postApiCall(
-          url: NetworkUrl.calculateFare,
-          body: calculateFareRequestModel.value.toJson()
-      );
-
-      if (response != null) {
-        final responseData = CancellationDetailsResponseModel.fromJson(response);
-        if (responseData.success == true) {
-          cancellationDetailsResponseObserver.value = ApiResult.success(responseData);
-          return;
-        }
-        throw "${responseData.message}";
-      }
-      throw "Response Body Null";
-    } catch (e) {
-      CustomSnackBar.show(Get.context!, message: errorMessage.value);
-      cancellationDetailsResponseObserver.value = ApiResult.error('Failed to search treks: ${e.toString()}');
     }
   }
 
