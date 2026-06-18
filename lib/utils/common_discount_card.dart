@@ -19,8 +19,10 @@ class CommonDiscountCard extends StatelessWidget {
   final double? imageHeight;
   final String? detailedDescription;
   final String? howToApply;
-  final String? termsAndConditions;
+  final List<String>? termsAndConditions;
   final String? footerNote;
+  // validUntil used for "Offer expires on …" fallback T&C line
+  final String? validUntil;
 
   const CommonDiscountCard({
     super.key,
@@ -36,7 +38,158 @@ class CommonDiscountCard extends StatelessWidget {
     this.howToApply,
     this.termsAndConditions,
     this.footerNote,
+    this.validUntil,
   });
+
+  // ── T&C bottom sheet ──────────────────────────────────────────────────────
+  void _openTnc(BuildContext context) {
+    // Format validUntil as "dd MMM yyyy"
+    String? formattedExpiry;
+    if (validUntil != null && validUntil!.isNotEmpty) {
+      try {
+        final dt = DateTime.parse(validUntil!);
+        const months = [
+          'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+        ];
+        formattedExpiry = '${dt.day} ${months[dt.month - 1]} ${dt.year}';
+      } catch (_) {
+        // leave null
+      }
+    }
+
+    // Default T&C bullets (used when no custom T&C is set)
+    final List<String> fallbackTerms = [
+      'Applicable on selected treks only.',
+      'Coupon code is valid for a single use per customer.',
+      'Additional terms & conditions may apply.',
+      if (formattedExpiry != null) 'Offer expires on $formattedExpiry.',
+      'Book now and start your adventure with Aorbo Treks!',
+    ];
+
+    final List<String> displayTerms =
+        (termsAndConditions != null && termsAndConditions!.isNotEmpty)
+            ? termsAndConditions!
+            : fallbackTerms;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(5.w)),
+      ),
+      builder: (_) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.6,
+        maxChildSize: 0.9,
+        minChildSize: 0.3,
+        builder: (ctx, scrollController) => SingleChildScrollView(
+          controller: scrollController,
+          child: Container(
+            padding: EdgeInsets.fromLTRB(6.w, 6.w, 6.w, 4.w),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        code,
+                        style: GoogleFonts.poppins(
+                          fontSize: FontSize.s16,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.black,
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => Navigator.pop(ctx),
+                      child: Container(
+                        width: 7.w,
+                        height: 7.w,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF0F0F0),
+                          borderRadius: BorderRadius.circular(3.w),
+                        ),
+                        child: Icon(Icons.close, size: 4.w, color: Colors.black54),
+                      ),
+                    ),
+                  ],
+                ),
+                if (title.isNotEmpty) ...[
+                  SizedBox(height: 0.5.h),
+                  Text(
+                    title,
+                    style: GoogleFonts.poppins(
+                      fontSize: FontSize.s11,
+                      fontWeight: FontWeight.w500,
+                      color: const Color(0xFF212199),
+                    ),
+                  ),
+                ],
+                SizedBox(height: 2.h),
+
+                // T&C heading
+                Text(
+                  'Terms & Conditions',
+                  style: GoogleFonts.poppins(
+                    fontSize: FontSize.s13,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black,
+                  ),
+                ),
+                SizedBox(height: 1.h),
+
+                // T&C bullets
+                ...displayTerms.map(
+                  (term) => Padding(
+                    padding: EdgeInsets.only(bottom: 1.h),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('• ',
+                            style: GoogleFonts.poppins(
+                                fontSize: FontSize.s11,
+                                color: Colors.grey[600])),
+                        Expanded(
+                          child: Text(
+                            term,
+                            style: GoogleFonts.poppins(
+                              fontSize: FontSize.s10,
+                              color: Colors.grey[600],
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Footer note
+                SizedBox(height: 2.h),
+                Text(
+                  (footerNote != null && footerNote!.isNotEmpty)
+                      ? footerNote!
+                      : 'Book now and start your adventure with Aorbo Treks!',
+                  style: GoogleFonts.poppins(
+                    fontSize: FontSize.s10,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF212199),
+                    height: 1.4,
+                  ),
+                ),
+                SizedBox(height: 2.h),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +201,7 @@ class CommonDiscountCard extends StatelessWidget {
             'discountCard': DiscountCardModel(
               title: title,
               subtitle: subtitle,
-              gradient:gradient,
+              gradient: gradient,
               textColour: textColour,
               code: code,
               offerAmount: offerAmount,
@@ -66,14 +219,12 @@ class CommonDiscountCard extends StatelessWidget {
       child: ClipPath(
         clipper: TicketClipper(),
         child: Container(
-          // height: 180,
           decoration: BoxDecoration(gradient: AppTheme.customGradient(gradient)),
           child: Row(
             children: [
               // Vertical Offer Strip
               SizedBox(
                 width: 10.w,
-                // padding: const EdgeInsets.only(left: 22),
                 child: Center(
                   child: Container(
                     margin: EdgeInsets.only(left: 3.8.w),
@@ -121,6 +272,7 @@ class CommonDiscountCard extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Title
                       Text(
                         title,
                         textScaler: const TextScaler.linear(1.0),
@@ -130,24 +282,52 @@ class CommonDiscountCard extends StatelessWidget {
                           color: Colors.black,
                         ),
                       ),
-                      SizedBox(height: 1.h),
+                      SizedBox(height: 0.6.h),
+
+                      // Description — capped at 2 lines so T&C is always visible
                       Text(
                         subtitle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         textScaler: const TextScaler.linear(1.0),
                         style: GoogleFonts.poppins(
                           fontSize: FontSize.s8,
                           color: Colors.black87,
+                          height: 1.4,
                         ),
                       ),
+                      SizedBox(height: 0.4.h),
+
+                      // T&C — always rendered separately, never inside description
+                      GestureDetector(
+                        // Prevent card tap from firing when user taps T&C
+                        onTap: () => _openTnc(context),
+                        behavior: HitTestBehavior.opaque,
+                        child: Padding(
+                          // Extra tap area without affecting layout
+                          padding: EdgeInsets.only(top: 0.2.h, bottom: 0.2.h),
+                          child: Text(
+                            'T&C',
+                            textScaler: const TextScaler.linear(1.0),
+                            style: GoogleFonts.poppins(
+                              fontSize: FontSize.s8,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xff4A97FF),
+                              decoration: TextDecoration.underline,
+                              decorationColor: const Color(0xff4A97FF),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      // Code + image row
                       SizedBox(
-                        // margin: EdgeInsets.only(top: 29),
-                        height: 8.h,
+                        height: 5.h,
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Container(
                               width: 25.w,
-                              margin: EdgeInsets.only(top: 2.6.h),
                               padding: EdgeInsets.symmetric(
                                 horizontal: 2.w,
                                 vertical: 0.8.h,
@@ -172,20 +352,23 @@ class CommonDiscountCard extends StatelessWidget {
                                       ),
                                     ),
                                   ),
-                                  Icon(Icons.copy,color: CommonColors.blackColor,size: 15)
+                                  Icon(Icons.copy,
+                                      color: CommonColors.blackColor, size: 15),
                                 ],
                               ),
                             ),
                             Visibility(
                               visible: imagePath.isNotEmpty,
-                              child: CustomNetworkImage(
-                                imageUrl: imagePath ?? "",
-                                fit: BoxFit.cover,
-                                width: 12.5.w,
-                                height: 12.5.w,
+                              child: Padding(
+                                padding: EdgeInsets.only(left: 2.w),
+                                child: CustomNetworkImage(
+                                  imageUrl: imagePath,
+                                  fit: BoxFit.cover,
+                                  width: 12.5.w,
+                                  height: 12.5.w,
+                                ),
                               ),
-                            )
-                            // const Spacer(),
+                            ),
                           ],
                         ),
                       ),
