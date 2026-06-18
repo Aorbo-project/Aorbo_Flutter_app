@@ -25,6 +25,10 @@ mixin _$ValidateCouponCodeRequestModel {
   dynamic get trekId => throw _privateConstructorUsedError;
   dynamic get bookingAmount => throw _privateConstructorUsedError;
 
+  /// Number of travelers — required for group-discount minimum participant validation.
+  @JsonKey(name: 'travelerCount')
+  int? get travelerCount => throw _privateConstructorUsedError;
+
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
   $ValidateCouponCodeRequestModelCopyWith<ValidateCouponCodeRequestModel>
@@ -39,7 +43,11 @@ abstract class $ValidateCouponCodeRequestModelCopyWith<$Res> {
       _$ValidateCouponCodeRequestModelCopyWithImpl<$Res,
           ValidateCouponCodeRequestModel>;
   @useResult
-  $Res call({String code, dynamic trekId, dynamic bookingAmount});
+  $Res call(
+      {String code,
+      dynamic trekId,
+      dynamic bookingAmount,
+      @JsonKey(name: 'travelerCount') int? travelerCount});
 }
 
 /// @nodoc
@@ -59,6 +67,7 @@ class _$ValidateCouponCodeRequestModelCopyWithImpl<$Res,
     Object? code = null,
     Object? trekId = freezed,
     Object? bookingAmount = freezed,
+    Object? travelerCount = freezed,
   }) {
     return _then(_value.copyWith(
       code: null == code
@@ -73,6 +82,10 @@ class _$ValidateCouponCodeRequestModelCopyWithImpl<$Res,
           ? _value.bookingAmount
           : bookingAmount // ignore: cast_nullable_to_non_nullable
               as dynamic,
+      travelerCount: freezed == travelerCount
+          ? _value.travelerCount
+          : travelerCount // ignore: cast_nullable_to_non_nullable
+              as int?,
     ) as $Val);
   }
 }
@@ -86,7 +99,11 @@ abstract class _$$ValidateCouponCodeRequestModelImplCopyWith<$Res>
       __$$ValidateCouponCodeRequestModelImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String code, dynamic trekId, dynamic bookingAmount});
+  $Res call(
+      {String code,
+      dynamic trekId,
+      dynamic bookingAmount,
+      @JsonKey(name: 'travelerCount') int? travelerCount});
 }
 
 /// @nodoc
@@ -105,6 +122,7 @@ class __$$ValidateCouponCodeRequestModelImplCopyWithImpl<$Res>
     Object? code = null,
     Object? trekId = freezed,
     Object? bookingAmount = freezed,
+    Object? travelerCount = freezed,
   }) {
     return _then(_$ValidateCouponCodeRequestModelImpl(
       code: null == code
@@ -119,6 +137,10 @@ class __$$ValidateCouponCodeRequestModelImplCopyWithImpl<$Res>
           ? _value.bookingAmount
           : bookingAmount // ignore: cast_nullable_to_non_nullable
               as dynamic,
+      travelerCount: freezed == travelerCount
+          ? _value.travelerCount
+          : travelerCount // ignore: cast_nullable_to_non_nullable
+              as int?,
     ));
   }
 }
@@ -128,7 +150,10 @@ class __$$ValidateCouponCodeRequestModelImplCopyWithImpl<$Res>
 class _$ValidateCouponCodeRequestModelImpl
     implements _ValidateCouponCodeRequestModel {
   const _$ValidateCouponCodeRequestModelImpl(
-      {required this.code, required this.trekId, required this.bookingAmount});
+      {required this.code,
+      required this.trekId,
+      required this.bookingAmount,
+      @JsonKey(name: 'travelerCount') this.travelerCount});
 
   factory _$ValidateCouponCodeRequestModelImpl.fromJson(
           Map<String, dynamic> json) =>
@@ -141,9 +166,14 @@ class _$ValidateCouponCodeRequestModelImpl
   @override
   final dynamic bookingAmount;
 
+  /// Number of travelers — required for group-discount minimum participant validation.
+  @override
+  @JsonKey(name: 'travelerCount')
+  final int? travelerCount;
+
   @override
   String toString() {
-    return 'ValidateCouponCodeRequestModel(code: $code, trekId: $trekId, bookingAmount: $bookingAmount)';
+    return 'ValidateCouponCodeRequestModel(code: $code, trekId: $trekId, bookingAmount: $bookingAmount, travelerCount: $travelerCount)';
   }
 
   @override
@@ -154,7 +184,9 @@ class _$ValidateCouponCodeRequestModelImpl
             (identical(other.code, code) || other.code == code) &&
             const DeepCollectionEquality().equals(other.trekId, trekId) &&
             const DeepCollectionEquality()
-                .equals(other.bookingAmount, bookingAmount));
+                .equals(other.bookingAmount, bookingAmount) &&
+            (identical(other.travelerCount, travelerCount) ||
+                other.travelerCount == travelerCount));
   }
 
   @JsonKey(ignore: true)
@@ -163,7 +195,8 @@ class _$ValidateCouponCodeRequestModelImpl
       runtimeType,
       code,
       const DeepCollectionEquality().hash(trekId),
-      const DeepCollectionEquality().hash(bookingAmount));
+      const DeepCollectionEquality().hash(bookingAmount),
+      travelerCount);
 
   @JsonKey(ignore: true)
   @override
@@ -186,7 +219,8 @@ abstract class _ValidateCouponCodeRequestModel
   const factory _ValidateCouponCodeRequestModel(
           {required final String code,
           required final dynamic trekId,
-          required final dynamic bookingAmount}) =
+          required final dynamic bookingAmount,
+          @JsonKey(name: 'travelerCount') final int? travelerCount}) =
       _$ValidateCouponCodeRequestModelImpl;
 
   factory _ValidateCouponCodeRequestModel.fromJson(Map<String, dynamic> json) =
@@ -198,6 +232,11 @@ abstract class _ValidateCouponCodeRequestModel
   dynamic get trekId;
   @override
   dynamic get bookingAmount;
+  @override
+
+  /// Number of travelers — required for group-discount minimum participant validation.
+  @JsonKey(name: 'travelerCount')
+  int? get travelerCount;
   @override
   @JsonKey(ignore: true)
   _$$ValidateCouponCodeRequestModelImplCopyWith<
@@ -864,9 +903,10 @@ mixin _$CouponCardData {
   int? get id => throw _privateConstructorUsedError;
   String? get title => throw _privateConstructorUsedError;
   String? get description => throw _privateConstructorUsedError;
-  @JsonKey(name: 'image_url')
+  @JsonKey(name: 'image_path')
   String? get imagePath => throw _privateConstructorUsedError;
   List<String>? get gradient => throw _privateConstructorUsedError;
+  @JsonKey(name: 'text_colour')
   String? get textColour => throw _privateConstructorUsedError;
   String? get code => throw _privateConstructorUsedError;
   @JsonKey(name: 'discount_type')
@@ -875,10 +915,24 @@ mixin _$CouponCardData {
   String? get discountValue => throw _privateConstructorUsedError;
   @JsonKey(name: 'terms_and_conditions')
   List<String>? get termsAndConditions => throw _privateConstructorUsedError;
+
+  /// Detailed marketing description (e.g. "Trekking is better with friends…")
+  @JsonKey(name: 'detailed_description')
+  String? get detailedDescription => throw _privateConstructorUsedError;
+
+  /// Plain-text instructions on how to redeem the coupon
+  @JsonKey(name: 'how_to_apply')
+  String? get howToApply => throw _privateConstructorUsedError;
+
+  /// Footer note shown at the bottom of the T&C modal
+  @JsonKey(name: 'footer_note')
+  String? get footerNote => throw _privateConstructorUsedError;
   @JsonKey(name: 'is_expired')
   bool? get isExpired => throw _privateConstructorUsedError;
   @JsonKey(name: 'is_active')
   bool? get isActive => throw _privateConstructorUsedError;
+  @JsonKey(name: 'valid_until')
+  String? get validUntil => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -896,15 +950,19 @@ abstract class $CouponCardDataCopyWith<$Res> {
       {int? id,
       String? title,
       String? description,
-      @JsonKey(name: 'image_url') String? imagePath,
+      @JsonKey(name: 'image_path') String? imagePath,
       List<String>? gradient,
-      String? textColour,
+      @JsonKey(name: 'text_colour') String? textColour,
       String? code,
       @JsonKey(name: 'discount_type') String? discountType,
       @JsonKey(name: 'discount_value') String? discountValue,
       @JsonKey(name: 'terms_and_conditions') List<String>? termsAndConditions,
+      @JsonKey(name: 'detailed_description') String? detailedDescription,
+      @JsonKey(name: 'how_to_apply') String? howToApply,
+      @JsonKey(name: 'footer_note') String? footerNote,
       @JsonKey(name: 'is_expired') bool? isExpired,
-      @JsonKey(name: 'is_active') bool? isActive});
+      @JsonKey(name: 'is_active') bool? isActive,
+      @JsonKey(name: 'valid_until') String? validUntil});
 }
 
 /// @nodoc
@@ -930,8 +988,12 @@ class _$CouponCardDataCopyWithImpl<$Res, $Val extends CouponCardData>
     Object? discountType = freezed,
     Object? discountValue = freezed,
     Object? termsAndConditions = freezed,
+    Object? detailedDescription = freezed,
+    Object? howToApply = freezed,
+    Object? footerNote = freezed,
     Object? isExpired = freezed,
     Object? isActive = freezed,
+    Object? validUntil = freezed,
   }) {
     return _then(_value.copyWith(
       id: freezed == id
@@ -974,6 +1036,18 @@ class _$CouponCardDataCopyWithImpl<$Res, $Val extends CouponCardData>
           ? _value.termsAndConditions
           : termsAndConditions // ignore: cast_nullable_to_non_nullable
               as List<String>?,
+      detailedDescription: freezed == detailedDescription
+          ? _value.detailedDescription
+          : detailedDescription // ignore: cast_nullable_to_non_nullable
+              as String?,
+      howToApply: freezed == howToApply
+          ? _value.howToApply
+          : howToApply // ignore: cast_nullable_to_non_nullable
+              as String?,
+      footerNote: freezed == footerNote
+          ? _value.footerNote
+          : footerNote // ignore: cast_nullable_to_non_nullable
+              as String?,
       isExpired: freezed == isExpired
           ? _value.isExpired
           : isExpired // ignore: cast_nullable_to_non_nullable
@@ -982,6 +1056,10 @@ class _$CouponCardDataCopyWithImpl<$Res, $Val extends CouponCardData>
           ? _value.isActive
           : isActive // ignore: cast_nullable_to_non_nullable
               as bool?,
+      validUntil: freezed == validUntil
+          ? _value.validUntil
+          : validUntil // ignore: cast_nullable_to_non_nullable
+              as String?,
     ) as $Val);
   }
 }
@@ -998,15 +1076,19 @@ abstract class _$$CouponCardDataImplCopyWith<$Res>
       {int? id,
       String? title,
       String? description,
-      @JsonKey(name: 'image_url') String? imagePath,
+      @JsonKey(name: 'image_path') String? imagePath,
       List<String>? gradient,
-      String? textColour,
+      @JsonKey(name: 'text_colour') String? textColour,
       String? code,
       @JsonKey(name: 'discount_type') String? discountType,
       @JsonKey(name: 'discount_value') String? discountValue,
       @JsonKey(name: 'terms_and_conditions') List<String>? termsAndConditions,
+      @JsonKey(name: 'detailed_description') String? detailedDescription,
+      @JsonKey(name: 'how_to_apply') String? howToApply,
+      @JsonKey(name: 'footer_note') String? footerNote,
       @JsonKey(name: 'is_expired') bool? isExpired,
-      @JsonKey(name: 'is_active') bool? isActive});
+      @JsonKey(name: 'is_active') bool? isActive,
+      @JsonKey(name: 'valid_until') String? validUntil});
 }
 
 /// @nodoc
@@ -1030,8 +1112,12 @@ class __$$CouponCardDataImplCopyWithImpl<$Res>
     Object? discountType = freezed,
     Object? discountValue = freezed,
     Object? termsAndConditions = freezed,
+    Object? detailedDescription = freezed,
+    Object? howToApply = freezed,
+    Object? footerNote = freezed,
     Object? isExpired = freezed,
     Object? isActive = freezed,
+    Object? validUntil = freezed,
   }) {
     return _then(_$CouponCardDataImpl(
       id: freezed == id
@@ -1074,6 +1160,18 @@ class __$$CouponCardDataImplCopyWithImpl<$Res>
           ? _value._termsAndConditions
           : termsAndConditions // ignore: cast_nullable_to_non_nullable
               as List<String>?,
+      detailedDescription: freezed == detailedDescription
+          ? _value.detailedDescription
+          : detailedDescription // ignore: cast_nullable_to_non_nullable
+              as String?,
+      howToApply: freezed == howToApply
+          ? _value.howToApply
+          : howToApply // ignore: cast_nullable_to_non_nullable
+              as String?,
+      footerNote: freezed == footerNote
+          ? _value.footerNote
+          : footerNote // ignore: cast_nullable_to_non_nullable
+              as String?,
       isExpired: freezed == isExpired
           ? _value.isExpired
           : isExpired // ignore: cast_nullable_to_non_nullable
@@ -1082,6 +1180,10 @@ class __$$CouponCardDataImplCopyWithImpl<$Res>
           ? _value.isActive
           : isActive // ignore: cast_nullable_to_non_nullable
               as bool?,
+      validUntil: freezed == validUntil
+          ? _value.validUntil
+          : validUntil // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -1093,16 +1195,20 @@ class _$CouponCardDataImpl implements _CouponCardData {
       {this.id,
       this.title,
       this.description,
-      @JsonKey(name: 'image_url') this.imagePath,
+      @JsonKey(name: 'image_path') this.imagePath,
       final List<String>? gradient,
-      this.textColour,
+      @JsonKey(name: 'text_colour') this.textColour,
       this.code,
       @JsonKey(name: 'discount_type') this.discountType,
       @JsonKey(name: 'discount_value') this.discountValue,
       @JsonKey(name: 'terms_and_conditions')
       final List<String>? termsAndConditions,
+      @JsonKey(name: 'detailed_description') this.detailedDescription,
+      @JsonKey(name: 'how_to_apply') this.howToApply,
+      @JsonKey(name: 'footer_note') this.footerNote,
       @JsonKey(name: 'is_expired') this.isExpired,
-      @JsonKey(name: 'is_active') this.isActive})
+      @JsonKey(name: 'is_active') this.isActive,
+      @JsonKey(name: 'valid_until') this.validUntil})
       : _gradient = gradient,
         _termsAndConditions = termsAndConditions;
 
@@ -1116,7 +1222,7 @@ class _$CouponCardDataImpl implements _CouponCardData {
   @override
   final String? description;
   @override
-  @JsonKey(name: 'image_url')
+  @JsonKey(name: 'image_path')
   final String? imagePath;
   final List<String>? _gradient;
   @override
@@ -1129,6 +1235,7 @@ class _$CouponCardDataImpl implements _CouponCardData {
   }
 
   @override
+  @JsonKey(name: 'text_colour')
   final String? textColour;
   @override
   final String? code;
@@ -1150,16 +1257,33 @@ class _$CouponCardDataImpl implements _CouponCardData {
     return EqualUnmodifiableListView(value);
   }
 
+  /// Detailed marketing description (e.g. "Trekking is better with friends…")
+  @override
+  @JsonKey(name: 'detailed_description')
+  final String? detailedDescription;
+
+  /// Plain-text instructions on how to redeem the coupon
+  @override
+  @JsonKey(name: 'how_to_apply')
+  final String? howToApply;
+
+  /// Footer note shown at the bottom of the T&C modal
+  @override
+  @JsonKey(name: 'footer_note')
+  final String? footerNote;
   @override
   @JsonKey(name: 'is_expired')
   final bool? isExpired;
   @override
   @JsonKey(name: 'is_active')
   final bool? isActive;
+  @override
+  @JsonKey(name: 'valid_until')
+  final String? validUntil;
 
   @override
   String toString() {
-    return 'CouponCardData(id: $id, title: $title, description: $description, imagePath: $imagePath, gradient: $gradient, textColour: $textColour, code: $code, discountType: $discountType, discountValue: $discountValue, termsAndConditions: $termsAndConditions, isExpired: $isExpired, isActive: $isActive)';
+    return 'CouponCardData(id: $id, title: $title, description: $description, imagePath: $imagePath, gradient: $gradient, textColour: $textColour, code: $code, discountType: $discountType, discountValue: $discountValue, termsAndConditions: $termsAndConditions, detailedDescription: $detailedDescription, howToApply: $howToApply, footerNote: $footerNote, isExpired: $isExpired, isActive: $isActive, validUntil: $validUntil)';
   }
 
   @override
@@ -1183,10 +1307,18 @@ class _$CouponCardDataImpl implements _CouponCardData {
                 other.discountValue == discountValue) &&
             const DeepCollectionEquality()
                 .equals(other._termsAndConditions, _termsAndConditions) &&
+            (identical(other.detailedDescription, detailedDescription) ||
+                other.detailedDescription == detailedDescription) &&
+            (identical(other.howToApply, howToApply) ||
+                other.howToApply == howToApply) &&
+            (identical(other.footerNote, footerNote) ||
+                other.footerNote == footerNote) &&
             (identical(other.isExpired, isExpired) ||
                 other.isExpired == isExpired) &&
             (identical(other.isActive, isActive) ||
-                other.isActive == isActive));
+                other.isActive == isActive) &&
+            (identical(other.validUntil, validUntil) ||
+                other.validUntil == validUntil));
   }
 
   @JsonKey(ignore: true)
@@ -1203,8 +1335,12 @@ class _$CouponCardDataImpl implements _CouponCardData {
       discountType,
       discountValue,
       const DeepCollectionEquality().hash(_termsAndConditions),
+      detailedDescription,
+      howToApply,
+      footerNote,
       isExpired,
-      isActive);
+      isActive,
+      validUntil);
 
   @JsonKey(ignore: true)
   @override
@@ -1226,16 +1362,21 @@ abstract class _CouponCardData implements CouponCardData {
       {final int? id,
       final String? title,
       final String? description,
-      @JsonKey(name: 'image_url') final String? imagePath,
+      @JsonKey(name: 'image_path') final String? imagePath,
       final List<String>? gradient,
-      final String? textColour,
+      @JsonKey(name: 'text_colour') final String? textColour,
       final String? code,
       @JsonKey(name: 'discount_type') final String? discountType,
       @JsonKey(name: 'discount_value') final String? discountValue,
       @JsonKey(name: 'terms_and_conditions')
       final List<String>? termsAndConditions,
+      @JsonKey(name: 'detailed_description') final String? detailedDescription,
+      @JsonKey(name: 'how_to_apply') final String? howToApply,
+      @JsonKey(name: 'footer_note') final String? footerNote,
       @JsonKey(name: 'is_expired') final bool? isExpired,
-      @JsonKey(name: 'is_active') final bool? isActive}) = _$CouponCardDataImpl;
+      @JsonKey(name: 'is_active') final bool? isActive,
+      @JsonKey(name: 'valid_until')
+      final String? validUntil}) = _$CouponCardDataImpl;
 
   factory _CouponCardData.fromJson(Map<String, dynamic> json) =
       _$CouponCardDataImpl.fromJson;
@@ -1247,11 +1388,12 @@ abstract class _CouponCardData implements CouponCardData {
   @override
   String? get description;
   @override
-  @JsonKey(name: 'image_url')
+  @JsonKey(name: 'image_path')
   String? get imagePath;
   @override
   List<String>? get gradient;
   @override
+  @JsonKey(name: 'text_colour')
   String? get textColour;
   @override
   String? get code;
@@ -1265,11 +1407,29 @@ abstract class _CouponCardData implements CouponCardData {
   @JsonKey(name: 'terms_and_conditions')
   List<String>? get termsAndConditions;
   @override
+
+  /// Detailed marketing description (e.g. "Trekking is better with friends…")
+  @JsonKey(name: 'detailed_description')
+  String? get detailedDescription;
+  @override
+
+  /// Plain-text instructions on how to redeem the coupon
+  @JsonKey(name: 'how_to_apply')
+  String? get howToApply;
+  @override
+
+  /// Footer note shown at the bottom of the T&C modal
+  @JsonKey(name: 'footer_note')
+  String? get footerNote;
+  @override
   @JsonKey(name: 'is_expired')
   bool? get isExpired;
   @override
   @JsonKey(name: 'is_active')
   bool? get isActive;
+  @override
+  @JsonKey(name: 'valid_until')
+  String? get validUntil;
   @override
   @JsonKey(ignore: true)
   _$$CouponCardDataImplCopyWith<_$CouponCardDataImpl> get copyWith =>

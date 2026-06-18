@@ -48,7 +48,14 @@ class NetworkUrl {
   static String fetchAdminCoupons(int trekId) => 'coupons/trek/$trekId';
 
   static String validateVersion(String? version,String platform) => 'version/check?current_version=$version&platform=$platform';
+static String fetchCouponsForTrek(int trekId) =>
+    'coupons/trek/$trekId';
 
+static String fetchCouponsForBatch({
+  required int batchId,
+  required int trekId,
+}) =>
+    'coupons/available?batch_id=$batchId&trek_id=$trekId';
   // Trek search & detail
   static String searchTrek(
   String cityId,

@@ -368,10 +368,11 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
                   imagePath: coupon.imagePath ??
                       'https://i.pinimg.com/originals/86/b5/3d/86b53d90fbd279ea28d04099ff7518f0.png',
                   imageHeight: 30,
-                  detailedDescription: coupon.description ?? '',
-                  howToApply: '',
-                  termsAndConditions: coupon.termsAndConditions?.join('\n'),
-                  footerNote: '',
+                  detailedDescription: coupon.detailedDescription,
+                  howToApply: coupon.howToApply,
+                  termsAndConditions: coupon.termsAndConditions,
+                  footerNote: coupon.footerNote,
+                  validUntil: coupon.validUntil,
                 ).withShimmerAi(loading: isLoading),
               );
             },
