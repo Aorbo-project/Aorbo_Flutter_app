@@ -8,7 +8,6 @@ import 'package:arobo_app/utils/common_logics.dart';
 import 'package:arobo_app/utils/custom_snackbar.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:arobo_app/widgets/logger.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -424,56 +423,19 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
             _errorMessage = null;
           });
 
-          try {
-            bool verified;
-            if (_authC.verificationIdData.value == "local_dev_bypass") {
-              verified = await _authC.verifyLocalOTP(
-                phoneNumber: _authC.phoneNumberLoginTextField.value.text,
-                otp: pin,
-              );
-            } else {
-              PhoneAuthCredential credential = PhoneAuthProvider.credential(
-                verificationId: _authC.verificationIdData.value,
-                smsCode: pin,
-              );
-              // First verify with Firebase
-              await FirebaseAuth.instance.signInWithCredential(credential);
+          final phone = _authC.phoneNumberLoginTextField.value.text;
+          final bool verified = await _authC.verifyOtp(phone, pin);
 
-              // Get the ID token after successful verification
-              await Get.find<AuthController>().getIdToken();
+          if (!mounted) return;
 
-              // Get the token and verify with backend
-              String firebaseToken = Get.find<AuthController>().idToken.value;
-              verified = await Get.find<AuthController>().verifyFirebaseToken(firebaseToken);
-            }
-
-            if (!mounted) return;
-
-            if (verified) {
-              _authC.phoneNumberLoginTextField.value.dispose();
-              // Use a single navigation call and remove previous screens
-              Get.offAllNamed('/dashboard');
-            } else {
-              if (!mounted) return;
-              setState(() {
-                isError = true;
-                isSuccess = false;
-              });
-              CustomSnackBar.show(
-                Get.context!,
-                message: 'Server verification failed. Please try again.',
-              );
-            }
-          } catch (error, s) {
-            if (!mounted) return;
+          if (verified) {
+            _authC.phoneNumberLoginTextField.value.dispose();
+            Get.offAllNamed('/dashboard');
+          } else {
             setState(() {
               isError = true;
               isSuccess = false;
             });
-            logger.e(error);
-            logger.e(s);
-            CustomSnackBar.show(Get.context!,
-                message: 'Invalid OTP. Please try again.');
             if (mounted) {
               _authC.otpTextField.value.clear();
               _pinFocusNode.requestFocus();
@@ -481,13 +443,11 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
           }
         } else {
           if (!mounted) return;
-          CustomSnackBar.show(Get.context!,
-              message: 'Please enter complete OTP');
+          CustomSnackBar.show(Get.context!, message: 'Please enter complete OTP');
         }
       } catch (e) {
         if (!mounted) return;
-        CustomSnackBar.show(Get.context!,
-            message: 'Something went wrong. Please try again.');
+        CustomSnackBar.show(Get.context!, message: 'Something went wrong. Please try again.');
       }
     }
 
@@ -526,7 +486,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                         fontWeight: FontWeight.w600)),
                 SizedBox(height: 1.h),
                 Text(
-                    "sent to ${_authC.formattedPhoneNumber(phoneNumber: _authC.phoneNumberLoginTextField.value.text)}",
+                    "sent to +91 ${_authC.phoneNumberLoginTextField.value.text}",
                     style: TextStyle(
                         fontSize: FontSize.s12,
                         fontFamily: "Poppins",
@@ -780,18 +740,20 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                     fontSize: FontSize.s14,
                     fontWeight: FontWeight.w600,
                     height: 6.h,
-                    onPressed: () {
+                    onPressed: () async {
                       if (isValidPhoneNumber) {
-                        _authC.sendCode(phoneNumber: _authC.phoneNumberLoginTextField.value.text);
-                        setState(() {
-                          showOtp = true;
+                        final phone = _authC.phoneNumberLoginTextField.value.text;
+                        final success = await _authC.requestOtp(phone);
+                        if (success && mounted) {
+                          setState(() {
+                            showOtp = true;
+                          });
                           _otpC.startTimer();
-                        });
+                        }
                       } else {
                         CustomSnackBar.show(
                           context,
-                          message:
-                              "Please enter a valid 10-digit mobile number",
+                          message: "Please enter a valid 10-digit mobile number",
                         );
                       }
                     },

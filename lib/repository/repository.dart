@@ -7,7 +7,6 @@ import 'package:arobo_app/utils/custom_alert_dialog.dart';
 import 'package:arobo_app/utils/shared_preferences.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart' hide FormData, Response;
 
@@ -60,47 +59,8 @@ class Repository {
           logger.e("❌ onError: Error ->> ${error.error}");
           logger.e("Response ->> ${error.response}");
 
-          // JWT token refresh on 401 — only attempt once per request
-          if (error.response?.statusCode == 401 &&
-              !(error.requestOptions.extra['_retry'] ?? false)) {
-            error.requestOptions.extra['_retry'] = true;
-            try {
-              final user = FirebaseAuth.instance.currentUser;
-              if (user != null) {
-                // Force-refresh the Firebase ID token
-                final newFirebaseToken = await user.getIdToken(true);
-
-                // Exchange for a new backend access token
-                final refreshResponse = await dio.post(
-                  NetworkUrl.firebaseVerify,
-                  data: json.encode({'firebaseIdToken': newFirebaseToken}),
-                  options: Options(
-                    headers: {'Content-Type': 'application/json'},
-                    extra: {'_retry': true},
-                  ),
-                );
-
-                if (refreshResponse.statusCode == 200 &&
-                    refreshResponse.data['success'] == true) {
-                  final newToken =
-                      refreshResponse.data['data']?['token'] as String?;
-                  if (newToken != null && newToken.isNotEmpty) {
-                    await sp!.putString(SpUtil.accessToken, newToken);
-
-                    // Retry the original request with the new token
-                    error.requestOptions.headers['Authorization'] =
-                        'Bearer $newToken';
-                    final retryResponse =
-                        await dio.fetch(error.requestOptions);
-                    return handler.resolve(retryResponse);
-                  }
-                }
-              }
-            } catch (refreshError) {
-              logger.e("Token refresh failed: $refreshError");
-            }
-
-            // Refresh failed — clear session and navigate to login
+          // Session expired — clear local state and redirect to login
+          if (error.response?.statusCode == 401) {
             await sp!.clear();
             Get.offAllNamed('/');
           }
