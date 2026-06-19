@@ -12,6 +12,7 @@ _$ValidateCouponCodeRequestModelImpl
           code: json['code'] as String,
           trekId: json['trekId'],
           bookingAmount: json['bookingAmount'],
+          travelerCount: json['travelerCount'] as int?,
         );
 
 Map<String, dynamic> _$$ValidateCouponCodeRequestModelImplToJson(
@@ -20,6 +21,7 @@ Map<String, dynamic> _$$ValidateCouponCodeRequestModelImplToJson(
       'code': instance.code,
       'trekId': instance.trekId,
       'bookingAmount': instance.bookingAmount,
+      'travelerCount': instance.travelerCount,
     };
 
 _$ValidateCouponCodeResponseModelImpl
@@ -87,19 +89,23 @@ _$CouponCardDataImpl _$$CouponCardDataImplFromJson(Map<String, dynamic> json) =>
       id: json['id'] as int?,
       title: json['title'] as String?,
       description: json['description'] as String?,
-      imagePath: json['image_url'] as String?,
+      imagePath: json['image_path'] as String?,
       gradient: (json['gradient'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
-      textColour: json['textColour'] as String?,
+      textColour: json['text_colour'] as String?,
       code: json['code'] as String?,
       discountType: json['discount_type'] as String?,
       discountValue: json['discount_value'] as String?,
       termsAndConditions: (json['terms_and_conditions'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
+      detailedDescription: json['detailed_description'] as String?,
+      howToApply: json['how_to_apply'] as String?,
+      footerNote: json['footer_note'] as String?,
       isExpired: json['is_expired'] as bool?,
       isActive: json['is_active'] as bool?,
+      validUntil: json['valid_until'] as String?,
     );
 
 Map<String, dynamic> _$$CouponCardDataImplToJson(
@@ -108,15 +114,19 @@ Map<String, dynamic> _$$CouponCardDataImplToJson(
       'id': instance.id,
       'title': instance.title,
       'description': instance.description,
-      'image_url': instance.imagePath,
+      'image_path': instance.imagePath,
       'gradient': instance.gradient,
-      'textColour': instance.textColour,
+      'text_colour': instance.textColour,
       'code': instance.code,
       'discount_type': instance.discountType,
       'discount_value': instance.discountValue,
       'terms_and_conditions': instance.termsAndConditions,
+      'detailed_description': instance.detailedDescription,
+      'how_to_apply': instance.howToApply,
+      'footer_note': instance.footerNote,
       'is_expired': instance.isExpired,
       'is_active': instance.isActive,
+      'valid_until': instance.validUntil,
     };
 
 _$VendorImpl _$$VendorImplFromJson(Map<String, dynamic> json) => _$VendorImpl(

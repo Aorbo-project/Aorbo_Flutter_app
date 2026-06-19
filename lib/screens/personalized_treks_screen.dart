@@ -969,23 +969,26 @@ class _PersonalizedTreksScreenState extends State<PersonalizedTreksScreen> {
                         shrinkWrap: true,
                         itemCount: filteredStates.length,
                         itemBuilder: (context, index) {
-                          return ListTile(
-                            title: Text(
-                              filteredStates[index].name ?? '',
-                              textScaler: const TextScaler.linear(1.0),
-                              style: GoogleFonts.poppins(
-                                fontSize: FontSize.s10,
-                                fontWeight: FontWeight.w500,
-                                color: CommonColors.blackColor,
+                          return Material(
+                            color: Colors.transparent,
+                            child: ListTile(
+                              title: Text(
+                                filteredStates[index].name ?? '',
+                                textScaler: const TextScaler.linear(1.0),
+                                style: GoogleFonts.poppins(
+                                  fontSize: FontSize.s10,
+                                  fontWeight: FontWeight.w500,
+                                  color: CommonColors.blackColor,
+                                ),
                               ),
+                              onTap: () {
+                                setState(() {
+                                  _selectedState =
+                                      filteredStates[index].name ?? '';
+                                });
+                                Navigator.pop(context);
+                              },
                             ),
-                            onTap: () {
-                              setState(() {
-                                _selectedState =
-                                    filteredStates[index].name ?? '';
-                              });
-                              Navigator.pop(context);
-                            },
                           );
                         },
                       ),

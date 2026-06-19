@@ -1753,39 +1753,42 @@ Future<void> _confirmDeleteTraveller(int index, Traveler traveller) async {
                                         : Colors.transparent,
                                     borderRadius: BorderRadius.circular(2.w),
                                   ),
-                                  child: ListTile(
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius:
-                                          BorderRadius.circular(2.w),
-                                    ),
-                                    title: Text(
-                                      state.name ?? '',
-                                      textScaler:
-                                          const TextScaler.linear(1.0),
-                                      style: TextStyle(
-                                        fontFamily: 'Poppins',
-                                        fontSize: FontSize.s10,
-                                        fontWeight: isSelected
-                                            ? FontWeight.w600
-                                            : FontWeight.w400,
-                                        color: isSelected ? _C.teal : _C.ink,
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: ListTile(
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(2.w),
                                       ),
+                                      title: Text(
+                                        state.name ?? '',
+                                        textScaler:
+                                            const TextScaler.linear(1.0),
+                                        style: TextStyle(
+                                          fontFamily: 'Poppins',
+                                          fontSize: FontSize.s10,
+                                          fontWeight: isSelected
+                                              ? FontWeight.w600
+                                              : FontWeight.w400,
+                                          color: isSelected ? _C.teal : _C.ink,
+                                        ),
+                                      ),
+                                      trailing: isSelected
+                                          ? Icon(
+                                              Icons.check_rounded,
+                                              color: _C.teal,
+                                              size: 5.w,
+                                            )
+                                          : null,
+                                      onTap: () {
+                                        setState(() {
+                                          _selectedState = state.name ?? '';
+                                          _userC.stateUpdateId.value =
+                                              state.id ?? 0;
+                                        });
+                                        Navigator.pop(context);
+                                      },
                                     ),
-                                    trailing: isSelected
-                                        ? Icon(
-                                            Icons.check_rounded,
-                                            color: _C.teal,
-                                            size: 5.w,
-                                          )
-                                        : null,
-                                    onTap: () {
-                                      setState(() {
-                                        _selectedState = state.name ?? '';
-                                        _userC.stateUpdateId.value =
-                                            state.id ?? 0;
-                                      });
-                                      Navigator.pop(context);
-                                    },
                                   ),
                                 );
                               },
