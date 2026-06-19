@@ -16,6 +16,7 @@ import '../repository/repository.dart';
 import '../utils/auth_utils.dart';
 import '../utils/custom_snackbar.dart';
 import '../widgets/logger.dart';
+import '../repository/app_env.dart';
 
 class AuthController extends GetxController {
   Repository repository = Repository();
@@ -25,6 +26,13 @@ class AuthController extends GetxController {
   RxBool isLoading = false.obs;
   RxBool isProfileLoading = false.obs;
   RxBool isPhoneValid = false.obs;
+
+  bool get isLocalDev {
+    final baseUrlStr = AppEnv().apiBaseUrl;
+    return baseUrlStr.contains('127.0.0.1') ||
+        baseUrlStr.contains('10.0.2.2') ||
+        baseUrlStr.contains('localhost');
+  }
 
   final validaVersionObserver = const ApiResult<ValidateVersionResponseModel>.init().obs;
 
