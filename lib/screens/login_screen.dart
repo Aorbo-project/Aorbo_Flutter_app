@@ -1,5 +1,6 @@
 
   import 'package:arobo_app/controller/auth_controller.dart';
+  import 'package:arobo_app/screens/otp_screen.dart';
   import 'package:arobo_app/utils/common_colors.dart';
   import 'package:arobo_app/utils/common_images.dart';
   import 'package:arobo_app/utils/screen_constants.dart';
@@ -239,18 +240,17 @@
                                   fontSize: FontSize.s14,
                                   fontWeight: FontWeight.w600,
                                   height: 6.h,
-                                  onPressed: () {
+                                  onPressed: () async {
                                     if (isValidPhoneNumber) {
-                                      _authC.sendCode(
-                                          phoneNumber: _authC
-                                              .phoneNumberLoginTextField
-                                              .value
-                                              .text);
+                                      final phone = _authC.phoneNumberLoginTextField.value.text;
+                                      final success = await _authC.requestOtp(phone);
+                                      if (success) {
+                                        Get.to(const OTPScreen());
+                                      }
                                     } else {
                                       CustomSnackBar.show(
                                         context,
-                                        message:
-                                            "Please enter a valid 10-digit mobile number",
+                                        message: "Please enter a valid 10-digit mobile number",
                                       );
                                     }
                                   },

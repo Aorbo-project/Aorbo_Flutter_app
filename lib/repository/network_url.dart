@@ -24,9 +24,10 @@ class NetworkUrl {
   static  String imageUrl = AppEnv().imageUrl;
 
   //#region Auth
-  static const String loginPath = 'customer/auth/request-otp';
-  static const String firebaseVerify = 'customer/auth/firebase-verify';
-  static const String deviceToken = 'customer/device-token';
+  static const String loginPath     = 'customer/auth/request-otp';
+  static const String resendOtpPath = 'customer/auth/resend-otp';
+  static const String verifyOtpPath = 'customer/auth/verify-otp';
+  static const String deviceToken   = 'customer/device-token';
 
   //#endregion
 

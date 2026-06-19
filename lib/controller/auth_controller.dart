@@ -4,7 +4,6 @@ import 'dart:io';
 
 import 'package:arobo_app/main.dart';
 import 'package:arobo_app/utils/shared_preferences.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -26,29 +25,21 @@ class AuthController extends GetxController {
   RxBool isLoading = false.obs;
   RxBool isProfileLoading = false.obs;
   RxBool isPhoneValid = false.obs;
-  var resendTokenData = 0.obs;
-  RxString idToken = ''.obs;
-  RxString verificationIdData = ''.obs;
 
   final validaVersionObserver = const ApiResult<ValidateVersionResponseModel>.init().obs;
-
-  String formattedPhoneNumber({required String phoneNumber}) {
-    final number = phoneNumber.trim();
-    if (number.startsWith('+91')) return number;
-    return '+91$number';
-  }
 
   Future<ValidateDataModel?> validateVersion() async {
     try {
       validaVersionObserver.value = const ApiResult.loading("");
       final version = await AuthUtils.getAppVersion();
       final platform = AuthUtils.getSource();
-      final String? validatorResponse = AuthUtils.validateRequestFields(['version'], {"version":version,"platform":platform});
+      final String? validatorResponse = AuthUtils.validateRequestFields(
+          ['version'], {"version": version, "platform": platform});
       if (validatorResponse != null) throw validatorResponse;
-      final body = await repository.getApiCall(url: NetworkUrl.validateVersion(version ?? "1.0.0",platform));
+      final body = await repository.getApiCall(
+          url: NetworkUrl.validateVersion(version ?? "1.0.0", platform));
       if (body != null) {
         final responseData = ValidateVersionResponseModel.fromJson(body);
-
         if (responseData.success == true) {
           validaVersionObserver.value = ApiResult.success(responseData);
           return responseData.data;
@@ -57,75 +48,90 @@ class AuthController extends GetxController {
       }
       throw "Response Body Null";
     } catch (e) {
-      CustomSnackBar.show(
-        Get.context!,
-        message: e.toString(),
-      );
+      CustomSnackBar.show(Get.context!, message: e.toString());
       return null;
     }
   }
 
-
-
-
-  Future<void> getIdToken() async {
+  // Send OTP to phone via backend (Message Central). Returns true on success.
+  // Navigation is the caller's responsibility.
+  Future<bool> requestOtp(String phone) async {
+    isProfileLoading.value = true;
     try {
-      User? user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        String? token = await user.getIdToken();
-        if (token != null) {
-          idToken.value = token;
-        }
+      final body = json.encode({'phone': phone});
+      final res = await repository.postApiCall(url: NetworkUrl.loginPath, body: body);
+      isProfileLoading.value = false;
+      if (res != null && res['success'] == true) {
+        return true;
       }
+      CustomSnackBar.show(Get.context!,
+          message: res?['message'] ?? 'Failed to send OTP. Please try again.');
+      return false;
     } catch (e) {
-      logger.e("Error getting ID token: $e");
+      isProfileLoading.value = false;
+      CustomSnackBar.show(Get.context!, message: 'Failed to send OTP. Please try again.');
+      return false;
     }
   }
 
-  sendCode({required String phoneNumber}) async {
+  // Resend OTP to the same phone. Shows a snack bar on success/failure.
+  Future<bool> resendOtp(String phone) async {
     try {
-      isProfileLoading.value = true;
-      await FirebaseAuth.instance.verifyPhoneNumber(
-        phoneNumber: formattedPhoneNumber(phoneNumber: phoneNumber),
-        verificationCompleted:  (PhoneAuthCredential credential) {
-          print(credential.toString());
-          print("Auto verified");
-        },
-        verificationFailed: (FirebaseAuthException e) {
-          isProfileLoading.value = false;
-          if (e.code == 'invalid-phone-number') {
-            CustomSnackBar.show(
-              Get.context!,
-              message: "The provided phone number is not valid.",
-            );
-          } else {
-            CustomSnackBar.show(
-              Get.context!,
-              message: e.message ?? "Verification failed",
-            );
-          }
-        },
-        codeSent: (String verificationId, int? resendToken) {
-          isLoading.value = false;
-          isProfileLoading.value = false;
-          resendTokenData.value = resendToken ?? 0;
-          verificationIdData.value = verificationId;
-        },
-        codeAutoRetrievalTimeout: (String verificationId) {},
-        forceResendingToken: resendTokenData.value,
-      );
-    } catch (error) {
+      final body = json.encode({'phone': phone});
+      final res = await repository.postApiCall(url: NetworkUrl.resendOtpPath, body: body);
+      if (res != null && res['success'] == true) {
+        CustomSnackBar.show(Get.context!, message: res['message'] ?? 'OTP sent');
+        return true;
+      }
+      CustomSnackBar.show(Get.context!,
+          message: res?['message'] ?? 'Failed to resend OTP. Please try again.');
+      return false;
+    } catch (e) {
+      CustomSnackBar.show(Get.context!, message: 'Failed to resend OTP. Please try again.');
+      return false;
+    }
+  }
+
+  // Verify OTP with backend. Stores JWT and registers FCM on success. Returns true on success.
+  Future<bool> verifyOtp(String phone, String otp) async {
+    isLoading.value = true;
+    try {
+      final body = json.encode({'phone': phone, 'otp': otp});
+      final res = await repository.postApiCall(url: NetworkUrl.verifyOtpPath, body: body);
       isLoading.value = false;
-      CustomSnackBar.show(
-        Get.context!,
-        message: "You have tried many times. Please try again after some time.",
-      );
+      if (res != null && res['success'] == true) {
+        try {
+          verifyOtpModal.value = VerifyOtpModal.fromJson(res);
+          final token = verifyOtpModal.value.data?.token;
+          if (token == null || token.isEmpty) {
+            CustomSnackBar.show(Get.context!, message: 'Invalid token received');
+            return false;
+          }
+          await sp!.putString(SpUtil.accessToken, token);
+          await sp!.putBool(SpUtil.isLoggedIn, true);
+          await sp!.putInt(SpUtil.userID, verifyOtpModal.value.data?.customer?.id ?? 0);
+          registerFcmToken();
+          return true;
+        } catch (parseError) {
+          logger.e('Error parsing auth response: $parseError');
+          CustomSnackBar.show(Get.context!, message: 'Error processing server response');
+          return false;
+        }
+      }
+      CustomSnackBar.show(Get.context!,
+          message: res?['message'] ?? 'OTP verification failed');
+      return false;
+    } catch (e) {
+      isLoading.value = false;
+      logger.e('verifyOtp error: $e');
+      CustomSnackBar.show(Get.context!, message: 'Verification failed. Please try again.');
+      return false;
     }
   }
 
   // Fire-and-forget: register FCM token with backend after successful auth.
   // Errors are non-fatal — user is already logged in.
-  Future<void> _registerFcmToken() async {
+  Future<void> registerFcmToken() async {
     try {
       final fcmToken = await FirebaseMessaging.instance.getToken();
       if (fcmToken == null) return;
@@ -137,61 +143,6 @@ class AuthController extends GetxController {
       logger.d('FCM token registered');
     } catch (e) {
       logger.e('FCM token registration failed: $e');
-    }
-  }
-
-  Future<bool> verifyFirebaseToken(String firebaseToken) async {
-    isLoading.value = true;
-
-    String body = json.encode({
-      'firebaseIdToken': firebaseToken,
-    });
-
-    try {
-      var res = await repository.postApiCall(url: NetworkUrl.firebaseVerify, body: body);
-
-      isLoading.value = false;
-
-      if (res != null && res['success'] == true) {
-        try {
-          verifyOtpModal.value = VerifyOtpModal.fromJson(res);
-
-          final token = verifyOtpModal.value.data?.token;
-          if (token == null || token.isEmpty) {
-            CustomSnackBar.show(Get.context!,
-                message: "Invalid token received");
-            return false;
-          }
-
-          await sp!.putString(SpUtil.accessToken, token);
-          await sp!.putBool(SpUtil.isLoggedIn, true);
-          await sp!.putInt(SpUtil.userID, verifyOtpModal.value.data?.customer?.id ?? 0);
-
-          // Register FCM device token now that we have a valid session
-          _registerFcmToken();
-
-          return true;
-        } catch (parseError) {
-          logger.e('Error parsing auth response: $parseError');
-          CustomSnackBar.show(Get.context!,
-              message: "Error processing server response");
-          return false;
-        }
-      } else {
-        CustomSnackBar.show(Get.context!,
-            message: res != null && res['message'] != null
-                ? res['message']
-                : "Server verification failed");
-        return false;
-      }
-    } catch (e) {
-      isLoading.value = false;
-      logger.e("Firebase verification error: $e");
-      CustomSnackBar.show(Get.context!,
-          message: "Network error: ${e.toString()}");
-      return false;
-    } finally {
-      isLoading.value = false;
     }
   }
 }
