@@ -14,7 +14,6 @@ import 'package:pinput/pinput.dart';
 import 'dart:async';
 
 import '../controller/auth_controller.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 class OTPScreen extends StatefulWidget {
   // final String phoneNumber;
@@ -95,43 +94,19 @@ class _OTPScreenState extends State<OTPScreen>
           _errorMessage = null;
         });
 
-        PhoneAuthCredential credential = PhoneAuthProvider.credential(
-            verificationId: Get.find<OTPController>().verificationId.value,
-            smsCode: pin);
+        final phone = _authC.phoneNumberLoginTextField.value.text;
+        final bool verified = await _authC.verifyOtp(phone, pin);
 
-        try {
-          // First verify with Firebase
-          await FirebaseAuth.instance.signInWithCredential(credential);
+        if (!mounted) return;
 
-          // Get the ID token after successful verification
-          await Get.find<AuthController>().getIdToken();
-
-          // Get the token and verify with backend
-          String firebaseToken = Get.find<AuthController>().idToken.value;
-          bool verified = await Get.find<AuthController>()
-              .verifyFirebaseToken(firebaseToken);
-
-          if (!mounted) return;
-
-          if (verified) {
-            _authC.phoneNumberLoginTextField.value.dispose();
-            // Use a single navigation call and remove previous screens
-            Get.offAllNamed('/dashboard');
-          } else {
-            if (!mounted) return;
-            setState(() {
-              _isError = true;
-              _isSuccess = false;
-            });
-            _showErrorMessage('Server verification failed. Please try again.');
-          }
-        } catch (error) {
-          if (!mounted) return;
+        if (verified) {
+          _authC.phoneNumberLoginTextField.value.dispose();
+          Get.offAllNamed('/dashboard');
+        } else {
           setState(() {
             _isError = true;
             _isSuccess = false;
           });
-          _showErrorMessage('Invalid OTP. Please try again.');
           if (mounted) {
             _authC.otpTextField.value.clear();
             _pinFocusNode.requestFocus();

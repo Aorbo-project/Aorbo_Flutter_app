@@ -1,17 +1,12 @@
 import 'dart:async';
 import 'package:arobo_app/controller/auth_controller.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../utils/custom_snackbar.dart';
 
 class OTPController extends GetxController {
-  RxString phoneNumber = "".obs;
-
   var otpController = TextEditingController().obs;
-  var verificationId = ''.obs;
-  // RxInt resendToken = 0.obs;
   final AuthController _authC = Get.find<AuthController>();
 
   RxInt secondsRemaining = 60.obs;
@@ -23,86 +18,49 @@ class OTPController extends GetxController {
   void onInit() {
     super.onInit();
     otpController.value.clear();
-    // getArgument();
-    // startTimer();
+    startTimer();
   }
 
-  // getArgument() async {
-  //   dynamic argumentData = Get.arguments;
-  //   if (argumentData != null) {
-  //     phoneNumber.value = argumentData['phoneNumber'];
-  //     verificationId.value = argumentData['verificationId'];
-  //     resendToken.value = argumentData['resendTokenData'];
-  //   }
-  // }
-
-  resendOTP() async {
+  Future<void> resendOTP() async {
     if (isDisposed) return;
-    await sendOTP();
-    if (!isDisposed) {
-      secondsRemaining.value = 60;
-      enableResend.value = false;
-      startTimer();
+    final success = await sendOTP();
+    if (!isDisposed && success) {
+      startTimer(); // resets secondsRemaining and enableResend internally
       otpController.value.clear();
     }
   }
 
   void startTimer() {
-    timer?.cancel(); // Cancel any existing timer
+    timer?.cancel();
     if (isDisposed) return;
-
-    timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    secondsRemaining.value = 60;
+    enableResend.value = false;
+    timer = Timer.periodic(const Duration(seconds: 1), (t) {
       if (isDisposed) {
-        timer.cancel();
+        t.cancel();
         return;
       }
-
       try {
         if (secondsRemaining.value > 0) {
           secondsRemaining.value--;
         } else {
-          timer.cancel();
+          t.cancel();
           enableResend.value = true;
         }
       } catch (e) {
-        timer.cancel();
+        t.cancel();
       }
     });
   }
 
   Future<bool> sendOTP() async {
     if (isDisposed) return false;
-
     try {
-      await FirebaseAuth.instance.verifyPhoneNumber(
-        phoneNumber: phoneNumber.value,
-        verificationCompleted: (PhoneAuthCredential credential) {},
-        verificationFailed: (FirebaseAuthException e) {
-          if (!isDisposed) {
-            CustomSnackBar.show(Get.context!,
-                message: e.message ?? "Verification failed");
-          }
-        },
-        codeSent: (String verificationId0, int? resendToken0) async {
-          if (!isDisposed) {
-            verificationId.value = verificationId0;
-            _authC.resendTokenData.value = resendToken0!;
-            CustomSnackBar.show(Get.context!, message: "OTP sent");
-          }
-        },
-        timeout: const Duration(seconds: 45),
-        forceResendingToken: _authC.resendTokenData.value,
-        codeAutoRetrievalTimeout: (String verificationId0) {
-          if (!isDisposed) {
-            verificationId.value = verificationId0;
-          }
-        },
-      );
-      return true;
+      final phone = _authC.phoneNumberLoginTextField.value.text;
+      return await _authC.resendOtp(phone);
     } catch (e) {
       if (!isDisposed) {
-        CustomSnackBar.show(Get.context!,
-            message: "Failed to send OTP. Please try again.");
+        CustomSnackBar.show(Get.context!, message: 'Failed to send OTP. Please try again.');
       }
       return false;
     }
@@ -115,7 +73,7 @@ class OTPController extends GetxController {
     try {
       otpController.value.dispose();
     } catch (e) {
-      // Ignore if already disposed
+      // already disposed
     }
     super.onClose();
   }
@@ -134,9 +92,7 @@ class OTPController extends GetxController {
   void onReady() {
     super.onReady();
     ever(secondsRemaining, (_) {
-      if (!isDisposed) {
-        update();
-      }
+      if (!isDisposed) update();
     });
   }
 }
