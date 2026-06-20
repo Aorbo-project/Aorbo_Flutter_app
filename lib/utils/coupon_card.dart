@@ -12,11 +12,11 @@ class CouponCard extends StatelessWidget {
   final bool isApplied;
 
   const CouponCard({
-    Key? key,
+    super.key,
     required this.coupon,
     required this.onApply,
     this.isApplied = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -69,12 +69,12 @@ class CouponCard extends StatelessWidget {
 
                           if (coupon?.discountType?.toLowerCase() ==
                               'percentage') {
-                            sideText = 'upto ${intValue}% off';
+                            sideText = 'upto $intValue% off';
                           } else if (coupon?.discountType?.toLowerCase() ==
                               'fixed') {
-                            sideText = 'Flat ${intValue}/- off';
+                            sideText = 'Flat $intValue/- off';
                           } else {
-                            sideText = '${intValue} off';
+                            sideText = '$intValue off';
                           }
 
                           final parts = sideText.split(' ');

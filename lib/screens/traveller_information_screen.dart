@@ -157,7 +157,7 @@ class _TravellerLimitBannerState extends State<_TravellerLimitBanner>
             borderRadius: BorderRadius.circular(3.w),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.18),
+                color: Colors.black.withValues(alpha: 0.18),
                 blurRadius: 16,
                 offset: const Offset(0, -4),
               ),
@@ -168,7 +168,7 @@ class _TravellerLimitBannerState extends State<_TravellerLimitBanner>
               Container(
                 width: 8.w, height: 8.w,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.12),
+                  color: Colors.white.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(Icons.groups_rounded,
@@ -181,7 +181,7 @@ class _TravellerLimitBannerState extends State<_TravellerLimitBanner>
                   text: TextSpan(
                     style: GoogleFonts.poppins(
                       fontSize: FontSize.s10,
-                      color: Colors.white.withOpacity(0.85),
+                      color: Colors.white.withValues(alpha: 0.85),
                     ),
                     children: [
                       const TextSpan(text: 'Max '),
@@ -202,11 +202,11 @@ class _TravellerLimitBannerState extends State<_TravellerLimitBanner>
                 child: Container(
                   width: 7.w, height: 7.w,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
+                    color: Colors.white.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(Icons.close_rounded,
-                      color: Colors.white.withOpacity(0.8), size: 4.w),
+                      color: Colors.white.withValues(alpha: 0.8), size: 4.w),
                 ),
               ),
             ],
@@ -221,7 +221,7 @@ class _TravellerLimitBannerState extends State<_TravellerLimitBanner>
 //  MAIN SCREEN
 // ─────────────────────────────────────────────
 class TravellerInformationScreen extends StatefulWidget {
-  const TravellerInformationScreen({Key? key}) : super(key: key);
+  const TravellerInformationScreen({super.key});
 
   @override
   State<TravellerInformationScreen> createState() =>
@@ -241,7 +241,7 @@ class _TravellerInformationScreenState
   String _selectedState = BookingConstants.defaultState;
   List<String> filteredStates = [];
 
-  bool _whatsappUpdates = false;
+  final bool _whatsappUpdates = false;
   String _selectedPaymentOption = 'standard';
 
   final GlobalKey _checkboxKey = GlobalKey();
@@ -287,7 +287,7 @@ class _TravellerInformationScreenState
             borderRadius: BorderRadius.vertical(top: Radius.circular(5.w)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.10),
+                color: Colors.black.withValues(alpha: 0.10),
                 blurRadius: 24,
                 offset: const Offset(0, -6),
               ),
@@ -552,7 +552,7 @@ class _TravellerInformationScreenState
           borderRadius: BorderRadius.circular(4.w),
           boxShadow: [
             BoxShadow(
-              color: CommonColors.blackColor.withOpacity(0.07),
+              color: CommonColors.blackColor.withValues(alpha: 0.07),
               blurRadius: 10,
               offset: const Offset(0, 3),
             ),
@@ -866,6 +866,7 @@ class _TravellerInformationScreenState
                   onPressed: () async {
                     if (_validateContactDetails()) {
                       await _userC.updateUserProfile();
+                      if (!context.mounted) return;
                       setState(() {});
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -998,6 +999,7 @@ class _TravellerInformationScreenState
                         setState(() {});
                       }
 
+                      if (!context.mounted) return;
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                         content: Text(
@@ -1181,10 +1183,10 @@ class _TravellerInformationScreenState
                           padding: EdgeInsets.symmetric(
                               horizontal: 4.w, vertical: 1.5.h),
                           decoration: BoxDecoration(
-                            color: _TI.brand.withOpacity(0.06),
+                            color: _TI.brand.withValues(alpha: 0.06),
                             borderRadius: BorderRadius.circular(3.w),
                             border: Border.all(
-                                color: _TI.brand.withOpacity(0.15)),
+                                color: _TI.brand.withValues(alpha: 0.15)),
                           ),
                           child: Row(children: [
                             Expanded(child: Column(
@@ -1289,7 +1291,7 @@ class _TravellerInformationScreenState
                             color: const Color(0xFFF8F9FF),
                             borderRadius: BorderRadius.circular(3.w),
                             border: Border.all(
-                                color: _TI.brand.withOpacity(0.12)),
+                                color: _TI.brand.withValues(alpha: 0.12)),
                           ),
                           child: Row(
                             mainAxisAlignment:
@@ -1431,12 +1433,12 @@ class _TravellerInformationScreenState
                                 padding: EdgeInsets.symmetric(
                                     horizontal: 3.w, vertical: 0.5.h),
                                 decoration: BoxDecoration(
-                                  color: _TI.brand.withOpacity(0.08),
+                                  color: _TI.brand.withValues(alpha: 0.08),
                                   borderRadius:
                                       BorderRadius.circular(20),
                                   border: Border.all(
                                       color:
-                                          _TI.brand.withOpacity(0.25)),
+                                          _TI.brand.withValues(alpha: 0.25)),
                                 ),
                                 child: Text(
                                   (_userC.userProfileData.value.customer
@@ -1569,7 +1571,7 @@ class _TravellerInformationScreenState
                                 color: const Color(0xFFF8F9FF),
                                 borderRadius: BorderRadius.circular(3.w),
                                 border: Border.all(
-                                  color: _TI.brand.withOpacity(0.2),
+                                  color: _TI.brand.withValues(alpha: 0.2),
                                   width: 1.5),
                               ),
                               child: Column(children: [
@@ -1680,13 +1682,13 @@ class _TravellerInformationScreenState
                                       horizontal: 4.w, vertical: 1.5.h),
                                   decoration: BoxDecoration(
                                     color: freeCancellation
-                                        ? _TI.brand.withOpacity(0.06)
+                                        ? _TI.brand.withValues(alpha: 0.06)
                                         : const Color(0xFFF8F9FF),
                                     borderRadius:
                                         BorderRadius.circular(3.w),
                                     border: Border.all(
                                       color: freeCancellation
-                                          ? _TI.brand.withOpacity(0.3)
+                                          ? _TI.brand.withValues(alpha: 0.3)
                                           : _TI.divider),
                                   ),
                                   child: Row(children: [
@@ -1942,7 +1944,7 @@ class _TravellerInformationScreenState
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [BoxShadow(
-          color: Colors.black.withOpacity(0.08),
+          color: Colors.black.withValues(alpha: 0.08),
           blurRadius: 12,
           offset: const Offset(0, -3))],
       ),
@@ -2114,12 +2116,12 @@ class _TravellerInformationScreenState
         padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
         decoration: BoxDecoration(
           color: isSelected
-              ? _TI.brand.withOpacity(0.05)
+              ? _TI.brand.withValues(alpha: 0.05)
               : const Color(0xFFF8F9FF),
           borderRadius: BorderRadius.circular(3.w),
           border: Border.all(
             color: isSelected
-                ? _TI.brand.withOpacity(0.4)
+                ? _TI.brand.withValues(alpha: 0.4)
                 : _TI.divider,
             width: isSelected ? 1.5 : 1),
         ),
@@ -2183,12 +2185,12 @@ class _TravellerInformationScreenState
             EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.8.h),
         decoration: BoxDecoration(
           color: isSelected
-              ? _TI.brand.withOpacity(0.05)
+              ? _TI.brand.withValues(alpha: 0.05)
               : const Color(0xFFF8F9FF),
           borderRadius: BorderRadius.circular(3.w),
           border: Border.all(
             color: isSelected
-                ? _TI.brand.withOpacity(0.4)
+                ? _TI.brand.withValues(alpha: 0.4)
                 : _TI.divider,
             width: isSelected ? 1.5 : 1),
         ),
@@ -2254,17 +2256,17 @@ class _TravellerInformationScreenState
         curve: Curves.easeOutCubic,
         decoration: BoxDecoration(
           color: isTravellerSelected
-              ? _TI.brand.withOpacity(0.04)
+              ? _TI.brand.withValues(alpha: 0.04)
               : const Color(0xFFF8F9FF),
           borderRadius: BorderRadius.circular(3.w),
           border: Border.all(
             color: isTravellerSelected
-                ? _TI.brand.withOpacity(0.3)
+                ? _TI.brand.withValues(alpha: 0.3)
                 : _TI.divider,
             width: isTravellerSelected ? 1.5 : 1),
           boxShadow: isTravellerSelected
               ? [BoxShadow(
-                  color: _TI.brand.withOpacity(0.08),
+                  color: _TI.brand.withValues(alpha: 0.08),
                   blurRadius: 8,
                   offset: const Offset(0, 2))]
               : [],
@@ -2311,7 +2313,7 @@ class _TravellerInformationScreenState
               width: 9.w, height: 9.w,
               decoration: BoxDecoration(
                 color: isTravellerSelected
-                    ? _TI.brand.withOpacity(0.12)
+                    ? _TI.brand.withValues(alpha: 0.12)
                     : const Color(0xFFE2E8F0),
                 shape: BoxShape.circle,
               ),
@@ -2353,10 +2355,10 @@ class _TravellerInformationScreenState
                 padding: EdgeInsets.symmetric(
                     horizontal: 2.5.w, vertical: 0.4.h),
                 decoration: BoxDecoration(
-                  color: _TI.brand.withOpacity(0.08),
+                  color: _TI.brand.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                      color: _TI.brand.withOpacity(0.2))),
+                      color: _TI.brand.withValues(alpha: 0.2))),
                 child: Text('Edit',
                   textScaler: const TextScaler.linear(1.0),
                   style: TextStyle(fontFamily:'Poppins',

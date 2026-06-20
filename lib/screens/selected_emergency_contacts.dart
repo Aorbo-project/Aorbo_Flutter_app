@@ -4,7 +4,6 @@ import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:sizer/sizer.dart';
 import 'package:get/get.dart';
 import '../utils/common_colors.dart';
-import '../utils/common_images.dart';
 import '../utils/screen_constants.dart';
 import '../utils/common_btn.dart';
 import '../models/emergency_contact_model.dart';
@@ -255,7 +254,7 @@ class _SelectedEmergencyContactsScreenState
     showDialog(
       context: context,
       barrierDismissible: true,
-      barrierColor: Colors.black.withOpacity(0.4),
+      barrierColor: Colors.black.withValues(alpha: 0.4),
       builder: (ctx) => Dialog(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -266,7 +265,7 @@ class _SelectedEmergencyContactsScreenState
             borderRadius: BorderRadius.circular(5.w),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
+                color: Colors.black.withValues(alpha: 0.08),
                 blurRadius: 24,
                 spreadRadius: 2,
                 offset: const Offset(0, 8),
@@ -284,7 +283,7 @@ class _SelectedEmergencyContactsScreenState
                     width: 11.w,
                     height: 11.w,
                     decoration: BoxDecoration(
-                      color: _C.danger.withOpacity(0.10),
+                      color: _C.danger.withValues(alpha: 0.10),
                       borderRadius: BorderRadius.circular(3.w),
                     ),
                     child: Center(
@@ -418,7 +417,7 @@ class _SelectedEmergencyContactsScreenState
                           borderRadius: BorderRadius.circular(2.w),
                           boxShadow: [
                             BoxShadow(
-                              color: _C.danger.withOpacity(0.30),
+                              color: _C.danger.withValues(alpha: 0.30),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             ),
@@ -493,7 +492,7 @@ class _SelectedEmergencyContactsScreenState
         width: 9.w,
         height: 9.w,
         decoration: BoxDecoration(
-          color: _C.danger.withOpacity(0.08),
+          color: _C.danger.withValues(alpha: 0.08),
           shape: BoxShape.circle,
         ),
         child: Icon(
@@ -526,7 +525,7 @@ class _SelectedEmergencyContactsScreenState
           border: Border.all(color: _C.fieldBorder),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 10,
               spreadRadius: 1,
               offset: const Offset(0, 2),
@@ -624,12 +623,12 @@ class _SelectedEmergencyContactsScreenState
           color: _C.cardBg,
           borderRadius: BorderRadius.circular(3.w),
           border: Border.all(
-            color: _C.teal.withOpacity(0.25),
+            color: _C.teal.withValues(alpha: 0.25),
             width: 1.2,
           ),
           boxShadow: [
             BoxShadow(
-              color: _C.teal.withOpacity(0.06),
+              color: _C.teal.withValues(alpha: 0.06),
               blurRadius: 10,
               spreadRadius: 1,
               offset: const Offset(0, 2),
@@ -755,12 +754,12 @@ class _SelectedEmergencyContactsScreenState
           color: _C.cardBg,
           borderRadius: BorderRadius.circular(3.w),
           border: Border.all(
-            color: _C.teal.withOpacity(0.3),
+            color: _C.teal.withValues(alpha: 0.3),
             width: 1.5,
           ),
           boxShadow: [
             BoxShadow(
-              color: _C.teal.withOpacity(0.06),
+              color: _C.teal.withValues(alpha: 0.06),
               blurRadius: 10,
               spreadRadius: 1,
               offset: const Offset(0, 2),
@@ -827,7 +826,7 @@ class _SelectedEmergencyContactsScreenState
 
     return PopScope(
       canPop: false,
-      onPopInvoked: (didPop) {
+      onPopInvokedWithResult: (didPop, _) {
         if (!didPop) Get.back(result: selectedContacts);
       },
       child: Scaffold(
@@ -1111,7 +1110,7 @@ class _SelectedEmergencyContactsScreenState
                   color: _C.cardBg,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
+                      color: Colors.black.withValues(alpha: 0.08),
                       blurRadius: 20,
                       offset: const Offset(0, -4),
                     ),

@@ -1,5 +1,3 @@
-import 'package:arobo_app/main.dart';
-import 'package:arobo_app/utils/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -11,10 +9,9 @@ import '../utils/screen_constants.dart';
 import '../utils/coupon_card.dart';
 import '../models/coupon_code/coupon_code_model.dart';
 import '../controller/trek_controller.dart';
-import '../utils/custom_snackbar.dart';
 
 class CouponCodeScreen extends StatefulWidget {
-  const CouponCodeScreen({Key? key}) : super(key: key);
+  const CouponCodeScreen({super.key});
 
   @override
   State<CouponCodeScreen> createState() => _CouponCodeScreenState();
@@ -91,7 +88,7 @@ class _CouponCodeScreenState extends State<CouponCodeScreen> {
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 10,
                       offset: const Offset(0, 2),
                     ),
@@ -181,7 +178,7 @@ class _CouponCodeScreenState extends State<CouponCodeScreen> {
                             couponErrorMessage,
                             style: GoogleFonts.poppins(
                               fontSize: FontSize.s10,
-                              color: CommonColors.blackColor.withOpacity(0.6),
+                              color: CommonColors.blackColor.withValues(alpha: 0.6),
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -201,7 +198,7 @@ class _CouponCodeScreenState extends State<CouponCodeScreen> {
                         'No matching coupons found',
                         style: GoogleFonts.poppins(
                           fontSize: FontSize.s10,
-                          color: CommonColors.blackColor.withOpacity(0.6),
+                          color: CommonColors.blackColor.withValues(alpha: 0.6),
                         ),
                       ),
                     );

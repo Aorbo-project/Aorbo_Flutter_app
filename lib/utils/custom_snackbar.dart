@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
 
-import 'common_colors.dart';
 import 'common_images.dart';
 import 'screen_constants.dart';
 
@@ -107,7 +106,7 @@ Widget build(BuildContext context) {
             borderRadius: BorderRadius.circular(widget.height / 2),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 4,
                 offset: Offset(0, 2),
               ),
@@ -126,7 +125,7 @@ Widget build(BuildContext context) {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 4,
                       offset: Offset(0, 2),
                     ),

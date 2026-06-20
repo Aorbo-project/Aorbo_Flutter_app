@@ -174,8 +174,9 @@ class _LoadingAnimationModalState extends State<LoadingAnimationModal>
       // Animate particles
       Future.doWhile(() async {
         if (!mounted) return false;
-        if (_particles.isEmpty)
+        if (_particles.isEmpty) {
           return false; // Stop animation if no particles left
+        }
         setState(() {
           _updateParticles();
         });
@@ -230,7 +231,7 @@ class _LoadingAnimationModalState extends State<LoadingAnimationModal>
                                       .radioBtnGradient, // Gradient for success circle
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.2),
+                                      color: Colors.black.withValues(alpha: 0.2),
                                       blurRadius: 10,
                                       spreadRadius: 2,
                                     ),
@@ -260,7 +261,7 @@ class _LoadingAnimationModalState extends State<LoadingAnimationModal>
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
                                       border: Border.all(
-                                        color: Colors.white.withOpacity(0.8),
+                                        color: Colors.white.withValues(alpha: 0.8),
                                         width: 3,
                                       ),
                                     ),
@@ -304,7 +305,7 @@ class _LoadingAnimationModalState extends State<LoadingAnimationModal>
                       style: GoogleFonts.poppins(
                         fontSize: 11.sp,
                         fontWeight: FontWeight.w400,
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                       ),
                     ),
                   ),
@@ -327,7 +328,7 @@ class ConfettiPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     for (var particle in particles) {
       final paint = Paint()
-        ..color = particle.color.withOpacity(particle.alpha)
+        ..color = particle.color.withValues(alpha: particle.alpha)
         ..style = PaintingStyle.fill;
 
       canvas.drawCircle(particle.position, particle.size / 2, paint);

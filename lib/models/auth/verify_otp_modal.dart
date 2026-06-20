@@ -57,6 +57,7 @@ class Data {
 
 class Customer {
   int? id;
+  String? name;
   String? phone;
   String? email;
   bool? profileCompleted;
@@ -64,6 +65,7 @@ class Customer {
 
   Customer({
     this.id,
+    this.name,
     this.phone,
     this.email,
     this.profileCompleted,
@@ -72,6 +74,7 @@ class Customer {
 
   Customer.fromJson(Map<String, dynamic> json) {
     id = json['id'];
+    name = json['name'];
     phone = json['phone'];
     email = json['email'];
     profileCompleted = json['profileCompleted'];
@@ -81,6 +84,7 @@ class Customer {
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['id'] = id;
+    data['name'] = name;
     data['phone'] = phone;
     data['email'] = email;
     data['profileCompleted'] = profileCompleted;

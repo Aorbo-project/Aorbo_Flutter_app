@@ -95,7 +95,7 @@ class CustomNetworkImage extends StatelessWidget {
             ).withShimmerAi(loading: true),
           ),
         ),
-        errorWidget: (context, url, error) => Image.asset(
+        errorBuilder: (context, url, error) => Image.asset(
           CommonImages.logo4,
           height: height ?? 10,
           width: width ?? 10,
@@ -141,7 +141,7 @@ class CustomNetworkImage extends StatelessWidget {
             ).withShimmerAi(loading: true),
           ),
         ),
-        errorWidget: (context, url, error) => Image.asset(
+        errorBuilder: (context, url, error) => Image.asset(
           CommonImages.logo4,
           height: height ?? 10,
           width: width ?? 10,
@@ -183,7 +183,7 @@ class CustomNetworkImage extends StatelessWidget {
                     memCacheWidth: width?.toInt(),
                     // Don't show progress for shadow to avoid flicker
                     progressIndicatorBuilder: (context, url, progress) => const SizedBox.shrink(),
-                    errorWidget: (context, url, error) => const SizedBox.shrink(),
+                    errorBuilder: (context, url, error) => const SizedBox.shrink(),
                   ),
                 ),
               ),
@@ -223,7 +223,7 @@ class CustomNetworkImage extends StatelessWidget {
                 ).withShimmerAi(loading: true),
               ),
             ),
-            errorWidget: (context, url, error) => Image.asset(
+            errorBuilder: (context, url, error) => Image.asset(
               CommonImages.logo4,
               height: height ?? 10,
               width: width ?? 10,

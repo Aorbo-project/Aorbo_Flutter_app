@@ -3,7 +3,6 @@ import 'package:sizer/sizer.dart';
 import '../utils/common_colors.dart';
 import '../utils/common_bottom_nav.dart';
 import '../utils/screen_constants.dart';
-import 'package:get/get.dart';
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS

@@ -1,4 +1,3 @@
-import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/common_images.dart';
 import 'package:arobo_app/utils/common_logics.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
@@ -202,7 +201,7 @@ class _LogoutScreenState extends State<LogoutScreen>
               final shimmerLogo = _splashDone
                   ? Shimmer.fromColors(
                       baseColor: Colors.black,
-                      highlightColor: Colors.white.withOpacity(0.6),
+                      highlightColor: Colors.white.withValues(alpha: 0.6),
                       period: const Duration(milliseconds: 3000),
                       direction: ShimmerDirection.ltr,
                       child: breathingLogo,
@@ -246,11 +245,11 @@ class _LogoutScreenState extends State<LogoutScreen>
                   width: 10.w,
                   height: 10.w,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.85),
+                    color: Colors.white.withValues(alpha: 0.85),
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
+                        color: Colors.black.withValues(alpha: 0.08),
                         blurRadius: 10,
                         offset: const Offset(0, 3),
                       ),
@@ -317,13 +316,13 @@ class _LogoutScreenState extends State<LogoutScreen>
                     end: Alignment.bottomRight,
                     colors: [
                       const Color(0xFFFEE2E2),
-                      const Color(0xFFFECACA).withOpacity(0.7),
+                      const Color(0xFFFECACA).withValues(alpha: 0.7),
                     ],
                   ),
                   boxShadow: [
                     BoxShadow(
                       color:
-                          const Color(0xFFDC2626).withOpacity(0.18),
+                          const Color(0xFFDC2626).withValues(alpha: 0.18),
                       blurRadius: 20,
                       spreadRadius: -2,
                       offset: const Offset(0, 8),
@@ -400,7 +399,7 @@ class _LogoutScreenState extends State<LogoutScreen>
                   boxShadow: [
                     BoxShadow(
                       color: const Color(0xFFDC2626)
-                          .withOpacity(_logoutPressed ? 0.2 : 0.4),
+                          .withValues(alpha: _logoutPressed ? 0.2 : 0.4),
                       blurRadius: _logoutPressed ? 8 : 18,
                       spreadRadius: -2,
                       offset: Offset(0, _logoutPressed ? 2 : 8),

@@ -13,6 +13,7 @@ import '../models/auth/verify_otp_modal.dart';
 import '../repository/api_result.dart';
 import '../repository/network_url.dart';
 import '../repository/repository.dart';
+// RateLimitException is defined in repository.dart — no separate import needed
 import '../utils/auth_utils.dart';
 import '../utils/custom_snackbar.dart';
 import '../widgets/logger.dart';
@@ -25,6 +26,8 @@ class AuthController extends GetxController {
   RxBool isLoading = false.obs;
   RxBool isProfileLoading = false.obs;
   RxBool isPhoneValid = false.obs;
+  // Populated by resendOtp when server returns 429 with wait_seconds
+  RxInt resendWaitSeconds = 0.obs;
 
   final validaVersionObserver = const ApiResult<ValidateVersionResponseModel>.init().obs;
 
@@ -75,7 +78,10 @@ class AuthController extends GetxController {
   }
 
   // Resend OTP to the same phone. Shows a snack bar on success/failure.
+  // Returns true on success. On RateLimitException, sets [resendWaitSeconds]
+  // so OTPController can sync its countdown timer to the server's value.
   Future<bool> resendOtp(String phone) async {
+    resendWaitSeconds.value = 0;
     try {
       final body = json.encode({'phone': phone});
       final res = await repository.postApiCall(url: NetworkUrl.resendOtpPath, body: body);
@@ -86,8 +92,13 @@ class AuthController extends GetxController {
       CustomSnackBar.show(Get.context!,
           message: res?['message'] ?? 'Failed to resend OTP. Please try again.');
       return false;
+    } on RateLimitException catch (e) {
+      resendWaitSeconds.value = e.waitSeconds;
+      CustomSnackBar.show(Get.context!, message: e.message);
+      return false;
     } catch (e) {
-      CustomSnackBar.show(Get.context!, message: 'Failed to resend OTP. Please try again.');
+      final msg = e.toString().replaceFirst('Exception: ', '');
+      CustomSnackBar.show(Get.context!, message: msg.isNotEmpty ? msg : 'Failed to resend OTP. Please try again.');
       return false;
     }
   }
@@ -107,9 +118,13 @@ class AuthController extends GetxController {
             CustomSnackBar.show(Get.context!, message: 'Invalid token received');
             return false;
           }
+          final customer = verifyOtpModal.value.data?.customer;
           await sp!.putString(SpUtil.accessToken, token);
           await sp!.putBool(SpUtil.isLoggedIn, true);
-          await sp!.putInt(SpUtil.userID, verifyOtpModal.value.data?.customer?.id ?? 0);
+          await sp!.putInt(SpUtil.userID, customer?.id ?? 0);
+          // Store profile completion state so the app can prompt new/incomplete users
+          await sp!.putBool(SpUtil.profileCompleted, customer?.profileCompleted ?? false);
+          await sp!.putBool(SpUtil.isNewCustomer, customer?.isNewCustomer ?? false);
           registerFcmToken();
           return true;
         } catch (parseError) {
@@ -118,13 +133,19 @@ class AuthController extends GetxController {
           return false;
         }
       }
+      // Surface backend error message (includes "X attempts remaining" and 429 messages)
       CustomSnackBar.show(Get.context!,
           message: res?['message'] ?? 'OTP verification failed');
+      return false;
+    } on RateLimitException catch (e) {
+      isLoading.value = false;
+      CustomSnackBar.show(Get.context!, message: e.message);
       return false;
     } catch (e) {
       isLoading.value = false;
       logger.e('verifyOtp error: $e');
-      CustomSnackBar.show(Get.context!, message: 'Verification failed. Please try again.');
+      final msg = e.toString().replaceFirst('Exception: ', '');
+      CustomSnackBar.show(Get.context!, message: msg.isNotEmpty ? msg : 'Verification failed. Please try again.');
       return false;
     }
   }

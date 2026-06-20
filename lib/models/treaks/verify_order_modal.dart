@@ -18,27 +18,27 @@ class VerifyOrderModal {
   VerifyOrderModal.fromJson(Map<String, dynamic> json) {
     success = json['success'];
     message = json['message'];
-    data = json['data'] != null ? new Data.fromJson(json['data']) : null;
+    data = json['data'] != null ? Data.fromJson(json['data']) : null;
     payment = json['payment'] != null
-        ? new Payment.fromJson(json['payment'])
+        ? Payment.fromJson(json['payment'])
         : null;
     paymentDetails = json['paymentDetails'] != null
-        ? new PaymentDetails.fromJson(json['paymentDetails'])
+        ? PaymentDetails.fromJson(json['paymentDetails'])
         : null;
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['success'] = this.success;
-    data['message'] = this.message;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['success'] = success;
+    data['message'] = message;
     if (this.data != null) {
       data['data'] = this.data!.toJson();
     }
-    if (this.payment != null) {
-      data['payment'] = this.payment!.toJson();
+    if (payment != null) {
+      data['payment'] = payment!.toJson();
     }
-    if (this.paymentDetails != null) {
-      data['paymentDetails'] = this.paymentDetails!.toJson();
+    if (paymentDetails != null) {
+      data['paymentDetails'] = paymentDetails!.toJson();
     }
     return data;
   }
@@ -122,65 +122,65 @@ class Data {
     createdAt = json['createdAt'];
     updatedAt = json['updatedAt'];
     userId = json['user_id'];
-    trek = json['trek'] != null ? new Trek.fromJson(json['trek']) : null;
+    trek = json['trek'] != null ? Trek.fromJson(json['trek']) : null;
     vendor = json['vendor'] != null
-        ? new Vendor.fromJson(json['vendor'])
+        ? Vendor.fromJson(json['vendor'])
         : null;
-    batch = json['batch'] != null ? new Batch.fromJson(json['batch']) : null;
-    city = json['city'] != null ? new City.fromJson(json['city']) : null;
+    batch = json['batch'] != null ? Batch.fromJson(json['batch']) : null;
+    city = json['city'] != null ? City.fromJson(json['city']) : null;
     if (json['travelers'] != null) {
       travelers = <VerifyTrekTraveler>[];
       json['travelers'].forEach((v) {
-        travelers!.add(new VerifyTrekTraveler.fromJson(v));
+        travelers!.add(VerifyTrekTraveler.fromJson(v));
       });
     }
     if (json['payments'] != null) {
       payments = <Payments>[];
       json['payments'].forEach((v) {
-        payments!.add(new Payments.fromJson(v));
+        payments!.add(Payments.fromJson(v));
       });
     }
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['id'] = this.id;
-    data['customer_id'] = this.customerId;
-    data['trek_id'] = this.trekId;
-    data['vendor_id'] = this.vendorId;
-    data['batch_id'] = this.batchId;
-    data['coupon_id'] = this.couponId;
-    data['total_travelers'] = this.totalTravelers;
-    data['total_amount'] = this.totalAmount;
-    data['discount_amount'] = this.discountAmount;
-    data['final_amount'] = this.finalAmount;
-    data['payment_status'] = this.paymentStatus;
-    data['status'] = this.status;
-    data['booking_date'] = this.bookingDate;
-    data['special_requests'] = this.specialRequests;
-    data['booking_source'] = this.bookingSource;
-    data['primary_contact_traveler_id'] = this.primaryContactTravelerId;
-    data['city_id'] = this.cityId;
-    data['createdAt'] = this.createdAt;
-    data['updatedAt'] = this.updatedAt;
-    data['user_id'] = this.userId;
-    if (this.trek != null) {
-      data['trek'] = this.trek!.toJson();
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['id'] = id;
+    data['customer_id'] = customerId;
+    data['trek_id'] = trekId;
+    data['vendor_id'] = vendorId;
+    data['batch_id'] = batchId;
+    data['coupon_id'] = couponId;
+    data['total_travelers'] = totalTravelers;
+    data['total_amount'] = totalAmount;
+    data['discount_amount'] = discountAmount;
+    data['final_amount'] = finalAmount;
+    data['payment_status'] = paymentStatus;
+    data['status'] = status;
+    data['booking_date'] = bookingDate;
+    data['special_requests'] = specialRequests;
+    data['booking_source'] = bookingSource;
+    data['primary_contact_traveler_id'] = primaryContactTravelerId;
+    data['city_id'] = cityId;
+    data['createdAt'] = createdAt;
+    data['updatedAt'] = updatedAt;
+    data['user_id'] = userId;
+    if (trek != null) {
+      data['trek'] = trek!.toJson();
     }
-    if (this.vendor != null) {
-      data['vendor'] = this.vendor!.toJson();
+    if (vendor != null) {
+      data['vendor'] = vendor!.toJson();
     }
-    if (this.batch != null) {
-      data['batch'] = this.batch!.toJson();
+    if (batch != null) {
+      data['batch'] = batch!.toJson();
     }
-    if (this.city != null) {
-      data['city'] = this.city!.toJson();
+    if (city != null) {
+      data['city'] = city!.toJson();
     }
-    if (this.travelers != null) {
-      data['travelers'] = this.travelers!.map((v) => v.toJson()).toList();
+    if (travelers != null) {
+      data['travelers'] = travelers!.map((v) => v.toJson()).toList();
     }
-    if (this.payments != null) {
-      data['payments'] = this.payments!.map((v) => v.toJson()).toList();
+    if (payments != null) {
+      data['payments'] = payments!.map((v) => v.toJson()).toList();
     }
     return data;
   }
@@ -291,46 +291,46 @@ class Trek {
     createdAt = json['createdAt'];
     updatedAt = json['updatedAt'];
     destinationData = json['destinationData'] != null
-        ? new DestinationData.fromJson(json['destinationData'])
+        ? DestinationData.fromJson(json['destinationData'])
         : null;
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['city_ids'] = this.cityIds;
-    data['inclusions'] = this.inclusions;
-    data['exclusions'] = this.exclusions;
-    data['activities'] = this.activities;
-    data['id'] = this.id;
-    data['mtr_id'] = this.mtrId;
-    data['title'] = this.title;
-    data['description'] = this.description;
-    data['vendor_id'] = this.vendorId;
-    data['destination_id'] = this.destinationId;
-    data['captain_id'] = this.captainId;
-    data['duration'] = this.duration;
-    data['duration_days'] = this.durationDays;
-    data['duration_nights'] = this.durationNights;
-    data['base_price'] = this.basePrice;
-    data['max_participants'] = this.maxParticipants;
-    data['trekking_rules'] = this.trekkingRules;
-    data['emergency_protocols'] = this.emergencyProtocols;
-    data['organizer_notes'] = this.organizerNotes;
-    data['status'] = this.status;
-    data['discount_value'] = this.discountValue;
-    data['discount_type'] = this.discountType;
-    data['has_discount'] = this.hasDiscount;
-    data['cancellation_policy_id'] = this.cancellationPolicyId;
-    data['badge_id'] = this.badgeId;
-    data['has_been_edited'] = this.hasBeenEdited;
-    data['safety_security_count'] = this.safetySecurityCount;
-    data['organizer_manner_count'] = this.organizerMannerCount;
-    data['trek_planning_count'] = this.trekPlanningCount;
-    data['women_safety_count'] = this.womenSafetyCount;
-    data['createdAt'] = this.createdAt;
-    data['updatedAt'] = this.updatedAt;
-    if (this.destinationData != null) {
-      data['destinationData'] = this.destinationData!.toJson();
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['city_ids'] = cityIds;
+    data['inclusions'] = inclusions;
+    data['exclusions'] = exclusions;
+    data['activities'] = activities;
+    data['id'] = id;
+    data['mtr_id'] = mtrId;
+    data['title'] = title;
+    data['description'] = description;
+    data['vendor_id'] = vendorId;
+    data['destination_id'] = destinationId;
+    data['captain_id'] = captainId;
+    data['duration'] = duration;
+    data['duration_days'] = durationDays;
+    data['duration_nights'] = durationNights;
+    data['base_price'] = basePrice;
+    data['max_participants'] = maxParticipants;
+    data['trekking_rules'] = trekkingRules;
+    data['emergency_protocols'] = emergencyProtocols;
+    data['organizer_notes'] = organizerNotes;
+    data['status'] = status;
+    data['discount_value'] = discountValue;
+    data['discount_type'] = discountType;
+    data['has_discount'] = hasDiscount;
+    data['cancellation_policy_id'] = cancellationPolicyId;
+    data['badge_id'] = badgeId;
+    data['has_been_edited'] = hasBeenEdited;
+    data['safety_security_count'] = safetySecurityCount;
+    data['organizer_manner_count'] = organizerMannerCount;
+    data['trek_planning_count'] = trekPlanningCount;
+    data['women_safety_count'] = womenSafetyCount;
+    data['createdAt'] = createdAt;
+    data['updatedAt'] = updatedAt;
+    if (destinationData != null) {
+      data['destinationData'] = destinationData!.toJson();
     }
     return data;
   }
@@ -366,14 +366,14 @@ class DestinationData {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['id'] = this.id;
-    data['name'] = this.name;
-    data['state'] = this.state;
-    data['isPopular'] = this.isPopular;
-    data['status'] = this.status;
-    data['created_at'] = this.createdAt;
-    data['updated_at'] = this.updatedAt;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['id'] = id;
+    data['name'] = name;
+    data['state'] = state;
+    data['isPopular'] = isPopular;
+    data['status'] = status;
+    data['created_at'] = createdAt;
+    data['updated_at'] = updatedAt;
     return data;
   }
 }
@@ -447,7 +447,7 @@ class Vendor {
     id = json['id'];
     userId = json['user_id'];
     companyInfo = json['company_info'] != null
-        ? new CompanyInfo.fromJson(json['company_info'])
+        ? CompanyInfo.fromJson(json['company_info'])
         : null;
     status = json['status'];
     address = json['address'];
@@ -479,39 +479,39 @@ class Vendor {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['id'] = this.id;
-    data['user_id'] = this.userId;
-    if (this.companyInfo != null) {
-      data['company_info'] = this.companyInfo!.toJson();
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['id'] = id;
+    data['user_id'] = userId;
+    if (companyInfo != null) {
+      data['company_info'] = companyInfo!.toJson();
     }
-    data['status'] = this.status;
-    data['address'] = this.address;
-    data['business_name'] = this.businessName;
-    data['business_type'] = this.businessType;
-    data['business_entity'] = this.businessEntity;
-    data['business_address'] = this.businessAddress;
-    data['gstin'] = this.gstin;
-    data['account_holder_name'] = this.accountHolderName;
-    data['bank_name'] = this.bankName;
-    data['ifsc_code'] = this.ifscCode;
-    data['account_number'] = this.accountNumber;
-    data['pan_card_path'] = this.panCardPath;
-    data['id_proof_path'] = this.idProofPath;
-    data['cancelled_cheque_path'] = this.cancelledChequePath;
-    data['gstin_certificate_path'] = this.gstinCertificatePath;
-    data['msme_certificate_path'] = this.msmeCertificatePath;
-    data['shop_establishment_path'] = this.shopEstablishmentPath;
-    data['pan_card_verified'] = this.panCardVerified;
-    data['id_proof_verified'] = this.idProofVerified;
-    data['cancelled_cheque_verified'] = this.cancelledChequeVerified;
-    data['gstin_certificate_verified'] = this.gstinCertificateVerified;
-    data['msme_certificate_verified'] = this.msmeCertificateVerified;
-    data['shop_establishment_verified'] = this.shopEstablishmentVerified;
-    data['kyc_status'] = this.kycStatus;
-    data['kyc_step'] = this.kycStep;
-    data['createdAt'] = this.createdAt;
-    data['updatedAt'] = this.updatedAt;
+    data['status'] = status;
+    data['address'] = address;
+    data['business_name'] = businessName;
+    data['business_type'] = businessType;
+    data['business_entity'] = businessEntity;
+    data['business_address'] = businessAddress;
+    data['gstin'] = gstin;
+    data['account_holder_name'] = accountHolderName;
+    data['bank_name'] = bankName;
+    data['ifsc_code'] = ifscCode;
+    data['account_number'] = accountNumber;
+    data['pan_card_path'] = panCardPath;
+    data['id_proof_path'] = idProofPath;
+    data['cancelled_cheque_path'] = cancelledChequePath;
+    data['gstin_certificate_path'] = gstinCertificatePath;
+    data['msme_certificate_path'] = msmeCertificatePath;
+    data['shop_establishment_path'] = shopEstablishmentPath;
+    data['pan_card_verified'] = panCardVerified;
+    data['id_proof_verified'] = idProofVerified;
+    data['cancelled_cheque_verified'] = cancelledChequeVerified;
+    data['gstin_certificate_verified'] = gstinCertificateVerified;
+    data['msme_certificate_verified'] = msmeCertificateVerified;
+    data['shop_establishment_verified'] = shopEstablishmentVerified;
+    data['kyc_status'] = kycStatus;
+    data['kyc_step'] = kycStep;
+    data['createdAt'] = createdAt;
+    data['updatedAt'] = updatedAt;
     return data;
   }
 }
@@ -558,18 +558,18 @@ class CompanyInfo {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['company_name'] = this.companyName;
-    data['contact_person'] = this.contactPerson;
-    data['phone'] = this.phone;
-    data['email'] = this.email;
-    data['address'] = this.address;
-    data['gst_number'] = this.gstNumber;
-    data['pan_number'] = this.panNumber;
-    data['bank_name'] = this.bankName;
-    data['account_number'] = this.accountNumber;
-    data['ifsc_code'] = this.ifscCode;
-    data['commission_rate'] = this.commissionRate;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['company_name'] = companyName;
+    data['contact_person'] = contactPerson;
+    data['phone'] = phone;
+    data['email'] = email;
+    data['address'] = address;
+    data['gst_number'] = gstNumber;
+    data['pan_number'] = panNumber;
+    data['bank_name'] = bankName;
+    data['account_number'] = accountNumber;
+    data['ifsc_code'] = ifscCode;
+    data['commission_rate'] = commissionRate;
     return data;
   }
 }
@@ -616,18 +616,18 @@ class Batch {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['id'] = this.id;
-    data['tbr_id'] = this.tbrId;
-    data['trek_id'] = this.trekId;
-    data['start_date'] = this.startDate;
-    data['end_date'] = this.endDate;
-    data['capacity'] = this.capacity;
-    data['booked_slots'] = this.bookedSlots;
-    data['available_slots'] = this.availableSlots;
-    data['captain_id'] = this.captainId;
-    data['createdAt'] = this.createdAt;
-    data['updatedAt'] = this.updatedAt;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['id'] = id;
+    data['tbr_id'] = tbrId;
+    data['trek_id'] = trekId;
+    data['start_date'] = startDate;
+    data['end_date'] = endDate;
+    data['capacity'] = capacity;
+    data['booked_slots'] = bookedSlots;
+    data['available_slots'] = availableSlots;
+    data['captain_id'] = captainId;
+    data['createdAt'] = createdAt;
+    data['updatedAt'] = updatedAt;
     return data;
   }
 }
@@ -659,13 +659,13 @@ class City {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['id'] = this.id;
-    data['cityName'] = this.cityName;
-    data['isPopular'] = this.isPopular;
-    data['stateId'] = this.stateId;
-    data['created_at'] = this.createdAt;
-    data['updated_at'] = this.updatedAt;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['id'] = id;
+    data['cityName'] = cityName;
+    data['isPopular'] = isPopular;
+    data['stateId'] = stateId;
+    data['created_at'] = createdAt;
+    data['updated_at'] = updatedAt;
     return data;
   }
 }
@@ -709,24 +709,24 @@ class VerifyTrekTraveler {
     createdAt = json['createdAt'];
     updatedAt = json['updatedAt'];
     traveler = json['traveler'] != null
-        ? new Traveler.fromJson(json['traveler'])
+        ? Traveler.fromJson(json['traveler'])
         : null;
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['id'] = this.id;
-    data['booking_id'] = this.bookingId;
-    data['traveler_id'] = this.travelerId;
-    data['is_primary'] = this.isPrimary;
-    data['special_requirements'] = this.specialRequirements;
-    data['accommodation_preference'] = this.accommodationPreference;
-    data['meal_preference'] = this.mealPreference;
-    data['status'] = this.status;
-    data['createdAt'] = this.createdAt;
-    data['updatedAt'] = this.updatedAt;
-    if (this.traveler != null) {
-      data['traveler'] = this.traveler!.toJson();
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['id'] = id;
+    data['booking_id'] = bookingId;
+    data['traveler_id'] = travelerId;
+    data['is_primary'] = isPrimary;
+    data['special_requirements'] = specialRequirements;
+    data['accommodation_preference'] = accommodationPreference;
+    data['meal_preference'] = mealPreference;
+    data['status'] = status;
+    data['createdAt'] = createdAt;
+    data['updatedAt'] = updatedAt;
+    if (traveler != null) {
+      data['traveler'] = traveler!.toJson();
     }
     return data;
   }
@@ -766,15 +766,15 @@ class Payments {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['id'] = this.id;
-    data['booking_id'] = this.bookingId;
-    data['amount'] = this.amount;
-    data['payment_method'] = this.paymentMethod;
-    data['transaction_id'] = this.transactionId;
-    data['status'] = this.status;
-    data['createdAt'] = this.createdAt;
-    data['updatedAt'] = this.updatedAt;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['id'] = id;
+    data['booking_id'] = bookingId;
+    data['amount'] = amount;
+    data['payment_method'] = paymentMethod;
+    data['transaction_id'] = transactionId;
+    data['status'] = status;
+    data['createdAt'] = createdAt;
+    data['updatedAt'] = updatedAt;
     return data;
   }
 }
@@ -795,11 +795,11 @@ class Payment {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['orderId'] = this.orderId;
-    data['paymentId'] = this.paymentId;
-    data['amount'] = this.amount;
-    data['status'] = this.status;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['orderId'] = orderId;
+    data['paymentId'] = paymentId;
+    data['amount'] = amount;
+    data['status'] = status;
     return data;
   }
 }
@@ -843,15 +843,15 @@ class PaymentDetails {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['isPartialPayment'] = this.isPartialPayment;
-    data['paymentStatus'] = this.paymentStatus;
-    data['totalAmount'] = this.totalAmount;
-    data['paidAmount'] = this.paidAmount;
-    data['remainingAmount'] = this.remainingAmount;
-    data['advanceAmountPerTraveler'] = this.advanceAmountPerTraveler;
-    data['totalAdvanceAmount'] = this.totalAdvanceAmount;
-    data['participantCount'] = this.participantCount;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['isPartialPayment'] = isPartialPayment;
+    data['paymentStatus'] = paymentStatus;
+    data['totalAmount'] = totalAmount;
+    data['paidAmount'] = paidAmount;
+    data['remainingAmount'] = remainingAmount;
+    data['advanceAmountPerTraveler'] = advanceAmountPerTraveler;
+    data['totalAdvanceAmount'] = totalAdvanceAmount;
+    data['participantCount'] = participantCount;
     return data;
   }
 }

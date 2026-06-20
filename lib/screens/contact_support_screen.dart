@@ -289,7 +289,7 @@ class _ContactSupportScreenState extends State<ContactSupportScreen>
         borderRadius: BorderRadius.circular(5.w),
         boxShadow: [
           BoxShadow(
-            color: CommonColors.blackColor.withOpacity(0.08),
+            color: CommonColors.blackColor.withValues(alpha: 0.08),
             blurRadius: 10,
             spreadRadius: 1,
             offset: const Offset(0, 2),
@@ -370,7 +370,7 @@ class _ContactSupportScreenState extends State<ContactSupportScreen>
         border: Border.all(color: _C.divider),
         boxShadow: [
           BoxShadow(
-            color: CommonColors.blackColor.withOpacity(0.05),
+            color: CommonColors.blackColor.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -477,8 +477,8 @@ class _ContactSupportScreenState extends State<ContactSupportScreen>
               boxShadow: [
                 BoxShadow(
                   color: isSelected
-                      ? _C.ink.withOpacity(0.15)
-                      : CommonColors.blackColor.withOpacity(0.04),
+                      ? _C.ink.withValues(alpha: 0.15)
+                      : CommonColors.blackColor.withValues(alpha: 0.04),
                   blurRadius: isSelected ? 12 : 6,
                   offset: const Offset(0, 3),
                 ),
@@ -524,7 +524,7 @@ class _ContactSupportScreenState extends State<ContactSupportScreen>
         border: Border.all(color: _C.divider),
         boxShadow: [
           BoxShadow(
-            color: CommonColors.blackColor.withOpacity(0.05),
+            color: CommonColors.blackColor.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -688,7 +688,7 @@ class _ContactSupportScreenState extends State<ContactSupportScreen>
       decoration: BoxDecoration(
         color: _C.tealSoft,
         borderRadius: BorderRadius.circular(3.w),
-        border: Border.all(color: _C.teal.withOpacity(0.2)),
+        border: Border.all(color: _C.teal.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [

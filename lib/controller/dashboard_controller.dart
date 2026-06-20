@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:arobo_app/models/know_more_data.dart';
 import 'package:arobo_app/models/seasonal_forecast_data.dart';
@@ -10,7 +9,6 @@ import 'package:flutter/material.dart';
 
 import 'package:arobo_app/models/dashboard/trek_modal.dart';
 import 'package:arobo_app/models/user_profile/state_list_model.dart';
-import 'package:arobo_app/models/refund/refund_detail_modal.dart';
 import 'package:arobo_app/models/dispute/dispute_detail_modal.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -68,7 +66,7 @@ class DashboardController extends GetxController {
   Timer? _calendarDebounceTimer;
 
   // Track if initial fetch has been attempted
-  bool _hasAttemptedInitialCalendarFetch = false;
+  final bool _hasAttemptedInitialCalendarFetch = false;
 
   //region Booking history
   Rx<BookingHistoryData?> bookingHistoryModal = BookingHistoryData().obs;
@@ -667,7 +665,7 @@ class DashboardController extends GetxController {
           bookingDetailsObserver.value = ApiResult.success(body);
           bookingHistoryModal.value = body.data;
         } else {
-          bookingDetailsObserver.value = ApiResult.error(response['message'] ?? 'Failed to load dispute details');;
+          bookingDetailsObserver.value = ApiResult.error(response['message'] ?? 'Failed to load dispute details');
         }
       }
     } catch (e) {

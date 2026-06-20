@@ -105,7 +105,7 @@ class _FilterModalState extends State<FilterModal> {
                   color: CommonColors.whiteColor,
                   boxShadow: [
                     BoxShadow(
-                      color: CommonColors.blackColor.withOpacity(0.05),
+                      color: CommonColors.blackColor.withValues(alpha: 0.05),
                       blurRadius: 1.w,
                       offset: const Offset(0, 2),
                     ),

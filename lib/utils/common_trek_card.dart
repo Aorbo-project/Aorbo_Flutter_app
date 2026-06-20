@@ -1,7 +1,6 @@
 import 'package:arobo_app/repository/repository.dart';
 import 'package:arobo_app/utils/auth_utils.dart';
 import 'package:arobo_app/utils/common_colors.dart';
-import 'package:arobo_app/utils/common_images.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
@@ -199,7 +198,7 @@ class CommonTrekCard extends StatelessWidget {
           border: Border.all(color: _TkC.divider, width: 1),
           boxShadow: [
             BoxShadow(
-              color: CommonColors.blackColor.withOpacity(0.07),
+              color: CommonColors.blackColor.withValues(alpha: 0.07),
               offset: const Offset(0, 3),
               blurRadius: 10,
             ),
@@ -555,7 +554,7 @@ class CommonTrekCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(1.5.w),
         border: Border.all(
           color: (isFlexible ? _TkC.policyFlexFg : _TkC.policyStdFg)
-              .withOpacity(0.3),
+              .withValues(alpha: 0.3),
           width: 1,
         ),
       ),

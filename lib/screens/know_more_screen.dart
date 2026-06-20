@@ -29,7 +29,7 @@ class _KnowMoreScreenState extends State<KnowMoreScreen> {
   @override
   Widget build(BuildContext context) {
 
-    final _dashboardC  = Get.find<DashboardController>();
+    final dashboardC  = Get.find<DashboardController>();
 
     return Scaffold(
       backgroundColor: CommonColors.offWhiteColor2,
@@ -50,7 +50,7 @@ class _KnowMoreScreenState extends State<KnowMoreScreen> {
         ),
       ),
       body: Obx(() {
-         List<KnowMoreData>? knowMoreCardsData = _dashboardC.whatsNewObserver.value.maybeWhen(success: (whatsNewResponse) {
+         List<KnowMoreData>? knowMoreCardsData = dashboardC.whatsNewObserver.value.maybeWhen(success: (whatsNewResponse) {
            return [
              KnowMoreData(title:"Variety of Treks",subtitle: "From Serene trails to thrilling climbs, find treksthat match your vibes !",hasKnowMore: false,imagePath: "https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/knowmore1.png?alt=media&token=367dcaa7-f0f6-4bb3-9d73-a67489aa77a8",textColour: "#000000",gradient: ["#F7EB68","#FFEF3E","#FFEF3E"]),
              KnowMoreData(title:"Countless Organizers",subtitle: "Choose from an extensive  network of trusted trek  organizers, All in one place !",hasKnowMore: false,imagePath: "https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/knowmore1.png?alt=media&token=367dcaa7-f0f6-4bb3-9d73-a67489aa77a8",textColour: "#FFFFFF",gradient: ["#FFFFFF","#B40000","#B40000"])

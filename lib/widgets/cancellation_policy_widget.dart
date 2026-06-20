@@ -112,7 +112,7 @@ class CancellationPolicyWidget extends StatelessWidget {
             ],
           ),
           if(row.hours != 0) Text(
-            "Before " + AuthUtils.formatDateTimeWithHourDecrease(departureDate ?? "",row.hours),
+            "Before ${AuthUtils.formatDateTimeWithHourDecrease(departureDate ?? "",row.hours)}",
             style: const TextStyle(fontSize: 12, height: 1.4),
           )
         ],

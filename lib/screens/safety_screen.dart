@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 import '../utils/common_images.dart';
 import '../utils/common_safety_card.dart';
-import '../utils/common_colors.dart';
 import '../utils/screen_constants.dart';
 import '../models/emergency_contact_model.dart';
 import '../repository/repository.dart';
@@ -66,8 +65,8 @@ class _SafetyScreenState extends State<SafetyScreen>
       'subtitle':
           "AoRbo connects you with trusted trekking partners, experienced guides & safety equipment.",
       'gradientColors': [
-        const Color(0xFF6C3DE0).withOpacity(0.75),
-        const Color(0xFFE0409A).withOpacity(0.75),
+        const Color(0xFF6C3DE0).withValues(alpha: 0.75),
+        const Color(0xFFE0409A).withValues(alpha: 0.75),
       ],
       'backgroundImage': CommonImages.safety1,
     },
@@ -76,8 +75,8 @@ class _SafetyScreenState extends State<SafetyScreen>
       'subtitle':
           "Our certified guides and well-maintained equipment ensure your safety throughout the journey.",
       'gradientColors': [
-        const Color(0xFF0D47A1).withOpacity(0.78),
-        const Color(0xFF00897B).withOpacity(0.78),
+        const Color(0xFF0D47A1).withValues(alpha: 0.78),
+        const Color(0xFF00897B).withValues(alpha: 0.78),
       ],
       'backgroundImage': CommonImages.safety2,
     },
@@ -86,8 +85,8 @@ class _SafetyScreenState extends State<SafetyScreen>
       'subtitle':
           "Round-the-clock assistance and emergency support available throughout your trek.",
       'gradientColors': [
-        const Color(0xFFBF360C).withOpacity(0.78),
-        const Color(0xFFF9A825).withOpacity(0.78),
+        const Color(0xFFBF360C).withValues(alpha: 0.78),
+        const Color(0xFFF9A825).withValues(alpha: 0.78),
       ],
       'backgroundImage': CommonImages.safety3,
     },
@@ -214,10 +213,10 @@ class _SafetyScreenState extends State<SafetyScreen>
         decoration: BoxDecoration(
           color: _C.cardBg,
           borderRadius: BorderRadius.circular(3.w),
-          border: Border.all(color: _C.teal.withOpacity(0.18)),
+          border: Border.all(color: _C.teal.withValues(alpha: 0.18)),
           boxShadow: [
             BoxShadow(
-              color: _C.teal.withOpacity(0.06),
+              color: _C.teal.withValues(alpha: 0.06),
               blurRadius: 10,
               spreadRadius: 1,
               offset: const Offset(0, 2),
@@ -463,7 +462,7 @@ class _SafetyScreenState extends State<SafetyScreen>
                 color: _C.tealSoft,
                 borderRadius: BorderRadius.circular(3.w),
                 border: Border.all(
-                  color: _C.teal.withOpacity(0.2),
+                  color: _C.teal.withValues(alpha: 0.2),
                   width: 1.5,
                 ),
               ),
@@ -490,7 +489,7 @@ class _SafetyScreenState extends State<SafetyScreen>
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontSize: FontSize.s9,
-                      color: _C.teal.withOpacity(0.7),
+                      color: _C.teal.withValues(alpha: 0.7),
                     ),
                   ),
                 ],
@@ -522,12 +521,12 @@ class _SafetyScreenState extends State<SafetyScreen>
                 color: _C.cardBg,
                 borderRadius: BorderRadius.circular(3.w),
                 border: Border.all(
-                  color: _C.teal.withOpacity(0.25),
+                  color: _C.teal.withValues(alpha: 0.25),
                   width: 1.5,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: _C.teal.withOpacity(0.06),
+                    color: _C.teal.withValues(alpha: 0.06),
                     blurRadius: 10,
                     spreadRadius: 1,
                     offset: const Offset(0, 2),
@@ -731,7 +730,7 @@ class _SafetyScreenState extends State<SafetyScreen>
                           borderRadius: BorderRadius.circular(5.w),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.08),
+                              color: Colors.black.withValues(alpha: 0.08),
                               blurRadius: 10,
                               spreadRadius: 1,
                               offset: const Offset(0, 2),
