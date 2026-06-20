@@ -12,11 +12,11 @@ import 'package:get/get.dart';
 import '../utils/app_theme.dart';
 
 class SeasonalForecastScreen extends StatelessWidget {
-  const SeasonalForecastScreen({Key? key}) : super(key: key);
+  const SeasonalForecastScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final _dashboardC = Get.find<DashboardController>();
+    final dashboardC = Get.find<DashboardController>();
 
     return Scaffold(
       backgroundColor: CommonColors.offWhiteColor2,
@@ -35,11 +35,11 @@ class SeasonalForecastScreen extends StatelessWidget {
         ),
       ),
       body: Obx(() {
-        final seasonalForcastLoading = _dashboardC
+        final seasonalForcastLoading = dashboardC
             .seasonalForcastObserver.value
             .maybeWhen(loading: (data) => true, orElse: () => false);
 
-        List<SeasonalForecastData>? seasonalForecastData = _dashboardC
+        List<SeasonalForecastData>? seasonalForecastData = dashboardC
             .seasonalForcastObserver.value
             .maybeWhen(
           success: (seasonalForcastResponse) {

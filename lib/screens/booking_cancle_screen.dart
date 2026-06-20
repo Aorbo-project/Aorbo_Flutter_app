@@ -1,7 +1,5 @@
 import 'package:arobo_app/freezed_models/booking/cancellation_data_model.dart';
 import 'package:arobo_app/screens/booking_cancellation_success_screen.dart';
-import 'package:arobo_app/utils/common_btn.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
@@ -351,7 +349,7 @@ final bool busy =
                 ? []
                 : [
                     BoxShadow(
-                      color: _brand.withOpacity(0.35),
+                      color: _brand.withValues(alpha: 0.35),
                       blurRadius: 14,
                       offset: const Offset(0, 5),
                     ),
@@ -505,12 +503,12 @@ final bool busy =
             color: _redSoft,
             borderRadius: BorderRadius.circular(4.w),
             border: Border.all(
-              color: _red.withOpacity(0.18 + t * 0.12),
+              color: _red.withValues(alpha: 0.18 + t * 0.12),
               width: 1.2,
             ),
             boxShadow: [
               BoxShadow(
-                color: _red.withOpacity(0.06 + t * 0.06),
+                color: _red.withValues(alpha: 0.06 + t * 0.06),
                 blurRadius: 14 + t * 8,
                 offset: const Offset(0, 4),
               ),
@@ -531,7 +529,7 @@ final bool busy =
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: _red.withOpacity(0.12),
+                color: _red.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
               child: Icon(Icons.warning_amber_rounded, color: _red, size: 5.w),
@@ -610,7 +608,7 @@ final bool busy =
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(10.w),
-        border: Border.all(color: color.withOpacity(0.25)),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -721,9 +719,9 @@ final bool busy =
           //   child: Container(
           //     padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.h),
           //     decoration: BoxDecoration(
-          //       color: _brand.withOpacity(0.06),
+          //       color: _brand.withValues(alpha: 0.06),
           //       borderRadius: BorderRadius.circular(2.w),
-          //       border: Border.all(color: _brand.withOpacity(0.15)),
+          //       border: Border.all(color: _brand.withValues(alpha: 0.15)),
           //     ),
           //     child: Row(
           //       mainAxisAlignment: MainAxisAlignment.center,
@@ -825,7 +823,7 @@ final bool busy =
             width: 8.w,
             height: 8.w,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.10),
+              color: color.withValues(alpha: 0.10),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: 4.w),
@@ -876,19 +874,19 @@ final bool busy =
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                _brand.withOpacity(0.10 + t * 0.05),
-                _brand.withOpacity(0.04 + t * 0.03),
+                _brand.withValues(alpha: 0.10 + t * 0.05),
+                _brand.withValues(alpha: 0.04 + t * 0.03),
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(4.w),
             border: Border.all(
-              color: _brand.withOpacity(0.15 + t * 0.08),
+              color: _brand.withValues(alpha: 0.15 + t * 0.08),
             ),
             boxShadow: [
               BoxShadow(
-                color: _brand.withOpacity(0.06 + t * 0.08),
+                color: _brand.withValues(alpha: 0.06 + t * 0.08),
                 blurRadius: 12 + t * 10,
                 offset: const Offset(0, 3),
               ),
@@ -908,7 +906,7 @@ final bool busy =
             child: Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: _brand.withOpacity(0.15),
+                color: _brand.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
               ),
               child: Icon(Icons.access_time_rounded, color: _brand, size: 5.w),
@@ -953,7 +951,7 @@ final bool busy =
           Container(
             padding: EdgeInsets.symmetric(horizontal: 2.5.w, vertical: 0.6.h),
             decoration: BoxDecoration(
-              color: _brand.withOpacity(0.12),
+              color: _brand.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10.w),
             ),
             child: AnimatedBuilder(
@@ -964,7 +962,7 @@ final bool busy =
                   fontFamily: 'Poppins',
                   fontSize: FontSize.s7,
                   fontWeight: FontWeight.w800,
-                  color: _brand.withOpacity(0.6 + _pulseController.value * 0.4),
+                  color: _brand.withValues(alpha: 0.6 + _pulseController.value * 0.4),
                   letterSpacing: 1,
                 ),
               ),
@@ -1025,7 +1023,7 @@ final bool busy =
                   decoration: BoxDecoration(
                     color: _tealSoft,
                     borderRadius: BorderRadius.circular(2.5.w),
-                    border: Border.all(color: _teal.withOpacity(0.15)),
+                    border: Border.all(color: _teal.withValues(alpha: 0.15)),
                   ),
                   child: Row(
                     children: [
@@ -1033,7 +1031,7 @@ final bool busy =
                         width: 6.w,
                         height: 6.w,
                         decoration: BoxDecoration(
-                          color: _teal.withOpacity(0.15),
+                          color: _teal.withValues(alpha: 0.15),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(Icons.check_rounded,
@@ -1121,7 +1119,7 @@ final bool busy =
                   decoration: BoxDecoration(
                     color: _redSoft,
                     borderRadius: BorderRadius.circular(2.5.w),
-                    border: Border.all(color: _red.withOpacity(0.15)),
+                    border: Border.all(color: _red.withValues(alpha: 0.15)),
                   ),
                   child: Row(
                     children: [
@@ -1129,7 +1127,7 @@ final bool busy =
                         width: 6.w,
                         height: 6.w,
                         decoration: BoxDecoration(
-                          color: _red.withOpacity(0.15),
+                          color: _red.withValues(alpha: 0.15),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(Icons.close_rounded,
@@ -1261,7 +1259,7 @@ final bool busy =
             width: 7.5.w,
             height: 7.5.w,
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.08),
+              color: iconColor.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(2.w),
             ),
             child: Icon(icon, color: iconColor, size: 3.8.w),
@@ -1330,7 +1328,7 @@ final bool busy =
             decoration: BoxDecoration(
               color: const Color(0xFFF8F9FF),
               borderRadius: BorderRadius.circular(3.w),
-              border: Border.all(color: _brand.withOpacity(0.15)),
+              border: Border.all(color: _brand.withValues(alpha: 0.15)),
             ),
             child: TextFormField(
               controller: _trekC.cancellationReasonController.value,
@@ -1378,7 +1376,7 @@ final bool busy =
           //   decoration: BoxDecoration(
           //     color: _orangeSoft,
           //     borderRadius: BorderRadius.circular(2.w),
-          //     border: Border.all(color: _orange.withOpacity(0.2)),
+          //     border: Border.all(color: _orange.withValues(alpha: 0.2)),
           //   ),
           //   child: Row(
           //     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1431,7 +1429,7 @@ final bool busy =
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(2.w),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1535,7 +1533,7 @@ final bool busy =
   // ─────────────────────────────────────────────
   List<BoxShadow> _cardShadow() => [
         BoxShadow(
-          color: CommonColors.blackColor.withOpacity(0.07),
+          color: CommonColors.blackColor.withValues(alpha: 0.07),
           blurRadius: 14,
           spreadRadius: 0,
           offset: const Offset(0, 4),
@@ -1675,7 +1673,7 @@ final bool busy =
           borderRadius: BorderRadius.vertical(top: Radius.circular(5.w)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.15),
+              color: Colors.black.withValues(alpha: 0.15),
               blurRadius: 20,
               offset: const Offset(0, -4),
             ),
@@ -1749,7 +1747,7 @@ final bool busy =
               icon: Icons.support_agent_outlined,
               text: 'For any queries, please contact the support team.',
               color: _brand,
-              bg: _brand.withOpacity(0.07),
+              bg: _brand.withValues(alpha: 0.07),
             ),
             SizedBox(height: 3.h),
             SizedBox(
@@ -1758,7 +1756,7 @@ final bool busy =
               child: OutlinedButton(
                 onPressed: () => Navigator.pop(context),
                 style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: _brand.withOpacity(0.4)),
+                  side: BorderSide(color: _brand.withValues(alpha: 0.4)),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(2.5.w),
                   ),

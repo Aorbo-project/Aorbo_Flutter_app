@@ -171,7 +171,7 @@ class _HelpScreenState extends State<HelpScreen>
         borderRadius: BorderRadius.circular(5.w),
         boxShadow: [
           BoxShadow(
-            color: CommonColors.blackColor.withOpacity(0.08),
+            color: CommonColors.blackColor.withValues(alpha: 0.08),
             blurRadius: 10,
             spreadRadius: 1,
             offset: const Offset(0, 2),
@@ -260,12 +260,12 @@ class _HelpScreenState extends State<HelpScreen>
         color: _C.cardBg,
         borderRadius: BorderRadius.circular(4.w),
         border: Border.all(
-          color: isOpen ? _C.ink.withOpacity(0.3) : _C.divider,
+          color: isOpen ? _C.ink.withValues(alpha: 0.3) : _C.divider,
           width: isOpen ? 1.5 : 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: CommonColors.blackColor.withOpacity(0.05),
+            color: CommonColors.blackColor.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -285,7 +285,7 @@ class _HelpScreenState extends State<HelpScreen>
               });
             },
             borderRadius: BorderRadius.circular(4.w),
-            splashColor: _C.ink.withOpacity(0.05),
+            splashColor: _C.ink.withValues(alpha: 0.05),
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.8.h),
               child: Row(
@@ -445,7 +445,7 @@ class _HelpScreenState extends State<HelpScreen>
         padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
         decoration: BoxDecoration(
           color: isActive
-              ? activeColor.withOpacity(0.1)
+              ? activeColor.withValues(alpha: 0.1)
               : CommonColors.cFFF3F4F6,
           borderRadius: BorderRadius.circular(2.w),
           border: Border.all(
@@ -495,7 +495,7 @@ class _HelpScreenState extends State<HelpScreen>
         borderRadius: BorderRadius.circular(5.w),
         boxShadow: [
           BoxShadow(
-            color: _C.ink.withOpacity(0.3),
+            color: _C.ink.withValues(alpha: 0.3),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -522,7 +522,7 @@ class _HelpScreenState extends State<HelpScreen>
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontSize: FontSize.s9,
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withValues(alpha: 0.8),
                   ),
                 ),
               ],
@@ -533,10 +533,10 @@ class _HelpScreenState extends State<HelpScreen>
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.2.h),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(3.w),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.4),
+                  color: Colors.white.withValues(alpha: 0.4),
                   width: 1,
                 ),
               ),

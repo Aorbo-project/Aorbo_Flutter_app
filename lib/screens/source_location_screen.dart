@@ -144,7 +144,9 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
 
   Future<void> _fetchCalendarDates() async {
     if (_dashboardC.selectedCityId.value == 0 ||
-        _dashboardC.selectedTrekId.value == 0) return;
+        _dashboardC.selectedTrekId.value == 0) {
+      return;
+    }
     final now   = DateTime.now();
     final later = now.add(const Duration(days: 90));
     await _dashboardC.fetchCalenderTrekDates(
@@ -260,7 +262,7 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
         border: Border.all(color: _L.divider, width: 1),
         boxShadow: [
           BoxShadow(
-            color: CommonColors.blackColor.withOpacity(0.05),
+            color: CommonColors.blackColor.withValues(alpha: 0.05),
             blurRadius: 18,
             offset: const Offset(0, 6),
           ),
@@ -397,7 +399,7 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
                         boxShadow: [
                           BoxShadow(
                             color:
-                                CommonColors.blackColor.withOpacity(0.06),
+                                CommonColors.blackColor.withValues(alpha: 0.06),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),

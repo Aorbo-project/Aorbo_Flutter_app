@@ -1,13 +1,11 @@
 import 'package:arobo_app/controller/auth_controller.dart';
 import 'package:arobo_app/controller/otp_controller.dart';
-import 'package:arobo_app/screens/update_version_screen.dart';
 import 'package:arobo_app/utils/common_btn.dart';
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/common_images.dart';
 import 'package:arobo_app/utils/common_logics.dart';
 import 'package:arobo_app/utils/custom_snackbar.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
-import 'package:arobo_app/widgets/logger.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -17,7 +15,6 @@ import 'dart:async';
 import 'package:shimmer/shimmer.dart';
 import 'package:sizer/sizer.dart';
 
-import '../controller/auth_controller.dart';
 
 class SplashWithLoginScreen extends StatefulWidget {
   const SplashWithLoginScreen({super.key});
@@ -410,7 +407,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
         border: Border.all(color: CommonColors.activeColor2),
       ),
     );
-    String? _errorMessage;
+    String? errorMessage;
 
     void validateOTP(String pin) async {
       if (!mounted) return;
@@ -420,7 +417,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
           setState(() {
             isSuccess = true;
             isError = false;
-            _errorMessage = null;
+            errorMessage = null;
           });
 
           final phone = _authC.phoneNumberLoginTextField.value.text;
@@ -429,7 +426,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
           if (!mounted) return;
 
           if (verified) {
-            _authC.phoneNumberLoginTextField.value.dispose();
+            _authC.phoneNumberLoginTextField.value.clear();
             Get.offAllNamed('/dashboard');
           } else {
             setState(() {
@@ -520,7 +517,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                         setState(() {
                           isError = false;
                           isSuccess = false;
-                          _errorMessage = null;
+                          errorMessage = null;
                         });
                       }
                     },
@@ -627,7 +624,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
               borderRadius: BorderRadius.circular(8.w),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
+                  color: Colors.black.withValues(alpha: 0.3),
                   blurRadius: 4,
                   offset: Offset(0, 2),
                 ),
@@ -819,7 +816,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
               final shimmerLogo = _splashDone
                   ? Shimmer.fromColors(
                       baseColor: Colors.black,
-                      highlightColor: Colors.white.withOpacity(0.6),
+                      highlightColor: Colors.white.withValues(alpha: 0.6),
                       period: const Duration(milliseconds: 3000),
                       direction: ShimmerDirection.ltr,
                       child: breathingLogo,
@@ -964,7 +961,7 @@ class _CustomOtpInputState extends State<CustomOtpInput> {
             borderRadius: BorderRadius.circular(3.w),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.3),
+                color: Colors.black.withValues(alpha: 0.3),
                 blurRadius: 4,
                 offset: Offset(0, 2),
               ),

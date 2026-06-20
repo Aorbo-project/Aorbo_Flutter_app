@@ -6,12 +6,12 @@ class DisputeDetailModal {
 
   DisputeDetailModal.fromJson(Map<String, dynamic> json) {
     success = json['success'];
-    data = json['data'] != null ? new DisputeDetailData.fromJson(json['data']) : null;
+    data = json['data'] != null ? DisputeDetailData.fromJson(json['data']) : null;
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['success'] = this.success;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['success'] = success;
     if (this.data != null) {
       data['data'] = this.data!.toJson();
     }
@@ -56,28 +56,28 @@ class DisputeDetailData {
     if (json['disputes'] != null) {
       disputes = <Disputes>[];
       json['disputes'].forEach((v) {
-        disputes!.add(new Disputes.fromJson(v));
+        disputes!.add(Disputes.fromJson(v));
       });
     }
     latestDispute = json['latest_dispute'] != null
-        ? new LatestDispute.fromJson(json['latest_dispute'])
+        ? LatestDispute.fromJson(json['latest_dispute'])
         : null;
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['booking_id'] = this.bookingId;
-    data['total_disputes'] = this.totalDisputes;
-    data['total_disputed_amount'] = this.totalDisputedAmount;
-    data['overall_status'] = this.overallStatus;
-    data['overall_priority'] = this.overallPriority;
-    data['booking_status'] = this.bookingStatus;
-    data['booking_amount'] = this.bookingAmount;
-    if (this.disputes != null) {
-      data['disputes'] = this.disputes!.map((v) => v.toJson()).toList();
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['booking_id'] = bookingId;
+    data['total_disputes'] = totalDisputes;
+    data['total_disputed_amount'] = totalDisputedAmount;
+    data['overall_status'] = overallStatus;
+    data['overall_priority'] = overallPriority;
+    data['booking_status'] = bookingStatus;
+    data['booking_amount'] = bookingAmount;
+    if (disputes != null) {
+      data['disputes'] = disputes!.map((v) => v.toJson()).toList();
     }
-    if (this.latestDispute != null) {
-      data['latest_dispute'] = this.latestDispute!.toJson();
+    if (latestDispute != null) {
+      data['latest_dispute'] = latestDispute!.toJson();
     }
     return data;
   }
@@ -123,17 +123,17 @@ class Disputes {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['dispute_id'] = this.disputeId;
-    data['issue_type'] = this.issueType;
-    data['issue_category'] = this.issueCategory;
-    data['status'] = this.status;
-    data['priority'] = this.priority;
-    data['disputed_amount'] = this.disputedAmount;
-    data['description'] = this.description;
-    data['created_at'] = this.createdAt;
-    data['updated_at'] = this.updatedAt;
-    data['resolved_at'] = this.resolvedAt;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['dispute_id'] = disputeId;
+    data['issue_type'] = issueType;
+    data['issue_category'] = issueCategory;
+    data['status'] = status;
+    data['priority'] = priority;
+    data['disputed_amount'] = disputedAmount;
+    data['description'] = description;
+    data['created_at'] = createdAt;
+    data['updated_at'] = updatedAt;
+    data['resolved_at'] = resolvedAt;
     return data;
   }
 }
@@ -163,12 +163,12 @@ class LatestDispute {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['dispute_id'] = this.disputeId;
-    data['issue_type'] = this.issueType;
-    data['status'] = this.status;
-    data['priority'] = this.priority;
-    data['created_at'] = this.createdAt;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['dispute_id'] = disputeId;
+    data['issue_type'] = issueType;
+    data['status'] = status;
+    data['priority'] = priority;
+    data['created_at'] = createdAt;
     return data;
   }
 }

@@ -151,7 +151,7 @@ class _ChewieVideoPlayerState extends State<ChewieVideoPlayer> {
   Widget build(BuildContext context) {
     // Show thumbnail while loading or before video starts
     if (_showThumbnail && widget.thumbnailImageUrl != null && widget.thumbnailImageUrl!.isNotEmpty) {
-      return Container(
+      return SizedBox(
         width: widget.width,
         height: widget.height,
         child: Stack(

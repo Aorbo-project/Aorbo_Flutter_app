@@ -4,7 +4,6 @@ import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/common_images.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -17,7 +16,7 @@ import '../controller/auth_controller.dart';
 
 class OTPScreen extends StatefulWidget {
   // final String phoneNumber;
-  const OTPScreen({Key? key}) : super(key: key);
+  const OTPScreen({super.key});
 
   @override
   _OTPScreenState createState() => _OTPScreenState();
@@ -100,7 +99,7 @@ class _OTPScreenState extends State<OTPScreen>
         if (!mounted) return;
 
         if (verified) {
-          _authC.phoneNumberLoginTextField.value.dispose();
+          _authC.phoneNumberLoginTextField.value.clear();
           Get.offAllNamed('/dashboard');
         } else {
           setState(() {
@@ -131,7 +130,7 @@ class _OTPScreenState extends State<OTPScreen>
   @override
   void dispose() {
     _errorTimer?.cancel();
-    _authC.otpTextField.value.dispose();
+    _authC.otpTextField.value.clear();
     _pinFocusNode.dispose();
     _animationController?.dispose();
     super.dispose();
@@ -315,7 +314,7 @@ class _OTPScreenState extends State<OTPScreen>
                               ),
                             SizedBox(height: 2.h),
                             Text(
-                              '${controller.formatTime()}',
+                              controller.formatTime(),
                               // textScaler: const TextScaler.linear(1.0),
                               style: GoogleFonts.poppins(
                                 fontSize: FontSize.s17,

@@ -7,7 +7,6 @@ import 'package:arobo_app/screens/trek_details_screen.dart';
 import 'package:arobo_app/utils/common_discount_card.dart';
 import 'package:arobo_app/utils/common_filter_bar.dart';
 import 'package:arobo_app/utils/common_trek_card.dart';
-import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:arobo_app/utils/statefullwrapper.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -17,8 +16,6 @@ import 'package:sizer/sizer.dart';
 
 import '../freezed_models/treks/treks_model_data.dart';
 import '../models/coupon_code/coupon_code_model.dart';
-import '../models/discount_card_model.dart';
-import '../utils/common_colors.dart';
 
 class _SSC {
   static const bg = Color(0xFFF4F7FF);
@@ -617,7 +614,7 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: _SSC.accent.withOpacity(0.3),
+                      color: _SSC.accent.withValues(alpha: 0.3),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),

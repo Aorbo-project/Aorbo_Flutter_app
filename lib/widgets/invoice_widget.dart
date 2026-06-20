@@ -387,7 +387,7 @@ class _TrekBannerWidget extends StatelessWidget {
                 decoration: BoxDecoration(
                   border: Border.all(color: _kBannerBorder, width: 0.5),
                   borderRadius: BorderRadius.circular(6),
-                  color: Colors.white.withOpacity(0.6),
+                  color: Colors.white.withValues(alpha: 0.6),
                 ),
                 child: Text(
                   banner.duration,

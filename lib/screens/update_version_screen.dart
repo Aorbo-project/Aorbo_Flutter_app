@@ -1,9 +1,7 @@
 import 'dart:io';
 
 import 'package:arobo_app/utils/common_colors.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../models/auth/validate_version_model.dart';
@@ -75,7 +73,7 @@ class _UpdateVersionScreenState extends State<UpdateVersionScreen> {
                                 borderRadius: BorderRadius.circular(8.0),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.3),
+                                    color: Colors.black.withValues(alpha: 0.3),
                                     spreadRadius: 2,
                                     blurRadius: 4,
                                     offset: const Offset(0, 3),
@@ -129,6 +127,7 @@ class _UpdateVersionScreenState extends State<UpdateVersionScreen> {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     }
     catch(error){
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Could not launch the store")));
     }
 
@@ -154,6 +153,7 @@ class _UpdateVersionScreenState extends State<UpdateVersionScreen> {
       await launchUrl(emailUri, mode: LaunchMode.externalApplication);
     }
     catch(error){
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Could not launch email")));
     }
   }

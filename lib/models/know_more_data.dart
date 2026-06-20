@@ -1,6 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-import '../utils/common_colors.dart';
 part 'know_more_data.freezed.dart';
 part 'know_more_data.g.dart';
 

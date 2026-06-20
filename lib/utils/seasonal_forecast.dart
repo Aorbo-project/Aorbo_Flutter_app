@@ -1,11 +1,8 @@
 import 'package:arobo_app/models/seasonal_forecast_data.dart';
 import 'package:arobo_app/utils/app_theme.dart';
-import 'package:arobo_app/utils/common_colors.dart';
-import 'package:arobo_app/utils/common_images.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:arobo_app/widgets/custom_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
 
