@@ -184,7 +184,7 @@ class CommonBookedCard extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 10,
               offset: const Offset(0, 3),
             ),
@@ -242,7 +242,7 @@ class CommonBookedCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: _getStatusColor(
                           statusRaw,
-                        ).withOpacity(0.12),
+                        ).withValues(alpha: 0.12),
                         borderRadius:
                             BorderRadius.circular(
                           1.5.w,
@@ -251,7 +251,7 @@ class CommonBookedCard extends StatelessWidget {
                           color:
                               _getStatusColor(
                             statusRaw,
-                          ).withOpacity(0.35),
+                          ).withValues(alpha: 0.35),
                         ),
                       ),
                       child: Text(

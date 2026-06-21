@@ -1,4 +1,3 @@
-import 'package:arobo_app/utils/app_dimensions.dart';
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/common_images.dart';
 import 'package:arobo_app/utils/screen_constants.dart';

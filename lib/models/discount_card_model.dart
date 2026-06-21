@@ -1,7 +1,3 @@
-import 'package:arobo_app/utils/common_colors.dart';
-import 'package:arobo_app/utils/common_images.dart';
-import 'package:flutter/material.dart';
-import 'package:sizer/sizer.dart';
 
 class DiscountCardModel {
   final String title;

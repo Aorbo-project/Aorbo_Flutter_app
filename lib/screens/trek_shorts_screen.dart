@@ -1,6 +1,5 @@
 import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
-import 'package:arobo_app/widgets/custom_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:arobo_app/models/shorts_treks_data.dart';
 import 'package:arobo_app/utils/common_colors.dart';
@@ -14,7 +13,7 @@ import 'package:video_player/video_player.dart';
 import '../widgets/chewie_video_player.dart';
 
 class TrekShortsScreen extends StatelessWidget {
-  const TrekShortsScreen({Key? key}) : super(key: key);
+  const TrekShortsScreen({super.key});
 
   void _showVideoPopup(BuildContext context, String videoUrl, String thumbnailUrl) {
     VideoPlayerController? videoController;
@@ -115,14 +114,14 @@ class TrekShortsScreen extends StatelessWidget {
         chewieController!.dispose();
       }
       if (videoController != null) {
-        videoController!.dispose();
+        videoController.dispose();
       }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final _dashboardC = Get.find<DashboardController>();
+    final dashboardC = Get.find<DashboardController>();
 
     return Scaffold(
       backgroundColor: CommonColors.offWhiteColor2,
@@ -141,9 +140,9 @@ class TrekShortsScreen extends StatelessWidget {
         ),
       ),
       body: Obx(() {
-        final shortsLoading = _dashboardC.shortsTreksObserver.value
+        final shortsLoading = dashboardC.shortsTreksObserver.value
             .maybeWhen(loading: (data) => true, orElse: () => false);
-        List<ShortsTreksData>? shortsTreksCardsData = _dashboardC
+        List<ShortsTreksData>? shortsTreksCardsData = dashboardC
             .shortsTreksObserver.value
             .maybeWhen(
           success: (shortsTreksResponse) {
@@ -243,7 +242,7 @@ class TrekShortsScreen extends StatelessWidget {
                               ),
                               SizedBox(height: 0.5.h),
                               Text(
-                                '${cardData?.title ?? '4M'}',
+                                cardData?.title ?? '4M',
                                 style: GoogleFonts.poppins(
                                   color: Colors.white,
                                   fontSize: 6.sp,

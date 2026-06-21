@@ -129,7 +129,7 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
     _userC.travellerId.value = traveler.id ?? 0;
     _userC.nameControllerTraveller.value.text = traveler.name ?? '';
     _userC.ageControllerTraveller.value.text = traveler.age?.toString() ?? '';
-    _userC.selectedGender.value = (traveler.gender ?? '').toLowerCase();
+    _userC.selectedGender.value = traveler.gender ?? '';
 
     setState(() {
       _expandedTravellerIndex = index;
@@ -268,7 +268,7 @@ Future<void> _confirmDeleteTraveller(int index, Traveler traveller) async {
   final bool? confirmed = await showDialog<bool>(
     context: context,
     barrierDismissible: true,
-    barrierColor: Colors.black.withOpacity(0.4),
+    barrierColor: Colors.black.withValues(alpha: 0.4),
     builder: (context) {
       return Dialog(
         backgroundColor: Colors.transparent,
@@ -280,7 +280,7 @@ Future<void> _confirmDeleteTraveller(int index, Traveler traveller) async {
             borderRadius: BorderRadius.circular(5.w),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
+                color: Colors.black.withValues(alpha: 0.08),
                 blurRadius: 24,
                 spreadRadius: 2,
                 offset: const Offset(0, 8),
@@ -298,7 +298,7 @@ Future<void> _confirmDeleteTraveller(int index, Traveler traveller) async {
                     width: 11.w,
                     height: 11.w,
                     decoration: BoxDecoration(
-                      color: _C.danger.withOpacity(0.10),
+                      color: _C.danger.withValues(alpha: 0.10),
                       borderRadius: BorderRadius.circular(3.w),
                     ),
                     child: Center(
@@ -444,7 +444,7 @@ Future<void> _confirmDeleteTraveller(int index, Traveler traveller) async {
                           borderRadius: BorderRadius.circular(2.w),
                           boxShadow: [
                             BoxShadow(
-                              color: _C.danger.withOpacity(0.30),
+                              color: _C.danger.withValues(alpha: 0.30),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             ),
@@ -904,7 +904,7 @@ Future<void> _confirmDeleteTraveller(int index, Traveler traveller) async {
         borderRadius: BorderRadius.circular(5.w),
         boxShadow: [
           BoxShadow(
-            color: CommonColors.blackColor.withOpacity(0.08),
+            color: CommonColors.blackColor.withValues(alpha: 0.08),
             blurRadius: 10,
             spreadRadius: 1,
             offset: const Offset(0, 2),
@@ -1222,7 +1222,7 @@ Future<void> _confirmDeleteTraveller(int index, Traveler traveller) async {
   Widget _buildGenderButton(String gender, bool isSelected) {
     return Expanded(
       child: GestureDetector(
-        onTap: () => _userC.selectedGender.value = gender.toLowerCase(),
+        onTap: () => _userC.selectedGender.value = gender,
         child: AnimatedContainer(
           duration: _kAnimDuration,
           curve: _kAnimCurve,
@@ -1237,7 +1237,7 @@ Future<void> _confirmDeleteTraveller(int index, Traveler traveller) async {
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: _C.teal.withOpacity(0.25),
+                      color: _C.teal.withValues(alpha: 0.25),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -1299,12 +1299,12 @@ Future<void> _confirmDeleteTraveller(int index, Traveler traveller) async {
         color: _C.fieldBg,
         borderRadius: BorderRadius.circular(2.w),
         border: Border.all(
-          color: isExpanded ? _C.teal.withOpacity(0.25) : _C.fieldBorder,
+          color: isExpanded ? _C.teal.withValues(alpha: 0.25) : _C.fieldBorder,
         ),
         boxShadow: isExpanded
             ? [
                 BoxShadow(
-                  color: _C.teal.withOpacity(0.08),
+                  color: _C.teal.withValues(alpha: 0.08),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -1402,7 +1402,7 @@ Future<void> _confirmDeleteTraveller(int index, Traveler traveller) async {
                       child: Container(
                         padding: EdgeInsets.all(1.8.w),
                         decoration: BoxDecoration(
-                          color: _C.danger.withOpacity(0.08),
+                          color: _C.danger.withValues(alpha: 0.08),
                           shape: BoxShape.circle,
                         ),
                         child: isDeleting
@@ -1490,7 +1490,7 @@ Future<void> _confirmDeleteTraveller(int index, Traveler traveller) async {
           ),
         ],
         border: _isAddTravellerExpanded
-            ? Border.all(color: _C.teal.withOpacity(0.2))
+            ? Border.all(color: _C.teal.withValues(alpha: 0.2))
             : null,
       ),
       child: InkWell(

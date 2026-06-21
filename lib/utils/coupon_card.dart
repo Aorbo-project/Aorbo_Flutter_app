@@ -11,11 +11,11 @@ class CouponCard extends StatefulWidget {
   final bool isApplied;
 
   const CouponCard({
-    Key? key,
+    super.key,
     required this.coupon,
     required this.onApply,
     this.isApplied = false,
-  }) : super(key: key);
+  });
 
   @override
   State<CouponCard> createState() => _CouponCardState();
@@ -76,17 +76,14 @@ class _CouponCardState extends State<CouponCard> {
                           final dtype =
                               coupon?.discountType?.toLowerCase() ?? '';
 
-                          if (dtype == 'percentage' ||
-                              dtype == 'early_bird' ||
-                              dtype == 'seasonal' ||
-                              dtype == 'conditional') {
-                            sideText = '${intValue}% off';
-                          } else if (dtype == 'fixed') {
-                            sideText = 'Flat ${intValue}/- off';
-                          } else if (dtype == 'group') {
-                            sideText = '${intValue}% off';
+                          if (coupon?.discountType?.toLowerCase() ==
+                              'percentage') {
+                            sideText = 'upto $intValue% off';
+                          } else if (coupon?.discountType?.toLowerCase() ==
+                              'fixed') {
+                            sideText = 'Flat $intValue/- off';
                           } else {
-                            sideText = '${intValue} off';
+                            sideText = '$intValue off';
                           }
 
                           final parts = sideText.split(' ');

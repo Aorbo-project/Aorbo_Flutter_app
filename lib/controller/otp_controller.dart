@@ -24,16 +24,24 @@ class OTPController extends GetxController {
   Future<void> resendOTP() async {
     if (isDisposed) return;
     final success = await sendOTP();
-    if (!isDisposed && success) {
-      startTimer(); // resets secondsRemaining and enableResend internally
-      otpController.value.clear();
+    if (!isDisposed) {
+      if (success) {
+        startTimer(); // success — restart at default 60s
+      } else if (_authC.resendWaitSeconds.value > 0) {
+        // Server said "wait X seconds" — sync the countdown to server's value
+        startTimer(seconds: _authC.resendWaitSeconds.value);
+        _authC.resendWaitSeconds.value = 0;
+      }
+      if (success) otpController.value.clear();
     }
   }
 
-  void startTimer() {
+  /// Starts (or restarts) the countdown. [seconds] defaults to 60 but can be
+  /// overridden with the server-provided [wait_seconds] from a 429 response.
+  void startTimer({int seconds = 60}) {
     timer?.cancel();
     if (isDisposed) return;
-    secondsRemaining.value = 60;
+    secondsRemaining.value = seconds;
     enableResend.value = false;
     timer = Timer.periodic(const Duration(seconds: 1), (t) {
       if (isDisposed) {

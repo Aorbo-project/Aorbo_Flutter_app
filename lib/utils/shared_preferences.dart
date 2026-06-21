@@ -3,10 +3,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class SpUtil {
   //pref- value
-  static const String isLoggedIn = 'is_logged_in';
-  static const String userID = 'user_id';
-  static const String userEmail = 'user_email';
-  static const String accessToken = 'access_token';
+  static const String isLoggedIn       = 'is_logged_in';
+  static const String userID           = 'user_id';
+  static const String userEmail        = 'user_email';
+  static const String accessToken      = 'access_token';
+  static const String profileCompleted = 'profile_completed';
+  static const String isNewCustomer    = 'is_new_customer';
 
   static SpUtil? _instance;
 

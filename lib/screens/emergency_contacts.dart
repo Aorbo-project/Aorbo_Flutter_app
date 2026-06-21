@@ -274,21 +274,21 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
           borderRadius: BorderRadius.circular(3.w),
           border: Border.all(
             color: isSelected
-                ? _C.teal.withOpacity(0.4)
+                ? _C.teal.withValues(alpha: 0.4)
                 : _C.fieldBorder,
             width: isSelected ? 1.5 : 1,
           ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: _C.teal.withOpacity(0.12),
+                    color: _C.teal.withValues(alpha: 0.12),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
                 ]
               : [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: Colors.black.withValues(alpha: 0.04),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -297,8 +297,8 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
         child: InkWell(
           onTap: () => _toggleSelection(contact),
           borderRadius: BorderRadius.circular(3.w),
-          splashColor: _C.teal.withOpacity(0.08),
-          highlightColor: _C.teal.withOpacity(0.04),
+          splashColor: _C.teal.withValues(alpha: 0.08),
+          highlightColor: _C.teal.withValues(alpha: 0.04),
           child: Padding(
             padding: EdgeInsets.symmetric(
               horizontal: 4.w,
@@ -328,7 +328,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
                             Icons.phone_outlined,
                             size: FontSize.s9,
                             color: isSelected
-                                ? _C.teal.withOpacity(0.7)
+                                ? _C.teal.withValues(alpha: 0.7)
                                 : _C.inkLight,
                           ),
                           SizedBox(width: 1.w),
@@ -338,7 +338,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
                               fontFamily: 'Poppins',
                               fontSize: FontSize.s9,
                               color: isSelected
-                                  ? _C.teal.withOpacity(0.7)
+                                  ? _C.teal.withValues(alpha: 0.7)
                                   : _C.inkMid,
                             ),
                           ),
@@ -412,7 +412,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
               width: 18.w,
               height: 18.w,
               decoration: BoxDecoration(
-                color: _C.danger.withOpacity(0.08),
+                color: _C.danger.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -455,7 +455,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
                   borderRadius: BorderRadius.circular(2.w),
                   boxShadow: [
                     BoxShadow(
-                      color: _C.teal.withOpacity(0.30),
+                      color: _C.teal.withValues(alpha: 0.30),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -560,7 +560,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
                     border: Border.all(color: _C.fieldBorder),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
+                        color: Colors.black.withValues(alpha: 0.04),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -711,7 +711,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
                 color: _C.cardBg,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
+                    color: Colors.black.withValues(alpha: 0.08),
                     blurRadius: 20,
                     offset: const Offset(0, -4),
                   ),

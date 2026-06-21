@@ -2,8 +2,6 @@
 
 
 import 'package:arobo_app/repository/network_url.dart';
-import 'package:arobo_app/utils/common_colors.dart';
-import 'package:get/get_state_manager/src/simple/get_controllers.dart';
 
 import '../models/coupon_code/coupon_code_model.dart';
 import '../repository/api_result.dart';

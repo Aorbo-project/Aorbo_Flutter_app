@@ -7,13 +7,13 @@ class RefundDetailModal {
   RefundDetailModal.fromJson(Map<String, dynamic> json) {
     success = json['success'];
     data = json['data'] != null
-        ? new RefundDetailData.fromJson(json['data'])
+        ? RefundDetailData.fromJson(json['data'])
         : null;
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['success'] = this.success;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['success'] = success;
     if (this.data != null) {
       data['data'] = this.data!.toJson();
     }
@@ -77,39 +77,39 @@ class RefundDetailData {
     canCancel = json['can_cancel'];
     cancellationMessage = json['cancellation_message'];
     refundCalculation = json['refund_calculation'] != null
-        ? new RefundCalculation.fromJson(json['refund_calculation'])
+        ? RefundCalculation.fromJson(json['refund_calculation'])
         : null;
     trekDetails = json['trek_details'] != null
-        ? new TrekDetails.fromJson(json['trek_details'])
+        ? TrekDetails.fromJson(json['trek_details'])
         : null;
     batchDetails = json['batch_details'] != null
-        ? new BatchDetails.fromJson(json['batch_details'])
+        ? BatchDetails.fromJson(json['batch_details'])
         : null;
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['booking_id'] = this.bookingId;
-    data['trek_id'] = this.trekId;
-    data['batch_id'] = this.batchId;
-    data['customer_id'] = this.customerId;
-    data['customer_name'] = this.customerName;
-    data['final_amount'] = this.finalAmount;
-    data['advance_amount'] = this.advanceAmount;
-    data['payment_status'] = this.paymentStatus;
-    data['cancellation_policy_type'] = this.cancellationPolicyType;
-    data['current_date'] = this.currentDate;
-    data['batch_start_date'] = this.batchStartDate;
-    data['can_cancel'] = this.canCancel;
-    data['cancellation_message'] = this.cancellationMessage;
-    if (this.refundCalculation != null) {
-      data['refund_calculation'] = this.refundCalculation!.toJson();
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['booking_id'] = bookingId;
+    data['trek_id'] = trekId;
+    data['batch_id'] = batchId;
+    data['customer_id'] = customerId;
+    data['customer_name'] = customerName;
+    data['final_amount'] = finalAmount;
+    data['advance_amount'] = advanceAmount;
+    data['payment_status'] = paymentStatus;
+    data['cancellation_policy_type'] = cancellationPolicyType;
+    data['current_date'] = currentDate;
+    data['batch_start_date'] = batchStartDate;
+    data['can_cancel'] = canCancel;
+    data['cancellation_message'] = cancellationMessage;
+    if (refundCalculation != null) {
+      data['refund_calculation'] = refundCalculation!.toJson();
     }
-    if (this.trekDetails != null) {
-      data['trek_details'] = this.trekDetails!.toJson();
+    if (trekDetails != null) {
+      data['trek_details'] = trekDetails!.toJson();
     }
-    if (this.batchDetails != null) {
-      data['batch_details'] = this.batchDetails!.toJson();
+    if (batchDetails != null) {
+      data['batch_details'] = batchDetails!.toJson();
     }
     return data;
   }
@@ -156,15 +156,15 @@ class RefundCalculation {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['deduction'] = this.deduction;
-    data['refund'] = this.refund;
-    data['deduction_percent'] = this.deductionPercent;
-    data['policy_type'] = this.policyType;
-    data['slab_info'] = this.slabInfo;
-    data['time_remaining_hours'] = this.timeRemainingHours;
-    data['message'] = this.message;
-    data['trek_price'] = this.trekPrice;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['deduction'] = deduction;
+    data['refund'] = refund;
+    data['deduction_percent'] = deductionPercent;
+    data['policy_type'] = policyType;
+    data['slab_info'] = slabInfo;
+    data['time_remaining_hours'] = timeRemainingHours;
+    data['message'] = message;
+    data['trek_price'] = trekPrice;
     return data;
   }
 }
@@ -183,10 +183,10 @@ class TrekDetails {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['id'] = this.id;
-    data['title'] = this.title;
-    data['base_price'] = this.basePrice;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['id'] = id;
+    data['title'] = title;
+    data['base_price'] = basePrice;
     return data;
   }
 }
@@ -207,11 +207,11 @@ class BatchDetails {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['id'] = this.id;
-    data['tbr_id'] = this.tbrId;
-    data['start_date'] = this.startDate;
-    data['end_date'] = this.endDate;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['id'] = id;
+    data['tbr_id'] = tbrId;
+    data['start_date'] = startDate;
+    data['end_date'] = endDate;
     return data;
   }
 }

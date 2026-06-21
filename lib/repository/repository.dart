@@ -10,6 +10,16 @@ import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart' hide FormData, Response;
 
+/// Thrown by [Repository.postApiCall] when the server returns HTTP 429.
+/// Carries the server-provided [waitSeconds] so callers can sync their countdown.
+class RateLimitException implements Exception {
+  final String message;
+  final int waitSeconds;
+  const RateLimitException(this.message, this.waitSeconds);
+  @override
+  String toString() => message;
+}
+
 class Repository {
   static final Repository _service = Repository._internal();
 
@@ -160,6 +170,15 @@ class Repository {
       }
       logger.w("Dio Exception Message ->> ${e.message.toString()}");
       logger.w("Dio Exception Data ->> ${e.response?.data?.toString()}");
+
+      // 429 — propagate rate-limit details so callers can sync UI timers
+      if (e.response?.statusCode == 429 && e.response?.data is Map) {
+        final data = e.response!.data as Map;
+        final waitSecs = data['wait_seconds'] is int ? data['wait_seconds'] as int : 60;
+        final msg = data['message'] is String ? data['message'] as String : 'Too many requests. Please wait.';
+        throw RateLimitException(msg, waitSecs);
+      }
+
       throw Exception(
         e.response?.data is List &&
                 (e.response?.data as List).isNotEmpty &&

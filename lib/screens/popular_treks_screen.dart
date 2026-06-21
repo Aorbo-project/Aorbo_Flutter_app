@@ -2,7 +2,6 @@ import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:arobo_app/utils/top_treks_card.dart';
-import 'package:arobo_app/models/trek_model.dart';
 import 'package:arobo_app/models/top_treks_data.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -19,7 +18,7 @@ class PopularTreksScreen extends StatefulWidget {
 
 class _PopularTreksScreenState extends State<PopularTreksScreen> {
   final ScrollController _scrollController = ScrollController();
-  Map<String, bool> _favoriteTreks = {};
+  final Map<String, bool> _favoriteTreks = {};
 
   final _dashboardC = Get.find<DashboardController>();
 

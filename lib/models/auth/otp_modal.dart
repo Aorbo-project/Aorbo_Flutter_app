@@ -14,11 +14,11 @@ class OtpGeneratedModal {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['success'] = this.success;
-    data['otp'] = this.otp;
-    data['message'] = this.message;
-    data['expiresIn'] = this.expiresIn;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['success'] = success;
+    data['otp'] = otp;
+    data['message'] = message;
+    data['expiresIn'] = expiresIn;
     return data;
   }
 }

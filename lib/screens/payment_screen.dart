@@ -18,7 +18,6 @@ import 'package:arobo_app/utils/common_images.dart';
 import 'package:arobo_app/utils/custom_snackbar.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:arobo_app/utils/total_fare_modal.dart';
-import 'package:arobo_app/widgets/slot_booking_details_modal.dart';
 
 // ─────────────────────────────────────────────
 // DESIGN TOKENS
@@ -176,7 +175,7 @@ print("REMAINING = ${breakdown?.remainingAmount}");
       final finalAmount = breakdown?.amountToPayNow ?? 0;
 
       final options = {
-        'key': BookingConstants.razorpayKey,
+        'key': _trekC.orderModal.value.keyId ?? BookingConstants.razorpayKey,
         'order_id': '${_trekC.orderData.value.id}',
         'amount': (finalAmount * 100).toInt(),
         'name': '${_trekC.trekDetailData.value.title}',
@@ -441,7 +440,7 @@ print("REMAINING = ${breakdown?.remainingAmount}");
                                           boxShadow: [
                                             BoxShadow(
                                               color:
-                                                  Colors.black.withOpacity(0.05),
+                                                  Colors.black.withValues(alpha: 0.05),
                                               blurRadius: 10,
                                               offset: const Offset(0, 2),
                                             ),

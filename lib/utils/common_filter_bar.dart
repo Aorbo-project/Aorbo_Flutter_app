@@ -1,4 +1,3 @@
-import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/common_images.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -40,7 +39,7 @@ class _T {
   // Shadows
   static List<BoxShadow> get cardShadow => [
         BoxShadow(
-          color: Colors.black.withOpacity(0.06),
+          color: Colors.black.withValues(alpha: 0.06),
           blurRadius: 10,
           offset: const Offset(0, 3),
         ),
@@ -48,7 +47,7 @@ class _T {
 
   static List<BoxShadow> accentGlowShadow(double opacity) => [
         BoxShadow(
-          color: accent.withOpacity(opacity),
+          color: accent.withValues(alpha: opacity),
           blurRadius: 16,
           spreadRadius: -2,
           offset: const Offset(0, 4),
@@ -332,7 +331,7 @@ class CommonFilterBarState extends State<CommonFilterBar>
         color: _T.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.07),
+            color: Colors.black.withValues(alpha: 0.07),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -558,7 +557,7 @@ class _ActiveChipState extends State<_ActiveChip>
                     width: 16,
                     height: 16,
                     decoration: BoxDecoration(
-                      color: _T.accent.withOpacity(0.15),
+                      color: _T.accent.withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(Icons.close_rounded,
@@ -833,7 +832,7 @@ class _FilterSheetContentState extends State<_FilterSheetContent>
           border: Border.all(color: _T.border, width: 0.8),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.13),
+              color: Colors.black.withValues(alpha: 0.13),
               blurRadius: 32,
               offset: const Offset(0, -6),
             ),
@@ -1301,7 +1300,7 @@ class _GroupBookingCard extends StatelessWidget {
               HapticFeedback.selectionClick();
               onChanged(v);
             },
-            activeColor: Colors.white,
+            activeThumbColor: Colors.white,
             activeTrackColor: _T.accent,
             inactiveTrackColor: _T.surfaceElevated,
             inactiveThumbColor: _T.ink400,
@@ -1554,7 +1553,7 @@ class _SheetFooter extends StatelessWidget {
         border: Border(top: BorderSide(color: _T.border)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, -2),
           ),
@@ -1593,7 +1592,7 @@ class _SheetFooter extends StatelessWidget {
                 // Only tappable when filters are selected.
                 onTap: hasFilters ? onApply : null,
                 borderRadius: BorderRadius.circular(16),
-                splashColor: Colors.white.withOpacity(0.15),
+                splashColor: Colors.white.withValues(alpha: 0.15),
                 highlightColor: Colors.transparent,
                 child: Center(
                   child: AnimatedSwitcher(
@@ -1662,7 +1661,7 @@ class _SvgIcon extends StatelessWidget {
         errorBuilder: (_, __, ___) => Icon(
           Icons.filter_alt_outlined,
           size: size,
-          color: color.withOpacity(0.5),
+          color: color.withValues(alpha: 0.5),
         ),
       ),
     );

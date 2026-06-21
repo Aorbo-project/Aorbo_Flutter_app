@@ -2,11 +2,9 @@ import 'dart:math' as math;
 import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/controller/trek_controller.dart';
 import 'package:arobo_app/controller/user_controller.dart';
-import 'package:arobo_app/repository/network_url.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:sizer/sizer.dart';
 import '../freezed_models/treks/trek_detail_model.dart';
@@ -77,7 +75,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
   bool _showFullItinerary       = false;
   bool _showFullFeatures        = false;
   bool _showFullActivities      = false;
-  bool _showFullOtherPolicies   = false;
+  final bool _showFullOtherPolicies   = false;
   bool _showFullReviews         = false;
   String _selectedSortOption    = 'Recent Reviews';
   List<LatestReviews> _sortedReviews = [];
@@ -233,7 +231,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: CommonColors.shadowColor.withOpacity(0.15),
+                    color: CommonColors.shadowColor.withValues(alpha: 0.15),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -460,7 +458,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
         borderRadius: BorderRadius.circular(4.w),
         boxShadow: [
           BoxShadow(
-            color: CommonColors.blackColor.withOpacity(0.07),
+            color: CommonColors.blackColor.withValues(alpha: 0.07),
             blurRadius: 10,
             spreadRadius: 0,
             offset: const Offset(0, 3),
@@ -587,7 +585,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
+      builder: (ctx) => SizedBox(
         height: 100.h,
         child: Stack(
           children: [
@@ -722,7 +720,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
               decoration: BoxDecoration(
                 color: const Color(0xFFF8F9FF),
                 borderRadius: BorderRadius.circular(3.w),
-                border: Border.all(color: _C.brand.withOpacity(0.12)),
+                border: Border.all(color: _C.brand.withValues(alpha: 0.12)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -732,7 +730,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                     padding: EdgeInsets.symmetric(
                         horizontal: 4.w, vertical: 1.h),
                     decoration: BoxDecoration(
-                      color: _C.brand.withOpacity(0.08),
+                      color: _C.brand.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.only(
                         topLeft: Radius.circular(3.w),
                         topRight: Radius.circular(3.w),
@@ -829,7 +827,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
           _sectionHeader('Activities', Icons.directions_walk_rounded),
           SizedBox(height: 2.h),
           ...List.generate(count,
-              (i) => _bulletItem(acts[i]?.name ?? '')),
+              (i) => _bulletItem(acts[i].name ?? '')),
           if (acts.length > 4)
             _toggleBtn('Activities', _showFullActivities,
                 () => setState(() => _showFullActivities = !_showFullActivities)),
@@ -972,10 +970,10 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                           width: 8.w,
                           height: 8.w,
                           decoration: BoxDecoration(
-                            color: _C.brand.withOpacity(0.1),
+                            color: _C.brand.withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                             border: Border.all(
-                                color: _C.brand.withOpacity(0.3)),
+                                color: _C.brand.withValues(alpha: 0.3)),
                           ),
                           child: Center(
                             child: Text(
@@ -1040,7 +1038,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                 ),
               ],
             );
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -1266,7 +1264,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                     width: 8.w,
                     height: 8.w,
                     decoration: BoxDecoration(
-                      color: _C.brand.withOpacity(0.1),
+                      color: _C.brand.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Center(
@@ -1370,7 +1368,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
         margin: EdgeInsets.only(right: 2.w),
         padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 0.8.h),
         decoration: BoxDecoration(
-          color: isSelected ? _C.brand.withOpacity(0.1) : _C.cardBg,
+          color: isSelected ? _C.brand.withValues(alpha: 0.1) : _C.cardBg,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected ? _C.brand : _C.divider,
@@ -1417,7 +1415,9 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
 
     if ((rules == null || rules.isEmpty) &&
         (emergency == null || emergency.isEmpty) &&
-        (notes == null || notes.isEmpty)) return const SizedBox.shrink();
+        (notes == null || notes.isEmpty)) {
+      return const SizedBox.shrink();
+    }
 
     return _card(
       child: Column(
@@ -1443,7 +1443,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFFF8F9FF),
         borderRadius: BorderRadius.circular(3.w),
-        border: Border.all(color: _C.brand.withOpacity(0.12)),
+        border: Border.all(color: _C.brand.withValues(alpha: 0.12)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1549,7 +1549,7 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
         borderRadius: BorderRadius.circular(4.w),
         boxShadow: [
           BoxShadow(
-            color: CommonColors.blackColor.withOpacity(0.07),
+            color: CommonColors.blackColor.withValues(alpha: 0.07),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -1597,10 +1597,10 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
               padding: EdgeInsets.symmetric(
                   horizontal: 4.w, vertical: 1.2.h),
               decoration: BoxDecoration(
-                color: CommonColors.trek_route_color.withOpacity(0.06),
+                color: CommonColors.trek_route_color.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(3.w),
                 border: Border.all(
-                    color: CommonColors.trek_route_color.withOpacity(0.2)),
+                    color: CommonColors.trek_route_color.withValues(alpha: 0.2)),
               ),
               child: Row(
                 children: [

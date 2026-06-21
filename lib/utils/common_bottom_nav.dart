@@ -12,12 +12,12 @@ class CommonBottomNav extends StatefulWidget {
   final Color? unselectedIconColor;
 
   const CommonBottomNav({
-    Key? key,
+    super.key,
     required this.selectedIndex,
     this.onIndexChanged,
     this.selectedIconColor,
     this.unselectedIconColor,
-  }) : super(key: key);
+  });
 
   @override
   State<CommonBottomNav> createState() => _CommonBottomNavState();

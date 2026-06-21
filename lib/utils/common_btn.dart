@@ -23,7 +23,7 @@ class CommonButton extends StatelessWidget {
   final String? fontFamily;
 
   const CommonButton({
-    Key? key,
+    super.key,
     required this.text,
     required this.onPressed,
     this.backgroundColor,
@@ -41,7 +41,7 @@ class CommonButton extends StatelessWidget {
     this.suffixIcon,
     this.gradient,
     this.fontWeight,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

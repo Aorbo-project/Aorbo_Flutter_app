@@ -584,7 +584,7 @@ class _PersonalizedTreksScreenState extends State<PersonalizedTreksScreen> {
                                 Transform.scale(
                                   scale: 0.8,
                                   child: Switch.adaptive(
-                                    activeColor: CommonColors.whiteColor,
+                                    activeThumbColor: CommonColors.whiteColor,
                                     activeTrackColor: CommonColors
                                         .completedColor
                                         .withValues(alpha: 0.8),
@@ -887,7 +887,7 @@ class _PersonalizedTreksScreenState extends State<PersonalizedTreksScreen> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            return Container(
+            return SizedBox(
               height: MediaQuery.of(context).size.height * 0.75,
               child: Padding(
                 padding: EdgeInsets.only(

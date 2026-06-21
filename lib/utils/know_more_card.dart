@@ -4,7 +4,6 @@ import 'package:arobo_app/widgets/custom_network_image.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'dart:ui';
 
 import 'package:sizer/sizer.dart';
 
@@ -21,7 +20,7 @@ class KnowMoreCard extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
 
   const KnowMoreCard({
-    Key? key,
+    super.key,
     required this.customGradient,
     required this.imagePath,
     required this.title,
@@ -32,7 +31,7 @@ class KnowMoreCard extends StatelessWidget {
     this.textColor,
     this.imageHeight,
     this.padding,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

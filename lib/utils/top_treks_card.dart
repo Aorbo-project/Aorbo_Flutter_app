@@ -25,7 +25,7 @@ class TopTreksCard extends StatefulWidget {
   final TextStyle? descriptionStyle;
 
   const TopTreksCard({
-    Key? key,
+    super.key,
     required this.gradientEndColor,
     required this.imagePath,
     required this.title,
@@ -41,7 +41,7 @@ class TopTreksCard extends StatefulWidget {
     this.customGradient,
     this.titleStyle,
     this.descriptionStyle,
-  }) : super(key: key);
+  });
 
   @override
   State<TopTreksCard> createState() => _TopTreksCardState();
