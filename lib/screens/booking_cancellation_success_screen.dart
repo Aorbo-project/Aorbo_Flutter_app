@@ -392,14 +392,12 @@ class _BookingCancellationSuccessScreenState extends State<BookingCancellationSu
                             color: CommonColors.greyTextColor,
                           ),
                         ),
-                        Obx(
-                          () => Text(
-                            '₹ ${widget.refund}',
-                            style: GoogleFonts.poppins(
-                              fontSize: FontSize.s12,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.green,
-                            ),
+                        Text(
+                          '₹ ${widget.refund}',
+                          style: GoogleFonts.poppins(
+                            fontSize: FontSize.s12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.green,
                           ),
                         ),
                       ],

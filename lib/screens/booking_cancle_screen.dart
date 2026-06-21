@@ -312,13 +312,16 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
     final isRequesting = _trekC.requestCancellationResponseObserver.value
         .maybeWhen(loading: (_) => true, orElse: () => false);
 
-    final bool alreadyCancelled =
-    cancellationDataModel?.canCancel == false;
+    final bool isBookingCancelled = booking.status == 'cancelled' || booking.trekStatus == 'cancelled';
+    final bool canCancel = cancellationDataModel?.canCancel ?? true;
 
-final bool busy =
-    isRequesting ||
-    _isCancelling ||
-    alreadyCancelled;
+    final bool busy =
+        isRequesting ||
+        _isCancelling ||
+        isBookingCancelled ||
+        !canCancel;
+
+    final bool showSpinner = isRequesting || _isCancelling;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -361,7 +364,7 @@ final bool busy =
               opacity: anim,
               child: ScaleTransition(scale: anim, child: child),
             ),
-            child: busy
+            child: showSpinner
                 ? const Center(
                     key: ValueKey('loading'),
                     child: SizedBox(
@@ -381,9 +384,11 @@ final bool busy =
                           color: Colors.white, size: 18),
                       const SizedBox(width: 8),
                       Text(
-                        alreadyCancelled
-    ? 'Already Cancelled'
-    : 'Confirm Cancellation',
+                        isBookingCancelled
+                            ? 'Already Cancelled'
+                            : (!canCancel
+                                ? 'Cannot Cancel'
+                                : 'Confirm Cancellation'),
                         textScaler: const TextScaler.linear(1.0),
                         style: TextStyle(
                           fontFamily: 'Poppins',
@@ -1498,10 +1503,14 @@ final bool busy =
     // SUCCESS
     isSuccess = true;
 
-    // refresh booking detail
+    // refresh booking detail and bookings history list immediately
     await _dashboardC.getBookingDetail(
       bookingId: bookingId,
     );
+    await _dashboardC.getBookingHistory(refresh: true);
+
+    final updatedBooking = _dashboardC.bookingHistoryModal.value;
+    final displayBooking = (updatedBooking != null && updatedBooking.batch != null) ? updatedBooking : booking;
 
     // navigate
     Get.off(() => BookingCancellationSuccessScreen(
@@ -1510,7 +1519,7 @@ final bool busy =
                   ?.refund
                   ?.toStringAsFixed(2) ??
               '0',
-          booking: _dashboardC.bookingHistoryModal.value,
+          booking: displayBooking,
         ));
 
   } catch (e) {
