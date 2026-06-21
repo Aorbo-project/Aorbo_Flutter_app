@@ -436,7 +436,7 @@ class _MyAccountScreenState extends State<MyAccountScreen>
           borderRadius: BorderRadius.circular(4.w),
           boxShadow: [
             BoxShadow(
-              color: CommonColors.blackColor.withOpacity(0.07),
+              color: CommonColors.blackColor.withValues(alpha: 0.07),
               blurRadius: 10,
               offset: const Offset(0, 3),
             ),
@@ -448,10 +448,10 @@ class _MyAccountScreenState extends State<MyAccountScreen>
               width: 14.w,
               height: 14.w,
               decoration: BoxDecoration(
-                color: _C.brand.withOpacity(0.10),
+                color: _C.brand.withValues(alpha: 0.10),
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: _C.brand.withOpacity(0.25),
+                  color: _C.brand.withValues(alpha: 0.25),
                 ),
               ),
               child: Center(
@@ -522,7 +522,7 @@ class _MyAccountScreenState extends State<MyAccountScreen>
         borderRadius: BorderRadius.circular(4.w),
         boxShadow: [
           BoxShadow(
-            color: CommonColors.blackColor.withOpacity(0.07),
+            color: CommonColors.blackColor.withValues(alpha: 0.07),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -828,7 +828,7 @@ class _AnimatedLogoutButtonState extends State<_AnimatedLogoutButton>
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: CommonColors.blackColor.withOpacity(0.05),
+                    color: CommonColors.blackColor.withValues(alpha: 0.05),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),

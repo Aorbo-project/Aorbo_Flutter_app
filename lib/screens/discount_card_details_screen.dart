@@ -23,7 +23,7 @@ class DiscountCardDetailsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: CommonColors.lightBlueColor3.withOpacity(0.2),
+        backgroundColor: CommonColors.lightBlueColor3.withValues(alpha: 0.2),
         elevation: 0,
         centerTitle: false,
         leading: IconButton(

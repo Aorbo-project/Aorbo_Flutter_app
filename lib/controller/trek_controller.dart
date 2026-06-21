@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/freezed_models/booking/booking_data_model.dart';
 import 'package:arobo_app/freezed_models/treks/treks_model_data.dart';
 import 'package:arobo_app/models/treaks/booking_cancelled_modal.dart';
@@ -18,9 +19,7 @@ import '../freezed_models/treks/trek_detail_model.dart';
 import '../repository/api_result.dart';
 import '../repository/repository.dart';
 import '../repository/network_url.dart';
-import '../controller/dashboard_controller.dart';
 import '../utils/auth_utils.dart';
-import '../utils/booking_constants.dart';
 // import '../models/trekcard/trek_card_list_model.dart';
 
 class TrekController extends GetxController {
@@ -102,10 +101,6 @@ class TrekController extends GetxController {
 
   //endregion
 
-  @override
-  void onInit() {
-    super.onInit();
-  }
 
   @override
   void onClose() {
@@ -450,6 +445,16 @@ class TrekController extends GetxController {
   Future<void> createTrekOrder() async {
     try {
       showLoaderDialog();
+      // Populate travelers from the selected list, normalizing gender to title case
+      createOrderRequestModel.value = createOrderRequestModel.value.copyWith(
+        travelers: travellerDetailList.map((t) {
+          final g = t.gender ?? '';
+          final normalizedGender = g.isNotEmpty
+              ? g[0].toUpperCase() + g.substring(1).toLowerCase()
+              : g;
+          return t.copyWith(gender: normalizedGender);
+        }).toList(),
+      );
       final response = await repository.postApiCall(
         url: NetworkUrl.addBooking,
         body: createOrderRequestModel.toJson(),
@@ -538,7 +543,6 @@ class TrekController extends GetxController {
   }) async {
     String body = json.encode({
       "trek_id": trekId,
-      "customer_id": customerId,
       "booking_id": bookingId,
       "batch_id": batchId,
       "rating_value": rating.value,
@@ -611,6 +615,7 @@ class TrekController extends GetxController {
         final responseData = BookingCancelledModal.fromJson(response);
         if (responseData.success == true) {
           requestCancellationResponseObserver.value = ApiResult.success(responseData);
+          Get.find<DashboardController>().getBookingHistory(refresh: true);
           return null;
         }
         throw "${responseData.message}";

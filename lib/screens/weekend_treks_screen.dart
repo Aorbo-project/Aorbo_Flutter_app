@@ -295,7 +295,7 @@ class _WeekendTreksScreenState extends State<WeekendTreksScreen>
                     boxShadow: isSel
                         ? [
                             BoxShadow(
-                              color: _W.teal.withOpacity(0.25),
+                              color: _W.teal.withValues(alpha: 0.25),
                               blurRadius: 8,
                               offset: const Offset(0, 3),
                             )
@@ -381,7 +381,7 @@ class _WeekendTreksScreenState extends State<WeekendTreksScreen>
         border: Border.all(color: _W.divider),
         boxShadow: [
           BoxShadow(
-            color: CommonColors.blackColor.withOpacity(0.05),
+            color: CommonColors.blackColor.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -528,7 +528,7 @@ class _WeekendTreksScreenState extends State<WeekendTreksScreen>
                   borderRadius: BorderRadius.circular(3.w),
                   boxShadow: [
                     BoxShadow(
-                      color: _W.teal.withOpacity(0.3),
+                      color: _W.teal.withValues(alpha: 0.3),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),

@@ -1,11 +1,8 @@
 import 'package:arobo_app/freezed_models/booking/booking_data_model.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
-import '../utils/booking_constants.dart';
 import '../utils/common_colors.dart';
-import '../utils/common_images.dart';
 import '../utils/screen_constants.dart';
 import 'package:intl/intl.dart';
 
@@ -27,7 +24,7 @@ class SlotBookingDetailsModal extends StatelessWidget {
 
 
   const SlotBookingDetailsModal({
-    Key? key,
+    super.key,
     required this.trekName,
     required this.adultCount,
     required this.fromLocation,
@@ -39,7 +36,7 @@ class SlotBookingDetailsModal extends StatelessWidget {
     required this.travellers,
     required this.breakdown,
     required this.isPartialPayment,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +44,7 @@ class SlotBookingDetailsModal extends StatelessWidget {
     final totalAmount = breakdown?.amountToPayNow;
 
     // Helper method for calculating end date
-    String _calculateEndDate(String startDate, String duration) {
+    String calculateEndDate(String startDate, String duration) {
       try {
         // Parse the start date - handle different date formats
         DateTime start;
@@ -79,7 +76,7 @@ class SlotBookingDetailsModal extends StatelessWidget {
     }
 
     // Helper method to format duration like traveller information screen
-    String _formatDuration(String duration) {
+    String formatDuration(String duration) {
       try {
         // Handle "3D 2N" format and convert to "3D|2N"
         if (duration.contains(' ')) {
@@ -234,7 +231,7 @@ class SlotBookingDetailsModal extends StatelessWidget {
                     child: Text(
                       textAlign: TextAlign.center,
                       textScaler: const TextScaler.linear(1.0),
-                      _formatDuration(duration),
+                      formatDuration(duration),
                       style: GoogleFonts.roboto(
                         fontSize: FontSize.s10,
                         fontWeight: FontWeight.w300,
@@ -253,7 +250,7 @@ class SlotBookingDetailsModal extends StatelessWidget {
                         child: Row(
                           children: [
                             Text(
-                              _calculateEndDate(departureDate, duration),
+                              calculateEndDate(departureDate, duration),
                               textScaler: const TextScaler.linear(1.0),
                               style: GoogleFonts.roboto(
                                 fontSize: FontSize.s9,

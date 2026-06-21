@@ -437,7 +437,7 @@ class _RateReviewScreenState extends State<RateReviewScreen>
                 gradient: LinearGradient(
                   colors: intRating > 0
                       ? [
-                          ratingColor.withOpacity(0.5),
+                          ratingColor.withValues(alpha: 0.5),
                           ratingColor,
                         ]
                       : [
@@ -464,7 +464,7 @@ class _RateReviewScreenState extends State<RateReviewScreen>
                       color: _R.tealSoft,
                       borderRadius: BorderRadius.circular(100),
                       border: Border.all(
-                        color: _R.teal.withOpacity(0.12),
+                        color: _R.teal.withValues(alpha: 0.12),
                       ),
                     ),
                     child: Text(
@@ -756,7 +756,7 @@ class _RateReviewScreenState extends State<RateReviewScreen>
         ),
         boxShadow: [
           BoxShadow(
-            color: CommonColors.blackColor.withOpacity(0.08),
+            color: CommonColors.blackColor.withValues(alpha: 0.08),
             blurRadius: 14,
             offset: const Offset(0, -3),
           ),
@@ -786,9 +786,7 @@ class _RateReviewScreenState extends State<RateReviewScreen>
               _submitFeedback(
                 trekId: booking?.trek?.id ?? 0,
                 customerId: booking?.customerId ?? 0,
-                bookingId: booking?.travelers?.isNotEmpty == true
-                    ? (booking!.travelers![0].bookingId ?? 0)
-                    : 0,
+                bookingId: booking?.id ?? 0,
                 batchId: booking?.batch?.id ?? 0,
                 safetySecurity:
                     selectedCategories.contains('Safety and Security'),
@@ -873,11 +871,11 @@ class _GlassCard extends StatelessWidget {
         color: _R.cardBg,
         borderRadius: BorderRadius.circular(3.8.w),
         border: Border.all(
-          color: _R.divider.withOpacity(0.95),
+          color: _R.divider.withValues(alpha: 0.95),
         ),
         boxShadow: [
           BoxShadow(
-            color: CommonColors.blackColor.withOpacity(0.05),
+            color: CommonColors.blackColor.withValues(alpha: 0.05),
             blurRadius: 14,
             offset: const Offset(0, 5),
           ),
@@ -917,7 +915,7 @@ class _SectionHeader extends StatelessWidget {
             borderRadius: BorderRadius.circular(1.9.w),
             boxShadow: [
               BoxShadow(
-                color: _R.ink.withOpacity(0.12),
+                color: _R.ink.withValues(alpha: 0.12),
                 blurRadius: 8,
                 offset: const Offset(0, 3),
               ),
@@ -998,7 +996,7 @@ class _SelectionCounter extends StatelessWidget {
         color: active ? _R.tealSoft : _R.bg,
         borderRadius: BorderRadius.circular(100),
         border: Border.all(
-          color: active ? _R.teal.withOpacity(0.18) : _R.divider,
+          color: active ? _R.teal.withValues(alpha: 0.18) : _R.divider,
         ),
       ),
       child: Text(
@@ -1040,13 +1038,13 @@ class _ProfessionalCategoryTile extends StatelessWidget {
         color: selected ? item.tint : _R.bg,
         borderRadius: BorderRadius.circular(3.w),
         border: Border.all(
-          color: selected ? item.accent.withOpacity(0.42) : _R.divider,
+          color: selected ? item.accent.withValues(alpha: 0.42) : _R.divider,
           width: selected ? 1.3 : 1.0,
         ),
         boxShadow: selected
             ? [
                 BoxShadow(
-                  color: item.accent.withOpacity(0.1),
+                  color: item.accent.withValues(alpha: 0.1),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -1066,7 +1064,7 @@ class _ProfessionalCategoryTile extends StatelessWidget {
               border: Border.all(
                 color: selected
                     ? item.accent
-                    : item.accent.withOpacity(0.18),
+                    : item.accent.withValues(alpha: 0.18),
               ),
             ),
             child: Center(
@@ -1148,7 +1146,7 @@ class _ProfessionalCategoryTile extends StatelessWidget {
               border: Border.all(
                 color: selected
                     ? item.accent
-                    : _R.inkLight.withOpacity(0.45),
+                    : _R.inkLight.withValues(alpha: 0.45),
                 width: 1.3,
               ),
             ),
@@ -1465,7 +1463,7 @@ class _PulseRingState extends State<_PulseRing>
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(
-              color: widget.color.withOpacity(_opacity.value),
+              color: widget.color.withValues(alpha: _opacity.value),
               width: 1.3,
             ),
           ),
@@ -1498,10 +1496,10 @@ class _SentimentPill extends StatelessWidget {
         vertical: 0.6.h,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.10),
+        color: color.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: color.withOpacity(0.30),
+          color: color.withValues(alpha: 0.30),
         ),
       ),
       child: Row(
@@ -1599,7 +1597,7 @@ class _AnimatedTextFieldState extends State<_AnimatedTextField>
             boxShadow: _focus.hasFocus
                 ? [
                     BoxShadow(
-                      color: _R.ink.withOpacity(0.05),
+                      color: _R.ink.withValues(alpha: 0.05),
                       blurRadius: 10,
                       offset: const Offset(0, 3),
                     ),

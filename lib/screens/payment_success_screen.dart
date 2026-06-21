@@ -74,7 +74,7 @@ class _ConfettiPainter extends CustomPainter {
       canvas.rotate(p.rotation);
       canvas.drawRect(
         Rect.fromCenter(center: Offset.zero, width: p.size, height: p.size * 0.6),
-        Paint()..color = p.color.withOpacity(p.opacity),
+        Paint()..color = p.color.withValues(alpha: p.opacity),
       );
       canvas.restore();
     }
@@ -358,12 +358,12 @@ class _IconPill extends StatelessWidget {
           width: 13.w,
           height: 13.w,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.10),
+            color: color.withValues(alpha: 0.10),
             shape: BoxShape.circle,
-            border: Border.all(color: color.withOpacity(0.25), width: 1.5),
+            border: Border.all(color: color.withValues(alpha: 0.25), width: 1.5),
             boxShadow: [
               BoxShadow(
-                color: color.withOpacity(0.15),
+                color: color.withValues(alpha: 0.15),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -580,9 +580,9 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                       width: 25.w,
                       height: 25.w,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 2),
                       ),
                       child: const Icon(Icons.check_rounded, color: Colors.white, size: 50),
                     ),
@@ -603,7 +603,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontSize: 13.sp,
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                       ),
                     ),
                   ],
@@ -662,7 +662,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 24,
             offset: const Offset(0, 6),
           ),
@@ -706,9 +706,9 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 0.5.h),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.22),
+                    color: Colors.white.withValues(alpha: 0.22),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white.withOpacity(0.4)),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -884,7 +884,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                           Container(
                             padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.h),
                             decoration: BoxDecoration(
-                              color: _TC.accent.withOpacity(0.04),
+                              color: _TC.accent.withValues(alpha: 0.04),
                               borderRadius: const BorderRadius.only(
                                 topLeft: Radius.circular(12), topRight: Radius.circular(12),
                               ),
@@ -897,7 +897,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                               ],
                             ),
                           ),
-                          ...?data.travelers!.asMap().entries.map((e) {
+                          ...data.travelers!.asMap().entries.map((e) {
                             final t = e.value;
                             final isLast = e.key == (data.travelers!.length - 1);
                             return Container(
@@ -937,7 +937,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                                 ],
                               ),
                             );
-                          }).toList(),
+                          }),
                         ],
                       ),
                     ),
@@ -1005,17 +1005,17 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                     padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 2.h),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [_TC.tealLight, _TC.teal.withOpacity(0.05)],
+                        colors: [_TC.tealLight, _TC.teal.withValues(alpha: 0.05)],
                       ),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: _TC.teal.withOpacity(0.2)),
+                      border: Border.all(color: _TC.teal.withValues(alpha: 0.2)),
                     ),
                     child: Row(
                       children: [
                         Container(
                           width: 9.w, height: 9.w,
                           decoration: BoxDecoration(
-                            color: _TC.teal.withOpacity(0.12),
+                            color: _TC.teal.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Icon(Icons.check_circle_rounded, color: _TC.teal, size: 5.w),
@@ -1098,7 +1098,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
             clipper: TicketClipper(cutoutOffset),
             elevation: 15,
             color: Colors.transparent,
-            shadowColor: Colors.black.withOpacity(0.15),
+            shadowColor: Colors.black.withValues(alpha: 0.15),
             child: ClipPath(
               clipper: TicketClipper(cutoutOffset),
               child: cardContent,
@@ -1125,7 +1125,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2)),
+            BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2)),
           ],
         ),
         child: Row(
@@ -1194,7 +1194,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: _TC.divider),
             boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2)),
+              BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2)),
             ],
           ),
           child: Row(
@@ -1355,7 +1355,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: _TC.divider),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2)),
+            BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 2)),
           ],
         ),
         child: Column(
@@ -1402,7 +1402,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 2.5.w, vertical: 0.4.h),
       decoration: BoxDecoration(
-        color: (isFemale ? const Color(0xFFEC4899) : _TC.brand).withOpacity(0.1),
+        color: (isFemale ? const Color(0xFFEC4899) : _TC.brand).withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(gender, textAlign: TextAlign.center, style: TextStyle(

@@ -1,5 +1,4 @@
 import 'package:arobo_app/freezed_models/booking/booking_data_model.dart';
-import 'package:arobo_app/utils/booking_constants.dart';
 import 'package:arobo_app/utils/common_images.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -75,11 +74,11 @@ class TotalFareModal extends StatelessWidget {
 
 
   const TotalFareModal({
-    Key? key,
+    super.key,
     required this.breakDown,
     required this.adultCount,
     required this.onClose
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

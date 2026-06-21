@@ -25,10 +25,6 @@ class UserController extends GetxController {
   RxInt travellerId = 0.obs;
 
   //endregion
-  @override
-  void onInit() {
-    super.onInit();
-  }
 
   @override
   void onClose() {

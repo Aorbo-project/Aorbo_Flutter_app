@@ -99,10 +99,129 @@ class _AnimatedCardState extends State<_AnimatedCard>
 }
 
 // ─────────────────────────────────────────────
+//  TRAVELLER LIMIT BANNER  (slides up from bottom)
+// ─────────────────────────────────────────────
+class _TravellerLimitBanner extends StatefulWidget {
+  final int limit;
+  final VoidCallback onClose;
+
+  const _TravellerLimitBanner({required this.limit, required this.onClose});
+
+  @override
+  State<_TravellerLimitBanner> createState() => _TravellerLimitBannerState();
+}
+
+class _TravellerLimitBannerState extends State<_TravellerLimitBanner>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<Offset> _slide;
+  late Animation<double>  _fade;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 320),
+    );
+    _slide = Tween<Offset>(
+      begin: const Offset(0, 1),
+      end:   Offset.zero,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
+    _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
+    _ctrl.forward();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _dismiss() async {
+    await _ctrl.reverse();
+    widget.onClose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _fade,
+      child: SlideTransition(
+        position: _slide,
+        child: Container(
+          margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
+          padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.4.h),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1C1C1E),
+            borderRadius: BorderRadius.circular(3.w),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.18),
+                blurRadius: 16,
+                offset: const Offset(0, -4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 8.w, height: 8.w,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.groups_rounded,
+                    color: Colors.white, size: 4.5.w),
+              ),
+              SizedBox(width: 3.w),
+              Expanded(
+                child: RichText(
+                  textScaler: const TextScaler.linear(1.0),
+                  text: TextSpan(
+                    style: GoogleFonts.poppins(
+                      fontSize: FontSize.s10,
+                      color: Colors.white.withValues(alpha: 0.85),
+                    ),
+                    children: [
+                      const TextSpan(text: 'Max '),
+                      TextSpan(
+                        text: '${widget.limit} traveller${widget.limit > 1 ? 's' : ''}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const TextSpan(text: ' allowed for this booking.'),
+                    ],
+                  ),
+                ),
+              ),
+              GestureDetector(
+                onTap: _dismiss,
+                child: Container(
+                  width: 7.w, height: 7.w,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.close_rounded,
+                      color: Colors.white.withValues(alpha: 0.8), size: 4.w),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
 //  MAIN SCREEN
 // ─────────────────────────────────────────────
 class TravellerInformationScreen extends StatefulWidget {
-  const TravellerInformationScreen({Key? key}) : super(key: key);
+  const TravellerInformationScreen({super.key});
 
   @override
   State<TravellerInformationScreen> createState() =>
@@ -122,10 +241,7 @@ class _TravellerInformationScreenState
   String _selectedState = BookingConstants.defaultState;
   List<String> filteredStates = [];
 
-  bool _whatsappUpdates = false;
-
-  // NOTE: This will be initialized in initState() based on the
-  // actual cancellation policy of the trek.
+  final bool _whatsappUpdates = false;
   String _selectedPaymentOption = 'standard';
 
   final GlobalKey _checkboxKey = GlobalKey();
@@ -147,18 +263,122 @@ class _TravellerInformationScreenState
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(5.w)),
       ),
-      builder: (context) => _StateSelectionSheetContent(
-        selectedState: _selectedState,
-        onStateSelected: (stateName) {
-          final idx = _dashboardC.stateList
-              .indexWhere((e) => e.name == stateName);
-          setModalState(() {
-            _userC.stateUpdateId.value = idx >= 0
-                ? (_dashboardC.stateList[idx].id ?? 0)
-                : 0;
-            _selectedState = stateName;
-          });
-        },
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) => Container(
+          height: MediaQuery.of(context).size.height * 0.75,
+          decoration: BoxDecoration(
+            color: _TI.sheetBg,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(5.w)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.10),
+                blurRadius: 24,
+                offset: const Offset(0, -6),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+              top: 2.5.h, left: 5.w, right: 5.w,
+            ),
+            child: Column(
+              children: [
+                _sheetHandle(),
+                Text(
+                  'Select state of residence',
+                  textScaler: const TextScaler.linear(1.0),
+                  style: GoogleFonts.poppins(
+                    fontSize: FontSize.s14,
+                    fontWeight: FontWeight.w700,
+                    color: _TI.sheetInk,
+                  ),
+                ),
+                SizedBox(height: 2.h),
+                Container(
+                  height: 6.h,
+                  padding: EdgeInsets.symmetric(horizontal: 3.w),
+                  decoration: BoxDecoration(
+                    color: _TI.sheetSurface,
+                    borderRadius: BorderRadius.circular(3.w),
+                    border: Border.all(color: _TI.sheetBorder),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.search, color: _TI.sheetInkMid, size: 5.w),
+                      SizedBox(width: 2.w),
+                      Expanded(
+                        child: TextField(
+                          controller: searchController,
+                          style: GoogleFonts.poppins(
+                            fontSize: FontSize.s11, color: _TI.sheetInk),
+                          cursorColor: _TI.sheetAccent,
+                          decoration: InputDecoration(
+                            hintText: 'Search state',
+                            border: InputBorder.none,
+                            hintStyle: GoogleFonts.poppins(
+                              fontSize: FontSize.s10, color: _TI.sheetInkMid),
+                          ),
+                          onChanged: (value) {
+                            setSheetState(() {
+                              filteredStates = _dashboardC.stateList
+                                  .map((e) => e.name!)
+                                  .where((s) => s.toLowerCase()
+                                      .contains(value.toLowerCase()))
+                                  .toList();
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 1.5.h),
+                Expanded(
+                  child: ListView.separated(
+                    itemCount: filteredStates.length,
+                    separatorBuilder: (_, __) =>
+                        Divider(color: _TI.sheetBorder, height: 1),
+                    itemBuilder: (context, index) {
+                      final stateName = filteredStates[index];
+                      final isChosen = stateName == _selectedState;
+                      return ListTile(
+                        title: Text(
+                          stateName,
+                          textScaler: const TextScaler.linear(1.0),
+                          style: GoogleFonts.poppins(
+                            fontSize: FontSize.s11,
+                            fontWeight: isChosen
+                                ? FontWeight.w700
+                                : FontWeight.w400,
+                            color: isChosen
+                                ? _TI.sheetAccent
+                                : _TI.sheetInk,
+                          ),
+                        ),
+                        trailing: isChosen
+                            ? Icon(Icons.check_circle_rounded,
+                                color: _TI.sheetAccent, size: 5.w)
+                            : null,
+                        onTap: () {
+                          final idx = _dashboardC.stateList
+                              .indexWhere((e) => e.name == stateName);
+                          setModalState(() {
+                            _userC.stateUpdateId.value = idx >= 0
+                                ? (_dashboardC.stateList[idx].id ?? 0)
+                                : 0;
+                            _selectedState = stateName;
+                          });
+                          Navigator.pop(context);
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -320,7 +540,7 @@ class _TravellerInformationScreenState
           borderRadius: BorderRadius.circular(4.w),
           boxShadow: [
             BoxShadow(
-              color: CommonColors.blackColor.withOpacity(0.07),
+              color: CommonColors.blackColor.withValues(alpha: 0.07),
               blurRadius: 10,
               offset: const Offset(0, 3),
             ),
@@ -634,6 +854,7 @@ class _TravellerInformationScreenState
                   onPressed: () async {
                     if (_validateContactDetails()) {
                       await _userC.updateUserProfile();
+                      if (!context.mounted) return;
                       setState(() {});
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -766,6 +987,7 @@ class _TravellerInformationScreenState
                         setState(() {});
                       }
 
+                      if (!context.mounted) return;
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                         content: Text(
@@ -949,10 +1171,10 @@ class _TravellerInformationScreenState
                           padding: EdgeInsets.symmetric(
                               horizontal: 4.w, vertical: 1.5.h),
                           decoration: BoxDecoration(
-                            color: _TI.brand.withOpacity(0.06),
+                            color: _TI.brand.withValues(alpha: 0.06),
                             borderRadius: BorderRadius.circular(3.w),
                             border: Border.all(
-                                color: _TI.brand.withOpacity(0.15)),
+                                color: _TI.brand.withValues(alpha: 0.15)),
                           ),
                           child: Row(children: [
                             Expanded(child: Column(
@@ -1057,7 +1279,7 @@ class _TravellerInformationScreenState
                             color: const Color(0xFFF8F9FF),
                             borderRadius: BorderRadius.circular(3.w),
                             border: Border.all(
-                                color: _TI.brand.withOpacity(0.12)),
+                                color: _TI.brand.withValues(alpha: 0.12)),
                           ),
                           child: Row(
                             mainAxisAlignment:
@@ -1181,12 +1403,12 @@ class _TravellerInformationScreenState
                                 padding: EdgeInsets.symmetric(
                                     horizontal: 3.w, vertical: 0.5.h),
                                 decoration: BoxDecoration(
-                                  color: _TI.brand.withOpacity(0.08),
+                                  color: _TI.brand.withValues(alpha: 0.08),
                                   borderRadius:
                                       BorderRadius.circular(20),
                                   border: Border.all(
                                       color:
-                                          _TI.brand.withOpacity(0.25)),
+                                          _TI.brand.withValues(alpha: 0.25)),
                                 ),
                                 child: Text(
                                   (_userC.userProfileData.value.customer
@@ -1319,7 +1541,7 @@ class _TravellerInformationScreenState
                                 color: const Color(0xFFF8F9FF),
                                 borderRadius: BorderRadius.circular(3.w),
                                 border: Border.all(
-                                  color: _TI.brand.withOpacity(0.2),
+                                  color: _TI.brand.withValues(alpha: 0.2),
                                   width: 1.5),
                               ),
                               child: Column(children: [
@@ -1430,13 +1652,13 @@ class _TravellerInformationScreenState
                                       horizontal: 4.w, vertical: 1.5.h),
                                   decoration: BoxDecoration(
                                     color: freeCancellation
-                                        ? _TI.brand.withOpacity(0.06)
+                                        ? _TI.brand.withValues(alpha: 0.06)
                                         : const Color(0xFFF8F9FF),
                                     borderRadius:
                                         BorderRadius.circular(3.w),
                                     border: Border.all(
                                       color: freeCancellation
-                                          ? _TI.brand.withOpacity(0.3)
+                                          ? _TI.brand.withValues(alpha: 0.3)
                                           : _TI.divider),
                                   ),
                                   child: Row(children: [
@@ -1697,7 +1919,7 @@ class _TravellerInformationScreenState
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [BoxShadow(
-          color: Colors.black.withOpacity(0.08),
+          color: Colors.black.withValues(alpha: 0.08),
           blurRadius: 12,
           offset: const Offset(0, -3))],
       ),
@@ -1856,12 +2078,12 @@ class _TravellerInformationScreenState
         padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
         decoration: BoxDecoration(
           color: isSelected
-              ? _TI.brand.withOpacity(0.05)
+              ? _TI.brand.withValues(alpha: 0.05)
               : const Color(0xFFF8F9FF),
           borderRadius: BorderRadius.circular(3.w),
           border: Border.all(
             color: isSelected
-                ? _TI.brand.withOpacity(0.4)
+                ? _TI.brand.withValues(alpha: 0.4)
                 : _TI.divider,
             width: isSelected ? 1.5 : 1),
         ),
@@ -1925,12 +2147,12 @@ class _TravellerInformationScreenState
             EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.8.h),
         decoration: BoxDecoration(
           color: isSelected
-              ? _TI.brand.withOpacity(0.05)
+              ? _TI.brand.withValues(alpha: 0.05)
               : const Color(0xFFF8F9FF),
           borderRadius: BorderRadius.circular(3.w),
           border: Border.all(
             color: isSelected
-                ? _TI.brand.withOpacity(0.4)
+                ? _TI.brand.withValues(alpha: 0.4)
                 : _TI.divider,
             width: isSelected ? 1.5 : 1),
         ),
@@ -1992,17 +2214,17 @@ class _TravellerInformationScreenState
         curve: Curves.easeOutCubic,
         decoration: BoxDecoration(
           color: isTravellerSelected
-              ? _TI.brand.withOpacity(0.04)
+              ? _TI.brand.withValues(alpha: 0.04)
               : const Color(0xFFF8F9FF),
           borderRadius: BorderRadius.circular(3.w),
           border: Border.all(
             color: isTravellerSelected
-                ? _TI.brand.withOpacity(0.3)
+                ? _TI.brand.withValues(alpha: 0.3)
                 : _TI.divider,
             width: isTravellerSelected ? 1.5 : 1),
           boxShadow: isTravellerSelected
               ? [BoxShadow(
-                  color: _TI.brand.withOpacity(0.08),
+                  color: _TI.brand.withValues(alpha: 0.08),
                   blurRadius: 8,
                   offset: const Offset(0, 2))]
               : [],
@@ -2043,7 +2265,7 @@ class _TravellerInformationScreenState
               width: 9.w, height: 9.w,
               decoration: BoxDecoration(
                 color: isTravellerSelected
-                    ? _TI.brand.withOpacity(0.12)
+                    ? _TI.brand.withValues(alpha: 0.12)
                     : const Color(0xFFE2E8F0),
                 shape: BoxShape.circle,
               ),
@@ -2085,10 +2307,10 @@ class _TravellerInformationScreenState
                 padding: EdgeInsets.symmetric(
                     horizontal: 2.5.w, vertical: 0.4.h),
                 decoration: BoxDecoration(
-                  color: _TI.brand.withOpacity(0.08),
+                  color: _TI.brand.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                      color: _TI.brand.withOpacity(0.2))),
+                      color: _TI.brand.withValues(alpha: 0.2))),
                 child: Text('Edit',
                   textScaler: const TextScaler.linear(1.0),
                   style: TextStyle(fontFamily:'Poppins',

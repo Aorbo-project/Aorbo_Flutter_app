@@ -147,8 +147,8 @@ class _BookingCancellationSuccessScreenState extends State<BookingCancellationSu
       child: Column(
         children: [
           _buildTableRow(
-            '${booking?.travelers?.length ?? 0} Slots',
-            booking?.travelers
+            '${booking.travelers?.length ?? 0} Slots',
+            booking.travelers
                     ?.map((t) => t.traveler?.name ?? 'Unknown')
                     .join(', ') ??
                 'Unknown',

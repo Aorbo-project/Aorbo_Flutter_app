@@ -17,7 +17,7 @@
     final BorderRadius? borderRadius;
 
     const CommonSafetyCard({
-      Key? key,
+      super.key,
       required this.title,
       required this.subtitle,
       required this.backgroundImage,
@@ -32,7 +32,7 @@
       this.onTap,
       this.margin,
       this.borderRadius,
-    }) : super(key: key);
+    });
 
     @override
     Widget build(BuildContext context) {

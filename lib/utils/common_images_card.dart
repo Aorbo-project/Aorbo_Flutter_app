@@ -1,4 +1,3 @@
-import 'package:arobo_app/repository/network_url.dart';
 import 'package:arobo_app/widgets/custom_network_image.dart';
 import 'package:flutter/material.dart';
 

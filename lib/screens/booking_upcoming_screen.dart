@@ -112,7 +112,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
   late Animation<double> _glowAnim;
 
   bool _ratingPanelVisible = false;
-  bool _ratingDismissed = false;
+  final bool _ratingDismissed = false;
   bool _isFabPressed = false;
 
   Set<int> openSections = {0};
@@ -167,6 +167,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
       if (Get.isDialogOpen ?? false) Get.back();
     } catch (e) {
       if (Get.isDialogOpen ?? false) Get.back();
+      if (!mounted) return;
       CustomSnackBar.show(
         context,
         message: 'Failed to generate ticket. Please try again.',
@@ -439,7 +440,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 24,
             offset: const Offset(0, 6),
           ),
@@ -485,9 +486,9 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                     vertical: 0.5.h,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.22),
+                    color: Colors.white.withValues(alpha: 0.22),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white.withOpacity(0.4)),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -731,7 +732,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                               vertical: 1.h,
                             ),
                             decoration: BoxDecoration(
-                              color: _TC.accent.withOpacity(0.04),
+                              color: _TC.accent.withValues(alpha: 0.04),
                               borderRadius: const BorderRadius.only(
                                 topLeft: Radius.circular(12),
                                 topRight: Radius.circular(12),
@@ -820,7 +821,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                                 ],
                               ),
                             );
-                          }).toList(),
+                          }),
                         ],
                       ),
                     ),
@@ -988,7 +989,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
             clipper: TicketClipper(cutoutOffset),
             elevation: 15,
             color: Colors.transparent,
-            shadowColor: Colors.black.withOpacity(0.15),
+            shadowColor: Colors.black.withValues(alpha: 0.15),
             child: ClipPath(
               clipper: TicketClipper(cutoutOffset),
               child: cardContent,
@@ -1029,7 +1030,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
           border: Border.all(color: _TC.divider),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -1065,6 +1066,12 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
 
   // ── FLOATING RATING BUTTON ────────────────────────────────────────────────
   Widget _buildFloatingRatingButton({required BookingHistoryData bookingData}) {
+    // Review only available after trek ends and booking was not cancelled
+    final bool isCancelled = bookingData.status == 'cancelled';
+    final bool trekEnded = bookingData.batch?.endDate != null &&
+        DateTime.now().isAfter(DateTime.tryParse(bookingData.batch!.endDate!) ?? DateTime.now());
+    if (isCancelled || !trekEnded) return const SizedBox.shrink();
+
     final bool isReviewed = bookingData.ratingGiven == true;
     final double currentRating = (bookingData.ratingValue ?? 0.0).toDouble();
 
@@ -1085,10 +1092,10 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: primary.withOpacity(0.08)),
+                border: Border.all(color: primary.withValues(alpha: 0.08)),
                 boxShadow: [
                   BoxShadow(
-                    color: primary.withOpacity(0.10),
+                    color: primary.withValues(alpha: 0.10),
                     blurRadius: 26,
                     offset: const Offset(0, 10),
                   ),
@@ -1105,7 +1112,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                           width: 11.w,
                           height: 11.w,
                           decoration: BoxDecoration(
-                            color: primary.withOpacity(0.08),
+                            color: primary.withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: Icon(
@@ -1175,7 +1182,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                       decoration: BoxDecoration(
                         color: const Color(0xFFF8FAFC),
                         borderRadius: BorderRadius.circular(18),
-                        border: Border.all(color: primary.withOpacity(0.06)),
+                        border: Border.all(color: primary.withValues(alpha: 0.06)),
                       ),
                       child: Row(
                         children: [
@@ -1272,15 +1279,15 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
             ),
             border: Border.all(
               color: isReviewed
-                  ? const Color(0xFF14B8A6).withOpacity(0.18)
-                  : const Color(0xFF3B82F6).withOpacity(0.18),
+                  ? const Color(0xFF14B8A6).withValues(alpha: 0.18)
+                  : const Color(0xFF3B82F6).withValues(alpha: 0.18),
               width: 1.2,
             ),
             boxShadow: [
               BoxShadow(
                 color: isReviewed
-                    ? const Color(0xFF14B8A6).withOpacity(0.10)
-                    : const Color(0xFF3B82F6).withOpacity(0.10),
+                    ? const Color(0xFF14B8A6).withValues(alpha: 0.10)
+                    : const Color(0xFF3B82F6).withValues(alpha: 0.10),
                 blurRadius: 24,
                 offset: const Offset(0, 10),
               ),
@@ -1350,7 +1357,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                       (isReviewed
                               ? const Color(0xFF14B8A6)
                               : const Color(0xFF3B82F6))
-                          .withOpacity(0.08),
+                          .withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: AnimatedRotation(
@@ -1386,10 +1393,10 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: CommonColors.appRedColor.withOpacity(0.25)),
+        border: Border.all(color: CommonColors.appRedColor.withValues(alpha: 0.25)),
         boxShadow: [
           BoxShadow(
-            color: CommonColors.appRedColor.withOpacity(0.07),
+            color: CommonColors.appRedColor.withValues(alpha: 0.07),
             blurRadius: 12,
             offset: const Offset(0, 3),
           ),
@@ -1404,7 +1411,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                 width: 9.w,
                 height: 9.w,
                 decoration: BoxDecoration(
-                  color: CommonColors.appRedColor.withOpacity(0.1),
+                  color: CommonColors.appRedColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
@@ -1444,7 +1451,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                   width: double.infinity,
                   padding: EdgeInsets.all(3.w),
                   decoration: BoxDecoration(
-                    color: CommonColors.appRedColor.withOpacity(0.06),
+                    color: CommonColors.appRedColor.withValues(alpha: 0.06),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
@@ -1594,7 +1601,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
+                                color: Colors.black.withValues(alpha: 0.05),
                                 blurRadius: 10,
                                 offset: const Offset(0, 2),
                               ),
@@ -1748,7 +1755,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                               border: Border.all(color: _TC.divider),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.04),
+                                  color: Colors.black.withValues(alpha: 0.04),
                                   blurRadius: 8,
                                   offset: const Offset(0, 2),
                                 ),

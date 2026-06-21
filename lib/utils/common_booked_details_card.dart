@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 import '../freezed_models/booking/booking_history_model.dart';
 import 'common_colors.dart';
-import 'common_images.dart';
 import 'screen_constants.dart';
 
 // ─────────────────────────────────────────────
@@ -125,7 +124,7 @@ class UpcomingBookingCard extends StatelessWidget {
                     gradient: LinearGradient(
                       colors: [
                         _UpC.divider,
-                        _UpC.divider.withOpacity(0.3),
+                        _UpC.divider.withValues(alpha: 0.3),
                       ],
                     ),
                   ),
@@ -156,7 +155,7 @@ class UpcomingBookingCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        _UpC.divider.withOpacity(0.3),
+                        _UpC.divider.withValues(alpha: 0.3),
                         _UpC.divider,
                       ],
                     ),
@@ -197,7 +196,7 @@ class UpcomingBookingCard extends StatelessWidget {
           border: Border.all(color: _UpC.divider, width: 1),
           boxShadow: [
             BoxShadow(
-              color: CommonColors.blackColor.withOpacity(0.07),
+              color: CommonColors.blackColor.withValues(alpha: 0.07),
               offset: const Offset(0, 3),
               blurRadius: 10,
             ),
@@ -235,10 +234,10 @@ class UpcomingBookingCard extends StatelessWidget {
                       padding: EdgeInsets.symmetric(
                           horizontal: 2.5.w, vertical: 0.35.h),
                       decoration: BoxDecoration(
-                        color: _getStatusColor(statusRaw).withOpacity(0.15),
+                        color: _getStatusColor(statusRaw).withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(1.5.w),
                         border: Border.all(
-                          color: _getStatusColor(statusRaw).withOpacity(0.4),
+                          color: _getStatusColor(statusRaw).withValues(alpha: 0.4),
                           width: 1,
                         ),
                       ),

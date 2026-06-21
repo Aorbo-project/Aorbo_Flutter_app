@@ -27,6 +27,7 @@ class NetworkUrl {
   static const String loginPath     = 'customer/auth/request-otp';
   static const String resendOtpPath = 'customer/auth/resend-otp';
   static const String verifyOtpPath = 'customer/auth/verify-otp';
+  static const String logoutPath    = 'customer/auth/logout';
   static const String deviceToken   = 'customer/device-token';
 
   //#endregion

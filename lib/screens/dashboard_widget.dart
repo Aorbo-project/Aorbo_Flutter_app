@@ -93,8 +93,8 @@ class _DashboardState extends State<Dashboard>
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
 
-  List<DateTime> _nearestWeekendDates = [];
-  Map<String, bool> _favoriteTreks = {};
+  final List<DateTime> _nearestWeekendDates = [];
+  final Map<String, bool> _favoriteTreks = {};
 
   // ---------------------------------------------------------------------------
   // Helpers
@@ -103,7 +103,7 @@ class _DashboardState extends State<Dashboard>
   String getFullImageUrl(String? path) {
     if (path == null || path.isEmpty) return '';
     if (path.startsWith('http')) return path;
-    return '[api.aorbotreks.co.in$path](https://api.aorbotreks.co.in$path)';
+    return 'https://api.aorbotreks.co.in$path';
   }
 
   List<String> _safeGradient(
@@ -191,8 +191,9 @@ class _DashboardState extends State<Dashboard>
     if (_knowMoreController.hasClients) _knowMoreController.jumpTo(0);
     if (_topTreksController.hasClients) _topTreksController.jumpTo(0);
     if (_trekShortsController.hasClients) _trekShortsController.jumpTo(0);
-    if (_seasonalForecastController.hasClients)
+    if (_seasonalForecastController.hasClients) {
       _seasonalForecastController.jumpTo(0);
+    }
   }
 
   Future<void> _initializeNTPTime() async {
@@ -414,6 +415,7 @@ class _DashboardState extends State<Dashboard>
     }
 
     if (_ntpTime == null) await _initializeNTPTime();
+    if (!context.mounted) return;
 
     final DateTime currentTime = _ntpTime ?? DateTime.now();
     final DateTime normalizedCurrent = DateTime(
@@ -440,7 +442,7 @@ class _DashboardState extends State<Dashboard>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withOpacity(0.4),
+      barrierColor: Colors.black.withValues(alpha: 0.4),
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setSheet) {
@@ -488,7 +490,7 @@ class _DashboardState extends State<Dashboard>
                             width: 44,
                             height: 4,
                             decoration: BoxDecoration(
-                              color: _C.inkLight.withOpacity(0.4),
+                              color: _C.inkLight.withValues(alpha: 0.4),
                               borderRadius: BorderRadius.circular(10),
                             ),
                           ),
@@ -511,7 +513,7 @@ class _DashboardState extends State<Dashboard>
                                       borderRadius:
                                           BorderRadius.circular(12),
                                       border: Border.all(
-                                          color: _C.teal.withOpacity(0.25)),
+                                          color: _C.teal.withValues(alpha: 0.25)),
                                     ),
                                     child: const Icon(
                                       Icons.calendar_month_rounded,
@@ -771,7 +773,7 @@ class _DashboardState extends State<Dashboard>
                                     fontFamily: 'Poppins',
                                     fontSize: 10.5,
                                     fontWeight: FontWeight.w700,
-                                    color: _C.danger.withOpacity(0.7),
+                                    color: _C.danger.withValues(alpha: 0.7),
                                     letterSpacing: 0.4,
                                   ),
                                   dowTextFormatter: (date, locale) =>
@@ -861,7 +863,7 @@ class _DashboardState extends State<Dashboard>
     return Container(
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
-        color: accent.withOpacity(0.1),
+        color: accent.withValues(alpha: 0.1),
         shape: BoxShape.circle,
       ),
       child: Icon(icon, size: 18, color: accent),
@@ -905,12 +907,12 @@ class _DashboardState extends State<Dashboard>
           border: isToday && !isSelected
               ? Border.all(color: _C.teal, width: 1.6)
               : isAvailable && !isSelected
-                  ? Border.all(color: _C.teal.withOpacity(0.35), width: 1)
+                  ? Border.all(color: _C.teal.withValues(alpha: 0.35), width: 1)
                   : null,
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: _C.teal.withOpacity(0.35),
+                    color: _C.teal.withValues(alpha: 0.35),
                     blurRadius: 10,
                     offset: const Offset(0, 3),
                   ),
@@ -934,7 +936,7 @@ class _DashboardState extends State<Dashboard>
                     : isAvailable
                         ? _C.teal
                         : isWeekend
-                            ? _C.danger.withOpacity(0.7)
+                            ? _C.danger.withValues(alpha: 0.7)
                             : _C.ink,
                 height: 1.0,
               ),
@@ -948,7 +950,7 @@ class _DashboardState extends State<Dashboard>
                   fontSize: 9,
                   fontWeight: FontWeight.w800,
                   color: isSelected
-                      ? Colors.white.withOpacity(0.95)
+                      ? Colors.white.withValues(alpha: 0.95)
                       : _C.teal,
                   height: 1.0,
                 ),
@@ -1141,7 +1143,7 @@ class _DashboardState extends State<Dashboard>
                                       Positioned.fill(
                                         child: TouchRipple(
                                           rippleColor:
-                                              _C.teal.withOpacity(0.08),
+                                              _C.teal.withValues(alpha: 0.08),
                                           onTap: _selectSourceLocation,
                                           child:
                                               const SizedBox.expand(),
@@ -1222,7 +1224,7 @@ class _DashboardState extends State<Dashboard>
                                       Positioned.fill(
                                         child: TouchRipple(
                                           rippleColor:
-                                              _C.teal.withOpacity(0.08),
+                                              _C.teal.withValues(alpha: 0.08),
                                           onTap: _selectDestinationTrek,
                                           child:
                                               const SizedBox.expand(),
@@ -1238,9 +1240,9 @@ class _DashboardState extends State<Dashboard>
                                     borderRadius:
                                         BorderRadius.circular(8),
                                     splashColor:
-                                        _C.teal.withOpacity(0.08),
+                                        _C.teal.withValues(alpha: 0.08),
                                     highlightColor:
-                                        _C.teal.withOpacity(0.04),
+                                        _C.teal.withValues(alpha: 0.04),
                                     child: Padding(
                                       padding:
                                           const EdgeInsets.symmetric(
@@ -1461,14 +1463,16 @@ class _DashboardState extends State<Dashboard>
                                                               [])
                                                           .where((d) {
                                                             if (d.date ==
-                                                                null)
+                                                                null) {
                                                               return false;
+                                                            }
                                                             final dt =
                                                                 DateTime
                                                                     .tryParse(
                                                                         d.date!);
-                                                            if (dt == null)
+                                                            if (dt == null) {
                                                               return false;
+                                                            }
                                                             return dt.isAfter(
                                                                 today.subtract(
                                                                     const Duration(
@@ -1524,8 +1528,9 @@ class _DashboardState extends State<Dashboard>
                                                                 cardData
                                                                         .date ??
                                                                     '');
-                                                        if (date == null)
+                                                        if (date == null) {
                                                           return const SizedBox();
+                                                        }
 
                                                         final String
                                                             formattedDate =
@@ -1609,7 +1614,7 @@ class _DashboardState extends State<Dashboard>
                                                                 color: isSelected
                                                                     ? _C.teal
                                                                     : isDateAvailable
-                                                                        ? _C.teal.withOpacity(0.35)
+                                                                        ? _C.teal.withValues(alpha: 0.35)
                                                                         : _C.fieldBorder,
                                                                 width: isSelected
                                                                     ? 1.5
@@ -1621,7 +1626,7 @@ class _DashboardState extends State<Dashboard>
                                                               color: isSelected
                                                                   ? _C.tealSoft
                                                                   : isDateAvailable
-                                                                      ? _C.tealSoft.withOpacity(0.4)
+                                                                      ? _C.tealSoft.withValues(alpha: 0.4)
                                                                       : _C.fieldBg,
                                                             ),
                                                             child: Column(
@@ -1912,7 +1917,7 @@ class _DashboardState extends State<Dashboard>
                                     BoxShadow(
                                       color: _isPressed
                                           ? Colors.transparent
-                                          : _C.teal.withOpacity(0.30),
+                                          : _C.teal.withValues(alpha: 0.30),
                                       blurRadius: 12,
                                       offset: const Offset(0, 5),
                                     ),
@@ -2076,8 +2081,9 @@ class _DashboardState extends State<Dashboard>
                                     physics:
                                         const BouncingScrollPhysics(),
                                     itemBuilder: (context, index) {
-                                      if (knowMoreCardsData.isEmpty)
+                                      if (knowMoreCardsData.isEmpty) {
                                         return const SizedBox();
+                                      }
                                       final cardData = knowMoreCardsData[
                                           index %
                                               knowMoreCardsData.length];
@@ -2393,8 +2399,9 @@ class _DashboardState extends State<Dashboard>
                                     physics:
                                         const BouncingScrollPhysics(),
                                     itemBuilder: (context, index) {
-                                      if (shortsTreksCardsData.isEmpty)
+                                      if (shortsTreksCardsData.isEmpty) {
                                         return const SizedBox();
+                                      }
                                       final cardData =
                                           shortsTreksCardsData[index %
                                               shortsTreksCardsData
@@ -2596,7 +2603,7 @@ class _DashboardState extends State<Dashboard>
                             fontSize: FontSize.s28,
                             fontWeight: FontWeight.bold,
                             color: CommonColors.greyColorf7f7f7
-                                .withOpacity(0.5),
+                                .withValues(alpha: 0.5),
                             height: 1.3,
                             letterSpacing: 1.8,
                           ),

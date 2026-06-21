@@ -1,6 +1,5 @@
 import 'package:arobo_app/models/know_more_data.dart';
 import 'package:arobo_app/utils/app_theme.dart';
-import 'package:arobo_app/utils/auth_utils.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:arobo_app/widgets/custom_network_image.dart';
 import 'package:flutter/material.dart';
@@ -22,7 +21,7 @@ class KnowMoreDetailsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: CommonColors.lightBlueColor3.withOpacity(0.2),
+        backgroundColor: CommonColors.lightBlueColor3.withValues(alpha: 0.2),
         elevation: 0,
         centerTitle: false,
         leading: IconButton(
@@ -144,7 +143,7 @@ class KnowMoreDetailsScreen extends StatelessWidget {
                 //   borderRadius: BorderRadius.circular(1.5.h),
                 //   boxShadow: [
                 //     BoxShadow(
-                //       color: Colors.black.withOpacity(0.05),
+                //       color: Colors.black.withValues(alpha: 0.05),
                 //       blurRadius: 10,
                 //       offset: const Offset(0, 2),
                 //     ),
@@ -186,7 +185,7 @@ class KnowMoreDetailsScreen extends StatelessWidget {
                 //   borderRadius: BorderRadius.circular(1.5.h),
                 //   boxShadow: [
                 //     BoxShadow(
-                //       color: Colors.black.withOpacity(0.05),
+                //       color: Colors.black.withValues(alpha: 0.05),
                 //       blurRadius: 10,
                 //       offset: const Offset(0, 2),
                 //     ),
@@ -243,7 +242,7 @@ description: '',
       //   borderRadius: BorderRadius.circular(1.5.h),
       //   boxShadow: [
       //     BoxShadow(
-      //       color: Colors.black.withOpacity(0.05),
+      //       color: Colors.black.withValues(alpha: 0.05),
       //       blurRadius: 10,
       //       offset: const Offset(0, 2),
       //     ),
