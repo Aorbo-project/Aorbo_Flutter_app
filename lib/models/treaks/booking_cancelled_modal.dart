@@ -103,8 +103,8 @@ class TrekDetails {
   TrekDetails.fromJson(Map<String, dynamic> json) {
     id = json['id'];
     title = json['title'];
-    basePrice = json['base_price'];
-    mtrId = json['mtr_id'];
+    basePrice = json['base_price']?.toString();
+    mtrId = (json['mtr_id'] ?? json['display_trek_id'])?.toString();
   }
 
   Map<String, dynamic> toJson() {

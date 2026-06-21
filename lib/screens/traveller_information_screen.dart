@@ -249,29 +249,13 @@ class _TravellerInformationScreenState
 
   List<Traveler> selectedTravellers = [];
 
-  // ── Traveller-limit banner state ──────────────────────────────────────────
-  bool _showLimitBanner = false;
-
-  void _showTravellerLimitBanner() {
-    HapticFeedback.mediumImpact();
-    setState(() => _showLimitBanner = true);
-    // Auto-dismiss after 3 s
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted && _showLimitBanner) {
-        setState(() => _showLimitBanner = false);
-      }
-    });
-  }
+  // Helper to know whether this trek supports flexible (partial) payment.
+  // From the logs, flexible policy => cancellationPolicy.id == 1.
+  bool get _isFlexiblePolicy => travelData.cancellationPolicy?.id == 1;
 
   // ─────────────────────────────────────────────────────────────────────────
 
   void _showStateSelectionBottomSheet(StateSetter setModalState) {
-    final TextEditingController searchController = TextEditingController();
-
-    setState(() {
-      filteredStates = _dashboardC.stateList.map((e) => e.name!).toList();
-    });
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -396,15 +380,7 @@ class _TravellerInformationScreenState
           ),
         ),
       ),
-    ).whenComplete(() {
-      searchController.dispose();
-      if (mounted) {
-        setState(() {
-          filteredStates =
-              _dashboardC.stateList.map((e) => e.name!).toList();
-        });
-      }
-    });
+    );
   }
 
   @override
@@ -414,14 +390,26 @@ class _TravellerInformationScreenState
         _dashboardC.stateList.map((element) => element.name!).toList();
     travelData = _trekC.trekDetailData.value;
 
+    // ── Pick the right default payment option based on policy ──────────
+    // If the trek supports a flexible policy, default to 'flexible'
+    // (partial payment). Otherwise, fall back to 'standard' (full payment).
+    final bool flexible = travelData.cancellationPolicy?.id == 1;
+    _selectedPaymentOption = flexible ? 'flexible' : 'standard';
+
+    // Preserve any coupon code the user already applied before reaching this screen.
+    // Resetting couponCode to '' here was the root cause of the discount being
+    // wiped on every calculateFare() call triggered by initState.
+    final existingCoupon = _trekC.calculateFareRequestModel.value.couponCode;
     _trekC.calculateFareRequestModel.value =
         _trekC.calculateFareRequestModel.value.copyWith(
       batchId: travelData.batchId ?? 1,
       travelerCount: 1,
       addInsurance: false,
       addFreeCancellationProtection: false,
-      couponCode: '',
-      cancellationPolicyType: 'standard',
+      couponCode: (existingCoupon != null && existingCoupon.isNotEmpty)
+          ? existingCoupon
+          : '',
+      cancellationPolicyType: _selectedPaymentOption,
     );
     _trekC.calculateFare();
 
@@ -1367,34 +1355,16 @@ class _TravellerInformationScreenState
                                     ),
                                   ),
                                   _counterBtn(Icons.add, () {
-                                    if (adultCount <
-                                        (travelData.availableSlots ??
-                                            0)) {
-                                      _trekC.calculateFareRequestModel
-                                          .value = _trekC
-                                          .calculateFareRequestModel
-                                          .value.copyWith(
-                                              travelerCount:
-                                                  adultCount + 1);
-                                    } else {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(SnackBar(
-                                        content: Text(
-                                          'Maximum available slots '
-                                          'reached (${travelData.availableSlots ?? 0})',
-                                          textScaler: const TextScaler
-                                              .linear(1.0)),
-                                        backgroundColor:
-                                            CommonColors.appRedColor,
-                                        duration:
-                                            const Duration(seconds: 2),
-                                      ));
-                                    }
+                                    _trekC.calculateFareRequestModel
+                                        .value = _trekC
+                                        .calculateFareRequestModel
+                                        .value.copyWith(
+                                            travelerCount:
+                                                adultCount + 1);
                                     _trekC.trekPersonCount.value =
                                         adultCount;
                                   },
-                                  active: adultCount <
-                                      (travelData.availableSlots ?? 0)),
+                                  active: true),
                                 ]);
                               }),
                             ],
@@ -1819,7 +1789,12 @@ class _TravellerInformationScreenState
                   SizedBox(height: 2.h),
 
                   // ── Payment Options ───────────────────────────────────
-                  if (travelData.cancellationPolicy?.id != 1)
+                  // FIX: Show the Payment Options card ONLY when the trek
+                  // has a flexible cancellation policy (id == 1). The
+                  // earlier condition (`!= 1`) hid it for flexible treks,
+                  // so users could never pick the "Pay ₹999" option and
+                  // the API kept receiving "standard".
+                  if (_isFlexiblePolicy)
                     _card(
                       index: 6,
                       child: Column(
@@ -1958,19 +1933,6 @@ class _TravellerInformationScreenState
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-
-            // ── Traveller-limit banner ──────────────────────────────
-            AnimatedSize(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOutCubic,
-              child: _showLimitBanner
-                  ? _TravellerLimitBanner(
-                      limit: fareReqModel.travelerCount,
-                      onClose: () =>
-                          setState(() => _showLimitBanner = false),
-                    )
-                  : const SizedBox.shrink(),
-            ),
 
             if (fareReqModel.travelerCount > 0)
               Container(
@@ -2246,10 +2208,6 @@ class _TravellerInformationScreenState
           _trekC.calculateFareRequestModel.value.travelerCount;
       final bool isTravellerSelected =
           selectedTravellers.any((t) => t.id == travelData.id);
-      final bool hasReachedLimit =
-          selectedTravellers.length >= adultCount;
-      final bool canSelect =
-          isTravellerSelected || !hasReachedLimit;
 
       return AnimatedContainer(
         duration: const Duration(milliseconds: 220),
@@ -2281,12 +2239,6 @@ class _TravellerInformationScreenState
                 value: isTravellerSelected,
                 onChanged: (bool? value) async {
                   final shouldSelect = value ?? false;
-                  if (shouldSelect &&
-                      !isTravellerSelected &&
-                      hasReachedLimit) {
-                    _showTravellerLimitBanner();
-                    return;
-                  }
                   HapticFeedback.selectionClick();
                   setState(() {
                     if (shouldSelect) {
@@ -2338,14 +2290,14 @@ class _TravellerInformationScreenState
                   style: TextStyle(fontFamily:'Poppins',
                     fontSize: FontSize.s11,
                     fontWeight: FontWeight.w600,
-                    color: canSelect ? _TI.ink : _TI.inkLight)),
+                    color: _TI.ink)),
                 Text(
                   '${travelData.gender ?? ''}, '
                   '${travelData.age ?? ''}',
                   textScaler: const TextScaler.linear(1.0),
                   style: TextStyle(fontFamily:'Poppins',
                     fontSize: FontSize.s9,
-                    color: canSelect ? _TI.inkMid : _TI.inkLight)),
+                    color: _TI.inkMid)),
               ],
             )),
             GestureDetector(
@@ -2431,6 +2383,167 @@ class _ScaleOnTapState extends State<_ScaleOnTap>
         builder: (_, child) =>
             Transform.scale(scale: _scale.value, child: child),
         child: widget.child,
+      ),
+    );
+  }
+}
+
+class _StateSelectionSheetContent extends StatefulWidget {
+  final String selectedState;
+  final ValueChanged<String> onStateSelected;
+
+  const _StateSelectionSheetContent({
+    Key? key,
+    required this.selectedState,
+    required this.onStateSelected,
+  }) : super(key: key);
+
+  @override
+  State<_StateSelectionSheetContent> createState() =>
+      _StateSelectionSheetContentState();
+}
+
+class _StateSelectionSheetContentState
+    extends State<_StateSelectionSheetContent> {
+  late final TextEditingController _searchController;
+  final DashboardController _dashboardC = Get.find<DashboardController>();
+  List<String> _filteredStates = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+    _filteredStates =
+        _dashboardC.stateList.map((e) => e.name!).toList();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.75,
+      decoration: BoxDecoration(
+        color: _TI.sheetBg,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(5.w)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.10),
+            blurRadius: 24,
+            offset: const Offset(0, -6),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+          top: 2.5.h,
+          left: 5.w,
+          right: 5.w,
+        ),
+        child: Column(
+          children: [
+            Center(
+              child: Container(
+                width: 10.w,
+                height: 0.5.h,
+                margin: EdgeInsets.only(bottom: 1.5.h),
+                decoration: BoxDecoration(
+                  color: _TI.sheetHandle,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+            Text(
+              'Select state of residence',
+              textScaler: const TextScaler.linear(1.0),
+              style: GoogleFonts.poppins(
+                fontSize: FontSize.s14,
+                fontWeight: FontWeight.w700,
+                color: _TI.sheetInk,
+              ),
+            ),
+            SizedBox(height: 2.h),
+            Container(
+              height: 6.h,
+              padding: EdgeInsets.symmetric(horizontal: 3.w),
+              decoration: BoxDecoration(
+                color: _TI.sheetSurface,
+                borderRadius: BorderRadius.circular(3.w),
+                border: Border.all(color: _TI.sheetBorder),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.search, color: _TI.sheetInkMid, size: 5.w),
+                  SizedBox(width: 2.w),
+                  Expanded(
+                    child: TextField(
+                      controller: _searchController,
+                      style: GoogleFonts.poppins(
+                          fontSize: FontSize.s11, color: _TI.sheetInk),
+                      cursorColor: _TI.sheetAccent,
+                      decoration: InputDecoration(
+                        hintText: 'Search state',
+                        border: InputBorder.none,
+                        hintStyle: GoogleFonts.poppins(
+                            fontSize: FontSize.s10, color: _TI.sheetInkMid),
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          _filteredStates = _dashboardC.stateList
+                              .map((e) => e.name!)
+                              .where((s) => s
+                                  .toLowerCase()
+                                  .contains(value.toLowerCase()))
+                              .toList();
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 1.5.h),
+            Expanded(
+              child: ListView.separated(
+                itemCount: _filteredStates.length,
+                separatorBuilder: (_, __) =>
+                    Divider(color: _TI.sheetBorder, height: 1),
+                itemBuilder: (context, index) {
+                  final stateName = _filteredStates[index];
+                  final isChosen = stateName == widget.selectedState;
+                  return Material(
+                    color: Colors.transparent,
+                    child: ListTile(
+                      title: Text(
+                        stateName,
+                        textScaler: const TextScaler.linear(1.0),
+                        style: GoogleFonts.poppins(
+                          fontSize: FontSize.s11,
+                          fontWeight:
+                              isChosen ? FontWeight.w700 : FontWeight.w400,
+                          color: isChosen ? _TI.sheetAccent : _TI.sheetInk,
+                        ),
+                      ),
+                      trailing: isChosen
+                          ? Icon(Icons.check_circle_rounded,
+                              color: _TI.sheetAccent, size: 5.w)
+                          : null,
+                      onTap: () {
+                        widget.onStateSelected(stateName);
+                        Navigator.pop(context);
+                      },
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

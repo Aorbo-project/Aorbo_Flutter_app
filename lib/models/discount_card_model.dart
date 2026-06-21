@@ -12,7 +12,7 @@ class DiscountCardModel {
   // Add detailed content
   final String? detailedDescription;
   final String? howToApply;
-  final String? termsAndConditions;
+  final List<String>? termsAndConditions;
   final String? footerNote;
 
   DiscountCardModel({

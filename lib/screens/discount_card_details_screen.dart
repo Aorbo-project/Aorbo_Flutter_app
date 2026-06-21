@@ -187,9 +187,9 @@ class DiscountCardDetailsScreen extends StatelessWidget {
 
             // Terms & Conditions Section
             if (discountCard.termsAndConditions?.isNotEmpty ?? false)
-              _buildSection(
+              _buildTermsSection(
                 title: 'Terms & Conditions',
-                content: discountCard.termsAndConditions!,
+                items: discountCard.termsAndConditions!,
               ),
 
             // Footer Note Section
@@ -241,6 +241,67 @@ class DiscountCardDetailsScreen extends StatelessWidget {
               fontSize: FontSize.s10,
               height: 1.5,
               color: Colors.black87,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTermsSection({required String title, required List<String> items}) {
+    return Container(
+      width: 100.w,
+      margin: EdgeInsets.symmetric(horizontal: 2.h, vertical: 1.h),
+      padding: EdgeInsets.all(2.h),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(1.5.h),
+        boxShadow: [
+          BoxShadow(
+            color: CommonColors.blackColor.withValues(alpha: 0.2),
+            offset: Offset(0, 0),
+            blurRadius: 2,
+            spreadRadius: 2,
+          )
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: GoogleFonts.poppins(
+              fontSize: FontSize.s12,
+              fontWeight: FontWeight.w600,
+              color: CommonColors.blueColor,
+            ),
+          ),
+          SizedBox(height: 1.5.h),
+          ...items.map(
+            (term) => Padding(
+              padding: EdgeInsets.only(bottom: 0.8.h),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '• ',
+                    style: GoogleFonts.poppins(
+                      fontSize: FontSize.s10,
+                      color: Colors.black54,
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      term,
+                      style: GoogleFonts.poppins(
+                        fontSize: FontSize.s10,
+                        height: 1.5,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],

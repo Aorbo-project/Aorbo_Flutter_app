@@ -200,54 +200,57 @@ class _FilterModalState extends State<FilterModal> {
                           final isSelected =
                               selectedOptionsByCategory[category.title] ==
                                   option;
-                          return ListTile(
-                            contentPadding:
-                                EdgeInsets.symmetric(horizontal: 5.w),
-                            title: Text(
-                              option.title,
-                              textScaler: const TextScaler.linear(1.0),
-                              style: GoogleFonts.poppins(
-                                fontSize: FontSize.s11,
-                                color: isSelected
-                                    ? CommonColors.blueColor
-                                    : CommonColors.blackColor,
-                                fontWeight: isSelected
-                                    ? FontWeight.w500
-                                    : FontWeight.normal,
-                              ),
-                            ),
-                            trailing: GestureDetector(
-                              onTap: () =>
-                                  _selectOption(category.title, option),
-                              child: Container(
-                                width: 6.w,
-                                height: 6.w,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  gradient: isSelected
-                                      ? CommonColors.radioBtnGradient
-                                      : null,
-                                  border: isSelected
-                                      ? null
-                                      : Border.all(
-                                          color: Colors.grey.shade400,
-                                          width: 0.5.w),
+                           return Material(
+                            color: Colors.transparent,
+                            child: ListTile(
+                              contentPadding:
+                                  EdgeInsets.symmetric(horizontal: 5.w),
+                              title: Text(
+                                option.title,
+                                textScaler: const TextScaler.linear(1.0),
+                                style: GoogleFonts.poppins(
+                                  fontSize: FontSize.s11,
+                                  color: isSelected
+                                      ? CommonColors.blueColor
+                                      : CommonColors.blackColor,
+                                  fontWeight: isSelected
+                                      ? FontWeight.w500
+                                      : FontWeight.normal,
                                 ),
-                                child: isSelected
-                                    ? Center(
-                                        child: Container(
-                                          width: 2.w,
-                                          height: 2.w,
-                                          decoration: const BoxDecoration(
-                                            color: Colors.white,
-                                            shape: BoxShape.circle,
-                                          ),
-                                        ),
-                                      )
-                                    : const SizedBox.shrink(),
                               ),
+                              trailing: GestureDetector(
+                                onTap: () =>
+                                    _selectOption(category.title, option),
+                                child: Container(
+                                  width: 6.w,
+                                  height: 6.w,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: isSelected
+                                        ? CommonColors.radioBtnGradient
+                                        : null,
+                                    border: isSelected
+                                        ? null
+                                        : Border.all(
+                                            color: Colors.grey.shade400,
+                                            width: 0.5.w),
+                                  ),
+                                  child: isSelected
+                                      ? Center(
+                                          child: Container(
+                                            width: 2.w,
+                                            height: 2.w,
+                                            decoration: const BoxDecoration(
+                                              color: Colors.white,
+                                              shape: BoxShape.circle,
+                                            ),
+                                          ),
+                                        )
+                                      : const SizedBox.shrink(),
+                                ),
+                              ),
+                              onTap: () => _selectOption(category.title, option),
                             ),
-                            onTap: () => _selectOption(category.title, option),
                           );
                         },
                       ),

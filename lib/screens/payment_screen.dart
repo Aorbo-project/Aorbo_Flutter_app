@@ -122,21 +122,22 @@ class _PaymentScreenState extends State<PaymentScreen>
     return cleaned.isEmpty ? null : cleaned;
   }
 
+  /// Extracts the applied coupon discount amount from the fare breakdown.
+  ///
+  /// Reads [breakdown.discount] — the server-calculated discount amount —
+  /// which is already correctly set by [fareCalculationService.calculateFare()]
+  /// whenever a coupon code is included in the request.
+  ///
+  /// Returns a formatted string (e.g. "810.00") when a non-zero discount
+  /// exists, or null if no coupon discount is applied.
   String? _extractCouponDiscountText(CalculateFareResponseModel? response) {
-    final details = _asMap(response?.couponDetails);
-    if (details == null) return null;
-
-    final raw = details['discountAmount'] ??
-        details['discount_amount'] ??
-        details['discount'] ??
-        details['amount'] ??
-        details['value'];
-
+    final raw = response?.breakdown?.discount;
     if (raw == null) return null;
 
-    final text = raw.toString().trim();
-    if (text.isEmpty || text == 'null') return null;
-    return text;
+    final amount = double.tryParse(raw.toString()) ?? 0.0;
+    if (amount <= 0) return null;
+
+    return amount.toStringAsFixed(2);
   }
 
   void _startTimer() {
@@ -166,6 +167,11 @@ class _PaymentScreenState extends State<PaymentScreen>
 
   void _openRazorpay(BreakDownDataModel? breakdown) async {
     try {
+      print("DISCOUNT = ${breakdown?.discount}");
+print("FINAL_AMOUNT = ${breakdown?.finalAmount}");
+print("PAY_NOW = ${breakdown?.amountToPayNow}");
+print("REMAINING = ${breakdown?.remainingAmount}");
+ 
       final finalAmount = breakdown?.amountToPayNow ?? 0;
 
       final options = {

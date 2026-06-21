@@ -8,7 +8,9 @@ class ValidateCouponCodeRequestModel with _$ValidateCouponCodeRequestModel {
   const factory ValidateCouponCodeRequestModel({
     required String code,
     required dynamic trekId,
-    required dynamic bookingAmount
+    required dynamic bookingAmount,
+    /// Number of travelers — required for group-discount minimum participant validation.
+    @JsonKey(name: 'travelerCount') int? travelerCount,
   }) = _ValidateCouponCodeRequestModel;
 
   factory ValidateCouponCodeRequestModel.fromJson(Map<String, dynamic> json) =>
@@ -61,9 +63,9 @@ class CouponCardData with _$CouponCardData {
     int? id,
     String? title,
     String? description,
-    @JsonKey(name: 'image_url') String? imagePath,
+    @JsonKey(name: 'image_path') String? imagePath,
     List<String>? gradient,
-    String? textColour,
+    @JsonKey(name: 'text_colour') String? textColour,
     String? code,
     @JsonKey(name: 'discount_type') String? discountType,
     @JsonKey(name: 'discount_value') String? discountValue,
@@ -71,8 +73,21 @@ class CouponCardData with _$CouponCardData {
     @JsonKey(name: 'terms_and_conditions')
     List<String>? termsAndConditions,
 
+    /// Detailed marketing description (e.g. "Trekking is better with friends…")
+    @JsonKey(name: 'detailed_description')
+    String? detailedDescription,
+
+    /// Plain-text instructions on how to redeem the coupon
+    @JsonKey(name: 'how_to_apply')
+    String? howToApply,
+
+    /// Footer note shown at the bottom of the T&C modal
+    @JsonKey(name: 'footer_note')
+    String? footerNote,
+
     @JsonKey(name: 'is_expired') bool? isExpired,
     @JsonKey(name: 'is_active') bool? isActive,
+    @JsonKey(name: 'valid_until') String? validUntil,
 
   }) = _CouponCardData;
 
