@@ -256,6 +256,7 @@ class _TravellerInformationScreenState
   // ─────────────────────────────────────────────────────────────────────────
 
   void _showStateSelectionBottomSheet(StateSetter setModalState) {
+    final TextEditingController searchController = TextEditingController();
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -380,7 +381,7 @@ class _TravellerInformationScreenState
           ),
         ),
       ),
-    );
+    ).whenComplete(searchController.dispose);
   }
 
   @override
