@@ -31,6 +31,10 @@ class OTPController extends GetxController {
         // Server said "wait X seconds" — sync the countdown to server's value
         startTimer(seconds: _authC.resendWaitSeconds.value);
         _authC.resendWaitSeconds.value = 0;
+      } else if (_authC.resendWaitSeconds.value < 0) {
+        // Daily cap hit (backend sent no wait_seconds) — disable resend until page exit
+        enableResend.value = false;
+        _authC.resendWaitSeconds.value = 0;
       }
       if (success) otpController.value.clear();
     }

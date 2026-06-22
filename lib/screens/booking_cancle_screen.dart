@@ -1512,13 +1512,15 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
     final updatedBooking = _dashboardC.bookingHistoryModal.value;
     final displayBooking = (updatedBooking != null && updatedBooking.batch != null) ? updatedBooking : booking;
 
-    // navigate
+    // navigate — use refund_amount from backend next_action_params; fall back
+    // to pre-cancellation estimate if the field is absent.
+    final refundFromServer = _trekC.cancelNextActionParams.value['refund_amount'];
+    final refundStr = refundFromServer != null
+        ? double.tryParse(refundFromServer.toString())?.toStringAsFixed(2) ?? '0'
+        : cancellationDataModel?.refundCalculation?.refund?.toStringAsFixed(2) ?? '0';
+
     Get.off(() => BookingCancellationSuccessScreen(
-          refund: cancellationDataModel
-                  ?.refundCalculation
-                  ?.refund
-                  ?.toStringAsFixed(2) ??
-              '0',
+          refund: refundStr,
           booking: displayBooking,
         ));
 

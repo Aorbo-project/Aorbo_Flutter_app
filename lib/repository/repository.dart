@@ -174,7 +174,8 @@ class Repository {
       // 429 — propagate rate-limit details so callers can sync UI timers
       if (e.response?.statusCode == 429 && e.response?.data is Map) {
         final data = e.response!.data as Map;
-        final waitSecs = data['wait_seconds'] is int ? data['wait_seconds'] as int : 60;
+        // -1 = sentinel for "daily cap hit, no specific wait time" (backend omits wait_seconds)
+        final waitSecs = data['wait_seconds'] is int ? data['wait_seconds'] as int : -1;
         final msg = data['message'] is String ? data['message'] as String : 'Too many requests. Please wait.';
         throw RateLimitException(msg, waitSecs);
       }

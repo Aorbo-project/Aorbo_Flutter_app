@@ -167,19 +167,16 @@ class _PaymentScreenState extends State<PaymentScreen>
 
   void _openRazorpay(BreakDownDataModel? breakdown) async {
     try {
-      print("DISCOUNT = ${breakdown?.discount}");
-print("FINAL_AMOUNT = ${breakdown?.finalAmount}");
-print("PAY_NOW = ${breakdown?.amountToPayNow}");
-print("REMAINING = ${breakdown?.remainingAmount}");
- 
-      final finalAmount = breakdown?.amountToPayNow ?? 0;
+      final params = _trekC.orderNextActionParams.value;
 
       final options = {
-        'key': _trekC.orderModal.value.keyId ?? BookingConstants.razorpayKey,
-        'order_id': '${_trekC.orderData.value.id}',
-        'amount': (finalAmount * 100).toInt(),
-        'name': '${_trekC.trekDetailData.value.title}',
-        'description': '${_trekC.trekDetailData.value.description}',
+        'key': params['key'] ?? BookingConstants.razorpayKey,
+        'order_id': params['order_id'] ?? '${_trekC.orderData.value.id}',
+        // backend sends amount in paise; fall back to client calculation if absent
+        'amount': params['amount'] ?? ((breakdown?.amountToPayNow ?? 0) * 100).toInt(),
+        'currency': params['currency'] ?? 'INR',
+        'name': params['name'] ?? '${_trekC.trekDetailData.value.title}',
+        'description': params['description'] ?? '${_trekC.trekDetailData.value.description}',
         'prefill': {
           'contact': '${_userC.userProfileData.value.customer?.phone}',
           'email': '${_userC.userProfileData.value.customer?.email}',
