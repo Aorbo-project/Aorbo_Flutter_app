@@ -73,6 +73,12 @@ class TrekController extends GetxController {
   Rx<Order> orderData = Order().obs;
   Rx<BookingData> orderBookingData = BookingData().obs;
 
+  // Backend-driven next_action routing — populated from raw API responses so
+  // screens don't need to re-derive navigation logic.
+  Rx<String> orderNextAction = 'OPEN_RAZORPAY'.obs;
+  Rx<Map<String, dynamic>> orderNextActionParams = <String, dynamic>{}.obs;
+  Rx<String> cancelNextAction = 'SHOW_CANCELLATION_CONFIRMED'.obs;
+  Rx<Map<String, dynamic>> cancelNextActionParams = <String, dynamic>{}.obs;
 
   //endregion
   //region VerifyTrek
@@ -465,9 +471,12 @@ class TrekController extends GetxController {
           orderModal.value = BookingResponse.fromJson(response);
           orderData.value = orderModal.value.order ?? Order();
           orderBookingData.value = orderModal.value.bookingData ?? BookingData();
+          orderNextAction.value = response['next_action'] ?? 'OPEN_RAZORPAY';
+          orderNextActionParams.value = Map<String, dynamic>.from(
+              response['next_action_params'] ?? {});
 
           logger.d(
-            'TrekController createTrekOrder - Server returned finalAmount: ${orderBookingData.value.finalAmount}',
+            'TrekController createTrekOrder - next_action: ${orderNextAction.value}',
           );
         } else {
           errorMessage.value = response['message'];
@@ -507,12 +516,15 @@ class TrekController extends GetxController {
       if (response != null) {
         if (response['success']) {
           verifyOrderModal.value = VerifyOrderModal.fromJson(response);
+          final nextAction = response['next_action'] ?? 'SHOW_BOOKING_CONFIRMED';
           hideLoaderDialog();
-          Get.offNamedUntil(
-            '/payment-success',
-            ModalRoute.withName('/dashboard'),
-          );
-          CustomSnackBar.show(Get.context!, message: 'Payment Successful!');
+          if (nextAction == 'SHOW_BOOKING_CONFIRMED') {
+            Get.offNamedUntil(
+              '/payment-success',
+              ModalRoute.withName('/dashboard'),
+            );
+            CustomSnackBar.show(Get.context!, message: 'Payment Successful!');
+          }
         } else {
           hideLoaderDialog();
 
@@ -614,6 +626,10 @@ class TrekController extends GetxController {
       if (response != null) {
         final responseData = BookingCancelledModal.fromJson(response);
         if (responseData.success == true) {
+          cancelNextAction.value =
+              response['next_action'] ?? 'SHOW_CANCELLATION_CONFIRMED';
+          cancelNextActionParams.value =
+              Map<String, dynamic>.from(response['next_action_params'] ?? {});
           requestCancellationResponseObserver.value = ApiResult.success(responseData);
           Get.find<DashboardController>().getBookingHistory(refresh: true);
           return null;
