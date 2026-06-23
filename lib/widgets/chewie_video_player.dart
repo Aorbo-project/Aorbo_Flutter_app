@@ -38,8 +38,25 @@ class _ChewieVideoPlayerState extends State<ChewieVideoPlayer> {
     _initializePlayer();
   }
 
+  /// Returns true if the URL is a direct streamable video file.
+  /// Instagram, YouTube, and other social URLs cannot be played by ExoPlayer.
+  bool _isStreamableUrl(String url) {
+    if (url.isEmpty) return false;
+    const blocked = [
+      'instagram.com',
+      'youtu.be',
+      'youtube.com',
+      'tiktok.com',
+      'facebook.com',
+      'twitter.com',
+      'x.com',
+    ];
+    final lower = url.toLowerCase();
+    return !blocked.any((host) => lower.contains(host));
+  }
+
   Future<void> _initializePlayer() async {
-    if (widget.videoUrl.isEmpty) {
+    if (widget.videoUrl.isEmpty || !_isStreamableUrl(widget.videoUrl)) {
       if (mounted) {
         setState(() {
           _hasError = true;

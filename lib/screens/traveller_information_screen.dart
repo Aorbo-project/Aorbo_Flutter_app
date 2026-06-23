@@ -237,6 +237,7 @@ class _TravellerInformationScreenState
   final UserController      _userC      = Get.find<UserController>();
   late TrekDetailData travelData;
   final nameNode = FocusNode();
+  final TextEditingController searchController = TextEditingController();
 
   String _selectedState = BookingConstants.defaultState;
   List<String> filteredStates = [];
@@ -425,6 +426,7 @@ class _TravellerInformationScreenState
   void dispose() {
     _removeOverlay();
     nameNode.dispose();
+    searchController.dispose();
     _userC.nameControllerTraveller.value.clear();
     _userC.ageControllerTraveller.value.clear();
     _userC.selectedGender.value = '';

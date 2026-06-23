@@ -9,11 +9,27 @@ import 'package:sizer/sizer.dart';
 import 'package:get/get.dart';
 import 'package:chewie/chewie.dart';
 import 'package:video_player/video_player.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../widgets/chewie_video_player.dart';
 
 class TrekShortsScreen extends StatelessWidget {
   const TrekShortsScreen({super.key});
+
+  static bool _isStreamableUrl(String url) {
+    const blocked = ['instagram.com', 'youtu.be', 'youtube.com', 'tiktok.com', 'facebook.com', 'twitter.com', 'x.com'];
+    final lower = url.toLowerCase();
+    return !blocked.any((h) => lower.contains(h));
+  }
+
+  void _handleVideoTap(BuildContext context, String videoUrl, String thumbnailUrl) {
+    if (!_isStreamableUrl(videoUrl)) {
+      // Open social links in browser
+      launchUrl(Uri.parse(videoUrl), mode: LaunchMode.externalApplication);
+      return;
+    }
+    _showVideoPopup(context, videoUrl, thumbnailUrl);
+  }
 
   void _showVideoPopup(BuildContext context, String videoUrl, String thumbnailUrl) {
     VideoPlayerController? videoController;
@@ -176,7 +192,7 @@ class TrekShortsScreen extends StatelessWidget {
               return GestureDetector(
                 onTap: () {
                   if (cardData?.videoPath != null && cardData!.videoPath!.isNotEmpty) {
-                    _showVideoPopup(
+                    _handleVideoTap(
                         context,
                         cardData.videoPath!,
                         cardData.imagePath ?? ""
