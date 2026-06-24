@@ -127,6 +127,8 @@ class TrekController extends GetxController {
         success: (model) {
           final d = model?.data;
           if (d == null) return;
+          // refund:initiated payload: {bookingId, tbrId, amount, method, refund_speed, expected_by, poll_interval_seconds}
+          // NO refundId yet — Razorpay issues it only after the refund is processed
           final updated = RefundStatusData(
             bookingId:          d.bookingId,
             cancellationId:     d.cancellationId,
@@ -135,7 +137,7 @@ class TrekController extends GetxController {
             refundAmount:       d.refundAmount,
             refundApplicable:   d.refundApplicable,
             refundStatus:       'processing',
-            refundId:           data['refundId']?.toString() ?? d.refundId,
+            refundId:           d.refundId, // not yet available at initiated stage
             refundSpeed:        data['refund_speed']?.toString() ?? d.refundSpeed,
             refundInitiatedAt:  d.refundInitiatedAt,
             statusMessage:      'Refund submitted — being processed by your bank',
@@ -165,7 +167,7 @@ class TrekController extends GetxController {
             refundId:           data['refundId']?.toString() ?? d.refundId,
             refundSpeed:        d.refundSpeed,
             refundInitiatedAt:  d.refundInitiatedAt,
-            refundProcessedAt:  data['settledAt']?.toString(),
+            refundProcessedAt:  data['settled_at']?.toString(), // backend sends snake_case
             statusMessage:      'Refund credited to your original payment method',
           );
           refundStatusObserver.value = ApiResult.success(
@@ -315,7 +317,7 @@ class TrekController extends GetxController {
         final responseData = ValidateCouponCodeResponseModel.fromJson(response);
         if (responseData.success == true) {
           validateCouponObserver.value = ApiResult.success(responseData);
-          calculateFareRequestModel.value = calculateFareRequestModel.value.copyWith(couponCode: coupon ?? '');
+          calculateFareRequestModel.value = calculateFareRequestModel.value.copyWith(couponCode: coupon);
           Get.back();
           return;
         }

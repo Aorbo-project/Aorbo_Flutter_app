@@ -302,7 +302,7 @@ class _CouponCardState extends State<CouponCard> {
   }
 
   Widget _buildTermsSheet(BuildContext context) {
-    String? _formattedExpiry() {
+    String? formattedExpiry() {
       final raw = coupon?.validUntil;
       if (raw == null || raw.isEmpty) return null;
       try {
@@ -317,7 +317,7 @@ class _CouponCardState extends State<CouponCard> {
       }
     }
 
-    final expiryLabel = _formattedExpiry();
+    final expiryLabel = formattedExpiry();
 
     final List<String> fallbackTerms = [
       'Applicable on selected treks only.',
@@ -407,8 +407,7 @@ class _CouponCardState extends State<CouponCard> {
                     ],
                   ),
                 ),
-              )
-              .toList(),
+              ),
           if (coupon?.howToApply != null &&
               coupon!.howToApply!.isNotEmpty) ...[
             SizedBox(height: 2.h),
