@@ -1,4 +1,6 @@
 import 'package:arobo_app/freezed_models/booking/cancellation_data_model.dart';
+import 'package:arobo_app/models/treaks/booking_cancelled_modal.dart';
+import 'package:arobo_app/repository/api_result.dart';
 import 'package:arobo_app/screens/booking_cancellation_success_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -1519,9 +1521,16 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
         ? double.tryParse(refundFromServer.toString())?.toStringAsFixed(2) ?? '0'
         : cancellationDataModel?.refundCalculation?.refund?.toStringAsFixed(2) ?? '0';
 
+    BookingCancelledData? cancelledData;
+    _trekC.requestCancellationResponseObserver.value.maybeWhen(
+      success: (modal) => cancelledData = modal?.data,
+      orElse: () {},
+    );
+
     Get.off(() => BookingCancellationSuccessScreen(
           refund: refundStr,
           booking: displayBooking,
+          cancelledData: cancelledData,
         ));
 
   } catch (e) {

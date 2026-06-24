@@ -34,6 +34,16 @@ class BookingCancelledData {
   TrekDetails? trekDetails;
   BatchDetails? batchDetails;
 
+  // Refund tracking — driven by Razorpay webhooks + reconciliation cron
+  bool? isAdvanceOnly;        // FLEX-01: advance forfeited, no cash refund, credit note issued
+  bool? creditNoteEligible;   // GST reversal credit note will be generated
+  String? refundStatus;       // null | 'initiated' | 'processing' | 'processed' | 'failed'
+  String? refundId;           // rfnd_XXXXX — populated after refund.created webhook
+  String? refundSpeed;        // 'instant' | 'normal' — populated after refund.created webhook
+  String? refundInitiatedAt;
+  String? refundProcessedAt;
+  int? pollIntervalSeconds;   // Flutter should poll /refund-status at this interval (300 = 5 min)
+
   BookingCancelledData({
     this.cancellationId,
     this.bookingId,
@@ -45,6 +55,14 @@ class BookingCancelledData {
     this.cancellationDate,
     this.trekDetails,
     this.batchDetails,
+    this.isAdvanceOnly,
+    this.creditNoteEligible,
+    this.refundStatus,
+    this.refundId,
+    this.refundSpeed,
+    this.refundInitiatedAt,
+    this.refundProcessedAt,
+    this.pollIntervalSeconds,
   });
 
   BookingCancelledData.fromJson(Map<String, dynamic> json) {
@@ -70,6 +88,14 @@ class BookingCancelledData {
     batchDetails = json['batch_details'] != null
         ? BatchDetails.fromJson(json['batch_details'])
         : null;
+    isAdvanceOnly = json['is_advance_only'];
+    creditNoteEligible = json['credit_note_eligible'];
+    refundStatus = json['refund_status'];
+    refundId = json['refund_id'];
+    refundSpeed = json['refund_speed'];
+    refundInitiatedAt = json['refund_initiated_at'];
+    refundProcessedAt = json['refund_processed_at'];
+    pollIntervalSeconds = json['poll_interval_seconds'];
   }
 
   Map<String, dynamic> toJson() {
@@ -82,12 +108,16 @@ class BookingCancelledData {
     data['deduction_admin'] = deductionAdmin;
     data['deduction_vendor'] = deductionVendor;
     data['cancellation_date'] = cancellationDate;
-    if (trekDetails != null) {
-      data['trek_details'] = trekDetails!.toJson();
-    }
-    if (batchDetails != null) {
-      data['batch_details'] = batchDetails!.toJson();
-    }
+    if (trekDetails != null) data['trek_details'] = trekDetails!.toJson();
+    if (batchDetails != null) data['batch_details'] = batchDetails!.toJson();
+    data['is_advance_only'] = isAdvanceOnly;
+    data['credit_note_eligible'] = creditNoteEligible;
+    data['refund_status'] = refundStatus;
+    data['refund_id'] = refundId;
+    data['refund_speed'] = refundSpeed;
+    data['refund_initiated_at'] = refundInitiatedAt;
+    data['refund_processed_at'] = refundProcessedAt;
+    data['poll_interval_seconds'] = pollIntervalSeconds;
     return data;
   }
 }

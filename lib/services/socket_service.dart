@@ -90,6 +90,23 @@ class SocketService {
         _notifyListeners('chat:joined', data);
       });
 
+      // Refund lifecycle events — emitted from backend after Razorpay webhook fires.
+      // All three events carry bookingId so the UI can match to the right booking.
+      _socket!.on('refund:initiated', (data) {
+        log('💸 Refund initiated: $data');
+        _notifyListeners('refund:initiated', data);
+      });
+
+      _socket!.on('refund:processed', (data) {
+        log('✅ Refund processed and credited: $data');
+        _notifyListeners('refund:processed', data);
+      });
+
+      _socket!.on('refund:failed', (data) {
+        log('❌ Refund failed — support needed: $data');
+        _notifyListeners('refund:failed', data);
+      });
+
       _socket!.connect();
     } catch (e) {
       log('Error connecting to socket: $e');
