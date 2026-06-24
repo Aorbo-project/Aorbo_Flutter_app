@@ -107,6 +107,24 @@ class SocketService {
         _notifyListeners('refund:failed', data);
       });
 
+      // booking:confirmed — admin confirmed a new booking payment
+      _socket!.on('booking:confirmed', (data) {
+        log('✅ Booking confirmed: $data');
+        _notifyListeners('booking:confirmed', data);
+      });
+
+      // tbr:cancelled — a batch (TBR) has been cancelled by vendor or admin
+      _socket!.on('tbr:cancelled', (data) {
+        log('❌ TBR cancelled: $data');
+        _notifyListeners('tbr:cancelled', data);
+      });
+
+      // payment:failed — payment for a booking attempt failed at Razorpay
+      _socket!.on('payment:failed', (data) {
+        log('❌ Payment failed: $data');
+        _notifyListeners('payment:failed', data);
+      });
+
       _socket!.connect();
     } catch (e) {
       log('Error connecting to socket: $e');
