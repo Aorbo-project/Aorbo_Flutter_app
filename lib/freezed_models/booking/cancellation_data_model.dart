@@ -71,10 +71,34 @@ class RefundCalculation with _$RefundCalculation {
     @JsonKey(name: 'total_final_amount') double? totalFinalAmount,
     String? message,
     @JsonKey(name: 'trek_price') double? trekPrice,
+    RefundBreakdown? breakdown,
   }) = _RefundCalculation;
 
   factory RefundCalculation.fromJson(Map<String, dynamic> json) =>
       _$RefundCalculationFromJson(json);
+}
+
+@freezed
+class RefundBreakdown with _$RefundBreakdown {
+  const factory RefundBreakdown({
+    @JsonKey(name: 'total_paid') double? totalPaid,
+    @JsonKey(name: 'base_price') double? basePrice,
+    @JsonKey(name: 'gst_paid') double? gstPaid,
+    @JsonKey(name: 'platform_fee') double? platformFee,
+    @JsonKey(name: 'deduction_amount') double? deductionAmount,
+    @JsonKey(name: 'cancellation_gst') double? cancellationGst,
+    double? commission,
+    @JsonKey(name: 'commission_gst') double? commissionGst,
+    @JsonKey(name: 'vendor_from_deduction') double? vendorFromDeduction,
+    @JsonKey(name: 'razorpay_fee') double? razorpayFee,
+    @JsonKey(name: 'payment_method') String? paymentMethod,
+    @JsonKey(name: 'credit_note_eligible') bool? creditNoteEligible,
+    // FLEX-01: advance forfeited, credit note issued for GST, no cash refund
+    @JsonKey(name: 'is_advance_only') bool? isAdvanceOnly,
+  }) = _RefundBreakdown;
+
+  factory RefundBreakdown.fromJson(Map<String, dynamic> json) =>
+      _$RefundBreakdownFromJson(json);
 }
 
 @freezed
