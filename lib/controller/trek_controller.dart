@@ -83,9 +83,9 @@ class TrekController extends GetxController {
   // Backend-driven next_action routing — populated from raw API responses so
   // screens don't need to re-derive navigation logic.
   Rx<String> orderNextAction = 'OPEN_RAZORPAY'.obs;
-  Rx<Map<String, dynamic>> orderNextActionParams = <String, dynamic>{}.obs;
+  RxMap<String, dynamic> orderNextActionParams = <String, dynamic>{}.obs;
   Rx<String> cancelNextAction = 'SHOW_CANCELLATION_CONFIRMED'.obs;
-  Rx<Map<String, dynamic>> cancelNextActionParams = <String, dynamic>{}.obs;
+  RxMap<String, dynamic> cancelNextActionParams = <String, dynamic>{}.obs;
 
   //endregion
   //region VerifyTrek

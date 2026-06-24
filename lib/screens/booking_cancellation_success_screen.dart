@@ -8,7 +8,6 @@ import '../controller/trek_controller.dart';
 import '../freezed_models/booking/booking_history_model.dart';
 import '../models/refund/refund_status_model.dart';
 import '../models/treaks/booking_cancelled_modal.dart';
-import '../repository/api_result.dart';
 import '../utils/common_colors.dart';
 import '../utils/common_booked_details_card.dart';
 import '../utils/screen_constants.dart';
@@ -434,37 +433,37 @@ class _BookingCancellationSuccessScreenState extends State<BookingCancellationSu
                 _buildStatusStep('Cancellation Confirmed', true, Icons.check_circle),
                 _buildStatusStep(
                   'Refund Initiated',
-                  statusData.refundStatus != null,
+                  statusData?.refundStatus != null,
                   Icons.currency_rupee,
                 ),
                 _buildStatusStep(
                   'Being Processed by Bank',
-                  statusData.refundStatus == 'processing' ||
-                      statusData.refundStatus == 'processed',
+                  statusData?.refundStatus == 'processing' ||
+                      statusData?.refundStatus == 'processed',
                   Icons.account_balance,
                 ),
                 _buildStatusStep(
-                  statusData.isProcessed
-                      ? 'Credited — ${_formatSettledAt(statusData.refundProcessedAt)}'
-                      : statusData.isFailed
+                  (statusData?.isProcessed ?? false)
+                      ? 'Credited — ${_formatSettledAt(statusData?.refundProcessedAt)}'
+                      : (statusData?.isFailed ?? false)
                           ? 'Failed — Contact Support'
                           : 'Awaiting Credit',
-                  statusData.isProcessed,
-                  statusData.isFailed ? Icons.error_outline : Icons.done_all,
-                  isFailed: statusData.isFailed,
+                  statusData?.isProcessed ?? false,
+                  (statusData?.isFailed ?? false) ? Icons.error_outline : Icons.done_all,
+                  isFailed: statusData?.isFailed ?? false,
                 ),
                 SizedBox(height: 2.h),
                 Text(
-                  statusData.statusMessage ?? 'Checking refund status...',
+                  statusData?.statusMessage ?? 'Checking refund status...',
                   style: GoogleFonts.poppins(
                     fontSize: FontSize.s10,
                     color: CommonColors.greyTextColor,
                   ),
                 ),
-                if (statusData.refundSpeed != null) ...[
+                if (statusData?.refundSpeed != null) ...[
                   SizedBox(height: 0.5.h),
                   Text(
-                    'Speed: ${statusData.refundSpeed == 'instant' ? 'Instant (within minutes)' : 'Normal (3–5 business days)'}',
+                    'Speed: ${statusData?.refundSpeed == 'instant' ? 'Instant (within minutes)' : 'Normal (3–5 business days)'}',
                     style: GoogleFonts.poppins(
                       fontSize: FontSize.s9,
                       color: CommonColors.greyTextColor,
