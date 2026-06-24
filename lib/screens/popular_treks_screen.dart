@@ -75,13 +75,10 @@ class _PopularTreksScreenState extends State<PopularTreksScreen> {
         ),
       ),
       body: Obx((){
-        List<TopTreksData>? topTreksCardsData = _dashboardC.topTreksObserver.value.maybeWhen(success: (topTreksResponse) {
-          return [
-            TopTreksData(title:"Coorg",description: "From Serene trails to thrilling climbs, find treksthat match your vibes !",imagePath: "https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/coorg%204.png?alt=media&token=354d476c-d3e5-4b9f-a06e-6b787227a608", textColour: "#35323b",gradient: ["#F7EB68","#FFEF3E","#FFEF3E"]),
-            TopTreksData(title:"Munnar",description: "From Serene trails to thrilling climbs, find treksthat match your vibes !",imagePath: "https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/coorg%204.png?alt=media&token=354d476c-d3e5-4b9f-a06e-6b787227a608",textColour: "#ffffff",gradient: ["#ffffff","#9e87e1","#7a56e1"]),
-          ];
-
-          return (topTreksResponse as TopTreksDataResponseModel).data;},error: (sc) => [],orElse: () => [TopTreksData(),TopTreksData(),TopTreksData(),TopTreksData()]);
+        List<TopTreksData>? topTreksCardsData = _dashboardC.topTreksObserver.value.maybeWhen(
+          success: (topTreksResponse) => (topTreksResponse as TopTreksDataResponseModel).data,
+          error: (sc) => [],
+          orElse: () => [TopTreksData(),TopTreksData(),TopTreksData(),TopTreksData()]);
 
         return ListView.builder(
           controller: _scrollController,

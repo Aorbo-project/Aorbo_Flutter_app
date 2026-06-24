@@ -124,7 +124,7 @@ class _CouponCodeScreenState extends State<CouponCodeScreen> {
                     TextButton(
                       onPressed: () async {
                         if (_couponController.text.isNotEmpty) {
-                          _trekController.validateCoupon(_couponController.text ?? "");
+                          _trekController.validateCoupon(_couponController.text);
                         }
                       },
                       child: Text(

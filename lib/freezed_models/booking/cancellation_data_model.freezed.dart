@@ -1043,6 +1043,7 @@ mixin _$RefundCalculation {
   String? get message => throw _privateConstructorUsedError;
   @JsonKey(name: 'trek_price')
   double? get trekPrice => throw _privateConstructorUsedError;
+  RefundBreakdown? get breakdown => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -1070,7 +1071,10 @@ abstract class $RefundCalculationCopyWith<$Res> {
       @JsonKey(name: 'lose_items') List<LoseItem>? loseItems,
       @JsonKey(name: 'total_final_amount') double? totalFinalAmount,
       String? message,
-      @JsonKey(name: 'trek_price') double? trekPrice});
+      @JsonKey(name: 'trek_price') double? trekPrice,
+      RefundBreakdown? breakdown});
+
+  $RefundBreakdownCopyWith<$Res>? get breakdown;
 }
 
 /// @nodoc
@@ -1100,6 +1104,7 @@ class _$RefundCalculationCopyWithImpl<$Res, $Val extends RefundCalculation>
     Object? totalFinalAmount = freezed,
     Object? message = freezed,
     Object? trekPrice = freezed,
+    Object? breakdown = freezed,
   }) {
     return _then(_value.copyWith(
       refund: freezed == refund
@@ -1158,7 +1163,23 @@ class _$RefundCalculationCopyWithImpl<$Res, $Val extends RefundCalculation>
           ? _value.trekPrice
           : trekPrice // ignore: cast_nullable_to_non_nullable
               as double?,
+      breakdown: freezed == breakdown
+          ? _value.breakdown
+          : breakdown // ignore: cast_nullable_to_non_nullable
+              as RefundBreakdown?,
     ) as $Val);
+  }
+
+  @override
+  @pragma('vm:prefer-inline')
+  $RefundBreakdownCopyWith<$Res>? get breakdown {
+    if (_value.breakdown == null) {
+      return null;
+    }
+
+    return $RefundBreakdownCopyWith<$Res>(_value.breakdown!, (value) {
+      return _then(_value.copyWith(breakdown: value) as $Val);
+    });
   }
 }
 
@@ -1184,7 +1205,11 @@ abstract class _$$RefundCalculationImplCopyWith<$Res>
       @JsonKey(name: 'lose_items') List<LoseItem>? loseItems,
       @JsonKey(name: 'total_final_amount') double? totalFinalAmount,
       String? message,
-      @JsonKey(name: 'trek_price') double? trekPrice});
+      @JsonKey(name: 'trek_price') double? trekPrice,
+      RefundBreakdown? breakdown});
+
+  @override
+  $RefundBreakdownCopyWith<$Res>? get breakdown;
 }
 
 /// @nodoc
@@ -1212,6 +1237,7 @@ class __$$RefundCalculationImplCopyWithImpl<$Res>
     Object? totalFinalAmount = freezed,
     Object? message = freezed,
     Object? trekPrice = freezed,
+    Object? breakdown = freezed,
   }) {
     return _then(_$RefundCalculationImpl(
       refund: freezed == refund
@@ -1270,6 +1296,10 @@ class __$$RefundCalculationImplCopyWithImpl<$Res>
           ? _value.trekPrice
           : trekPrice // ignore: cast_nullable_to_non_nullable
               as double?,
+      breakdown: freezed == breakdown
+          ? _value.breakdown
+          : breakdown // ignore: cast_nullable_to_non_nullable
+              as RefundBreakdown?,
     ));
   }
 }
@@ -1291,7 +1321,8 @@ class _$RefundCalculationImpl implements _RefundCalculation {
       @JsonKey(name: 'lose_items') final List<LoseItem>? loseItems,
       @JsonKey(name: 'total_final_amount') this.totalFinalAmount,
       this.message,
-      @JsonKey(name: 'trek_price') this.trekPrice})
+      @JsonKey(name: 'trek_price') this.trekPrice,
+      this.breakdown})
       : _refundItems = refundItems,
         _loseItems = loseItems;
 
@@ -1353,10 +1384,12 @@ class _$RefundCalculationImpl implements _RefundCalculation {
   @override
   @JsonKey(name: 'trek_price')
   final double? trekPrice;
+  @override
+  final RefundBreakdown? breakdown;
 
   @override
   String toString() {
-    return 'RefundCalculation(refund: $refund, deduction: $deduction, deductionPercent: $deductionPercent, policyType: $policyType, policyName: $policyName, slabInfo: $slabInfo, timeRemainingHours: $timeRemainingHours, within24Hours: $within24Hours, freeCancellation: $freeCancellation, refundItems: $refundItems, loseItems: $loseItems, totalFinalAmount: $totalFinalAmount, message: $message, trekPrice: $trekPrice)';
+    return 'RefundCalculation(refund: $refund, deduction: $deduction, deductionPercent: $deductionPercent, policyType: $policyType, policyName: $policyName, slabInfo: $slabInfo, timeRemainingHours: $timeRemainingHours, within24Hours: $within24Hours, freeCancellation: $freeCancellation, refundItems: $refundItems, loseItems: $loseItems, totalFinalAmount: $totalFinalAmount, message: $message, trekPrice: $trekPrice, breakdown: $breakdown)';
   }
 
   @override
@@ -1389,7 +1422,9 @@ class _$RefundCalculationImpl implements _RefundCalculation {
                 other.totalFinalAmount == totalFinalAmount) &&
             (identical(other.message, message) || other.message == message) &&
             (identical(other.trekPrice, trekPrice) ||
-                other.trekPrice == trekPrice));
+                other.trekPrice == trekPrice) &&
+            (identical(other.breakdown, breakdown) ||
+                other.breakdown == breakdown));
   }
 
   @JsonKey(ignore: true)
@@ -1409,7 +1444,8 @@ class _$RefundCalculationImpl implements _RefundCalculation {
       const DeepCollectionEquality().hash(_loseItems),
       totalFinalAmount,
       message,
-      trekPrice);
+      trekPrice,
+      breakdown);
 
   @JsonKey(ignore: true)
   @override
@@ -1441,8 +1477,8 @@ abstract class _RefundCalculation implements RefundCalculation {
       @JsonKey(name: 'lose_items') final List<LoseItem>? loseItems,
       @JsonKey(name: 'total_final_amount') final double? totalFinalAmount,
       final String? message,
-      @JsonKey(name: 'trek_price')
-      final double? trekPrice}) = _$RefundCalculationImpl;
+      @JsonKey(name: 'trek_price') final double? trekPrice,
+      final RefundBreakdown? breakdown}) = _$RefundCalculationImpl;
 
   factory _RefundCalculation.fromJson(Map<String, dynamic> json) =
       _$RefundCalculationImpl.fromJson;
@@ -1487,8 +1523,456 @@ abstract class _RefundCalculation implements RefundCalculation {
   @JsonKey(name: 'trek_price')
   double? get trekPrice;
   @override
+  RefundBreakdown? get breakdown;
+  @override
   @JsonKey(ignore: true)
   _$$RefundCalculationImplCopyWith<_$RefundCalculationImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+RefundBreakdown _$RefundBreakdownFromJson(Map<String, dynamic> json) {
+  return _RefundBreakdown.fromJson(json);
+}
+
+/// @nodoc
+mixin _$RefundBreakdown {
+  @JsonKey(name: 'total_paid')
+  double? get totalPaid => throw _privateConstructorUsedError;
+  @JsonKey(name: 'base_price')
+  double? get basePrice => throw _privateConstructorUsedError;
+  @JsonKey(name: 'gst_paid')
+  double? get gstPaid => throw _privateConstructorUsedError;
+  @JsonKey(name: 'platform_fee')
+  double? get platformFee => throw _privateConstructorUsedError;
+  @JsonKey(name: 'deduction_amount')
+  double? get deductionAmount => throw _privateConstructorUsedError;
+  @JsonKey(name: 'cancellation_gst')
+  double? get cancellationGst => throw _privateConstructorUsedError;
+  double? get commission => throw _privateConstructorUsedError;
+  @JsonKey(name: 'commission_gst')
+  double? get commissionGst => throw _privateConstructorUsedError;
+  @JsonKey(name: 'vendor_from_deduction')
+  double? get vendorFromDeduction => throw _privateConstructorUsedError;
+  @JsonKey(name: 'razorpay_fee')
+  double? get razorpayFee => throw _privateConstructorUsedError;
+  @JsonKey(name: 'payment_method')
+  String? get paymentMethod => throw _privateConstructorUsedError;
+  @JsonKey(name: 'credit_note_eligible')
+  bool? get creditNoteEligible =>
+      throw _privateConstructorUsedError; // FLEX-01: advance forfeited, credit note issued for GST, no cash refund
+  @JsonKey(name: 'is_advance_only')
+  bool? get isAdvanceOnly => throw _privateConstructorUsedError;
+
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+  @JsonKey(ignore: true)
+  $RefundBreakdownCopyWith<RefundBreakdown> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $RefundBreakdownCopyWith<$Res> {
+  factory $RefundBreakdownCopyWith(
+          RefundBreakdown value, $Res Function(RefundBreakdown) then) =
+      _$RefundBreakdownCopyWithImpl<$Res, RefundBreakdown>;
+  @useResult
+  $Res call(
+      {@JsonKey(name: 'total_paid') double? totalPaid,
+      @JsonKey(name: 'base_price') double? basePrice,
+      @JsonKey(name: 'gst_paid') double? gstPaid,
+      @JsonKey(name: 'platform_fee') double? platformFee,
+      @JsonKey(name: 'deduction_amount') double? deductionAmount,
+      @JsonKey(name: 'cancellation_gst') double? cancellationGst,
+      double? commission,
+      @JsonKey(name: 'commission_gst') double? commissionGst,
+      @JsonKey(name: 'vendor_from_deduction') double? vendorFromDeduction,
+      @JsonKey(name: 'razorpay_fee') double? razorpayFee,
+      @JsonKey(name: 'payment_method') String? paymentMethod,
+      @JsonKey(name: 'credit_note_eligible') bool? creditNoteEligible,
+      @JsonKey(name: 'is_advance_only') bool? isAdvanceOnly});
+}
+
+/// @nodoc
+class _$RefundBreakdownCopyWithImpl<$Res, $Val extends RefundBreakdown>
+    implements $RefundBreakdownCopyWith<$Res> {
+  _$RefundBreakdownCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? totalPaid = freezed,
+    Object? basePrice = freezed,
+    Object? gstPaid = freezed,
+    Object? platformFee = freezed,
+    Object? deductionAmount = freezed,
+    Object? cancellationGst = freezed,
+    Object? commission = freezed,
+    Object? commissionGst = freezed,
+    Object? vendorFromDeduction = freezed,
+    Object? razorpayFee = freezed,
+    Object? paymentMethod = freezed,
+    Object? creditNoteEligible = freezed,
+    Object? isAdvanceOnly = freezed,
+  }) {
+    return _then(_value.copyWith(
+      totalPaid: freezed == totalPaid
+          ? _value.totalPaid
+          : totalPaid // ignore: cast_nullable_to_non_nullable
+              as double?,
+      basePrice: freezed == basePrice
+          ? _value.basePrice
+          : basePrice // ignore: cast_nullable_to_non_nullable
+              as double?,
+      gstPaid: freezed == gstPaid
+          ? _value.gstPaid
+          : gstPaid // ignore: cast_nullable_to_non_nullable
+              as double?,
+      platformFee: freezed == platformFee
+          ? _value.platformFee
+          : platformFee // ignore: cast_nullable_to_non_nullable
+              as double?,
+      deductionAmount: freezed == deductionAmount
+          ? _value.deductionAmount
+          : deductionAmount // ignore: cast_nullable_to_non_nullable
+              as double?,
+      cancellationGst: freezed == cancellationGst
+          ? _value.cancellationGst
+          : cancellationGst // ignore: cast_nullable_to_non_nullable
+              as double?,
+      commission: freezed == commission
+          ? _value.commission
+          : commission // ignore: cast_nullable_to_non_nullable
+              as double?,
+      commissionGst: freezed == commissionGst
+          ? _value.commissionGst
+          : commissionGst // ignore: cast_nullable_to_non_nullable
+              as double?,
+      vendorFromDeduction: freezed == vendorFromDeduction
+          ? _value.vendorFromDeduction
+          : vendorFromDeduction // ignore: cast_nullable_to_non_nullable
+              as double?,
+      razorpayFee: freezed == razorpayFee
+          ? _value.razorpayFee
+          : razorpayFee // ignore: cast_nullable_to_non_nullable
+              as double?,
+      paymentMethod: freezed == paymentMethod
+          ? _value.paymentMethod
+          : paymentMethod // ignore: cast_nullable_to_non_nullable
+              as String?,
+      creditNoteEligible: freezed == creditNoteEligible
+          ? _value.creditNoteEligible
+          : creditNoteEligible // ignore: cast_nullable_to_non_nullable
+              as bool?,
+      isAdvanceOnly: freezed == isAdvanceOnly
+          ? _value.isAdvanceOnly
+          : isAdvanceOnly // ignore: cast_nullable_to_non_nullable
+              as bool?,
+    ) as $Val);
+  }
+}
+
+/// @nodoc
+abstract class _$$RefundBreakdownImplCopyWith<$Res>
+    implements $RefundBreakdownCopyWith<$Res> {
+  factory _$$RefundBreakdownImplCopyWith(_$RefundBreakdownImpl value,
+          $Res Function(_$RefundBreakdownImpl) then) =
+      __$$RefundBreakdownImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call(
+      {@JsonKey(name: 'total_paid') double? totalPaid,
+      @JsonKey(name: 'base_price') double? basePrice,
+      @JsonKey(name: 'gst_paid') double? gstPaid,
+      @JsonKey(name: 'platform_fee') double? platformFee,
+      @JsonKey(name: 'deduction_amount') double? deductionAmount,
+      @JsonKey(name: 'cancellation_gst') double? cancellationGst,
+      double? commission,
+      @JsonKey(name: 'commission_gst') double? commissionGst,
+      @JsonKey(name: 'vendor_from_deduction') double? vendorFromDeduction,
+      @JsonKey(name: 'razorpay_fee') double? razorpayFee,
+      @JsonKey(name: 'payment_method') String? paymentMethod,
+      @JsonKey(name: 'credit_note_eligible') bool? creditNoteEligible,
+      @JsonKey(name: 'is_advance_only') bool? isAdvanceOnly});
+}
+
+/// @nodoc
+class __$$RefundBreakdownImplCopyWithImpl<$Res>
+    extends _$RefundBreakdownCopyWithImpl<$Res, _$RefundBreakdownImpl>
+    implements _$$RefundBreakdownImplCopyWith<$Res> {
+  __$$RefundBreakdownImplCopyWithImpl(
+      _$RefundBreakdownImpl _value, $Res Function(_$RefundBreakdownImpl) _then)
+      : super(_value, _then);
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? totalPaid = freezed,
+    Object? basePrice = freezed,
+    Object? gstPaid = freezed,
+    Object? platformFee = freezed,
+    Object? deductionAmount = freezed,
+    Object? cancellationGst = freezed,
+    Object? commission = freezed,
+    Object? commissionGst = freezed,
+    Object? vendorFromDeduction = freezed,
+    Object? razorpayFee = freezed,
+    Object? paymentMethod = freezed,
+    Object? creditNoteEligible = freezed,
+    Object? isAdvanceOnly = freezed,
+  }) {
+    return _then(_$RefundBreakdownImpl(
+      totalPaid: freezed == totalPaid
+          ? _value.totalPaid
+          : totalPaid // ignore: cast_nullable_to_non_nullable
+              as double?,
+      basePrice: freezed == basePrice
+          ? _value.basePrice
+          : basePrice // ignore: cast_nullable_to_non_nullable
+              as double?,
+      gstPaid: freezed == gstPaid
+          ? _value.gstPaid
+          : gstPaid // ignore: cast_nullable_to_non_nullable
+              as double?,
+      platformFee: freezed == platformFee
+          ? _value.platformFee
+          : platformFee // ignore: cast_nullable_to_non_nullable
+              as double?,
+      deductionAmount: freezed == deductionAmount
+          ? _value.deductionAmount
+          : deductionAmount // ignore: cast_nullable_to_non_nullable
+              as double?,
+      cancellationGst: freezed == cancellationGst
+          ? _value.cancellationGst
+          : cancellationGst // ignore: cast_nullable_to_non_nullable
+              as double?,
+      commission: freezed == commission
+          ? _value.commission
+          : commission // ignore: cast_nullable_to_non_nullable
+              as double?,
+      commissionGst: freezed == commissionGst
+          ? _value.commissionGst
+          : commissionGst // ignore: cast_nullable_to_non_nullable
+              as double?,
+      vendorFromDeduction: freezed == vendorFromDeduction
+          ? _value.vendorFromDeduction
+          : vendorFromDeduction // ignore: cast_nullable_to_non_nullable
+              as double?,
+      razorpayFee: freezed == razorpayFee
+          ? _value.razorpayFee
+          : razorpayFee // ignore: cast_nullable_to_non_nullable
+              as double?,
+      paymentMethod: freezed == paymentMethod
+          ? _value.paymentMethod
+          : paymentMethod // ignore: cast_nullable_to_non_nullable
+              as String?,
+      creditNoteEligible: freezed == creditNoteEligible
+          ? _value.creditNoteEligible
+          : creditNoteEligible // ignore: cast_nullable_to_non_nullable
+              as bool?,
+      isAdvanceOnly: freezed == isAdvanceOnly
+          ? _value.isAdvanceOnly
+          : isAdvanceOnly // ignore: cast_nullable_to_non_nullable
+              as bool?,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$RefundBreakdownImpl implements _RefundBreakdown {
+  const _$RefundBreakdownImpl(
+      {@JsonKey(name: 'total_paid') this.totalPaid,
+      @JsonKey(name: 'base_price') this.basePrice,
+      @JsonKey(name: 'gst_paid') this.gstPaid,
+      @JsonKey(name: 'platform_fee') this.platformFee,
+      @JsonKey(name: 'deduction_amount') this.deductionAmount,
+      @JsonKey(name: 'cancellation_gst') this.cancellationGst,
+      this.commission,
+      @JsonKey(name: 'commission_gst') this.commissionGst,
+      @JsonKey(name: 'vendor_from_deduction') this.vendorFromDeduction,
+      @JsonKey(name: 'razorpay_fee') this.razorpayFee,
+      @JsonKey(name: 'payment_method') this.paymentMethod,
+      @JsonKey(name: 'credit_note_eligible') this.creditNoteEligible,
+      @JsonKey(name: 'is_advance_only') this.isAdvanceOnly});
+
+  factory _$RefundBreakdownImpl.fromJson(Map<String, dynamic> json) =>
+      _$$RefundBreakdownImplFromJson(json);
+
+  @override
+  @JsonKey(name: 'total_paid')
+  final double? totalPaid;
+  @override
+  @JsonKey(name: 'base_price')
+  final double? basePrice;
+  @override
+  @JsonKey(name: 'gst_paid')
+  final double? gstPaid;
+  @override
+  @JsonKey(name: 'platform_fee')
+  final double? platformFee;
+  @override
+  @JsonKey(name: 'deduction_amount')
+  final double? deductionAmount;
+  @override
+  @JsonKey(name: 'cancellation_gst')
+  final double? cancellationGst;
+  @override
+  final double? commission;
+  @override
+  @JsonKey(name: 'commission_gst')
+  final double? commissionGst;
+  @override
+  @JsonKey(name: 'vendor_from_deduction')
+  final double? vendorFromDeduction;
+  @override
+  @JsonKey(name: 'razorpay_fee')
+  final double? razorpayFee;
+  @override
+  @JsonKey(name: 'payment_method')
+  final String? paymentMethod;
+  @override
+  @JsonKey(name: 'credit_note_eligible')
+  final bool? creditNoteEligible;
+// FLEX-01: advance forfeited, credit note issued for GST, no cash refund
+  @override
+  @JsonKey(name: 'is_advance_only')
+  final bool? isAdvanceOnly;
+
+  @override
+  String toString() {
+    return 'RefundBreakdown(totalPaid: $totalPaid, basePrice: $basePrice, gstPaid: $gstPaid, platformFee: $platformFee, deductionAmount: $deductionAmount, cancellationGst: $cancellationGst, commission: $commission, commissionGst: $commissionGst, vendorFromDeduction: $vendorFromDeduction, razorpayFee: $razorpayFee, paymentMethod: $paymentMethod, creditNoteEligible: $creditNoteEligible, isAdvanceOnly: $isAdvanceOnly)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$RefundBreakdownImpl &&
+            (identical(other.totalPaid, totalPaid) ||
+                other.totalPaid == totalPaid) &&
+            (identical(other.basePrice, basePrice) ||
+                other.basePrice == basePrice) &&
+            (identical(other.gstPaid, gstPaid) || other.gstPaid == gstPaid) &&
+            (identical(other.platformFee, platformFee) ||
+                other.platformFee == platformFee) &&
+            (identical(other.deductionAmount, deductionAmount) ||
+                other.deductionAmount == deductionAmount) &&
+            (identical(other.cancellationGst, cancellationGst) ||
+                other.cancellationGst == cancellationGst) &&
+            (identical(other.commission, commission) ||
+                other.commission == commission) &&
+            (identical(other.commissionGst, commissionGst) ||
+                other.commissionGst == commissionGst) &&
+            (identical(other.vendorFromDeduction, vendorFromDeduction) ||
+                other.vendorFromDeduction == vendorFromDeduction) &&
+            (identical(other.razorpayFee, razorpayFee) ||
+                other.razorpayFee == razorpayFee) &&
+            (identical(other.paymentMethod, paymentMethod) ||
+                other.paymentMethod == paymentMethod) &&
+            (identical(other.creditNoteEligible, creditNoteEligible) ||
+                other.creditNoteEligible == creditNoteEligible) &&
+            (identical(other.isAdvanceOnly, isAdvanceOnly) ||
+                other.isAdvanceOnly == isAdvanceOnly));
+  }
+
+  @JsonKey(ignore: true)
+  @override
+  int get hashCode => Object.hash(
+      runtimeType,
+      totalPaid,
+      basePrice,
+      gstPaid,
+      platformFee,
+      deductionAmount,
+      cancellationGst,
+      commission,
+      commissionGst,
+      vendorFromDeduction,
+      razorpayFee,
+      paymentMethod,
+      creditNoteEligible,
+      isAdvanceOnly);
+
+  @JsonKey(ignore: true)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$RefundBreakdownImplCopyWith<_$RefundBreakdownImpl> get copyWith =>
+      __$$RefundBreakdownImplCopyWithImpl<_$RefundBreakdownImpl>(
+          this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$RefundBreakdownImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _RefundBreakdown implements RefundBreakdown {
+  const factory _RefundBreakdown(
+      {@JsonKey(name: 'total_paid') final double? totalPaid,
+      @JsonKey(name: 'base_price') final double? basePrice,
+      @JsonKey(name: 'gst_paid') final double? gstPaid,
+      @JsonKey(name: 'platform_fee') final double? platformFee,
+      @JsonKey(name: 'deduction_amount') final double? deductionAmount,
+      @JsonKey(name: 'cancellation_gst') final double? cancellationGst,
+      final double? commission,
+      @JsonKey(name: 'commission_gst') final double? commissionGst,
+      @JsonKey(name: 'vendor_from_deduction') final double? vendorFromDeduction,
+      @JsonKey(name: 'razorpay_fee') final double? razorpayFee,
+      @JsonKey(name: 'payment_method') final String? paymentMethod,
+      @JsonKey(name: 'credit_note_eligible') final bool? creditNoteEligible,
+      @JsonKey(name: 'is_advance_only')
+      final bool? isAdvanceOnly}) = _$RefundBreakdownImpl;
+
+  factory _RefundBreakdown.fromJson(Map<String, dynamic> json) =
+      _$RefundBreakdownImpl.fromJson;
+
+  @override
+  @JsonKey(name: 'total_paid')
+  double? get totalPaid;
+  @override
+  @JsonKey(name: 'base_price')
+  double? get basePrice;
+  @override
+  @JsonKey(name: 'gst_paid')
+  double? get gstPaid;
+  @override
+  @JsonKey(name: 'platform_fee')
+  double? get platformFee;
+  @override
+  @JsonKey(name: 'deduction_amount')
+  double? get deductionAmount;
+  @override
+  @JsonKey(name: 'cancellation_gst')
+  double? get cancellationGst;
+  @override
+  double? get commission;
+  @override
+  @JsonKey(name: 'commission_gst')
+  double? get commissionGst;
+  @override
+  @JsonKey(name: 'vendor_from_deduction')
+  double? get vendorFromDeduction;
+  @override
+  @JsonKey(name: 'razorpay_fee')
+  double? get razorpayFee;
+  @override
+  @JsonKey(name: 'payment_method')
+  String? get paymentMethod;
+  @override
+  @JsonKey(name: 'credit_note_eligible')
+  bool? get creditNoteEligible;
+  @override // FLEX-01: advance forfeited, credit note issued for GST, no cash refund
+  @JsonKey(name: 'is_advance_only')
+  bool? get isAdvanceOnly;
+  @override
+  @JsonKey(ignore: true)
+  _$$RefundBreakdownImplCopyWith<_$RefundBreakdownImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
