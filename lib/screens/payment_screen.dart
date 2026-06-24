@@ -167,7 +167,7 @@ class _PaymentScreenState extends State<PaymentScreen>
 
   void _openRazorpay(BreakDownDataModel? breakdown) async {
     try {
-      final params = _trekC.orderNextActionParams.value;
+      final params = _trekC.orderNextActionParams; // RxMap implements Map directly
 
       final options = {
         'key': params['key'] ?? BookingConstants.razorpayKey,

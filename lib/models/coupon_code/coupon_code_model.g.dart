@@ -11,7 +11,7 @@ _$ValidateCouponCodeRequestModelImpl
         _$ValidateCouponCodeRequestModelImpl(
           code: json['code'] as String,
           trekId: json['trekId'],
-          bookingAmount: json['bookingAmount'],
+          bookingAmount: json['amount'],
           travelerCount: json['travelerCount'] as int?,
         );
 
@@ -20,7 +20,7 @@ Map<String, dynamic> _$$ValidateCouponCodeRequestModelImplToJson(
     <String, dynamic>{
       'code': instance.code,
       'trekId': instance.trekId,
-      'bookingAmount': instance.bookingAmount,
+      'amount': instance.bookingAmount,
       'travelerCount': instance.travelerCount,
     };
 

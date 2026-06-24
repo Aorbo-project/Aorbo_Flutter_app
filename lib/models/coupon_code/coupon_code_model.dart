@@ -8,7 +8,7 @@ class ValidateCouponCodeRequestModel with _$ValidateCouponCodeRequestModel {
   const factory ValidateCouponCodeRequestModel({
     required String code,
     required dynamic trekId,
-    required dynamic bookingAmount,
+    @JsonKey(name: 'amount') required dynamic bookingAmount,
     /// Number of travelers — required for group-discount minimum participant validation.
     @JsonKey(name: 'travelerCount') int? travelerCount,
   }) = _ValidateCouponCodeRequestModel;

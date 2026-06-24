@@ -170,40 +170,38 @@ class _claims extends State<claims> {
                   SizedBox(
                     height: 10.h,
                   ),
-                  Container(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              width: 2.w,
-                              height: 2.w,
-                              decoration: const BoxDecoration(
-                                color: CommonColors.blackColor,
-                                shape: BoxShape.circle,
-                              ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 2.w,
+                            height: 2.w,
+                            decoration: const BoxDecoration(
+                              color: CommonColors.blackColor,
+                              shape: BoxShape.circle,
                             ),
-                            SizedBox(width: 4.w),
-                            Text(
-                              "Powered by (Insurance company name)",
-                              style: TextStyle(fontSize: 9),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 2.h),
-                        CommonButton(
-                          text: 'Claim Insurance',
-                          onPressed: () async {},
-                          gradient: CommonColors.btnGradient,
-                          textColor: CommonColors.whiteColor,
-                          fontWeight: FontWeight.w600,
-                          fontSize: FontSize.s11,
-                          height: 6.5.h,
-                        ),
-                      ],
-                    ),
+                          ),
+                          SizedBox(width: 4.w),
+                          Text(
+                            "Powered by (Insurance company name)",
+                            style: TextStyle(fontSize: 9),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 2.h),
+                      CommonButton(
+                        text: 'Claim Insurance',
+                        onPressed: () async {},
+                        gradient: CommonColors.btnGradient,
+                        textColor: CommonColors.whiteColor,
+                        fontWeight: FontWeight.w600,
+                        fontSize: FontSize.s11,
+                        height: 6.5.h,
+                      ),
+                    ],
                   )
                 ],
               ),

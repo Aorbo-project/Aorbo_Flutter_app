@@ -78,6 +78,7 @@ dependencies:
   animate_do: ^3.0.2
   http: ^1.6.0
   chewie: ^1.13.1
+  video_player: ^2.10.1
 
 dev_dependencies:
   flutter_test:
