@@ -145,13 +145,8 @@ class TrekShortsScreen extends StatelessWidget {
         List<ShortsTreksData>? shortsTreksCardsData = dashboardC
             .shortsTreksObserver.value
             .maybeWhen(
-          success: (shortsTreksResponse) {
-            return [
-              ShortsTreksData(title: "cvubvghf  gjvhbun",description: "4M",textColour: "#ffffff",imagePath: "https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/image%20(9).png?alt=media&token=a173b677-2c64-47b9-b610-6f8bad60650f",videoPath: "https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/WhatsApp%20Video%202026-04-30%20at%209.47.14%20PM.mp4?alt=media&token=d6f20c28-3369-415b-8859-5a02dad8113a",shortVideoPath: "https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/WhatsApp%20Video%202026-04-30%20at%209.46.02%20PM.mp4?alt=media&token=356e3d97-dfc9-4360-8a98-118a0b60a5c3"),
-              ShortsTreksData(title: "hgvjhbkjnllbhjg h",description: "5M",textColour: "#35323b",imagePath: "https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/image%20(9).png?alt=media&token=a173b677-2c64-47b9-b610-6f8bad60650f",videoPath: "https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/WhatsApp%20Video%202026-04-30%20at%209.47.14%20PM.mp4?alt=media&token=d6f20c28-3369-415b-8859-5a02dad8113a",shortVideoPath: "https://firebasestorage.googleapis.com/v0/b/ram-raheem-solutions.firebasestorage.app/o/WhatsApp%20Video%202026-04-30%20at%209.46.02%20PM.mp4?alt=media&token=356e3d97-dfc9-4360-8a98-118a0b60a5c3"),
-            ];
-            return (shortsTreksResponse as ShortsTreksDataResponseModel).data;
-          },
+          success: (shortsTreksResponse) =>
+              (shortsTreksResponse as ShortsTreksDataResponseModel).data,
           error: (sc) => [],
           orElse: () => [
             ShortsTreksData(),

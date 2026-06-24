@@ -66,7 +66,7 @@ class _FilterModalState extends State<FilterModal> {
 
     for (var filter in widget.selectedFilters) {
       for (var category in categories) {
-        if (category.options.contains(filter)) {
+        if (category.options.any((o) => o.title == filter)) {
           selectedOptionsByCategory[category.title] = filter;
           break;
         }
@@ -199,7 +199,7 @@ class _FilterModalState extends State<FilterModal> {
                           final option = category.options[index];
                           final isSelected =
                               selectedOptionsByCategory[category.title] ==
-                                  option;
+                                  option.title;
                            return Material(
                             color: Colors.transparent,
                             child: ListTile(

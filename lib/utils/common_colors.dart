@@ -106,7 +106,7 @@ class CommonColors {
   static const Color trek_route_color = Color(0xff212199);
   static const Color trekroutecolorlight = Color(0xffEEEEEE);
   static const Color textColor = Color(0xff494949);
-  static const Color greyColor_494949 = Color(0xff14494949);
+  static const Color greyColor_494949 = Color(0xFF14494949);
   static const Color grey_AEAEAE = Color.fromARGB(255, 138, 138, 138);
   static const Color grey_DEE2E6 = Color(0xffDEE2E6);
   static const Color grey_F8F8F8 = Color(0xffF8F8F8);
