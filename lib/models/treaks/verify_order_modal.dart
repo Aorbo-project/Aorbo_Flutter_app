@@ -119,8 +119,8 @@ class Data {
     bookingSource = json['booking_source'];
     primaryContactTravelerId = json['primary_contact_traveler_id'];
     cityId = json['city_id'];
-    createdAt = json['createdAt'];
-    updatedAt = json['updatedAt'];
+    createdAt = json['created_at'];
+    updatedAt = json['updated_at'];
     userId = json['user_id'];
     trek = json['trek'] != null ? Trek.fromJson(json['trek']) : null;
     vendor = json['vendor'] != null
@@ -161,8 +161,8 @@ class Data {
     data['booking_source'] = bookingSource;
     data['primary_contact_traveler_id'] = primaryContactTravelerId;
     data['city_id'] = cityId;
-    data['createdAt'] = createdAt;
-    data['updatedAt'] = updatedAt;
+    data['created_at'] = createdAt;
+    data['updated_at'] = updatedAt;
     data['user_id'] = userId;
     if (trek != null) {
       data['trek'] = trek!.toJson();
@@ -288,8 +288,8 @@ class Trek {
     organizerMannerCount = json['organizer_manner_count'];
     trekPlanningCount = json['trek_planning_count'];
     womenSafetyCount = json['women_safety_count'];
-    createdAt = json['createdAt'];
-    updatedAt = json['updatedAt'];
+    createdAt = json['created_at'];
+    updatedAt = json['updated_at'];
     destinationData = json['destinationData'] != null
         ? DestinationData.fromJson(json['destinationData'])
         : null;
@@ -327,8 +327,8 @@ class Trek {
     data['organizer_manner_count'] = organizerMannerCount;
     data['trek_planning_count'] = trekPlanningCount;
     data['women_safety_count'] = womenSafetyCount;
-    data['createdAt'] = createdAt;
-    data['updatedAt'] = updatedAt;
+    data['created_at'] = createdAt;
+    data['updated_at'] = updatedAt;
     if (destinationData != null) {
       data['destinationData'] = destinationData!.toJson();
     }
@@ -474,8 +474,8 @@ class Vendor {
     shopEstablishmentVerified = json['shop_establishment_verified'];
     kycStatus = json['kyc_status'];
     kycStep = json['kyc_step'];
-    createdAt = json['createdAt'];
-    updatedAt = json['updatedAt'];
+    createdAt = json['created_at'];
+    updatedAt = json['updated_at'];
   }
 
   Map<String, dynamic> toJson() {
@@ -510,8 +510,8 @@ class Vendor {
     data['shop_establishment_verified'] = shopEstablishmentVerified;
     data['kyc_status'] = kycStatus;
     data['kyc_step'] = kycStep;
-    data['createdAt'] = createdAt;
-    data['updatedAt'] = updatedAt;
+    data['created_at'] = createdAt;
+    data['updated_at'] = updatedAt;
     return data;
   }
 }
@@ -611,8 +611,8 @@ class Batch {
     bookedSlots = json['booked_slots'];
     availableSlots = json['available_slots'];
     captainId = json['captain_id'];
-    createdAt = json['createdAt'];
-    updatedAt = json['updatedAt'];
+    createdAt = json['created_at'];
+    updatedAt = json['updated_at'];
   }
 
   Map<String, dynamic> toJson() {
@@ -626,8 +626,8 @@ class Batch {
     data['booked_slots'] = bookedSlots;
     data['available_slots'] = availableSlots;
     data['captain_id'] = captainId;
-    data['createdAt'] = createdAt;
-    data['updatedAt'] = updatedAt;
+    data['created_at'] = createdAt;
+    data['updated_at'] = updatedAt;
     return data;
   }
 }
@@ -706,8 +706,8 @@ class VerifyTrekTraveler {
     accommodationPreference = json['accommodation_preference'];
     mealPreference = json['meal_preference'];
     status = json['status'];
-    createdAt = json['createdAt'];
-    updatedAt = json['updatedAt'];
+    createdAt = json['created_at'];
+    updatedAt = json['updated_at'];
     traveler = json['traveler'] != null
         ? Traveler.fromJson(json['traveler'])
         : null;
@@ -723,8 +723,8 @@ class VerifyTrekTraveler {
     data['accommodation_preference'] = accommodationPreference;
     data['meal_preference'] = mealPreference;
     data['status'] = status;
-    data['createdAt'] = createdAt;
-    data['updatedAt'] = updatedAt;
+    data['created_at'] = createdAt;
+    data['updated_at'] = updatedAt;
     if (traveler != null) {
       data['traveler'] = traveler!.toJson();
     }
@@ -761,8 +761,8 @@ class Payments {
     paymentMethod = json['payment_method'];
     transactionId = json['transaction_id'];
     status = json['status'];
-    createdAt = json['createdAt'];
-    updatedAt = json['updatedAt'];
+    createdAt = json['created_at'];
+    updatedAt = json['updated_at'];
   }
 
   Map<String, dynamic> toJson() {
@@ -773,8 +773,8 @@ class Payments {
     data['payment_method'] = paymentMethod;
     data['transaction_id'] = transactionId;
     data['status'] = status;
-    data['createdAt'] = createdAt;
-    data['updatedAt'] = updatedAt;
+    data['created_at'] = createdAt;
+    data['updated_at'] = updatedAt;
     return data;
   }
 }
