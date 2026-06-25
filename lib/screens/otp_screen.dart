@@ -19,7 +19,7 @@ class OTPScreen extends StatefulWidget {
   const OTPScreen({super.key});
 
   @override
-  _OTPScreenState createState() => _OTPScreenState();
+  State<OTPScreen> createState() => _OTPScreenState();
 }
 
 class _OTPScreenState extends State<OTPScreen>

@@ -23,6 +23,7 @@ ValidateCouponCodeRequestModel _$ValidateCouponCodeRequestModelFromJson(
 mixin _$ValidateCouponCodeRequestModel {
   String get code => throw _privateConstructorUsedError;
   dynamic get trekId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'amount')
   dynamic get bookingAmount => throw _privateConstructorUsedError;
 
   /// Number of travelers — required for group-discount minimum participant validation.
@@ -46,7 +47,7 @@ abstract class $ValidateCouponCodeRequestModelCopyWith<$Res> {
   $Res call(
       {String code,
       dynamic trekId,
-      dynamic bookingAmount,
+      @JsonKey(name: 'amount') dynamic bookingAmount,
       @JsonKey(name: 'travelerCount') int? travelerCount});
 }
 
@@ -102,7 +103,7 @@ abstract class _$$ValidateCouponCodeRequestModelImplCopyWith<$Res>
   $Res call(
       {String code,
       dynamic trekId,
-      dynamic bookingAmount,
+      @JsonKey(name: 'amount') dynamic bookingAmount,
       @JsonKey(name: 'travelerCount') int? travelerCount});
 }
 
@@ -152,7 +153,7 @@ class _$ValidateCouponCodeRequestModelImpl
   const _$ValidateCouponCodeRequestModelImpl(
       {required this.code,
       required this.trekId,
-      required this.bookingAmount,
+      @JsonKey(name: 'amount') required this.bookingAmount,
       @JsonKey(name: 'travelerCount') this.travelerCount});
 
   factory _$ValidateCouponCodeRequestModelImpl.fromJson(
@@ -164,6 +165,7 @@ class _$ValidateCouponCodeRequestModelImpl
   @override
   final dynamic trekId;
   @override
+  @JsonKey(name: 'amount')
   final dynamic bookingAmount;
 
   /// Number of travelers — required for group-discount minimum participant validation.
@@ -219,7 +221,7 @@ abstract class _ValidateCouponCodeRequestModel
   const factory _ValidateCouponCodeRequestModel(
           {required final String code,
           required final dynamic trekId,
-          required final dynamic bookingAmount,
+          @JsonKey(name: 'amount') required final dynamic bookingAmount,
           @JsonKey(name: 'travelerCount') final int? travelerCount}) =
       _$ValidateCouponCodeRequestModelImpl;
 
@@ -231,6 +233,7 @@ abstract class _ValidateCouponCodeRequestModel
   @override
   dynamic get trekId;
   @override
+  @JsonKey(name: 'amount')
   dynamic get bookingAmount;
   @override
 

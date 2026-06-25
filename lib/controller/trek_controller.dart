@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:arobo_app/controller/dashboard_controller.dart';
@@ -7,6 +8,8 @@ import 'package:arobo_app/models/treaks/booking_cancelled_modal.dart';
 import 'package:arobo_app/models/treaks/verify_order_modal.dart';
 import 'package:arobo_app/models/coupon_code/coupon_code_model.dart';
 import 'package:arobo_app/models/dispute/submit_issue_modal.dart';
+import 'package:arobo_app/models/refund/refund_status_model.dart';
+import 'package:arobo_app/services/socket_service.dart';
 import 'package:arobo_app/utils/custom_snackbar.dart';
 import 'package:arobo_app/utils/loader_dialog.dart';
 import 'package:arobo_app/widgets/logger.dart';
@@ -52,6 +55,10 @@ class TrekController extends GetxController {
 
   final cancellationDetailsResponseObserver  = const ApiResult<CancellationDetailsResponseModel>.init().obs;
   final requestCancellationResponseObserver  = const ApiResult<BookingCancelledModal>.init().obs;
+  final refundStatusObserver = const ApiResult<RefundStatusModel>.init().obs;
+
+  final _socketService = SocketService();
+  Timer? _refundPollTimer;
 
   Rx<TextEditingController> cancellationReasonController =
       TextEditingController().obs;
@@ -76,9 +83,9 @@ class TrekController extends GetxController {
   // Backend-driven next_action routing — populated from raw API responses so
   // screens don't need to re-derive navigation logic.
   Rx<String> orderNextAction = 'OPEN_RAZORPAY'.obs;
-  Rx<Map<String, dynamic>> orderNextActionParams = <String, dynamic>{}.obs;
+  RxMap<String, dynamic> orderNextActionParams = <String, dynamic>{}.obs;
   Rx<String> cancelNextAction = 'SHOW_CANCELLATION_CONFIRMED'.obs;
-  Rx<Map<String, dynamic>> cancelNextActionParams = <String, dynamic>{}.obs;
+  RxMap<String, dynamic> cancelNextActionParams = <String, dynamic>{}.obs;
 
   //endregion
   //region VerifyTrek
@@ -109,7 +116,133 @@ class TrekController extends GetxController {
 
 
   @override
+  void onInit() {
+    super.onInit();
+    _registerRefundSocketListeners();
+  }
+
+  void _registerRefundSocketListeners() {
+    _socketService.addListener('refund:initiated', (data) {
+      refundStatusObserver.value.maybeWhen(
+        success: (model) {
+          final d = model?.data;
+          if (d == null) return;
+          // refund:initiated payload: {bookingId, tbrId, amount, method, refund_speed, expected_by, poll_interval_seconds}
+          // NO refundId yet — Razorpay issues it only after the refund is processed
+          final updated = RefundStatusData(
+            bookingId:          d.bookingId,
+            cancellationId:     d.cancellationId,
+            cancellationNumber: d.cancellationNumber,
+            cancellationDate:   d.cancellationDate,
+            refundAmount:       d.refundAmount,
+            refundApplicable:   d.refundApplicable,
+            refundStatus:       'processing',
+            refundId:           d.refundId, // not yet available at initiated stage
+            refundSpeed:        data['refund_speed']?.toString() ?? d.refundSpeed,
+            refundInitiatedAt:  d.refundInitiatedAt,
+            statusMessage:      'Refund submitted — being processed by your bank',
+          );
+          refundStatusObserver.value = ApiResult.success(
+            RefundStatusModel(success: true, data: updated, nextAction: 'POLL_REFUND_STATUS'),
+          );
+        },
+        orElse: () {},
+      );
+    });
+
+    _socketService.addListener('refund:processed', (data) {
+      stopRefundPolling();
+      refundStatusObserver.value.maybeWhen(
+        success: (model) {
+          final d = model?.data;
+          if (d == null) return;
+          final updated = RefundStatusData(
+            bookingId:          d.bookingId,
+            cancellationId:     d.cancellationId,
+            cancellationNumber: d.cancellationNumber,
+            cancellationDate:   d.cancellationDate,
+            refundAmount:       d.refundAmount,
+            refundApplicable:   d.refundApplicable,
+            refundStatus:       'processed',
+            refundId:           data['refundId']?.toString() ?? d.refundId,
+            refundSpeed:        d.refundSpeed,
+            refundInitiatedAt:  d.refundInitiatedAt,
+            refundProcessedAt:  data['settled_at']?.toString(), // backend sends snake_case
+            statusMessage:      'Refund credited to your original payment method',
+          );
+          refundStatusObserver.value = ApiResult.success(
+            RefundStatusModel(success: true, data: updated, nextAction: 'SHOW_REFUND_CREDITED'),
+          );
+        },
+        orElse: () {},
+      );
+    });
+
+    _socketService.addListener('refund:failed', (data) {
+      stopRefundPolling();
+      refundStatusObserver.value.maybeWhen(
+        success: (model) {
+          final d = model?.data;
+          if (d == null) return;
+          final updated = RefundStatusData(
+            bookingId:           d.bookingId,
+            cancellationId:      d.cancellationId,
+            cancellationNumber:  d.cancellationNumber,
+            cancellationDate:    d.cancellationDate,
+            refundAmount:        d.refundAmount,
+            refundApplicable:    d.refundApplicable,
+            refundStatus:        'failed',
+            refundFailureReason: data['message']?.toString(),
+            statusMessage:       'Refund failed — our team will contact you shortly',
+          );
+          refundStatusObserver.value = ApiResult.success(
+            RefundStatusModel(success: true, data: updated, nextAction: 'CONTACT_SUPPORT'),
+          );
+        },
+        orElse: () {},
+      );
+      if (Get.context != null) {
+        CustomSnackBar.show(
+          Get.context!,
+          message: 'Your refund could not be processed. Our support team will contact you.',
+        );
+      }
+    });
+  }
+
+  /// Fetch live refund status from backend (driven by Razorpay webhooks).
+  Future<void> fetchRefundStatus(String bookingId) async {
+    try {
+      final response = await repository.getApiCall(url: NetworkUrl.refundStatus(bookingId));
+      if (response != null) {
+        refundStatusObserver.value = ApiResult.success(RefundStatusModel.fromJson(response));
+      }
+    } catch (e) {
+      // Non-fatal — polling failure should not surface an error to the user
+    }
+  }
+
+  /// Start 5-minute polling for refund status (fallback when socket event is missed).
+  void startRefundPolling(String bookingId) {
+    stopRefundPolling();
+    fetchRefundStatus(bookingId); // immediate first fetch
+    _refundPollTimer = Timer.periodic(
+      const Duration(seconds: 300), // 5 minutes — matches backend poll_interval_seconds
+      (_) => fetchRefundStatus(bookingId),
+    );
+  }
+
+  void stopRefundPolling() {
+    _refundPollTimer?.cancel();
+    _refundPollTimer = null;
+  }
+
+  @override
   void onClose() {
+    stopRefundPolling();
+    _socketService.removeAllListeners('refund:initiated');
+    _socketService.removeAllListeners('refund:processed');
+    _socketService.removeAllListeners('refund:failed');
     reviewController.value.dispose();
     if (cancellationReasonController.value.text.isNotEmpty) {
       cancellationReasonController.value.dispose();
@@ -184,7 +317,7 @@ class TrekController extends GetxController {
         final responseData = ValidateCouponCodeResponseModel.fromJson(response);
         if (responseData.success == true) {
           validateCouponObserver.value = ApiResult.success(responseData);
-          calculateFareRequestModel.value = calculateFareRequestModel.value.copyWith(couponCode: coupon ?? '');
+          calculateFareRequestModel.value = calculateFareRequestModel.value.copyWith(couponCode: coupon);
           Get.back();
           return;
         }

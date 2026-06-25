@@ -135,6 +135,10 @@ static String fetchCouponsForBatch({
 
   static const String refund = 'bookings/confirm-cancellation';
 
+  // Refund status polling — Flutter polls every 5 min after cancellation
+  static String refundStatus(String bookingId) =>
+      'bookings/$bookingId/refund-status';
+
   // Dispute / issue reporting
   static const String submitIssue = 'issues/submit';
   static String bookingDispute(String bookingId) =>

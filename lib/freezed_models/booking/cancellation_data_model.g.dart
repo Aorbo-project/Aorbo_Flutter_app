@@ -120,6 +120,9 @@ _$RefundCalculationImpl _$$RefundCalculationImplFromJson(
       totalFinalAmount: (json['total_final_amount'] as num?)?.toDouble(),
       message: json['message'] as String?,
       trekPrice: (json['trek_price'] as num?)?.toDouble(),
+      breakdown: json['breakdown'] == null
+          ? null
+          : RefundBreakdown.fromJson(json['breakdown'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$$RefundCalculationImplToJson(
@@ -139,6 +142,43 @@ Map<String, dynamic> _$$RefundCalculationImplToJson(
       'total_final_amount': instance.totalFinalAmount,
       'message': instance.message,
       'trek_price': instance.trekPrice,
+      'breakdown': instance.breakdown,
+    };
+
+_$RefundBreakdownImpl _$$RefundBreakdownImplFromJson(
+        Map<String, dynamic> json) =>
+    _$RefundBreakdownImpl(
+      totalPaid: (json['total_paid'] as num?)?.toDouble(),
+      basePrice: (json['base_price'] as num?)?.toDouble(),
+      gstPaid: (json['gst_paid'] as num?)?.toDouble(),
+      platformFee: (json['platform_fee'] as num?)?.toDouble(),
+      deductionAmount: (json['deduction_amount'] as num?)?.toDouble(),
+      cancellationGst: (json['cancellation_gst'] as num?)?.toDouble(),
+      commission: (json['commission'] as num?)?.toDouble(),
+      commissionGst: (json['commission_gst'] as num?)?.toDouble(),
+      vendorFromDeduction: (json['vendor_from_deduction'] as num?)?.toDouble(),
+      razorpayFee: (json['razorpay_fee'] as num?)?.toDouble(),
+      paymentMethod: json['payment_method'] as String?,
+      creditNoteEligible: json['credit_note_eligible'] as bool?,
+      isAdvanceOnly: json['is_advance_only'] as bool?,
+    );
+
+Map<String, dynamic> _$$RefundBreakdownImplToJson(
+        _$RefundBreakdownImpl instance) =>
+    <String, dynamic>{
+      'total_paid': instance.totalPaid,
+      'base_price': instance.basePrice,
+      'gst_paid': instance.gstPaid,
+      'platform_fee': instance.platformFee,
+      'deduction_amount': instance.deductionAmount,
+      'cancellation_gst': instance.cancellationGst,
+      'commission': instance.commission,
+      'commission_gst': instance.commissionGst,
+      'vendor_from_deduction': instance.vendorFromDeduction,
+      'razorpay_fee': instance.razorpayFee,
+      'payment_method': instance.paymentMethod,
+      'credit_note_eligible': instance.creditNoteEligible,
+      'is_advance_only': instance.isAdvanceOnly,
     };
 
 _$RefundItemImpl _$$RefundItemImplFromJson(Map<String, dynamic> json) =>

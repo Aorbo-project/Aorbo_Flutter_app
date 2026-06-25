@@ -2396,10 +2396,9 @@ class _StateSelectionSheetContent extends StatefulWidget {
   final ValueChanged<String> onStateSelected;
 
   const _StateSelectionSheetContent({
-    Key? key,
     required this.selectedState,
     required this.onStateSelected,
-  }) : super(key: key);
+  });
 
   @override
   State<_StateSelectionSheetContent> createState() =>
@@ -2435,7 +2434,7 @@ class _StateSelectionSheetContentState
         borderRadius: BorderRadius.vertical(top: Radius.circular(5.w)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.10),
+            color: Colors.black.withValues(alpha: 0.10),
             blurRadius: 24,
             offset: const Offset(0, -6),
           ),

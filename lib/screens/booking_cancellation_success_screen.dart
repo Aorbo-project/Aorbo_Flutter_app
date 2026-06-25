@@ -4,7 +4,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
 import 'package:shimmer_ai/shimmer_ai.dart';
 import '../controller/dashboard_controller.dart';
+import '../controller/trek_controller.dart';
 import '../freezed_models/booking/booking_history_model.dart';
+import '../models/refund/refund_status_model.dart';
+import '../models/treaks/booking_cancelled_modal.dart';
 import '../utils/common_colors.dart';
 import '../utils/common_booked_details_card.dart';
 import '../utils/screen_constants.dart';
@@ -12,7 +15,13 @@ import '../utils/screen_constants.dart';
 class BookingCancellationSuccessScreen extends StatefulWidget {
   final BookingHistoryData? booking;
   final String refund;
-  const BookingCancellationSuccessScreen({super.key,required this.booking, required this.refund});
+  final BookingCancelledData? cancelledData;
+  const BookingCancellationSuccessScreen({
+    super.key,
+    required this.booking,
+    required this.refund,
+    this.cancelledData,
+  });
 
   @override
   State<BookingCancellationSuccessScreen> createState() =>
@@ -21,26 +30,31 @@ class BookingCancellationSuccessScreen extends StatefulWidget {
 
 class _BookingCancellationSuccessScreenState extends State<BookingCancellationSuccessScreen> {
   final DashboardController dashboardC = Get.find<DashboardController>();
+  final TrekController _trekC = Get.find<TrekController>();
   bool _isLoading = true;
+
+  bool get _hasRefund => (widget.cancelledData?.totalRefundableAmount ?? 0) > 0;
+  bool get _isAdvanceOnly => widget.cancelledData?.isAdvanceOnly == true;
 
   @override
   void initState() {
     super.initState();
     _simulateLoading();
+    // Start polling if a cash refund was issued
+    if (_hasRefund && widget.cancelledData?.bookingId != null) {
+      _trekC.startRefundPolling(widget.cancelledData!.bookingId!.toString());
+    }
   }
 
   void _simulateLoading() {
-    Future.delayed(Duration(milliseconds: 1200), () {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+    Future.delayed(const Duration(milliseconds: 1200), () {
+      if (mounted) setState(() => _isLoading = false);
     });
   }
 
   @override
   void dispose() {
+    _trekC.stopRefundPolling();
     super.dispose();
   }
 
@@ -231,12 +245,12 @@ class _BookingCancellationSuccessScreenState extends State<BookingCancellationSu
       ),
       child: Column(
         children: [
-          // Top Section - Light Blue Background
+          // Top Section
           Container(
             width: double.infinity,
             padding: EdgeInsets.all(4.w),
             decoration: BoxDecoration(
-              color: Color(0xFFE8F4F8), // Light blue background
+              color: const Color(0xFFE8F4F8),
               borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(4.w),
                 topRight: Radius.circular(4.w),
@@ -267,7 +281,6 @@ class _BookingCancellationSuccessScreenState extends State<BookingCancellationSu
                     ],
                   ),
                 ),
-                // Ticket Icon
                 Container(
                   width: 12.w,
                   height: 12.w,
@@ -275,87 +288,16 @@ class _BookingCancellationSuccessScreenState extends State<BookingCancellationSu
                     color: Colors.orange.shade100,
                     borderRadius: BorderRadius.circular(2.w),
                   ),
-                  child: Stack(
-                    children: [
-                      // Background ticket
-                      Positioned(
-                        right: 1.w,
-                        child: Container(
-                          width: 8.w,
-                          height: 10.w,
-                          decoration: BoxDecoration(
-                            color: Colors.orange.shade300,
-                            borderRadius: BorderRadius.circular(1.w),
-                            border: Border.all(
-                              color: Colors.grey.shade300,
-                              width: 0.5,
-                            ),
-                          ),
-                          child: Column(
-                            children: [
-                              Container(
-                                height: 2.w,
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.shade300,
-                                  borderRadius: BorderRadius.only(
-                                    topLeft: Radius.circular(1.w),
-                                    topRight: Radius.circular(1.w),
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.orange.shade300,
-                                    borderRadius: BorderRadius.only(
-                                      bottomLeft: Radius.circular(1.w),
-                                      bottomRight: Radius.circular(1.w),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      // Front ticket with X
-                      Positioned(
-                        child: Container(
-                          width: 8.w,
-                          height: 10.w,
-                          decoration: BoxDecoration(
-                            color: Colors.orange.shade400,
-                            borderRadius: BorderRadius.circular(1.w),
-                            border: Border.all(
-                              color: Colors.grey.shade400,
-                              width: 0.5,
-                            ),
-                          ),
-                          child: Center(
-                            child: Container(
-                              width: 3.w,
-                              height: 3.w,
-                              decoration: BoxDecoration(
-                                color: Colors.pink.shade300,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.close,
-                                color: Colors.white,
-                                size: 2.w,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                  child: Center(
+                    child: Icon(Icons.cancel_outlined,
+                        color: Colors.orange.shade700, size: 6.w),
                   ),
                 ),
               ],
             ),
           ),
 
-          // Bottom Section - White Background
+          // Bottom Section
           Container(
             width: double.infinity,
             padding: EdgeInsets.all(4.w),
@@ -369,9 +311,13 @@ class _BookingCancellationSuccessScreenState extends State<BookingCancellationSu
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Refund Message
+                // Context-aware message
                 Text(
-                  'The refund will be processed to your payment method shortly.',
+                  _isAdvanceOnly
+                      ? 'Your advance amount is non-refundable. A credit note will be issued for GST reversal.'
+                      : _hasRefund
+                          ? 'Your refund will be processed to your original payment method.'
+                          : 'No refund is applicable for this cancellation.',
                   style: GoogleFonts.poppins(
                     fontSize: FontSize.s10,
                     color: CommonColors.blackColor,
@@ -379,50 +325,194 @@ class _BookingCancellationSuccessScreenState extends State<BookingCancellationSu
                 ),
                 SizedBox(height: 2.h),
 
-                // Refund Amount and Status
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          'Total refund ',
+                // Refund amount row — only when a cash refund exists
+                if (_hasRefund) ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            'Total refund ',
+                            style: GoogleFonts.poppins(
+                              fontSize: FontSize.s10,
+                              color: CommonColors.greyTextColor,
+                            ),
+                          ),
+                          Text(
+                            '₹ ${widget.refund}',
+                            style: GoogleFonts.poppins(
+                              fontSize: FontSize.s12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.green,
+                            ),
+                          ),
+                        ],
+                      ),
+                      GestureDetector(
+                        onTap: () => _showRefundStatusSheet(context),
+                        child: Text(
+                          'Track Refund →',
                           style: GoogleFonts.poppins(
                             fontSize: FontSize.s10,
-                            color: CommonColors.greyTextColor,
+                            color: Colors.blue,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
-                        Text(
-                          '₹ ${widget.refund}',
-                          style: GoogleFonts.poppins(
-                            fontSize: FontSize.s12,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.green,
+                      ),
+                    ],
+                  ),
+                ],
+
+                // Credit note notice for FLEX-01
+                if (_isAdvanceOnly) ...[
+                  SizedBox(height: 1.5.h),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.h),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.shade50,
+                      borderRadius: BorderRadius.circular(2.w),
+                      border: Border.all(color: Colors.amber.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.receipt_long_outlined,
+                            size: 4.w, color: Colors.amber.shade800),
+                        SizedBox(width: 2.w),
+                        Expanded(
+                          child: Text(
+                            'A credit note for GST reversal will be shared to your registered email.',
+                            style: GoogleFonts.poppins(
+                              fontSize: FontSize.s9,
+                              color: Colors.amber.shade900,
+                            ),
                           ),
                         ),
                       ],
                     ),
-                    GestureDetector(
-                      onTap: () {
-                        // Handle refund status
-                      },
-                      child: Text(
-                        'Refund Status',
-                        style: GoogleFonts.poppins(
-                          fontSize: FontSize.s10,
-                          color: Colors.blue,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ],
             ),
           ),
         ],
       ),
     );
+  }
+
+  /// Bottom sheet showing live refund status — updates via socket or polling.
+  void _showRefundStatusSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(5.w)),
+      ),
+      builder: (_) => Obx(() {
+        final result = _trekC.refundStatusObserver.value;
+        RefundStatusData? statusData;
+        result.maybeWhen(success: (m) => statusData = m?.data, orElse: () {});
+        final isPolling = result.maybeWhen(loading: (_) => true, orElse: () => false);
+
+        return Padding(
+          padding: EdgeInsets.all(5.w),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Refund Status',
+                style: GoogleFonts.poppins(
+                  fontSize: FontSize.s14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              SizedBox(height: 2.h),
+              if (isPolling || statusData == null)
+                const Center(child: CircularProgressIndicator())
+              else ...[
+                _buildStatusStep('Cancellation Confirmed', true, Icons.check_circle),
+                _buildStatusStep(
+                  'Refund Initiated',
+                  statusData?.refundStatus != null,
+                  Icons.currency_rupee,
+                ),
+                _buildStatusStep(
+                  'Being Processed by Bank',
+                  statusData?.refundStatus == 'processing' ||
+                      statusData?.refundStatus == 'processed',
+                  Icons.account_balance,
+                ),
+                _buildStatusStep(
+                  (statusData?.isProcessed ?? false)
+                      ? 'Credited — ${_formatSettledAt(statusData?.refundProcessedAt)}'
+                      : (statusData?.isFailed ?? false)
+                          ? 'Failed — Contact Support'
+                          : 'Awaiting Credit',
+                  statusData?.isProcessed ?? false,
+                  (statusData?.isFailed ?? false) ? Icons.error_outline : Icons.done_all,
+                  isFailed: statusData?.isFailed ?? false,
+                ),
+                SizedBox(height: 2.h),
+                Text(
+                  statusData?.statusMessage ?? 'Checking refund status...',
+                  style: GoogleFonts.poppins(
+                    fontSize: FontSize.s10,
+                    color: CommonColors.greyTextColor,
+                  ),
+                ),
+                if (statusData?.refundSpeed != null) ...[
+                  SizedBox(height: 0.5.h),
+                  Text(
+                    'Speed: ${statusData?.refundSpeed == 'instant' ? 'Instant (within minutes)' : 'Normal (3–5 business days)'}',
+                    style: GoogleFonts.poppins(
+                      fontSize: FontSize.s9,
+                      color: CommonColors.greyTextColor,
+                    ),
+                  ),
+                ],
+              ],
+              SizedBox(height: 3.h),
+            ],
+          ),
+        );
+      }),
+    );
+  }
+
+  Widget _buildStatusStep(String label, bool done, IconData icon, {bool isFailed = false}) {
+    final color = isFailed
+        ? Colors.red
+        : done
+            ? Colors.green
+            : CommonColors.greyTextColor;
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 0.8.h),
+      child: Row(
+        children: [
+          Icon(icon, size: 5.w, color: color),
+          SizedBox(width: 3.w),
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: FontSize.s11,
+              color: color,
+              fontWeight: done ? FontWeight.w500 : FontWeight.w400,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatSettledAt(String? iso) {
+    if (iso == null) return '';
+    try {
+      final dt = DateTime.parse(iso).toLocal();
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
+    } catch (_) {
+      return '';
+    }
   }
 
   String _formatDate(DateTime date) {
