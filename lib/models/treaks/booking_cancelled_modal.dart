@@ -34,6 +34,8 @@ class BookingCancelledData {
   TrekDetails? trekDetails;
   BatchDetails? batchDetails;
 
+  String? cancellationNumber;  // Human-readable CAN ID (e.g. CXL-2026-00042)
+
   // Refund tracking — driven by Razorpay webhooks + reconciliation cron
   bool? isAdvanceOnly;        // FLEX-01: advance forfeited, no cash refund, credit note issued
   bool? creditNoteEligible;   // GST reversal credit note will be generated
@@ -48,6 +50,7 @@ class BookingCancelledData {
     this.cancellationId,
     this.bookingId,
     this.status,
+    this.cancellationNumber,
     this.totalRefundableAmount,
     this.deduction,
     this.deductionAdmin,
@@ -69,6 +72,7 @@ class BookingCancelledData {
     cancellationId = json['cancellation_id'];
     bookingId = json['booking_id'];
     status = json['status'];
+    cancellationNumber = json['cancellation_number'];
     totalRefundableAmount = json['total_refundable_amount'] != null
         ? double.parse(json['total_refundable_amount'].toString())
         : null;
@@ -103,6 +107,7 @@ class BookingCancelledData {
     data['cancellation_id'] = cancellationId;
     data['booking_id'] = bookingId;
     data['status'] = status;
+    data['cancellation_number'] = cancellationNumber;
     data['total_refundable_amount'] = totalRefundableAmount;
     data['deduction'] = deduction;
     data['deduction_admin'] = deductionAdmin;
