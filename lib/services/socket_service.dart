@@ -23,7 +23,7 @@ class SocketService {
       }
 
       _socket = io.io(
-        NetworkUrl.socketUrl,
+        '${NetworkUrl.socketUrl}/customer',
         io.OptionBuilder()
             .setTransports(['websocket', 'polling'])
             .enableReconnection()
