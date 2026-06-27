@@ -311,6 +311,30 @@ class _BookingCancellationSuccessScreenState extends State<BookingCancellationSu
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Cancellation reference number
+                if (widget.cancelledData?.cancellationNumber != null) ...[
+                  Row(
+                    children: [
+                      Text(
+                        'CAN # ',
+                        style: GoogleFonts.poppins(
+                          fontSize: FontSize.s10,
+                          color: CommonColors.greyTextColor,
+                        ),
+                      ),
+                      Text(
+                        widget.cancelledData!.cancellationNumber!,
+                        style: GoogleFonts.poppins(
+                          fontSize: FontSize.s10,
+                          fontWeight: FontWeight.w600,
+                          color: CommonColors.blackColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 1.5.h),
+                ],
+
                 // Context-aware message
                 Text(
                   _isAdvanceOnly
