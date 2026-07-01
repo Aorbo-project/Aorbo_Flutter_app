@@ -112,9 +112,9 @@ _$TrekDataImpl _$$TrekDataImplFromJson(Map<String, dynamic> json) =>
     _$TrekDataImpl(
       id: json['id'] as int?,
       name: json['name'] as String?,
-      vendor: json['vendor'] as String?,
+      vendorName: json['vendor_name'] as String?,
+      companyName: json['company_name'] as String?,
       vendorLogo: json['vendorLogo'] as String?,
-      businessName: json['business_name'] as String?,
       hasDiscount: json['hasDiscount'] as bool?,
       discountText: json['discountText'] as String?,
       rating: (json['rating'] as num?)?.toDouble(),
@@ -137,9 +137,9 @@ Map<String, dynamic> _$$TrekDataImplToJson(_$TrekDataImpl instance) =>
     <String, dynamic>{
       'id': instance.id,
       'name': instance.name,
-      'vendor': instance.vendor,
+      'vendor_name': instance.vendorName,
+      'company_name': instance.companyName,
       'vendorLogo': instance.vendorLogo,
-      'business_name': instance.businessName,
       'hasDiscount': instance.hasDiscount,
       'discountText': instance.discountText,
       'rating': instance.rating,

@@ -80,17 +80,17 @@ class TrekData with _$TrekData {
 
     String? name,
 
-    // BACKEND RETURNS "vendor"
-    @JsonKey(name: 'vendor')
-    String? vendor,
+    // Personal name of the vendor's user account — backend key: "vendor_name"
+    @JsonKey(name: 'vendor_name')
+    String? vendorName,
 
-    // BACKEND RETURNS "vendorLogo"
+    // Business/company name — backend key: "company_name"
+    @JsonKey(name: 'company_name')
+    String? companyName,
+
+    // Vendor logo URL — backend key: "vendorLogo"
     @JsonKey(name: 'vendorLogo')
     String? vendorLogo,
-
-    // fallback
-    @JsonKey(name: 'business_name')
-    String? businessName,
 
     @JsonKey(name: 'hasDiscount')
     bool? hasDiscount,
