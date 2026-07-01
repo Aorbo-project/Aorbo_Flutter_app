@@ -166,7 +166,9 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
 
     return StatefulWrapper(
       onInit: () async {
-        await _couponC.fetchAdminCoupons(_dashboardC.selectedTrekId.value);
+        // Fetch PLATFORM coupons for the listing-screen carousel.
+        // No destination or trek ID is needed — PLATFORM coupons are global.
+        await _couponC.fetchPlatformCoupons();
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (_scrollController.hasClients) {
