@@ -30,7 +30,6 @@ class TrekShortsScreen extends StatelessWidget {
     }
     _showVideoPopup(context, videoUrl, thumbnailUrl);
   }
-
   void _showVideoPopup(BuildContext context, String videoUrl, String thumbnailUrl) {
     VideoPlayerController? videoController;
     ChewieController? chewieController;

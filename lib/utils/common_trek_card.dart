@@ -120,29 +120,29 @@ class CommonTrekCard extends StatelessWidget {
   }
 
   String _vendorInitials() {
-  final name = (trek?.businessName ?? trek?.vendor ?? '').trim();
+    final name = (trek?.companyName ?? trek?.vendorName ?? trek?.businessName ?? trek?.vendor ?? '').trim();
 
-  if (name.isEmpty) {
-    return '?';
+    if (name.isEmpty) {
+      return '?';
+    }
+
+    final parts = name
+        .split(' ')
+        .where((e) => e.trim().isNotEmpty)
+        .toList();
+
+    if (parts.isEmpty) {
+      return '?';
+    }
+
+    if (parts.length == 1) {
+      return parts.first[0].toUpperCase();
+    }
+
+    return (
+      parts[0][0] + parts[1][0]
+    ).toUpperCase();
   }
-
-  final parts = name
-      .split(' ')
-      .where((e) => e.trim().isNotEmpty)
-      .toList();
-
-  if (parts.isEmpty) {
-    return '?';
-  }
-
-  if (parts.length == 1) {
-    return parts.first[0].toUpperCase();
-  }
-
-  return (
-    parts[0][0] + parts[1][0]
-  ).toUpperCase();
-}
   // ── Helper for labeled info items ──────────
   Widget _buildInfoItem(String label, String value) {
     if (value.isEmpty) return const SizedBox.shrink();
@@ -282,7 +282,7 @@ class CommonTrekCard extends StatelessWidget {
                           children: [
                             Flexible(
                               child: Text(
-                                trek?.businessName ?? trek?.vendor ?? '-',
+                                trek?.companyName ?? trek?.vendorName ?? trek?.businessName ?? trek?.vendor ?? '-',
                                 textScaler: const TextScaler.linear(1.0),
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(

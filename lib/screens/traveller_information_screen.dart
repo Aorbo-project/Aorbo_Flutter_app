@@ -237,7 +237,7 @@ class _TravellerInformationScreenState
   final UserController      _userC      = Get.find<UserController>();
   late TrekDetailData travelData;
   final nameNode = FocusNode();
-  final TextEditingController searchController = TextEditingController();
+
 
   String _selectedState = BookingConstants.defaultState;
   List<String> filteredStates = [];
@@ -252,10 +252,8 @@ class _TravellerInformationScreenState
 
   // Helper to know whether this trek supports flexible (partial) payment.
   // From the logs, flexible policy => cancellationPolicy.id == 1.
-  bool get _isFlexiblePolicy => travelData.cancellationPolicy?.id == 1;
-
+  bool get _isFlexiblePolicy => travelData.cancellationPolicy?.id == 2;
   // ─────────────────────────────────────────────────────────────────────────
-
   void _showStateSelectionBottomSheet(StateSetter setModalState) {
     final TextEditingController searchController = TextEditingController();
     showModalBottomSheet(
@@ -391,11 +389,16 @@ class _TravellerInformationScreenState
     filteredStates =
         _dashboardC.stateList.map((element) => element.name!).toList();
     travelData = _trekC.trekDetailData.value;
+    debugPrint("========== POLICY DEBUG ==========");
+    debugPrint("Trek ID: ${travelData.id}");
+    debugPrint("Cancellation Policy ID: ${travelData.cancellationPolicy?.id}");
+    debugPrint("Cancellation Policy Title: ${travelData.cancellationPolicy?.title}");
+    debugPrint("==================================");
 
     // ── Pick the right default payment option based on policy ──────────
     // If the trek supports a flexible policy, default to 'flexible'
     // (partial payment). Otherwise, fall back to 'standard' (full payment).
-    final bool flexible = travelData.cancellationPolicy?.id == 1;
+    final bool flexible = travelData.cancellationPolicy?.id == 2;
     _selectedPaymentOption = flexible ? 'flexible' : 'standard';
 
     // Preserve any coupon code the user already applied before reaching this screen.
