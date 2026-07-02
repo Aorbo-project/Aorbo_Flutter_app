@@ -1160,11 +1160,17 @@ mixin _$TrekData {
       throw _privateConstructorUsedError; // BACKEND RETURNS "vendor"
   @JsonKey(name: 'vendor')
   String? get vendor =>
-      throw _privateConstructorUsedError; // BACKEND RETURNS "vendorLogo"
-  @JsonKey(name: 'vendorLogo')
-  String? get vendorLogo => throw _privateConstructorUsedError; // fallback
+      throw _privateConstructorUsedError; // Personal name of the vendor's user account — backend key: "vendor_name"
+  @JsonKey(name: 'vendor_name')
+  String? get vendorName =>
+      throw _privateConstructorUsedError; // Business/company name — backend key: "company_name"
+  @JsonKey(name: 'company_name')
+  String? get companyName => throw _privateConstructorUsedError; // fallback
   @JsonKey(name: 'business_name')
-  String? get businessName => throw _privateConstructorUsedError;
+  String? get businessName =>
+      throw _privateConstructorUsedError; // Vendor logo URL — backend key: "vendorLogo"
+  @JsonKey(name: 'vendorLogo')
+  String? get vendorLogo => throw _privateConstructorUsedError;
   @JsonKey(name: 'hasDiscount')
   bool? get hasDiscount => throw _privateConstructorUsedError;
   @JsonKey(name: 'discountText')
@@ -1195,8 +1201,10 @@ abstract class $TrekDataCopyWith<$Res> {
       {int? id,
       String? name,
       @JsonKey(name: 'vendor') String? vendor,
-      @JsonKey(name: 'vendorLogo') String? vendorLogo,
+      @JsonKey(name: 'vendor_name') String? vendorName,
+      @JsonKey(name: 'company_name') String? companyName,
       @JsonKey(name: 'business_name') String? businessName,
+      @JsonKey(name: 'vendorLogo') String? vendorLogo,
       @JsonKey(name: 'hasDiscount') bool? hasDiscount,
       @JsonKey(name: 'discountText') String? discountText,
       double? rating,
@@ -1229,8 +1237,10 @@ class _$TrekDataCopyWithImpl<$Res, $Val extends TrekData>
     Object? id = freezed,
     Object? name = freezed,
     Object? vendor = freezed,
-    Object? vendorLogo = freezed,
+    Object? vendorName = freezed,
+    Object? companyName = freezed,
     Object? businessName = freezed,
+    Object? vendorLogo = freezed,
     Object? hasDiscount = freezed,
     Object? discountText = freezed,
     Object? rating = freezed,
@@ -1254,13 +1264,21 @@ class _$TrekDataCopyWithImpl<$Res, $Val extends TrekData>
           ? _value.vendor
           : vendor // ignore: cast_nullable_to_non_nullable
               as String?,
-      vendorLogo: freezed == vendorLogo
-          ? _value.vendorLogo
-          : vendorLogo // ignore: cast_nullable_to_non_nullable
+      vendorName: freezed == vendorName
+          ? _value.vendorName
+          : vendorName // ignore: cast_nullable_to_non_nullable
+              as String?,
+      companyName: freezed == companyName
+          ? _value.companyName
+          : companyName // ignore: cast_nullable_to_non_nullable
               as String?,
       businessName: freezed == businessName
           ? _value.businessName
           : businessName // ignore: cast_nullable_to_non_nullable
+              as String?,
+      vendorLogo: freezed == vendorLogo
+          ? _value.vendorLogo
+          : vendorLogo // ignore: cast_nullable_to_non_nullable
               as String?,
       hasDiscount: freezed == hasDiscount
           ? _value.hasDiscount
@@ -1351,8 +1369,10 @@ abstract class _$$TrekDataImplCopyWith<$Res>
       {int? id,
       String? name,
       @JsonKey(name: 'vendor') String? vendor,
-      @JsonKey(name: 'vendorLogo') String? vendorLogo,
+      @JsonKey(name: 'vendor_name') String? vendorName,
+      @JsonKey(name: 'company_name') String? companyName,
       @JsonKey(name: 'business_name') String? businessName,
+      @JsonKey(name: 'vendorLogo') String? vendorLogo,
       @JsonKey(name: 'hasDiscount') bool? hasDiscount,
       @JsonKey(name: 'discountText') String? discountText,
       double? rating,
@@ -1386,8 +1406,10 @@ class __$$TrekDataImplCopyWithImpl<$Res>
     Object? id = freezed,
     Object? name = freezed,
     Object? vendor = freezed,
-    Object? vendorLogo = freezed,
+    Object? vendorName = freezed,
+    Object? companyName = freezed,
     Object? businessName = freezed,
+    Object? vendorLogo = freezed,
     Object? hasDiscount = freezed,
     Object? discountText = freezed,
     Object? rating = freezed,
@@ -1411,13 +1433,21 @@ class __$$TrekDataImplCopyWithImpl<$Res>
           ? _value.vendor
           : vendor // ignore: cast_nullable_to_non_nullable
               as String?,
-      vendorLogo: freezed == vendorLogo
-          ? _value.vendorLogo
-          : vendorLogo // ignore: cast_nullable_to_non_nullable
+      vendorName: freezed == vendorName
+          ? _value.vendorName
+          : vendorName // ignore: cast_nullable_to_non_nullable
+              as String?,
+      companyName: freezed == companyName
+          ? _value.companyName
+          : companyName // ignore: cast_nullable_to_non_nullable
               as String?,
       businessName: freezed == businessName
           ? _value.businessName
           : businessName // ignore: cast_nullable_to_non_nullable
+              as String?,
+      vendorLogo: freezed == vendorLogo
+          ? _value.vendorLogo
+          : vendorLogo // ignore: cast_nullable_to_non_nullable
               as String?,
       hasDiscount: freezed == hasDiscount
           ? _value.hasDiscount
@@ -1466,8 +1496,10 @@ class _$TrekDataImpl implements _TrekData {
       {this.id,
       this.name,
       @JsonKey(name: 'vendor') this.vendor,
-      @JsonKey(name: 'vendorLogo') this.vendorLogo,
+      @JsonKey(name: 'vendor_name') this.vendorName,
+      @JsonKey(name: 'company_name') this.companyName,
       @JsonKey(name: 'business_name') this.businessName,
+      @JsonKey(name: 'vendorLogo') this.vendorLogo,
       @JsonKey(name: 'hasDiscount') this.hasDiscount,
       @JsonKey(name: 'discountText') this.discountText,
       this.rating,
@@ -1489,14 +1521,22 @@ class _$TrekDataImpl implements _TrekData {
   @override
   @JsonKey(name: 'vendor')
   final String? vendor;
-// BACKEND RETURNS "vendorLogo"
+// Personal name of the vendor's user account — backend key: "vendor_name"
   @override
-  @JsonKey(name: 'vendorLogo')
-  final String? vendorLogo;
+  @JsonKey(name: 'vendor_name')
+  final String? vendorName;
+// Business/company name — backend key: "company_name"
+  @override
+  @JsonKey(name: 'company_name')
+  final String? companyName;
 // fallback
   @override
   @JsonKey(name: 'business_name')
   final String? businessName;
+// Vendor logo URL — backend key: "vendorLogo"
+  @override
+  @JsonKey(name: 'vendorLogo')
+  final String? vendorLogo;
   @override
   @JsonKey(name: 'hasDiscount')
   final bool? hasDiscount;
@@ -1522,7 +1562,7 @@ class _$TrekDataImpl implements _TrekData {
 
   @override
   String toString() {
-    return 'TrekData(id: $id, name: $name, vendor: $vendor, vendorLogo: $vendorLogo, businessName: $businessName, hasDiscount: $hasDiscount, discountText: $discountText, rating: $rating, price: $price, duration: $duration, batchInfo: $batchInfo, badge: $badge, imageUrl: $imageUrl, cancellationPolicy: $cancellationPolicy)';
+    return 'TrekData(id: $id, name: $name, vendor: $vendor, vendorName: $vendorName, companyName: $companyName, businessName: $businessName, vendorLogo: $vendorLogo, hasDiscount: $hasDiscount, discountText: $discountText, rating: $rating, price: $price, duration: $duration, batchInfo: $batchInfo, badge: $badge, imageUrl: $imageUrl, cancellationPolicy: $cancellationPolicy)';
   }
 
   @override
@@ -1533,10 +1573,14 @@ class _$TrekDataImpl implements _TrekData {
             (identical(other.id, id) || other.id == id) &&
             (identical(other.name, name) || other.name == name) &&
             (identical(other.vendor, vendor) || other.vendor == vendor) &&
-            (identical(other.vendorLogo, vendorLogo) ||
-                other.vendorLogo == vendorLogo) &&
+            (identical(other.vendorName, vendorName) ||
+                other.vendorName == vendorName) &&
+            (identical(other.companyName, companyName) ||
+                other.companyName == companyName) &&
             (identical(other.businessName, businessName) ||
                 other.businessName == businessName) &&
+            (identical(other.vendorLogo, vendorLogo) ||
+                other.vendorLogo == vendorLogo) &&
             (identical(other.hasDiscount, hasDiscount) ||
                 other.hasDiscount == hasDiscount) &&
             (identical(other.discountText, discountText) ||
@@ -1561,8 +1605,10 @@ class _$TrekDataImpl implements _TrekData {
       id,
       name,
       vendor,
-      vendorLogo,
+      vendorName,
+      companyName,
       businessName,
+      vendorLogo,
       hasDiscount,
       discountText,
       rating,
@@ -1592,8 +1638,10 @@ abstract class _TrekData implements TrekData {
       {final int? id,
       final String? name,
       @JsonKey(name: 'vendor') final String? vendor,
-      @JsonKey(name: 'vendorLogo') final String? vendorLogo,
+      @JsonKey(name: 'vendor_name') final String? vendorName,
+      @JsonKey(name: 'company_name') final String? companyName,
       @JsonKey(name: 'business_name') final String? businessName,
+      @JsonKey(name: 'vendorLogo') final String? vendorLogo,
       @JsonKey(name: 'hasDiscount') final bool? hasDiscount,
       @JsonKey(name: 'discountText') final String? discountText,
       final double? rating,
@@ -1615,12 +1663,18 @@ abstract class _TrekData implements TrekData {
   @override // BACKEND RETURNS "vendor"
   @JsonKey(name: 'vendor')
   String? get vendor;
-  @override // BACKEND RETURNS "vendorLogo"
-  @JsonKey(name: 'vendorLogo')
-  String? get vendorLogo;
+  @override // Personal name of the vendor's user account — backend key: "vendor_name"
+  @JsonKey(name: 'vendor_name')
+  String? get vendorName;
+  @override // Business/company name — backend key: "company_name"
+  @JsonKey(name: 'company_name')
+  String? get companyName;
   @override // fallback
   @JsonKey(name: 'business_name')
   String? get businessName;
+  @override // Vendor logo URL — backend key: "vendorLogo"
+  @JsonKey(name: 'vendorLogo')
+  String? get vendorLogo;
   @override
   @JsonKey(name: 'hasDiscount')
   bool? get hasDiscount;
