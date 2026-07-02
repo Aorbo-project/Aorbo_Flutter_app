@@ -852,10 +852,10 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                         _dividerLine(),
                         // Read booking_number from the verified booking response (data.bookingNumber).
                         // Fall back to orderData only if the verify response didn't include it.
-                        _ticketRow('Booking ID',
-                            data.bookingNumber ??
-                            _trekC.orderData.value.bookingNumber ??
-                            'N/A'),
+                        _ticketRow(
+  'Booking ID',
+  _trekC.orderData.value.bookingNumber ?? 'N/A',
+),
                         _dividerLine(),
                         _ticketRow('Booking Date',
                           bookingDate != null ? DateFormat('E, d MMM yyyy').format(bookingDate) : 'N/A'),

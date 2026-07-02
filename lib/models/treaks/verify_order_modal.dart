@@ -58,6 +58,7 @@ class Data {
   String? paymentStatus;
   String? status;
   String? bookingDate;
+  String? bookingNumber;
   String? specialRequests;
   String? bookingSource;
   int? primaryContactTravelerId;
@@ -86,6 +87,7 @@ class Data {
     this.paymentStatus,
     this.status,
     this.bookingDate,
+    this.bookingNumber,
     this.specialRequests,
     this.bookingSource,
     this.primaryContactTravelerId,
@@ -115,6 +117,7 @@ class Data {
     paymentStatus = json['payment_status'];
     status = json['status'];
     bookingDate = json['booking_date'];
+    bookingNumber = json['booking_number'];
     specialRequests = json['special_requests'];
     bookingSource = json['booking_source'];
     primaryContactTravelerId = json['primary_contact_traveler_id'];
@@ -157,6 +160,7 @@ class Data {
     data['payment_status'] = paymentStatus;
     data['status'] = status;
     data['booking_date'] = bookingDate;
+    data['booking_number'] = bookingNumber;
     data['special_requests'] = specialRequests;
     data['booking_source'] = bookingSource;
     data['primary_contact_traveler_id'] = primaryContactTravelerId;
