@@ -1002,7 +1002,13 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                         _dividerLine(),
                         _ticketRow('Total Paid', '₹${payment?.amount ?? 0}', isHighlight: true),
                         _dividerLine(),
-                        _ticketRow('Payment Status', 'Fully Paid', isHighlight: true),
+                        _ticketRow(
+                          'Payment Status',
+                          paymentDet?.paymentStatus == 'partial'
+                              ? 'Advance Paid'
+                              : 'Fully Paid',
+                          isHighlight: true,
+                        ),
                       ],
                     ),
                   ),

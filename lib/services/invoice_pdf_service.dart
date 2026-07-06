@@ -830,7 +830,7 @@ class InvoicePdfService {
     final isFullyPaid = paymentStatus == 'full_paid';
     final statusText = isFullyPaid
         ? 'Paid'
-        : paymentStatus == 'partial_paid'
+        : paymentStatus == 'partial'
             ? 'Partially Paid'
             : 'Pending';
     final statusColor = isFullyPaid ? _green : _red;

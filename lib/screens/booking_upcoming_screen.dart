@@ -301,16 +301,16 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
     }
   }
 
-  String? _getPaymentStatusText(String? status) {
+  String _getPaymentStatusText(String? status) {
     switch (status) {
       case 'full_paid':
         return 'Fully Paid';
-      case 'partial_paid':
+      case 'partial':
         return 'Partially Paid';
       case 'pending':
         return 'Pending';
       default:
-        return status;
+        return status ?? 'N/A';
     }
   }
 
@@ -887,38 +887,62 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                       color: const Color(0xFFF8FAFC),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Column(
-                      children: [
-                        _ticketRow(
-                          'Total Amount',
-                          '₹${booking.totalAmount ?? '0'}',
-                        ),
-                        _dividerLine(),
-                        _ticketRow(
-                          'Discount',
-                          '-₹${booking.discountAmount ?? '0'}',
-                        ),
-                        _dividerLine(),
-                        _ticketRow(
-                          'Platform Fees',
-                          '₹${booking.platformFees ?? '0'}',
-                        ),
-                        _dividerLine(),
-                        _ticketRow('GST', '₹${booking.gstAmount ?? '0'}'),
-                        _dividerLine(),
-                        _ticketRow(
-                          'Final Amount',
-                          '₹${booking.finalAmount ?? '0'}',
-                          isHighlight: true,
-                        ),
-                        _dividerLine(),
-                        _ticketRow(
-                          'Payment Status',
-                          _getPaymentStatusText(booking.paymentStatus) ?? 'N/A',
-                          isHighlight: true,
-                        ),
-                      ],
-                    ),
+                    child: Builder(builder: (context) {
+                      final isPartial = booking.paymentStatus == 'partial';
+
+                      // Paid amount: for full payment → finalAmount,
+                      //              for flexible    → advanceAmount
+                      final paidAmount = isPartial
+                          ? (booking.advanceAmount ?? '0')
+                          : (booking.finalAmount ?? '0');
+
+                      // Remaining: for full payment → ₹0,
+                      //            for flexible    → remainingAmount from backend
+                      final remainingAmount = isPartial
+                          ? (booking.remainingAmount ?? '0')
+                          : '0';
+
+                      return Column(
+                        children: [
+                          _ticketRow(
+                            'Trip Cost',
+                            '₹${booking.totalAmount ?? '0'}',
+                          ),
+                          if ((booking.discountAmount ?? '0') != '0') ...[
+                            _dividerLine(),
+                            _ticketRow(
+                              'Discount',
+                              '-₹${booking.discountAmount ?? '0'}',
+                            ),
+                          ],
+                          _dividerLine(),
+                          _ticketRow(
+                            'Platform Fee',
+                            '₹${booking.platformFees ?? '0'}',
+                          ),
+                          _dividerLine(),
+                          _ticketRow('GST', '₹${booking.gstAmount ?? '0'}'),
+                          _dividerLine(),
+                          _ticketRow(
+                            'Paid Amount',
+                            '₹$paidAmount',
+                            isHighlight: true,
+                          ),
+                          _dividerLine(),
+                          _ticketRow(
+                            'Remaining Amount',
+                            '₹$remainingAmount',
+                            isHighlight: isPartial,
+                          ),
+                          _dividerLine(),
+                          _ticketRow(
+                            'Payment Status',
+                            _getPaymentStatusText(booking.paymentStatus),
+                            isHighlight: true,
+                          ),
+                        ],
+                      );
+                    }),
                   ),
                   SizedBox(height: 1.5.h),
                 ],
