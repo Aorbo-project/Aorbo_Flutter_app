@@ -141,20 +141,20 @@ flutter:
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
 
-# flutter_launcher_icons:
-#   android: true
-#   ios: true
-#   image_path: "assets/images/img/app_icon3.png"
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/img/app_icon3.png"
+  adaptive_icon_background: "#FFF200"
+  adaptive_icon_foreground: "assets/images/img/app_icon3.png"
 
-#   adaptive_icon_background: "#FFF200" # your yellow
-#   adaptive_icon_foreground: "assets/images/img/black_splash.png"
+flutter_native_splash:
+  image: "assets/images/img/transparent.png"
+  color: "#000000"
+  android: true
+  ios: true
 
-# flutter_native_splash:
-#   image: assets/images/img/transparent.png
-#   android: true
-#   ios: true
-
-#   android_12:
-#     color: "#000000"
-#     image: assets/images/img/transparent.png
-    
+  android_12:
+    image: "assets/images/img/transparent.png"
+    icon_background_color: "#000000"
+    color: "#000000"

@@ -15,7 +15,6 @@ import 'dart:async';
 import 'package:shimmer/shimmer.dart';
 import 'package:sizer/sizer.dart';
 
-
 class SplashWithLoginScreen extends StatefulWidget {
   const SplashWithLoginScreen({super.key});
 
@@ -41,7 +40,6 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
   Animation<double>? _shakeAnimation;
 
   final AuthController _authC = Get.put(AuthController());
-
 
   // final TextEditingController _phoneController = TextEditingController();
   bool isValid = false;
@@ -164,29 +162,29 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
       duration: const Duration(milliseconds: 1200),
     );
 
-    _logoAlignmentAnimation = AlignmentTween(
-      begin: Alignment.center,
-      end: const Alignment(0.0, -0.88), // Your target alignment
-    ).animate(CurvedAnimation(
-      parent: _logoController,
-      curve: Curves.easeInOut,
-    ));
+    _logoAlignmentAnimation =
+        AlignmentTween(
+          begin: Alignment.center,
+          end: const Alignment(0.0, -0.88), // Your target alignment
+        ).animate(
+          CurvedAnimation(parent: _logoController, curve: Curves.easeInOut),
+        );
 
-    _logoWidthAnimation = Tween<double>(
-      begin: 70.w, // Your initial width
-      end: 46.w, // Your target width
-    ).animate(CurvedAnimation(
-      parent: _logoController,
-      curve: Curves.easeInOut,
-    ));
+    _logoWidthAnimation =
+        Tween<double>(
+          begin: 70.w, // Your initial width
+          end: 46.w, // Your target width
+        ).animate(
+          CurvedAnimation(parent: _logoController, curve: Curves.easeInOut),
+        );
 
-    _logoHeightAnimation = Tween<double>(
-      begin: 50.h, // Your initial height
-      end: 10.h, // Your target height
-    ).animate(CurvedAnimation(
-      parent: _logoController,
-      curve: Curves.easeInOut,
-    ));
+    _logoHeightAnimation =
+        Tween<double>(
+          begin: 50.h, // Your initial height
+          end: 10.h, // Your target height
+        ).animate(
+          CurvedAnimation(parent: _logoController, curve: Curves.easeInOut),
+        );
 
     // Form Slide Animation
     _formController = AnimationController(
@@ -197,10 +195,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
     _formOffsetAnimation = Tween<Offset>(
       begin: const Offset(0, 1), // Slide from bottom
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _formController,
-      curve: Curves.easeOut,
-    ));
+    ).animate(CurvedAnimation(parent: _formController, curve: Curves.easeOut));
 
     // Breathing Animation
     _breathingController = AnimationController(
@@ -209,10 +204,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
     )..repeat(reverse: true); // Starts repeating immediately
 
     _breathingAnimation = Tween<double>(begin: 0.98, end: 1.02).animate(
-      CurvedAnimation(
-        parent: _breathingController,
-        curve: Curves.easeInOut,
-      ),
+      CurvedAnimation(parent: _breathingController, curve: Curves.easeInOut),
     );
 
     // Button Tap/Shake Animation Controller
@@ -221,23 +213,21 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
       duration: const Duration(milliseconds: 300),
     );
 
-    _shakeAnimation = Tween<double>(begin: 0.0, end: 24.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.elasticIn,
-      ),
-    )..addListener(() {
-        if (mounted) {
-          // Good practice to check mounted in listeners
-          setState(() {});
-        }
-      });
+    _shakeAnimation =
+        Tween<double>(begin: 0.0, end: 24.0).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.elasticIn,
+          ),
+        )..addListener(() {
+          if (mounted) {
+            // Good practice to check mounted in listeners
+            setState(() {});
+          }
+        });
 
     _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeInOut,
-      ),
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
 
     // OTP Text Field Controller
@@ -389,10 +379,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
       decoration: BoxDecoration(
         color: CommonColors.whiteColor,
         borderRadius: BorderRadius.circular(10.sp),
-        border: Border.all(
-          color: Colors.transparent,
-          width: 1.0,
-        ),
+        border: Border.all(color: Colors.transparent, width: 1.0),
         boxShadow: [
           BoxShadow(
             color: CommonColors.blackColor.withValues(alpha: 0.4),
@@ -440,11 +427,17 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
           }
         } else {
           if (!mounted) return;
-          CustomSnackBar.show(Get.context!, message: 'Please enter complete OTP');
+          CustomSnackBar.show(
+            Get.context!,
+            message: 'Please enter complete OTP',
+          );
         }
       } catch (e) {
         if (!mounted) return;
-        CustomSnackBar.show(Get.context!, message: 'Something went wrong. Please try again.');
+        CustomSnackBar.show(
+          Get.context!,
+          message: 'Something went wrong. Please try again.',
+        );
       }
     }
 
@@ -457,16 +450,19 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
             children: [
               GestureDetector(
                 onTap: () => setState(() => showOtp = false),
-                child: const Icon(Icons.arrow_back_ios_new_rounded,
-                    color: Colors.black),
+                child: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: Colors.black,
+                ),
               ),
               SizedBox(width: 5.w),
               Text(
                 "Verify OTP",
                 style: TextStyle(
-                    fontSize: FontSize.s14,
-                    fontFamily: "Poppins",
-                    fontWeight: FontWeight.w600),
+                  fontSize: FontSize.s14,
+                  fontFamily: "Poppins",
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),
@@ -476,19 +472,24 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Enter Verification Code",
-                    style: TextStyle(
-                        fontSize: FontSize.s14,
-                        fontFamily: "Poppins",
-                        fontWeight: FontWeight.w600)),
+                Text(
+                  "Enter Verification Code",
+                  style: TextStyle(
+                    fontSize: FontSize.s14,
+                    fontFamily: "Poppins",
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 SizedBox(height: 1.h),
                 Text(
-                    "sent to +91 ${_authC.phoneNumberLoginTextField.value.text}",
-                    style: TextStyle(
-                        fontSize: FontSize.s12,
-                        fontFamily: "Poppins",
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black)),
+                  "sent to +91 ${_authC.phoneNumberLoginTextField.value.text}",
+                  style: TextStyle(
+                    fontSize: FontSize.s12,
+                    fontFamily: "Poppins",
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black,
+                  ),
+                ),
               ],
             ),
           ),
@@ -556,35 +557,38 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                 : Container(),
           ),
           // SizedBox(height: 3.h),
-          Obx(() => Align(
-                alignment: Alignment.center,
-                child: TextButton(
-                  onPressed:
-                      _otpC.enableResend.value ? () => _otpC.resendOTP() : null,
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.symmetric(vertical: 0.5.h),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  child: Text.rich(
-                    TextSpan(
-                      children: [
-                        if (_otpC.enableResend.value)
-                          TextSpan(
-                            text: 'Resend code via SMS',
-                            style: TextStyle(
-                              color: CommonColors.bluebac,
-                              fontWeight: FontWeight.w500,
-                              decoration: TextDecoration.underline,
-                              decorationColor: CommonColors.whiteColor,
-                              fontSize: FontSize.s9,
-                            ),
+          Obx(
+            () => Align(
+              alignment: Alignment.center,
+              child: TextButton(
+                onPressed: _otpC.enableResend.value
+                    ? () => _otpC.resendOTP()
+                    : null,
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.symmetric(vertical: 0.5.h),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: Text.rich(
+                  TextSpan(
+                    children: [
+                      if (_otpC.enableResend.value)
+                        TextSpan(
+                          text: 'Resend code via SMS',
+                          style: TextStyle(
+                            color: CommonColors.bluebac,
+                            fontWeight: FontWeight.w500,
+                            decoration: TextDecoration.underline,
+                            decorationColor: CommonColors.whiteColor,
+                            fontSize: FontSize.s9,
                           ),
-                      ],
-                    ),
+                        ),
+                    ],
                   ),
                 ),
-              )),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -596,26 +600,38 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Your Trek,",
-              style: GoogleFonts.sairaStencilOne(
-                  fontSize: 24.sp,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black)),
-          Text("just a",
-              style: GoogleFonts.sairaStencilOne(
-                  fontSize: 24.sp,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black)),
-          Text("Click",
-              style: GoogleFonts.sairaStencilOne(
-                  fontSize: 24.sp,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black)),
-          Text("Away !",
-              style: GoogleFonts.sairaStencilOne(
-                  fontSize: 24.sp,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black)),
+          Text(
+            "Your Trek,",
+            style: GoogleFonts.sairaStencilOne(
+              fontSize: 24.sp,
+              fontWeight: FontWeight.w600,
+              color: Colors.black,
+            ),
+          ),
+          Text(
+            "just a",
+            style: GoogleFonts.sairaStencilOne(
+              fontSize: 24.sp,
+              fontWeight: FontWeight.w600,
+              color: Colors.black,
+            ),
+          ),
+          Text(
+            "Click",
+            style: GoogleFonts.sairaStencilOne(
+              fontSize: 24.sp,
+              fontWeight: FontWeight.w600,
+              color: Colors.black,
+            ),
+          ),
+          Text(
+            "Away !",
+            style: GoogleFonts.sairaStencilOne(
+              fontSize: 24.sp,
+              fontWeight: FontWeight.w600,
+              color: Colors.black,
+            ),
+          ),
           SizedBox(height: 4.h),
           Container(
             height: 6.h,
@@ -691,9 +707,9 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                   SizedBox(width: 2.w),
                   Expanded(
                     child: MediaQuery(
-                      data: MediaQuery.of(context).copyWith(
-                        textScaler: const TextScaler.linear(1.0),
-                      ),
+                      data: MediaQuery.of(
+                        context,
+                      ).copyWith(textScaler: const TextScaler.linear(1.0)),
                       child: TextField(
                         focusNode: _phoneFocusNode,
                         onTapOutside: (event) {
@@ -725,51 +741,52 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
             ),
           ),
           SizedBox(height: 3.h),
-          Obx(() => GestureDetector(
-                onTapDown: _onTapDown,
-                onTapUp: _onTapUp,
-                onTapCancel: _onTapCancel,
-                child: ScaleTransition(
-                  scale: _scaleAnimation,
-                  child: CommonButton(
-                    text:
-                        _authC.isLoading.value ? 'Please wait...' : 'Continue',
-                    fontSize: FontSize.s14,
-                    fontWeight: FontWeight.w600,
-                    height: 6.h,
-                    onPressed: () async {
-                      if (isValidPhoneNumber) {
-                        final phone = _authC.phoneNumberLoginTextField.value.text;
-                        final success = await _authC.requestOtp(phone);
-                        if (success && mounted) {
-                          setState(() {
-                            showOtp = true;
-                          });
-                          _otpC.startTimer();
-                        }
-                      } else {
-                        CustomSnackBar.show(
-                          context,
-                          message: "Please enter a valid 10-digit mobile number",
-                        );
+          Obx(
+            () => GestureDetector(
+              onTapDown: _onTapDown,
+              onTapUp: _onTapUp,
+              onTapCancel: _onTapCancel,
+              child: ScaleTransition(
+                scale: _scaleAnimation,
+                child: CommonButton(
+                  text: _authC.isLoading.value ? 'Please wait...' : 'Continue',
+                  fontSize: FontSize.s14,
+                  fontWeight: FontWeight.w600,
+                  height: 6.h,
+                  onPressed: () async {
+                    if (isValidPhoneNumber) {
+                      final phone = _authC.phoneNumberLoginTextField.value.text;
+                      final success = await _authC.requestOtp(phone);
+                      if (success && mounted) {
+                        setState(() {
+                          showOtp = true;
+                        });
+                        _otpC.startTimer();
                       }
-                    },
-                    gradient: isValidPhoneNumber
-                        ? const LinearGradient(
-                            colors: [
-                              CommonColors.appYellowColor,
-                              CommonColors.appYellowColor,
-                            ],
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                          )
-                        : CommonColors.disableBtnGradient,
-                    textColor: isValidPhoneNumber
-                        ? CommonColors.blackColor
-                        : CommonColors.whiteColor,
-                  ),
+                    } else {
+                      CustomSnackBar.show(
+                        context,
+                        message: "Please enter a valid 10-digit mobile number",
+                      );
+                    }
+                  },
+                  gradient: isValidPhoneNumber
+                      ? const LinearGradient(
+                          colors: [
+                            CommonColors.appYellowColor,
+                            CommonColors.appYellowColor,
+                          ],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        )
+                      : CommonColors.disableBtnGradient,
+                  textColor: isValidPhoneNumber
+                      ? CommonColors.blackColor
+                      : CommonColors.whiteColor,
                 ),
-              )),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -788,24 +805,20 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFFFEF200),
-                  Color(0xFFFFA000),
-                ],
+                colors: [Color(0xFFFEF200), Color(0xFFFFA000)],
               ),
             ),
           ),
           AnimatedBuilder(
-            animation:
-                Listenable.merge([_logoController, _breathingController]),
+            animation: Listenable.merge([
+              _logoController,
+              _breathingController,
+            ]),
             builder: (context, child) {
               final baseLogo = SizedBox(
                 width: _logoWidthAnimation.value,
                 height: _logoHeightAnimation.value,
-                child: Image.asset(
-                  CommonImages.logo1,
-                  fit: BoxFit.contain,
-                ),
+                child: Image.asset(CommonImages.logo1, fit: BoxFit.contain),
               );
 
               final breathingLogo = ScaleTransition(
@@ -830,10 +843,10 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
             },
           ),
           //       if (CommonLogics.checkUserLogin()) {
-//         Get.offNamed('/dashboard');
-//       } else {
-//         Get.offNamed('/login');
-//       }
+          //         Get.offNamed('/dashboard');
+          //       } else {
+          //         Get.offNamed('/login');
+          //       }
           SlideTransition(
             position: _formOffsetAnimation,
             child: Align(
@@ -844,8 +857,9 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                 padding: EdgeInsets.symmetric(horizontal: 6.w),
                 decoration: BoxDecoration(
                   color: Color(0xffFFFDF9),
-                  borderRadius:
-                      BorderRadius.vertical(top: Radius.circular(8.w)),
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(8.w),
+                  ),
                 ),
                 child: showOtp ? _buildOtpContainer() : _buildLoginContainer(),
               ),
@@ -921,8 +935,10 @@ class CustomOtpInput extends StatefulWidget {
 }
 
 class _CustomOtpInputState extends State<CustomOtpInput> {
-  final List<TextEditingController> _controllers =
-      List.generate(6, (_) => TextEditingController());
+  final List<TextEditingController> _controllers = List.generate(
+    6,
+    (_) => TextEditingController(),
+  );
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
 
   @override
