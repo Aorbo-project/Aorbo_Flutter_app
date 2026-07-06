@@ -850,12 +850,12 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                       children: [
                         _ticketRow('TBR ID', batch?.tbrId ?? 'N/A', isHighlight: true),
                         _dividerLine(),
-                        // Read booking_number from the verified booking response (data.bookingNumber).
-                        // Fall back to orderData only if the verify response didn't include it.
                         _ticketRow(
-  'Booking ID',
-  _trekC.orderData.value.bookingNumber ?? 'N/A',
-),
+                          'Booking ID',
+                          _trekC.verifyOrderModal.value.data?.bookingNumber ??
+                              _trekC.orderData.value.bookingNumber ??
+                              'N/A',
+                        ),
                         _dividerLine(),
                         _ticketRow('Booking Date',
                           bookingDate != null ? DateFormat('E, d MMM yyyy').format(bookingDate) : 'N/A'),
@@ -1002,13 +1002,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                         _dividerLine(),
                         _ticketRow('Total Paid', '₹${payment?.amount ?? 0}', isHighlight: true),
                         _dividerLine(),
-                        _ticketRow(
-                          'Payment Status',
-                          paymentDet?.paymentStatus == 'partial'
-                              ? 'Advance Paid'
-                              : 'Fully Paid',
-                          isHighlight: true,
-                        ),
+                        _ticketRow('Payment Status', 'Fully Paid', isHighlight: true),
                       ],
                     ),
                   ),

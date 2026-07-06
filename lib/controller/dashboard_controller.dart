@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:arobo_app/models/know_more_data.dart';
 import 'package:arobo_app/models/seasonal_forecast_data.dart';
@@ -616,6 +617,11 @@ class DashboardController extends GetxController {
 
       final body = response;
       if (body != null) {
+        
+
+debugPrint("========== BOOKING HISTORY RESPONSE ==========");
+debugPrint(const JsonEncoder.withIndent('  ').convert(body));
+debugPrint("==============================================");
         final responseData = BookingHistoryModel.fromJson(body);
         if (responseData.success == true) {
           observer.value.data.value.maybeWhen(success: (data) {

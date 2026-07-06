@@ -153,8 +153,8 @@ class CommonBookedCard extends StatelessWidget {
     final duration =
         booking.trek?.duration ?? '-';
 
-    final bookedSlots =
-        booking.batch?.bookedSlots ?? 0;
+   final bookedSlots =
+    booking.totalTravelers ?? 0;
 
     final availableSlots =
         booking.batch?.availableSlots ?? 0;

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+
 import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/freezed_models/booking/booking_data_model.dart';
 import 'package:arobo_app/freezed_models/treks/treks_model_data.dart';
@@ -305,8 +306,20 @@ class TrekController extends GetxController {
         travelerCount: calculateFareRequestModel.value.travelerCount,
       );
 
-      final validateResponse =  AuthUtils.validateRequestFields(["code","trekId","bookingAmount"], requestModel.toJson());
-      if(validateResponse != null) throw validateResponse;
+      // Validate using serialized JSON keys (not Dart property names).
+      // bookingAmount is annotated @JsonKey(name: 'amount'), so toJson()
+      // produces "amount" — validate against that key, not "bookingAmount".
+      final validateResponse = AuthUtils.validateRequestFields(
+        ["code", "trekId", "amount"],
+        requestModel.toJson(),
+      );
+      if (validateResponse != null) throw validateResponse;
+
+      print("===== Coupon Request =====");
+      print(requestModel.toJson());
+      debugPrint("===== Coupon Request =====");
+debugPrint(jsonEncode(requestModel.toJson()));
+debugPrint("==========================");
 
       final response = await repository.postApiCall(
         url: NetworkUrl.validateCoupon,
@@ -586,18 +599,34 @@ class TrekController extends GetxController {
       showLoaderDialog();
       // Populate travelers from the selected list, normalizing gender to title case
       createOrderRequestModel.value = createOrderRequestModel.value.copyWith(
-        travelers: travellerDetailList.map((t) {
-          final g = t.gender ?? '';
-          final normalizedGender = g.isNotEmpty
-              ? g[0].toUpperCase() + g.substring(1).toLowerCase()
-              : g;
-          return t.copyWith(gender: normalizedGender);
-        }).toList(),
-      );
-      final response = await repository.postApiCall(
-        url: NetworkUrl.addBooking,
-        body: createOrderRequestModel.toJson(),
-      );
+  travelers: travellerDetailList.map((t) {
+    final g = t.gender ?? '';
+    final normalizedGender = g.isNotEmpty
+        ? g[0].toUpperCase() + g.substring(1).toLowerCase()
+        : g;
+    return t.copyWith(gender: normalizedGender);
+  }).toList(),
+);
+
+// ===== DEBUG START =====
+debugPrint("========== CREATE ORDER ==========");
+debugPrint("Traveller Count: ${travellerDetailList.length}");
+
+for (final t in travellerDetailList) {
+  debugPrint(
+    "ID=${t.id}, Name=${t.name}, Age=${t.age}, Gender=${t.gender}",
+  );
+}
+
+debugPrint("Request JSON:");
+debugPrint(jsonEncode(createOrderRequestModel.value.toJson()));
+debugPrint("========== END CREATE ORDER ==========");
+// ===== DEBUG END =====
+
+final response = await repository.postApiCall(
+  url: NetworkUrl.addBooking,
+  body: createOrderRequestModel.toJson(),
+);
 
       if (response != null) {
         if (response['success']) {

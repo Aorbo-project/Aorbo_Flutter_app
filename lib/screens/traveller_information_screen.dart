@@ -405,10 +405,20 @@ class _TravellerInformationScreenState
     // Resetting couponCode to '' here was the root cause of the discount being
     // wiped on every calculateFare() call triggered by initState.
     final existingCoupon = _trekC.calculateFareRequestModel.value.couponCode;
+
+    // Restore previously selected travellers (e.g. back-navigation).
+    selectedTravellers = List.from(_trekC.travellerDetailList);
+
+    // travelerCount must reflect the actual number of selected travellers.
+    // Fall back to 1 only when starting fresh (no travellers selected yet).
+    final restoredCount = selectedTravellers.isNotEmpty
+        ? selectedTravellers.length
+        : 1;
+
     _trekC.calculateFareRequestModel.value =
         _trekC.calculateFareRequestModel.value.copyWith(
       batchId: travelData.batchId ?? 1,
-      travelerCount: 1,
+      travelerCount: restoredCount,
       addInsurance: false,
       addFreeCancellationProtection: false,
       couponCode: (existingCoupon != null && existingCoupon.isNotEmpty)
@@ -985,6 +995,13 @@ class _TravellerInformationScreenState
                               selectedTravellers.add(newTraveler);
                               _trekC.travellerDetailList.value =
                                   List.from(selectedTravellers);
+                              // Sync travelerCount so fare reflects the
+                              // newly auto-selected traveller.
+                              _trekC.calculateFareRequestModel.value =
+                                  _trekC.calculateFareRequestModel.value
+                                      .copyWith(
+                                travelerCount: selectedTravellers.length,
+                              );
                             });
                           }
                         }
@@ -2257,6 +2274,12 @@ class _TravellerInformationScreenState
                     }
                     _trekC.travellerDetailList.value =
                         List.from(selectedTravellers);
+                    // Sync travelerCount so fare is calculated for all
+                    // selected travellers, not just the stepper value.
+                    _trekC.calculateFareRequestModel.value =
+                        _trekC.calculateFareRequestModel.value.copyWith(
+                      travelerCount: selectedTravellers.length,
+                    );
                   });
                 },
                 shape: RoundedRectangleBorder(
