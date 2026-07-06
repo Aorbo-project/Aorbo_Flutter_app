@@ -43,3 +43,7 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# npm artifacts (should not exist in a Flutter project)
+package-lock.json
+node_modules/
