@@ -224,6 +224,10 @@ class Trek {
   String? createdAt;
   String? updatedAt;
   DestinationData? destinationData;
+  // Captain and boarding point — resolved by backend at booking time
+  String? captainName;
+  String? captainPhone;
+  String? boardingPoint;
 
   Trek({
     this.cityIds,
@@ -259,6 +263,9 @@ class Trek {
     this.createdAt,
     this.updatedAt,
     this.destinationData,
+    this.captainName,
+    this.captainPhone,
+    this.boardingPoint,
   });
 
   Trek.fromJson(Map<String, dynamic> json) {
@@ -297,6 +304,9 @@ class Trek {
     destinationData = json['destinationData'] != null
         ? DestinationData.fromJson(json['destinationData'])
         : null;
+    captainName  = json['captain_name']?.toString();
+    captainPhone = json['captain_phone']?.toString();
+    boardingPoint = json['boarding_point']?.toString();
   }
 
   Map<String, dynamic> toJson() {
@@ -336,6 +346,9 @@ class Trek {
     if (destinationData != null) {
       data['destinationData'] = destinationData!.toJson();
     }
+    data['captain_name']   = captainName;
+    data['captain_phone']  = captainPhone;
+    data['boarding_point'] = boardingPoint;
     return data;
   }
 }

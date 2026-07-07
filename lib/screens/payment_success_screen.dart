@@ -968,11 +968,20 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                             data.vendor?.businessName ??
                             'N/A'),
                         _dividerLine(),
-                        _ticketRow('Boarding Point', data.city?.cityName ?? 'To be announced'),
+                        _ticketRow('Boarding Point',
+                            data.trek?.boardingPoint ??
+                            data.city?.cityName ??
+                            'To be announced'),
                         _dividerLine(),
-                        _ticketRow('Trek Captain', data.vendor?.companyInfo?.contactPerson ?? 'To be announced'),
+                        _ticketRow('Trek Captain',
+                            data.trek?.captainName ??
+                            data.vendor?.companyInfo?.contactPerson ??
+                            'To be announced'),
                         _dividerLine(),
-                        _ticketRowWithCall('Captain Contact', data.vendor?.companyInfo?.phone ?? 'Not available'),
+                        _ticketRowWithCall('Captain Contact',
+                            data.trek?.captainPhone ??
+                            data.vendor?.companyInfo?.phone ??
+                            'Not available'),
                         _dividerLine(),
                         _ticketRow('Difficulty', 'Moderate'),
                       ],
@@ -1122,8 +1131,9 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
   // ─────────────────────────────────────────────
   Widget _buildContactBlock() {
     final data = _trekC.verifyOrderModal.value.data;
-    final captainName = data?.vendor?.companyInfo?.contactPerson;
-    final captainPhone = data?.vendor?.companyInfo?.phone;
+    // Prefer resolved captain fields; fall back to vendor company_info contact
+    final captainName  = data?.trek?.captainName  ?? data?.vendor?.companyInfo?.contactPerson;
+    final captainPhone = data?.trek?.captainPhone ?? data?.vendor?.companyInfo?.phone;
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 4.w),

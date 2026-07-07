@@ -69,8 +69,12 @@ class BookingCancelledData {
   });
 
   BookingCancelledData.fromJson(Map<String, dynamic> json) {
-    cancellationId = json['cancellation_id'];
-    bookingId = json['booking_id'];
+    cancellationId = json['cancellation_id'] != null
+        ? int.tryParse(json['cancellation_id'].toString())
+        : null;
+    bookingId = json['booking_id'] != null
+        ? int.tryParse(json['booking_id'].toString())
+        : null;
     status = json['status'];
     cancellationNumber = json['cancellation_number'];
     totalRefundableAmount = json['total_refundable_amount'] != null
@@ -136,7 +140,7 @@ class TrekDetails {
   TrekDetails({this.id, this.title, this.basePrice, this.mtrId});
 
   TrekDetails.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
+    id = json['id'] != null ? int.tryParse(json['id'].toString()) : null;
     title = json['title'];
     basePrice = json['base_price']?.toString();
     mtrId = (json['mtr_id'] ?? json['display_trek_id'])?.toString();

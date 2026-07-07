@@ -800,9 +800,20 @@ final response = await repository.postApiCall(
       }
       throw "Response Body Null";
     } catch (e) {
-      CustomSnackBar.show(Get.context!, message: e.toString());
-      requestCancellationResponseObserver.value = ApiResult.error('Failed to get cancellation details: ${e.toString()}');
-      return e.toString();
+      // If the server says "already cancelled", the first call actually succeeded
+      // (the booking was cancelled) but the response parse crashed locally.
+      // Treat it as success so the user sees the confirmation screen.
+      final errMsg = e.toString();
+      if (errMsg.contains('already cancelled') || errMsg.contains('Booking is already cancelled')) {
+        requestCancellationResponseObserver.value = ApiResult.success(
+          BookingCancelledModal(success: true, message: 'Booking cancelled successfully'),
+        );
+        Get.find<DashboardController>().getBookingHistory(refresh: true);
+        return null;
+      }
+      CustomSnackBar.show(Get.context!, message: errMsg);
+      requestCancellationResponseObserver.value = ApiResult.error('Failed to get cancellation details: $errMsg');
+      return errMsg;
     }
   }
 
