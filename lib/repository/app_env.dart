@@ -4,9 +4,9 @@ class AppEnv {
   // For a physical device, replace with your machine's LAN IP (e.g. 192.168.1.X).
   // Switch to production block below before releasing.
   // ─────────────────────────────────────────────────────────────────────────────
-  String apiBaseUrl = "http://192.168.0.106:3001";
-  String socketUrl  = "http://192.168.0.106:3001";
-  String imageUrl   = "http://192.168.0.106:3001/";
+  String apiBaseUrl = "http://10.235.203.22:3001";
+  String socketUrl  = "http://10.235.203.22:3001";
+  String imageUrl   = "http://10.235.203.22:3001/";
 
   // ─── PRODUCTION (uncomment to use) ──────────────────────────────────────────
   // String apiBaseUrl = "https://api.aorbotreks.co.in";
