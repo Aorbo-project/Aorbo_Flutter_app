@@ -120,7 +120,7 @@ class CommonTrekCard extends StatelessWidget {
   }
 
   String _vendorInitials() {
-    final name = (trek?.companyName ?? trek?.vendorName ?? trek?.businessName ?? trek?.vendor ?? '').trim();
+    final name = (trek?.companyName ?? trek?.businessName ?? trek?.vendor ?? '').trim();
 
     if (name.isEmpty) {
       return '?';
@@ -282,7 +282,7 @@ class CommonTrekCard extends StatelessWidget {
                           children: [
                             Flexible(
                               child: Text(
-                                trek?.companyName ?? trek?.vendorName ?? trek?.businessName ?? trek?.vendor ?? '-',
+                                trek?.companyName ?? trek?.businessName ?? trek?.vendor ?? '-',
                                 textScaler: const TextScaler.linear(1.0),
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
