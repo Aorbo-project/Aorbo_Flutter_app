@@ -345,21 +345,19 @@ class CommonTrekCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  // ═══ CTA BADGE — color-only, no icon (icons dropped platform-wide
-                  // for consistency; the color set in admin's Badge Master is the
-                  // single source of truth, rendered identically here and on vendor) ═══
-                  if (trek?.badge != null)
-                    _buildPill(
-                      text: trek!.badge!.name ?? '',
-                      bg: _parseBadgeColor(trek?.badge?.color),
-                      fg: CommonColors.blackColor,
-                    )
-                  else
-                    _buildPill(
-                      text: 'Best seller',
-                      bg: _TkC.badgeBg,
-                      fg: _TkC.badgeFg,
-                    ),
+                  // ═══ CTA BADGE (Best seller) – commented out as requested ═══
+                  // if (trek?.badge != null)
+                  //   _buildPill(
+                  //     text: '${trek!.badge!.icon ?? ''} ${trek!.badge!.name ?? ''}'.trim(),
+                  //     bg: _parseBadgeColor(trek?.badge?.color),
+                  //     fg: CommonColors.blackColor,
+                  //   )
+                  // else
+                  //   _buildPill(
+                  //     text: 'Best seller',
+                  //     bg: _TkC.badgeBg,
+                  //     fg: _TkC.badgeFg,
+                  //   ),
                 ],
               ),
 
