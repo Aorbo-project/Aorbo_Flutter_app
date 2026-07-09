@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:arobo_app/firebase_options.dart';
 import 'package:arobo_app/repository/repository.dart';
@@ -24,6 +25,17 @@ SpUtil? sp;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // TEMP DIAGNOSTIC — force full stack traces for zone errors that are
+  // otherwise reported tersely ("Another exception was thrown: ..." with no
+  // detail). Remove once the "Null is not a subtype of int" crash is found.
+  PlatformDispatcher.instance.onError = (error, stack) {
+    debugPrint('╔══ TEMP DIAGNOSTIC — UNCAUGHT ZONE ERROR ══╗');
+    debugPrint('$error');
+    debugPrint('$stack');
+    debugPrint('╚════════════════════════════════════════╝');
+    return true;
+  };
 
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 

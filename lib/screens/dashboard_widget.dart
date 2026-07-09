@@ -322,7 +322,8 @@ class _DashboardState extends State<Dashboard>
       final route = ModalRoute.of(context);
       if (!_isTrekShortsUserInteracting &&
           mounted &&
-          (route != null && route.isCurrent)) {
+          (route != null && route.isCurrent) &&
+          _trekShortsPageController.hasClients) {
         _trekShortsPageController.nextPage(
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
