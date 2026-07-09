@@ -1003,7 +1003,19 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                     ),
                     child: Column(
                       children: [
-                        _ticketRow('Base Fare', '₹${trek?.basePrice ?? 0}'),
+                        // Booking's own stored total_amount (the ORIGINAL
+                        // pre-discount base fare at time of booking) — not
+                        // trek?.basePrice, which reads the trek's CURRENT
+                        // live price and can drift from what was actually
+                        // charged if the vendor edits pricing later.
+                        _ticketRow('Base Fare', '₹${(double.tryParse(data.totalAmount?.toString() ?? '') ?? 0).toStringAsFixed(0)}'),
+                        if ((double.tryParse(data.discountAmount?.toString() ?? '') ?? 0) > 0) ...[
+                          _dividerLine(),
+                          _ticketRow(
+                            'Vendor Discount',
+                            '- ₹${(double.tryParse(data.discountAmount?.toString() ?? '') ?? 0).toStringAsFixed(0)}',
+                          ),
+                        ],
                         if (paymentDet?.isPartialPayment == true) ...[
                           _dividerLine(),
                           _ticketRow('Remaining Amount', '₹${paymentDet?.remainingAmount ?? 0}', isHighlight: true),
