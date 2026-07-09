@@ -16,6 +16,7 @@ import 'package:arobo_app/utils/common_btn.dart';
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/common_images.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
+import 'package:arobo_app/utils/state_selection_bottom_sheet.dart';
 import 'package:arobo_app/utils/total_fare_modal.dart';
 
 import '../freezed_models/profile/user_profile_model.dart';
@@ -240,7 +241,6 @@ class _TravellerInformationScreenState
 
 
   String _selectedState = BookingConstants.defaultState;
-  List<String> filteredStates = [];
 
   final bool _whatsappUpdates = false;
   String _selectedPaymentOption = 'standard';
@@ -255,139 +255,22 @@ class _TravellerInformationScreenState
   bool get _isFlexiblePolicy => travelData.cancellationPolicy?.id == 2;
   // ─────────────────────────────────────────────────────────────────────────
   void _showStateSelectionBottomSheet(StateSetter setModalState) {
-    final TextEditingController searchController = TextEditingController();
-    showModalBottomSheet(
+    showStateSelectionBottomSheet(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(5.w)),
-      ),
-      builder: (context) => StatefulBuilder(
-        builder: (context, setSheetState) => Container(
-          height: MediaQuery.of(context).size.height * 0.75,
-          decoration: BoxDecoration(
-            color: _TI.sheetBg,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(5.w)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.10),
-                blurRadius: 24,
-                offset: const Offset(0, -6),
-              ),
-            ],
-          ),
-          child: Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom,
-              top: 2.5.h, left: 5.w, right: 5.w,
-            ),
-            child: Column(
-              children: [
-                _sheetHandle(),
-                Text(
-                  'Select state of residence',
-                  textScaler: const TextScaler.linear(1.0),
-                  style: GoogleFonts.poppins(
-                    fontSize: FontSize.s14,
-                    fontWeight: FontWeight.w700,
-                    color: _TI.sheetInk,
-                  ),
-                ),
-                SizedBox(height: 2.h),
-                Container(
-                  height: 6.h,
-                  padding: EdgeInsets.symmetric(horizontal: 3.w),
-                  decoration: BoxDecoration(
-                    color: _TI.sheetSurface,
-                    borderRadius: BorderRadius.circular(3.w),
-                    border: Border.all(color: _TI.sheetBorder),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.search, color: _TI.sheetInkMid, size: 5.w),
-                      SizedBox(width: 2.w),
-                      Expanded(
-                        child: TextField(
-                          controller: searchController,
-                          style: GoogleFonts.poppins(
-                            fontSize: FontSize.s11, color: _TI.sheetInk),
-                          cursorColor: _TI.sheetAccent,
-                          decoration: InputDecoration(
-                            hintText: 'Search state',
-                            border: InputBorder.none,
-                            hintStyle: GoogleFonts.poppins(
-                              fontSize: FontSize.s10, color: _TI.sheetInkMid),
-                          ),
-                          onChanged: (value) {
-                            setSheetState(() {
-                              filteredStates = _dashboardC.stateList
-                                  .map((e) => e.name!)
-                                  .where((s) => s.toLowerCase()
-                                      .contains(value.toLowerCase()))
-                                  .toList();
-                            });
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 1.5.h),
-                Expanded(
-                  child: ListView.separated(
-                    itemCount: filteredStates.length,
-                    separatorBuilder: (_, __) =>
-                        Divider(color: _TI.sheetBorder, height: 1),
-                    itemBuilder: (context, index) {
-                      final stateName = filteredStates[index];
-                      final isChosen = stateName == _selectedState;
-                      return ListTile(
-                        title: Text(
-                          stateName,
-                          textScaler: const TextScaler.linear(1.0),
-                          style: GoogleFonts.poppins(
-                            fontSize: FontSize.s11,
-                            fontWeight: isChosen
-                                ? FontWeight.w700
-                                : FontWeight.w400,
-                            color: isChosen
-                                ? _TI.sheetAccent
-                                : _TI.sheetInk,
-                          ),
-                        ),
-                        trailing: isChosen
-                            ? Icon(Icons.check_circle_rounded,
-                                color: _TI.sheetAccent, size: 5.w)
-                            : null,
-                        onTap: () {
-                          final idx = _dashboardC.stateList
-                              .indexWhere((e) => e.name == stateName);
-                          setModalState(() {
-                            _userC.stateUpdateId.value = idx >= 0
-                                ? (_dashboardC.stateList[idx].id ?? 0)
-                                : 0;
-                            _selectedState = stateName;
-                          });
-                          Navigator.pop(context);
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    ).whenComplete(searchController.dispose);
+      stateList: _dashboardC.stateList,
+      selectedStateId: _userC.stateUpdateId.value,
+      onStateSelected: (state) {
+        setModalState(() {
+          _userC.stateUpdateId.value = state.id ?? 0;
+          _selectedState = state.name ?? '';
+        });
+      },
+    );
   }
 
   @override
   void initState() {
     super.initState();
-    filteredStates =
-        _dashboardC.stateList.map((element) => element.name!).toList();
     travelData = _trekC.trekDetailData.value;
     debugPrint("========== POLICY DEBUG ==========");
     debugPrint("Trek ID: ${travelData.id}");
@@ -2411,166 +2294,6 @@ class _ScaleOnTapState extends State<_ScaleOnTap>
         builder: (_, child) =>
             Transform.scale(scale: _scale.value, child: child),
         child: widget.child,
-      ),
-    );
-  }
-}
-
-class _StateSelectionSheetContent extends StatefulWidget {
-  final String selectedState;
-  final ValueChanged<String> onStateSelected;
-
-  const _StateSelectionSheetContent({
-    required this.selectedState,
-    required this.onStateSelected,
-  });
-
-  @override
-  State<_StateSelectionSheetContent> createState() =>
-      _StateSelectionSheetContentState();
-}
-
-class _StateSelectionSheetContentState
-    extends State<_StateSelectionSheetContent> {
-  late final TextEditingController _searchController;
-  final DashboardController _dashboardC = Get.find<DashboardController>();
-  List<String> _filteredStates = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _searchController = TextEditingController();
-    _filteredStates =
-        _dashboardC.stateList.map((e) => e.name!).toList();
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.75,
-      decoration: BoxDecoration(
-        color: _TI.sheetBg,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(5.w)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.10),
-            blurRadius: 24,
-            offset: const Offset(0, -6),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-          top: 2.5.h,
-          left: 5.w,
-          right: 5.w,
-        ),
-        child: Column(
-          children: [
-            Center(
-              child: Container(
-                width: 10.w,
-                height: 0.5.h,
-                margin: EdgeInsets.only(bottom: 1.5.h),
-                decoration: BoxDecoration(
-                  color: _TI.sheetHandle,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            ),
-            Text(
-              'Select state of residence',
-              textScaler: const TextScaler.linear(1.0),
-              style: GoogleFonts.poppins(
-                fontSize: FontSize.s14,
-                fontWeight: FontWeight.w700,
-                color: _TI.sheetInk,
-              ),
-            ),
-            SizedBox(height: 2.h),
-            Container(
-              height: 6.h,
-              padding: EdgeInsets.symmetric(horizontal: 3.w),
-              decoration: BoxDecoration(
-                color: _TI.sheetSurface,
-                borderRadius: BorderRadius.circular(3.w),
-                border: Border.all(color: _TI.sheetBorder),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.search, color: _TI.sheetInkMid, size: 5.w),
-                  SizedBox(width: 2.w),
-                  Expanded(
-                    child: TextField(
-                      controller: _searchController,
-                      style: GoogleFonts.poppins(
-                          fontSize: FontSize.s11, color: _TI.sheetInk),
-                      cursorColor: _TI.sheetAccent,
-                      decoration: InputDecoration(
-                        hintText: 'Search state',
-                        border: InputBorder.none,
-                        hintStyle: GoogleFonts.poppins(
-                            fontSize: FontSize.s10, color: _TI.sheetInkMid),
-                      ),
-                      onChanged: (value) {
-                        setState(() {
-                          _filteredStates = _dashboardC.stateList
-                              .map((e) => e.name!)
-                              .where((s) => s
-                                  .toLowerCase()
-                                  .contains(value.toLowerCase()))
-                              .toList();
-                        });
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 1.5.h),
-            Expanded(
-              child: ListView.separated(
-                itemCount: _filteredStates.length,
-                separatorBuilder: (_, __) =>
-                    Divider(color: _TI.sheetBorder, height: 1),
-                itemBuilder: (context, index) {
-                  final stateName = _filteredStates[index];
-                  final isChosen = stateName == widget.selectedState;
-                  return Material(
-                    color: Colors.transparent,
-                    child: ListTile(
-                      title: Text(
-                        stateName,
-                        textScaler: const TextScaler.linear(1.0),
-                        style: GoogleFonts.poppins(
-                          fontSize: FontSize.s11,
-                          fontWeight:
-                              isChosen ? FontWeight.w700 : FontWeight.w400,
-                          color: isChosen ? _TI.sheetAccent : _TI.sheetInk,
-                        ),
-                      ),
-                      trailing: isChosen
-                          ? Icon(Icons.check_circle_rounded,
-                              color: _TI.sheetAccent, size: 5.w)
-                          : null,
-                      onTap: () {
-                        widget.onStateSelected(stateName);
-                        Navigator.pop(context);
-                      },
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

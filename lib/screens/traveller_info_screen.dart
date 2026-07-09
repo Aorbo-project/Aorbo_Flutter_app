@@ -14,6 +14,7 @@ import '../freezed_models/profile/user_profile_model.dart';
 import '../utils/common_colors.dart';
 import '../utils/common_images.dart';
 import '../utils/screen_constants.dart';
+import '../utils/state_selection_bottom_sheet.dart';
 
 class _C {
   static const bg = Color(0xFFF5F8FF);
@@ -1615,195 +1616,18 @@ Future<void> _confirmDeleteTraveller(int index, Traveler traveller) async {
   }
 
   Future<void> _showStateSelectionBottomSheet() async {
-    final searchController = TextEditingController();
-    filteredStates = List.from(_dashboardC.stateList);
-
-    await showModalBottomSheet(
+    await showStateSelectionBottomSheet(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: CommonColors.whiteColor,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(5.w)),
-      ),
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return SizedBox(
-              height: MediaQuery.of(context).size.height * 0.75,
-              child: Padding(
-                padding: EdgeInsets.only(
-                  bottom: MediaQuery.of(context).viewInsets.bottom,
-                  top: 2.5.h,
-                  left: 5.w,
-                  right: 5.w,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 10.w,
-                      height: 0.5.h,
-                      margin: EdgeInsets.only(bottom: 1.5.h),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE5E7EB),
-                        borderRadius: BorderRadius.circular(1.w),
-                      ),
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Select state of residence',
-                          textScaler: const TextScaler.linear(1.0),
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: FontSize.s14,
-                            fontWeight: FontWeight.w600,
-                            color: _C.ink,
-                          ),
-                        ),
-                        IconButton(
-                          icon: SvgPicture.asset(
-                            CommonImages.close,
-                            width: 5.w,
-                            height: 5.w,
-                            fit: BoxFit.contain,
-                          ),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 2.h),
-                    Container(
-                      height: 6.h,
-                      padding: EdgeInsets.symmetric(horizontal: 2.5.w),
-                      decoration: BoxDecoration(
-                        color: _C.fieldBg,
-                        borderRadius: BorderRadius.circular(3.w),
-                        border: Border.all(color: _C.fieldBorder),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.search,
-                              color: _C.inkLight, size: 5.5.w),
-                          SizedBox(width: 2.5.w),
-                          Expanded(
-                            child: TextField(
-                              controller: searchController,
-                              decoration: InputDecoration(
-                                hintText: 'Search State',
-                                border: InputBorder.none,
-                                hintStyle: TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontSize: FontSize.s10,
-                                  color: _C.inkLight,
-                                ),
-                              ),
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: FontSize.s10,
-                                color: _C.ink,
-                              ),
-                              onChanged: (value) {
-                                setModalState(() {
-                                  filteredStates = _dashboardC.stateList
-                                      .where(
-                                        (s) =>
-                                            s.name
-                                                ?.toLowerCase()
-                                                .contains(
-                                                    value.toLowerCase()) ??
-                                            false,
-                                      )
-                                      .toList();
-                                });
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 1.25.h),
-                    Expanded(
-                      child: filteredStates.isEmpty
-                          ? Center(
-                              child: Text(
-                                'No states match your search.',
-                                style: TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontSize: FontSize.s10,
-                                  color: _C.inkMid,
-                                ),
-                              ),
-                            )
-                          : ListView.builder(
-                              shrinkWrap: true,
-                              itemCount: filteredStates.length,
-                              itemBuilder: (context, index) {
-                                final state = filteredStates[index];
-                                final isSelected =
-                                    state.id == _userC.stateUpdateId.value;
-                                return AnimatedContainer(
-                                  duration: _kAnimDuration,
-                                  margin:
-                                      EdgeInsets.symmetric(vertical: 0.3.h),
-                                  decoration: BoxDecoration(
-                                    color: isSelected
-                                        ? _C.tealSoft
-                                        : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(2.w),
-                                  ),
-                                  child: Material(
-                                    color: Colors.transparent,
-                                    child: ListTile(
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(2.w),
-                                      ),
-                                      title: Text(
-                                        state.name ?? '',
-                                        textScaler:
-                                            const TextScaler.linear(1.0),
-                                        style: TextStyle(
-                                          fontFamily: 'Poppins',
-                                          fontSize: FontSize.s10,
-                                          fontWeight: isSelected
-                                              ? FontWeight.w600
-                                              : FontWeight.w400,
-                                          color: isSelected ? _C.teal : _C.ink,
-                                        ),
-                                      ),
-                                      trailing: isSelected
-                                          ? Icon(
-                                              Icons.check_rounded,
-                                              color: _C.teal,
-                                              size: 5.w,
-                                            )
-                                          : null,
-                                      onTap: () {
-                                        setState(() {
-                                          _selectedState = state.name ?? '';
-                                          _userC.stateUpdateId.value =
-                                              state.id ?? 0;
-                                        });
-                                        Navigator.pop(context);
-                                      },
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
+      stateList: _dashboardC.stateList,
+      selectedStateId: _userC.stateUpdateId.value,
+      onStateSelected: (state) {
+        setState(() {
+          _selectedState = state.name ?? '';
+          _userC.stateUpdateId.value = state.id ?? 0;
+        });
       },
     );
 
-    searchController.dispose();
     if (mounted) {
       setState(() => filteredStates = List.from(_dashboardC.stateList));
     }
