@@ -60,6 +60,13 @@ class _PaymentScreenState extends State<PaymentScreen>
   bool _isCouponExpanded = true;
   String? _selectedUPI = PaymentMethods.razorpay;
 
+  // Payment in-flight state — true from the moment an order/verify call is
+  // fired until it resolves (success nav-away or error overlay shown).
+  // Drives the back-navigation confirmation and blocks accidental exits.
+  bool _isProcessingPayment = false;
+  bool _showPaymentError = false;
+  String _paymentErrorMessage = '';
+
   static const int _totalTimerSecs = 5 * 60;
   final RxInt _remainingSecs = _totalTimerSecs.obs;
   bool _isTimerExpired = false;
@@ -197,15 +204,136 @@ class _PaymentScreenState extends State<PaymentScreen>
     _trekC.paymentId.value = r.paymentId ?? '';
     _trekC.signature.value = r.signature ?? '';
 
-    await _trekC.verifyTrekOrder(
+    final verified = await _trekC.verifyTrekOrder(
       razorpayOrderId: r.orderId ?? '',
       razorpayPaymentId: r.paymentId ?? '',
       razorpaySignature: r.signature ?? '',
     );
+
+    if (!verified && mounted) {
+      // Razorpay already confirmed the charge — the failure here is only in
+      // reaching/parsing our own verify call (network drop, timeout). The
+      // retry button re-calls verifyTrekOrder with this SAME payment id, so
+      // it can never create a second booking or a second charge.
+      setState(() {
+        _isProcessingPayment = false;
+        _showPaymentError = true;
+        _paymentErrorMessage = _trekC.errorMessage.value.isNotEmpty
+            ? _trekC.errorMessage.value
+            : 'Your payment went through, but we could not confirm it yet. '
+                'Please retry — you will not be charged twice.';
+      });
+    }
   }
 
   void _handlePaymentError(PaymentFailureResponse r) {
-    CustomSnackBar.show(context, message: 'Payment Failed! ${r.message}');
+    // Razorpay checkout itself failed or was cancelled before any charge —
+    // no paymentId exists yet, so retry below reopens the SAME order rather
+    // than calling verify.
+    if (!mounted) return;
+    setState(() {
+      _isProcessingPayment = false;
+      _showPaymentError = true;
+      _paymentErrorMessage = (r.message?.isNotEmpty ?? false)
+          ? r.message!
+          : 'Payment was not completed.';
+    });
+  }
+
+  Future<void> _handlePayNow() async {
+    if (!_isPaymentValid) return;
+    setState(() {
+      _isProcessingPayment = true;
+      _showPaymentError = false;
+    });
+    await _trekC.createTrekOrder();
+    if (_trekC.orderModal.value.success ?? false) {
+      _openRazorpay(_trekC.calculateFareResponseModel.value.maybeWhen(
+        success: (r) => (r as CalculateFareResponseModel).breakdown,
+        orElse: () => null,
+      ));
+    } else if (mounted) {
+      setState(() {
+        _isProcessingPayment = false;
+        _showPaymentError = true;
+        _paymentErrorMessage = _trekC.errorMessage.value.isNotEmpty
+            ? _trekC.errorMessage.value
+            : 'Could not start payment. Please try again.';
+      });
+    }
+  }
+
+  /// RETRY from the error overlay. Never blindly restarts from scratch:
+  /// - If Razorpay already returned a captured payment (paymentId is set),
+  ///   re-checks status on that SAME order/payment — this is the path the
+  ///   backend's idempotency (paymentService._completeBookingCore) exists
+  ///   for, and it's what actually prevents a lost booking on retry.
+  /// - Else if an order was already created (still valid ~15 min server-side
+  ///   per PendingBooking.expires_at), reopen Razorpay on that SAME order_id
+  ///   instead of creating a new pending order every retry tap.
+  /// - Only falls back to a brand-new order if nothing usable exists yet.
+  Future<void> _retryPayment() async {
+    setState(() {
+      _showPaymentError = false;
+      _isProcessingPayment = true;
+    });
+
+    final hasCapturedPayment = _trekC.paymentId.value.isNotEmpty;
+    final existingOrderId = _trekC.orderData.value.id ??
+        _trekC.orderNextActionParams['order_id']?.toString();
+    final hasExistingOrder = (existingOrderId ?? '').isNotEmpty;
+
+    if (hasCapturedPayment) {
+      final verified = await _trekC.verifyTrekOrder(
+        razorpayOrderId: _trekC.orderId.value,
+        razorpayPaymentId: _trekC.paymentId.value,
+        razorpaySignature: _trekC.signature.value,
+      );
+      if (!verified && mounted) {
+        setState(() {
+          _isProcessingPayment = false;
+          _showPaymentError = true;
+          _paymentErrorMessage = _trekC.errorMessage.value.isNotEmpty
+              ? _trekC.errorMessage.value
+              : 'Still could not confirm your payment. Please try again in a moment.';
+        });
+      }
+    } else if (hasExistingOrder) {
+      _openRazorpay(_trekC.calculateFareResponseModel.value.maybeWhen(
+        success: (r) => (r as CalculateFareResponseModel).breakdown,
+        orElse: () => null,
+      ));
+    } else {
+      await _handlePayNow();
+    }
+  }
+
+  Future<void> _showCancelPaymentDialog() async {
+    final leave = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Cancel Payment?'),
+        content: const Text(
+          'Your payment is still being processed. If any amount was already '
+          'deducted, it will never be charged twice — your booking will still '
+          'go through safely once confirmed. Are you sure you want to leave?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Stay'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text('Leave Anyway', style: TextStyle(color: _Pay.red)),
+          ),
+        ],
+      ),
+    );
+    if (leave == true && mounted) {
+      setState(() => _isProcessingPayment = false);
+      Get.back();
+    }
   }
 
   void _handleExternalWallet(ExternalWalletResponse r) {
@@ -1400,14 +1528,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                   fontSize: FontSize.s13,
                   fontWeight: FontWeight.w700,
                   fontFamily: 'Poppins',
-                  onPressed: () async {
-                    if (_isPaymentValid) {
-                      await _trekC.createTrekOrder();
-                      if (_trekC.orderModal.value.success ?? false) {
-                        _openRazorpay(bd);
-                      }
-                    }
-                  },
+                  onPressed: _handlePayNow,
                   gradient: _isPaymentValid
                       ? CommonColors.filterGradient
                       : CommonColors.disableBtnGradient,
@@ -1428,6 +1549,17 @@ class _PaymentScreenState extends State<PaymentScreen>
   Widget build(BuildContext context) {
     final trek = _trekC.trekDetailData.value;
 
+    return PopScope(
+      canPop: !_isProcessingPayment,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _showCancelPaymentDialog();
+      },
+      child: _buildScaffold(trek),
+    );
+  }
+
+  Widget _buildScaffold(dynamic trek) {
     return Scaffold(
       backgroundColor: _Pay.bg,
       appBar: _buildAppBar(),
@@ -1511,11 +1643,86 @@ class _PaymentScreenState extends State<PaymentScreen>
                     ),
                   ),
                 ),
+              if (_showPaymentError) _buildPaymentErrorOverlay(),
             ],
           );
         }),
       ),
       bottomNavigationBar: _buildBottomBar(),
+    );
+  }
+
+  Widget _buildPaymentErrorOverlay() {
+    return Positioned.fill(
+      child: Container(
+        color: Colors.black.withValues(alpha: 0.45),
+        child: Center(
+          child: Container(
+            margin: EdgeInsets.symmetric(horizontal: 8.w),
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: _Pay.cardBg,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.error_outline_rounded, size: 40, color: _Pay.red),
+                const SizedBox(height: 12),
+                Text(
+                  'Something went wrong',
+                  textScaler: const TextScaler.linear(1.0),
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: FontSize.s14,
+                    fontWeight: FontWeight.w700,
+                    color: _Pay.ink,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  _paymentErrorMessage,
+                  textAlign: TextAlign.center,
+                  textScaler: const TextScaler.linear(1.0),
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: FontSize.s10,
+                    color: _Pay.inkMid,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Get.back(),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: _Pay.inkMid,
+                          side: BorderSide(color: _Pay.border),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: const Text('GO BACK'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: _retryPayment,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _Pay.accent,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: const Text('RETRY'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 

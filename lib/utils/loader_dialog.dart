@@ -7,11 +7,18 @@ void showLoaderDialog() {
     context: Get.context!,
     barrierDismissible: false,
     builder: (context) {
-      return Container(
-        color: CommonColors.whiteColor.withValues(alpha: 0.5),
-        child: const Center(
-          child: CircularProgressIndicator(
-            color: CommonColors.appColor,
+      // canPop: false — barrierDismissible only blocks tap-outside; without
+      // this, the hardware/gesture back button still pops this dialog route
+      // while the underlying network call keeps running, leaving the user
+      // staring at a screen with no spinner but a request still in flight.
+      return PopScope(
+        canPop: false,
+        child: Container(
+          color: CommonColors.whiteColor.withValues(alpha: 0.5),
+          child: const Center(
+            child: CircularProgressIndicator(
+              color: CommonColors.appColor,
+            ),
           ),
         ),
       );
