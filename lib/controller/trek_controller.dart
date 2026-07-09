@@ -655,13 +655,23 @@ final response = await repository.postApiCall(
     }
   }
 
-  verifyTrekOrder({
+  /// Verifies a Razorpay payment and creates the booking. Safe to call more
+  /// than once with the SAME orderId/paymentId — the backend
+  /// (paymentService._completeBookingCore) is idempotent on order_id: a
+  /// second call for an already-completed order returns the existing
+  /// booking instead of erroring or double-charging. This is what makes it
+  /// safe for the UI to retry this exact call after a network failure
+  /// instead of restarting checkout from scratch.
+  ///
+  /// Returns true only when the booking was confirmed (fresh or
+  /// already-processed); false on any failure, so the caller can decide
+  /// how to surface the error instead of this always doing it via snackbar.
+  Future<bool> verifyTrekOrder({
     required String razorpayOrderId,
     required String razorpayPaymentId,
     required String razorpaySignature,
   }) async {
     showLoaderDialog();
-
 
     String body = json.encode({
       "razorpay_order_id": razorpayOrderId,
@@ -686,20 +696,24 @@ final response = await repository.postApiCall(
               ModalRoute.withName('/dashboard'),
             );
             CustomSnackBar.show(Get.context!, message: 'Payment Successful!');
+            return true;
           }
+          return false;
         } else {
           hideLoaderDialog();
-
-          errorMessage.value = response['message'];
-          CustomSnackBar.show(Get.context!, message: errorMessage.value);
+          errorMessage.value = response['message'] ?? 'Payment verification failed';
+          return false;
         }
       }
+      hideLoaderDialog();
+      errorMessage.value = 'Payment verification failed';
+      return false;
     } catch (e, s) {
       hideLoaderDialog();
       logger.e('Stack trace: $s');
       logger.e('Error: $e');
       errorMessage.value = 'Failed to verify payment: ${e.toString()}';
-      CustomSnackBar.show(Get.context!, message: errorMessage.value);
+      return false;
     } finally {
       isLoading.value = false;
     }
