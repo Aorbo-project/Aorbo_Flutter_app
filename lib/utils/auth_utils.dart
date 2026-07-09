@@ -65,6 +65,52 @@ class AuthUtils {
     return null;
   }
 
+  /// Human-readable device model (e.g. "Pixel 8", "iPhone15,2") for the
+  /// admin's "Logins & Devices" view — same fields captured, richer detail.
+  static Future<String?> getDeviceModel() async {
+    try {
+      DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+
+      if (kIsWeb) {
+        WebBrowserInfo webInfo = await deviceInfo.webBrowserInfo;
+        return webInfo.browserName.name;
+      }
+
+      if (Platform.isAndroid) {
+        AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+        return '${androidInfo.manufacturer} ${androidInfo.model}'.trim();
+      }
+
+      if (Platform.isIOS) {
+        IosDeviceInfo iosInfo = await deviceInfo.iosInfo;
+        return iosInfo.utsname.machine;
+      }
+    } catch (_) {
+      // Best-effort — never block login over device-info collection.
+    }
+    return null;
+  }
+
+  /// OS name + version (e.g. "Android 14", "iOS 17.4").
+  static Future<String?> getOsVersion() async {
+    try {
+      DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+
+      if (Platform.isAndroid) {
+        AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+        return 'Android ${androidInfo.version.release}';
+      }
+
+      if (Platform.isIOS) {
+        IosDeviceInfo iosInfo = await deviceInfo.iosInfo;
+        return 'iOS ${iosInfo.systemVersion}';
+      }
+    } catch (_) {
+      // Best-effort — never block login over device-info collection.
+    }
+    return null;
+  }
+
   static String getSource() {
     if (kIsWeb) return "web";
     if (Platform.isAndroid) return "android";
