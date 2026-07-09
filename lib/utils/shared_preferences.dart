@@ -9,6 +9,7 @@ class SpUtil {
   static const String accessToken      = 'access_token';
   static const String profileCompleted = 'profile_completed';
   static const String isNewCustomer    = 'is_new_customer';
+  static const String deviceId         = 'device_id';
 
   static SpUtil? _instance;
 

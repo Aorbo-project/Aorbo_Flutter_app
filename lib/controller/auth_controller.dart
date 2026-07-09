@@ -111,11 +111,26 @@ class AuthController extends GetxController {
     }
   }
 
+  // Persistent per-install id (not a true hardware device id) so the admin's
+  // "Logins & Devices" view can tell "same phone logging in again" apart
+  // from a new install — same pattern as the vendor/admin web session log.
+  Future<String> _getOrCreateDeviceId() async {
+    final existing = sp!.getString(SpUtil.deviceId);
+    if (existing != null && existing.isNotEmpty) return existing;
+    final generated =
+        'dev-${DateTime.now().millisecondsSinceEpoch}-${(1000 + (DateTime.now().microsecondsSinceEpoch % 9000))}';
+    await sp!.putString(SpUtil.deviceId, generated);
+    return generated;
+  }
+
   // Verify OTP with backend. Stores JWT and registers FCM on success. Returns true on success.
   Future<bool> verifyOtp(String phone, String otp) async {
     isLoading.value = true;
     try {
-      final body = json.encode({'phone': phone, 'otp': otp});
+      final deviceId = await _getOrCreateDeviceId();
+      final source = AuthUtils.getSource();
+      final platform = (source == 'android' || source == 'ios') ? 'mobile_$source' : source;
+      final body = json.encode({'phone': phone, 'otp': otp, 'device_id': deviceId, 'platform': platform});
       final res = await repository.postApiCall(url: NetworkUrl.verifyOtpPath, body: body);
       isLoading.value = false;
       if (res != null && res['success'] == true) {
