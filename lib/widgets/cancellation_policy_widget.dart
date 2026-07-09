@@ -10,6 +10,19 @@ class CancellationPolicyWidget extends StatelessWidget {
 
   const CancellationPolicyWidget({super.key, required this.policy,required this.departureDate});
 
+  // BUGFIX: Rules.hours is typed `dynamic` (the API can omit it entirely),
+  // so a null value passed `row.hours != 0` unharmed (null != 0 is true in
+  // Dart) and was then handed straight to
+  // AuthUtils.formatDateTimeWithHourDecrease's non-nullable `int` parameter,
+  // throwing "type 'Null' is not a subtype of type 'int'" at the call site
+  // and taking down the whole cancellation policy section.
+  int? _hoursAsInt(dynamic hours) {
+    if (hours == null) return null;
+    if (hours is int) return hours;
+    if (hours is num) return hours.toInt();
+    return int.tryParse(hours.toString());
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -111,8 +124,8 @@ class CancellationPolicyWidget extends StatelessWidget {
               ),
             ],
           ),
-          if(row.hours != 0) Text(
-            "Before ${AuthUtils.formatDateTimeWithHourDecrease(departureDate ?? "",row.hours)}",
+          if(_hoursAsInt(row.hours) != null && _hoursAsInt(row.hours) != 0) Text(
+            "Before ${AuthUtils.formatDateTimeWithHourDecrease(departureDate ?? "", _hoursAsInt(row.hours)!)}",
             style: const TextStyle(fontSize: 12, height: 1.4),
           )
         ],

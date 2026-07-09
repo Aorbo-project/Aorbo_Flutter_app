@@ -1521,11 +1521,28 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
     return [list, []];
   }
 
+  // BUGFIX: meeting/trek_point stages are stored one row per boarding city
+  // per day (the vendor form's "fill once, applies to every city" sync
+  // writes the same value to every city_id's row for that day), so the raw
+  // trekStages list has one duplicate per boarding city for every meeting
+  // point — same root cause already fixed on the admin/vendor web panels.
+  // Boarding/return genuinely differ per city and are left as-is.
+  List<TrekStages> _dedupeStages(List<TrekStages> stages) {
+    final seen = <String>{};
+    return stages.where((s) {
+      if (s.stageName != 'meeting' && s.stageName != 'trek_point') return true;
+      final key = '${s.destination ?? ''}|${s.dateTime ?? ''}';
+      if (seen.contains(key)) return false;
+      seen.add(key);
+      return true;
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     final ctrl       = Get.find<TrekController>();
     final trek       = ctrl.trekDetailData.value;
-    final routeList  = trek.trekStages ?? [];
+    final routeList  = _dedupeStages(trek.trekStages ?? []);
     final split      = _splitRouteList(routeList);
     final visible    = split[0];
     final hidden     = split[1];
