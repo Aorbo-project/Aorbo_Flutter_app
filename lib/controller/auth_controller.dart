@@ -130,7 +130,18 @@ class AuthController extends GetxController {
       final deviceId = await _getOrCreateDeviceId();
       final source = AuthUtils.getSource();
       final platform = (source == 'android' || source == 'ios') ? 'mobile_$source' : source;
-      final body = json.encode({'phone': phone, 'otp': otp, 'device_id': deviceId, 'platform': platform});
+      final deviceModel = await AuthUtils.getDeviceModel();
+      final osVersion = await AuthUtils.getOsVersion();
+      final appVersion = await AuthUtils.getAppVersion();
+      final body = json.encode({
+        'phone': phone,
+        'otp': otp,
+        'device_id': deviceId,
+        'platform': platform,
+        'device_model': deviceModel,
+        'os_version': osVersion,
+        'app_version': appVersion,
+      });
       final res = await repository.postApiCall(url: NetworkUrl.verifyOtpPath, body: body);
       isLoading.value = false;
       if (res != null && res['success'] == true) {
