@@ -15,7 +15,6 @@ import 'package:arobo_app/utils/booking_constants.dart';
 import 'package:arobo_app/utils/common_btn.dart';
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/common_images.dart';
-import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:arobo_app/utils/state_selection_bottom_sheet.dart';
 import 'package:arobo_app/utils/total_fare_modal.dart';
 
@@ -26,28 +25,28 @@ import '../freezed_models/treks/trek_detail_model.dart';
 //  DESIGN TOKENS
 // ─────────────────────────────────────────────
 class _TI {
-  static const bg        = CommonColors.offWhiteColor;
-  static const cardBg    = CommonColors.whiteColor;
-  static const ink       = CommonColors.blackColor;
-  static const inkMid    = CommonColors.cFF6B7280;
-  static const inkLight  = CommonColors.grey_AEAEAE;
-  static const brand     = CommonColors.trek_route_color;
-  static const teal      = CommonColors.cFF0F7B6C;
-  static const tealSoft  = CommonColors.cFFE6F5F3;
+  static const bg = CommonColors.offWhiteColor;
+  static const cardBg = CommonColors.whiteColor;
+  static const ink = CommonColors.blackColor;
+  static const inkMid = CommonColors.cFF6B7280;
+  static const inkLight = CommonColors.grey_AEAEAE;
+  static const brand = CommonColors.trek_route_color;
+  static const teal = CommonColors.cFF0F7B6C;
+  static const tealSoft = CommonColors.cFFE6F5F3;
   static const iconBadge = CommonColors.cFF111827;
-  static const divider   = CommonColors.trekroutecolorlight;
-  static const shadow    = CommonColors.c0A000000;
+  static const divider = CommonColors.trekroutecolorlight;
+  static const shadow = CommonColors.c0A000000;
 
-  static const sheetBg       = Colors.white;
-  static const sheetSurface  = Colors.white;
-  static const sheetBorder   = Color(0xFFE2E8F0);
-  static const sheetInk      = Color(0xFF0F172A);
-  static const sheetInkMid   = Color(0xFF64748B);
-  static const sheetHandle   = Color(0xFFD1D5DB);
-  static const sheetAccent   = Color(0xFF111827);
+  static const sheetBg = Colors.white;
+  static const sheetSurface = Colors.white;
+  static const sheetBorder = Color(0xFFE2E8F0);
+  static const sheetInk = Color(0xFF0F172A);
+  static const sheetInkMid = Color(0xFF64748B);
+  static const sheetHandle = Color(0xFFD1D5DB);
+  static const sheetAccent = Color(0xFF111827);
   static const sheetSelected = Color(0xFFE6F5F3);
-  static const sheetYellow   = Color(0xFFFACC15);
-  static const sheetGreen    = Color(0xFF0F7B6C);
+  static const sheetYellow = Color(0xFFFACC15);
+  static const sheetGreen = Color(0xFF0F7B6C);
 }
 
 // ─────────────────────────────────────────────
@@ -76,9 +75,9 @@ class _AnimatedCardState extends State<_AnimatedCard>
       duration: Duration(milliseconds: 400 + widget.index * 80),
     );
     _opacity = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
-    _slide   = Tween<Offset>(
+    _slide = Tween<Offset>(
       begin: const Offset(0, 0.06),
-      end:   Offset.zero,
+      end: Offset.zero,
     ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
 
     Future.delayed(Duration(milliseconds: widget.index * 60), () {
@@ -116,7 +115,7 @@ class _TravellerLimitBannerState extends State<_TravellerLimitBanner>
     with SingleTickerProviderStateMixin {
   late AnimationController _ctrl;
   late Animation<Offset> _slide;
-  late Animation<double>  _fade;
+  late Animation<double> _fade;
 
   @override
   void initState() {
@@ -127,7 +126,7 @@ class _TravellerLimitBannerState extends State<_TravellerLimitBanner>
     );
     _slide = Tween<Offset>(
       begin: const Offset(0, 1),
-      end:   Offset.zero,
+      end: Offset.zero,
     ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
     _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
     _ctrl.forward();
@@ -167,13 +166,17 @@ class _TravellerLimitBannerState extends State<_TravellerLimitBanner>
           child: Row(
             children: [
               Container(
-                width: 8.w, height: 8.w,
+                width: 8.w,
+                height: 8.w,
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.groups_rounded,
-                    color: Colors.white, size: 4.5.w),
+                child: Icon(
+                  Icons.groups_rounded,
+                  color: Colors.white,
+                  size: 4.5.w,
+                ),
               ),
               SizedBox(width: 3.w),
               Expanded(
@@ -181,13 +184,14 @@ class _TravellerLimitBannerState extends State<_TravellerLimitBanner>
                   textScaler: const TextScaler.linear(1.0),
                   text: TextSpan(
                     style: GoogleFonts.poppins(
-                      fontSize: FontSize.s10,
+                      fontSize: 10.sp,
                       color: Colors.white.withValues(alpha: 0.85),
                     ),
                     children: [
                       const TextSpan(text: 'Max '),
                       TextSpan(
-                        text: '${widget.limit} traveller${widget.limit > 1 ? 's' : ''}',
+                        text:
+                            '${widget.limit} traveller${widget.limit > 1 ? 's' : ''}',
                         style: const TextStyle(
                           fontWeight: FontWeight.w700,
                           color: Colors.white,
@@ -201,13 +205,17 @@ class _TravellerLimitBannerState extends State<_TravellerLimitBanner>
               GestureDetector(
                 onTap: _dismiss,
                 child: Container(
-                  width: 7.w, height: 7.w,
+                  width: 7.w,
+                  height: 7.w,
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(Icons.close_rounded,
-                      color: Colors.white.withValues(alpha: 0.8), size: 4.w),
+                  child: Icon(
+                    Icons.close_rounded,
+                    color: Colors.white.withValues(alpha: 0.8),
+                    size: 4.w,
+                  ),
                 ),
               ),
             ],
@@ -229,16 +237,13 @@ class TravellerInformationScreen extends StatefulWidget {
       _TravellerInformationScreenState();
 }
 
-class _TravellerInformationScreenState
-    extends State<TravellerInformationScreen>
+class _TravellerInformationScreenState extends State<TravellerInformationScreen>
     with SingleTickerProviderStateMixin {
-
-  final TrekController      _trekC      = Get.find<TrekController>();
+  final TrekController _trekC = Get.find<TrekController>();
   final DashboardController _dashboardC = Get.find<DashboardController>();
-  final UserController      _userC      = Get.find<UserController>();
+  final UserController _userC = Get.find<UserController>();
   late TrekDetailData travelData;
   final nameNode = FocusNode();
-
 
   String _selectedState = BookingConstants.defaultState;
 
@@ -251,8 +256,8 @@ class _TravellerInformationScreenState
   List<Traveler> selectedTravellers = [];
 
   // Helper to know whether this trek supports flexible (partial) payment.
-  // From the logs, flexible policy => cancellationPolicy.id == 1.
-  bool get _isFlexiblePolicy => travelData.cancellationPolicy?.id == 2;
+  // From the logs, flexible policy => cancellationPolicy.id == 2.
+  bool get _isFlexiblePolicy => travelData.cancellationPolicy?.id == 5;
   // ─────────────────────────────────────────────────────────────────────────
   void _showStateSelectionBottomSheet(StateSetter setModalState) {
     showStateSelectionBottomSheet(
@@ -275,14 +280,15 @@ class _TravellerInformationScreenState
     debugPrint("========== POLICY DEBUG ==========");
     debugPrint("Trek ID: ${travelData.id}");
     debugPrint("Cancellation Policy ID: ${travelData.cancellationPolicy?.id}");
-    debugPrint("Cancellation Policy Title: ${travelData.cancellationPolicy?.title}");
+    debugPrint(
+      "Cancellation Policy Title: ${travelData.cancellationPolicy?.title}",
+    );
     debugPrint("==================================");
 
     // ── Pick the right default payment option based on policy ──────────
     // If the trek supports a flexible policy, default to 'flexible'
     // (partial payment). Otherwise, fall back to 'standard' (full payment).
-    final bool flexible = travelData.cancellationPolicy?.id == 2;
-    _selectedPaymentOption = flexible ? 'flexible' : 'standard';
+    _selectedPaymentOption = _isFlexiblePolicy ? 'flexible' : 'standard';
 
     // Preserve any coupon code the user already applied before reaching this screen.
     // Resetting couponCode to '' here was the root cause of the discount being
@@ -298,24 +304,24 @@ class _TravellerInformationScreenState
         ? selectedTravellers.length
         : 1;
 
-    _trekC.calculateFareRequestModel.value =
-        _trekC.calculateFareRequestModel.value.copyWith(
-      batchId: travelData.batchId ?? 1,
-      travelerCount: restoredCount,
-      addInsurance: false,
-      addFreeCancellationProtection: false,
-      couponCode: (existingCoupon != null && existingCoupon.isNotEmpty)
-          ? existingCoupon
-          : '',
-      cancellationPolicyType: _selectedPaymentOption,
-    );
+    _trekC.calculateFareRequestModel.value = _trekC
+        .calculateFareRequestModel
+        .value
+        .copyWith(
+          batchId: travelData.batchId ?? 1,
+          travelerCount: restoredCount,
+          addInsurance: false,
+          addFreeCancellationProtection: false,
+          couponCode: (existingCoupon != null && existingCoupon.isNotEmpty)
+              ? existingCoupon
+              : '',
+          cancellationPolicyType: _selectedPaymentOption,
+        );
     _trekC.calculateFare();
 
-    debounce(
-      _trekC.calculateFareRequestModel,
-      (value) { _trekC.calculateFare(); },
-      time: const Duration(milliseconds: 500),
-    );
+    debounce(_trekC.calculateFareRequestModel, (value) {
+      _trekC.calculateFare();
+    }, time: const Duration(milliseconds: 500));
   }
 
   @override
@@ -339,17 +345,22 @@ class _TravellerInformationScreenState
       final parts = dateString.split('-');
       if (parts.length == 3) return '${parts[2]}-${parts[1]}-${parts[0]}';
       return dateString;
-    } catch (_) { return dateString; }
+    } catch (_) {
+      return dateString;
+    }
   }
 
   String _calculateEndDate(String? startDate, int? durationDays) {
-    if (startDate == null || startDate.isEmpty || durationDays == null) return '-';
+    if (startDate == null || startDate.isEmpty || durationDays == null)
+      return '-';
     try {
       final start = DateTime.parse(startDate);
-      final end   = start.add(Duration(days: durationDays));
+      final end = start.add(Duration(days: durationDays));
       return '${end.day.toString().padLeft(2, '0')}-'
-             '${end.month.toString().padLeft(2, '0')}-${end.year}';
-    } catch (_) { return '-'; }
+          '${end.month.toString().padLeft(2, '0')}-${end.year}';
+    } catch (_) {
+      return '-';
+    }
   }
 
   void _showTickOverlay(BuildContext context) {
@@ -359,69 +370,98 @@ class _TravellerInformationScreenState
     if (checkbox == null) return;
     final position = checkbox.localToGlobal(Offset.zero);
     final size = checkbox.size;
-    final cx = position.dx + (size.width  / 2);
+    final cx = position.dx + (size.width / 2);
     final cy = position.dy + (size.height / 2);
 
-    _overlayEntry = OverlayEntry(
-      builder: (context) => Stack(children: [
-        ...List.generate(12, (i) {
-          final angle = (i * (360 / 12)) * (pi / 180);
-          return Positioned(
-            left: cx - 2, top: cy - 2,
-            child: TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0.0, end: 1.0),
-              duration: const Duration(milliseconds: 400),
-              curve: Curves.easeOut,
-              builder: (_, v, __) => Transform.translate(
-                offset: Offset(cos(angle)*40*v, sin(angle)*40*v),
-                child: Opacity(opacity: 1-v,
-                  child: Container(width:4, height:4,
-                    decoration: BoxDecoration(
-                      color: CommonColors.lightBlueColor,
-                      shape: BoxShape.circle))),
+    final List<Widget> particles = [];
+
+    // 12 small dots radiating outward
+    for (int i = 0; i < 12; i++) {
+      final angle = (i * (360 / 12)) * (pi / 180);
+      particles.add(
+        Positioned(
+          left: cx - 2,
+          top: cy - 2,
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.0, end: 1.0),
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeOut,
+            builder: (_, v, __) => Transform.translate(
+              offset: Offset(cos(angle) * 40 * v, sin(angle) * 40 * v),
+              child: Opacity(
+                opacity: 1 - v,
+                child: Container(
+                  width: 4,
+                  height: 4,
+                  decoration: const BoxDecoration(
+                    color: CommonColors.lightBlueColor,
+                    shape: BoxShape.circle,
+                  ),
+                ),
               ),
             ),
-          );
-        }),
-        ...List.generate(6, (i) {
-          final angle = (i * (360 / 6)) * (pi / 180);
-          final delay = i * 100;
-          return Positioned(
-            left: cx - 15, top: cy - 15,
-            child: TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0.0, end: 1.0),
-              duration: const Duration(milliseconds: 800),
-              curve: Curves.easeOutCubic,
-              onEnd: i == 0 ? _removeOverlay : null,
-              builder: (_, v, __) {
-                final dv = v == 0 ? 0.0
-                    : ((v*1000-delay)/(800-delay)).clamp(0.0,1.0);
-                final dist = 60*dv;
-                return Transform.translate(
-                  offset: Offset(
-                    cos(angle)*dist,
-                    sin(angle)*dist + sin(v*pi*2)*20),
-                  child: Transform.scale(
-                    scale: dv*(1-dv*0.5),
-                    child: Opacity(opacity: 1-dv,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          boxShadow: [BoxShadow(
+          ),
+        ),
+      );
+    }
+
+    // 6 check badges radiating outward
+    for (int i = 0; i < 6; i++) {
+      final angle = (i * (360 / 6)) * (pi / 180);
+      final delay = i * 100;
+      particles.add(
+        Positioned(
+          left: cx - 15,
+          top: cy - 15,
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.0, end: 1.0),
+            duration: const Duration(milliseconds: 800),
+            curve: Curves.easeOutCubic,
+            onEnd: i == 0 ? _removeOverlay : null,
+            builder: (_, v, __) {
+              final dv = v == 0
+                  ? 0.0
+                  : ((v * 1000 - delay) / (800 - delay)).clamp(0.0, 1.0);
+              final dist = 60 * dv;
+              return Transform.translate(
+                offset: Offset(
+                  cos(angle) * dist,
+                  sin(angle) * dist + sin(v * pi * 2) * 20,
+                ),
+                child: Transform.scale(
+                  scale: dv * (1 - dv * 0.5),
+                  child: Opacity(
+                    opacity: 1 - dv,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
                             color: CommonColors.lightBlueColor,
-                            blurRadius: 4, spreadRadius: 1)]),
-                        child: Icon(Icons.check,
-                          color: CommonColors.lightBlueColor, size: 16),
-                      )),
+                            blurRadius: 4,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.check,
+                        color: CommonColors.lightBlueColor,
+                        size: 16,
+                      ),
+                    ),
                   ),
-                );
-              },
-            ),
-          );
-        }),
-      ]),
+                ),
+              );
+            },
+          ),
+        ),
+      );
+    }
+
+    _overlayEntry = OverlayEntry(
+      builder: (context) => Stack(children: particles),
     );
     Overlay.of(context).insert(_overlayEntry!);
   }
@@ -453,48 +493,65 @@ class _TravellerInformationScreenState
   }
 
   Widget _sectionHeader(String title, IconData icon) {
-    return Row(children: [
-      Container(
-        width: 9.w, height: 9.w,
-        decoration: BoxDecoration(
-          color: _TI.iconBadge,
-          borderRadius: BorderRadius.circular(2.5.w),
+    return Row(
+      children: [
+        Container(
+          width: 9.w,
+          height: 9.w,
+          decoration: BoxDecoration(
+            color: _TI.iconBadge,
+            borderRadius: BorderRadius.circular(2.5.w),
+          ),
+          child: Center(
+            child: Icon(icon, color: Colors.white, size: 4.5.w),
+          ),
         ),
-        child: Center(
-          child: Icon(icon, color: Colors.white, size: 4.5.w)),
-      ),
-      SizedBox(width: 3.w),
-      Text(title,
-        textScaler: const TextScaler.linear(1.0),
-        style: TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: FontSize.s14,
-          fontWeight: FontWeight.w700,
-          color: _TI.ink)),
-    ]);
+        SizedBox(width: 3.w),
+        Text(
+          title,
+          textScaler: const TextScaler.linear(1.0),
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w700,
+            color: _TI.ink,
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _infoRow(String svgAsset, String value) {
     return Padding(
       padding: EdgeInsets.only(bottom: 1.2.h),
-      child: Row(children: [
-        Container(
-          width: 8.w, height: 8.w,
-          decoration: BoxDecoration(
-            color: const Color(0xFFF1F5F9),
-            borderRadius: BorderRadius.circular(8),
+      child: Row(
+        children: [
+          Container(
+            width: 8.w,
+            height: 8.w,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Center(
+              child: SvgPicture.asset(svgAsset, width: 4.w, height: 4.w),
+            ),
           ),
-          child: Center(
-            child: SvgPicture.asset(svgAsset, width: 4.w, height: 4.w)),
-        ),
-        SizedBox(width: 3.w),
-        Expanded(
-          child: Text(value,
-            textScaler: const TextScaler.linear(1.0),
-            style: TextStyle(fontFamily: 'Poppins', fontSize: FontSize.s11,
-                fontWeight: FontWeight.w500, color: _TI.ink)),
-        ),
-      ]),
+          SizedBox(width: 3.w),
+          Expanded(
+            child: Text(
+              value,
+              textScaler: const TextScaler.linear(1.0),
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 11.sp,
+                fontWeight: FontWeight.w500,
+                color: _TI.ink,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -502,60 +559,74 @@ class _TravellerInformationScreenState
 
   Widget _sheetHandle() => Center(
     child: Container(
-      width: 10.w, height: 0.5.h,
+      width: 10.w,
+      height: 0.5.h,
       margin: EdgeInsets.only(bottom: 1.5.h),
       decoration: BoxDecoration(
         color: _TI.sheetHandle,
-        borderRadius: BorderRadius.circular(10)),
+        borderRadius: BorderRadius.circular(10),
+      ),
     ),
   );
 
   Widget _sheetHeader(String title, {VoidCallback? onClose}) => Row(
     mainAxisAlignment: MainAxisAlignment.spaceBetween,
     children: [
-      Text(title,
+      Text(
+        title,
         textScaler: const TextScaler.linear(1.0),
         style: GoogleFonts.alexandria(
-          fontSize: FontSize.s16,
+          fontSize: 16.sp,
           fontWeight: FontWeight.w600,
-          color: _TI.sheetInk)),
+          color: _TI.sheetInk,
+        ),
+      ),
       GestureDetector(
         onTap: onClose ?? () => Navigator.pop(context),
         child: Container(
-          width: 8.w, height: 8.w,
+          width: 8.w,
+          height: 8.w,
           decoration: BoxDecoration(
             color: _TI.sheetSurface,
             shape: BoxShape.circle,
-            border: Border.all(color: _TI.sheetBorder)),
-          child: Icon(Icons.close, size: 4.5.w, color: _TI.sheetInkMid)),
+            border: Border.all(color: _TI.sheetBorder),
+          ),
+          child: Icon(Icons.close, size: 4.5.w, color: _TI.sheetInkMid),
+        ),
       ),
     ],
   );
 
-  Widget _sheetInputContainer({
-    required String label,
-    required Widget child,
-  }) => Container(
-    decoration: BoxDecoration(
-      color: _TI.sheetSurface,
-      border: Border.all(color: _TI.sheetBorder),
-      borderRadius: BorderRadius.circular(2.w),
-    ),
-    padding: EdgeInsets.only(left:4.w, right:2.w, top:0.8.h, bottom:0.8.h),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label,
-          textScaler: const TextScaler.linear(1.0),
-          style: GoogleFonts.poppins(
-            fontSize: FontSize.s7,
-            color: _TI.sheetInkMid,
-            fontWeight: FontWeight.w400)),
-        SizedBox(height: 0.3.h),
-        child,
-      ],
-    ),
-  );
+  Widget _sheetInputContainer({required String label, required Widget child}) =>
+      Container(
+        decoration: BoxDecoration(
+          color: _TI.sheetSurface,
+          border: Border.all(color: _TI.sheetBorder),
+          borderRadius: BorderRadius.circular(2.w),
+        ),
+        padding: EdgeInsets.only(
+          left: 4.w,
+          right: 2.w,
+          top: 0.8.h,
+          bottom: 0.8.h,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              textScaler: const TextScaler.linear(1.0),
+              style: GoogleFonts.poppins(
+                fontSize: 7.sp,
+                color: _TI.sheetInkMid,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+            SizedBox(height: 0.3.h),
+            child,
+          ],
+        ),
+      );
 
   Widget _sheetTextField(
     TextEditingController controller, {
@@ -564,16 +635,14 @@ class _TravellerInformationScreenState
     FocusNode? focusNode,
     VoidCallback? onChanged,
   }) => MediaQuery(
-    data: MediaQuery.of(context)
-        .copyWith(textScaler: TextScaler.linear(1.0)),
+    data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(1.0)),
     child: TextField(
       controller: controller,
       keyboardType: keyboardType,
       focusNode: focusNode,
       maxLength: maxLength,
       onChanged: (_) => onChanged?.call(),
-      style: GoogleFonts.poppins(
-          fontSize: FontSize.s12, color: _TI.sheetInk),
+      style: GoogleFonts.poppins(fontSize: 12.sp, color: _TI.sheetInk),
       cursorColor: _TI.sheetAccent,
       decoration: const InputDecoration(
         border: InputBorder.none,
@@ -588,13 +657,12 @@ class _TravellerInformationScreenState
   void _showContactDetailsBottomSheet({bool isEdit = false}) {
     _userC.phoneNumberController.value.text =
         (isEdit && _userC.userProfileData.value.customer?.phone != null)
-            ? _userC.userProfileData.value.customer!.phone!
-                .replaceFirst('+91', '')
-            : '';
+        ? _userC.userProfileData.value.customer!.phone!.replaceFirst('+91', '')
+        : '';
     _userC.emailController.value.text =
         (isEdit && _userC.userProfileData.value.customer?.email != null)
-            ? _userC.userProfileData.value.customer!.email!
-            : '';
+        ? _userC.userProfileData.value.customer!.email!
+        : '';
 
     if (isEdit && _userC.userProfileData.value.customer?.state != null) {
       _userC.stateUpdateId.value =
@@ -613,7 +681,8 @@ class _TravellerInformationScreenState
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.55,
         margin: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom),
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
         decoration: BoxDecoration(
           color: _TI.sheetBg,
           borderRadius: BorderRadius.vertical(top: Radius.circular(5.w)),
@@ -621,19 +690,27 @@ class _TravellerInformationScreenState
         child: StatefulBuilder(
           builder: (context, setModalState) => Padding(
             padding: EdgeInsets.only(
-                left: 6.w, right: 6.w, top: 2.h, bottom: 2.h),
+              left: 6.w,
+              right: 6.w,
+              top: 2.h,
+              bottom: 2.h,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _sheetHandle(),
-                _sheetHeader(isEdit
-                    ? 'Edit Contact Details'
-                    : 'Add Contact Details'),
+                _sheetHeader(
+                  isEdit ? 'Edit Contact Details' : 'Add Contact Details',
+                ),
                 SizedBox(height: 0.5.h),
-                Text('Trip ticket details will be provided to',
+                Text(
+                  'Trip ticket details will be provided to',
                   textScaler: const TextScaler.linear(1.0),
                   style: GoogleFonts.poppins(
-                      fontSize: FontSize.s8, color: _TI.sheetInkMid)),
+                    fontSize: 8.sp,
+                    color: _TI.sheetInkMid,
+                  ),
+                ),
                 SizedBox(height: 2.h),
 
                 // Phone
@@ -643,42 +720,54 @@ class _TravellerInformationScreenState
                     border: Border.all(color: _TI.sheetBorder),
                     borderRadius: BorderRadius.circular(2.w),
                   ),
-                  child: Row(children: [
-                    Container(
-                      width: 27.w,
-                      padding: EdgeInsets.symmetric(vertical: 1.2.h),
-                      decoration: BoxDecoration(
-                        border: Border(right: BorderSide(
-                            color: _TI.sheetBorder, width: 1))),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Text('Country Code',
-                            textScaler: const TextScaler.linear(1.0),
-                            style: GoogleFonts.poppins(
-                              fontSize: FontSize.s7,
-                              color: _TI.sheetInkMid,
-                              fontWeight: FontWeight.w300)),
-                          SizedBox(height: 0.4.h),
-                          Text('+91 (IND)',
-                            textScaler: const TextScaler.linear(1.0),
-                            style: GoogleFonts.poppins(
-                              fontSize: FontSize.s10,
-                              fontWeight: FontWeight.w600,
-                              color: _TI.sheetInk)),
-                        ],
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 27.w,
+                        padding: EdgeInsets.symmetric(vertical: 1.2.h),
+                        decoration: BoxDecoration(
+                          border: Border(
+                            right: BorderSide(color: _TI.sheetBorder, width: 1),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Country Code',
+                              textScaler: const TextScaler.linear(1.0),
+                              style: GoogleFonts.poppins(
+                                fontSize: 7.sp,
+                                color: _TI.sheetInkMid,
+                                fontWeight: FontWeight.w300,
+                              ),
+                            ),
+                            SizedBox(height: 0.4.h),
+                            Text(
+                              '+91 (IND)',
+                              textScaler: const TextScaler.linear(1.0),
+                              style: GoogleFonts.poppins(
+                                fontSize: 10.sp,
+                                fontWeight: FontWeight.w600,
+                                color: _TI.sheetInk,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    Expanded(child: _sheetInputContainer(
-                      label: 'Phone Number',
-                      child: _sheetTextField(
-                        _userC.phoneNumberController.value,
-                        keyboardType: TextInputType.phone,
-                        maxLength: 10,
-                        onChanged: () => setModalState(() {}),
+                      Expanded(
+                        child: _sheetInputContainer(
+                          label: 'Phone Number',
+                          child: _sheetTextField(
+                            _userC.phoneNumberController.value,
+                            keyboardType: TextInputType.phone,
+                            maxLength: 10,
+                            onChanged: () => setModalState(() {}),
+                          ),
+                        ),
                       ),
-                    )),
-                  ]),
+                    ],
+                  ),
                 ),
                 SizedBox(height: 1.8.h),
 
@@ -704,38 +793,46 @@ class _TravellerInformationScreenState
                   child: Material(
                     color: Colors.transparent,
                     child: InkWell(
-                      onTap: () => _showStateSelectionBottomSheet(
-                          setModalState),
+                      onTap: () =>
+                          _showStateSelectionBottomSheet(setModalState),
                       borderRadius: BorderRadius.circular(2.w),
                       child: Padding(
                         padding: EdgeInsets.symmetric(
-                            horizontal: 4.w, vertical: 1.h),
+                          horizontal: 4.w,
+                          vertical: 1.h,
+                        ),
                         child: Row(
-                          mainAxisAlignment:
-                              MainAxisAlignment.spaceBetween,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('State of Residence',
-                                  textScaler:
-                                      const TextScaler.linear(1.0),
+                                Text(
+                                  'State of Residence',
+                                  textScaler: const TextScaler.linear(1.0),
                                   style: GoogleFonts.poppins(
-                                    fontSize: FontSize.s7,
+                                    fontSize: 7.sp,
                                     color: _TI.sheetInkMid,
-                                    fontWeight: FontWeight.w300)),
+                                    fontWeight: FontWeight.w300,
+                                  ),
+                                ),
                                 SizedBox(height: 0.25.h),
-                                Text(_selectedState,
-                                  textScaler:
-                                      const TextScaler.linear(1.0),
+                                Text(
+                                  _selectedState,
+                                  textScaler: const TextScaler.linear(1.0),
                                   style: GoogleFonts.poppins(
-                                    fontSize: FontSize.s11,
+                                    fontSize: 11.sp,
                                     fontWeight: FontWeight.w500,
-                                    color: _TI.sheetInk)),
+                                    color: _TI.sheetInk,
+                                  ),
+                                ),
                               ],
                             ),
-                            Icon(Icons.keyboard_arrow_down,
-                                color: _TI.sheetInkMid, size: 6.w),
+                            Icon(
+                              Icons.keyboard_arrow_down,
+                              color: _TI.sheetInkMid,
+                              size: 6.w,
+                            ),
                           ],
                         ),
                       ),
@@ -755,15 +852,18 @@ class _TravellerInformationScreenState
                       if (!context.mounted) return;
                       setState(() {});
                       Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text(
-                          isEdit
-                            ? 'Contact details updated successfully'
-                            : 'Contact details saved successfully',
-                          textScaler: const TextScaler.linear(1.0)),
-                        backgroundColor: CommonColors.completedColor,
-                        duration: const Duration(seconds: 2),
-                      ));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            isEdit
+                                ? 'Contact details updated successfully'
+                                : 'Contact details saved successfully',
+                            textScaler: const TextScaler.linear(1.0),
+                          ),
+                          backgroundColor: CommonColors.completedColor,
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
                     }
                   },
                 ),
@@ -780,8 +880,7 @@ class _TravellerInformationScreenState
     if (isEdit && traveller != null) {
       _userC.travellerId.value = traveller.id ?? 0;
       _userC.nameControllerTraveller.value.text = traveller.name ?? '';
-      _userC.ageControllerTraveller.value.text =
-          traveller.age.toString();
+      _userC.ageControllerTraveller.value.text = traveller.age.toString();
       _userC.selectedGender.value = traveller.gender ?? '';
     } else {
       _userC.travellerId.value = 0;
@@ -797,7 +896,8 @@ class _TravellerInformationScreenState
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.58,
         margin: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom),
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
         decoration: BoxDecoration(
           color: _TI.sheetBg,
           borderRadius: BorderRadius.vertical(top: Radius.circular(5.w)),
@@ -805,13 +905,16 @@ class _TravellerInformationScreenState
         child: StatefulBuilder(
           builder: (context, setModalState) => Padding(
             padding: EdgeInsets.only(
-                left: 6.w, right: 6.w, top: 2.h, bottom: 2.h),
+              left: 6.w,
+              right: 6.w,
+              top: 2.h,
+              bottom: 2.h,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _sheetHandle(),
-                _sheetHeader(
-                    isEdit ? 'Edit Traveller' : 'Add New Traveller'),
+                _sheetHeader(isEdit ? 'Edit Traveller' : 'Add New Traveller'),
                 SizedBox(height: 2.h),
 
                 _sheetInputContainer(
@@ -834,19 +937,24 @@ class _TravellerInformationScreenState
                 ),
                 SizedBox(height: 2.h),
 
-                Text('Gender',
+                Text(
+                  'Gender',
                   textScaler: const TextScaler.linear(1.0),
                   style: GoogleFonts.poppins(
-                    fontSize: FontSize.s11,
+                    fontSize: 11.sp,
                     fontWeight: FontWeight.w400,
-                    color: _TI.sheetInkMid)),
+                    color: _TI.sheetInkMid,
+                  ),
+                ),
                 SizedBox(height: 1.h),
 
-                Row(children: [
-                  _buildGenderButtonInSheet('Male',   setModalState),
-                  SizedBox(width: 3.w),
-                  _buildGenderButtonInSheet('Female', setModalState),
-                ]),
+                Row(
+                  children: [
+                    _buildGenderButtonInSheet('Male', setModalState),
+                    SizedBox(width: 3.w),
+                    _buildGenderButtonInSheet('Female', setModalState),
+                  ],
+                ),
                 SizedBox(height: 3.h),
 
                 CommonButton(
@@ -865,26 +973,31 @@ class _TravellerInformationScreenState
                       if (!isEdit) {
                         final adultCount = _trekC
                             .calculateFareRequestModel
-                            .value.travelerCount;
-                        final travelers = _userC.userProfileData.value
-                                .customer?.travelers ?? [];
+                            .value
+                            .travelerCount;
+                        final travelers =
+                            _userC.userProfileData.value.customer?.travelers ??
+                            [];
                         if (travelers.isNotEmpty) {
                           final newTraveler = travelers.last;
-                          final alreadySelected = selectedTravellers
-                              .any((t) => t.id == newTraveler.id);
+                          final alreadySelected = selectedTravellers.any(
+                            (t) => t.id == newTraveler.id,
+                          );
                           if (!alreadySelected &&
                               selectedTravellers.length < adultCount) {
                             setState(() {
                               selectedTravellers.add(newTraveler);
-                              _trekC.travellerDetailList.value =
-                                  List.from(selectedTravellers);
+                              _trekC.travellerDetailList.value = List.from(
+                                selectedTravellers,
+                              );
                               // Sync travelerCount so fare reflects the
                               // newly auto-selected traveller.
-                              _trekC.calculateFareRequestModel.value =
-                                  _trekC.calculateFareRequestModel.value
-                                      .copyWith(
-                                travelerCount: selectedTravellers.length,
-                              );
+                              _trekC.calculateFareRequestModel.value = _trekC
+                                  .calculateFareRequestModel
+                                  .value
+                                  .copyWith(
+                                    travelerCount: selectedTravellers.length,
+                                  );
                             });
                           }
                         }
@@ -894,15 +1007,18 @@ class _TravellerInformationScreenState
 
                       if (!context.mounted) return;
                       Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text(
-                          isEdit
-                            ? 'Traveller updated successfully'
-                            : 'Traveller added successfully',
-                          textScaler: const TextScaler.linear(1.0)),
-                        backgroundColor: CommonColors.completedColor,
-                        duration: const Duration(seconds: 2),
-                      ));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            isEdit
+                                ? 'Traveller updated successfully'
+                                : 'Traveller added successfully',
+                            textScaler: const TextScaler.linear(1.0),
+                          ),
+                          backgroundColor: CommonColors.completedColor,
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
                     }
                   },
                 ),
@@ -916,8 +1032,7 @@ class _TravellerInformationScreenState
 
   List<Traveler> _sortedAvailableTravellers() {
     final travelers = List<Traveler>.from(
-      _userC.userProfileData.value.customer?.travelers ??
-          const <Traveler>[],
+      _userC.userProfileData.value.customer?.travelers ?? const <Traveler>[],
     );
     travelers.sort((a, b) {
       final aS = selectedTravellers.any((t) => t.id == a.id);
@@ -933,8 +1048,7 @@ class _TravellerInformationScreenState
         _userC.selectedGender.value.toLowerCase() == gender.toLowerCase();
     return Expanded(
       child: GestureDetector(
-        onTap: () =>
-            setModalState(() => _userC.selectedGender.value = gender),
+        onTap: () => setModalState(() => _userC.selectedGender.value = gender),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           height: 5.5.h,
@@ -951,17 +1065,19 @@ class _TravellerInformationScreenState
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(gender,
+                Text(
+                  gender,
                   textScaler: const TextScaler.linear(1.0),
                   style: GoogleFonts.poppins(
-                    fontSize: FontSize.s11,
+                    fontSize: 11.sp,
                     fontWeight: FontWeight.w600,
-                    color: isSelected
-                        ? _TI.sheetInk
-                        : _TI.sheetInkMid)),
+                    color: isSelected ? _TI.sheetInk : _TI.sheetInkMid,
+                  ),
+                ),
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  width: 5.w, height: 5.w,
+                  width: 5.w,
+                  height: 5.w,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: isSelected ? _TI.teal : Colors.transparent,
@@ -970,9 +1086,13 @@ class _TravellerInformationScreenState
                         : Border.all(color: _TI.sheetBorder, width: 1.5),
                   ),
                   child: isSelected
-                      ? const Center(child: Icon(
-                          Icons.check_rounded,
-                          color: Colors.white, size: 12))
+                      ? const Center(
+                          child: Icon(
+                            Icons.check_rounded,
+                            color: Colors.white,
+                            size: 12,
+                          ),
+                        )
                       : null,
                 ),
               ],
@@ -987,59 +1107,79 @@ class _TravellerInformationScreenState
     final phone = _userC.phoneNumberController.value.text.trim();
     final email = _userC.emailController.value.text.trim();
 
-    if (phone.length != 10 ||
-        !RegExp(r'^[0-9]{10}$').hasMatch(phone)) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: const Text('Please enter a valid 10-digit phone number'),
-        backgroundColor: CommonColors.appRedColor));
+    if (phone.length != 10 || !RegExp(r'^[0-9]{10}$').hasMatch(phone)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please enter a valid 10-digit phone number'),
+          backgroundColor: CommonColors.appRedColor,
+        ),
+      );
       return false;
     }
     if (email.isEmpty ||
         !RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: const Text('Please enter a valid email address'),
-        backgroundColor: CommonColors.appRedColor));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please enter a valid email address'),
+          backgroundColor: CommonColors.appRedColor,
+        ),
+      );
       return false;
     }
     if (_userC.stateUpdateId.value == 0 ||
         _selectedState.isEmpty ||
         _selectedState == '-') {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: const Text('Please select your state of residence'),
-        backgroundColor: CommonColors.appRedColor));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please select your state of residence'),
+          backgroundColor: CommonColors.appRedColor,
+        ),
+      );
       return false;
     }
     return true;
   }
 
   bool _validateTravellerDetails() {
-    final name   = _userC.nameControllerTraveller.value.text.trim();
-    final age    = _userC.ageControllerTraveller.value.text.trim();
+    final name = _userC.nameControllerTraveller.value.text.trim();
+    final age = _userC.ageControllerTraveller.value.text.trim();
     final gender = _userC.selectedGender.value;
 
     if (name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: const Text('Please enter traveller name'),
-        backgroundColor: CommonColors.appRedColor));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please enter traveller name'),
+          backgroundColor: CommonColors.appRedColor,
+        ),
+      );
       return false;
     }
     if (age.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: const Text('Please enter traveller age'),
-        backgroundColor: CommonColors.appRedColor));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please enter traveller age'),
+          backgroundColor: CommonColors.appRedColor,
+        ),
+      );
       return false;
     }
     final ageVal = int.tryParse(age);
     if (ageVal == null || ageVal <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: const Text('Please enter a valid age'),
-        backgroundColor: CommonColors.appRedColor));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please enter a valid age'),
+          backgroundColor: CommonColors.appRedColor,
+        ),
+      );
       return false;
     }
     if (gender.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: const Text('Please select gender'),
-        backgroundColor: CommonColors.appRedColor));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please select gender'),
+          backgroundColor: CommonColors.appRedColor,
+        ),
+      );
       return false;
     }
     return true;
@@ -1057,111 +1197,157 @@ class _TravellerInformationScreenState
           SingleChildScrollView(
             physics: const ClampingScrollPhysics(),
             child: Padding(
-              padding:
-                  EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+              padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-
                   // ── Trip Summary ──────────────────────────────────────
                   _card(
                     index: 0,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _sectionHeader('Trip Summary',
-                            Icons.route_rounded),
+                        _sectionHeader('Trip Summary', Icons.route_rounded),
                         SizedBox(height: 2.h),
                         Container(
                           padding: EdgeInsets.symmetric(
-                              horizontal: 4.w, vertical: 1.5.h),
+                            horizontal: 4.w,
+                            vertical: 1.5.h,
+                          ),
                           decoration: BoxDecoration(
                             color: _TI.brand.withValues(alpha: 0.06),
                             borderRadius: BorderRadius.circular(3.w),
                             border: Border.all(
-                                color: _TI.brand.withValues(alpha: 0.15)),
-                          ),
-                          child: Row(children: [
-                            Expanded(child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('FROM',
-                                  textScaler: const TextScaler.linear(1.0),
-                                  style: TextStyle(fontFamily:'Poppins',
-                                    fontSize: FontSize.s7,
-                                    fontWeight: FontWeight.w600,
-                                    color: _TI.inkLight,
-                                    letterSpacing: 0.8)),
-                                SizedBox(height: 0.3.h),
-                                Text(_formatDate(travelData.startDate),
-                                  textScaler: const TextScaler.linear(1.0),
-                                  style: TextStyle(fontFamily:'Poppins',
-                                    fontSize: FontSize.s11,
-                                    fontWeight: FontWeight.w700,
-                                    color: _TI.ink)),
-                                Text(_dashboardC.fromController.value.text,
-                                  textScaler: const TextScaler.linear(1.0),
-                                  style: TextStyle(fontFamily:'Poppins',
-                                    fontSize: FontSize.s9,
-                                    color: _TI.inkMid)),
-                              ],
-                            )),
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 3.w, vertical: 0.8.h),
-                              decoration: BoxDecoration(
-                                color: _TI.brand,
-                                borderRadius: BorderRadius.circular(20)),
-                              child: Column(children: [
-                                Icon(Icons.swap_horiz_rounded,
-                                    color: Colors.white, size: 4.w),
-                                SizedBox(height: 0.2.h),
-                                Text(
-                                  '${travelData.durationDays}D|'
-                                  '${travelData.durationNights}N',
-                                  textScaler: const TextScaler.linear(1.0),
-                                  style: TextStyle(fontFamily:'Poppins',
-                                    fontSize: FontSize.s8,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.white)),
-                              ]),
+                              color: _TI.brand.withValues(alpha: 0.15),
                             ),
-                            Expanded(child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text('TO',
-                                  textScaler: const TextScaler.linear(1.0),
-                                  style: TextStyle(fontFamily:'Poppins',
-                                    fontSize: FontSize.s7,
-                                    fontWeight: FontWeight.w600,
-                                    color: _TI.inkLight,
-                                    letterSpacing: 0.8)),
-                                SizedBox(height: 0.3.h),
-                                Text(_calculateEndDate(
-                                    travelData.startDate,
-                                    travelData.durationDays),
-                                  textScaler: const TextScaler.linear(1.0),
-                                  style: TextStyle(fontFamily:'Poppins',
-                                    fontSize: FontSize.s11,
-                                    fontWeight: FontWeight.w700,
-                                    color: _TI.ink)),
-                                Text(_dashboardC.toController.value.text,
-                                  textScaler: const TextScaler.linear(1.0),
-                                  style: TextStyle(fontFamily:'Poppins',
-                                    fontSize: FontSize.s9,
-                                    color: _TI.inkMid)),
-                              ],
-                            )),
-                          ]),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'FROM',
+                                      textScaler: const TextScaler.linear(1.0),
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontSize: 7.sp,
+                                        fontWeight: FontWeight.w600,
+                                        color: _TI.inkLight,
+                                        letterSpacing: 0.8,
+                                      ),
+                                    ),
+                                    SizedBox(height: 0.3.h),
+                                    Text(
+                                      _formatDate(travelData.startDate),
+                                      textScaler: const TextScaler.linear(1.0),
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontSize: 11.sp,
+                                        fontWeight: FontWeight.w700,
+                                        color: _TI.ink,
+                                      ),
+                                    ),
+                                    Text(
+                                      _dashboardC.fromController.value.text,
+                                      textScaler: const TextScaler.linear(1.0),
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontSize: 9.sp,
+                                        color: _TI.inkMid,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 3.w,
+                                  vertical: 0.8.h,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: _TI.brand,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Icon(
+                                      Icons.swap_horiz_rounded,
+                                      color: Colors.white,
+                                      size: 4.w,
+                                    ),
+                                    SizedBox(height: 0.2.h),
+                                    Text(
+                                      '${travelData.durationDays}D|'
+                                      '${travelData.durationNights}N',
+                                      textScaler: const TextScaler.linear(1.0),
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontSize: 8.sp,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      'TO',
+                                      textScaler: const TextScaler.linear(1.0),
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontSize: 7.sp,
+                                        fontWeight: FontWeight.w600,
+                                        color: _TI.inkLight,
+                                        letterSpacing: 0.8,
+                                      ),
+                                    ),
+                                    SizedBox(height: 0.3.h),
+                                    Text(
+                                      _calculateEndDate(
+                                        travelData.startDate,
+                                        travelData.durationDays,
+                                      ),
+                                      textScaler: const TextScaler.linear(1.0),
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontSize: 11.sp,
+                                        fontWeight: FontWeight.w700,
+                                        color: _TI.ink,
+                                      ),
+                                    ),
+                                    Text(
+                                      _dashboardC.toController.value.text,
+                                      textScaler: const TextScaler.linear(1.0),
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontSize: 9.sp,
+                                        color: _TI.inkMid,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                         SizedBox(height: 1.5.h),
                         Text(
                           'A round-trip trek covering '
                           '${travelData.title ?? '-'}',
                           textScaler: const TextScaler.linear(1.0),
-                          style: TextStyle(fontFamily:'Poppins',
-                            fontSize: FontSize.s9,
-                            color: _TI.inkMid, height: 1.5)),
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 9.sp,
+                            color: _TI.inkMid,
+                            height: 1.5,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -1174,103 +1360,117 @@ class _TravellerInformationScreenState
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _sectionHeader('Travellers',
-                            Icons.people_outline_rounded),
+                        _sectionHeader(
+                          'Travellers',
+                          Icons.people_outline_rounded,
+                        ),
                         SizedBox(height: 2.h),
                         Container(
                           padding: EdgeInsets.symmetric(
-                              horizontal: 4.w, vertical: 1.5.h),
+                            horizontal: 4.w,
+                            vertical: 1.5.h,
+                          ),
                           decoration: BoxDecoration(
                             color: const Color(0xFFF8F9FF),
                             borderRadius: BorderRadius.circular(3.w),
                             border: Border.all(
-                                color: _TI.brand.withValues(alpha: 0.12)),
+                              color: _TI.brand.withValues(alpha: 0.12),
+                            ),
                           ),
                           child: Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment.spaceBetween,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('Adults',
-                                    textScaler:
-                                        const TextScaler.linear(1.0),
+                                  Text(
+                                    'Adults',
+                                    textScaler: const TextScaler.linear(1.0),
                                     style: TextStyle(
                                       fontFamily: 'Poppins',
-                                      fontSize: FontSize.s12,
+                                      fontSize: 12.sp,
                                       fontWeight: FontWeight.w600,
-                                      color: _TI.ink)),
-                                  Text('18+ years',
-                                    textScaler:
-                                        const TextScaler.linear(1.0),
+                                      color: _TI.ink,
+                                    ),
+                                  ),
+                                  Text(
+                                    '18+ years',
+                                    textScaler: const TextScaler.linear(1.0),
                                     style: TextStyle(
                                       fontFamily: 'Poppins',
-                                      fontSize: FontSize.s9,
-                                      color: _TI.inkMid)),
+                                      fontSize: 9.sp,
+                                      color: _TI.inkMid,
+                                    ),
+                                  ),
                                 ],
                               ),
                               Obx(() {
                                 final adultCount = _trekC
                                     .calculateFareRequestModel
-                                    .value.travelerCount;
-                                return Row(children: [
-                                  _counterBtn(Icons.remove, () {
-                                    setState(() {
-                                      if (adultCount > 1) {
-                                        _trekC.calculateFareRequestModel
-                                            .value = _trekC
-                                            .calculateFareRequestModel
-                                            .value.copyWith(
-                                                travelerCount:
-                                                    adultCount - 1);
-                                        if (selectedTravellers.length >
-                                            adultCount - 1) {
-                                          selectedTravellers =
-                                              selectedTravellers
-                                                  .take(adultCount - 1)
-                                                  .toList();
+                                    .value
+                                    .travelerCount;
+                                return Row(
+                                  children: [
+                                    _counterBtn(Icons.remove, () {
+                                      setState(() {
+                                        if (adultCount > 1) {
+                                          _trekC
+                                              .calculateFareRequestModel
+                                              .value = _trekC
+                                              .calculateFareRequestModel
+                                              .value
+                                              .copyWith(
+                                                travelerCount: adultCount - 1,
+                                              );
+                                          if (selectedTravellers.length >
+                                              adultCount - 1) {
+                                            selectedTravellers =
+                                                selectedTravellers
+                                                    .take(adultCount - 1)
+                                                    .toList();
+                                          }
                                         }
-                                      }
-                                    });
-                                    _trekC.trekPersonCount.value =
-                                        adultCount;
-                                    _trekC.travellerDetailList.value =
-                                        selectedTravellers;
-                                  }, active: adultCount > 1),
-                                  Padding(
-                                    padding: EdgeInsets.symmetric(
-                                        horizontal: 4.w),
-                                    child: TweenAnimationBuilder<double>(
-                                      tween: Tween(
+                                      });
+                                      _trekC.trekPersonCount.value = adultCount;
+                                      _trekC.travellerDetailList.value =
+                                          selectedTravellers;
+                                    }, active: adultCount > 1),
+                                    Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 4.w,
+                                      ),
+                                      child: TweenAnimationBuilder<double>(
+                                        tween: Tween(
                                           begin: adultCount.toDouble(),
-                                          end:   adultCount.toDouble()),
-                                      duration: const Duration(
-                                          milliseconds: 200),
-                                      builder: (_, v, __) => Text(
-                                        '$adultCount',
-                                        textScaler: const TextScaler
-                                            .linear(1.0),
-                                        style: TextStyle(
-                                          fontFamily: 'Poppins',
-                                          fontSize: FontSize.s16,
-                                          fontWeight: FontWeight.w700,
-                                          color: _TI.ink)),
+                                          end: adultCount.toDouble(),
+                                        ),
+                                        duration: const Duration(
+                                          milliseconds: 200,
+                                        ),
+                                        builder: (_, v, __) => Text(
+                                          '$adultCount',
+                                          textScaler: const TextScaler.linear(
+                                            1.0,
+                                          ),
+                                          style: TextStyle(
+                                            fontFamily: 'Poppins',
+                                            fontSize: 16.sp,
+                                            fontWeight: FontWeight.w700,
+                                            color: _TI.ink,
+                                          ),
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                  _counterBtn(Icons.add, () {
-                                    _trekC.calculateFareRequestModel
-                                        .value = _trekC
-                                        .calculateFareRequestModel
-                                        .value.copyWith(
-                                            travelerCount:
-                                                adultCount + 1);
-                                    _trekC.trekPersonCount.value =
-                                        adultCount;
-                                  },
-                                  active: true),
-                                ]);
+                                    _counterBtn(Icons.add, () {
+                                      _trekC.calculateFareRequestModel.value =
+                                          _trekC.calculateFareRequestModel.value
+                                              .copyWith(
+                                                travelerCount: adultCount + 1,
+                                              );
+                                      _trekC.trekPersonCount.value = adultCount;
+                                    }, active: true),
+                                  ],
+                                );
                               }),
                             ],
                           ),
@@ -1288,82 +1488,106 @@ class _TravellerInformationScreenState
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
-                          mainAxisAlignment:
-                              MainAxisAlignment.spaceBetween,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Expanded(child: _sectionHeader(
+                            Expanded(
+                              child: _sectionHeader(
                                 'Contact Details',
-                                Icons.contact_phone_outlined)),
+                                Icons.contact_phone_outlined,
+                              ),
+                            ),
                             GestureDetector(
-                              onTap: () =>
-                                  _showContactDetailsBottomSheet(
-                                isEdit: _userC.userProfileData.value
-                                            .customer?.email !=
+                              onTap: () => _showContactDetailsBottomSheet(
+                                isEdit:
+                                    _userC
+                                            .userProfileData
+                                            .value
+                                            .customer
+                                            ?.email !=
                                         null &&
-                                    _userC.userProfileData.value
-                                            .customer?.phone !=
+                                    _userC
+                                            .userProfileData
+                                            .value
+                                            .customer
+                                            ?.phone !=
                                         null,
                               ),
                               child: Container(
                                 padding: EdgeInsets.symmetric(
-                                    horizontal: 3.w, vertical: 0.5.h),
+                                  horizontal: 3.w,
+                                  vertical: 0.5.h,
+                                ),
                                 decoration: BoxDecoration(
                                   color: _TI.brand.withValues(alpha: 0.08),
-                                  borderRadius:
-                                      BorderRadius.circular(20),
+                                  borderRadius: BorderRadius.circular(20),
                                   border: Border.all(
-                                      color:
-                                          _TI.brand.withValues(alpha: 0.25)),
+                                    color: _TI.brand.withValues(alpha: 0.25),
+                                  ),
                                 ),
                                 child: Text(
-                                  (_userC.userProfileData.value.customer
+                                  (_userC
+                                                  .userProfileData
+                                                  .value
+                                                  .customer
                                                   ?.email !=
                                               null &&
-                                          _userC.userProfileData.value
-                                                  .customer?.phone !=
+                                          _userC
+                                                  .userProfileData
+                                                  .value
+                                                  .customer
+                                                  ?.phone !=
                                               null)
                                       ? 'Edit'
                                       : 'Add',
-                                  textScaler:
-                                      const TextScaler.linear(1.0),
+                                  textScaler: const TextScaler.linear(1.0),
                                   style: TextStyle(
                                     fontFamily: 'Poppins',
-                                    fontSize: FontSize.s9,
+                                    fontSize: 9.sp,
                                     fontWeight: FontWeight.w600,
-                                    color: _TI.brand)),
+                                    color: _TI.brand,
+                                  ),
+                                ),
                               ),
                             ),
                           ],
                         ),
                         SizedBox(height: 0.5.h),
-                        Text('Trip ticket details will be provided to',
+                        Text(
+                          'Trip ticket details will be provided to',
                           textScaler: const TextScaler.linear(1.0),
-                          style: TextStyle(fontFamily: 'Poppins',
-                              fontSize: FontSize.s8, color: _TI.inkMid)),
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 8.sp,
+                            color: _TI.inkMid,
+                          ),
+                        ),
                         SizedBox(height: 2.h),
-                        _infoRow(CommonImages.phone,
-                            _userC.userProfileData.value.customer?.phone
-                                ?? '-'),
-                        _infoRow(CommonImages.email,
-                            _userC.userProfileData.value.customer?.email
-                                ?? '-'),
+                        _infoRow(
+                          CommonImages.phone,
+                          _userC.userProfileData.value.customer?.phone ?? '-',
+                        ),
+                        _infoRow(
+                          CommonImages.email,
+                          _userC.userProfileData.value.customer?.email ?? '-',
+                        ),
                         _infoRow(
                           CommonImages.location4,
-                          _userC.userProfileData.value.customer?.state
-                                      ?.id !=
+                          _userC.userProfileData.value.customer?.state?.id !=
                                   null
-                              ? _dashboardC.stateList[_dashboardC
-                                          .stateList
-                                          .indexWhere((e) =>
-                                              e.id ==
-                                              _userC
-                                                  .userProfileData
-                                                  .value
-                                                  .customer
-                                                  ?.state
-                                                  ?.id)]
-                                      .name ??
-                                  '-'
+                              ? _dashboardC
+                                        .stateList[_dashboardC.stateList
+                                            .indexWhere(
+                                              (e) =>
+                                                  e.id ==
+                                                  _userC
+                                                      .userProfileData
+                                                      .value
+                                                      .customer
+                                                      ?.state
+                                                      ?.id,
+                                            )]
+                                        .name ??
+                                    '-'
                               : '-',
                         ),
                       ],
@@ -1379,37 +1603,45 @@ class _TravellerInformationScreenState
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
-                          mainAxisAlignment:
-                              MainAxisAlignment.spaceBetween,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Expanded(child: _sectionHeader(
+                            Expanded(
+                              child: _sectionHeader(
                                 'Traveller Details',
-                                Icons.badge_outlined)),
+                                Icons.badge_outlined,
+                              ),
+                            ),
                             GestureDetector(
-                              onTap: () => _showTravellerBottomSheet(
-                                  isEdit: false),
+                              onTap: () =>
+                                  _showTravellerBottomSheet(isEdit: false),
                               child: Container(
                                 padding: EdgeInsets.symmetric(
-                                    horizontal: 3.w, vertical: 0.5.h),
+                                  horizontal: 3.w,
+                                  vertical: 0.5.h,
+                                ),
                                 decoration: BoxDecoration(
                                   color: _TI.iconBadge,
-                                  borderRadius:
-                                      BorderRadius.circular(20)),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(Icons.add_rounded,
-                                        color: Colors.white,
-                                        size: 3.5.w),
+                                    Icon(
+                                      Icons.add_rounded,
+                                      color: Colors.white,
+                                      size: 3.5.w,
+                                    ),
                                     SizedBox(width: 1.w),
-                                    Text('Add New',
-                                      textScaler:
-                                          const TextScaler.linear(1.0),
+                                    Text(
+                                      'Add New',
+                                      textScaler: const TextScaler.linear(1.0),
                                       style: TextStyle(
                                         fontFamily: 'Poppins',
-                                        fontSize: FontSize.s9,
+                                        fontSize: 9.sp,
                                         fontWeight: FontWeight.w600,
-                                        color: Colors.white)),
+                                        color: Colors.white,
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -1420,330 +1652,351 @@ class _TravellerInformationScreenState
                         Obx(() {
                           final adultCount = _trekC
                               .calculateFareRequestModel
-                              .value.travelerCount;
+                              .value
+                              .travelerCount;
                           return Text(
                             'Select up to $adultCount '
                             'traveller${adultCount > 1 ? 's' : ''} '
                             '(${selectedTravellers.length}/$adultCount selected)',
                             textScaler: const TextScaler.linear(1.0),
-                            style: TextStyle(fontFamily: 'Poppins',
-                                fontSize: FontSize.s9,
-                                color: _TI.inkMid));
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 9.sp,
+                              color: _TI.inkMid,
+                            ),
+                          );
                         }),
                         SizedBox(height: 1.5.h),
 
-                        if (_userC.userProfileData.value.customer
-                                ?.travelers?.isEmpty ??
+                        if (_userC
+                                .userProfileData
+                                .value
+                                .customer
+                                ?.travelers
+                                ?.isEmpty ??
                             true)
                           GestureDetector(
-                            onTap: () => _showTravellerBottomSheet(
-                                isEdit: false),
+                            onTap: () =>
+                                _showTravellerBottomSheet(isEdit: false),
                             child: Container(
                               width: double.infinity,
-                              padding:
-                                  EdgeInsets.symmetric(vertical: 2.5.h),
+                              padding: EdgeInsets.symmetric(vertical: 2.5.h),
                               decoration: BoxDecoration(
                                 color: const Color(0xFFF8F9FF),
                                 borderRadius: BorderRadius.circular(3.w),
                                 border: Border.all(
                                   color: _TI.brand.withValues(alpha: 0.2),
-                                  width: 1.5),
+                                  width: 1.5,
+                                ),
                               ),
-                              child: Column(children: [
-                                SvgPicture.asset(CommonImages.adduser,
-                                    width: 10.w, height: 10.w),
-                                SizedBox(height: 1.h),
-                                Text('Tap to add traveller details',
-                                  textScaler:
-                                      const TextScaler.linear(1.0),
-                                  style: TextStyle(fontFamily: 'Poppins',
-                                    fontSize: FontSize.s11,
-                                    fontWeight: FontWeight.w500,
-                                    color: _TI.brand)),
-                              ]),
+                              child: Column(
+                                children: [
+                                  SvgPicture.asset(
+                                    CommonImages.adduser,
+                                    width: 10.w,
+                                    height: 10.w,
+                                  ),
+                                  SizedBox(height: 1.h),
+                                  Text(
+                                    'Tap to add traveller details',
+                                    textScaler: const TextScaler.linear(1.0),
+                                    style: TextStyle(
+                                      fontFamily: 'Poppins',
+                                      fontSize: 11.sp,
+                                      fontWeight: FontWeight.w500,
+                                      color: _TI.brand,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           )
                         else
-                          Builder(builder: (context) {
-                            final travelers =
-                                _sortedAvailableTravellers();
-                            return ListView.separated(
-                              shrinkWrap: true,
-                              physics:
-                                  const NeverScrollableScrollPhysics(),
-                              itemCount: travelers.length,
-                              separatorBuilder: (_, __) =>
-                                  SizedBox(height: 1.h),
-                              itemBuilder: (context, index) {
-                                final traveler = travelers[index];
-                                return _buildExistingTravellerItem(
-                                  travelData: traveler,
-                                  isSelected: selectedTravellers.any(
-                                      (t) => t.id == traveler.id),
-                                );
-                              },
-                            );
-                          }),
+                          Builder(
+                            builder: (context) {
+                              final travelers = _sortedAvailableTravellers();
+                              return ListView.separated(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: travelers.length,
+                                separatorBuilder: (_, __) =>
+                                    SizedBox(height: 1.h),
+                                itemBuilder: (context, index) {
+                                  final traveler = travelers[index];
+                                  return _buildExistingTravellerItem(
+                                    travelData: traveler,
+                                    isSelected: selectedTravellers.any(
+                                      (t) => t.id == traveler.id,
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          ),
                       ],
                     ),
                   ),
 
                   SizedBox(height: 2.h),
 
-                  // ── Free Cancellation ─────────────────────────────────
-                  Obx(() {
-                    final fareResp =
-                        _trekC.calculateFareResponseModel.value.maybeWhen(
-                      success: (r) => r, orElse: () => null);
-                    return Visibility(
-                      visible: fareResp?.allowCancellation ?? true,
-                      child: _card(
-                        index: 4,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _sectionHeader('Free Cancellation',
-                                Icons.shield_outlined),
-                            SizedBox(height: 1.5.h),
-                            RichText(
-                              textScaler: const TextScaler.linear(1.0),
-                              text: TextSpan(children: [
-                                TextSpan(
-                                  text:
-                                    'A fee of ₹90 per person will be '
-                                    'charged for a full refund on '
-                                    'cancellations made ',
-                                  style: TextStyle(fontFamily:'Poppins',
-                                    fontSize: FontSize.s9,
-                                    fontWeight: FontWeight.w300,
-                                    color: _TI.ink)),
-                                TextSpan(text: 'T&C',
-                                  style: TextStyle(fontFamily:'Poppins',
-                                    fontSize: FontSize.s9,
-                                    fontWeight: FontWeight.w600,
-                                    color: CommonColors.blueColor)),
-                                TextSpan(
-                                  text:
-                                    ' at least 24 hours prior to departure.',
-                                  style: TextStyle(fontFamily:'Poppins',
-                                    fontSize: FontSize.s9,
-                                    fontWeight: FontWeight.w300,
-                                    color: _TI.ink)),
-                              ]),
-                            ),
-                            SizedBox(height: 2.h),
-                            Obx(() {
-                              final freeCancellation = _trekC
-                                  .calculateFareRequestModel
-                                  .value
-                                  .addFreeCancellationProtection;
-                              return GestureDetector(
-                                onTap: () {
-                                  _trekC.calculateFareRequestModel.value =
-                                      _trekC.calculateFareRequestModel
-                                          .value.copyWith(
-                                    addFreeCancellationProtection:
-                                        !freeCancellation);
-                                  if (_trekC.calculateFareRequestModel
-                                      .value
-                                      .addFreeCancellationProtection) {
-                                    _showTickOverlay(context);
-                                  }
-                                },
-                                child: AnimatedContainer(
-                                  duration:
-                                      const Duration(milliseconds: 250),
-                                  padding: EdgeInsets.symmetric(
-                                      horizontal: 4.w, vertical: 1.5.h),
-                                  decoration: BoxDecoration(
-                                    color: freeCancellation
-                                        ? _TI.brand.withValues(alpha: 0.06)
-                                        : const Color(0xFFF8F9FF),
-                                    borderRadius:
-                                        BorderRadius.circular(3.w),
-                                    border: Border.all(
-                                      color: freeCancellation
-                                          ? _TI.brand.withValues(alpha: 0.3)
-                                          : _TI.divider),
-                                  ),
-                                  child: Row(children: [
-                                    AnimatedContainer(
-                                      key: _checkboxKey,
-                                      duration: const Duration(
-                                          milliseconds: 200),
-                                      width: 6.25.w,
-                                      height: 6.25.w,
-                                      decoration: BoxDecoration(
-                                        border: Border.all(
-                                          color: CommonColors
-                                              .lightBlueColor
-                                              .withValues(alpha: 0.7),
-                                          width: 0.5.w),
-                                        borderRadius:
-                                            BorderRadius.circular(5),
-                                        color: freeCancellation
-                                            ? CommonColors.blueColor
-                                            : Colors.white,
-                                      ),
-                                      child: freeCancellation
-                                          ? Icon(Icons.check,
-                                              size: 5.w,
-                                              color: Colors.white)
-                                          : null,
-                                    ),
-                                    SizedBox(width: 3.w),
-                                    Expanded(child: Text(
-                                      'I would like to choose the '
-                                      'free cancellation option',
-                                      textScaler:
-                                          const TextScaler.linear(1.0),
-                                      style: TextStyle(
-                                        fontFamily: 'Poppins',
-                                        fontSize: FontSize.s10,
-                                        fontWeight: FontWeight.w500,
-                                        color: _TI.ink))),
-                                  ]),
-                                ),
-                              );
-                            }),
-                          ],
-                        ),
-                      ),
-                    );
-                  }),
+                  // ── Free Cancellation (COMMENTED OUT) ─────────────────
+                  // Obx(() {
+                  //   final fareResp =
+                  //       _trekC.calculateFareResponseModel.value.maybeWhen(
+                  //     success: (r) => r, orElse: () => null);
+                  //   return Visibility(
+                  //     visible: fareResp?.allowCancellation ?? true,
+                  //     child: _card(
+                  //       index: 4,
+                  //       child: Column(
+                  //         crossAxisAlignment: CrossAxisAlignment.start,
+                  //         children: [
+                  //           _sectionHeader('Free Cancellation',
+                  //               Icons.shield_outlined),
+                  //           SizedBox(height: 1.5.h),
+                  //           RichText(
+                  //             textScaler: const TextScaler.linear(1.0),
+                  //             text: TextSpan(children: [
+                  //               TextSpan(
+                  //                 text:
+                  //                   'A fee of ₹90 per person will be '
+                  //                   'charged for a full refund on '
+                  //                   'cancellations made ',
+                  //                 style: TextStyle(fontFamily:'Poppins',
+                  //                   fontSize: 9.sp,
+                  //                   fontWeight: FontWeight.w300,
+                  //                   color: _TI.ink)),
+                  //               TextSpan(text: 'T&C',
+                  //                 style: TextStyle(fontFamily:'Poppins',
+                  //                   fontSize: 9.sp,
+                  //                   fontWeight: FontWeight.w600,
+                  //                   color: CommonColors.blueColor)),
+                  //               TextSpan(
+                  //                 text:
+                  //                   ' at least 24 hours prior to departure.',
+                  //                 style: TextStyle(fontFamily:'Poppins',
+                  //                   fontSize: 9.sp,
+                  //                   fontWeight: FontWeight.w300,
+                  //                   color: _TI.ink)),
+                  //             ]),
+                  //           ),
+                  //           SizedBox(height: 2.h),
+                  //           Obx(() {
+                  //             final freeCancellation = _trekC
+                  //                 .calculateFareRequestModel
+                  //                 .value
+                  //                 .addFreeCancellationProtection;
+                  //             return GestureDetector(
+                  //               onTap: () {
+                  //                 _trekC.calculateFareRequestModel.value =
+                  //                     _trekC.calculateFareRequestModel
+                  //                         .value.copyWith(
+                  //                   addFreeCancellationProtection:
+                  //                       !freeCancellation);
+                  //                 if (_trekC.calculateFareRequestModel
+                  //                     .value
+                  //                     .addFreeCancellationProtection) {
+                  //                   _showTickOverlay(context);
+                  //                 }
+                  //               },
+                  //               child: AnimatedContainer(
+                  //                 duration:
+                  //                     const Duration(milliseconds: 250),
+                  //                 padding: EdgeInsets.symmetric(
+                  //                     horizontal: 4.w, vertical: 1.5.h),
+                  //                 decoration: BoxDecoration(
+                  //                   color: freeCancellation
+                  //                       ? _TI.brand.withValues(alpha: 0.06)
+                  //                       : const Color(0xFFF8F9FF),
+                  //                   borderRadius:
+                  //                       BorderRadius.circular(3.w),
+                  //                   border: Border.all(
+                  //                     color: freeCancellation
+                  //                         ? _TI.brand.withValues(alpha: 0.3)
+                  //                         : _TI.divider),
+                  //                 ),
+                  //                 child: Row(children: [
+                  //                   AnimatedContainer(
+                  //                     key: _checkboxKey,
+                  //                     duration: const Duration(
+                  //                         milliseconds: 200),
+                  //                     width: 6.25.w,
+                  //                     height: 6.25.w,
+                  //                     decoration: BoxDecoration(
+                  //                       border: Border.all(
+                  //                         color: CommonColors
+                  //                             .lightBlueColor
+                  //                             .withValues(alpha: 0.7),
+                  //                         width: 0.5.w),
+                  //                       borderRadius:
+                  //                           BorderRadius.circular(5),
+                  //                       color: freeCancellation
+                  //                           ? CommonColors.blueColor
+                  //                           : Colors.white,
+                  //                     ),
+                  //                     child: freeCancellation
+                  //                         ? Icon(Icons.check,
+                  //                             size: 5.w,
+                  //                             color: Colors.white)
+                  //                         : null,
+                  //                   ),
+                  //                   SizedBox(width: 3.w),
+                  //                   Expanded(child: Text(
+                  //                     'I would like to choose the '
+                  //                     'free cancellation option',
+                  //                     textScaler:
+                  //                         const TextScaler.linear(1.0),
+                  //                     style: TextStyle(
+                  //                       fontFamily: 'Poppins',
+                  //                       fontSize: 10.sp,
+                  //                       fontWeight: FontWeight.w500,
+                  //                       color: _TI.ink))),
+                  //                 ]),
+                  //               ),
+                  //             );
+                  //           }),
+                  //         ],
+                  //       ),
+                  //     ),
+                  //   );
+                  // }),
+                  //
+                  // SizedBox(height: 2.h),
 
-                  SizedBox(height: 2.h),
-
-                  // ── Travel Insurance ──────────────────────────────────
-                  Obx(() {
-                    final selectedInsuranceOption = _trekC
-                        .calculateFareRequestModel.value.addInsurance;
-                    return _card(
-                      index: 5,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(children: [
-                            Container(
-                              width: 9.w, height: 9.w,
-                              decoration: BoxDecoration(
-                                color: _TI.iconBadge,
-                                borderRadius:
-                                    BorderRadius.circular(2.5.w)),
-                              child: ClipRRect(
-                                borderRadius:
-                                    BorderRadius.circular(2.5.w),
-                                child: Image.asset(CommonImages.logo,
-                                    fit: BoxFit.contain)),
-                            ),
-                            SizedBox(width: 3.w),
-                            Expanded(child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Travel Insurance',
-                                  textScaler:
-                                      const TextScaler.linear(1.0),
-                                  style: TextStyle(fontFamily:'Poppins',
-                                    fontSize: FontSize.s14,
-                                    fontWeight: FontWeight.w700,
-                                    color: _TI.ink)),
-                                Text(
-                                  'Secure your trek, enjoy the adventure',
-                                  textScaler:
-                                      const TextScaler.linear(1.0),
-                                  style: TextStyle(fontFamily:'Poppins',
-                                    fontSize: FontSize.s8,
-                                    color: _TI.inkMid)),
-                              ],
-                            )),
-                            GestureDetector(
-                              onTap: () {},
-                              child: Text('View covers',
-                                textScaler:
-                                    const TextScaler.linear(1.0),
-                                style: TextStyle(fontFamily:'Poppins',
-                                  fontSize: FontSize.s9,
-                                  fontWeight: FontWeight.w600,
-                                  color: CommonColors.blueColor)),
-                            ),
-                          ]),
-                          SizedBox(height: 2.h),
-                          _insuranceOption(
-                            title: 'Add Travel Insurance',
-                            subtitle: '₹80 for 1 Traveller',
-                            isSelected: selectedInsuranceOption == true,
-                            onTap: () => _trekC
-                                .calculateFareRequestModel.value = _trekC
-                                .calculateFareRequestModel.value
-                                .copyWith(addInsurance: true),
-                          ),
-                          SizedBox(height: 1.2.h),
-                          _insuranceOption(
-                            title: "Don't add Travel Insurance",
-                            isSelected: selectedInsuranceOption == false,
-                            onTap: () => _trekC
-                                .calculateFareRequestModel.value = _trekC
-                                .calculateFareRequestModel.value
-                                .copyWith(addInsurance: false),
-                          ),
-                        ],
-                      ),
-                    );
-                  }),
-
+                  // ── Travel Insurance (COMMENTED OUT) ───────────────────
+                  // Obx(() {
+                  //   final selectedInsuranceOption = _trekC
+                  //       .calculateFareRequestModel.value.addInsurance;
+                  //   return _card(
+                  //     index: 5,
+                  //     child: Column(
+                  //       crossAxisAlignment: CrossAxisAlignment.start,
+                  //       children: [
+                  //         Row(children: [
+                  //           Container(
+                  //             width: 9.w, height: 9.w,
+                  //             decoration: BoxDecoration(
+                  //               color: _TI.iconBadge,
+                  //               borderRadius:
+                  //                   BorderRadius.circular(2.5.w)),
+                  //             child: ClipRRect(
+                  //               borderRadius:
+                  //                   BorderRadius.circular(2.5.w),
+                  //               child: Image.asset(CommonImages.logo,
+                  //                   fit: BoxFit.contain)),
+                  //           ),
+                  //           SizedBox(width: 3.w),
+                  //           Expanded(child: Column(
+                  //             crossAxisAlignment: CrossAxisAlignment.start,
+                  //             children: [
+                  //               Text('Travel Insurance',
+                  //                 textScaler:
+                  //                     const TextScaler.linear(1.0),
+                  //                 style: TextStyle(fontFamily:'Poppins',
+                  //                   fontSize: 14.sp,
+                  //                   fontWeight: FontWeight.w700,
+                  //                   color: _TI.ink)),
+                  //               Text(
+                  //                 'Secure your trek, enjoy the adventure',
+                  //                 textScaler:
+                  //                     const TextScaler.linear(1.0),
+                  //                 style: TextStyle(fontFamily:'Poppins',
+                  //                   fontSize: 8.sp,
+                  //                   color: _TI.inkMid)),
+                  //             ],
+                  //           )),
+                  //           GestureDetector(
+                  //             onTap: () {},
+                  //             child: Text('View covers',
+                  //               textScaler:
+                  //                   const TextScaler.linear(1.0),
+                  //               style: TextStyle(fontFamily:'Poppins',
+                  //                 fontSize: 9.sp,
+                  //                 fontWeight: FontWeight.w600,
+                  //                 color: CommonColors.blueColor)),
+                  //           ),
+                  //         ]),
+                  //         SizedBox(height: 2.h),
+                  //         _insuranceOption(
+                  //           title: 'Add Travel Insurance',
+                  //           subtitle: '₹80 for 1 Traveller',
+                  //           isSelected: selectedInsuranceOption == true,
+                  //           onTap: () => _trekC
+                  //               .calculateFareRequestModel.value = _trekC
+                  //               .calculateFareRequestModel.value
+                  //               .copyWith(addInsurance: true),
+                  //         ),
+                  //         SizedBox(height: 1.2.h),
+                  //         _insuranceOption(
+                  //           title: "Don't add Travel Insurance",
+                  //           isSelected: selectedInsuranceOption == false,
+                  //           onTap: () => _trekC
+                  //               .calculateFareRequestModel.value = _trekC
+                  //               .calculateFareRequestModel.value
+                  //               .copyWith(addInsurance: false),
+                  //         ),
+                  //       ],
+                  //     ),
+                  //   );
+                  // }),
                   SizedBox(height: 2.h),
 
                   // ── Payment Options ───────────────────────────────────
-                  // FIX: Show the Payment Options card ONLY when the trek
-                  // has a flexible cancellation policy (id == 1). The
-                  // earlier condition (`!= 1`) hid it for flexible treks,
-                  // so users could never pick the "Pay ₹999" option and
-                  // the API kept receiving "standard".
+                  // Only show the Payment Options card for flexible policy treks.
                   if (_isFlexiblePolicy)
                     _card(
                       index: 6,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _sectionHeader('Payment Options',
-                              Icons.payment_outlined),
+                          _sectionHeader(
+                            'Payment Options',
+                            Icons.payment_outlined,
+                          ),
                           SizedBox(height: 0.5.h),
-                          Text("Lock your spot. Adventure's calling!",
+                          Text(
+                            "Lock your spot. Adventure's calling!",
                             textScaler: const TextScaler.linear(1.0),
-                            style: TextStyle(fontFamily:'Poppins',
-                                fontSize: FontSize.s9,
-                                color: _TI.inkMid)),
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 9.sp,
+                              color: _TI.inkMid,
+                            ),
+                          ),
                           SizedBox(height: 2.h),
+
+                          // Option 1: Partial Payment (Flexible)
                           _paymentOption(
                             title: 'Pay ₹999',
                             subtitle: _getTotalFareSubtitleText(),
-                            isSelected:
-                                _selectedPaymentOption == 'flexible',
+                            isSelected: _selectedPaymentOption == 'flexible',
+                            isEnabled:
+                                true, // Always enabled since card only shows for flexible
                             onTap: () {
-                              setState(() =>
-                                  _selectedPaymentOption = 'flexible');
-                              _trekC.calculateFareRequestModel.value =
-                                  _trekC.calculateFareRequestModel.value
-                                      .copyWith(
-                                          cancellationPolicyType:
-                                              'flexible');
+                              setState(
+                                () => _selectedPaymentOption = 'flexible',
+                              );
+                              _trekC.calculateFareRequestModel.value = _trekC
+                                  .calculateFareRequestModel
+                                  .value
+                                  .copyWith(cancellationPolicyType: 'flexible');
                             },
                           ),
                           SizedBox(height: 1.2.h),
+
+                          // Option 2: Full Payment (Standard)
                           _paymentOption(
                             title: 'Pay Full Payment',
-                            subtitle:
-                                'Secure your booking with full payment',
-                            isSelected:
-                                _selectedPaymentOption == 'standard',
+                            subtitle: 'Secure your booking with full payment',
+                            isSelected: _selectedPaymentOption == 'standard',
                             onTap: () {
-                              setState(() =>
-                                  _selectedPaymentOption = 'standard');
-                              _trekC.calculateFareRequestModel.value =
-                                  _trekC.calculateFareRequestModel.value
-                                      .copyWith(
-                                          cancellationPolicyType:
-                                              'standard');
+                              setState(
+                                () => _selectedPaymentOption = 'standard',
+                              );
+                              _trekC.calculateFareRequestModel.value = _trekC
+                                  .calculateFareRequestModel
+                                  .value
+                                  .copyWith(cancellationPolicyType: 'standard');
                             },
                           ),
                         ],
@@ -1757,14 +2010,19 @@ class _TravellerInformationScreenState
           ),
 
           // Loading overlay
-          Obx(() => _trekC.calculateFareResponseModel.value.maybeWhen(
-            loading: (_) => Container(
-              color: CommonColors.grey400,
-              child: Center(child: CircularProgressIndicator(
-                  color: CommonColors.blueColor)),
+          Obx(
+            () => _trekC.calculateFareResponseModel.value.maybeWhen(
+              loading: (_) => Container(
+                color: CommonColors.grey400,
+                child: Center(
+                  child: CircularProgressIndicator(
+                    color: CommonColors.blueColor,
+                  ),
+                ),
+              ),
+              orElse: () => const SizedBox(),
             ),
-            orElse: () => const SizedBox(),
-          )),
+          ),
         ],
       ),
     );
@@ -1787,32 +2045,54 @@ class _TravellerInformationScreenState
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Traveller Information',
+          Text(
+            'Traveller Information',
             textScaler: const TextScaler.linear(1.0),
-            style: TextStyle(fontFamily:'Poppins',
-              fontSize: FontSize.s13,
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 13.sp,
               fontWeight: FontWeight.w700,
-              color: _TI.ink)),
-          Row(children: [
-            if (_dashboardC.fromController.value.text.isNotEmpty)
-              Flexible(child: Text(
-                _dashboardC.fromController.value.text,
-                textScaler: const TextScaler.linear(1.0),
-                style: TextStyle(fontFamily:'Poppins',
-                    fontSize: FontSize.s9, color: _TI.inkMid))),
-            if (_dashboardC.fromController.value.text.isNotEmpty &&
-                _dashboardC.toController.value.text.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: Icon(Icons.arrow_forward_rounded,
-                    color: _TI.inkLight, size: 12)),
-            if (_dashboardC.toController.value.text.isNotEmpty)
-              Flexible(child: Text(
-                _dashboardC.toController.value.text,
-                textScaler: const TextScaler.linear(1.0),
-                style: TextStyle(fontFamily:'Poppins',
-                    fontSize: FontSize.s9, color: _TI.inkMid))),
-          ]),
+              color: _TI.ink,
+            ),
+          ),
+          Row(
+            children: [
+              if (_dashboardC.fromController.value.text.isNotEmpty)
+                Flexible(
+                  child: Text(
+                    _dashboardC.fromController.value.text,
+                    textScaler: const TextScaler.linear(1.0),
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 9.sp,
+                      color: _TI.inkMid,
+                    ),
+                  ),
+                ),
+              if (_dashboardC.fromController.value.text.isNotEmpty &&
+                  _dashboardC.toController.value.text.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Icon(
+                    Icons.arrow_forward_rounded,
+                    color: _TI.inkLight,
+                    size: 12,
+                  ),
+                ),
+              if (_dashboardC.toController.value.text.isNotEmpty)
+                Flexible(
+                  child: Text(
+                    _dashboardC.toController.value.text,
+                    textScaler: const TextScaler.linear(1.0),
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 9.sp,
+                      color: _TI.inkMid,
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ],
       ),
     );
@@ -1823,26 +2103,27 @@ class _TravellerInformationScreenState
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        boxShadow: [BoxShadow(
-          color: Colors.black.withValues(alpha: 0.08),
-          blurRadius: 12,
-          offset: const Offset(0, -3))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, -3),
+          ),
+        ],
       ),
       child: Obx(() {
-        final fareReqModel =
-            _trekC.calculateFareRequestModel.value;
-        final fareRespModel =
-            _trekC.calculateFareResponseModel.value.maybeWhen(
-          success: (r) => r, orElse: () => null);
+        final fareReqModel = _trekC.calculateFareRequestModel.value;
+        final fareRespModel = _trekC.calculateFareResponseModel.value.maybeWhen(
+          success: (r) => r,
+          orElse: () => null,
+        );
 
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-
             if (fareReqModel.travelerCount > 0)
               Container(
-                margin: const EdgeInsets.only(
-                    left: 27, right: 25, top: 14),
+                margin: const EdgeInsets.only(left: 27, right: 25, top: 14),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -1856,45 +2137,64 @@ class _TravellerInformationScreenState
                           onClose: () => Navigator.pop(context),
                         ),
                       ),
-                      child: Row(children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Total Fare',
-                              textScaler:
-                                  const TextScaler.linear(1.0),
-                              style: TextStyle(fontFamily:'Poppins',
-                                fontSize: FontSize.s10,
-                                fontWeight: FontWeight.w600,
-                                color: _TI.ink)),
-                            Text('Tax Included',
-                              textScaler:
-                                  const TextScaler.linear(1.0),
-                              style: TextStyle(fontFamily:'Poppins',
-                                  fontSize: FontSize.s8,
-                                  color: _TI.inkMid)),
-                          ],
-                        ),
-                        const SizedBox(width: 6),
-                        Icon(Icons.keyboard_arrow_down_rounded,
-                            size: 20, color: _TI.inkMid),
-                      ]),
+                      child: Row(
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Total Fare',
+                                textScaler: const TextScaler.linear(1.0),
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: 10.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: _TI.ink,
+                                ),
+                              ),
+                              Text(
+                                'Tax Included',
+                                textScaler: const TextScaler.linear(1.0),
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: 8.sp,
+                                  color: _TI.inkMid,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(width: 6),
+                          Icon(
+                            Icons.keyboard_arrow_down_rounded,
+                            size: 20,
+                            color: _TI.inkMid,
+                          ),
+                        ],
+                      ),
                     ),
                     RichText(
                       textScaler: const TextScaler.linear(1.0),
-                      text: TextSpan(children: [
-                        TextSpan(text: '₹ ',
-                          style: GoogleFonts.roboto(
-                            fontSize: FontSize.s15,
-                            fontWeight: FontWeight.w600,
-                            color: CommonColors.softGreen2)),
-                        TextSpan(
-                          text: '${fareRespModel?.breakdown?.amountToPayNow ?? "--"}',
-                          style: GoogleFonts.poppins(
-                            fontSize: FontSize.s16,
-                            fontWeight: FontWeight.w700,
-                            color: CommonColors.softGreen2)),
-                      ]),
+                      text: TextSpan(
+                        children: [
+                          TextSpan(
+                            text: '₹ ',
+                            style: GoogleFonts.roboto(
+                              fontSize: 15.sp,
+                              fontWeight: FontWeight.w600,
+                              color: CommonColors.softGreen2,
+                            ),
+                          ),
+                          TextSpan(
+                            text:
+                                '${fareRespModel?.breakdown?.amountToPayNow ?? "--"}',
+                            style: GoogleFonts.poppins(
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.w700,
+                              color: CommonColors.softGreen2,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -1903,37 +2203,30 @@ class _TravellerInformationScreenState
             if (fareReqModel.travelerCount > 0) SizedBox(height: 1.5.h),
 
             Padding(
-              padding: const EdgeInsets.only(
-                  left: 41, right: 41, bottom: 20),
+              padding: const EdgeInsets.only(left: 41, right: 41, bottom: 20),
               child: Obx(() {
                 final isFormValid =
-                    _trekC.calculateFareRequestModel.value
-                            .travelerCount > 0 &&
-                        _userC.userProfileData.value.customer?.email !=
-                            null &&
-                        _userC.userProfileData.value.customer?.phone !=
-                            null &&
-                        _userC.userProfileData.value.customer?.state
-                                ?.id !=
-                            null &&
-                        selectedTravellers.length >=
-                            _trekC.calculateFareRequestModel.value
-                                .travelerCount;
+                    _trekC.calculateFareRequestModel.value.travelerCount > 0 &&
+                    _userC.userProfileData.value.customer?.email != null &&
+                    _userC.userProfileData.value.customer?.phone != null &&
+                    _userC.userProfileData.value.customer?.state?.id != null &&
+                    selectedTravellers.length >=
+                        _trekC.calculateFareRequestModel.value.travelerCount;
 
                 return AnimatedScale(
                   scale: isFormValid ? 1.0 : 0.97,
                   duration: const Duration(milliseconds: 200),
                   child: CommonButton(
                     text: 'Pay Now',
-                    fontSize: FontSize.s14,
+                    fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
                     fontFamily: 'Poppins',
                     onPressed: () {
                       if (isFormValid) {
                         _trekC.createOrderRequestModel.value = _trekC
-                            .createOrderRequestModel.value.copyWith(
-                                travelers:
-                                    selectedTravellers.toList());
+                            .createOrderRequestModel
+                            .value
+                            .copyWith(travelers: selectedTravellers.toList());
                         _handlePayment(fareRespModel?.breakdown);
                       }
                     },
@@ -1953,19 +2246,21 @@ class _TravellerInformationScreenState
   }
 
   // ── HELPERS ───────────────────────────────────────────────────────────────
-  Widget _counterBtn(IconData icon, VoidCallback onTap,
-      {bool active = true}) {
+  Widget _counterBtn(IconData icon, VoidCallback onTap, {bool active = true}) {
     return _ScaleOnTap(
       onTap: onTap,
       child: Container(
-        width: 8.w, height: 8.w,
+        width: 8.w,
+        height: 8.w,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: active ? _TI.iconBadge : const Color(0xFFF1F5F9),
         ),
-        child: Icon(icon,
-            size: 4.w,
-            color: active ? Colors.white : _TI.inkLight),
+        child: Icon(
+          icon,
+          size: 4.w,
+          color: active ? Colors.white : _TI.inkLight,
+        ),
       ),
     );
   }
@@ -1987,53 +2282,70 @@ class _TravellerInformationScreenState
               : const Color(0xFFF8F9FF),
           borderRadius: BorderRadius.circular(3.w),
           border: Border.all(
-            color: isSelected
-                ? _TI.brand.withValues(alpha: 0.4)
-                : _TI.divider,
-            width: isSelected ? 1.5 : 1),
-        ),
-        child: Row(children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: 6.w, height: 6.w,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: isSelected
-                  ? CommonColors.radioBtnGradient
-                  : null,
-              border: isSelected
-                  ? null
-                  : Border.all(
-                      color: CommonColors.greyColor585858,
-                      width: 0.5.w),
-              color: Colors.white,
-            ),
-            child: isSelected
-                ? Center(child: Container(
-                    width: 2.w, height: 2.w,
-                    decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle)))
-                : null,
+            color: isSelected ? _TI.brand.withValues(alpha: 0.4) : _TI.divider,
+            width: isSelected ? 1.5 : 1,
           ),
-          SizedBox(width: 3.w),
-          Expanded(child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title,
-                textScaler: const TextScaler.linear(1.0),
-                style: TextStyle(fontFamily:'Poppins',
-                  fontSize: FontSize.s11,
-                  fontWeight: FontWeight.w500,
-                  color: _TI.ink)),
-              if (subtitle != null)
-                Text(subtitle,
-                  textScaler: const TextScaler.linear(1.0),
-                  style: TextStyle(fontFamily:'Poppins',
-                      fontSize: FontSize.s8, color: _TI.inkMid)),
-            ],
-          )),
-        ]),
+        ),
+        child: Row(
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 6.w,
+              height: 6.w,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: isSelected ? CommonColors.radioBtnGradient : null,
+                border: isSelected
+                    ? null
+                    : Border.all(
+                        color: CommonColors.greyColor585858,
+                        width: 0.5.w,
+                      ),
+                color: Colors.white,
+              ),
+              child: isSelected
+                  ? Center(
+                      child: Container(
+                        width: 2.w,
+                        height: 2.w,
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    )
+                  : null,
+            ),
+            SizedBox(width: 3.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    textScaler: const TextScaler.linear(1.0),
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w500,
+                      color: _TI.ink,
+                    ),
+                  ),
+                  if (subtitle != null)
+                    Text(
+                      subtitle,
+                      textScaler: const TextScaler.linear(1.0),
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 8.sp,
+                        color: _TI.inkMid,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -2043,63 +2355,89 @@ class _TravellerInformationScreenState
     required String subtitle,
     required bool isSelected,
     required VoidCallback onTap,
+    bool isEnabled = true,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding:
-            EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.8.h),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? _TI.brand.withValues(alpha: 0.05)
-              : const Color(0xFFF8F9FF),
-          borderRadius: BorderRadius.circular(3.w),
-          border: Border.all(
+    return Opacity(
+      opacity: isEnabled ? 1.0 : 0.45,
+      child: GestureDetector(
+        onTap: isEnabled ? onTap : null,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.8.h),
+          decoration: BoxDecoration(
             color: isSelected
-                ? _TI.brand.withValues(alpha: 0.4)
-                : _TI.divider,
-            width: isSelected ? 1.5 : 1),
-        ),
-        child: Row(children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: 6.w, height: 6.w,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: isSelected
-                  ? CommonColors.radioBtnGradient
-                  : null,
-              border: isSelected
-                  ? null
-                  : Border.all(
-                      color: CommonColors.greyColor585858,
-                      width: 0.5.w),
-              color: Colors.white,
+                ? _TI.brand.withValues(alpha: 0.05)
+                : const Color(0xFFF8F9FF),
+            borderRadius: BorderRadius.circular(3.w),
+            border: Border.all(
+              color: isSelected
+                  ? _TI.brand.withValues(alpha: 0.4)
+                  : _TI.divider,
+              width: isSelected ? 1.5 : 1,
             ),
-            child: isSelected
-                ? Center(child: Container(
-                    width: 2.w, height: 2.w,
-                    decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle)))
-                : null,
           ),
-          SizedBox(width: 3.w),
-          Column(crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
             children: [
-              Text(title,
-                textScaler: const TextScaler.linear(1.0),
-                style: TextStyle(fontFamily:'Poppins',
-                  fontSize: FontSize.s11,
-                  fontWeight: FontWeight.w600,
-                  color: _TI.ink)),
-              Text(subtitle,
-                textScaler: const TextScaler.linear(1.0),
-                style: TextStyle(fontFamily:'Poppins',
-                    fontSize: FontSize.s8, color: _TI.inkMid)),
-            ]),
-        ]),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 6.w,
+                height: 6.w,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: isSelected && isEnabled
+                      ? CommonColors.radioBtnGradient
+                      : null,
+                  border: isSelected && isEnabled
+                      ? null
+                      : Border.all(
+                          color: CommonColors.greyColor585858,
+                          width: 0.5.w,
+                        ),
+                  color: Colors.white,
+                ),
+                child: isSelected && isEnabled
+                    ? Center(
+                        child: Container(
+                          width: 2.w,
+                          height: 2.w,
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      )
+                    : null,
+              ),
+              SizedBox(width: 3.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      textScaler: const TextScaler.linear(1.0),
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w600,
+                        color: _TI.ink,
+                      ),
+                    ),
+                    Text(
+                      subtitle,
+                      textScaler: const TextScaler.linear(1.0),
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 8.sp,
+                        color: _TI.inkMid,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -2109,10 +2447,10 @@ class _TravellerInformationScreenState
     required bool isSelected,
   }) {
     return Obx(() {
-      final adultCount =
-          _trekC.calculateFareRequestModel.value.travelerCount;
-      final bool isTravellerSelected =
-          selectedTravellers.any((t) => t.id == travelData.id);
+      final adultCount = _trekC.calculateFareRequestModel.value.travelerCount;
+      final bool isTravellerSelected = selectedTravellers.any(
+        (t) => t.id == travelData.id,
+      );
 
       return AnimatedContainer(
         duration: const Duration(milliseconds: 220),
@@ -2126,111 +2464,141 @@ class _TravellerInformationScreenState
             color: isTravellerSelected
                 ? _TI.brand.withValues(alpha: 0.3)
                 : _TI.divider,
-            width: isTravellerSelected ? 1.5 : 1),
+            width: isTravellerSelected ? 1.5 : 1,
+          ),
           boxShadow: isTravellerSelected
-              ? [BoxShadow(
-                  color: _TI.brand.withValues(alpha: 0.08),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2))]
+              ? [
+                  BoxShadow(
+                    color: _TI.brand.withValues(alpha: 0.08),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
               : [],
         ),
         child: Padding(
-          padding: EdgeInsets.symmetric(
-              horizontal: 3.w, vertical: 1.h),
-          child: Row(children: [
-            SizedBox(
-              width: 24, height: 24,
-              child: Checkbox(
-                value: isTravellerSelected,
-                onChanged: (bool? value) async {
-                  final shouldSelect = value ?? false;
-                  HapticFeedback.selectionClick();
-                  setState(() {
-                    if (shouldSelect) {
-                      if (!selectedTravellers.any(
-                          (t) => t.id == travelData.id)) {
-                        selectedTravellers.add(travelData);
+          padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.h),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 24,
+                height: 24,
+                child: Checkbox(
+                  value: isTravellerSelected,
+                  onChanged: (bool? value) async {
+                    final shouldSelect = value ?? false;
+                    HapticFeedback.selectionClick();
+                    setState(() {
+                      if (shouldSelect) {
+                        if (!selectedTravellers.any(
+                          (t) => t.id == travelData.id,
+                        )) {
+                          selectedTravellers.add(travelData);
+                        }
+                      } else {
+                        selectedTravellers.removeWhere(
+                          (t) => t.id == travelData.id,
+                        );
                       }
-                    } else {
-                      selectedTravellers.removeWhere(
-                          (t) => t.id == travelData.id);
-                    }
-                    _trekC.travellerDetailList.value =
-                        List.from(selectedTravellers);
-                    // Sync travelerCount so fare is calculated for all
-                    // selected travellers, not just the stepper value.
-                    _trekC.calculateFareRequestModel.value =
-                        _trekC.calculateFareRequestModel.value.copyWith(
-                      travelerCount: selectedTravellers.length,
-                    );
-                  });
-                },
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(4)),
-                activeColor: _TI.brand,
+                      _trekC.travellerDetailList.value = List.from(
+                        selectedTravellers,
+                      );
+                      // Sync travelerCount so fare is calculated for all
+                      // selected travellers, not just the stepper value.
+                      _trekC.calculateFareRequestModel.value = _trekC
+                          .calculateFareRequestModel
+                          .value
+                          .copyWith(travelerCount: selectedTravellers.length);
+                    });
+                  },
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  activeColor: _TI.brand,
+                ),
               ),
-            ),
-            SizedBox(width: 3.w),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 220),
-              width: 9.w, height: 9.w,
-              decoration: BoxDecoration(
-                color: isTravellerSelected
-                    ? _TI.brand.withValues(alpha: 0.12)
-                    : const Color(0xFFE2E8F0),
-                shape: BoxShape.circle,
-              ),
-              child: Center(child: Text(
-                (travelData.name?.isNotEmpty == true)
-                    ? travelData.name![0].toUpperCase()
-                    : '?',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: FontSize.s12,
-                  fontWeight: FontWeight.w700,
-                  color: isTravellerSelected
-                      ? _TI.brand
-                      : _TI.inkMid))),
-            ),
-            SizedBox(width: 3.w),
-            Expanded(child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(travelData.name ?? '-',
-                  textScaler: const TextScaler.linear(1.0),
-                  style: TextStyle(fontFamily:'Poppins',
-                    fontSize: FontSize.s11,
-                    fontWeight: FontWeight.w600,
-                    color: _TI.ink)),
-                Text(
-                  '${travelData.gender ?? ''}, '
-                  '${travelData.age ?? ''}',
-                  textScaler: const TextScaler.linear(1.0),
-                  style: TextStyle(fontFamily:'Poppins',
-                    fontSize: FontSize.s9,
-                    color: _TI.inkMid)),
-              ],
-            )),
-            GestureDetector(
-              onTap: () => _showTravellerBottomSheet(
-                  traveller: travelData, isEdit: true),
-              child: Container(
-                padding: EdgeInsets.symmetric(
-                    horizontal: 2.5.w, vertical: 0.4.h),
+              SizedBox(width: 3.w),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                width: 9.w,
+                height: 9.w,
                 decoration: BoxDecoration(
-                  color: _TI.brand.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                      color: _TI.brand.withValues(alpha: 0.2))),
-                child: Text('Edit',
-                  textScaler: const TextScaler.linear(1.0),
-                  style: TextStyle(fontFamily:'Poppins',
-                    fontSize: FontSize.s9,
-                    fontWeight: FontWeight.w600,
-                    color: _TI.brand)),
+                  color: isTravellerSelected
+                      ? _TI.brand.withValues(alpha: 0.12)
+                      : const Color(0xFFE2E8F0),
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    (travelData.name?.isNotEmpty == true)
+                        ? travelData.name![0].toUpperCase()
+                        : '?',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w700,
+                      color: isTravellerSelected ? _TI.brand : _TI.inkMid,
+                    ),
+                  ),
+                ),
               ),
-            ),
-          ]),
+              SizedBox(width: 3.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      travelData.name ?? '-',
+                      textScaler: const TextScaler.linear(1.0),
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w600,
+                        color: _TI.ink,
+                      ),
+                    ),
+                    Text(
+                      '${travelData.gender ?? ''}, '
+                      '${travelData.age ?? ''}',
+                      textScaler: const TextScaler.linear(1.0),
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 9.sp,
+                        color: _TI.inkMid,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              GestureDetector(
+                onTap: () => _showTravellerBottomSheet(
+                  traveller: travelData,
+                  isEdit: true,
+                ),
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 2.5.w,
+                    vertical: 0.4.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _TI.brand.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: _TI.brand.withValues(alpha: 0.2)),
+                  ),
+                  child: Text(
+                    'Edit',
+                    textScaler: const TextScaler.linear(1.0),
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 9.sp,
+                      fontWeight: FontWeight.w600,
+                      color: _TI.brand,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       );
     });
@@ -2271,14 +2639,20 @@ class _ScaleOnTapState extends State<_ScaleOnTap>
     _ctrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 100),
-      lowerBound: 0.0, upperBound: 1.0,
+      lowerBound: 0.0,
+      upperBound: 1.0,
     );
-    _scale = Tween<double>(begin: 1.0, end: 0.88)
-        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+    _scale = Tween<double>(
+      begin: 1.0,
+      end: 0.88,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
   }
 
   @override
-  void dispose() { _ctrl.dispose(); super.dispose(); }
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
