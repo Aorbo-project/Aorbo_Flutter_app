@@ -23,10 +23,24 @@ class _DashboardMainState extends State<DashboardMain> {
   @override
   void initState() {
     super.initState();
-    _dashboardC = Get.put(DashboardController());
-    Get.put(TrekController());
-    Get.put(CouponController());
-    Get.put(UserController());
+    // permanent: true — these are app-session-wide singletons referenced via
+    // Get.find() from dozens of screens (traveller info, payment, account,
+    // booking flow). Without this, GetX's smart management can dispose them
+    // (and, on UserController/TrekController, the TextEditingControllers and
+    // in-flight order/payment state they hold) whenever it decides nothing
+    // currently on-screen depends on them — a screen still holding a cached
+    // reference then hits "used after being disposed" on next interaction.
+    _dashboardC = Get.put(DashboardController(), permanent: true);
+    final trekC = Get.put(TrekController(), permanent: true);
+    Get.put(CouponController(), permanent: true);
+    Get.put(UserController(), permanent: true);
+
+    // Every path into the dashboard (fresh OTP login or a relaunch that
+    // restores an existing session) passes through here — the one place
+    // that's guaranteed to run before the user could possibly reopen Razorpay
+    // checkout again. Fire-and-forget: see checkPendingOrderOnResume's own
+    // doc comment for why this must not block startup.
+    trekC.checkPendingOrderOnResume();
   }
 
   Widget _buildScreen(int index) {

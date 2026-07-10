@@ -24,6 +24,7 @@ import '../repository/api_result.dart';
 import '../repository/repository.dart';
 import '../repository/network_url.dart';
 import '../utils/auth_utils.dart';
+import '../utils/shared_preferences.dart';
 // import '../models/trekcard/trek_card_list_model.dart';
 
 class TrekController extends GetxController {
@@ -165,7 +166,7 @@ class TrekController extends GetxController {
             refundAmount:       d.refundAmount,
             refundApplicable:   d.refundApplicable,
             refundStatus:       'processed',
-            refundId:           data['refundId']?.toString() ?? d.refundId,
+            refundId:           data['refund_id']?.toString() ?? d.refundId, // backend sends snake_case
             refundSpeed:        d.refundSpeed,
             refundInitiatedAt:  d.refundInitiatedAt,
             refundProcessedAt:  data['settled_at']?.toString(), // backend sends snake_case
@@ -637,6 +638,16 @@ final response = await repository.postApiCall(
           orderNextActionParams.value = Map<String, dynamic>.from(
               response['next_action_params'] ?? {});
 
+          // Persist BEFORE Razorpay checkout opens (caller does that next) —
+          // not after success — so a killed/crashed app can find this on
+          // relaunch and ask the backend whether it already went through,
+          // instead of the user unknowingly attempting to pay twice.
+          final pendingOrderId = orderData.value.id;
+          if (pendingOrderId != null && pendingOrderId.toString().isNotEmpty) {
+            final pref = await SpUtil.getInstance();
+            await pref.putString(SpUtil.pendingOrderId, pendingOrderId.toString());
+          }
+
           logger.d(
             'TrekController createTrekOrder - next_action: ${orderNextAction.value}',
           );
@@ -691,6 +702,9 @@ final response = await repository.postApiCall(
           final nextAction = response['next_action'] ?? 'SHOW_BOOKING_CONFIRMED';
           hideLoaderDialog();
           if (nextAction == 'SHOW_BOOKING_CONFIRMED') {
+            // Booking is confirmed — nothing left to resume on next launch.
+            final pref = await SpUtil.getInstance();
+            await pref.remove(SpUtil.pendingOrderId);
             Get.offNamedUntil(
               '/payment-success',
               ModalRoute.withName('/dashboard'),
@@ -716,6 +730,89 @@ final response = await repository.postApiCall(
       return false;
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  /// Called once on app launch/resume (see DashboardMain.initState) — before
+  /// the user ever gets a chance to reopen Razorpay checkout again. If a
+  /// previous session created an order and then the app was killed/crashed
+  /// before verify-payment could run (network drop, OS reclaim, force-close),
+  /// this is the only way we'd otherwise find out whether that payment
+  /// actually went through.
+  ///
+  /// Deliberately silent — no loader, no snackbar on the common paths. This
+  /// runs in the background while the dashboard is already rendering; a
+  /// blocking dialog here would stall app startup for a case that mostly
+  /// resolves to "nothing to do".
+  Future<void> checkPendingOrderOnResume() async {
+    final pref = await SpUtil.getInstance();
+    final pendingOrderId = pref.getString(SpUtil.pendingOrderId);
+    if (pendingOrderId == null || pendingOrderId.isEmpty) return;
+
+    try {
+      final response = await repository.getApiCall(
+        url: NetworkUrl.orderStatus(pendingOrderId),
+      );
+
+      if (response == null || response['success'] != true) {
+        // 404 etc. — order isn't findable/ownable anymore; nothing left to
+        // resume. Clear it so we stop checking on every future launch.
+        await pref.remove(SpUtil.pendingOrderId);
+        return;
+      }
+
+      final status = response['data']?['status'] as String?;
+
+      switch (status) {
+        case 'paid':
+          // Payment succeeded server-side (client callback or the Razorpay
+          // webhook completed it) even though this device never found out.
+          await pref.remove(SpUtil.pendingOrderId);
+          logger.d('checkPendingOrderOnResume: order already paid — booking exists, nothing to reopen');
+          if (Get.context != null) {
+            CustomSnackBar.show(
+              Get.context!,
+              message: 'Your earlier booking payment was confirmed — check My Bookings.',
+            );
+          }
+          break;
+        case 'expired':
+        case 'refunded':
+          // Genuinely dead — safe to let the user start a fresh booking next time.
+          await pref.remove(SpUtil.pendingOrderId);
+          break;
+        case 'pending':
+        default:
+          // Still genuinely in flight (or an unrecognized shape) — leave the
+          // stored id in place and re-check on the next launch rather than
+          // guessing. Never auto-reopen Razorpay checkout from here.
+          break;
+      }
+    } catch (e) {
+      // Network failure / server error — unknown state, not a definitive
+      // answer. Keep the stored id so we try again next launch instead of
+      // silently discarding the one clue we have.
+      logger.w('checkPendingOrderOnResume failed: ${e.toString()}');
+    }
+  }
+
+  /// One-off order-status check for a specific order_id — used when
+  /// Razorpay's own checkout SDK reports an error, but that doesn't
+  /// guarantee the payment actually failed server-side (the webhook, or a
+  /// racing client call, may have already completed it). Returns the
+  /// `data` object (`{status, booking_id, booking_number, ...}`) on success,
+  /// or null if the check itself was inconclusive (network error, or the
+  /// order genuinely isn't found) — callers must treat null as "don't know",
+  /// not as "definitely failed".
+  Future<Map<String, dynamic>?> checkOrderStatus(String orderId) async {
+    if (orderId.isEmpty) return null;
+    try {
+      final response = await repository.getApiCall(url: NetworkUrl.orderStatus(orderId));
+      if (response == null || response['success'] != true) return null;
+      return response['data'] as Map<String, dynamic>?;
+    } catch (e) {
+      logger.w('checkOrderStatus failed: ${e.toString()}');
+      return null;
     }
   }
 

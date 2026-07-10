@@ -117,6 +117,10 @@ static String fetchCouponsForBatch({
   static const String addBooking = 'bookings/create-order';
   static const String verifyBooking = 'bookings/verify-payment';
 
+  // Called on app resume/restart if a locally-stored pending order_id exists,
+  // before ever reopening Razorpay checkout for it.
+  static String orderStatus(String orderId) => 'bookings/order-status/$orderId';
+
   static String bookingHistoryWithStatus({
     required int page,
     String? trekStatus,
