@@ -1,8 +1,10 @@
-import 'dart:math' as math;
 import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/controller/trek_controller.dart';
 import 'package:arobo_app/controller/user_controller.dart';
+import 'package:arobo_app/repository/repository.dart';
+import 'package:arobo_app/widgets/custom_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -11,43 +13,47 @@ import '../freezed_models/treks/trek_detail_model.dart';
 import '../freezed_models/treks/treks_model_data.dart';
 import '../utils/common_colors.dart';
 import '../utils/common_images.dart';
-import '../utils/common_trek_card.dart';
 import '../utils/common_images_card.dart';
 import '../utils/common_trek_details_bar.dart';
 import '../utils/common_btn.dart';
-import '../utils/screen_constants.dart';
 import '../widgets/cancellation_policy_widget.dart';
-import '../widgets/custom_network_image.dart';
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS
 // ─────────────────────────────────────────────
 class _C {
-  static const bg          = CommonColors.offWhiteColor;
-  static const cardBg      = CommonColors.whiteColor;
-  static const ink         = CommonColors.blackColor;
-  static const inkMid      = CommonColors.cFF6B7280;
-  static const inkLight    = CommonColors.grey_AEAEAE;
-  static const brand       = CommonColors.trek_route_color;    // deep blue #212199
-  static const teal        = CommonColors.cFF0F7B6C;
-  static const tealSoft    = CommonColors.cFFE6F5F3;
-  static const iconBadge   = CommonColors.cFF111827;           // dark black badge
-  static const divider     = CommonColors.trekroutecolorlight;
-  static const shadow      = CommonColors.c0A000000;
-  static const routeLine   = CommonColors.trekroutecolorlight;
+  static const bg = CommonColors.offWhiteColor;
+  static const cardBg = CommonColors.whiteColor;
+  static const ink = CommonColors.blackColor;
+  static const inkMid = CommonColors.cFF6B7280;
+  static const inkLight = CommonColors.grey_AEAEAE;
+  static const brand = CommonColors.trek_route_color;
+  static const teal = CommonColors.cFF0F7B6C;
+  static const tealSoft = CommonColors.cFFE6F5F3;
+  static const iconBadge = CommonColors.cFF111827;
+  static const divider = CommonColors.trekroutecolorlight;
+  static const shadow = CommonColors.c0A000000;
+  static const routeLine = CommonColors.trekroutecolorlight;
+  static const softTint = Color(0xFFF8F9FF);
+  static const danger = CommonColors.cFFDC2626;
 }
 
 // ─────────────────────────────────────────────
-//  STICKY HEADER DELEGATE — unchanged
+//  STICKY HEADER DELEGATE
 // ─────────────────────────────────────────────
 class _StickyTrekDetailsBarDelegate extends SliverPersistentHeaderDelegate {
   final Widget child;
   _StickyTrekDetailsBarDelegate({required this.child});
 
-  @override double get minExtent => 6.5.h;
-  @override double get maxExtent => 6.5.h;
-  @override bool shouldRebuild(_StickyTrekDetailsBarDelegate o) => true;
-  @override Widget build(BuildContext context, double shrinkOffset, bool overlaps) => child;
+  @override
+  double get minExtent => 6.5.h;
+  @override
+  double get maxExtent => 6.5.h;
+  @override
+  bool shouldRebuild(_StickyTrekDetailsBarDelegate o) => true;
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlaps) =>
+      child;
 }
 
 // ─────────────────────────────────────────────
@@ -62,26 +68,25 @@ class TrekDetailsScreen extends StatefulWidget {
 }
 
 class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
-
-  final TrekController     _trekC      = Get.find<TrekController>();
+  final TrekController _trekC = Get.find<TrekController>();
   final DashboardController _dashboardC = Get.find<DashboardController>();
-  final UserController      _userC      = Get.find<UserController>();
+  final UserController _userC = Get.find<UserController>();
 
   final ScrollController _scrollController = ScrollController();
-  final List<GlobalKey> _sectionKeys =
-      List.generate(8, (index) => GlobalKey());
+  final List<GlobalKey> _sectionKeys = List.generate(8, (index) => GlobalKey());
+  final GlobalKey _tabBarKey = GlobalKey();
 
-  int  _selectedTabIndex        = 0;
-  bool _showFullItinerary       = false;
-  bool _showFullFeatures        = false;
-  bool _showFullActivities      = false;
-  final bool _showFullOtherPolicies   = false;
-  bool _showFullReviews         = false;
-  String _selectedSortOption    = 'Recent Reviews';
+  int _selectedTabIndex = 0;
+  bool _showFullItinerary = false;
+  bool _showFullFeatures = false;
+  bool _showFullActivities = false;
+  bool _showFullReviews = false;
+  String _selectedSortOption = 'Recent Reviews';
   List<LatestReviews> _sortedReviews = [];
-  bool _isUserScrolling         = false;
+  bool _isUserScrolling = false;
 
-  // ── rating gradient — same as original ──────
+  bool _isFav = false;
+
   LinearGradient getRatingColor(double rating) {
     if (rating >= 3.0 && rating <= 3.8) {
       return const LinearGradient(
@@ -92,19 +97,26 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
         colors: [Color(0xFFFF6B3A), Color(0xFFFF6B3A)],
       );
     }
-    return const LinearGradient(
-      colors: [Color(0xFF19FA00), Color(0xFF4EE53D)],
-    );
+    return const LinearGradient(colors: [Color(0xFF19FA00), Color(0xFF4EE53D)]);
   }
 
   @override
   void initState() {
     super.initState();
+
+    // Make sure the tab bar starts highlighted on whichever section is
+    // actually rendered first, instead of always assuming "Trek Route".
+    final visibility = _sectionVisibilityFlags();
+    final firstVisible = visibility.indexWhere((v) => v);
+    _selectedTabIndex = firstVisible == -1 ? 0 : firstVisible;
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollController.addListener(_onScroll);
     });
-    _sortedReviews =
-        _trekC.trekDetailData.value.latestReviews ?? [];
+    _sortedReviews = _sortReviews(
+      _trekC.trekDetailData.value.latestReviews ?? [],
+      _selectedSortOption,
+    );
   }
 
   @override
@@ -114,148 +126,169 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
     super.dispose();
   }
 
-  // ── All scroll logic unchanged ───────────────
+  void _toggleFavorite() {
+    HapticFeedback.mediumImpact();
+    setState(() {
+      _isFav = !_isFav;
+    });
+  }
+
+  // ── Bulletproof Scroll Sync Logic ──────────
   void _onScroll() {
     if (!_scrollController.hasClients || _isUserScrolling) return;
-    final position    = _scrollController.position;
-    final vpHeight    = position.viewportDimension;
-    int  mostVisible  = _selectedTabIndex;
-    double maxVis     = 0;
-    const topBuffer   = 0.0;
+
+    final RenderBox? tabBarBox =
+        _tabBarKey.currentContext?.findRenderObject() as RenderBox?;
+    if (tabBarBox == null) return;
+
+    final double headerBottom =
+        tabBarBox.localToGlobal(Offset.zero).dy + tabBarBox.size.height;
+    int activeIndex = _selectedTabIndex;
 
     for (int i = 0; i < _sectionKeys.length; i++) {
       final key = _sectionKeys[i];
       if (key.currentContext == null) continue;
-      final box  = key.currentContext!.findRenderObject() as RenderBox;
-      final pos  = box.localToGlobal(Offset.zero);
-      final top  = pos.dy - topBuffer;
-      final h    = box.size.height;
-      final visT = math.max(0.0, top);
-      final visB = math.min(vpHeight, top + h);
-      double vis = visB - visT;
-      if (top < vpHeight * 0.5) vis *= 1.5;
-      if (vis > maxVis) { maxVis = vis; mostVisible = i; }
+
+      final RenderBox box = key.currentContext!.findRenderObject() as RenderBox;
+      final Offset pos = box.localToGlobal(Offset.zero);
+
+      if (pos.dy <= headerBottom + 10) {
+        activeIndex = i;
+      } else {
+        break;
+      }
     }
-    if (mostVisible != _selectedTabIndex) {
-      setState(() => _selectedTabIndex = mostVisible);
+
+    if (activeIndex != _selectedTabIndex) {
+      setState(() => _selectedTabIndex = activeIndex);
     }
   }
 
   void _scrollToSection(int index) {
-    if (index >= _sectionKeys.length) return;
-    _isUserScrolling = true;
-    setState(() => _selectedTabIndex = index);
-    _scrollToSectionWithRendering(index);
-  }
+    if (index < 0 || index >= _sectionKeys.length) return;
 
-  void _scrollToSectionWithRendering(int index) {
-    final offsets = [0, 45.h, 90.h, 135.h, 180.h, 225.h, 270.h, 315.h];
-    final target  = (index < offsets.length ? offsets[index] : index * 45.h)
-        .clamp(0.0, _scrollController.position.maxScrollExtent);
-    _scrollController
-        .animateTo(target.toDouble(),
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOut)
-        .then((_) {
-      Future.delayed(const Duration(milliseconds: 200), () {
-        _attemptPreciseScroll(index, 0);
-      });
+    // Some tabs correspond to sections that have no data and therefore
+    // never get mounted (their GlobalKey has no context). Tapping those
+    // used to silently do nothing — instead, redirect to the nearest
+    // section that actually exists so the tap always has visible effect.
+    int targetIndex = index;
+    if (_sectionKeys[targetIndex].currentContext == null) {
+      int forward = targetIndex + 1;
+      int backward = targetIndex - 1;
+      while (forward < _sectionKeys.length || backward >= 0) {
+        if (forward < _sectionKeys.length &&
+            _sectionKeys[forward].currentContext != null) {
+          targetIndex = forward;
+          break;
+        }
+        if (backward >= 0 && _sectionKeys[backward].currentContext != null) {
+          targetIndex = backward;
+          break;
+        }
+        forward++;
+        backward--;
+      }
+    }
+
+    if (_sectionKeys[targetIndex].currentContext == null) return;
+
+    _isUserScrolling = true;
+    setState(() => _selectedTabIndex = targetIndex);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final keyContext = _sectionKeys[targetIndex].currentContext;
+      final tabBarContext = _tabBarKey.currentContext;
+
+      if (keyContext != null && tabBarContext != null) {
+        final RenderBox box = keyContext.findRenderObject() as RenderBox;
+        final RenderBox tabBarBox =
+            tabBarContext.findRenderObject() as RenderBox;
+
+        final double headerBottom =
+            tabBarBox.localToGlobal(Offset.zero).dy + tabBarBox.size.height;
+        final double target =
+            _scrollController.offset +
+            box.localToGlobal(Offset.zero).dy -
+            headerBottom;
+
+        final double maxExtent = _scrollController.position.hasContentDimensions
+            ? _scrollController.position.maxScrollExtent
+            : target.clamp(0.0, double.infinity);
+
+        _scrollController
+            .animateTo(
+              target.clamp(0.0, maxExtent),
+              duration: const Duration(milliseconds: 400),
+              curve: Curves.easeInOut,
+            )
+            .then((_) {
+              _isUserScrolling = false;
+            });
+      } else {
+        _isUserScrolling = false;
+      }
     });
   }
 
-  void _attemptPreciseScroll(int index, int attempts) {
-    if (attempts >= 3) { _isUserScrolling = false; return; }
-    final key = _sectionKeys[index];
-    if (key.currentContext != null) {
+  List<LatestReviews> _sortReviews(List<LatestReviews> src, String option) {
+    final list = [...src];
+    DateTime parse(String? d) {
+      if (d == null || d.isEmpty) return DateTime(1970);
       try {
-        final box    = key.currentContext!.findRenderObject() as RenderBox;
-        final pos    = box.localToGlobal(Offset.zero);
-        final target = (_scrollController.offset + pos.dy - 18.h)
-            .clamp(0.0, _scrollController.position.maxScrollExtent);
-        _scrollController
-            .animateTo(target.toDouble(),
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeOut)
-            .then((_) => _isUserScrolling = false);
+        return DateTime.parse(d);
       } catch (_) {
-        Future.delayed(const Duration(milliseconds: 100), () =>
-            _attemptPreciseScroll(index, attempts + 1));
+        return DateTime(1970);
       }
-    } else {
-      Future.delayed(const Duration(milliseconds: 100), () =>
-          _attemptPreciseScroll(index, attempts + 1));
     }
-  }
 
-  String _formatReviewDate(String date) {
-    final d = DateFormat('dd/MM/yyyy').parse(date);
-    return DateFormat('dd MMM yyyy').format(d);
+    switch (option) {
+      case 'High to Low Ratings':
+        list.sort((a, b) => (b.ratingValue ?? 0).compareTo(a.ratingValue ?? 0));
+        break;
+      case 'Low to High Ratings':
+        list.sort((a, b) => (a.ratingValue ?? 0).compareTo(b.ratingValue ?? 0));
+        break;
+      case 'Solo Traveller':
+        list.sort(
+          (a, b) => (a.customerName ?? '').compareTo(b.customerName ?? ''),
+        );
+        break;
+      case 'Recent Reviews':
+      default:
+        list.sort((a, b) => parse(b.createdAt).compareTo(parse(a.createdAt)));
+        break;
+    }
+    return list;
   }
 
   IconData _getIconForPolicy(String name) {
     switch (name) {
-      case 'no_drinks':            return Icons.no_drinks;
-      case 'schedule':             return Icons.schedule;
-      case 'cancel_schedule_send': return Icons.cancel_schedule_send;
-      case 'attach_money':         return Icons.attach_money;
-      case 'phone_in_talk':        return Icons.phone_in_talk;
-      case 'person_pin_circle':    return Icons.person_pin_circle;
-      default:                     return Icons.info_outline;
+      case 'Trekking Rules':
+        return Icons.terrain_rounded;
+      case 'Emergency Protocols':
+        return Icons.health_and_safety_rounded;
+      case 'Organizer Notes':
+        return Icons.notes_rounded;
+      default:
+        return Icons.info_outline;
     }
   }
 
-  // ─────────────────────────────────────────────
-  //  BUILD
-  // ─────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    ScreenConstant.setScreenAwareConstant(context);
-
     return Scaffold(
       backgroundColor: _C.bg,
-      appBar: _buildAppBar(),
-      bottomNavigationBar: _buildBottomBar(),
       body: CustomScrollView(
         controller: _scrollController,
         physics: const ClampingScrollPhysics(),
         slivers: [
-          // ── Trek card ───────────────────────
-          SliverToBoxAdapter(
-            child: Container(
-              margin: EdgeInsets.only(bottom: 0.5.h),
-              decoration: BoxDecoration(
-                color: _C.cardBg,
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(3.w),
-                  bottomRight: Radius.circular(3.w),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: CommonColors.shadowColor.withValues(alpha: 0.15),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Container(
-                width: 100.w,
-                margin: EdgeInsets.only(top: 1.5.h, bottom: 1.2.h),
-                child: CommonTrekCard(
-                  trek: widget.trek,
-                  showShare: true,
-                ),
-              ),
-            ),
-          ),
-
-          // ── Photo gallery ───────────────────
+          _buildSliverAppBar(),
           if (_trekC.trekDetailData.value.images != null &&
               _trekC.trekDetailData.value.images!.isNotEmpty)
             SliverToBoxAdapter(
               child: Container(
                 width: 100.w,
-                margin: EdgeInsets.only(
-                    top: 2.h, left: 4.w, bottom: 1.5.h),
+                margin: EdgeInsets.only(top: 1.h, left: 4.w, bottom: 1.h),
                 child: GestureDetector(
                   onTap: () => _showImageViewer(
                     context,
@@ -266,7 +299,8 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                     0,
                   ),
                   child: CommonImageCard(
-                    images: _trekC.trekDetailData.value.images
+                    images:
+                        _trekC.trekDetailData.value.images
                             ?.map((e) => e.url ?? '')
                             .toList() ??
                         [],
@@ -274,18 +308,23 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                 ),
               ),
             ),
-
-          // ── Sticky tab bar ──────────────────
           SliverPersistentHeader(
             pinned: true,
             delegate: _StickyTrekDetailsBarDelegate(
               child: Container(
+                key: _tabBarKey,
                 width: 100.w,
                 color: _C.cardBg,
                 child: Container(
                   margin: EdgeInsets.symmetric(horizontal: 2.w),
                   child: Center(
                     child: CommonTrekDetailsBar(
+                      // Keying on the selected index forces this widget to
+                      // rebuild fresh whenever the active tab changes, so
+                      // its highlighted state always matches scroll
+                      // position / taps instead of getting stuck on the
+                      // value it was first constructed with.
+                      key: ValueKey(_selectedTabIndex),
                       onTabSelected: _scrollToSection,
                       initialIndex: _selectedTabIndex,
                     ),
@@ -294,115 +333,141 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
               ),
             ),
           ),
-
-          // ── Section list ────────────────────
-          SliverList(
-            delegate: SliverChildListDelegate([
-              SizedBox(height: 1.h),
-              _sectionWrapper(0,
-                  visible: _trekC.trekDetailData.value.trekStages?.isNotEmpty == true,
-                  child: TrekRouteTab(trek: _trekC.trekDetailData.value)),
-              SizedBox(height: 1.5.h),
-              _sectionWrapper(1,
-                  visible: _trekC.trekDetailData.value.itineraryItems?.isNotEmpty == true,
-                  child: _buildItineraryTab()),
-              SizedBox(height: 1.5.h),
-              _sectionWrapper(2,
-                  visible: _trekC.trekDetailData.value.activities?.isNotEmpty == true,
-                  child: _buildActivitiesTab()),
-              SizedBox(height: 1.5.h),
-              _sectionWrapper(3,
-                  visible: _trekC.trekDetailData.value.accommodations?.isNotEmpty == true,
-                  child: _buildResortsTab()),
-              SizedBox(height: 1.5.h),
-              _sectionWrapper(4,
-                  visible: _trekC.trekDetailData.value.inclusions?.isNotEmpty == true,
-                  child: _buildFeaturesTab()),
-              SizedBox(height: 1.5.h),
-              _sectionWrapper(5,
-                  visible: _trekC.trekDetailData.value.latestReviews?.isNotEmpty == true,
-                  child: _buildReviewsTab()),
-              SizedBox(height: 1.5.h),
-              _sectionWrapper(6,
-                  visible: _trekC.trekDetailData.value.cancellationPolicy?.rules?.isNotEmpty == true,
-                  child: _buildCancellationPoliciesTab()),
-              SizedBox(height: 1.5.h),
-              _sectionWrapper(7,
-                  visible: (_trekC.trekDetailData.value.trekkingRules?.isNotEmpty == true) ||
-                      (_trekC.trekDetailData.value.emergencyProtocols?.isNotEmpty == true) ||
-                      (_trekC.trekDetailData.value.organizerNotes?.isNotEmpty == true),
-                  child: _buildOtherPoliciesTab()),
-              SizedBox(height: 3.h),
-            ]),
-          ),
+          SliverList(delegate: SliverChildListDelegate(_buildSections())),
         ],
       ),
+      bottomNavigationBar: _buildBottomBar(),
     );
   }
 
   // ─────────────────────────────────────────────
-  //  APP BAR
+  //  PERSISTENT APP BAR
   // ─────────────────────────────────────────────
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
+  Widget _buildSliverAppBar() {
+    final trek = widget.trek;
+
+    return SliverAppBar(
       backgroundColor: _C.cardBg,
       elevation: 0,
-      scrolledUnderElevation: 0,
-      surfaceTintColor: Colors.transparent,
-      automaticallyImplyLeading: true,
-      iconTheme: const IconThemeData(color: _C.ink),
+      pinned: true,
+      automaticallyImplyLeading: false,
       titleSpacing: 0,
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(1),
-        child: Container(height: 1, color: _C.divider),
-      ),
-      title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            _trekC.trekDetailData.value.title ?? '--',
-            textScaler: const TextScaler.linear(1.0),
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: FontSize.s12,
-              fontWeight: FontWeight.w600,
-              color: _C.ink,
+      toolbarHeight: 8.h,
+      title: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 4.w),
+        child: Row(
+          children: [
+            GestureDetector(
+              onTap: () => Get.back(),
+              child: Icon(Icons.arrow_back_rounded, color: _C.ink, size: 6.w),
             ),
-          ),
-          Row(
-            children: [
-              Text(
-                _dashboardC.fromController.value.text,
-                textScaler: const TextScaler.linear(1.0),
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: FontSize.s9,
-                  color: _C.inkMid,
-                ),
+            SizedBox(width: 3.w),
+            Container(
+              width: 7.w,
+              height: 7.w,
+              decoration: const BoxDecoration(
+                color: _C.tealSoft,
+                shape: BoxShape.circle,
               ),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 1.w),
-                child: Icon(Icons.arrow_forward_rounded,
-                    color: _C.inkLight, size: 3.5.w),
+              clipBehavior: Clip.antiAlias,
+              child: trek?.vendorLogo?.isNotEmpty == true
+                  ? CustomNetworkImage(
+                      accessToken: Repository.token,
+                      imageUrl: trek?.vendorLogo ?? "",
+                      fit: BoxFit.cover,
+                      width: 7.w,
+                      height: 7.w,
+                    )
+                  : Center(
+                      child: Text(
+                        (trek?.companyName?.isNotEmpty == true
+                                ? trek!.companyName![0]
+                                : '?')
+                            .toUpperCase(),
+                        style: const TextStyle(
+                          color: _C.teal,
+                          fontWeight: FontWeight.w800,
+                          fontFamily: 'Poppins',
+                        ),
+                      ),
+                    ),
+            ),
+            SizedBox(width: 3.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    trek?.name ?? '-',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textScaler: const TextScaler.linear(1.0),
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 12.0.sp,
+                      fontWeight: FontWeight.w700,
+                      color: _C.ink,
+                      height: 1.2,
+                    ),
+                  ),
+                  Text(
+                    trek?.companyName ??
+                        trek?.businessName ??
+                        trek?.vendor ??
+                        '-',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textScaler: const TextScaler.linear(1.0),
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 9.0.sp,
+                      fontWeight: FontWeight.w500,
+                      color: _C.inkMid,
+                      height: 1.2,
+                    ),
+                  ),
+                ],
               ),
-              Text(
-                _dashboardC.toController.value.text,
-                textScaler: const TextScaler.linear(1.0),
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: FontSize.s9,
-                  color: _C.inkMid,
-                ),
+            ),
+            GestureDetector(
+              onTap: () async {
+                final title = trek?.name ?? 'this amazing trek';
+                final id = trek?.id ?? '';
+                final link = '[aroboapp.com](https://aroboapp.com/trek/$id)';
+                await Clipboard.setData(
+                  ClipboardData(text: 'Check out $title: $link'),
+                );
+                Get.snackbar(
+                  'Link Copied',
+                  'Trek link copied to clipboard!',
+                  snackPosition: SnackPosition.BOTTOM,
+                  backgroundColor: Colors.black87,
+                  colorText: Colors.white,
+                  margin: const EdgeInsets.all(10),
+                  borderRadius: 8,
+                  duration: const Duration(seconds: 2),
+                );
+              },
+              child: Icon(Icons.ios_share, color: _C.ink, size: 6.w),
+            ),
+            SizedBox(width: 4.w),
+            GestureDetector(
+              onTap: _toggleFavorite,
+              child: Icon(
+                _isFav ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+                color: _isFav ? _C.teal : _C.ink,
+                size: 6.w,
               ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
   // ─────────────────────────────────────────────
-  //  BOTTOM BAR — same logic
+  //  BOTTOM BAR
   // ─────────────────────────────────────────────
   Widget _buildBottomBar() {
     return Container(
@@ -411,15 +476,17 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
         color: _C.cardBg,
         boxShadow: [
           BoxShadow(
-              color: _C.shadow, blurRadius: 12, offset: const Offset(0, -3)),
+            color: _C.shadow,
+            blurRadius: 12,
+            offset: const Offset(0, -3),
+          ),
         ],
       ),
       child: CommonButton(
         text: 'Continue',
         onPressed: () async {
           await _userC.getUserProfile();
-          _trekC.trekBatchId.value =
-              _trekC.trekDetailData.value.batchId ?? 0;
+          _trekC.trekBatchId.value = _trekC.trekDetailData.value.batchId ?? 0;
           Get.toNamed('/traveller-info');
         },
         gradient: CommonColors.filterGradient,
@@ -427,18 +494,62 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
         height: 6.h,
         isFullWidth: false,
         width: 50.w,
-        fontSize: FontSize.s14,
+        fontSize: 14.0.sp,
       ),
     );
   }
 
   // ─────────────────────────────────────────────
-  //  SECTION WRAPPER
-  //  Handles visibility + attaches section key
+  //  SECTION VISIBILITY (single source of truth)
   // ─────────────────────────────────────────────
-  Widget _sectionWrapper(int idx,
-      {required bool visible, required Widget child}) {
-    if (!visible) return const SizedBox.shrink();
+  // Used by both the section builder and the initial tab selection so the
+  // tab bar can never fall out of sync with what's actually rendered.
+  List<bool> _sectionVisibilityFlags() {
+    final detail = _trekC.trekDetailData.value;
+    return [
+      detail.trekStages?.isNotEmpty == true, // 0 - Trek Route
+      detail.itineraryItems?.isNotEmpty == true, // 1 - Itinerary
+      detail.activities?.isNotEmpty == true, // 2 - Activities
+      detail.accommodations?.isNotEmpty == true, // 3 - Accommodation
+      detail.inclusions?.isNotEmpty == true, // 4 - Inclusions/Exclusions
+      detail.latestReviews?.isNotEmpty == true, // 5 - Reviews
+      detail.cancellationPolicy?.rules?.isNotEmpty == true, // 6 - Cancellation
+      (detail.trekkingRules?.isNotEmpty == true) ||
+          (detail.emergencyProtocols?.isNotEmpty == true) ||
+          (detail.organizerNotes?.isNotEmpty == true), // 7 - Other Policies
+    ];
+  }
+
+  // ─────────────────────────────────────────────
+  //  SECTIONS BUILDER
+  // ─────────────────────────────────────────────
+  List<Widget> _buildSections() {
+    final detail = _trekC.trekDetailData.value;
+    final visibility = _sectionVisibilityFlags();
+    final widgets = <Widget>[];
+
+    void addSection(int idx, Widget child) {
+      if (!visibility[idx]) return;
+      if (widgets.isNotEmpty) widgets.add(SizedBox(height: 1.5.h));
+      widgets.add(_sectionWrapper(idx, child: child));
+    }
+
+    widgets.add(SizedBox(height: 1.h));
+
+    addSection(0, TrekRouteTab(trek: detail));
+    addSection(1, _buildItineraryTab());
+    addSection(2, _buildActivitiesTab());
+    addSection(3, _buildResortsTab());
+    addSection(4, _buildFeaturesTab());
+    addSection(5, _buildReviewsTab());
+    addSection(6, _buildCancellationPoliciesTab());
+    addSection(7, _buildOtherPoliciesTab());
+
+    widgets.add(SizedBox(height: 3.h));
+    return widgets;
+  }
+
+  Widget _sectionWrapper(int idx, {required Widget child}) {
     return Container(
       key: _sectionKeys[idx],
       margin: EdgeInsets.symmetric(horizontal: 4.w),
@@ -446,10 +557,6 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
     );
   }
 
-  // ─────────────────────────────────────────────
-  //  SHARED CARD SHELL
-  //  White rounded card used by every section
-  // ─────────────────────────────────────────────
   Widget _card({required Widget child}) {
     return Container(
       width: double.infinity,
@@ -472,10 +579,6 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
     );
   }
 
-  // ─────────────────────────────────────────────
-  //  SHARED SECTION HEADER
-  //  Dark icon badge + title — matches app-wide style
-  // ─────────────────────────────────────────────
   Widget _sectionHeader(String title, IconData icon) {
     return Row(
       children: [
@@ -491,23 +594,22 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
           ),
         ),
         SizedBox(width: 3.w),
-        Text(
-          title,
-          textScaler: const TextScaler.linear(1.0),
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: FontSize.s14,
-            fontWeight: FontWeight.w700,
-            color: _C.ink,
+        Expanded(
+          child: Text(
+            title,
+            textScaler: const TextScaler.linear(1.0),
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 14.0.sp,
+              fontWeight: FontWeight.w700,
+              color: _C.ink,
+            ),
           ),
         ),
       ],
     );
   }
 
-  // ─────────────────────────────────────────────
-  //  SHOW MORE / LESS BUTTON
-  // ─────────────────────────────────────────────
   Widget _toggleBtn(String label, bool expanded, VoidCallback onTap) {
     return Center(
       child: TextButton(
@@ -520,7 +622,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
               textScaler: const TextScaler.linear(1.0),
               style: TextStyle(
                 fontFamily: 'Poppins',
-                fontSize: FontSize.s10,
+                fontSize: 10.0.sp,
                 fontWeight: FontWeight.w600,
                 color: _C.brand,
               ),
@@ -539,10 +641,6 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
     );
   }
 
-  // ─────────────────────────────────────────────
-  //  BULLET ITEM
-  //  Used in inclusions, exclusions, activities
-  // ─────────────────────────────────────────────
   Widget _bulletItem(String text) {
     return Padding(
       padding: EdgeInsets.only(bottom: 1.2.h),
@@ -553,10 +651,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
             margin: const EdgeInsets.only(top: 7),
             width: 5,
             height: 5,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: _C.brand,
-            ),
+            decoration: BoxDecoration(shape: BoxShape.circle, color: _C.brand),
           ),
           SizedBox(width: 3.w),
           Expanded(
@@ -565,7 +660,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
               textScaler: const TextScaler.linear(1.0),
               style: TextStyle(
                 fontFamily: 'Poppins',
-                fontSize: FontSize.s10,
+                fontSize: 10.0.sp,
                 color: _C.ink,
                 height: 1.55,
               ),
@@ -576,11 +671,11 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
     );
   }
 
-  // ─────────────────────────────────────────────
-  //  IMAGE VIEWER — same as original
-  // ─────────────────────────────────────────────
   void _showImageViewer(
-      BuildContext context, List<String> images, int initial) {
+    BuildContext context,
+    List<String> images,
+    int initial,
+  ) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -607,71 +702,30 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                   ),
                 ),
               ),
-            )
+            ),
           ],
         ),
       ),
     );
   }
-//
-    Widget _buildCancellationPoliciesTab() {
-  final departure = _trekC.trekDetailData.value.departureDateTimeFromStages;
-  return CancellationPolicyWidget(policy: _trekC.trekDetailData.value.cancellationPolicy,departureDate: departure.toString());
-  // return CancellationPolicyCard(
-  //   departureDate: departure?.toIso8601String(),
-  //   basePrice: _trekC.trekDetailData.value.basePrice,
-  //   bookingType: (_trekC.trekDetailData.value.cancellationPolicy?.id ?? 0) == 1 ? "standard" :"flexible",
-  // );
-}
 
-  // Widget _buildOtherPoliciesTab() {
-  //   final rules = _trekC.trekDetailData.value.trekkingRules;
-  //   final emergency = _trekC.trekDetailData.value.emergencyProtocols;
-  //   final notes = _trekC.trekDetailData.value.organizerNotes;
-  //
-  //   if ((rules == null || rules.isEmpty) &&
-  //       (emergency == null || emergency.isEmpty) &&
-  //       (notes == null || notes.isEmpty)) {
-  //     return Container();
-  //   }
-  //
-  //   return Container(
-  //     width: 95.w,
-  //     decoration: BoxDecoration(
-  //       color: CommonColors.whiteColor,
-  //       borderRadius: BorderRadius.circular(3.8.w),
-  //       boxShadow: [
-  //         BoxShadow(
-  //           color: CommonColors.blackColor.withAlpha(25),
-  //           spreadRadius: 0,
-  //           blurRadius: 2.w,
-  //           offset: Offset(0, 2),
-  //         ),
-  //       ],
-  //     ),
-  //     child: Container(
-  //       width: 85.w,
-  //       margin: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
-  //       child: Column(
-  //         crossAxisAlignment: CrossAxisAlignment.start,
-  //         children: [
-  //           Text(
-  //             'Other Policies',
-  //             style: GoogleFonts.poppins(
-  //               fontSize: FontSize.s17,
-  //               fontWeight: FontWeight.w600,
-  //               color: CommonColors.trek_route_color,
-  //             ),
-  //           ),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
+  Widget _buildCancellationPoliciesTab() {
+    final departure = _trekC.trekDetailData.value.departureDateTimeFromStages;
+    return _card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _sectionHeader('Cancellation Policy', Icons.gavel_rounded),
+          SizedBox(height: 2.h),
+          CancellationPolicyWidget(
+            policy: _trekC.trekDetailData.value.cancellationPolicy,
+            departureDate: departure.toString(),
+          ),
+        ],
+      ),
+    );
+  }
 
-  // ─────────────────────────────────────────────
-  //  STAR RATING — same as original
-  // ─────────────────────────────────────────────
   Widget _buildStarRating({required double rating, required double size}) {
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -683,28 +737,21 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
             v >= 1.0
                 ? Icons.star
                 : v >= 0.5
-                    ? Icons.star_half
-                    : Icons.star_border,
+                ? Icons.star_half
+                : Icons.star_border,
             size: size,
-            color: v > 0
-                ? CommonColors.completedColor2
-                : Colors.grey.shade300,
+            color: v > 0 ? CommonColors.completedColor2 : Colors.grey.shade300,
           ),
         );
       }),
     );
   }
 
-  // ─────────────────────────────────────────────
-  //  ITINERARY TAB
-  // ─────────────────────────────────────────────
   Widget _buildItineraryTab() {
     final items = _trekC.trekDetailData.value.itineraryItems;
     if (items == null || items.isEmpty) return const SizedBox.shrink();
 
-    final count = (_showFullItinerary || items.length <= 2)
-        ? items.length
-        : 2;
+    final count = (_showFullItinerary || items.length <= 2) ? items.length : 2;
 
     return _card(
       child: Column(
@@ -713,22 +760,23 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
           _sectionHeader('Itinerary', Icons.map_outlined),
           SizedBox(height: 2.h),
           ...List.generate(count, (idx) {
-            final day        = items[idx];
+            final day = items[idx];
             final activities = day.activities ?? [];
             return Container(
               margin: EdgeInsets.only(bottom: 2.h),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8F9FF),
+                color: _C.softTint,
                 borderRadius: BorderRadius.circular(3.w),
                 border: Border.all(color: _C.brand.withValues(alpha: 0.12)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Day header strip
                   Container(
                     padding: EdgeInsets.symmetric(
-                        horizontal: 4.w, vertical: 1.h),
+                      horizontal: 4.w,
+                      vertical: 1.h,
+                    ),
                     decoration: BoxDecoration(
                       color: _C.brand.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.only(
@@ -740,7 +788,9 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                       children: [
                         Container(
                           padding: EdgeInsets.symmetric(
-                              horizontal: 2.5.w, vertical: 0.3.h),
+                            horizontal: 2.5.w,
+                            vertical: 0.3.h,
+                          ),
                           decoration: BoxDecoration(
                             color: _C.brand,
                             borderRadius: BorderRadius.circular(2.w),
@@ -750,7 +800,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                             textScaler: const TextScaler.linear(1.0),
                             style: TextStyle(
                               fontFamily: 'Poppins',
-                              fontSize: FontSize.s9,
+                              fontSize: 9.0.sp,
                               fontWeight: FontWeight.w700,
                               color: Colors.white,
                             ),
@@ -763,7 +813,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                             textScaler: const TextScaler.linear(1.0),
                             style: TextStyle(
                               fontFamily: 'Poppins',
-                              fontSize: FontSize.s10,
+                              fontSize: 10.0.sp,
                               fontWeight: FontWeight.w500,
                               color: _C.brand,
                             ),
@@ -773,7 +823,6 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                       ],
                     ),
                   ),
-                  // Activity list
                   Padding(
                     padding: EdgeInsets.fromLTRB(4.w, 1.5.h, 4.w, 1.h),
                     child: Column(
@@ -782,17 +831,32 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                         ...activities
                             .take(_showFullItinerary ? activities.length : 4)
                             .map((a) => _bulletItem(a)),
+                        // FIX: this used to be a plain, non-interactive Text
+                        // widget, so tapping "+N more activities" (e.g. "+1
+                        // more activities") did nothing. It's now wrapped in
+                        // an InkWell that expands the itinerary.
                         if (!_showFullItinerary && activities.length > 4)
-                          Padding(
-                            padding: EdgeInsets.only(left: 3.w),
-                            child: Text(
-                              '+ ${activities.length - 4} more activities',
-                              textScaler: const TextScaler.linear(1.0),
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: FontSize.s9,
-                                color: _C.brand,
-                                fontWeight: FontWeight.w500,
+                          InkWell(
+                            onTap: () =>
+                                setState(() => _showFullItinerary = true),
+                            borderRadius: BorderRadius.circular(2.w),
+                            child: Padding(
+                              padding: EdgeInsets.only(
+                                left: 3.w,
+                                top: 0.3.h,
+                                bottom: 0.3.h,
+                              ),
+                              child: Text(
+                                '+ ${activities.length - 4} more '
+                                '${activities.length - 4 == 1 ? 'activity' : 'activities'}',
+                                textScaler: const TextScaler.linear(1.0),
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: 9.0.sp,
+                                  color: _C.brand,
+                                  fontWeight: FontWeight.w600,
+                                  decoration: TextDecoration.underline,
+                                ),
                               ),
                             ),
                           ),
@@ -804,19 +868,19 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
             );
           }),
           if (items.length > 2)
-            _toggleBtn('itinerary', _showFullItinerary,
-                () => setState(() => _showFullItinerary = !_showFullItinerary)),
+            _toggleBtn(
+              'itinerary',
+              _showFullItinerary,
+              () => setState(() => _showFullItinerary = !_showFullItinerary),
+            ),
         ],
       ),
     );
   }
 
-  // ─────────────────────────────────────────────
-  //  ACTIVITIES TAB
-  // ─────────────────────────────────────────────
   Widget _buildActivitiesTab() {
     final acts = _trekC.trekDetailData.value.activities;
-    if (acts == null) return const SizedBox.shrink();
+    if (acts == null || acts.isEmpty) return const SizedBox.shrink();
 
     final count = (acts.length > 2 && !_showFullActivities) ? 2 : acts.length;
 
@@ -826,26 +890,38 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
         children: [
           _sectionHeader('Activities', Icons.directions_walk_rounded),
           SizedBox(height: 2.h),
-          ...List.generate(count,
-              (i) => _bulletItem(acts[i].name ?? '')),
-          if (acts.length > 4)
-            _toggleBtn('Activities', _showFullActivities,
-                () => setState(() => _showFullActivities = !_showFullActivities)),
+          ...List.generate(count, (i) => _bulletItem(acts[i].name ?? '')),
+          if (acts.length > 2)
+            _toggleBtn(
+              'Activities',
+              _showFullActivities,
+              () => setState(() => _showFullActivities = !_showFullActivities),
+            ),
         ],
       ),
     );
   }
 
-  // ─────────────────────────────────────────────
-  //  FEATURES / INCLUSIONS-EXCLUSIONS TAB
-  // ─────────────────────────────────────────────
   Widget _buildFeaturesTab() {
-    final inc = _showFullFeatures
-        ? _trekC.trekDetailData.value.inclusions
-        : _trekC.trekDetailData.value.inclusions?.take(4).toList();
-    final exc = _showFullFeatures
-        ? _trekC.trekDetailData.value.exclusions
-        : _trekC.trekDetailData.value.exclusions?.take(4).toList();
+    final allInc = _trekC.trekDetailData.value.inclusions;
+    final allExc = _trekC.trekDetailData.value.exclusions;
+
+    final inc = (_showFullFeatures || (allInc?.length ?? 0) <= 4)
+        ? allInc
+        : allInc?.take(4).toList();
+    final exc = (_showFullFeatures || (allExc?.length ?? 0) <= 4)
+        ? allExc
+        : allExc?.take(4).toList();
+
+    String asString(dynamic e) {
+      if (e == null) return '-';
+      if (e is String) return e;
+      try {
+        return (e.name ?? '-').toString();
+      } catch (_) {
+        return e.toString();
+      }
+    }
 
     return _card(
       child: Column(
@@ -853,26 +929,23 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
         children: [
           _sectionHeader('Inclusions & Exclusions', Icons.checklist_rounded),
           SizedBox(height: 2.h),
-
-          // Inclusions
           if (inc != null && inc.isNotEmpty) ...[
             _subLabel('Inclusions', _C.teal),
             SizedBox(height: 1.h),
-            ...inc.map((e) => _checkItem(e.name ?? '-', included: true)),
+            ...inc.map((e) => _checkItem(asString(e), included: true)),
             SizedBox(height: 2.h),
           ],
-
-          // Exclusions
           if (exc != null && exc.isNotEmpty) ...[
             _subLabel('Exclusions', CommonColors.cFFDC2626),
             SizedBox(height: 1.h),
-            ...exc.map((e) => _checkItem(e, included: false)),
+            ...exc.map((e) => _checkItem(asString(e), included: false)),
           ],
-
-          if ((_trekC.trekDetailData.value.inclusions?.length ?? 0) > 4 ||
-              (_trekC.trekDetailData.value.exclusions?.length ?? 0) > 4)
-            _toggleBtn('Features', _showFullFeatures,
-                () => setState(() => _showFullFeatures = !_showFullFeatures)),
+          if ((allInc?.length ?? 0) > 4 || (allExc?.length ?? 0) > 4)
+            _toggleBtn(
+              'Features',
+              _showFullFeatures,
+              () => setState(() => _showFullFeatures = !_showFullFeatures),
+            ),
         ],
       ),
     );
@@ -892,7 +965,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
           textScaler: const TextScaler.linear(1.0),
           style: TextStyle(
             fontFamily: 'Poppins',
-            fontSize: FontSize.s12,
+            fontSize: 12.0.sp,
             fontWeight: FontWeight.w600,
             color: color,
           ),
@@ -912,9 +985,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
             width: 5.5.w,
             height: 5.5.w,
             decoration: BoxDecoration(
-              color: included
-                  ? _C.tealSoft
-                  : CommonColors.cFFFFE4E4,
+              color: included ? _C.tealSoft : CommonColors.cFFFFE4E4,
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -930,7 +1001,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
               textScaler: const TextScaler.linear(1.0),
               style: TextStyle(
                 fontFamily: 'Poppins',
-                fontSize: FontSize.s10,
+                fontSize: 10.0.sp,
                 color: _C.ink,
                 height: 1.55,
               ),
@@ -941,9 +1012,6 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
     );
   }
 
-  // ─────────────────────────────────────────────
-  //  RESORTS / ACCOMMODATION TAB
-  // ─────────────────────────────────────────────
   Widget _buildResortsTab() {
     final accs = _trekC.trekDetailData.value.accommodations;
     if (accs == null || accs.isEmpty) return const SizedBox.shrink();
@@ -955,86 +1023,81 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
           _sectionHeader('Accommodation', Icons.hotel_rounded),
           SizedBox(height: 2.h),
           ...accs.asMap().entries.map((entry) {
-            final i   = entry.key;
+            final i = entry.key;
             final acc = entry.value;
             final isLast = i == accs.length - 1;
-            return Column(
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                Column(
                   children: [
-                    // Timeline
-                    Column(
-                      children: [
-                        Container(
-                          width: 8.w,
-                          height: 8.w,
-                          decoration: BoxDecoration(
-                            color: _C.brand.withValues(alpha: 0.1),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                                color: _C.brand.withValues(alpha: 0.3)),
-                          ),
-                          child: Center(
-                            child: Text(
-                              'D${i + 1}',
-                              textScaler: const TextScaler.linear(1.0),
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: FontSize.s8,
-                                fontWeight: FontWeight.w700,
-                                color: _C.brand,
-                              ),
-                            ),
-                          ),
+                    Container(
+                      width: 8.w,
+                      height: 8.w,
+                      decoration: BoxDecoration(
+                        color: _C.brand.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: _C.brand.withValues(alpha: 0.3),
                         ),
-                        if (!isLast)
-                          Container(
-                            width: 1.5,
-                            height: 5.h,
-                            color: _C.divider,
+                      ),
+                      child: Center(
+                        child: Text(
+                          'D${i + 1}',
+                          textScaler: const TextScaler.linear(1.0),
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 8.0.sp,
+                            fontWeight: FontWeight.w700,
+                            color: _C.brand,
                           ),
-                      ],
-                    ),
-                    SizedBox(width: 3.w),
-                    Expanded(
-                      child: Padding(
-                        padding: EdgeInsets.only(bottom: isLast ? 0 : 2.h),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Check in to ${acc.details?.location ?? '-'}',
-                              textScaler: const TextScaler.linear(1.0),
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: FontSize.s11,
-                                fontWeight: FontWeight.w600,
-                                color: _C.ink,
-                              ),
-                            ),
-                            SizedBox(height: 0.3.h),
-                            Row(
-                              children: [
-                                Icon(Icons.hotel_rounded,
-                                    size: 3.5.w, color: _C.inkLight),
-                                SizedBox(width: 1.w),
-                                Text(
-                                  acc.type ?? '-',
-                                  textScaler: const TextScaler.linear(1.0),
-                                  style: TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontSize: FontSize.s9,
-                                    color: _C.inkMid,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
                         ),
                       ),
                     ),
+                    if (!isLast)
+                      Container(width: 1.5, height: 5.h, color: _C.divider),
                   ],
+                ),
+                SizedBox(width: 3.w),
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(bottom: isLast ? 0 : 2.h),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Check in to ${acc.details?.location ?? '-'}',
+                          textScaler: const TextScaler.linear(1.0),
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 11.0.sp,
+                            fontWeight: FontWeight.w600,
+                            color: _C.ink,
+                          ),
+                        ),
+                        SizedBox(height: 0.3.h),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.hotel_rounded,
+                              size: 3.5.w,
+                              color: _C.inkLight,
+                            ),
+                            SizedBox(width: 1.w),
+                            Text(
+                              acc.type ?? '-',
+                              textScaler: const TextScaler.linear(1.0),
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 9.0.sp,
+                                color: _C.inkMid,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             );
@@ -1044,13 +1107,14 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
     );
   }
 
-  // ─────────────────────────────────────────────
-  //  REVIEWS TAB
-  // ─────────────────────────────────────────────
   Widget _buildReviewsTab() {
     final reviews = _trekC.trekDetailData.value.latestReviews;
-    if (reviews == null) return const SizedBox.shrink();
+    if (reviews == null || reviews.isEmpty) return const SizedBox.shrink();
     final ratings = _trekC.trekDetailData.value.categoryRatings;
+
+    final displayed = _showFullReviews
+        ? _sortedReviews
+        : _sortedReviews.take(5).toList();
 
     return _card(
       child: Column(
@@ -1058,18 +1122,16 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
         children: [
           _sectionHeader('Ratings & Reviews', Icons.star_rounded),
           SizedBox(height: 2.h),
-
-          // Summary row
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Big rating number
               Container(
                 width: 18.w,
                 height: 18.w,
                 decoration: BoxDecoration(
                   gradient: getRatingColor(
-                    _trekC.trekDetailData.value.averageRating?.toDouble() ?? 0),
+                    _trekC.trekDetailData.value.averageRating?.toDouble() ?? 0,
+                  ),
                   borderRadius: BorderRadius.circular(3.w),
                 ),
                 child: Center(
@@ -1079,7 +1141,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                     textScaler: const TextScaler.linear(1.0),
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: FontSize.s20,
+                      fontSize: 20.0.sp,
                       fontWeight: FontWeight.w800,
                       color: Colors.white,
                     ),
@@ -1092,7 +1154,10 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildStarRating(
-                      rating: _trekC.trekDetailData.value.averageRating?.toDouble() ?? 0.0,
+                      rating:
+                          _trekC.trekDetailData.value.averageRating
+                              ?.toDouble() ??
+                          0.0,
                       size: 5.w,
                     ),
                     SizedBox(height: 0.5.h),
@@ -1101,7 +1166,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                       textScaler: const TextScaler.linear(1.0),
                       style: TextStyle(
                         fontFamily: 'Poppins',
-                        fontSize: FontSize.s9,
+                        fontSize: 9.0.sp,
                         color: _C.inkMid,
                       ),
                     ),
@@ -1110,42 +1175,50 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
               ),
             ],
           ),
-
           SizedBox(height: 2.h),
           Divider(color: _C.divider, height: 1),
           SizedBox(height: 2.h),
-
-          // Category ratings
           Text(
             'People like',
             textScaler: const TextScaler.linear(1.0),
             style: TextStyle(
               fontFamily: 'Poppins',
-              fontSize: FontSize.s12,
+              fontSize: 12.0.sp,
               fontWeight: FontWeight.w600,
               color: _C.ink,
             ),
           ),
           SizedBox(height: 1.5.h),
-          ...([
-            {'label': 'Safety & Security', 'value': ratings?.safetySecurity ?? 0.0},
-            {'label': 'Organizer Manner',  'value': ratings?.organizerManner ?? 0.0},
-            {'label': 'Trek Planning',     'value': ratings?.trekPlanning ?? 0.0},
-            {'label': 'Women Safety',      'value': ratings?.womenSafety ?? 0.0},
-          ].map((item) => _ratingBar(
-              item['label'] as String, (item['value'] as double)))),
-
+          ...[
+            {
+              'label': 'Safety & Security',
+              'value': (ratings?.safetySecurity ?? 0.0).toDouble(),
+            },
+            {
+              'label': 'Organizer Manner',
+              'value': (ratings?.organizerManner ?? 0.0).toDouble(),
+            },
+            {
+              'label': 'Trek Planning',
+              'value': (ratings?.trekPlanning ?? 0.0).toDouble(),
+            },
+            {
+              'label': 'Women Safety',
+              'value': (ratings?.womenSafety ?? 0.0).toDouble(),
+            },
+          ].map(
+            (item) =>
+                _ratingBar(item['label'] as String, item['value'] as double),
+          ),
           SizedBox(height: 2.h),
           Divider(color: _C.divider, height: 1),
           SizedBox(height: 2.h),
-
-          // Sort chips
           Text(
             'Sort by',
             textScaler: const TextScaler.linear(1.0),
             style: TextStyle(
               fontFamily: 'Poppins',
-              fontSize: FontSize.s11,
+              fontSize: 11.0.sp,
               fontWeight: FontWeight.w600,
               color: _C.ink,
             ),
@@ -1153,37 +1226,34 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
           SizedBox(height: 1.h),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
+            padding: EdgeInsets.only(right: 2.w),
             child: Row(
-              children: [
-                'Recent Reviews',
-                'Solo Traveller',
-                'High to Low Ratings',
-                'Low to High Ratings',
-                'Organizer Manner',
-              ].map((t) => _buildSortButton(t, t == _selectedSortOption)).toList(),
+              children:
+                  [
+                        'Recent Reviews',
+                        'Solo Traveller',
+                        'High to Low Ratings',
+                        'Low to High Ratings',
+                      ]
+                      .map((t) => _buildSortButton(t, t == _selectedSortOption))
+                      .toList(),
             ),
           ),
-
           SizedBox(height: 2.h),
-
-          // Review cards — horizontal scroll
           SizedBox(
             height: 20.h,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
-              itemCount: (_showFullReviews ? reviews : reviews.take(5)).length,
-              itemBuilder: (_, i) {
-                final r = (_showFullReviews
-                    ? reviews
-                    : reviews.take(5).toList())[i];
-                return _reviewCard(r);
-              },
+              itemCount: displayed.length,
+              itemBuilder: (_, i) => _reviewCard(displayed[i]),
             ),
           ),
-
-          if (reviews.length > 5)
-            _toggleBtn('Reviews', _showFullReviews,
-                () => setState(() => _showFullReviews = !_showFullReviews)),
+          if (_sortedReviews.length > 5)
+            _toggleBtn(
+              'Reviews',
+              _showFullReviews,
+              () => setState(() => _showFullReviews = !_showFullReviews),
+            ),
         ],
       ),
     );
@@ -1201,7 +1271,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
               textScaler: const TextScaler.linear(1.0),
               style: TextStyle(
                 fontFamily: 'Poppins',
-                fontSize: FontSize.s9,
+                fontSize: 9.0.sp,
                 color: _C.inkMid,
               ),
             ),
@@ -1211,11 +1281,12 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
-                value: value / 5.0,
+                value: (value / 5.0).clamp(0.0, 1.0),
                 minHeight: 6,
                 backgroundColor: _C.divider,
-                valueColor:
-                    AlwaysStoppedAnimation<Color>(CommonColors.completedColor2),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  CommonColors.completedColor2,
+                ),
               ),
             ),
           ),
@@ -1227,7 +1298,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
             textScaler: const TextScaler.linear(1.0),
             style: TextStyle(
               fontFamily: 'Poppins',
-              fontSize: FontSize.s9,
+              fontSize: 9.0.sp,
               fontWeight: FontWeight.w600,
               color: _C.ink,
             ),
@@ -1238,6 +1309,17 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
   }
 
   Widget _reviewCard(LatestReviews review) {
+    String dateStr = '-';
+    if (review.createdAt != null && review.createdAt!.isNotEmpty) {
+      try {
+        dateStr = DateFormat(
+          'd MMM yyyy',
+        ).format(DateTime.parse(review.createdAt!));
+      } catch (_) {
+        dateStr = review.createdAt!;
+      }
+    }
+
     return Container(
       width: 75.w,
       margin: EdgeInsets.only(right: 3.w),
@@ -1248,7 +1330,10 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
         border: Border.all(color: _C.divider),
         boxShadow: [
           BoxShadow(
-              color: _C.shadow, blurRadius: 6, offset: const Offset(0, 2)),
+            color: _C.shadow,
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: Column(
@@ -1257,7 +1342,6 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Avatar + name
               Row(
                 children: [
                   Container(
@@ -1274,7 +1358,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                             : '?',
                         style: TextStyle(
                           fontFamily: 'Poppins',
-                          fontSize: FontSize.s12,
+                          fontSize: 12.0.sp,
                           fontWeight: FontWeight.w700,
                           color: _C.brand,
                         ),
@@ -1290,20 +1374,17 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                         textScaler: const TextScaler.linear(1.0),
                         style: TextStyle(
                           fontFamily: 'Poppins',
-                          fontSize: FontSize.s10,
+                          fontSize: 10.0.sp,
                           fontWeight: FontWeight.w600,
                           color: _C.ink,
                         ),
                       ),
                       Text(
-                        review.createdAt != null
-                            ? DateFormat('d MMM yyyy')
-                                .format(DateTime.parse(review.createdAt!))
-                            : '-',
+                        dateStr,
                         textScaler: const TextScaler.linear(1.0),
                         style: TextStyle(
                           fontFamily: 'Poppins',
-                          fontSize: FontSize.s8,
+                          fontSize: 8.0.sp,
                           color: _C.inkLight,
                         ),
                       ),
@@ -1311,27 +1392,29 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                   ),
                 ],
               ),
-              // Rating badge
               Container(
-                padding: EdgeInsets.symmetric(
-                    horizontal: 2.w, vertical: 0.3.h),
+                padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.3.h),
                 decoration: BoxDecoration(
                   gradient: getRatingColor(
-                      (review.ratingValue ?? 0.0).toDouble()),
+                    (review.ratingValue ?? 0.0).toDouble(),
+                  ),
                   borderRadius: BorderRadius.circular(1.5.w),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.star_rounded,
-                        color: Colors.white, size: 12),
+                    const Icon(
+                      Icons.star_rounded,
+                      color: Colors.white,
+                      size: 12,
+                    ),
                     const SizedBox(width: 3),
                     Text(
                       '${review.ratingValue}',
                       textScaler: const TextScaler.linear(1.0),
                       style: TextStyle(
                         fontFamily: 'Poppins',
-                        fontSize: FontSize.s9,
+                        fontSize: 9.0.sp,
                         fontWeight: FontWeight.w700,
                         color: Colors.white,
                       ),
@@ -1348,7 +1431,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
               textScaler: const TextScaler.linear(1.0),
               style: TextStyle(
                 fontFamily: 'Poppins',
-                fontSize: FontSize.s9,
+                fontSize: 9.0.sp,
                 color: _C.inkMid,
                 height: 1.5,
               ),
@@ -1363,7 +1446,13 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
 
   Widget _buildSortButton(String text, bool isSelected) {
     return GestureDetector(
-      onTap: () => setState(() => _selectedSortOption = text),
+      onTap: () => setState(() {
+        _selectedSortOption = text;
+        _sortedReviews = _sortReviews(
+          _trekC.trekDetailData.value.latestReviews ?? [],
+          text,
+        );
+      }),
       child: Container(
         margin: EdgeInsets.only(right: 2.w),
         padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 0.8.h),
@@ -1380,7 +1469,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
           textScaler: const TextScaler.linear(1.0),
           style: TextStyle(
             fontFamily: 'Poppins',
-            fontSize: FontSize.s9,
+            fontSize: 9.0.sp,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
             color: isSelected ? _C.brand : _C.ink,
           ),
@@ -1389,29 +1478,10 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
     );
   }
 
-  // ─────────────────────────────────────────────
-  //  CANCELLATION POLICIES TAB — same logic
-  // ─────────────────────────────────────────────
-  // Widget _buildCancellationPoliciesTab() {
-  //   final departure =
-  //       _trekC.trekDetailData.value.departureDateTimeFromStages;
-  //   return CancellationPolicyCard(
-  //     departureDate: departure?.toIso8601String(),
-  //     basePrice: _trekC.trekDetailData.value.basePrice,
-  //     bookingType:
-  //         (_trekC.trekDetailData.value.cancellationPolicy?.id ?? 0) == 1
-  //             ? 'standard'
-  //             : 'flexible',
-  //   );
-  // }
-  //
-  // // ─────────────────────────────────────────────
-  // //  OTHER POLICIES TAB
-  // // ─────────────────────────────────────────────
   Widget _buildOtherPoliciesTab() {
-    final rules     = _trekC.trekDetailData.value.trekkingRules;
+    final rules = _trekC.trekDetailData.value.trekkingRules;
     final emergency = _trekC.trekDetailData.value.emergencyProtocols;
-    final notes     = _trekC.trekDetailData.value.organizerNotes;
+    final notes = _trekC.trekDetailData.value.organizerNotes;
 
     if ((rules == null || rules.isEmpty) &&
         (emergency == null || emergency.isEmpty) &&
@@ -1441,7 +1511,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
       margin: EdgeInsets.only(bottom: 2.h),
       padding: EdgeInsets.all(4.w),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F9FF),
+        color: _C.softTint,
         borderRadius: BorderRadius.circular(3.w),
         border: Border.all(color: _C.brand.withValues(alpha: 0.12)),
       ),
@@ -1457,7 +1527,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                 textScaler: const TextScaler.linear(1.0),
                 style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: FontSize.s11,
+                  fontSize: 11.0.sp,
                   fontWeight: FontWeight.w600,
                   color: _C.brand,
                 ),
@@ -1470,7 +1540,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
             textScaler: const TextScaler.linear(1.0),
             style: TextStyle(
               fontFamily: 'Poppins',
-              fontSize: FontSize.s9,
+              fontSize: 9.0.sp,
               color: _C.inkMid,
               height: 1.6,
             ),
@@ -1482,7 +1552,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
 }
 
 // ─────────────────────────────────────────────
-//  TREK ROUTE TAB — same logic, upgraded UI
+//  TREK ROUTE TAB
 // ─────────────────────────────────────────────
 class TrekRouteTab extends StatefulWidget {
   final TrekDetailData trek;
@@ -1493,7 +1563,6 @@ class TrekRouteTab extends StatefulWidget {
 }
 
 class _TrekRouteTabState extends State<TrekRouteTab> {
-
   bool showFullRoute = false;
 
   Map<String, String> _formatDateTime(String? dt) {
@@ -1521,12 +1590,6 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
     return [list, []];
   }
 
-  // BUGFIX: meeting/trek_point stages are stored one row per boarding city
-  // per day (the vendor form's "fill once, applies to every city" sync
-  // writes the same value to every city_id's row for that day), so the raw
-  // trekStages list has one duplicate per boarding city for every meeting
-  // point — same root cause already fixed on the admin/vendor web panels.
-  // Boarding/return genuinely differ per city and are left as-is.
   List<TrekStages> _dedupeStages(List<TrekStages> stages) {
     final seen = <String>{};
     return stages.where((s) {
@@ -1540,29 +1603,29 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
 
   @override
   Widget build(BuildContext context) {
-    final ctrl       = Get.find<TrekController>();
-    final trek       = ctrl.trekDetailData.value;
-    final routeList  = _dedupeStages(trek.trekStages ?? []);
-    final split      = _splitRouteList(routeList);
-    final visible    = split[0];
-    final hidden     = split[1];
+    final ctrl = Get.find<TrekController>();
+    final trek = ctrl.trekDetailData.value;
+    final routeList = _dedupeStages(trek.trekStages ?? []);
+    final split = _splitRouteList(routeList);
+    final visible = split[0];
+    final hidden = split[1];
 
-    // find boarding point
     final boarding = routeList.isNotEmpty
         ? routeList.firstWhere(
             (s) => s.isBoardingPoint == true,
-            orElse: () => routeList.first)
+            orElse: () => routeList.first,
+          )
         : null;
     final firstName = routeList.isNotEmpty
         ? (routeList.first.isBoardingPoint == true
-            ? (routeList.first.city?.cityName ?? '')
-            : (routeList.first.destination ?? ''))
+              ? (routeList.first.city?.cityName ?? '')
+              : (routeList.first.destination ?? ''))
         : '';
 
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: CommonColors.whiteColor,
+        color: _C.cardBg,
         borderRadius: BorderRadius.circular(4.w),
         boxShadow: [
           BoxShadow(
@@ -1576,20 +1639,21 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-
-          // Header
           Row(
             children: [
               Container(
                 width: 9.w,
                 height: 9.w,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF111827),
+                  color: _C.iconBadge,
                   borderRadius: BorderRadius.circular(2.5.w),
                 ),
-                child: const Center(
-                  child: Icon(Icons.alt_route_rounded,
-                      color: Colors.white, size: 16),
+                child: Center(
+                  child: Icon(
+                    Icons.alt_route_rounded,
+                    color: Colors.white,
+                    size: 4.5.w,
+                  ),
                 ),
               ),
               SizedBox(width: 3.w),
@@ -1598,26 +1662,21 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
                 textScaler: const TextScaler.linear(1.0),
                 style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: FontSize.s14,
+                  fontSize: 14.0.sp,
                   fontWeight: FontWeight.w700,
-                  color: CommonColors.blackColor,
+                  color: _C.ink,
                 ),
               ),
             ],
           ),
-
           SizedBox(height: 2.h),
-
-          // Boarding point card
           if (boarding != null) ...[
             Container(
-              padding: EdgeInsets.symmetric(
-                  horizontal: 4.w, vertical: 1.2.h),
+              padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.2.h),
               decoration: BoxDecoration(
-                color: CommonColors.trek_route_color.withValues(alpha: 0.06),
+                color: _C.brand.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(3.w),
-                border: Border.all(
-                    color: CommonColors.trek_route_color.withValues(alpha: 0.2)),
+                border: Border.all(color: _C.brand.withValues(alpha: 0.2)),
               ),
               child: Row(
                 children: [
@@ -1625,12 +1684,15 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
                     width: 8.w,
                     height: 8.w,
                     decoration: BoxDecoration(
-                      color: CommonColors.trek_route_color,
+                      color: _C.brand,
                       shape: BoxShape.circle,
                     ),
                     child: const Center(
-                      child: Icon(Icons.flag_rounded,
-                          color: Colors.white, size: 14),
+                      child: Icon(
+                        Icons.flag_rounded,
+                        color: Colors.white,
+                        size: 14,
+                      ),
                     ),
                   ),
                   SizedBox(width: 3.w),
@@ -1643,9 +1705,9 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
                           textScaler: const TextScaler.linear(1.0),
                           style: TextStyle(
                             fontFamily: 'Poppins',
-                            fontSize: FontSize.s8,
+                            fontSize: 8.0.sp,
                             fontWeight: FontWeight.w600,
-                            color: CommonColors.trek_route_color,
+                            color: _C.brand,
                             letterSpacing: 0.8,
                           ),
                         ),
@@ -1657,9 +1719,9 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
                           textScaler: const TextScaler.linear(1.0),
                           style: TextStyle(
                             fontFamily: 'Poppins',
-                            fontSize: FontSize.s10,
+                            fontSize: 10.0.sp,
                             fontWeight: FontWeight.w500,
-                            color: CommonColors.blackColor,
+                            color: _C.ink,
                           ),
                         ),
                         Text(
@@ -1667,8 +1729,8 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
                           textScaler: const TextScaler.linear(1.0),
                           style: TextStyle(
                             fontFamily: 'Poppins',
-                            fontSize: FontSize.s9,
-                            color: CommonColors.cFF6B7280,
+                            fontSize: 9.0.sp,
+                            color: _C.inkMid,
                           ),
                         ),
                       ],
@@ -1679,23 +1741,20 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
             ),
             SizedBox(height: 2.h),
           ],
-
-          // Route items
           if (visible.isNotEmpty)
             ...visible.asMap().entries.map((entry) {
-              final idx       = entry.key;
-              final stop      = entry.value;
-              final isLast    = idx == visible.length - 1;
-              final isSecond  = idx == 1;
-              final hasDots   = !showFullRoute && isSecond && hidden.isNotEmpty;
+              final idx = entry.key;
+              final stop = entry.value;
+              final isLast = idx == visible.length - 1;
+              final isSecond = idx == 1;
+              final hasDots = !showFullRoute && isSecond && hidden.isNotEmpty;
               return _buildRouteItem(
-                stop, isLast,
+                stop,
+                isLast,
                 showDottedLine: hasDots,
                 firstRouteName: firstName,
               );
             }),
-
-          // Toggle
           if (routeList.length > 3)
             Center(
               child: TextButton(
@@ -1704,15 +1763,13 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      showFullRoute
-                          ? 'Hide trek route'
-                          : 'View all trek route',
+                      showFullRoute ? 'Hide trek route' : 'View all trek route',
                       textScaler: const TextScaler.linear(1.0),
                       style: TextStyle(
                         fontFamily: 'Poppins',
-                        fontSize: FontSize.s10,
+                        fontSize: 10.0.sp,
                         fontWeight: FontWeight.w600,
-                        color: CommonColors.trek_route_color,
+                        color: _C.brand,
                       ),
                     ),
                     const SizedBox(width: 6),
@@ -1720,7 +1777,7 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
                       showFullRoute
                           ? Icons.keyboard_arrow_up_rounded
                           : Icons.keyboard_arrow_down_rounded,
-                      color: CommonColors.trek_route_color,
+                      color: _C.brand,
                       size: 20,
                     ),
                   ],
@@ -1738,19 +1795,18 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
     bool showDottedLine = false,
     String? firstRouteName,
   }) {
-    final fmt    = _formatDateTime(stop.dateTime);
-    final label  = isLast && firstRouteName != null
+    final fmt = _formatDateTime(stop.dateTime);
+    final label = isLast && firstRouteName != null
         ? firstRouteName
         : (stop.isBoardingPoint == true
-            ? (stop.city?.cityName ?? '')
-            : (stop.destination ?? ''));
+              ? (stop.city?.cityName ?? '')
+              : (stop.destination ?? ''));
 
     return Column(
       children: [
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Time column
             SizedBox(
               width: 18.w,
               child: Column(
@@ -1761,8 +1817,8 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
                     textScaler: const TextScaler.linear(1.0),
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: FontSize.s9,
-                      color: CommonColors.cFF6B7280,
+                      fontSize: 9.0.sp,
+                      color: _C.inkMid,
                     ),
                   ),
                   Text(
@@ -1770,15 +1826,14 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
                     textScaler: const TextScaler.linear(1.0),
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: FontSize.s8,
-                      color: CommonColors.grey_AEAEAE,
+                      fontSize: 8.0.sp,
+                      color: _C.inkLight,
                     ),
                   ),
                 ],
               ),
             ),
             SizedBox(width: 3.w),
-            // Dot + line
             Column(
               children: [
                 Container(
@@ -1786,9 +1841,7 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
                   height: 12,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: isLast
-                        ? CommonColors.materialRed
-                        : CommonColors.trek_route_color,
+                    color: isLast ? CommonColors.materialRed : _C.brand,
                     border: Border.all(
                       color: Colors.white,
                       width: 2,
@@ -1801,14 +1854,13 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
                     width: 2,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: CommonColors.trekroutecolorlight,
+                      color: _C.routeLine,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
               ],
             ),
             SizedBox(width: 3.w),
-            // Label + transport
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1822,9 +1874,9 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
                           textScaler: const TextScaler.linear(1.0),
                           style: TextStyle(
                             fontFamily: 'Poppins',
-                            fontSize: FontSize.s10,
+                            fontSize: 10.0.sp,
                             fontWeight: FontWeight.w600,
-                            color: CommonColors.blackColor,
+                            color: _C.ink,
                           ),
                         ),
                       ),
@@ -1832,9 +1884,11 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
                           stop.meansOfTransport!.isNotEmpty)
                         Container(
                           padding: EdgeInsets.symmetric(
-                              horizontal: 2.w, vertical: 0.2.h),
+                            horizontal: 2.w,
+                            vertical: 0.2.h,
+                          ),
                           decoration: BoxDecoration(
-                            color: CommonColors.cFFE6F5F3,
+                            color: _C.tealSoft,
                             borderRadius: BorderRadius.circular(2.w),
                           ),
                           child: Text(
@@ -1842,8 +1896,8 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
                             textScaler: const TextScaler.linear(1.0),
                             style: TextStyle(
                               fontFamily: 'Poppins',
-                              fontSize: FontSize.s7,
-                              color: CommonColors.cFF0F7B6C,
+                              fontSize: 7.0.sp,
+                              color: _C.teal,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -1856,29 +1910,25 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
             ),
           ],
         ),
-        // Dotted gap
         if (showDottedLine)
-          Row(
-            children: [
-              SizedBox(width: 21.w + 6),
-              Column(
-                children: List.generate(
-                  3,
-                  (i) => Container(
-                    width: 2,
-                    height: 6,
-                    margin: const EdgeInsets.symmetric(vertical: 3),
-                    decoration: BoxDecoration(
-                      color: CommonColors.trekroutecolorlight,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
+          Padding(
+            padding: EdgeInsets.only(left: 21.w),
+            child: Column(
+              children: List.generate(
+                3,
+                (i) => Container(
+                  width: 2,
+                  height: 6,
+                  margin: const EdgeInsets.symmetric(vertical: 3),
+                  decoration: BoxDecoration(
+                    color: _C.routeLine,
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
               ),
-            ],
+            ),
           ),
       ],
     );
   }
 }
-

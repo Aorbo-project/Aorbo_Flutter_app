@@ -1,9 +1,10 @@
 import 'package:arobo_app/controller/trek_controller.dart';
+import 'package:arobo_app/utils/app_theme.dart';
+import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:sizer/sizer.dart';
-import 'common_colors.dart';
-import 'screen_constants.dart';
 
 class CommonTrekDetailsBar extends StatefulWidget {
   final Function(int) onTabSelected;
@@ -16,14 +17,11 @@ class CommonTrekDetailsBar extends StatefulWidget {
   });
 
   @override
-  State<CommonTrekDetailsBar> createState() =>
-      _CommonTrekDetailsBarState();
+  State<CommonTrekDetailsBar> createState() => _CommonTrekDetailsBarState();
 }
 
-class _CommonTrekDetailsBarState
-    extends State<CommonTrekDetailsBar> {
-  final TrekController _trekC =
-      Get.find<TrekController>();
+class _CommonTrekDetailsBarState extends State<CommonTrekDetailsBar> {
+  final TrekController _trekC = Get.find<TrekController>();
 
   late int selectedIndex;
   final ScrollController _scrollController = ScrollController();
@@ -73,13 +71,14 @@ class _CommonTrekDetailsBarState
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.white,
-      padding: EdgeInsets.symmetric(vertical: 0.8.h),
+      color: AroboTheme.cardBg, // Clean white background
+      padding: EdgeInsets.symmetric(vertical: 1.h),
       child: SizedBox(
         height: 5.5.h,
         child: ListView.builder(
           controller: _scrollController,
           scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
           itemCount: _tabs.length,
           itemBuilder: (_, index) {
             if (!_tabVisibility[index]) return const SizedBox();
@@ -88,36 +87,45 @@ class _CommonTrekDetailsBarState
 
             return GestureDetector(
               onTap: () {
+                HapticFeedback.selectionClick();
                 setState(() => selectedIndex = index);
                 widget.onTabSelected(index);
                 _scrollToSelectedTab();
               },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 250),
+                curve: Curves.easeOut,
                 margin: EdgeInsets.only(
                   left: index == 0 ? 4.w : 2.w,
                   right: 2.w,
                 ),
-                padding: EdgeInsets.symmetric(
-                  horizontal: 4.w,
-                  vertical: 0.9.h,
-                ),
+                padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 0.9.h),
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? CommonColors.blueColor
-                      : Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(3.w),
+                  // Using the deep slate primary color for selection
+                  color: isSelected ? AroboTheme.primary : AroboTheme.elevated,
+                  borderRadius: BorderRadius.circular(12), // Modern rounding
+                  border: Border.all(
+                    color: isSelected ? AroboTheme.primary : AroboTheme.border,
+                    width: 1,
+                  ),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: AroboTheme.primary.withOpacity(0.2),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : [],
                 ),
                 child: Center(
                   child: Text(
                     _tabs[index],
                     textScaler: const TextScaler.linear(1.0),
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: FontSize.s10,
-                      fontWeight: FontWeight.w600,
-                      color:
-                          isSelected ? Colors.white : Colors.black87,
+                    style: AroboTheme.label(
+                      size: FontSize.s11,
+                      weight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                      color: isSelected ? Colors.white : AroboTheme.ink400,
                     ),
                   ),
                 ),
