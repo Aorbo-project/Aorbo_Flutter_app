@@ -17,7 +17,9 @@ import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/common_images.dart';
 import 'package:arobo_app/utils/custom_snackbar.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
+import 'package:arobo_app/utils/shared_preferences.dart';
 import 'package:arobo_app/utils/total_fare_modal.dart';
+import 'package:arobo_app/widgets/logger.dart';
 
 // ─────────────────────────────────────────────
 // DESIGN TOKENS
@@ -49,7 +51,7 @@ class PaymentScreen extends StatefulWidget {
 }
 
 class _PaymentScreenState extends State<PaymentScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   final DashboardController _dashboardC = Get.find<DashboardController>();
   final TrekController _trekC = Get.find<TrekController>();
   final UserController _userC = Get.find<UserController>();
@@ -67,6 +69,13 @@ class _PaymentScreenState extends State<PaymentScreen>
   bool _showPaymentError = false;
   String _paymentErrorMessage = '';
 
+  // True from the moment _razorpay.open() is called until the NEXT app
+  // resume consumes it — marks "a checkout is genuinely in flight" so
+  // didChangeAppLifecycleState knows to hand off to ProcessingBookingScreen
+  // rather than treating the resume as unrelated (e.g. pulling down the
+  // notification shade).
+  bool _razorpayCheckoutOpen = false;
+
   static const int _totalTimerSecs = 5 * 60;
   final RxInt _remainingSecs = _totalTimerSecs.obs;
   bool _isTimerExpired = false;
@@ -79,6 +88,8 @@ class _PaymentScreenState extends State<PaymentScreen>
   @override
   void initState() {
     super.initState();
+
+    WidgetsBinding.instance.addObserver(this);
 
     _fadeCtrl = AnimationController(
       vsync: this,
@@ -107,6 +118,13 @@ class _PaymentScreenState extends State<PaymentScreen>
     // show a SnackBar/navigate before this screen finishes building.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _syncTimerToExpiry(_currentFareResponse()?.expiresAt);
+      // Covers Activity recreation: if the OS destroyed and rebuilt this
+      // Activity while a UPI app had focus, initState just ran fresh — all
+      // in-memory orderId/paymentId/correlationId state is gone, and the
+      // Razorpay SDK's success/error callback has no listener to land on
+      // anymore. The persisted SpUtil.pendingOrderId is the only surviving
+      // clue; resolve it now instead of waiting for the user to notice.
+      _resolvePendingPaymentIfAny();
     });
     ever(_trekC.calculateFareResponseModel, (result) {
       result.maybeWhen(
@@ -118,6 +136,94 @@ class _PaymentScreenState extends State<PaymentScreen>
     });
 
     _startTimer();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state != AppLifecycleState.resumed) return;
+
+    if (_razorpayCheckoutOpen) {
+      // Returning from an actual checkout attempt — hand off to
+      // ProcessingBookingScreen unconditionally. Razorpay's own success/error
+      // callback is only a best-effort fast path from here on: it can be
+      // silently dropped by the OS (Activity recreation detaches the
+      // plugin's ActivityResultListener — confirmed via razorpay_flutter's
+      // own source), so the backend's own order status, not the SDK
+      // callback, is what actually resolves this booking.
+      _razorpayCheckoutOpen = false;
+      _navigateToProcessingBooking();
+    } else {
+      // Not returning from a checkout (e.g. Activity recreation wiped this
+      // flag along with everything else) — fall back to the reactive check.
+      _resolvePendingPaymentIfAny();
+    }
+  }
+
+  Future<void> _navigateToProcessingBooking() async {
+    String? orderId = _trekC.orderData.value.id?.toString();
+    if (orderId == null || orderId.isEmpty || orderId == 'null') {
+      final pref = await SpUtil.getInstance();
+      orderId = pref.getString(SpUtil.pendingOrderId);
+    }
+    if (orderId == null || orderId.isEmpty) return; // nothing to resolve — stay put
+    if (!mounted) return;
+    Get.offNamed('/processing-booking', arguments: {'orderId': orderId});
+  }
+
+  /// Proactively resolves a leftover pending Razorpay order for this device,
+  /// if one exists, instead of waiting for the user to tap Pay Now again
+  /// (which only checks reactively — see TrekController._resolveExistingOrderBeforeNewOne).
+  /// Safe to call repeatedly; a no-op when nothing is pending.
+  Future<void> _resolvePendingPaymentIfAny() async {
+    if (!mounted || _isProcessingPayment) return;
+
+    final pref = await SpUtil.getInstance();
+    final pendingOrderId = pref.getString(SpUtil.pendingOrderId);
+    if (pendingOrderId == null || pendingOrderId.isEmpty) return;
+
+    final status = await _trekC.checkOrderStatus(pendingOrderId);
+    if (!mounted || status == null) return; // inconclusive — leave as-is, don't guess
+
+    switch (status['status']) {
+      case 'paid':
+        await pref.remove(SpUtil.pendingOrderId);
+        await pref.remove(SpUtil.pendingCorrelationId);
+        if (!mounted) return;
+        setState(() {
+          _isProcessingPayment = false;
+          _showPaymentError = false;
+        });
+        _trekC.clearBookingData();
+        Get.offNamedUntil('/my-bookings', ModalRoute.withName('/dashboard'));
+        if (Get.context != null) {
+          CustomSnackBar.show(
+            Get.context!,
+            message: 'Your earlier payment was confirmed — check My Bookings.',
+          );
+        }
+        break;
+      case 'expired':
+      case 'refunded':
+        await pref.remove(SpUtil.pendingOrderId);
+        await pref.remove(SpUtil.pendingCorrelationId);
+        if (!mounted) return;
+        if (status['status'] == 'refunded') {
+          setState(() {
+            _showPaymentError = true;
+            _paymentErrorMessage = 'Your previous payment attempt could not be '
+                'completed in time and has been automatically refunded. '
+                'You can try booking again.';
+          });
+        }
+        break;
+      case 'pending':
+      default:
+        // Still genuinely in flight (or webhook/reconciliation hasn't landed
+        // yet) — leave it alone, same conservative rule as everywhere else
+        // in this flow: never guess, never auto-reopen checkout.
+        break;
+    }
   }
 
   CalculateFareResponseModel? _currentFareResponse() {
@@ -147,6 +253,7 @@ class _PaymentScreenState extends State<PaymentScreen>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     _couponCtrl.removeListener(_handleTextChange);
     _couponCtrl.dispose();
@@ -241,8 +348,13 @@ class _PaymentScreenState extends State<PaymentScreen>
         },
       };
 
+      // Marks that a checkout is genuinely in flight so the NEXT app-resume
+      // (returning from Razorpay/the UPI app) knows to hand off to
+      // ProcessingBookingScreen — see didChangeAppLifecycleState below.
+      _razorpayCheckoutOpen = true;
       _razorpay.open(options);
     } catch (e) {
+      _razorpayCheckoutOpen = false;
       CustomSnackBar.show(
         context,
         message: 'Failed to open payment: ${e.toString()}',
@@ -250,68 +362,32 @@ class _PaymentScreenState extends State<PaymentScreen>
     }
   }
 
+  /// Best-effort fast path only. If Razorpay's SDK actually delivers this
+  /// callback AND our verify call reaches the server, this shows the ticket
+  /// faster than waiting for a full resume+poll cycle. If either step fails
+  /// or never arrives, no alarming overlay is shown here — the resume-
+  /// triggered ProcessingBookingScreen (see didChangeAppLifecycleState) is
+  /// the single, authoritative path from here, checked directly against the
+  /// backend. This is what eliminates the old "Something went wrong" false
+  /// alarm that used to appear for payments that had actually succeeded.
   Future<void> _handlePaymentSuccess(PaymentSuccessResponse r) async {
     _trekC.orderId.value = r.orderId ?? '';
     _trekC.paymentId.value = r.paymentId ?? '';
     _trekC.signature.value = r.signature ?? '';
-
-    final verified = await _trekC.verifyTrekOrder(
+    await _trekC.verifyTrekOrder(
       razorpayOrderId: r.orderId ?? '',
       razorpayPaymentId: r.paymentId ?? '',
       razorpaySignature: r.signature ?? '',
     );
-
-    if (!verified && mounted) {
-      // Razorpay already confirmed the charge — the failure here is only in
-      // reaching/parsing our own verify call (network drop, timeout). The
-      // retry button re-calls verifyTrekOrder with this SAME payment id, so
-      // it can never create a second booking or a second charge.
-      setState(() {
-        _isProcessingPayment = false;
-        _showPaymentError = true;
-        _paymentErrorMessage = _trekC.errorMessage.value.isNotEmpty
-            ? _trekC.errorMessage.value
-            : 'Your payment went through, but we could not confirm it yet. '
-                'Please retry — you will not be charged twice.';
-      });
-    }
   }
 
+  /// Best-effort fast path only — see _handlePaymentSuccess. Razorpay's own
+  /// SDK reporting an error is not proof the payment actually failed
+  /// server-side (or even if it is, that's still just what the resume+poll
+  /// flow will independently confirm), so nothing is shown here at all.
+  /// Deliberately silent by design, not an oversight.
   Future<void> _handlePaymentError(PaymentFailureResponse r) async {
-    if (!mounted) return;
-
-    // Razorpay's own SDK reported an error, but that's not proof the payment
-    // actually failed server-side — the webhook (or a racing client call)
-    // may have already completed it. Check before scaring the user with a
-    // "something went wrong" dialog for a booking that's actually confirmed.
-    final orderId = _trekC.orderData.value.id ??
-        _trekC.orderNextActionParams['order_id']?.toString() ??
-        '';
-    if (orderId.isNotEmpty) {
-      final status = await _trekC.checkOrderStatus(orderId);
-      if (status?['status'] == 'paid' && mounted) {
-        setState(() => _isProcessingPayment = false);
-        _trekC.clearBookingData();
-        Get.offNamedUntil('/my-bookings', ModalRoute.withName('/dashboard'));
-        CustomSnackBar.show(
-          Get.context!,
-          message: 'Good news — your payment actually went through. Check My Bookings.',
-        );
-        return;
-      }
-    }
-
-    // Razorpay checkout itself failed or was cancelled before any charge —
-    // no paymentId exists yet, so retry below reopens the SAME order rather
-    // than calling verify.
-    if (!mounted) return;
-    setState(() {
-      _isProcessingPayment = false;
-      _showPaymentError = true;
-      _paymentErrorMessage = (r.message?.isNotEmpty ?? false)
-          ? r.message!
-          : 'Payment was not completed.';
-    });
+    logger.d('Razorpay reported a payment error (informational only): ${r.message}');
   }
 
   Future<void> _handlePayNow() async {
@@ -327,13 +403,21 @@ class _PaymentScreenState extends State<PaymentScreen>
         orElse: () => null,
       ));
     } else if (mounted) {
-      setState(() {
-        _isProcessingPayment = false;
-        _showPaymentError = true;
-        _paymentErrorMessage = _trekC.errorMessage.value.isNotEmpty
-            ? _trekC.errorMessage.value
-            : 'Could not start payment. Please try again.';
-      });
+      if (_trekC.blockedByPendingCheck) {
+        // Not a genuine failure — an earlier payment already succeeded or is
+        // still being confirmed. TrekController already showed a calm
+        // SnackBar (and navigated away entirely for the "already paid" case).
+        // Just drop the processing state; no alarming overlay on top of that.
+        setState(() => _isProcessingPayment = false);
+      } else {
+        setState(() {
+          _isProcessingPayment = false;
+          _showPaymentError = true;
+          _paymentErrorMessage = _trekC.errorMessage.value.isNotEmpty
+              ? _trekC.errorMessage.value
+              : 'Could not start payment. Please try again.';
+        });
+      }
     }
   }
 

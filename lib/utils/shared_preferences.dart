@@ -15,6 +15,10 @@ class SpUtil {
   // whether this order already succeeded, instead of blindly reopening
   // checkout (or a duplicate charge attempt) on next launch.
   static const String pendingOrderId   = 'pending_razorpay_order_id';
+  // Paired with pendingOrderId — the same client_correlation_id sent with
+  // that order's create-order call, so a resumed/retried attempt keeps
+  // logging under the same trace ID instead of starting a new one.
+  static const String pendingCorrelationId = 'pending_client_correlation_id';
 
   static SpUtil? _instance;
 

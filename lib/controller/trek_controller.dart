@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 
 
 import 'package:arobo_app/controller/dashboard_controller.dart';
@@ -94,6 +95,17 @@ class TrekController extends GetxController {
   RxString orderId = ''.obs;
   RxString paymentId = ''.obs;
   RxString signature = ''.obs;
+
+  // Client-generated per-attempt trace ID — sent with create-order and
+  // verify-payment so one payment attempt can be correlated end-to-end
+  // across Flutter logs, backend logs, the database, and Razorpay's own
+  // event timestamps. Not a security token, just a debugging/audit trail.
+  RxString correlationId = ''.obs;
+
+  String _generateCorrelationId() {
+    final rand = Random().nextInt(999999).toString().padLeft(6, '0');
+    return '${DateTime.now().millisecondsSinceEpoch}-$rand';
+  }
   Rx<VerifyOrderModal> verifyOrderModal = VerifyOrderModal().obs;
 
   //endregion
@@ -595,9 +607,82 @@ debugPrint("==========================");
 
 
 
+  /// Set by `_resolveExistingOrderBeforeNewOne` whenever it blocks a new order
+  /// for a NON-failure reason (an earlier payment already succeeded, or is
+  /// still genuinely being confirmed). Callers must check this before
+  /// treating `createTrekOrder()` returning "unsuccessful" as a genuine
+  /// failure — this path already shows its own calm SnackBar and, for the
+  /// "paid" case, navigates away entirely. Showing the alarming "Something
+  /// went wrong" overlay on top of that is what this flag exists to prevent.
+  bool blockedByPendingCheck = false;
+
+  /// Returns true if it's safe to mint a brand-new Razorpay order right now.
+  /// Checks for a leftover pending/captured order from an earlier attempt on
+  /// THIS device first — closes the gap where leaving the payment screen
+  /// (Back button, app killed mid-UPI-switch, Activity recreation, a lost
+  /// network right after Razorpay's success callback) and then simply
+  /// tapping Pay Now again could silently double-charge, because the earlier
+  /// payment may have already gone through server-side without this device
+  /// ever finding out. Previously only `checkPendingOrderOnResume` (app
+  /// launch/resume only) guarded against this — this covers the in-session
+  /// "leave the error screen, start over" path that slipped through it.
+  Future<bool> _resolveExistingOrderBeforeNewOne() async {
+    blockedByPendingCheck = false;
+
+    final pref = await SpUtil.getInstance();
+    final existingOrderId = pref.getString(SpUtil.pendingOrderId);
+    if (existingOrderId == null || existingOrderId.isEmpty) return true;
+
+    final status = await checkOrderStatus(existingOrderId);
+    if (status == null) {
+      // Inconclusive (network error, or the order is simply gone) — don't
+      // trap the user behind a transient check failure. The 15-minute
+      // server-side TTL plus the backend reconciliation cron are the real
+      // safety net for the rare case this was actually still live.
+      return true;
+    }
+
+    switch (status['status']) {
+      case 'paid':
+        await pref.remove(SpUtil.pendingOrderId);
+        await pref.remove(SpUtil.pendingCorrelationId);
+        blockedByPendingCheck = true;
+        errorMessage.value =
+            'Your earlier payment for this booking already went through — check My Bookings.';
+        if (Get.context != null) {
+          Get.offNamedUntil('/my-bookings', ModalRoute.withName('/dashboard'));
+          CustomSnackBar.show(Get.context!, message: errorMessage.value);
+        }
+        return false;
+      case 'expired':
+      case 'refunded':
+        await pref.remove(SpUtil.pendingOrderId);
+        await pref.remove(SpUtil.pendingCorrelationId);
+        return true;
+      case 'pending':
+      default:
+        // Genuinely still in flight — creating a second order now is exactly
+        // the double-charge risk this check exists to prevent. Not a
+        // failure — just not the right moment yet.
+        blockedByPendingCheck = true;
+        errorMessage.value =
+            'Your previous payment attempt is still being confirmed. Please wait a moment and check My Bookings before trying again.';
+        if (Get.context != null) {
+          CustomSnackBar.show(Get.context!, message: errorMessage.value);
+        }
+        return false;
+    }
+  }
+
   Future<void> createTrekOrder() async {
     try {
+      final canProceed = await _resolveExistingOrderBeforeNewOne();
+      if (!canProceed) {
+        orderModal.value = BookingResponse(success: false, message: errorMessage.value);
+        return;
+      }
       showLoaderDialog();
+      correlationId.value = _generateCorrelationId();
       // Populate travelers from the selected list, normalizing gender to title case
       createOrderRequestModel.value = createOrderRequestModel.value.copyWith(
   travelers: travellerDetailList.map((t) {
@@ -624,9 +709,12 @@ debugPrint(jsonEncode(createOrderRequestModel.value.toJson()));
 debugPrint("========== END CREATE ORDER ==========");
 // ===== DEBUG END =====
 
+final bodyMap = Map<String, dynamic>.from(createOrderRequestModel.toJson());
+bodyMap['client_correlation_id'] = correlationId.value;
+
 final response = await repository.postApiCall(
   url: NetworkUrl.addBooking,
-  body: createOrderRequestModel.toJson(),
+  body: bodyMap,
 );
 
       if (response != null) {
@@ -646,6 +734,7 @@ final response = await repository.postApiCall(
           if (pendingOrderId != null && pendingOrderId.toString().isNotEmpty) {
             final pref = await SpUtil.getInstance();
             await pref.putString(SpUtil.pendingOrderId, pendingOrderId.toString());
+            await pref.putString(SpUtil.pendingCorrelationId, correlationId.value);
           }
 
           logger.d(
@@ -684,10 +773,19 @@ final response = await repository.postApiCall(
   }) async {
     showLoaderDialog();
 
+    // Fall back to the persisted correlation ID if in-memory state was lost
+    // (Activity recreation, app relaunch) — keeps this attempt traceable
+    // under the SAME id it started with, rather than silently going untagged.
+    if (correlationId.value.isEmpty) {
+      final pref = await SpUtil.getInstance();
+      correlationId.value = pref.getString(SpUtil.pendingCorrelationId) ?? '';
+    }
+
     String body = json.encode({
       "razorpay_order_id": razorpayOrderId,
       "razorpay_payment_id": razorpayPaymentId,
-      "razorpay_signature": razorpaySignature
+      "razorpay_signature": razorpaySignature,
+      "client_correlation_id": correlationId.value,
     });
 
     try {
@@ -705,6 +803,7 @@ final response = await repository.postApiCall(
             // Booking is confirmed — nothing left to resume on next launch.
             final pref = await SpUtil.getInstance();
             await pref.remove(SpUtil.pendingOrderId);
+            await pref.remove(SpUtil.pendingCorrelationId);
             Get.offNamedUntil(
               '/payment-success',
               ModalRoute.withName('/dashboard'),
@@ -758,6 +857,7 @@ final response = await repository.postApiCall(
         // 404 etc. — order isn't findable/ownable anymore; nothing left to
         // resume. Clear it so we stop checking on every future launch.
         await pref.remove(SpUtil.pendingOrderId);
+        await pref.remove(SpUtil.pendingCorrelationId);
         return;
       }
 
@@ -765,21 +865,34 @@ final response = await repository.postApiCall(
 
       switch (status) {
         case 'paid':
-          // Payment succeeded server-side (client callback or the Razorpay
-          // webhook completed it) even though this device never found out.
+          // Payment succeeded server-side (client callback, the Razorpay
+          // webhook, or reconciliation completed it) even though this
+          // device never found out — including the case where
+          // ProcessingBookingScreen itself got wiped out by an Activity
+          // recreation mid-poll. DashboardMain is the one screen that
+          // reliably survives any relaunch, so THIS is the durable place
+          // to actually show the ticket, not just a snackbar — the user
+          // should never have to go hunting in My Bookings to discover a
+          // payment they just made actually went through.
           await pref.remove(SpUtil.pendingOrderId);
-          logger.d('checkPendingOrderOnResume: order already paid — booking exists, nothing to reopen');
+          await pref.remove(SpUtil.pendingCorrelationId);
+          logger.d('checkPendingOrderOnResume: order already paid — showing ticket');
+          final rawBookingId = response['data']?['booking_id'];
+          final bookingId = rawBookingId is int
+              ? rawBookingId
+              : int.tryParse(rawBookingId?.toString() ?? '');
+          if (bookingId != null) {
+            await fetchAndPopulateTicketData(bookingId);
+          }
           if (Get.context != null) {
-            CustomSnackBar.show(
-              Get.context!,
-              message: 'Your earlier booking payment was confirmed — check My Bookings.',
-            );
+            Get.toNamed('/payment-success');
           }
           break;
         case 'expired':
         case 'refunded':
           // Genuinely dead — safe to let the user start a fresh booking next time.
           await pref.remove(SpUtil.pendingOrderId);
+          await pref.remove(SpUtil.pendingCorrelationId);
           break;
         case 'pending':
         default:
@@ -813,6 +926,55 @@ final response = await repository.postApiCall(
     } catch (e) {
       logger.w('checkOrderStatus failed: ${e.toString()}');
       return null;
+    }
+  }
+
+  /// Fetches full booking details (trek/vendor/batch/travelers) and populates
+  /// [verifyOrderModal] so the existing Ticket UI on PaymentSuccessPage can
+  /// render — used by ProcessingBookingScreen when a booking is confirmed via
+  /// backend polling rather than Razorpay's own success callback (which is
+  /// what [verifyTrekOrder] populates it from normally). Same endpoint
+  /// already used by the booking-history detail view.
+  Future<bool> fetchAndPopulateTicketData(int bookingId) async {
+    try {
+      final response = await repository.getApiCall(
+        url: NetworkUrl.bookingDetails(bookingId),
+      );
+      if (response == null || response['success'] != true) return false;
+
+      final rawData = response['data'] as Map<String, dynamic>?;
+      if (rawData == null) return false;
+
+      final data = Data.fromJson(rawData);
+      final finalAmount = double.tryParse(rawData['final_amount']?.toString() ?? '') ?? 0;
+      final advanceAmount = double.tryParse(rawData['advance_amount']?.toString() ?? '') ?? 0;
+      final remainingAmount = double.tryParse(rawData['remaining_amount']?.toString() ?? '') ?? 0;
+      final isPartial = rawData['payment_status']?.toString() == 'partial';
+
+      verifyOrderModal.value = VerifyOrderModal(
+        success: true,
+        data: data,
+        payment: Payment(
+          orderId: rawData['razorpay_order_id']?.toString(),
+          paymentId: rawData['razorpay_payment_id']?.toString(),
+          amount: finalAmount,
+          status: rawData['payment_status']?.toString(),
+        ),
+        paymentDetails: PaymentDetails(
+          isPartialPayment: isPartial,
+          paymentStatus: rawData['payment_status']?.toString(),
+          totalAmount: finalAmount,
+          paidAmount: isPartial ? advanceAmount : finalAmount,
+          remainingAmount: remainingAmount,
+          advanceAmountPerTraveler: advanceAmount,
+          totalAdvanceAmount: advanceAmount,
+          participantCount: rawData['total_travelers'] as int?,
+        ),
+      );
+      return true;
+    } catch (e) {
+      logger.w('fetchAndPopulateTicketData failed: ${e.toString()}');
+      return false;
     }
   }
 

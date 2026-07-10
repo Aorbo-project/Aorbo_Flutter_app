@@ -5,6 +5,7 @@ import 'package:arobo_app/screens/notifications_screen.dart';
 import 'package:arobo_app/screens/otp_screen.dart';
 import 'package:arobo_app/screens/payment_screen.dart';
 import 'package:arobo_app/screens/payment_success_screen.dart';
+import 'package:arobo_app/screens/processing_booking_screen.dart';
 import 'package:arobo_app/screens/personalized_treks_screen.dart';
 import 'package:arobo_app/screens/popular_treks_screen.dart';
 import 'package:arobo_app/screens/search_summary_screen.dart';
@@ -128,6 +129,7 @@ final routes = [
   ),
   GetPage(name: '/payment', page: () => const PaymentScreen()),
   GetPage(name: '/payment-success', page: () => const PaymentSuccessPage()),
+  GetPage(name: '/processing-booking', page: () => const ProcessingBookingScreen()),
   GetPage(name: '/rate-review', page: () => const RateReviewScreen()),
   GetPage(name: '/issue-report', page: () => const IssueReportScreen()),
 

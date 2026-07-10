@@ -15,6 +15,7 @@ import 'package:arobo_app/utils/booking_constants.dart';
 import 'package:arobo_app/utils/common_btn.dart';
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/common_images.dart';
+import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:arobo_app/utils/state_selection_bottom_sheet.dart';
 import 'package:arobo_app/utils/total_fare_modal.dart';
 
@@ -246,6 +247,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
   final nameNode = FocusNode();
 
   String _selectedState = BookingConstants.defaultState;
+  bool _isEditingContact = false;
 
   final bool _whatsappUpdates = false;
   String _selectedPaymentOption = 'standard';
@@ -259,13 +261,13 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
   // From the logs, flexible policy => cancellationPolicy.id == 2.
   bool get _isFlexiblePolicy => travelData.cancellationPolicy?.id == 5;
   // ─────────────────────────────────────────────────────────────────────────
-  void _showStateSelectionBottomSheet(StateSetter setModalState) {
+  void _showStateSelectionBottomSheet() {
     showStateSelectionBottomSheet(
       context: context,
       stateList: _dashboardC.stateList,
       selectedStateId: _userC.stateUpdateId.value,
       onStateSelected: (state) {
-        setModalState(() {
+        setState(() {
           _userC.stateUpdateId.value = state.id ?? 0;
           _selectedState = state.name ?? '';
         });
@@ -653,225 +655,183 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
     ),
   );
 
-  // ── CONTACT BOTTOM SHEET ──────────────────────────────────────────────────
-  void _showContactDetailsBottomSheet({bool isEdit = false}) {
-    _userC.phoneNumberController.value.text =
-        (isEdit && _userC.userProfileData.value.customer?.phone != null)
-        ? _userC.userProfileData.value.customer!.phone!.replaceFirst('+91', '')
-        : '';
-    _userC.emailController.value.text =
-        (isEdit && _userC.userProfileData.value.customer?.email != null)
-        ? _userC.userProfileData.value.customer!.email!
-        : '';
+  // ── CONTACT DETAILS — INLINE EDIT (not a bottom sheet) ────────────────────
+  // Deliberately NOT a showModalBottomSheet: this section is opened while
+  // the screen is reached via the booking flow (trek details / personalized
+  // treks), and the state-of-residence picker below is itself a
+  // showModalBottomSheet. Nesting a second modal sheet inside this one was
+  // the actual cause of a `_dependents.isEmpty` framework assertion on
+  // selection — popping the inner sheet raced with the outer sheet's own
+  // element deactivation. The account-edit screen (traveller_info_screen.dart)
+  // never had this bug because its Contact Details edit is inline, not a
+  // sheet, so its state picker is always the only active modal. Mirroring
+  // that architecture here removes the nesting entirely.
+  bool get _hasExistingContactDetails =>
+      _userC.userProfileData.value.customer?.email != null &&
+      _userC.userProfileData.value.customer?.phone != null;
 
-    if (isEdit && _userC.userProfileData.value.customer?.state != null) {
-      _userC.stateUpdateId.value =
-          _userC.userProfileData.value.customer!.state!.id!;
-      _selectedState =
-          _userC.userProfileData.value.customer!.state!.name ?? '-';
+  void _enterContactEditMode() {
+    final customer = _userC.userProfileData.value.customer;
+    final isEdit = _hasExistingContactDetails;
+
+    _userC.phoneNumberController.value.text =
+        (isEdit && customer?.phone != null)
+            ? customer!.phone!.replaceFirst('+91', '')
+            : '';
+    _userC.emailController.value.text =
+        (isEdit && customer?.email != null) ? customer!.email! : '';
+
+    if (isEdit && customer?.state != null) {
+      _userC.stateUpdateId.value = customer!.state!.id!;
+      _selectedState = customer.state?.name ?? '-';
     } else {
       _userC.stateUpdateId.value = 0;
       _selectedState = BookingConstants.defaultState;
     }
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.55,
-        margin: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        decoration: BoxDecoration(
-          color: _TI.sheetBg,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(5.w)),
-        ),
-        child: StatefulBuilder(
-          builder: (context, setModalState) => Padding(
-            padding: EdgeInsets.only(
-              left: 6.w,
-              right: 6.w,
-              top: 2.h,
-              bottom: 2.h,
+    setState(() => _isEditingContact = true);
+  }
+
+  Widget _buildContactEditForm() {
+    final isEdit = _hasExistingContactDetails;
+    return Column(
+      key: const ValueKey('contact-edit'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(height: 2.h),
+        Divider(color: _TI.sheetBorder, height: 1),
+        SizedBox(height: 2.h),
+
+        // Phone
+        Container(
+          decoration: BoxDecoration(
+            color: _TI.sheetSurface,
+            border: Border.all(color: _TI.sheetBorder),
+            borderRadius: BorderRadius.circular(2.w),
+          ),
+          child: Row(children: [
+            Container(
+              width: 27.w,
+              padding: EdgeInsets.symmetric(vertical: 1.2.h),
+              decoration: BoxDecoration(
+                border: Border(right: BorderSide(
+                    color: _TI.sheetBorder, width: 1))),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text('Country Code',
+                    textScaler: const TextScaler.linear(1.0),
+                    style: GoogleFonts.poppins(
+                      fontSize: FontSize.s7,
+                      color: _TI.sheetInkMid,
+                      fontWeight: FontWeight.w300)),
+                  SizedBox(height: 0.4.h),
+                  Text('+91 (IND)',
+                    textScaler: const TextScaler.linear(1.0),
+                    style: GoogleFonts.poppins(
+                      fontSize: FontSize.s10,
+                      fontWeight: FontWeight.w600,
+                      color: _TI.sheetInk)),
+                ],
+              ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _sheetHandle(),
-                _sheetHeader(
-                  isEdit ? 'Edit Contact Details' : 'Add Contact Details',
-                ),
-                SizedBox(height: 0.5.h),
-                Text(
-                  'Trip ticket details will be provided to',
-                  textScaler: const TextScaler.linear(1.0),
-                  style: GoogleFonts.poppins(
-                    fontSize: 8.sp,
-                    color: _TI.sheetInkMid,
-                  ),
-                ),
-                SizedBox(height: 2.h),
+            Expanded(child: _sheetInputContainer(
+              label: 'Phone Number',
+              child: _sheetTextField(
+                _userC.phoneNumberController.value,
+                keyboardType: TextInputType.phone,
+                maxLength: 10,
+                onChanged: () => setState(() {}),
+              ),
+            )),
+          ]),
+        ),
+        SizedBox(height: 1.8.h),
 
-                // Phone
-                Container(
-                  decoration: BoxDecoration(
-                    color: _TI.sheetSurface,
-                    border: Border.all(color: _TI.sheetBorder),
-                    borderRadius: BorderRadius.circular(2.w),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 27.w,
-                        padding: EdgeInsets.symmetric(vertical: 1.2.h),
-                        decoration: BoxDecoration(
-                          border: Border(
-                            right: BorderSide(color: _TI.sheetBorder, width: 1),
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Country Code',
-                              textScaler: const TextScaler.linear(1.0),
-                              style: GoogleFonts.poppins(
-                                fontSize: 7.sp,
-                                color: _TI.sheetInkMid,
-                                fontWeight: FontWeight.w300,
-                              ),
-                            ),
-                            SizedBox(height: 0.4.h),
-                            Text(
-                              '+91 (IND)',
-                              textScaler: const TextScaler.linear(1.0),
-                              style: GoogleFonts.poppins(
-                                fontSize: 10.sp,
-                                fontWeight: FontWeight.w600,
-                                color: _TI.sheetInk,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: _sheetInputContainer(
-                          label: 'Phone Number',
-                          child: _sheetTextField(
-                            _userC.phoneNumberController.value,
-                            keyboardType: TextInputType.phone,
-                            maxLength: 10,
-                            onChanged: () => setModalState(() {}),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 1.8.h),
+        // Email
+        _sheetInputContainer(
+          label: 'Email ID',
+          child: _sheetTextField(
+            _userC.emailController.value,
+            keyboardType: TextInputType.emailAddress,
+            onChanged: () => setState(() {}),
+          ),
+        ),
+        SizedBox(height: 1.8.h),
 
-                // Email
-                _sheetInputContainer(
-                  label: 'Email ID',
-                  child: _sheetTextField(
-                    _userC.emailController.value,
-                    keyboardType: TextInputType.emailAddress,
-                    onChanged: () => setModalState(() {}),
-                  ),
-                ),
-                SizedBox(height: 1.8.h),
-
-                // State
-                Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: _TI.sheetSurface,
-                    border: Border.all(color: _TI.sheetBorder),
-                    borderRadius: BorderRadius.circular(2.w),
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () =>
-                          _showStateSelectionBottomSheet(setModalState),
-                      borderRadius: BorderRadius.circular(2.w),
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 4.w,
-                          vertical: 1.h,
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'State of Residence',
-                                  textScaler: const TextScaler.linear(1.0),
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 7.sp,
-                                    color: _TI.sheetInkMid,
-                                    fontWeight: FontWeight.w300,
-                                  ),
-                                ),
-                                SizedBox(height: 0.25.h),
-                                Text(
-                                  _selectedState,
-                                  textScaler: const TextScaler.linear(1.0),
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 11.sp,
-                                    fontWeight: FontWeight.w500,
-                                    color: _TI.sheetInk,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Icon(
-                              Icons.keyboard_arrow_down,
-                              color: _TI.sheetInkMid,
-                              size: 6.w,
-                            ),
-                          ],
-                        ),
-                      ),
+        // State
+        Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: _TI.sheetSurface,
+            border: Border.all(color: _TI.sheetBorder),
+            borderRadius: BorderRadius.circular(2.w),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: _showStateSelectionBottomSheet,
+              borderRadius: BorderRadius.circular(2.w),
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                    horizontal: 4.w, vertical: 1.h),
+                child: Row(
+                  mainAxisAlignment:
+                      MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('State of Residence',
+                          textScaler:
+                              const TextScaler.linear(1.0),
+                          style: GoogleFonts.poppins(
+                            fontSize: FontSize.s7,
+                            color: _TI.sheetInkMid,
+                            fontWeight: FontWeight.w300)),
+                        SizedBox(height: 0.25.h),
+                        Text(_selectedState,
+                          textScaler:
+                              const TextScaler.linear(1.0),
+                          style: GoogleFonts.poppins(
+                            fontSize: FontSize.s11,
+                            fontWeight: FontWeight.w500,
+                            color: _TI.sheetInk)),
+                      ],
                     ),
-                  ),
+                    Icon(Icons.keyboard_arrow_down,
+                        color: _TI.sheetInkMid, size: 6.w),
+                  ],
                 ),
-                SizedBox(height: 3.h),
-
-                CommonButton(
-                  height: 48,
-                  gradient: CommonColors.filterGradient,
-                  text: isEdit ? 'Update' : 'Save',
-                  textColor: CommonColors.whiteColor,
-                  onPressed: () async {
-                    if (_validateContactDetails()) {
-                      await _userC.updateUserProfile();
-                      if (!context.mounted) return;
-                      setState(() {});
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            isEdit
-                                ? 'Contact details updated successfully'
-                                : 'Contact details saved successfully',
-                            textScaler: const TextScaler.linear(1.0),
-                          ),
-                          backgroundColor: CommonColors.completedColor,
-                          duration: const Duration(seconds: 2),
-                        ),
-                      );
-                    }
-                  },
-                ),
-              ],
+              ),
             ),
           ),
         ),
-      ),
+        SizedBox(height: 3.h),
+
+        CommonButton(
+          height: 48,
+          gradient: CommonColors.filterGradient,
+          text: isEdit ? 'Update' : 'Save',
+          textColor: CommonColors.whiteColor,
+          onPressed: () async {
+            if (_validateContactDetails()) {
+              await _userC.updateUserProfile();
+              if (!mounted) return;
+              setState(() => _isEditingContact = false);
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text(
+                  isEdit
+                    ? 'Contact details updated successfully'
+                    : 'Contact details saved successfully',
+                  textScaler: const TextScaler.linear(1.0)),
+                backgroundColor: CommonColors.completedColor,
+                duration: const Duration(seconds: 2),
+              ));
+            }
+          },
+        ),
+      ],
     );
   }
 
@@ -1497,21 +1457,10 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                               ),
                             ),
                             GestureDetector(
-                              onTap: () => _showContactDetailsBottomSheet(
-                                isEdit:
-                                    _userC
-                                            .userProfileData
-                                            .value
-                                            .customer
-                                            ?.email !=
-                                        null &&
-                                    _userC
-                                            .userProfileData
-                                            .value
-                                            .customer
-                                            ?.phone !=
-                                        null,
-                              ),
+                              onTap: _isEditingContact
+                                  ? () => setState(
+                                      () => _isEditingContact = false)
+                                  : _enterContactEditMode,
                               child: Container(
                                 padding: EdgeInsets.symmetric(
                                   horizontal: 3.w,
@@ -1525,21 +1474,13 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                                   ),
                                 ),
                                 child: Text(
-                                  (_userC
-                                                  .userProfileData
-                                                  .value
-                                                  .customer
-                                                  ?.email !=
-                                              null &&
-                                          _userC
-                                                  .userProfileData
-                                                  .value
-                                                  .customer
-                                                  ?.phone !=
-                                              null)
-                                      ? 'Edit'
-                                      : 'Add',
-                                  textScaler: const TextScaler.linear(1.0),
+                                  _isEditingContact
+                                      ? 'Close'
+                                      : (_hasExistingContactDetails
+                                          ? 'Edit'
+                                          : 'Add'),
+                                  textScaler:
+                                      const TextScaler.linear(1.0),
                                   style: TextStyle(
                                     fontFamily: 'Poppins',
                                     fontSize: 9.sp,
@@ -1589,6 +1530,26 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                                         .name ??
                                     '-'
                               : '-',
+                        ),
+                        AnimatedSize(
+                          duration: const Duration(milliseconds: 280),
+                          curve: Curves.easeOutCubic,
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 280),
+                            transitionBuilder: (child, anim) =>
+                                FadeTransition(
+                              opacity: anim,
+                              child: SizeTransition(
+                                sizeFactor: anim,
+                                axisAlignment: -1,
+                                child: child,
+                              ),
+                            ),
+                            child: _isEditingContact
+                                ? _buildContactEditForm()
+                                : const SizedBox.shrink(
+                                    key: ValueKey('contact-readonly')),
+                          ),
                         ),
                       ],
                     ),

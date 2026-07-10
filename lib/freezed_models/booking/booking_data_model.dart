@@ -128,6 +128,7 @@ class BreakDownDataModel with _$BreakDownDataModel {
     @JsonKey(name: 'base_price') dynamic basePrice,
     @JsonKey(name: 'traveler_count') dynamic travelerCount,
     @JsonKey(name: 'base_total') dynamic baseTotal,
+    @JsonKey(name: 'vendor_discount') dynamic vendorDiscount,
     dynamic discount,
     @JsonKey(name: 'coupon_code') dynamic couponCode,
     @JsonKey(name: 'amount_after_discount') dynamic amountAfterDiscount,

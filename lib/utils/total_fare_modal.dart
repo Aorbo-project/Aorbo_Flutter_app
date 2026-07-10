@@ -141,16 +141,16 @@ class TotalFareModal extends StatelessWidget {
                 ),
                 SizedBox(height: 12),
 
-                // // Vendor Discount (if any)
-                // if ((breakDown?.discount ?? 0) > 0) ...[
-                //   _buildFareRow(
-                //     'Vendor Discount',
-                //     '-₹${breakDown?.discount.toStringAsFixed(2)}',
-                //     textColor: CommonColors.greyColor2,
-                //     isTotal: false,
-                //   ),
-                //   SizedBox(height: 12),
-                // ],
+                // Vendor Discount (if any)
+                if ((breakDown?.vendorDiscount ?? 0) > 0) ...[
+                  _buildFareRow(
+                    'Vendor Discount',
+                    '-₹${breakDown?.vendorDiscount.toStringAsFixed(2)}',
+                    textColor: CommonColors.greyColor2,
+                    isTotal: false,
+                  ),
+                  SizedBox(height: 12),
+                ],
 
                 // Coupon Discount (if any)
                 if ((breakDown?.discount ?? 0) > 0) ...[
