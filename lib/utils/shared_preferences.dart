@@ -10,6 +10,11 @@ class SpUtil {
   static const String profileCompleted = 'profile_completed';
   static const String isNewCustomer    = 'is_new_customer';
   static const String deviceId         = 'device_id';
+  // Razorpay order_id stored the instant an order is created — BEFORE Razorpay
+  // checkout opens — so a killed/crashed app can resume and ask the backend
+  // whether this order already succeeded, instead of blindly reopening
+  // checkout (or a duplicate charge attempt) on next launch.
+  static const String pendingOrderId   = 'pending_razorpay_order_id';
 
   static SpUtil? _instance;
 

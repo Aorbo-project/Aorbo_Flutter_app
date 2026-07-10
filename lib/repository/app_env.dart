@@ -9,9 +9,9 @@ class AppEnv {
   // For a physical device, replace with your machine's LAN IP (e.g. 192.168.1.X).
   // Switch back to production block above before committing/releasing.
   // ─────────────────────────────────────────────────────────────────────────────
-  // String apiBaseUrl = "http://10.235.203.22:3001";
-  // String socketUrl  = "http://10.235.203.22:3001";
-  // String imageUrl   = "http://10.235.203.22:3001/";
+  // String apiBaseUrl = "http://192.168.29.60:3001";
+  // String socketUrl  = "http://192.168.29.60:3001";
+  // String imageUrl   = "http://192.168.29.60:3001/";
 
-  String razorpayKey = "rzp_test_SW9tLdKrLyka8y";
+  String razorpayKey = "rzp_test_TBii9P0UpWmSoW";
 }

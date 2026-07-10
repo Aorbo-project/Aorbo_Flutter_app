@@ -99,7 +99,50 @@ class _PaymentScreenState extends State<PaymentScreen>
       time: const Duration(milliseconds: 500),
     );
 
+    // The countdown must track the server-side fareToken's real expiry, not
+    // wall-clock time since this screen mounted — the token is minted back
+    // on the Traveller Information screen, so part of its 5-minute life is
+    // already spent by the time the user reaches Payment. Deferred to after
+    // the first frame since an already-expired token would otherwise try to
+    // show a SnackBar/navigate before this screen finishes building.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _syncTimerToExpiry(_currentFareResponse()?.expiresAt);
+    });
+    ever(_trekC.calculateFareResponseModel, (result) {
+      result.maybeWhen(
+        success: (r) => _syncTimerToExpiry(
+          (r as CalculateFareResponseModel).expiresAt,
+        ),
+        orElse: () {},
+      );
+    });
+
     _startTimer();
+  }
+
+  CalculateFareResponseModel? _currentFareResponse() {
+    return _trekC.calculateFareResponseModel.value.maybeWhen(
+      success: (r) => r as CalculateFareResponseModel,
+      orElse: () => null,
+    );
+  }
+
+  /// Re-anchors the countdown to the fareToken's actual server expiry
+  /// (`expires_at`) whenever a fare calculation completes — initial load,
+  /// or a fresh token minted after a coupon/add-on change on this screen.
+  void _syncTimerToExpiry(dynamic expiresAtRaw) {
+    if (expiresAtRaw == null) return;
+    final expiresAt = DateTime.tryParse(expiresAtRaw.toString());
+    if (expiresAt == null) return;
+
+    final secsLeft = expiresAt.difference(DateTime.now()).inSeconds;
+    _remainingSecs.value = secsLeft.clamp(0, _totalTimerSecs);
+    _isTimerExpired = false;
+
+    if (_remainingSecs.value <= 0) {
+      _timer?.cancel();
+      _handleTimerExpired();
+    }
   }
 
   @override
@@ -165,6 +208,14 @@ class _PaymentScreenState extends State<PaymentScreen>
 
   void _handleTimerExpired() {
     if (!mounted) return;
+    if (_isProcessingPayment) {
+      // A checkout or verify-payment call is genuinely in flight — forcing
+      // navigation away now would abandon it mid-flight, exactly what the
+      // back-button guard (PopScope(canPop: !_isProcessingPayment)) exists
+      // to prevent. A UPI/bank-OTP flow can easily run past the 5-minute
+      // fareToken window; let it resolve instead of yanking the user out.
+      return;
+    }
     CustomSnackBar.show(
       context,
       message: 'Payment session timed out. Please start over.',
@@ -226,7 +277,30 @@ class _PaymentScreenState extends State<PaymentScreen>
     }
   }
 
-  void _handlePaymentError(PaymentFailureResponse r) {
+  Future<void> _handlePaymentError(PaymentFailureResponse r) async {
+    if (!mounted) return;
+
+    // Razorpay's own SDK reported an error, but that's not proof the payment
+    // actually failed server-side — the webhook (or a racing client call)
+    // may have already completed it. Check before scaring the user with a
+    // "something went wrong" dialog for a booking that's actually confirmed.
+    final orderId = _trekC.orderData.value.id ??
+        _trekC.orderNextActionParams['order_id']?.toString() ??
+        '';
+    if (orderId.isNotEmpty) {
+      final status = await _trekC.checkOrderStatus(orderId);
+      if (status?['status'] == 'paid' && mounted) {
+        setState(() => _isProcessingPayment = false);
+        _trekC.clearBookingData();
+        Get.offNamedUntil('/my-bookings', ModalRoute.withName('/dashboard'));
+        CustomSnackBar.show(
+          Get.context!,
+          message: 'Good news — your payment actually went through. Check My Bookings.',
+        );
+        return;
+      }
+    }
+
     // Razorpay checkout itself failed or was cancelled before any charge —
     // no paymentId exists yet, so retry below reopens the SAME order rather
     // than calling verify.
@@ -304,6 +378,27 @@ class _PaymentScreenState extends State<PaymentScreen>
         orElse: () => null,
       ));
     } else {
+      // No order was created yet — the prior attempt may well have failed
+      // because the fareToken expired (5-min server TTL). Mint a fresh one
+      // before resubmitting, otherwise this deterministically repeats the
+      // same "Fare calculation expired" error every time.
+      await _trekC.calculateFare();
+      final refreshed = _trekC.calculateFareResponseModel.value.maybeWhen(
+        success: (_) => true,
+        orElse: () => false,
+      );
+      if (!refreshed) {
+        if (mounted) {
+          setState(() {
+            _isProcessingPayment = false;
+            _showPaymentError = true;
+            _paymentErrorMessage = _trekC.errorMessage.value.isNotEmpty
+                ? _trekC.errorMessage.value
+                : 'Could not refresh fare. Please try again.';
+          });
+        }
+        return;
+      }
       await _handlePayNow();
     }
   }
@@ -1529,6 +1624,11 @@ class _PaymentScreenState extends State<PaymentScreen>
                   fontWeight: FontWeight.w700,
                   fontFamily: 'Poppins',
                   onPressed: _handlePayNow,
+                  // A fast double-tap could otherwise fire _handlePayNow()
+                  // twice before the first setState's rebuild lands, each
+                  // independently calling createTrekOrder() — creating two
+                  // separate Razorpay orders for one purchase attempt.
+                  isDisabled: _isProcessingPayment,
                   gradient: _isPaymentValid
                       ? CommonColors.filterGradient
                       : CommonColors.disableBtnGradient,
@@ -1707,7 +1807,10 @@ class _PaymentScreenState extends State<PaymentScreen>
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: _retryPayment,
+                        // Guards the same double-tap window as Pay Now — the
+                        // "no existing order" branch of _retryPayment ends up
+                        // calling createTrekOrder() too.
+                        onPressed: _isProcessingPayment ? null : _retryPayment,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: _Pay.accent,
                           foregroundColor: Colors.white,
