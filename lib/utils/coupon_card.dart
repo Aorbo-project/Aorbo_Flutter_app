@@ -4,6 +4,7 @@ import 'package:sizer/sizer.dart';
 import 'common_colors.dart';
 import 'screen_constants.dart';
 import '../models/coupon_code/coupon_code_model.dart';
+import 'ist_date_utils.dart';
 
 class CouponCard extends StatefulWidget {
   final CouponCardData? coupon;
@@ -305,16 +306,9 @@ class _CouponCardState extends State<CouponCard> {
     String? formattedExpiry() {
       final raw = coupon?.validUntil;
       if (raw == null || raw.isEmpty) return null;
-      try {
-        final dt = DateTime.parse(raw);
-        const months = [
-          'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-        ];
-        return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
-      } catch (_) {
-        return null;
-      }
+      return ISTDateUtils.toIST(raw) != null
+          ? ISTDateUtils.formatCustom(raw, 'd MMM yyyy')
+          : null;
     }
 
     final expiryLabel = formattedExpiry();

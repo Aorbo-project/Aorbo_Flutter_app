@@ -17,6 +17,7 @@ import '../utils/common_images_card.dart';
 import '../utils/common_trek_details_bar.dart';
 import '../utils/common_btn.dart';
 import '../widgets/cancellation_policy_widget.dart';
+import '../utils/ist_date_utils.dart';
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS
@@ -1312,9 +1313,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
     String dateStr = '-';
     if (review.createdAt != null && review.createdAt!.isNotEmpty) {
       try {
-        dateStr = DateFormat(
-          'd MMM yyyy',
-        ).format(DateTime.parse(review.createdAt!));
+        dateStr = ISTDateUtils.formatDate(review.createdAt!);
       } catch (_) {
         dateStr = review.createdAt!;
       }

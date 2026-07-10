@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import '../utils/ist_date_utils.dart';
 
 class InvoicePdfService {
   // ─────────────────────────────────────────────
@@ -24,7 +25,7 @@ class InvoicePdfService {
   //  DATE HELPERS
   // ─────────────────────────────────────────────
   static DateTime _parseDate(String? s) =>
-      s != null ? (DateTime.tryParse(s) ?? DateTime.now()) : DateTime.now();
+      s != null ? (ISTDateUtils.toIST(s) ?? DateTime.now()) : DateTime.now();
 
   // MySQL TIME "HH:MM:SS" → "06:00 AM"
   static String _formatTime(String? t) {

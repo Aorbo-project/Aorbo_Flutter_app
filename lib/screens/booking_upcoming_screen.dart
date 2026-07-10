@@ -16,6 +16,7 @@ import '../utils/common_colors.dart';
 import '../utils/screen_constants.dart';
 import '../utils/custom_snackbar.dart';
 import '../services/invoice_pdf_service.dart'; // ← make sure this path matches
+import '../utils/ist_date_utils.dart';
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS
@@ -427,11 +428,9 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
 
     final trek = booking.trek;
     final batch = booking.batch;
-    final startDate = DateTime.tryParse(batch?.startDate ?? '');
-    final endDate = DateTime.tryParse(batch?.endDate ?? '');
-    final bookingDate = booking.bookingDate != null
-        ? DateTime.parse(booking.bookingDate!)
-        : null;
+    final startDate = ISTDateUtils.toIST(batch?.startDate);
+    final endDate = ISTDateUtils.toIST(batch?.endDate);
+    final bookingDate = ISTDateUtils.toIST(booking.bookingDate);
 
     final cardContent = Container(
       key: _cardKey,
