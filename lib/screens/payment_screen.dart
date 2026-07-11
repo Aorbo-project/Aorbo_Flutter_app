@@ -16,7 +16,6 @@ import 'package:arobo_app/utils/common_btn.dart';
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/common_images.dart';
 import 'package:arobo_app/utils/custom_snackbar.dart';
-import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:arobo_app/utils/total_fare_modal.dart';
 
 // ─────────────────────────────────────────────
@@ -59,10 +58,8 @@ class _PaymentScreenState extends State<PaymentScreen>
 
   bool _isCouponExpanded = true;
   String? _selectedUPI = PaymentMethods.razorpay;
+  String _selectedPaymentOption = 'standard';
 
-  // Payment in-flight state — true from the moment an order/verify call is
-  // fired until it resolves (success nav-away or error overlay shown).
-  // Drives the back-navigation confirmation and blocks accidental exits.
   bool _isProcessingPayment = false;
   bool _showPaymentError = false;
   String _paymentErrorMessage = '';
@@ -76,9 +73,16 @@ class _PaymentScreenState extends State<PaymentScreen>
   late final AnimationController _fadeCtrl;
   late final Animation<double> _fadeAnim;
 
+  bool get _isFlexiblePolicy =>
+      _trekC.trekDetailData.value.cancellationPolicy?.id == 5;
+
   @override
   void initState() {
     super.initState();
+
+    _selectedPaymentOption =
+        _trekC.calculateFareRequestModel.value.cancellationPolicyType ??
+        'standard';
 
     _fadeCtrl = AnimationController(
       vsync: this,
@@ -99,20 +103,13 @@ class _PaymentScreenState extends State<PaymentScreen>
       time: const Duration(milliseconds: 500),
     );
 
-    // The countdown must track the server-side fareToken's real expiry, not
-    // wall-clock time since this screen mounted — the token is minted back
-    // on the Traveller Information screen, so part of its 5-minute life is
-    // already spent by the time the user reaches Payment. Deferred to after
-    // the first frame since an already-expired token would otherwise try to
-    // show a SnackBar/navigate before this screen finishes building.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _syncTimerToExpiry(_currentFareResponse()?.expiresAt);
     });
     ever(_trekC.calculateFareResponseModel, (result) {
       result.maybeWhen(
-        success: (r) => _syncTimerToExpiry(
-          (r as CalculateFareResponseModel).expiresAt,
-        ),
+        success: (r) =>
+            _syncTimerToExpiry((r as CalculateFareResponseModel).expiresAt),
         orElse: () {},
       );
     });
@@ -127,9 +124,6 @@ class _PaymentScreenState extends State<PaymentScreen>
     );
   }
 
-  /// Re-anchors the countdown to the fareToken's actual server expiry
-  /// (`expires_at`) whenever a fare calculation completes — initial load,
-  /// or a fresh token minted after a coupon/add-on change on this screen.
   void _syncTimerToExpiry(dynamic expiresAtRaw) {
     if (expiresAtRaw == null) return;
     final expiresAt = DateTime.tryParse(expiresAtRaw.toString());
@@ -159,12 +153,6 @@ class _PaymentScreenState extends State<PaymentScreen>
     if (mounted) setState(() {});
   }
 
-  Map<String, dynamic>? _asMap(dynamic value) {
-    if (value is Map<String, dynamic>) return value;
-    if (value is Map) return Map<String, dynamic>.from(value);
-    return null;
-  }
-
   String? _extractAppliedCouponCode() {
     final code = _trekC.calculateFareRequestModel.value.couponCode;
     if (code == null) return null;
@@ -172,14 +160,6 @@ class _PaymentScreenState extends State<PaymentScreen>
     return cleaned.isEmpty ? null : cleaned;
   }
 
-  /// Extracts the applied coupon discount amount from the fare breakdown.
-  ///
-  /// Reads [breakdown.discount] — the server-calculated discount amount —
-  /// which is already correctly set by [fareCalculationService.calculateFare()]
-  /// whenever a coupon code is included in the request.
-  ///
-  /// Returns a formatted string (e.g. "810.00") when a non-zero discount
-  /// exists, or null if no coupon discount is applied.
   String? _extractCouponDiscountText(CalculateFareResponseModel? response) {
     final raw = response?.breakdown?.discount;
     if (raw == null) return null;
@@ -209,11 +189,6 @@ class _PaymentScreenState extends State<PaymentScreen>
   void _handleTimerExpired() {
     if (!mounted) return;
     if (_isProcessingPayment) {
-      // A checkout or verify-payment call is genuinely in flight — forcing
-      // navigation away now would abandon it mid-flight, exactly what the
-      // back-button guard (PopScope(canPop: !_isProcessingPayment)) exists
-      // to prevent. A UPI/bank-OTP flow can easily run past the 5-minute
-      // fareToken window; let it resolve instead of yanking the user out.
       return;
     }
     CustomSnackBar.show(
@@ -225,16 +200,19 @@ class _PaymentScreenState extends State<PaymentScreen>
 
   void _openRazorpay(BreakDownDataModel? breakdown) async {
     try {
-      final params = _trekC.orderNextActionParams; // RxMap implements Map directly
+      final params = _trekC.orderNextActionParams;
 
       final options = {
         'key': params['key'] ?? BookingConstants.razorpayKey,
         'order_id': params['order_id'] ?? '${_trekC.orderData.value.id}',
-        // backend sends amount in paise; fall back to client calculation if absent
-        'amount': params['amount'] ?? ((breakdown?.amountToPayNow ?? 0) * 100).toInt(),
+        'amount':
+            params['amount'] ??
+            ((breakdown?.amountToPayNow ?? 0) * 100).toInt(),
         'currency': params['currency'] ?? 'INR',
         'name': params['name'] ?? '${_trekC.trekDetailData.value.title}',
-        'description': params['description'] ?? '${_trekC.trekDetailData.value.description}',
+        'description':
+            params['description'] ??
+            '${_trekC.trekDetailData.value.description}',
         'prefill': {
           'contact': '${_userC.userProfileData.value.customer?.phone}',
           'email': '${_userC.userProfileData.value.customer?.email}',
@@ -262,17 +240,13 @@ class _PaymentScreenState extends State<PaymentScreen>
     );
 
     if (!verified && mounted) {
-      // Razorpay already confirmed the charge — the failure here is only in
-      // reaching/parsing our own verify call (network drop, timeout). The
-      // retry button re-calls verifyTrekOrder with this SAME payment id, so
-      // it can never create a second booking or a second charge.
       setState(() {
         _isProcessingPayment = false;
         _showPaymentError = true;
         _paymentErrorMessage = _trekC.errorMessage.value.isNotEmpty
             ? _trekC.errorMessage.value
             : 'Your payment went through, but we could not confirm it yet. '
-                'Please retry — you will not be charged twice.';
+                  'Please retry — you will not be charged twice.';
       });
     }
   }
@@ -280,11 +254,8 @@ class _PaymentScreenState extends State<PaymentScreen>
   Future<void> _handlePaymentError(PaymentFailureResponse r) async {
     if (!mounted) return;
 
-    // Razorpay's own SDK reported an error, but that's not proof the payment
-    // actually failed server-side — the webhook (or a racing client call)
-    // may have already completed it. Check before scaring the user with a
-    // "something went wrong" dialog for a booking that's actually confirmed.
-    final orderId = _trekC.orderData.value.id ??
+    final orderId =
+        _trekC.orderData.value.id ??
         _trekC.orderNextActionParams['order_id']?.toString() ??
         '';
     if (orderId.isNotEmpty) {
@@ -295,15 +266,13 @@ class _PaymentScreenState extends State<PaymentScreen>
         Get.offNamedUntil('/my-bookings', ModalRoute.withName('/dashboard'));
         CustomSnackBar.show(
           Get.context!,
-          message: 'Good news — your payment actually went through. Check My Bookings.',
+          message:
+              'Good news — your payment actually went through. Check My Bookings.',
         );
         return;
       }
     }
 
-    // Razorpay checkout itself failed or was cancelled before any charge —
-    // no paymentId exists yet, so retry below reopens the SAME order rather
-    // than calling verify.
     if (!mounted) return;
     setState(() {
       _isProcessingPayment = false;
@@ -322,10 +291,12 @@ class _PaymentScreenState extends State<PaymentScreen>
     });
     await _trekC.createTrekOrder();
     if (_trekC.orderModal.value.success ?? false) {
-      _openRazorpay(_trekC.calculateFareResponseModel.value.maybeWhen(
-        success: (r) => (r as CalculateFareResponseModel).breakdown,
-        orElse: () => null,
-      ));
+      _openRazorpay(
+        _trekC.calculateFareResponseModel.value.maybeWhen(
+          success: (r) => (r as CalculateFareResponseModel).breakdown,
+          orElse: () => null,
+        ),
+      );
     } else if (mounted) {
       setState(() {
         _isProcessingPayment = false;
@@ -337,15 +308,6 @@ class _PaymentScreenState extends State<PaymentScreen>
     }
   }
 
-  /// RETRY from the error overlay. Never blindly restarts from scratch:
-  /// - If Razorpay already returned a captured payment (paymentId is set),
-  ///   re-checks status on that SAME order/payment — this is the path the
-  ///   backend's idempotency (paymentService._completeBookingCore) exists
-  ///   for, and it's what actually prevents a lost booking on retry.
-  /// - Else if an order was already created (still valid ~15 min server-side
-  ///   per PendingBooking.expires_at), reopen Razorpay on that SAME order_id
-  ///   instead of creating a new pending order every retry tap.
-  /// - Only falls back to a brand-new order if nothing usable exists yet.
   Future<void> _retryPayment() async {
     setState(() {
       _showPaymentError = false;
@@ -353,7 +315,8 @@ class _PaymentScreenState extends State<PaymentScreen>
     });
 
     final hasCapturedPayment = _trekC.paymentId.value.isNotEmpty;
-    final existingOrderId = _trekC.orderData.value.id ??
+    final existingOrderId =
+        _trekC.orderData.value.id ??
         _trekC.orderNextActionParams['order_id']?.toString();
     final hasExistingOrder = (existingOrderId ?? '').isNotEmpty;
 
@@ -373,15 +336,13 @@ class _PaymentScreenState extends State<PaymentScreen>
         });
       }
     } else if (hasExistingOrder) {
-      _openRazorpay(_trekC.calculateFareResponseModel.value.maybeWhen(
-        success: (r) => (r as CalculateFareResponseModel).breakdown,
-        orElse: () => null,
-      ));
+      _openRazorpay(
+        _trekC.calculateFareResponseModel.value.maybeWhen(
+          success: (r) => (r as CalculateFareResponseModel).breakdown,
+          orElse: () => null,
+        ),
+      );
     } else {
-      // No order was created yet — the prior attempt may well have failed
-      // because the fareToken expired (5-min server TTL). Mint a fresh one
-      // before resubmitting, otherwise this deterministically repeats the
-      // same "Fare calculation expired" error every time.
       await _trekC.calculateFare();
       final refreshed = _trekC.calculateFareResponseModel.value.maybeWhen(
         success: (_) => true,
@@ -454,7 +415,9 @@ class _PaymentScreenState extends State<PaymentScreen>
           .map(
             (t) => {
               'nameController': TextEditingController(text: t.name ?? ''),
-              'ageController': TextEditingController(text: t.age?.toString() ?? ''),
+              'ageController': TextEditingController(
+                text: t.age?.toString() ?? '',
+              ),
               'gender': t.gender ?? '',
             },
           )
@@ -466,22 +429,8 @@ class _PaymentScreenState extends State<PaymentScreen>
         'nameController': TextEditingController(text: 'Traveller'),
         'ageController': TextEditingController(text: '18'),
         'gender': 'Male',
-      }
+      },
     ];
-  }
-
-  String _calculateEndDate(String? startDate, int? durationDays) {
-    if (startDate == null || startDate.isEmpty || durationDays == null) {
-      return '-';
-    }
-
-    try {
-      final start = DateTime.parse(startDate);
-      final end = start.add(Duration(days: durationDays));
-      return '${end.year}-${end.month.toString().padLeft(2, '0')}-${end.day.toString().padLeft(2, '0')}';
-    } catch (_) {
-      return '-';
-    }
   }
 
   Widget _buildTimerAndProgress() {
@@ -513,7 +462,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                     formattedTime,
                     textScaler: const TextScaler.linear(1.0),
                     style: GoogleFonts.poppins(
-                      fontSize: FontSize.s11,
+                      fontSize: 11.sp,
                       fontWeight: FontWeight.w600,
                       color: CommonColors.orangeColor,
                     ),
@@ -536,6 +485,134 @@ class _PaymentScreenState extends State<PaymentScreen>
           ],
         );
       }),
+    );
+  }
+
+  Widget _buildPaymentOptionsCard(dynamic fareReq) {
+    if (!_isFlexiblePolicy) return const SizedBox.shrink();
+
+    return _card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _sectionHeader(
+            icon: Icons.payment_outlined,
+            label: 'Payment Options',
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "Lock your spot. Adventure's calling!",
+            textScaler: const TextScaler.linear(1.0),
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 10.sp,
+              color: _Pay.inkMid,
+            ),
+          ),
+          const SizedBox(height: 14),
+          _paymentOption(
+            title: 'Pay ₹999',
+            subtitle: 'Advance Paid ₹999, pay remaining before trek start',
+            isSelected: _selectedPaymentOption == 'flexible',
+            onTap: () {
+              setState(() => _selectedPaymentOption = 'flexible');
+              _trekC.calculateFareRequestModel.value = _trekC
+                  .calculateFareRequestModel
+                  .value
+                  .copyWith(cancellationPolicyType: 'flexible');
+            },
+          ),
+          const SizedBox(height: 10),
+          _paymentOption(
+            title: 'Pay Full Payment',
+            subtitle: 'Secure your booking with full payment',
+            isSelected: _selectedPaymentOption == 'standard',
+            onTap: () {
+              setState(() => _selectedPaymentOption = 'standard');
+              _trekC.calculateFareRequestModel.value = _trekC
+                  .calculateFareRequestModel
+                  .value
+                  .copyWith(cancellationPolicyType: 'standard');
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _paymentOption({
+    required String title,
+    required String subtitle,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        decoration: BoxDecoration(
+          color: isSelected ? _Pay.accentLight : _Pay.bg,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isSelected
+                ? _Pay.accent.withValues(alpha: 0.4)
+                : _Pay.border,
+            width: isSelected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isSelected ? _Pay.accent : Colors.transparent,
+                border: Border.all(
+                  color: isSelected ? _Pay.accent : _Pay.inkLight,
+                  width: 2,
+                ),
+              ),
+              child: isSelected
+                  ? const Icon(
+                      Icons.check_rounded,
+                      size: 13,
+                      color: Colors.white,
+                    )
+                  : null,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    textScaler: const TextScaler.linear(1.0),
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w600,
+                      color: _Pay.ink,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    textScaler: const TextScaler.linear(1.0),
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 9.sp,
+                      color: _Pay.inkMid,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -580,7 +657,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                       'Coupon Code',
                       textScaler: const TextScaler.linear(1.0),
                       style: GoogleFonts.poppins(
-                        fontSize: FontSize.s14,
+                        fontSize: 14.sp,
                         fontWeight: FontWeight.w500,
                         color: CommonColors.blackColor,
                       ),
@@ -622,16 +699,19 @@ class _PaymentScreenState extends State<PaymentScreen>
                           ),
                         ),
                         child: Obx(() {
-                          final fareResponse =
-                              _trekC.calculateFareResponseModel.value.maybeWhen(
-                            success: (response) =>
-                                response as CalculateFareResponseModel,
-                            orElse: () => null,
-                          );
+                          final fareResponse = _trekC
+                              .calculateFareResponseModel
+                              .value
+                              .maybeWhen(
+                                success: (response) =>
+                                    response as CalculateFareResponseModel,
+                                orElse: () => null,
+                              );
 
                           final appliedCoupon = _extractAppliedCouponCode();
-                          final discountText =
-                              _extractCouponDiscountText(fareResponse);
+                          final discountText = _extractCouponDiscountText(
+                            fareResponse,
+                          );
                           final isCouponValid = discountText != null;
 
                           if (appliedCoupon == null) {
@@ -651,16 +731,18 @@ class _PaymentScreenState extends State<PaymentScreen>
                                         height: 50,
                                         decoration: BoxDecoration(
                                           color: CommonColors.whiteColor,
-                                          borderRadius:
-                                              BorderRadius.circular(3.w),
+                                          borderRadius: BorderRadius.circular(
+                                            3.w,
+                                          ),
                                           border: Border.all(
                                             color: CommonColors.profileColor,
                                             width: 1,
                                           ),
                                           boxShadow: [
                                             BoxShadow(
-                                              color:
-                                                  Colors.black.withValues(alpha: 0.05),
+                                              color: Colors.black.withValues(
+                                                alpha: 0.05,
+                                              ),
                                               blurRadius: 10,
                                               offset: const Offset(0, 2),
                                             ),
@@ -670,7 +752,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                                           child: Text(
                                             'Enter Coupon Code',
                                             style: GoogleFonts.poppins(
-                                              fontSize: FontSize.s11,
+                                              fontSize: 11.sp,
                                               color: const Color(0xff969696),
                                             ),
                                           ),
@@ -684,7 +766,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                                       child: Text(
                                         'Apply',
                                         style: GoogleFonts.poppins(
-                                          fontSize: FontSize.s11,
+                                          fontSize: 11.sp,
                                           fontWeight: FontWeight.w500,
                                           color: _couponCtrl.text.isNotEmpty
                                               ? CommonColors.blueColor
@@ -702,12 +784,13 @@ class _PaymentScreenState extends State<PaymentScreen>
                             children: [
                               Expanded(
                                 child: Padding(
-                                  padding:
-                                      const EdgeInsets.symmetric(horizontal: 20),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                  ),
                                   child: Text(
                                     appliedCoupon,
                                     style: GoogleFonts.poppins(
-                                      fontSize: FontSize.s11,
+                                      fontSize: 11.sp,
                                       color: const Color(0xff969696),
                                     ),
                                   ),
@@ -718,8 +801,8 @@ class _PaymentScreenState extends State<PaymentScreen>
                                   gradient: isCouponValid
                                       ? CommonColors.btnGradient
                                       : (_couponCtrl.text.isNotEmpty
-                                          ? CommonColors.btnGradient
-                                          : CommonColors.disableBtnGradient),
+                                            ? CommonColors.btnGradient
+                                            : CommonColors.disableBtnGradient),
                                   borderRadius: BorderRadius.horizontal(
                                     right: Radius.circular(3.w),
                                   ),
@@ -745,7 +828,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                                             ? BookingMessages.remove
                                             : BookingMessages.apply,
                                         style: GoogleFonts.poppins(
-                                          fontSize: FontSize.s11,
+                                          fontSize: 11.sp,
                                           fontWeight: FontWeight.w500,
                                           color: CommonColors.whiteColor,
                                         ),
@@ -765,7 +848,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                           child: Text(
                             _couponError ?? '',
                             style: GoogleFonts.poppins(
-                              fontSize: FontSize.s7,
+                              fontSize: 7.sp,
                               color: CommonColors.appRedColor,
                               fontWeight: FontWeight.w400,
                             ),
@@ -791,7 +874,7 @@ class _PaymentScreenState extends State<PaymentScreen>
         children: [
           _sectionHeader(icon: Icons.payment_rounded, label: 'Payment Method'),
           const SizedBox(height: 14),
-          _paymentOption(
+          _paymentMethodOption(
             icon: _razorpayLogo(),
             label: 'Razorpay',
             subtitle: 'Credit card, Debit card, UPI, Wallets & more',
@@ -803,7 +886,7 @@ class _PaymentScreenState extends State<PaymentScreen>
           const SizedBox(height: 10),
           Opacity(
             opacity: 0.45,
-            child: _paymentOption(
+            child: _paymentMethodOption(
               icon: _lockedIcon(CommonImages.phonePeIcon),
               label: 'PhonePe UPI',
               subtitle: 'Coming soon',
@@ -815,7 +898,7 @@ class _PaymentScreenState extends State<PaymentScreen>
           const SizedBox(height: 8),
           Opacity(
             opacity: 0.45,
-            child: _paymentOption(
+            child: _paymentMethodOption(
               icon: _lockedIcon(CommonImages.paytmIcon),
               label: 'Paytm UPI',
               subtitle: 'Coming soon',
@@ -829,7 +912,7 @@ class _PaymentScreenState extends State<PaymentScreen>
     );
   }
 
-  Widget _paymentOption({
+  Widget _paymentMethodOption({
     required Widget icon,
     required String label,
     required String subtitle,
@@ -864,7 +947,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                     textScaler: const TextScaler.linear(1.0),
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: FontSize.s11,
+                      fontSize: 11.sp,
                       fontWeight: FontWeight.w600,
                       color: _Pay.ink,
                     ),
@@ -874,7 +957,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                     textScaler: const TextScaler.linear(1.0),
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: FontSize.s8,
+                      fontSize: 8.sp,
                       color: _Pay.inkMid,
                     ),
                   ),
@@ -897,8 +980,11 @@ class _PaymentScreenState extends State<PaymentScreen>
                   ),
                 ),
                 child: isSelected
-                    ? const Icon(Icons.check_rounded,
-                        size: 13, color: Colors.white)
+                    ? const Icon(
+                        Icons.check_rounded,
+                        size: 13,
+                        color: Colors.white,
+                      )
                     : null,
               ),
           ],
@@ -920,7 +1006,7 @@ class _PaymentScreenState extends State<PaymentScreen>
           'R',
           style: TextStyle(
             fontFamily: 'Poppins',
-            fontSize: FontSize.s14,
+            fontSize: 14.sp,
             fontWeight: FontWeight.w800,
             color: Colors.white,
           ),
@@ -937,9 +1023,7 @@ class _PaymentScreenState extends State<PaymentScreen>
         color: _Pay.divider,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Center(
-        child: SvgPicture.asset(svgPath, width: 22, height: 22),
-      ),
+      child: Center(child: SvgPicture.asset(svgPath, width: 22, height: 22)),
     );
   }
 
@@ -954,7 +1038,7 @@ class _PaymentScreenState extends State<PaymentScreen>
           textScaler: const TextScaler.linear(1.0),
           style: TextStyle(
             fontFamily: 'Poppins',
-            fontSize: FontSize.s8,
+            fontSize: 8.sp,
             color: _Pay.inkMid,
           ),
         ),
@@ -1000,7 +1084,7 @@ class _PaymentScreenState extends State<PaymentScreen>
           textScaler: const TextScaler.linear(1.0),
           style: TextStyle(
             fontFamily: 'Poppins',
-            fontSize: FontSize.s13,
+            fontSize: 13.sp,
             fontWeight: FontWeight.w700,
             color: _Pay.ink,
           ),
@@ -1020,7 +1104,7 @@ class _PaymentScreenState extends State<PaymentScreen>
             textScaler: const TextScaler.linear(1.0),
             style: TextStyle(
               fontFamily: 'Poppins',
-              fontSize: FontSize.s10,
+              fontSize: 10.sp,
               color: _Pay.inkMid,
             ),
           ),
@@ -1045,7 +1129,7 @@ class _PaymentScreenState extends State<PaymentScreen>
             textScaler: const TextScaler.linear(1.0),
             style: TextStyle(
               fontFamily: 'Poppins',
-              fontSize: FontSize.s14,
+              fontSize: 14.sp,
               fontWeight: FontWeight.w700,
               color: _Pay.ink,
             ),
@@ -1095,7 +1179,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                     textScaler: const TextScaler.linear(1.0),
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: FontSize.s9,
+                      fontSize: 9.sp,
                       fontWeight: FontWeight.w600,
                       color: _Pay.green,
                     ),
@@ -1134,7 +1218,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                     textScaler: const TextScaler.linear(1.0),
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: FontSize.s10,
+                      fontSize: 10.sp,
                       fontWeight: FontWeight.w700,
                       color: _Pay.accent,
                       letterSpacing: 0.3,
@@ -1159,9 +1243,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                       ),
                     ),
                     const SizedBox(width: 12),
-                    Expanded(
-                      child: _travRow('Gender', t['gender'] ?? '-'),
-                    ),
+                    Expanded(child: _travRow('Gender', t['gender'] ?? '-')),
                   ],
                 ),
                 if (i < travellers.length - 1) ...[
@@ -1186,7 +1268,7 @@ class _PaymentScreenState extends State<PaymentScreen>
           textScaler: const TextScaler.linear(1.0),
           style: TextStyle(
             fontFamily: 'Poppins',
-            fontSize: FontSize.s8,
+            fontSize: 8.sp,
             color: _Pay.inkLight,
             fontWeight: FontWeight.w500,
           ),
@@ -1197,7 +1279,7 @@ class _PaymentScreenState extends State<PaymentScreen>
           textScaler: const TextScaler.linear(1.0),
           style: TextStyle(
             fontFamily: 'Poppins',
-            fontSize: FontSize.s11,
+            fontSize: 11.sp,
             fontWeight: FontWeight.w600,
             color: _Pay.ink,
           ),
@@ -1221,10 +1303,11 @@ class _PaymentScreenState extends State<PaymentScreen>
               ),
               GestureDetector(
                 onTap: () {
-                  final fareResp = _trekC.calculateFareResponseModel.value.maybeWhen(
-                    success: (r) => r as CalculateFareResponseModel,
-                    orElse: () => null,
-                  );
+                  final fareResp = _trekC.calculateFareResponseModel.value
+                      .maybeWhen(
+                        success: (r) => r as CalculateFareResponseModel,
+                        orElse: () => null,
+                      );
                   showModalBottomSheet(
                     context: context,
                     backgroundColor: Colors.transparent,
@@ -1240,7 +1323,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                   textScaler: const TextScaler.linear(1.0),
                   style: TextStyle(
                     fontFamily: 'Poppins',
-                    fontSize: FontSize.s9,
+                    fontSize: 9.sp,
                     fontWeight: FontWeight.w600,
                     color: _Pay.accent,
                   ),
@@ -1255,7 +1338,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                 'Loading fare…',
                 style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: FontSize.s10,
+                  fontSize: 10.sp,
                   color: _Pay.inkMid,
                 ),
               ),
@@ -1312,7 +1395,7 @@ class _PaymentScreenState extends State<PaymentScreen>
             textScaler: const TextScaler.linear(1.0),
             style: TextStyle(
               fontFamily: 'Poppins',
-              fontSize: FontSize.s10,
+              fontSize: 10.sp,
               fontWeight: isBold ? FontWeight.w700 : FontWeight.w400,
               color: isBold ? _Pay.ink : _Pay.inkMid,
             ),
@@ -1322,7 +1405,7 @@ class _PaymentScreenState extends State<PaymentScreen>
             textScaler: const TextScaler.linear(1.0),
             style: TextStyle(
               fontFamily: 'Poppins',
-              fontSize: isBold ? FontSize.s13 : FontSize.s10,
+              fontSize: isBold ? 13.sp : 10.sp,
               fontWeight: isBold ? FontWeight.w700 : FontWeight.w500,
               color: valueColor ?? _Pay.ink,
             ),
@@ -1372,7 +1455,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                   textScaler: const TextScaler.linear(1.0),
                   style: TextStyle(
                     fontFamily: 'Poppins',
-                    fontSize: FontSize.s13,
+                    fontSize: 13.sp,
                     fontWeight: FontWeight.w700,
                     color: _Pay.ink,
                   ),
@@ -1404,7 +1487,10 @@ class _PaymentScreenState extends State<PaymentScreen>
                 const SizedBox(height: 14),
                 if (appliedCode.isNotEmpty)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: isCouponApplied ? _Pay.greenLight : _Pay.redLight,
                       borderRadius: BorderRadius.circular(10),
@@ -1433,9 +1519,11 @@ class _PaymentScreenState extends State<PaymentScreen>
                                 textScaler: const TextScaler.linear(1.0),
                                 style: TextStyle(
                                   fontFamily: 'Poppins',
-                                  fontSize: FontSize.s12,
+                                  fontSize: 12.sp,
                                   fontWeight: FontWeight.w700,
-                                  color: isCouponApplied ? _Pay.green : _Pay.red,
+                                  color: isCouponApplied
+                                      ? _Pay.green
+                                      : _Pay.red,
                                 ),
                               ),
                               if (isCouponApplied)
@@ -1444,7 +1532,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                                   textScaler: const TextScaler.linear(1.0),
                                   style: TextStyle(
                                     fontFamily: 'Poppins',
-                                    fontSize: FontSize.s9,
+                                    fontSize: 9.sp,
                                     color: _Pay.green,
                                   ),
                                 ),
@@ -1453,16 +1541,17 @@ class _PaymentScreenState extends State<PaymentScreen>
                         ),
                         GestureDetector(
                           onTap: () {
-                            _trekC.calculateFareRequestModel.value =
-                                _trekC.calculateFareRequestModel.value
-                                    .copyWith(couponCode: '');
+                            _trekC.calculateFareRequestModel.value = _trekC
+                                .calculateFareRequestModel
+                                .value
+                                .copyWith(couponCode: '');
                           },
                           child: Text(
                             'Remove',
                             textScaler: const TextScaler.linear(1.0),
                             style: TextStyle(
                               fontFamily: 'Poppins',
-                              fontSize: FontSize.s9,
+                              fontSize: 9.sp,
                               fontWeight: FontWeight.w600,
                               color: _Pay.red,
                             ),
@@ -1490,8 +1579,11 @@ class _PaymentScreenState extends State<PaymentScreen>
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.local_offer_outlined,
-                              size: 16, color: _Pay.accent),
+                          Icon(
+                            Icons.local_offer_outlined,
+                            size: 16,
+                            color: _Pay.accent,
+                          ),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
@@ -1499,14 +1591,17 @@ class _PaymentScreenState extends State<PaymentScreen>
                               textScaler: const TextScaler.linear(1.0),
                               style: TextStyle(
                                 fontFamily: 'Poppins',
-                                fontSize: FontSize.s11,
+                                fontSize: 11.sp,
                                 color: _Pay.accent,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
                           ),
-                          Icon(Icons.arrow_forward_ios_rounded,
-                              size: 12, color: _Pay.accent),
+                          Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            size: 12,
+                            color: _Pay.accent,
+                          ),
                         ],
                       ),
                     ),
@@ -1518,7 +1613,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                     textScaler: const TextScaler.linear(1.0),
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: FontSize.s8,
+                      fontSize: 8.sp,
                       color: _Pay.red,
                     ),
                   ),
@@ -1583,13 +1678,16 @@ class _PaymentScreenState extends State<PaymentScreen>
                               textScaler: const TextScaler.linear(1.0),
                               style: TextStyle(
                                 fontFamily: 'Poppins',
-                                fontSize: FontSize.s9,
+                                fontSize: 9.sp,
                                 color: _Pay.inkMid,
                               ),
                             ),
                             const SizedBox(width: 4),
-                            Icon(Icons.keyboard_arrow_down_rounded,
-                                size: 16, color: _Pay.inkMid),
+                            Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              size: 16,
+                              color: _Pay.inkMid,
+                            ),
                           ],
                         ),
                         Text(
@@ -1599,7 +1697,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                           textScaler: const TextScaler.linear(1.0),
                           style: TextStyle(
                             fontFamily: 'Poppins',
-                            fontSize: FontSize.s18,
+                            fontSize: 18.sp,
                             fontWeight: FontWeight.w800,
                             color: _Pay.accent,
                           ),
@@ -1609,7 +1707,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                           textScaler: const TextScaler.linear(1.0),
                           style: TextStyle(
                             fontFamily: 'Poppins',
-                            fontSize: FontSize.s8,
+                            fontSize: 8.sp,
                             color: _Pay.inkLight,
                           ),
                         ),
@@ -1620,14 +1718,10 @@ class _PaymentScreenState extends State<PaymentScreen>
                 SizedBox(width: 3.w),
                 CommonButton(
                   text: BookingMessages.payNow,
-                  fontSize: FontSize.s13,
+                  fontSize: 13.sp,
                   fontWeight: FontWeight.w700,
                   fontFamily: 'Poppins',
                   onPressed: _handlePayNow,
-                  // A fast double-tap could otherwise fire _handlePayNow()
-                  // twice before the first setState's rebuild lands, each
-                  // independently calling createTrekOrder() — creating two
-                  // separate Razorpay orders for one purchase attempt.
                   isDisabled: _isProcessingPayment,
                   gradient: _isPaymentValid
                       ? CommonColors.filterGradient
@@ -1666,20 +1760,19 @@ class _PaymentScreenState extends State<PaymentScreen>
       body: FadeTransition(
         opacity: _fadeAnim,
         child: Obx(() {
-          final isCalcLoading = _trekC.calculateFareResponseModel.value.maybeWhen(
-            loading: (_) => true,
-            orElse: () => false,
-          );
+          final isCalcLoading = _trekC.calculateFareResponseModel.value
+              .maybeWhen(loading: (_) => true, orElse: () => false);
 
           final breakdown = _trekC.calculateFareResponseModel.value.maybeWhen(
             success: (r) => (r as CalculateFareResponseModel).breakdown,
             orElse: () => null,
           );
 
-          final fareResponse = _trekC.calculateFareResponseModel.value.maybeWhen(
-            success: (r) => r as CalculateFareResponseModel,
-            orElse: () => null,
-          );
+          final fareResponse = _trekC.calculateFareResponseModel.value
+              .maybeWhen(
+                success: (r) => r as CalculateFareResponseModel,
+                orElse: () => null,
+              );
 
           final fareReq = _trekC.calculateFareRequestModel.value;
 
@@ -1700,13 +1793,12 @@ class _PaymentScreenState extends State<PaymentScreen>
                     SizedBox(height: 2.h),
                     _buildTravellerDetailsCard(),
                     SizedBox(height: 2.h),
+                    _buildPaymentOptionsCard(fareReq),
+                    SizedBox(height: 2.h),
                     _buildFareBreakdownCard(breakdown, fareReq),
                     SizedBox(height: 2.h),
                     _buildCouponCard(fareReq, fareResponse),
                     SizedBox(height: 2.h),
-                    // _buildPaymentMethodCard(),
-                    // SizedBox(height: 2.h),
-                    // _buildSecurityNote(),
                   ],
                 ),
               ),
@@ -1733,7 +1825,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                               'Calculating fare…',
                               style: TextStyle(
                                 fontFamily: 'Poppins',
-                                fontSize: FontSize.s11,
+                                fontSize: 11.sp,
                                 color: _Pay.inkMid,
                               ),
                             ),
@@ -1774,7 +1866,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                   textScaler: const TextScaler.linear(1.0),
                   style: TextStyle(
                     fontFamily: 'Poppins',
-                    fontSize: FontSize.s14,
+                    fontSize: 14.sp,
                     fontWeight: FontWeight.w700,
                     color: _Pay.ink,
                   ),
@@ -1786,7 +1878,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                   textScaler: const TextScaler.linear(1.0),
                   style: TextStyle(
                     fontFamily: 'Poppins',
-                    fontSize: FontSize.s10,
+                    fontSize: 10.sp,
                     color: _Pay.inkMid,
                   ),
                 ),
@@ -1807,9 +1899,6 @@ class _PaymentScreenState extends State<PaymentScreen>
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton(
-                        // Guards the same double-tap window as Pay Now — the
-                        // "no existing order" branch of _retryPayment ends up
-                        // calling createTrekOrder() too.
                         onPressed: _isProcessingPayment ? null : _retryPayment,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: _Pay.accent,
@@ -1847,7 +1936,7 @@ class _PaymentScreenState extends State<PaymentScreen>
         textScaler: const TextScaler.linear(1.0),
         style: TextStyle(
           fontFamily: 'Poppins',
-          fontSize: FontSize.s14,
+          fontSize: 14.sp,
           fontWeight: FontWeight.w700,
           color: _Pay.ink,
         ),

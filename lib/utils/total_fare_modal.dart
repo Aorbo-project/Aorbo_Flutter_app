@@ -1,238 +1,220 @@
 import 'package:arobo_app/freezed_models/booking/booking_data_model.dart';
-import 'package:arobo_app/utils/common_images.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:arobo_app/utils/common_colors.dart';
-import 'package:arobo_app/utils/screen_constants.dart';
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:sizer/sizer.dart';
 
-/// Total Fare Modal - Displays detailed fare breakdown for trek bookings
-///
-/// This modal shows a complete breakdown of the fare calculation to the user,
-/// including all discounts, fees, taxes, and add-ons.
-///
-/// LEGAL COMPLIANCE NOTES (as per Payment.md):
-/// ============================================
-/// 1. GST Calculation: GST (5%) is calculated on NET FARE only (base price after discounts)
-///    NOT on (fare + platform fee). This ensures proper tax compliance.
-///    Reference: Payment.md lines 64, 118-119, 134-138
-///
-/// 2. Platform Fee: ₹15 (fixed)
-///    - Non-refundable in all scenarios
-///    - Part of platform revenue
-///    - Taxable separately (not included in trek fare GST calculation)
-///
-/// 3. Add-ons (Insurance/Free Cancellation):
-///    - Insurance: ₹80 per person (non-refundable, passed to insurer)
-///    - Free Cancellation: ₹90 per person (allows advance refund if cancelled >24h)
-///    - Both charged per person
-///
-/// 4. Refund Policy: GST is refundable if trek is not delivered (customer cancels before departure)
-///    Company must adjust GST returns accordingly.
-///
-/// CALCULATION FORMULA (Per Payment.md Policy):
-/// =============================================
-/// Step 1: NET FARE = Base Price - Vendor Discount - Coupon Discount
-/// Step 2: **GST = NET FARE × 5%** (NOT on Net Fare + Platform Fee)
-/// Step 3: FINAL AMOUNT = NET FARE + Platform Fee + GST + Insurance + Free Cancellation
-///
-/// For PARTIAL PAYMENT:
-/// ====================
-/// - Advance Payment: ₹999 per person
-/// - Remaining Amount: FINAL AMOUNT - Advance Payment
-/// - User pays advance now, remaining amount due before trek start
-///
-/// For FULL PAYMENT:
-/// =================
-/// - Pay Now: FINAL AMOUNT (complete amount)
-/// - Remaining: ₹0
-///
-/// EXAMPLE CALCULATION (1 Adult, ₹5,999 fare, no discounts):
-/// ==========================================================
-/// - Base Fare: ₹5,999
-/// - Vendor Discount: ₹0
-/// - Coupon Discount: ₹0
-/// - Net Fare: ₹5,999
-/// - Platform Fee: ₹15
-/// - GST (5% of ₹5,999): ₹299.95
-/// - Final Amount: ₹6,313.95
-/// - If Partial: Advance ₹999, Remaining ₹5,314.95
-/// - If Full: Pay Now ₹6,313.95
-///
-/// EXAMPLE WITH COUPON (1 Adult, ₹5,999 fare, ₹500 coupon):
-/// ==========================================================
-/// - Base Fare: ₹5,999
-/// - Coupon Discount: ₹500
-/// - Net Fare: ₹5,499
-/// - Platform Fee: ₹15
-/// - GST (5% of ₹5,499): ₹274.95
-/// - Final Amount: ₹5,788.95
 class TotalFareModal extends StatelessWidget {
   final BreakDownDataModel? breakDown;
   final int adultCount;
   final VoidCallback onClose;
 
-
   const TotalFareModal({
     super.key,
     required this.breakDown,
     required this.adultCount,
-    required this.onClose
+    required this.onClose,
   });
+
+  String _format(dynamic value) {
+    if (value == null) return '0.00';
+    final num? val = num.tryParse(value.toString());
+    return val?.toStringAsFixed(2) ?? '0.00';
+  }
+
+  bool _isGreaterThanZero(dynamic value) {
+    if (value == null) return false;
+    final num? val = num.tryParse(value.toString());
+    return val != null && val > 0;
+  }
 
   @override
   Widget build(BuildContext context) {
+    final bool isFlexible = breakDown?.cancellationPolicyType == 'flexible';
 
+    // Safely parse all numbers to double
+    double baseTotal = double.tryParse(_format(breakDown?.baseTotal)) ?? 0.0;
+    double discount = double.tryParse(_format(breakDown?.discount)) ?? 0.0;
+    double platformFee =
+        double.tryParse(_format(breakDown?.platformFee)) ?? 0.0;
+    double gst = double.tryParse(_format(breakDown?.gst)) ?? 0.0;
+    double finalAmount =
+        double.tryParse(_format(breakDown?.finalAmount)) ?? 0.0;
+    double amountToPayNow =
+        double.tryParse(_format(breakDown?.amountToPayNow)) ?? 0.0;
+    double remainingAmount =
+        double.tryParse(_format(breakDown?.remainingAmount)) ?? 0.0;
+    double advanceTotal =
+        double.tryParse(_format(breakDown?.advanceAmount)) ?? 0.0;
+
+    // Calculations for clear display
+    double perPersonBase = adultCount > 0 ? (baseTotal / adultCount) : 0.0;
+    double perPersonAdvance = adultCount > 0
+        ? (advanceTotal / adultCount)
+        : 0.0;
+    double taxesAndFees = amountToPayNow - advanceTotal;
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
+        color: CommonColors.whiteColor,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(5.w)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Handle bar at top
-          Container(
-            margin: EdgeInsets.only(top: 8),
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(2),
+          // Handle bar
+          Center(
+            child: Container(
+              margin: EdgeInsets.only(top: 2.h, bottom: 1.5.h),
+              width: 10.w,
+              height: 0.5.h,
+              decoration: BoxDecoration(
+                color: const Color(0xFFD1D5DB),
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
           ),
           Padding(
-            padding: EdgeInsets.all(20),
+            padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 1.h),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Header
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       'Fare Breakup',
-                      textScaler: const TextScaler.linear(1.0),
-                      style: GoogleFonts.poppins(
-                        fontSize: FontSize.s15,
-                        fontWeight: FontWeight.w500,
-                        color: CommonColors.blackColor,
+                      style: GoogleFonts.alexandria(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF0F172A),
                       ),
                     ),
                     GestureDetector(
                       onTap: onClose,
-                      child: SvgPicture.asset(
-                        CommonImages.close,
-                        width: 24,
-                        height: 24,
+                      child: Container(
+                        width: 8.w,
+                        height: 8.w,
+                        decoration: BoxDecoration(
+                          color: CommonColors.whiteColor,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: const Icon(
+                          Icons.close,
+                          size: 16,
+                          color: Color(0xFF64748B),
+                        ),
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: 20),
-                // Base Amount (Total Basic Cost)
+                SizedBox(height: 2.h),
+
+                // 1. Base Fare
                 _buildFareRow(
-                  'Total Basic Cost',
-                  '₹${breakDown?.baseTotal.toStringAsFixed(2)}',
-                  isTotal: false,
+                  'Base Fare (₹${perPersonBase.toStringAsFixed(0)} x $adultCount Traveller${adultCount > 1 ? 's' : ''})',
+                  '₹${_format(baseTotal)}',
                 ),
-                SizedBox(height: 12),
+                SizedBox(height: 1.2.h),
 
-                // // Vendor Discount (if any)
-                // if ((breakDown?.discount ?? 0) > 0) ...[
-                //   _buildFareRow(
-                //     'Vendor Discount',
-                //     '-₹${breakDown?.discount.toStringAsFixed(2)}',
-                //     textColor: CommonColors.greyColor2,
-                //     isTotal: false,
-                //   ),
-                //   SizedBox(height: 12),
-                // ],
-
-                // Coupon Discount (if any)
-                if ((breakDown?.discount ?? 0) > 0) ...[
+                // 2. Coupon Discount (if any)
+                if (_isGreaterThanZero(discount)) ...[
                   _buildFareRow(
                     'Coupon Discount',
-                    '-₹${breakDown?.discount.toStringAsFixed(2)}',
-                    textColor: CommonColors.greyColor2,
-                    isTotal: false,
+                    '-₹${_format(discount)}',
+                    valueColor: CommonColors.cFF0F7B6C,
                   ),
-                  SizedBox(height: 12),
+                  SizedBox(height: 1.2.h),
                 ],
 
-                // Platform Fees
+                // 3. Platform Fees
                 _buildFareRow(
                   'Platform Fees',
-                  '₹${breakDown?.platformFee.toStringAsFixed(2)}',
-                  textColor: CommonColors.greyColor2,
-                  isTotal: false,
+                  '₹${_format(platformFee)}',
+                  isSub: true,
                 ),
-                SizedBox(height: 12),
+                SizedBox(height: 1.2.h),
 
-                // GST (always show)
+                // 4. GST
+                _buildFareRow('GST (5%)', '₹${_format(gst)}', isSub: true),
+                SizedBox(height: 1.2.h),
+
+                // 5. Total Trek Amount
+                Divider(color: CommonColors.trekroutecolorlight, height: 2.h),
                 _buildFareRow(
-                  'GST (5%)',
-                  '₹${breakDown?.gst.toStringAsFixed(2)}',
-                  textColor: CommonColors.greyColor2,
-                  isTotal: false,
-                ),
-                SizedBox(height: 12),
-
-                // Insurance (if selected)
-                if ((breakDown?.insuranceFee ?? 0) > 0) ...[
-                  _buildFareRow(
-                    'Insurance (₹${breakDown?.insuranceFee.toStringAsFixed(0)} × $adultCount person${adultCount > 1 ? 's' : ''})',
-                    '₹${breakDown?.insuranceFee.toStringAsFixed(2)}',
-                    textColor: CommonColors.greyColor2,
-                    isTotal: false,
-                  ),
-                  SizedBox(height: 12),
-                ],
-
-                // Free Cancellation (if selected)
-                if ((breakDown?.cancellationFee ?? 0) > 0) ...[
-                  _buildFareRow(
-                    'Free Cancellation (₹${breakDown?.cancellationFee.toStringAsFixed(0)} × $adultCount person${adultCount > 1 ? 's' : ''})',
-                    '₹${breakDown?.cancellationFee.toStringAsFixed(2)}',
-                    textColor: CommonColors.greyColor2,
-                    isTotal: false,
-                  ),
-                  SizedBox(height: 12),
-                ],
-
-                // For partial payment: Show advance and remaining
-                if (breakDown?.cancellationPolicyType == 'flexible') ...[
-                  Container(height: 1, color: CommonColors.greyColor2),
-                  SizedBox(height: 12),
-                  _buildFareRow(
-                    'Advance Payment (₹999 per person)',
-                    '₹${breakDown?.amountToPayNow.toStringAsFixed(2)}',
-                    textColor: CommonColors.greyColor2,
-                    isTotal: false,
-                  ),
-                  SizedBox(height: 12),
-                  _buildFareRow(
-                    'Remaining Amount',
-                    '₹${breakDown?.remainingAmount.toStringAsFixed(2)}',
-                    textColor: CommonColors.greyColor2,
-                    isTotal: false,
-                  ),
-                  SizedBox(height: 12),
-                ],
-
-                SizedBox(height: 20),
-                Container(height: 1, color: Colors.grey[300]),
-                SizedBox(height: 20),
-                _buildFareRow(
-                  breakDown?.cancellationPolicyType == 'flexible' ? 'Amount Payable Now' : 'Total Amount',
-                  '₹${breakDown?.amountToPayNow.toStringAsFixed(2)}',
+                  'Total Trek Amount',
+                  '₹${_format(finalAmount)}',
                   isTotal: true,
-                  textColor: CommonColors.greyColor2,
                 ),
-                SizedBox(height: 20),
+                SizedBox(height: 2.h),
+
+                // 6. Flexible Payment Breakdown (if selected)
+                if (isFlexible) ...[
+                  Container(
+                    padding: EdgeInsets.all(3.w),
+                    decoration: BoxDecoration(
+                      color: CommonColors.cFFE6F5F3,
+                      borderRadius: BorderRadius.circular(2.w),
+                      border: Border.all(
+                        color: CommonColors.cFF0F7B6C.withOpacity(0.3),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Flexible Payment Plan Selected',
+                          style: GoogleFonts.poppins(
+                            fontSize: 10.sp,
+                            fontWeight: FontWeight.w600,
+                            color: CommonColors.cFF0F7B6C,
+                          ),
+                        ),
+                        SizedBox(height: 1.5.h),
+                        _buildFareRow(
+                          'Advance Payment (₹${perPersonAdvance.toStringAsFixed(0)} x $adultCount)',
+                          '₹${_format(advanceTotal)}',
+                        ),
+                        SizedBox(height: 1.2.h),
+                        _buildFareRow(
+                          'Taxes & Fees',
+                          '₹${_format(taxesAndFees)}',
+                          isSub: true,
+                        ),
+                        SizedBox(height: 1.2.h),
+                        Divider(
+                          color: CommonColors.cFF0F7B6C.withOpacity(0.3),
+                          height: 1.h,
+                        ),
+                        SizedBox(height: 1.2.h),
+                        _buildFareRow(
+                          'Amount Payable Now',
+                          '₹${_format(amountToPayNow)}',
+                          isTotal: true,
+                          valueColor: CommonColors.trek_route_color,
+                        ),
+                        SizedBox(height: 1.2.h),
+                        _buildFareRow(
+                          'Remaining Amount (Pay later)',
+                          '₹${_format(remainingAmount)}',
+                          isSub: true,
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else ...[
+                  // Standard Payment
+                  _buildFareRow(
+                    'Amount Payable Now',
+                    '₹${_format(amountToPayNow)}',
+                    isTotal: true,
+                    valueColor: CommonColors.trek_route_color,
+                  ),
+                ],
+
+                SizedBox(height: 3.h),
               ],
             ),
           ),
@@ -244,48 +226,40 @@ class TotalFareModal extends StatelessWidget {
   Widget _buildFareRow(
     String label,
     String amount, {
-    String? subtext,
     bool isTotal = false,
-    Color? textColor,
+    bool isSub = false,
+    Color? valueColor,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              label,
-              textScaler: const TextScaler.linear(1.0),
-              style: GoogleFonts.poppins(
-                fontSize: isTotal ? FontSize.s10 : FontSize.s9,
-                fontWeight: isTotal ? FontWeight.w600 : FontWeight.w400,
-                color: textColor ?? CommonColors.blackColor,
-              ),
-            ),
-            Text(
-              amount,
-              textScaler: const TextScaler.linear(1.0),
-              style: GoogleFonts.poppins(
-                fontSize: isTotal ? FontSize.s10 : FontSize.s9,
-                fontWeight: isTotal ? FontWeight.w600 : FontWeight.w400,
-                color: textColor ?? CommonColors.blackColor,
-              ),
-            ),
-          ],
-        ),
-        if (subtext != null) ...[
-          SizedBox(height: 4),
-          Text(
-            subtext,
-            textScaler: const TextScaler.linear(1.0),
+        Flexible(
+          child: Text(
+            label,
             style: GoogleFonts.poppins(
-              fontSize: FontSize.s7,
-              fontWeight: FontWeight.w400,
-              color: CommonColors.greyColor,
+              fontSize: isTotal ? 13.sp : 10.sp,
+              fontWeight: isTotal ? FontWeight.w700 : FontWeight.w400,
+              color: isTotal
+                  ? const Color(0xFF0F172A)
+                  : (isSub ? const Color(0xFF64748B) : CommonColors.blackColor),
             ),
           ),
-        ],
+        ),
+        const SizedBox(width: 10),
+        Text(
+          amount,
+          style: GoogleFonts.poppins(
+            fontSize: isTotal ? 13.sp : 10.sp,
+            fontWeight: isTotal ? FontWeight.w700 : FontWeight.w500,
+            color:
+                valueColor ??
+                (isTotal
+                    ? CommonColors.trek_route_color
+                    : (isSub
+                          ? const Color(0xFF64748B)
+                          : CommonColors.blackColor)),
+          ),
+        ),
       ],
     );
   }
