@@ -9,7 +9,6 @@ import 'package:arobo_app/utils/app_theme.dart';
 import 'package:arobo_app/utils/common_discount_card.dart';
 import 'package:arobo_app/utils/common_filter_bar.dart';
 import 'package:arobo_app/utils/common_trek_card.dart';
-import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:arobo_app/utils/statefullwrapper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

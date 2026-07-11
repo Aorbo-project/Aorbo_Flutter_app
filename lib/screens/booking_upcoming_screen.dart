@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:animated_rating_stars/animated_rating_stars.dart';
 import 'package:arobo_app/controller/trek_controller.dart';
 import 'package:flutter/material.dart';
@@ -94,21 +95,15 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
   final TrekController _trekC = Get.find<TrekController>();
   late AnimationController _animationController;
 
-  // Floating rating panel controllers
   late AnimationController _ratingPanelController;
   late Animation<double> _ratingPanelAnim;
 
-  // Pulse animation for FAB
   late AnimationController _pulseController;
   late Animation<double> _pulseAnim;
 
-  // Shimmer sweep for FAB
   late AnimationController _shimmerController;
-
-  // Rotating gradient border
   late AnimationController _borderRotationController;
 
-  // Glow pulse
   late AnimationController _glowController;
   late Animation<double> _glowAnim;
 
@@ -122,19 +117,14 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
   final GlobalKey _cardKey = GlobalKey();
   double cutoutOffset = 0;
 
-  // ── TICKET / INVOICE DOWNLOAD ─────────────────────────────────────────────
   Future<void> _handleTicketDownload(BookingHistoryData? booking) async {
     if (booking == null) {
       CustomSnackBar.show(context, message: 'Booking details not available');
       return;
     }
 
-    // NOTE: `cancellationPolicy` isn't part of the current Trek model,
-    // so we default to 'standard'. When the field is added to the model,
-    // swap this back to read from booking.trek?.cancellationPolicy.
     const policyType = 'standard';
 
-    // Show loader dialog
     Get.dialog(
       Center(
         child: Container(
@@ -164,7 +154,10 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
     );
 
     try {
-      await InvoicePdfService.previewInvoice(booking: booking, policyType: policyType);
+      await InvoicePdfService.previewInvoice(
+        booking: booking,
+        policyType: policyType,
+      );
       if (Get.isDialogOpen ?? false) Get.back();
     } catch (e) {
       if (Get.isDialogOpen ?? false) Get.back();
@@ -262,7 +255,10 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
         openSections.add(index);
       }
     });
-    Future.delayed(const Duration(milliseconds: 100), _updateCutoutOffset);
+    Future.delayed(
+      const Duration(milliseconds: 100),
+      () => _updateCutoutOffset(),
+    );
   }
 
   void _showRatingPanel() {
@@ -315,7 +311,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
     }
   }
 
-  // ── SECTION HEADER ────────────────────────────────────────────────────────
   Widget _sectionHeader(String title, int index) {
     final bool isOpen = openSections.contains(index);
     return InkWell(
@@ -386,7 +381,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
     }
   }
 
-  // ── TICKET ROW ────────────────────────────────────────────────────────────
   Widget _ticketRow(String title, String value, {bool isHighlight = false}) {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 0.9.h),
@@ -412,6 +406,102 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
               style: TextStyle(
                 fontFamily: 'Poppins',
                 fontSize: FontSize.s9,
+                fontWeight: isHighlight ? FontWeight.w700 : FontWeight.w500,
+                color: isHighlight ? _TC.brand : _TC.ink,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── FINANCE SNAPSHOT HELPERS ───────────────────────────────────────────────
+  Map<String, dynamic>? _parseFinanceSnapshot(String? jsonStr) {
+    if (jsonStr == null || jsonStr.isEmpty) return null;
+    try {
+      return jsonDecode(jsonStr) as Map<String, dynamic>;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String _fmtCurrency(dynamic value) {
+    if (value == null) return '₹0';
+    if (value is num) {
+      final hasDecimal = value != value.roundToDouble();
+      return '₹${hasDecimal ? value.toStringAsFixed(2) : value.toInt().toString()}';
+    }
+    return '₹$value';
+  }
+
+  String _fmtSnapshotDate(String? dateStr) {
+    if (dateStr == null || dateStr.isEmpty) return 'N/A';
+    final dt = DateTime.tryParse(dateStr);
+    if (dt == null) return dateStr;
+    return DateFormat('dd MMM yyyy, hh:mm a').format(dt);
+  }
+
+  String _capitalize(String? value) {
+    if (value == null || value.isEmpty) return 'N/A';
+    return value[0].toUpperCase() + value.substring(1);
+  }
+
+  Widget _financeGroupHeader(String title) {
+    return Padding(
+      padding: EdgeInsets.only(top: 1.2.h, bottom: 0.3.h),
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 0.8.h),
+        decoration: BoxDecoration(
+          color: _TC.accent.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          title,
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: FontSize.s8,
+            fontWeight: FontWeight.w700,
+            color: _TC.accent,
+            letterSpacing: 0.5,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _ticketRowSmall(
+    String title,
+    String value, {
+    bool isHighlight = false,
+  }) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 0.9.h),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 4,
+            child: Text(
+              title,
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: FontSize.s8,
+                color: _TC.inkMid,
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 6,
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: FontSize.s8,
                 fontWeight: isHighlight ? FontWeight.w700 : FontWeight.w500,
                 color: isHighlight ? _TC.brand : _TC.ink,
               ),
@@ -487,7 +577,9 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.22),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.4),
+                    ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -886,62 +978,251 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                       color: const Color(0xFFF8FAFC),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Builder(builder: (context) {
-                      final isPartial = booking.paymentStatus == 'partial';
+                    child: Builder(
+                      builder: (context) {
+                        final snap = _parseFinanceSnapshot(
+                          booking.financeSnapshot,
+                        );
+                        final isPartial = booking.paymentStatus == 'partial';
 
-                      // Paid amount: for full payment → finalAmount,
-                      //              for flexible    → advanceAmount
-                      final paidAmount = isPartial
-                          ? (booking.advanceAmount ?? '0')
-                          : (booking.finalAmount ?? '0');
+                        final travelerCount =
+                            snap?['traveler_count'] ??
+                            booking.totalTravelers ??
+                            1;
+                        final origBaseFare =
+                            snap?['original_base_fare'] ??
+                            booking.totalBasicCost ??
+                            '0';
+                        final farePerPerson =
+                            snap?['original_base_fare_per_person'];
+                        final vendorDiscount =
+                            snap?['vendor_discount'] ??
+                            booking.vendorDiscount ??
+                            '0';
+                        final couponId = snap?['coupon_id'];
+                        final couponDiscount =
+                            snap?['coupon_discount'] ??
+                            booking.couponDiscount ??
+                            '0';
+                        final finalBaseFare = snap?['final_base_fare'];
+                        final gst5 =
+                            snap?['gst_5_percent'] ?? booking.gstAmount ?? '0';
+                        final commissionRate = snap?['commission_rate'] ?? 10;
+                        final commission10 = snap?['commission_10_percent'];
+                        final commissionGst18 =
+                            snap?['commission_gst_18_percent'];
+                        final tds1 = snap?['tds_1_percent'];
+                        final vendorShare = snap?['vendor_share'];
+                        final platformFee =
+                            snap?['platform_fee'] ??
+                            booking.platformFees ??
+                            '0';
+                        final insuranceFee =
+                            snap?['insurance_fee'] ??
+                            booking.insuranceAmount ??
+                            '0';
+                        final cancelProtectFee =
+                            snap?['cancellation_protection_fee'] ??
+                            booking.freeCancellationAmount ??
+                            '0';
+                        final finalAmount =
+                            snap?['final_amount'] ?? booking.finalAmount ?? '0';
+                        final cancelPolicy =
+                            snap?['cancellation_policy_type'] ??
+                            booking.cancellationPolicyType ??
+                            'standard';
+                        final advanceAmt =
+                            snap?['advance_amount'] ??
+                            booking.advanceAmount ??
+                            '0';
+                        final remainingAmt =
+                            snap?['remaining_amount'] ??
+                            booking.remainingAmount ??
+                            '0';
+                        final amountPaidNow = snap?['amount_paid_now'];
+                        final paymentMethod =
+                            snap?['payment_method'] ??
+                            booking.paymentMethod ??
+                            'N/A';
+                        final rzPayId =
+                            snap?['razorpay_payment_id'] ??
+                            booking.razorpayPaymentId ??
+                            'N/A';
+                        final rzOrderId =
+                            snap?['razorpay_order_id'] ??
+                            booking.razorpayOrderId ??
+                            'N/A';
+                        final snapshotVer = snap?['snapshot_version'];
+                        final calculatedAt = snap?['calculated_at'];
 
-                      // Remaining: for full payment → ₹0,
-                      //            for flexible    → remainingAmount from backend
-                      final remainingAmount = isPartial
-                          ? (booking.remainingAmount ?? '0')
-                          : '0';
-
-                      return Column(
-                        children: [
-                          _ticketRow(
-                            'Trip Cost',
-                            '₹${booking.totalAmount ?? '0'}',
-                          ),
-                          if ((booking.discountAmount ?? '0') != '0') ...[
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _financeGroupHeader('Base Fare Calculation'),
+                            _ticketRow('Traveler Count', '$travelerCount'),
                             _dividerLine(),
                             _ticketRow(
-                              'Discount',
-                              '-₹${booking.discountAmount ?? '0'}',
+                              'Original Base Fare',
+                              _fmtCurrency(origBaseFare),
+                            ),
+                            if (farePerPerson != null) ...[
+                              _dividerLine(),
+                              _ticketRow(
+                                'Base Fare / Person',
+                                _fmtCurrency(farePerPerson),
+                              ),
+                            ],
+                            _dividerLine(),
+                            _ticketRow(
+                              'Vendor Discount',
+                              '-${_fmtCurrency(vendorDiscount)}',
+                            ),
+                            if (couponId != null) ...[
+                              _dividerLine(),
+                              _ticketRow('Coupon ID', '$couponId'),
+                            ],
+                            if ((couponDiscount is num &&
+                                    couponDiscount != 0) ||
+                                (couponDiscount is String &&
+                                    couponDiscount != '0')) ...[
+                              _dividerLine(),
+                              _ticketRow(
+                                'Coupon Discount',
+                                '-${_fmtCurrency(couponDiscount)}',
+                              ),
+                            ],
+                            _dividerLine(),
+                            _ticketRow(
+                              'Final Base Fare',
+                              _fmtCurrency(finalBaseFare),
+                              isHighlight: true,
+                            ),
+
+                            _financeGroupHeader('Taxes & Fees'),
+                            _ticketRow('GST (5%)', _fmtCurrency(gst5)),
+                            _dividerLine(),
+                            _ticketRow(
+                              'Platform Fee',
+                              _fmtCurrency(platformFee),
+                            ),
+                            if ((insuranceFee is num && insuranceFee != 0) ||
+                                (insuranceFee is String &&
+                                    insuranceFee != '0' &&
+                                    insuranceFee != '0.00')) ...[
+                              _dividerLine(),
+                              _ticketRow(
+                                'Insurance Fee',
+                                _fmtCurrency(insuranceFee),
+                              ),
+                            ],
+                            if ((cancelProtectFee is num &&
+                                    cancelProtectFee != 0) ||
+                                (cancelProtectFee is String &&
+                                    cancelProtectFee != '0' &&
+                                    cancelProtectFee != '0.00')) ...[
+                              _dividerLine(),
+                              _ticketRow(
+                                'Cancellation Protection Fee',
+                                _fmtCurrency(cancelProtectFee),
+                              ),
+                            ],
+
+                            _financeGroupHeader('Commission Breakdown'),
+                            _ticketRow('Commission Rate', '$commissionRate%'),
+                            if (commission10 != null) ...[
+                              _dividerLine(),
+                              _ticketRow(
+                                'Commission ($commissionRate%)',
+                                _fmtCurrency(commission10),
+                              ),
+                            ],
+                            if (commissionGst18 != null) ...[
+                              _dividerLine(),
+                              _ticketRow(
+                                'Commission GST (18%)',
+                                _fmtCurrency(commissionGst18),
+                              ),
+                            ],
+                            if (tds1 != null) ...[
+                              _dividerLine(),
+                              _ticketRow('TDS (1%)', _fmtCurrency(tds1)),
+                            ],
+                            if (vendorShare != null) ...[
+                              _dividerLine(),
+                              _ticketRow(
+                                'Vendor Share',
+                                _fmtCurrency(vendorShare),
+                                isHighlight: true,
+                              ),
+                            ],
+
+                            _financeGroupHeader('Payment Summary'),
+                            _ticketRow(
+                              'Final Amount',
+                              _fmtCurrency(finalAmount),
+                              isHighlight: true,
+                            ),
+                            _dividerLine(),
+                            _ticketRow(
+                              'Cancellation Policy',
+                              _capitalize(cancelPolicy.toString()),
+                            ),
+                            _dividerLine(),
+                            _ticketRow(
+                              'Advance Amount',
+                              _fmtCurrency(advanceAmt),
+                            ),
+                            if (amountPaidNow != null) ...[
+                              _dividerLine(),
+                              _ticketRow(
+                                'Amount Paid Now',
+                                _fmtCurrency(amountPaidNow),
+                                isHighlight: true,
+                              ),
+                            ],
+                            _dividerLine(),
+                            _ticketRow(
+                              'Remaining Amount',
+                              _fmtCurrency(remainingAmt),
+                              isHighlight: isPartial,
+                            ),
+                            _dividerLine(),
+                            _ticketRow(
+                              'Payment Method',
+                              _capitalize(paymentMethod),
+                            ),
+                            _dividerLine(),
+                            _ticketRow(
+                              'Payment Status',
+                              _getPaymentStatusText(booking.paymentStatus),
+                              isHighlight: true,
+                            ),
+
+                            _financeGroupHeader('Payment References'),
+                            _ticketRowSmall(
+                              'Razorpay Payment ID',
+                              rzPayId ?? 'N/A',
+                            ),
+                            _dividerLine(),
+                            _ticketRowSmall(
+                              'Razorpay Order ID',
+                              rzOrderId ?? 'N/A',
+                            ),
+
+                            _financeGroupHeader('Snapshot Info'),
+                            _ticketRow(
+                              'Snapshot Version',
+                              snapshotVer != null ? 'v$snapshotVer' : 'N/A',
+                            ),
+                            _dividerLine(),
+                            _ticketRow(
+                              'Calculated At',
+                              _fmtSnapshotDate(calculatedAt),
                             ),
                           ],
-                          _dividerLine(),
-                          _ticketRow(
-                            'Platform Fee',
-                            '₹${booking.platformFees ?? '0'}',
-                          ),
-                          _dividerLine(),
-                          _ticketRow('GST', '₹${booking.gstAmount ?? '0'}'),
-                          _dividerLine(),
-                          _ticketRow(
-                            'Paid Amount',
-                            '₹$paidAmount',
-                            isHighlight: true,
-                          ),
-                          _dividerLine(),
-                          _ticketRow(
-                            'Remaining Amount',
-                            '₹$remainingAmount',
-                            isHighlight: isPartial,
-                          ),
-                          _dividerLine(),
-                          _ticketRow(
-                            'Payment Status',
-                            _getPaymentStatusText(booking.paymentStatus),
-                            isHighlight: true,
-                          ),
-                        ],
-                      );
-                    }),
+                        );
+                      },
+                    ),
                   ),
                   SizedBox(height: 1.5.h),
                 ],
@@ -1037,7 +1318,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
     letterSpacing: 0.4,
   );
 
-  // ── ACTION BUTTON ─────────────────────────────────────────────────────────
   Widget _buildActionButton(
     IconData icon,
     String label, {
@@ -1087,12 +1367,13 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
     );
   }
 
-  // ── FLOATING RATING BUTTON ────────────────────────────────────────────────
   Widget _buildFloatingRatingButton({required BookingHistoryData bookingData}) {
-    // Review only available after trek ends and booking was not cancelled
     final bool isCancelled = bookingData.status == 'cancelled';
-    final bool trekEnded = bookingData.batch?.endDate != null &&
-        DateTime.now().isAfter(DateTime.tryParse(bookingData.batch!.endDate!) ?? DateTime.now());
+    final bool trekEnded =
+        bookingData.batch?.endDate != null &&
+        DateTime.now().isAfter(
+          DateTime.tryParse(bookingData.batch!.endDate!) ?? DateTime.now(),
+        );
     if (isCancelled || !trekEnded) return const SizedBox.shrink();
 
     final bool isReviewed = bookingData.ratingGiven == true;
@@ -1205,7 +1486,9 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                       decoration: BoxDecoration(
                         color: const Color(0xFFF8FAFC),
                         borderRadius: BorderRadius.circular(18),
-                        border: Border.all(color: primary.withValues(alpha: 0.06)),
+                        border: Border.all(
+                          color: primary.withValues(alpha: 0.06),
+                        ),
                       ),
                       child: Row(
                         children: [
@@ -1408,7 +1691,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
     );
   }
 
-  // ── DISPUTE CARD ──────────────────────────────────────────────────────────
   Widget _buildDisputeCard({required List<Disputes> disputeData}) {
     return Container(
       margin: EdgeInsets.only(bottom: 2.h),
@@ -1416,7 +1698,9 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: CommonColors.appRedColor.withValues(alpha: 0.25)),
+        border: Border.all(
+          color: CommonColors.appRedColor.withValues(alpha: 0.25),
+        ),
         boxShadow: [
           BoxShadow(
             color: CommonColors.appRedColor.withValues(alpha: 0.07),
@@ -1525,7 +1809,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
     );
   }
 
-  // ── SHIMMER ───────────────────────────────────────────────────────────────
   Widget _buildShimmerLoading() {
     return SingleChildScrollView(
       padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
@@ -1553,7 +1836,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
     );
   }
 
-  // ── BUILD ─────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return Sizer(

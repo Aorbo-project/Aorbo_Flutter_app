@@ -6,10 +6,8 @@ part 'trek_detail_model.g.dart';
 
 @freezed
 class TrekDetailModal with _$TrekDetailModal {
-  const factory TrekDetailModal({
-    bool? success,
-    TrekDetailData? data,
-  }) = _TrekDetailModal;
+  const factory TrekDetailModal({bool? success, TrekDetailData? data}) =
+      _TrekDetailModal;
 
   factory TrekDetailModal.fromJson(Map<String, dynamic> json) =>
       _$TrekDetailModalFromJson(json);
@@ -69,7 +67,8 @@ class TrekDetailData with _$TrekDetailData {
     int? capacity,
     @JsonKey(name: 'booked_slots') int? bookedSlots,
     @JsonKey(name: 'available_slots') int? availableSlots,
-    @JsonKey(name: 'cancellation_policy') CancellationPolicy? cancellationPolicy,
+    @JsonKey(name: 'cancellation_policy')
+    CancellationPolicy? cancellationPolicy,
     @JsonKey(name: 'booking_type') String? bookingType,
   }) = _TrekDetailData;
 
@@ -105,11 +104,8 @@ extension TrekDetailDataExtension on TrekDetailData {
 
 @freezed
 class Inclusions with _$Inclusions {
-  const factory Inclusions({
-    int? id,
-    String? name,
-    String? description,
-  }) = _Inclusions;
+  const factory Inclusions({int? id, String? name, String? description}) =
+      _Inclusions;
 
   factory Inclusions.fromJson(Map<String, dynamic> json) =>
       _$InclusionsFromJson(json);
@@ -117,10 +113,7 @@ class Inclusions with _$Inclusions {
 
 @freezed
 class Activities with _$Activities {
-  const factory Activities({
-    int? id,
-    String? name,
-  }) = _Activities;
+  const factory Activities({int? id, String? name}) = _Activities;
 
   factory Activities.fromJson(Map<String, dynamic> json) =>
       _$ActivitiesFromJson(json);
@@ -128,23 +121,15 @@ class Activities with _$Activities {
 
 @freezed
 class Vendor with _$Vendor {
-  const factory Vendor({
-    int? id,
-    User? user,
-  }) = _Vendor;
+  const factory Vendor({int? id, User? user}) = _Vendor;
 
-  factory Vendor.fromJson(Map<String, dynamic> json) =>
-      _$VendorFromJson(json);
+  factory Vendor.fromJson(Map<String, dynamic> json) => _$VendorFromJson(json);
 }
 
 @freezed
 class User with _$User {
-  const factory User({
-    int? id,
-    String? name,
-    String? email,
-    String? phone,
-  }) = _User;
+  const factory User({int? id, String? name, String? email, String? phone}) =
+      _User;
 
   factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
 }
@@ -182,10 +167,8 @@ class TrekStages with _$TrekStages {
 
 @freezed
 class City with _$City {
-  const factory City({
-    int? id,
-    @JsonKey(name: 'cityName') String? cityName,
-  }) = _City;
+  const factory City({int? id, @JsonKey(name: 'cityName') String? cityName}) =
+      _City;
 
   factory City.fromJson(Map<String, dynamic> json) => _$CityFromJson(json);
 }
@@ -208,10 +191,7 @@ class Accommodations with _$Accommodations {
 
 @freezed
 class Details with _$Details {
-  const factory Details({
-    int? night,
-    String? location,
-  }) = _Details;
+  const factory Details({int? night, String? location}) = _Details;
 
   factory Details.fromJson(Map<String, dynamic> json) =>
       _$DetailsFromJson(json);
@@ -239,8 +219,7 @@ class Images with _$Images {
     @JsonKey(name: 'is_cover') bool? isCover,
   }) = _Images;
 
-  factory Images.fromJson(Map<String, dynamic> json) =>
-      _$ImagesFromJson(json);
+  factory Images.fromJson(Map<String, dynamic> json) => _$ImagesFromJson(json);
 }
 
 @freezed
@@ -256,19 +235,16 @@ class CategoryRatings with _$CategoryRatings {
       _$CategoryRatingsFromJson(json);
 }
 
-
-
-
 @freezed
 class BatchInfo with _$BatchInfo {
   const factory BatchInfo({
     int? id,
     String? tbrId,
-   String? startDate,
+    String? startDate,
     String? startTime,
     String? endDate,
     int? bookedSlots,
-   int? availableSlots,
+    int? availableSlots,
     int? capacity,
   }) = _BatchInfo;
 
