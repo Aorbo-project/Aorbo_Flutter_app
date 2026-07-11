@@ -35,6 +35,7 @@ class _BookingCancellationSuccessScreenState extends State<BookingCancellationSu
 
   bool get _hasRefund => (widget.cancelledData?.totalRefundableAmount ?? 0) > 0;
   bool get _isAdvanceOnly => widget.cancelledData?.isAdvanceOnly == true;
+  bool get _creditNoteEligible => widget.cancelledData?.creditNoteEligible == true;
 
   @override
   void initState() {
@@ -337,11 +338,13 @@ class _BookingCancellationSuccessScreenState extends State<BookingCancellationSu
 
                 // Context-aware message
                 Text(
-                  _isAdvanceOnly
+                  _creditNoteEligible
                       ? 'Your advance amount is non-refundable. A credit note will be issued for GST reversal.'
-                      : _hasRefund
-                          ? 'Your refund will be processed to your original payment method.'
-                          : 'No refund is applicable for this cancellation.',
+                      : _isAdvanceOnly
+                          ? 'Your advance amount, including GST, is non-refundable.'
+                          : _hasRefund
+                              ? 'Your refund will be processed to your original payment method.'
+                              : 'No refund is applicable for this cancellation.',
                   style: GoogleFonts.poppins(
                     fontSize: FontSize.s10,
                     color: CommonColors.blackColor,
@@ -388,8 +391,8 @@ class _BookingCancellationSuccessScreenState extends State<BookingCancellationSu
                   ),
                 ],
 
-                // Credit note notice for FLEX-01
-                if (_isAdvanceOnly) ...[
+                // Credit note notice — only when a credit note is actually being issued
+                if (_creditNoteEligible) ...[
                   SizedBox(height: 1.5.h),
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.h),
