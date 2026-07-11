@@ -7,6 +7,7 @@
 // ── Enums ────────────────────────────────────────────────────────────────────
 
 import '../../freezed_models/treks/trek_detail_model.dart';
+import '../../utils/ist_date_utils.dart';
 
 enum InvoiceStatus { paid, partiallyPaid }
 
@@ -107,9 +108,9 @@ class TrekBanner {
     bookingId: json['bookingId'] as String,
     tbrId: json['tbrId'] as String,
     departureCity: json['departureCity'] as String,
-    departureDateTime: DateTime.parse(json['departureDateTime'] as String),
+    departureDateTime: ISTDateUtils.toIST(json['departureDateTime'] as String)!,
     returnCity: json['returnCity'] as String,
-    returnDateTime: DateTime.parse(json['returnDateTime'] as String),
+    returnDateTime: ISTDateUtils.toIST(json['returnDateTime'] as String)!,
     duration: json['duration'] as String,
   );
 }
@@ -338,7 +339,7 @@ class InvoiceModel {
   });
 
   factory InvoiceModel.fromJson(Map<String, dynamic> json) => InvoiceModel(
-    bookingDate: DateTime.parse(json['bookingDate'] as String),
+    bookingDate: ISTDateUtils.toIST(json['bookingDate'] as String)!,
     vendor: VendorInfo.fromJson(json['vendor'] as Map<String, dynamic>),
     aorbo: AorboInfo.fromJson(json['aorbo'] as Map<String, dynamic>),
     banner: TrekBanner.fromJson(json['banner'] as Map<String, dynamic>),

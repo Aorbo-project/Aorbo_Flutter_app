@@ -8,6 +8,7 @@ import '../freezed_models/booking/booking_history_model.dart';
 import '../utils/common_colors.dart';
 import '../utils/screen_constants.dart';
 import '../utils/common_booked_card.dart';
+import '../utils/ist_date_utils.dart';
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS
@@ -127,26 +128,7 @@ class _BookingsScreenState extends State<BookingsScreen> with SingleTickerProvid
   }
 
   String _formatDate(String raw) {
-    try {
-      final dt = DateTime.parse(raw);
-      const months = [
-        'Jan',
-        'Feb',
-        'Mar',
-        'Apr',
-        'May',
-        'Jun',
-        'Jul',
-        'Aug',
-        'Sep',
-        'Oct',
-        'Nov',
-        'Dec',
-      ];
-      return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
-    } catch (_) {
-      return raw;
-    }
+    return ISTDateUtils.formatCustom(raw, 'd MMM yyyy', fallback: raw);
   }
 
   // ── BUILD ─────────────────────────────────────────────────────────────────

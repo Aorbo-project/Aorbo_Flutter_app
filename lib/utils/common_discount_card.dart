@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
 import 'package:arobo_app/models/discount_card_model.dart';
+import 'package:arobo_app/utils/ist_date_utils.dart';
 import 'package:get/get.dart';
 
 class CommonDiscountCard extends StatelessWidget {
@@ -46,15 +47,8 @@ class CommonDiscountCard extends StatelessWidget {
     // Format validUntil as "dd MMM yyyy"
     String? formattedExpiry;
     if (validUntil != null && validUntil!.isNotEmpty) {
-      try {
-        final dt = DateTime.parse(validUntil!);
-        const months = [
-          'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-        ];
-        formattedExpiry = '${dt.day} ${months[dt.month - 1]} ${dt.year}';
-      } catch (_) {
-        // leave null
+      if (ISTDateUtils.toIST(validUntil) != null) {
+        formattedExpiry = ISTDateUtils.formatCustom(validUntil, 'd MMM yyyy');
       }
     }
 

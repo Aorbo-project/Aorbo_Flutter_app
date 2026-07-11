@@ -3,6 +3,7 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'ist_date_utils.dart';
 
 
 
@@ -132,31 +133,22 @@ class AuthUtils {
     if (dateString == null || dateString.isEmpty) {
       return '-';
     }
-
-    try {
-      // Parse the input (adjust if your format is different)
-      final dateTime = DateTime.parse(dateString);
-
-      // Format: 22/12/2024 03:30 PM
-      return DateFormat('dd/MM/yyyy hh:mm a').format(dateTime);
-    } catch (e) {
-      return dateString;
-    }
+    return ISTDateUtils.formatDateTimeSlash(dateString, fallback: dateString);
   }
 
+  // NOTE: unlike formatDateTime above, this is fed an already-IST wall-clock
+  // DateTime.toString() (from TrekDetailDataExtension.departureDateTimeFromStages,
+  // itself parsed from the naive IST "yyyy-MM-dd hh:mm a" trek_stages string) —
+  // NOT a raw backend UTC timestamp. Routing this through ISTDateUtils would
+  // double-shift it by another +5:30, so it stays on plain DateTime.parse.
   static String formatDateTimeWithHourDecrease(String? dateString, int hoursToDecrease) {
     if (dateString == null || dateString.isEmpty) {
       return '-';
     }
 
     try {
-      // Parse the input date string
       final dateTime = DateTime.parse(dateString);
-
-      // Decrease hours from the dateTime
       final decreasedDateTime = dateTime.subtract(Duration(hours: hoursToDecrease));
-
-      // Format: 22/12/2024 03:30 PM
       return DateFormat('dd/MM/yyyy hh:mm a').format(decreasedDateTime);
     } catch (e) {
       return dateString;

@@ -9,6 +9,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:dotted_line/dotted_line.dart';
 import 'package:sizer/sizer.dart';
+import 'package:arobo_app/utils/ist_date_utils.dart';
 
 
 // ─────────────────────────────────────────────
@@ -647,11 +648,9 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
 
     final trek        = data.trek;
     final batch       = data.batch;
-    final startDate   = DateTime.tryParse(batch?.startDate ?? '');
-    final endDate     = DateTime.tryParse(batch?.endDate ?? '');
-    final bookingDate = data.bookingDate != null
-        ? DateTime.parse(data.bookingDate!)
-        : null;
+    final startDate   = ISTDateUtils.toIST(batch?.startDate);
+    final endDate     = ISTDateUtils.toIST(batch?.endDate);
+    final bookingDate = ISTDateUtils.toIST(data.bookingDate);
     final payment     = _trekC.verifyOrderModal.value.payment;
     final paymentDet  = _trekC.verifyOrderModal.value.paymentDetails;
 
