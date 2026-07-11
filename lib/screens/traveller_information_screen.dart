@@ -256,8 +256,14 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
   List<Traveler> selectedTravellers = [];
 
   // Helper to know whether this trek supports flexible (partial) payment.
-  // From the logs, flexible policy => cancellationPolicy.id == 2.
-  bool get _isFlexiblePolicy => travelData.cancellationPolicy?.id == 5;
+  // Match on title, not a hardcoded DB id — the numeric id depends on seed/
+  // insertion order and has already silently drifted once (previously
+  // assumed 2, then found to actually be 5 in production logs). `title` is
+  // sent by the backend on the same object (trekController.js) and is the
+  // stable identifier the admin panel uses to create/label this policy.
+  bool get _isFlexiblePolicy =>
+      travelData.cancellationPolicy?.title?.toLowerCase().contains('flexible') ??
+      false;
   // ─────────────────────────────────────────────────────────────────────────
   void _showStateSelectionBottomSheet(StateSetter setModalState) {
     showStateSelectionBottomSheet(
