@@ -516,7 +516,27 @@ mixin _$BookingHistoryData {
   @JsonKey(name: 'advance_amount', fromJson: _toString)
   String? get advanceAmount => throw _privateConstructorUsedError;
   @JsonKey(name: 'remaining_amount', fromJson: _toString)
-  String? get remainingAmount => throw _privateConstructorUsedError;
+  String? get remainingAmount =>
+      throw _privateConstructorUsedError; // ─── NEW FINANCE SNAPSHOT FIELDS ─────────────────────────────────────────
+  @JsonKey(name: 'finance_snapshot')
+  String? get financeSnapshot => throw _privateConstructorUsedError;
+  @JsonKey(name: 'total_basic_cost', fromJson: _toString)
+  String? get totalBasicCost => throw _privateConstructorUsedError;
+  @JsonKey(name: 'vendor_discount', fromJson: _toString)
+  String? get vendorDiscount => throw _privateConstructorUsedError;
+  @JsonKey(name: 'coupon_discount', fromJson: _toString)
+  String? get couponDiscount => throw _privateConstructorUsedError;
+  @JsonKey(name: 'insurance_amount', fromJson: _toString)
+  String? get insuranceAmount => throw _privateConstructorUsedError;
+  @JsonKey(name: 'free_cancellation_amount', fromJson: _toString)
+  String? get freeCancellationAmount => throw _privateConstructorUsedError;
+  @JsonKey(name: 'payment_method')
+  String? get paymentMethod => throw _privateConstructorUsedError;
+  @JsonKey(name: 'razorpay_payment_id')
+  String? get razorpayPaymentId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'razorpay_order_id')
+  String? get razorpayOrderId =>
+      throw _privateConstructorUsedError; // ─────────────────────────────────────────────────────────────────────────
   Trek? get trek => throw _privateConstructorUsedError;
   Batch? get batch => throw _privateConstructorUsedError;
   List<TravelersDataModel>? get travelers => throw _privateConstructorUsedError;
@@ -572,6 +592,20 @@ abstract class $BookingHistoryDataCopyWith<$Res> {
       String? advanceAmount,
       @JsonKey(name: 'remaining_amount', fromJson: _toString)
       String? remainingAmount,
+      @JsonKey(name: 'finance_snapshot') String? financeSnapshot,
+      @JsonKey(name: 'total_basic_cost', fromJson: _toString)
+      String? totalBasicCost,
+      @JsonKey(name: 'vendor_discount', fromJson: _toString)
+      String? vendorDiscount,
+      @JsonKey(name: 'coupon_discount', fromJson: _toString)
+      String? couponDiscount,
+      @JsonKey(name: 'insurance_amount', fromJson: _toString)
+      String? insuranceAmount,
+      @JsonKey(name: 'free_cancellation_amount', fromJson: _toString)
+      String? freeCancellationAmount,
+      @JsonKey(name: 'payment_method') String? paymentMethod,
+      @JsonKey(name: 'razorpay_payment_id') String? razorpayPaymentId,
+      @JsonKey(name: 'razorpay_order_id') String? razorpayOrderId,
       Trek? trek,
       Batch? batch,
       List<TravelersDataModel>? travelers,
@@ -623,6 +657,15 @@ class _$BookingHistoryDataCopyWithImpl<$Res, $Val extends BookingHistoryData>
     Object? cancellationPolicyType = freezed,
     Object? advanceAmount = freezed,
     Object? remainingAmount = freezed,
+    Object? financeSnapshot = freezed,
+    Object? totalBasicCost = freezed,
+    Object? vendorDiscount = freezed,
+    Object? couponDiscount = freezed,
+    Object? insuranceAmount = freezed,
+    Object? freeCancellationAmount = freezed,
+    Object? paymentMethod = freezed,
+    Object? razorpayPaymentId = freezed,
+    Object? razorpayOrderId = freezed,
     Object? trek = freezed,
     Object? batch = freezed,
     Object? travelers = freezed,
@@ -736,6 +779,42 @@ class _$BookingHistoryDataCopyWithImpl<$Res, $Val extends BookingHistoryData>
           ? _value.remainingAmount
           : remainingAmount // ignore: cast_nullable_to_non_nullable
               as String?,
+      financeSnapshot: freezed == financeSnapshot
+          ? _value.financeSnapshot
+          : financeSnapshot // ignore: cast_nullable_to_non_nullable
+              as String?,
+      totalBasicCost: freezed == totalBasicCost
+          ? _value.totalBasicCost
+          : totalBasicCost // ignore: cast_nullable_to_non_nullable
+              as String?,
+      vendorDiscount: freezed == vendorDiscount
+          ? _value.vendorDiscount
+          : vendorDiscount // ignore: cast_nullable_to_non_nullable
+              as String?,
+      couponDiscount: freezed == couponDiscount
+          ? _value.couponDiscount
+          : couponDiscount // ignore: cast_nullable_to_non_nullable
+              as String?,
+      insuranceAmount: freezed == insuranceAmount
+          ? _value.insuranceAmount
+          : insuranceAmount // ignore: cast_nullable_to_non_nullable
+              as String?,
+      freeCancellationAmount: freezed == freeCancellationAmount
+          ? _value.freeCancellationAmount
+          : freeCancellationAmount // ignore: cast_nullable_to_non_nullable
+              as String?,
+      paymentMethod: freezed == paymentMethod
+          ? _value.paymentMethod
+          : paymentMethod // ignore: cast_nullable_to_non_nullable
+              as String?,
+      razorpayPaymentId: freezed == razorpayPaymentId
+          ? _value.razorpayPaymentId
+          : razorpayPaymentId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      razorpayOrderId: freezed == razorpayOrderId
+          ? _value.razorpayOrderId
+          : razorpayOrderId // ignore: cast_nullable_to_non_nullable
+              as String?,
       trek: freezed == trek
           ? _value.trek
           : trek // ignore: cast_nullable_to_non_nullable
@@ -831,6 +910,20 @@ abstract class _$$BookingHistoryDataImplCopyWith<$Res>
       String? advanceAmount,
       @JsonKey(name: 'remaining_amount', fromJson: _toString)
       String? remainingAmount,
+      @JsonKey(name: 'finance_snapshot') String? financeSnapshot,
+      @JsonKey(name: 'total_basic_cost', fromJson: _toString)
+      String? totalBasicCost,
+      @JsonKey(name: 'vendor_discount', fromJson: _toString)
+      String? vendorDiscount,
+      @JsonKey(name: 'coupon_discount', fromJson: _toString)
+      String? couponDiscount,
+      @JsonKey(name: 'insurance_amount', fromJson: _toString)
+      String? insuranceAmount,
+      @JsonKey(name: 'free_cancellation_amount', fromJson: _toString)
+      String? freeCancellationAmount,
+      @JsonKey(name: 'payment_method') String? paymentMethod,
+      @JsonKey(name: 'razorpay_payment_id') String? razorpayPaymentId,
+      @JsonKey(name: 'razorpay_order_id') String? razorpayOrderId,
       Trek? trek,
       Batch? batch,
       List<TravelersDataModel>? travelers,
@@ -882,6 +975,15 @@ class __$$BookingHistoryDataImplCopyWithImpl<$Res>
     Object? cancellationPolicyType = freezed,
     Object? advanceAmount = freezed,
     Object? remainingAmount = freezed,
+    Object? financeSnapshot = freezed,
+    Object? totalBasicCost = freezed,
+    Object? vendorDiscount = freezed,
+    Object? couponDiscount = freezed,
+    Object? insuranceAmount = freezed,
+    Object? freeCancellationAmount = freezed,
+    Object? paymentMethod = freezed,
+    Object? razorpayPaymentId = freezed,
+    Object? razorpayOrderId = freezed,
     Object? trek = freezed,
     Object? batch = freezed,
     Object? travelers = freezed,
@@ -995,6 +1097,42 @@ class __$$BookingHistoryDataImplCopyWithImpl<$Res>
           ? _value.remainingAmount
           : remainingAmount // ignore: cast_nullable_to_non_nullable
               as String?,
+      financeSnapshot: freezed == financeSnapshot
+          ? _value.financeSnapshot
+          : financeSnapshot // ignore: cast_nullable_to_non_nullable
+              as String?,
+      totalBasicCost: freezed == totalBasicCost
+          ? _value.totalBasicCost
+          : totalBasicCost // ignore: cast_nullable_to_non_nullable
+              as String?,
+      vendorDiscount: freezed == vendorDiscount
+          ? _value.vendorDiscount
+          : vendorDiscount // ignore: cast_nullable_to_non_nullable
+              as String?,
+      couponDiscount: freezed == couponDiscount
+          ? _value.couponDiscount
+          : couponDiscount // ignore: cast_nullable_to_non_nullable
+              as String?,
+      insuranceAmount: freezed == insuranceAmount
+          ? _value.insuranceAmount
+          : insuranceAmount // ignore: cast_nullable_to_non_nullable
+              as String?,
+      freeCancellationAmount: freezed == freeCancellationAmount
+          ? _value.freeCancellationAmount
+          : freeCancellationAmount // ignore: cast_nullable_to_non_nullable
+              as String?,
+      paymentMethod: freezed == paymentMethod
+          ? _value.paymentMethod
+          : paymentMethod // ignore: cast_nullable_to_non_nullable
+              as String?,
+      razorpayPaymentId: freezed == razorpayPaymentId
+          ? _value.razorpayPaymentId
+          : razorpayPaymentId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      razorpayOrderId: freezed == razorpayOrderId
+          ? _value.razorpayOrderId
+          : razorpayOrderId // ignore: cast_nullable_to_non_nullable
+              as String?,
       trek: freezed == trek
           ? _value.trek
           : trek // ignore: cast_nullable_to_non_nullable
@@ -1060,6 +1198,20 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
       @JsonKey(name: 'advance_amount', fromJson: _toString) this.advanceAmount,
       @JsonKey(name: 'remaining_amount', fromJson: _toString)
       this.remainingAmount,
+      @JsonKey(name: 'finance_snapshot') this.financeSnapshot,
+      @JsonKey(name: 'total_basic_cost', fromJson: _toString)
+      this.totalBasicCost,
+      @JsonKey(name: 'vendor_discount', fromJson: _toString)
+      this.vendorDiscount,
+      @JsonKey(name: 'coupon_discount', fromJson: _toString)
+      this.couponDiscount,
+      @JsonKey(name: 'insurance_amount', fromJson: _toString)
+      this.insuranceAmount,
+      @JsonKey(name: 'free_cancellation_amount', fromJson: _toString)
+      this.freeCancellationAmount,
+      @JsonKey(name: 'payment_method') this.paymentMethod,
+      @JsonKey(name: 'razorpay_payment_id') this.razorpayPaymentId,
+      @JsonKey(name: 'razorpay_order_id') this.razorpayOrderId,
       this.trek,
       this.batch,
       final List<TravelersDataModel>? travelers,
@@ -1146,6 +1298,35 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
   @override
   @JsonKey(name: 'remaining_amount', fromJson: _toString)
   final String? remainingAmount;
+// ─── NEW FINANCE SNAPSHOT FIELDS ─────────────────────────────────────────
+  @override
+  @JsonKey(name: 'finance_snapshot')
+  final String? financeSnapshot;
+  @override
+  @JsonKey(name: 'total_basic_cost', fromJson: _toString)
+  final String? totalBasicCost;
+  @override
+  @JsonKey(name: 'vendor_discount', fromJson: _toString)
+  final String? vendorDiscount;
+  @override
+  @JsonKey(name: 'coupon_discount', fromJson: _toString)
+  final String? couponDiscount;
+  @override
+  @JsonKey(name: 'insurance_amount', fromJson: _toString)
+  final String? insuranceAmount;
+  @override
+  @JsonKey(name: 'free_cancellation_amount', fromJson: _toString)
+  final String? freeCancellationAmount;
+  @override
+  @JsonKey(name: 'payment_method')
+  final String? paymentMethod;
+  @override
+  @JsonKey(name: 'razorpay_payment_id')
+  final String? razorpayPaymentId;
+  @override
+  @JsonKey(name: 'razorpay_order_id')
+  final String? razorpayOrderId;
+// ─────────────────────────────────────────────────────────────────────────
   @override
   final Trek? trek;
   @override
@@ -1175,7 +1356,7 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
 
   @override
   String toString() {
-    return 'BookingHistoryData(id: $id, customerId: $customerId, trekId: $trekId, vendorId: $vendorId, vendorIdAlt: $vendorIdAlt, batchId: $batchId, couponId: $couponId, totalTravelers: $totalTravelers, totalAmount: $totalAmount, platformFees: $platformFees, gstAmount: $gstAmount, discountAmount: $discountAmount, finalAmount: $finalAmount, paymentStatus: $paymentStatus, status: $status, bookingDate: $bookingDate, specialRequests: $specialRequests, bookingSource: $bookingSource, primaryContactTravelerId: $primaryContactTravelerId, createdAt: $createdAt, updatedAt: $updatedAt, userId: $userId, cityId: $cityId, cancellationPolicyType: $cancellationPolicyType, advanceAmount: $advanceAmount, remainingAmount: $remainingAmount, trek: $trek, batch: $batch, travelers: $travelers, bookingNumber: $bookingNumber, trekStatus: $trekStatus, ratingGiven: $ratingGiven, ratingValue: $ratingValue)';
+    return 'BookingHistoryData(id: $id, customerId: $customerId, trekId: $trekId, vendorId: $vendorId, vendorIdAlt: $vendorIdAlt, batchId: $batchId, couponId: $couponId, totalTravelers: $totalTravelers, totalAmount: $totalAmount, platformFees: $platformFees, gstAmount: $gstAmount, discountAmount: $discountAmount, finalAmount: $finalAmount, paymentStatus: $paymentStatus, status: $status, bookingDate: $bookingDate, specialRequests: $specialRequests, bookingSource: $bookingSource, primaryContactTravelerId: $primaryContactTravelerId, createdAt: $createdAt, updatedAt: $updatedAt, userId: $userId, cityId: $cityId, cancellationPolicyType: $cancellationPolicyType, advanceAmount: $advanceAmount, remainingAmount: $remainingAmount, financeSnapshot: $financeSnapshot, totalBasicCost: $totalBasicCost, vendorDiscount: $vendorDiscount, couponDiscount: $couponDiscount, insuranceAmount: $insuranceAmount, freeCancellationAmount: $freeCancellationAmount, paymentMethod: $paymentMethod, razorpayPaymentId: $razorpayPaymentId, razorpayOrderId: $razorpayOrderId, trek: $trek, batch: $batch, travelers: $travelers, bookingNumber: $bookingNumber, trekStatus: $trekStatus, ratingGiven: $ratingGiven, ratingValue: $ratingValue)';
   }
 
   @override
@@ -1230,6 +1411,24 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
                 other.advanceAmount == advanceAmount) &&
             (identical(other.remainingAmount, remainingAmount) ||
                 other.remainingAmount == remainingAmount) &&
+            (identical(other.financeSnapshot, financeSnapshot) ||
+                other.financeSnapshot == financeSnapshot) &&
+            (identical(other.totalBasicCost, totalBasicCost) ||
+                other.totalBasicCost == totalBasicCost) &&
+            (identical(other.vendorDiscount, vendorDiscount) ||
+                other.vendorDiscount == vendorDiscount) &&
+            (identical(other.couponDiscount, couponDiscount) ||
+                other.couponDiscount == couponDiscount) &&
+            (identical(other.insuranceAmount, insuranceAmount) ||
+                other.insuranceAmount == insuranceAmount) &&
+            (identical(other.freeCancellationAmount, freeCancellationAmount) ||
+                other.freeCancellationAmount == freeCancellationAmount) &&
+            (identical(other.paymentMethod, paymentMethod) ||
+                other.paymentMethod == paymentMethod) &&
+            (identical(other.razorpayPaymentId, razorpayPaymentId) ||
+                other.razorpayPaymentId == razorpayPaymentId) &&
+            (identical(other.razorpayOrderId, razorpayOrderId) ||
+                other.razorpayOrderId == razorpayOrderId) &&
             (identical(other.trek, trek) || other.trek == trek) &&
             (identical(other.batch, batch) || other.batch == batch) &&
             const DeepCollectionEquality()
@@ -1274,6 +1473,15 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
         const DeepCollectionEquality().hash(cancellationPolicyType),
         advanceAmount,
         remainingAmount,
+        financeSnapshot,
+        totalBasicCost,
+        vendorDiscount,
+        couponDiscount,
+        insuranceAmount,
+        freeCancellationAmount,
+        paymentMethod,
+        razorpayPaymentId,
+        razorpayOrderId,
         trek,
         batch,
         const DeepCollectionEquality().hash(_travelers),
@@ -1334,6 +1542,20 @@ abstract class _BookingHistoryData implements BookingHistoryData {
       final String? advanceAmount,
       @JsonKey(name: 'remaining_amount', fromJson: _toString)
       final String? remainingAmount,
+      @JsonKey(name: 'finance_snapshot') final String? financeSnapshot,
+      @JsonKey(name: 'total_basic_cost', fromJson: _toString)
+      final String? totalBasicCost,
+      @JsonKey(name: 'vendor_discount', fromJson: _toString)
+      final String? vendorDiscount,
+      @JsonKey(name: 'coupon_discount', fromJson: _toString)
+      final String? couponDiscount,
+      @JsonKey(name: 'insurance_amount', fromJson: _toString)
+      final String? insuranceAmount,
+      @JsonKey(name: 'free_cancellation_amount', fromJson: _toString)
+      final String? freeCancellationAmount,
+      @JsonKey(name: 'payment_method') final String? paymentMethod,
+      @JsonKey(name: 'razorpay_payment_id') final String? razorpayPaymentId,
+      @JsonKey(name: 'razorpay_order_id') final String? razorpayOrderId,
       final Trek? trek,
       final Batch? batch,
       final List<TravelersDataModel>? travelers,
@@ -1420,7 +1642,34 @@ abstract class _BookingHistoryData implements BookingHistoryData {
   @override
   @JsonKey(name: 'remaining_amount', fromJson: _toString)
   String? get remainingAmount;
+  @override // ─── NEW FINANCE SNAPSHOT FIELDS ─────────────────────────────────────────
+  @JsonKey(name: 'finance_snapshot')
+  String? get financeSnapshot;
   @override
+  @JsonKey(name: 'total_basic_cost', fromJson: _toString)
+  String? get totalBasicCost;
+  @override
+  @JsonKey(name: 'vendor_discount', fromJson: _toString)
+  String? get vendorDiscount;
+  @override
+  @JsonKey(name: 'coupon_discount', fromJson: _toString)
+  String? get couponDiscount;
+  @override
+  @JsonKey(name: 'insurance_amount', fromJson: _toString)
+  String? get insuranceAmount;
+  @override
+  @JsonKey(name: 'free_cancellation_amount', fromJson: _toString)
+  String? get freeCancellationAmount;
+  @override
+  @JsonKey(name: 'payment_method')
+  String? get paymentMethod;
+  @override
+  @JsonKey(name: 'razorpay_payment_id')
+  String? get razorpayPaymentId;
+  @override
+  @JsonKey(name: 'razorpay_order_id')
+  String? get razorpayOrderId;
+  @override // ─────────────────────────────────────────────────────────────────────────
   Trek? get trek;
   @override
   Batch? get batch;

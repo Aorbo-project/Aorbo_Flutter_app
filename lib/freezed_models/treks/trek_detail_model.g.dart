@@ -27,17 +27,13 @@ _$TrekDetailDataImpl _$$TrekDetailDataImplFromJson(Map<String, dynamic> json) =>
       cityIds:
           (json['city_ids'] as List<dynamic>?)?.map((e) => e as int).toList(),
       inclusions: (json['inclusions'] as List<dynamic>?)
-          ?.map((e) => e is Map<String, dynamic>
-              ? Inclusions.fromJson(e)
-              : Inclusions(id: e is int ? e : int.tryParse(e.toString()), name: null, description: null))
+          ?.map((e) => Inclusions.fromJson(e as Map<String, dynamic>))
           .toList(),
       exclusions: (json['exclusions'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
       activities: (json['activities'] as List<dynamic>?)
-          ?.map((e) => e is Map<String, dynamic>
-              ? Activities.fromJson(e)
-              : Activities(id: e is int ? e : int.tryParse(e.toString()), name: null))
+          ?.map((e) => Activities.fromJson(e as Map<String, dynamic>))
           .toList(),
       id: json['id'] as int?,
       mtrId: json['mtr_id'] as String?,

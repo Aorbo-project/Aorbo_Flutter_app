@@ -1,11 +1,14 @@
 import 'dart:math';
+import 'dart:async';
 
 import 'package:arobo_app/freezed_models/booking/booking_data_model.dart';
+import 'package:arobo_app/screens/coupon_code_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:sizer/sizer.dart';
 
 import 'package:arobo_app/controller/dashboard_controller.dart';
@@ -15,6 +18,7 @@ import 'package:arobo_app/utils/booking_constants.dart';
 import 'package:arobo_app/utils/common_btn.dart';
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/common_images.dart';
+import 'package:arobo_app/utils/custom_snackbar.dart';
 import 'package:arobo_app/utils/state_selection_bottom_sheet.dart';
 import 'package:arobo_app/utils/total_fare_modal.dart';
 
@@ -35,7 +39,6 @@ class _TI {
   static const tealSoft = CommonColors.cFFE6F5F3;
   static const iconBadge = CommonColors.cFF111827;
   static const divider = CommonColors.trekroutecolorlight;
-  static const shadow = CommonColors.c0A000000;
 
   static const sheetBg = Colors.white;
   static const sheetSurface = Colors.white;
@@ -44,186 +47,6 @@ class _TI {
   static const sheetInkMid = Color(0xFF64748B);
   static const sheetHandle = Color(0xFFD1D5DB);
   static const sheetAccent = Color(0xFF111827);
-  static const sheetSelected = Color(0xFFE6F5F3);
-  static const sheetYellow = Color(0xFFFACC15);
-  static const sheetGreen = Color(0xFF0F7B6C);
-}
-
-// ─────────────────────────────────────────────
-//  ANIMATED CARD WRAPPER
-// ─────────────────────────────────────────────
-class _AnimatedCard extends StatefulWidget {
-  final Widget child;
-  final int index;
-  const _AnimatedCard({required this.child, required this.index});
-
-  @override
-  State<_AnimatedCard> createState() => _AnimatedCardState();
-}
-
-class _AnimatedCardState extends State<_AnimatedCard>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-  late Animation<double> _opacity;
-  late Animation<Offset> _slide;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: Duration(milliseconds: 400 + widget.index * 80),
-    );
-    _opacity = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
-    _slide = Tween<Offset>(
-      begin: const Offset(0, 0.06),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
-
-    Future.delayed(Duration(milliseconds: widget.index * 60), () {
-      if (mounted) _ctrl.forward();
-    });
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => FadeTransition(
-    opacity: _opacity,
-    child: SlideTransition(position: _slide, child: widget.child),
-  );
-}
-
-// ─────────────────────────────────────────────
-//  TRAVELLER LIMIT BANNER  (slides up from bottom)
-// ─────────────────────────────────────────────
-class _TravellerLimitBanner extends StatefulWidget {
-  final int limit;
-  final VoidCallback onClose;
-
-  const _TravellerLimitBanner({required this.limit, required this.onClose});
-
-  @override
-  State<_TravellerLimitBanner> createState() => _TravellerLimitBannerState();
-}
-
-class _TravellerLimitBannerState extends State<_TravellerLimitBanner>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-  late Animation<Offset> _slide;
-  late Animation<double> _fade;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 320),
-    );
-    _slide = Tween<Offset>(
-      begin: const Offset(0, 1),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
-    _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
-    _ctrl.forward();
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  Future<void> _dismiss() async {
-    await _ctrl.reverse();
-    widget.onClose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _fade,
-      child: SlideTransition(
-        position: _slide,
-        child: Container(
-          margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
-          padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.4.h),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1C1C1E),
-            borderRadius: BorderRadius.circular(3.w),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.18),
-                blurRadius: 16,
-                offset: const Offset(0, -4),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 8.w,
-                height: 8.w,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.groups_rounded,
-                  color: Colors.white,
-                  size: 4.5.w,
-                ),
-              ),
-              SizedBox(width: 3.w),
-              Expanded(
-                child: RichText(
-                  textScaler: const TextScaler.linear(1.0),
-                  text: TextSpan(
-                    style: GoogleFonts.poppins(
-                      fontSize: 10.sp,
-                      color: Colors.white.withValues(alpha: 0.85),
-                    ),
-                    children: [
-                      const TextSpan(text: 'Max '),
-                      TextSpan(
-                        text:
-                            '${widget.limit} traveller${widget.limit > 1 ? 's' : ''}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const TextSpan(text: ' allowed for this booking.'),
-                    ],
-                  ),
-                ),
-              ),
-              GestureDetector(
-                onTap: _dismiss,
-                child: Container(
-                  width: 7.w,
-                  height: 7.w,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.close_rounded,
-                    color: Colors.white.withValues(alpha: 0.8),
-                    size: 4.w,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 // ─────────────────────────────────────────────
@@ -238,7 +61,7 @@ class TravellerInformationScreen extends StatefulWidget {
 }
 
 class _TravellerInformationScreenState extends State<TravellerInformationScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   final TrekController _trekC = Get.find<TrekController>();
   final DashboardController _dashboardC = Get.find<DashboardController>();
   final UserController _userC = Get.find<UserController>();
@@ -246,66 +69,50 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
   final nameNode = FocusNode();
 
   String _selectedState = BookingConstants.defaultState;
-
-  final bool _whatsappUpdates = false;
   String _selectedPaymentOption = 'standard';
-
-  final GlobalKey _checkboxKey = GlobalKey();
-  OverlayEntry? _overlayEntry;
+  String? _selectedUPI = PaymentMethods.razorpay;
 
   List<Traveler> selectedTravellers = [];
 
-  // Helper to know whether this trek supports flexible (partial) payment.
-  // Match on title, not a hardcoded DB id — the numeric id depends on seed/
-  // insertion order and has already silently drifted once (previously
-  // assumed 2, then found to actually be 5 in production logs). `title` is
-  // sent by the backend on the same object (trekController.js) and is the
-  // stable identifier the admin panel uses to create/label this policy.
-  bool get _isFlexiblePolicy =>
-      travelData.cancellationPolicy?.title?.toLowerCase().contains('flexible') ??
-      false;
-  // ─────────────────────────────────────────────────────────────────────────
-  void _showStateSelectionBottomSheet(StateSetter setModalState) {
-    showStateSelectionBottomSheet(
-      context: context,
-      stateList: _dashboardC.stateList,
-      selectedStateId: _userC.stateUpdateId.value,
-      onStateSelected: (state) {
-        setModalState(() {
-          _userC.stateUpdateId.value = state.id ?? 0;
-          _selectedState = state.name ?? '';
-        });
-      },
-    );
-  }
+  // Payment & Coupon State
+  bool _isTripExpanded = false;
+  bool _isCouponExpanded = true;
+  bool _isProcessingPayment = false;
+  bool _showPaymentError = false;
+  String _paymentErrorMessage = '';
+
+  static const int _totalTimerSecs = 5 * 60;
+  final RxInt _remainingSecs = _totalTimerSecs.obs;
+  bool _isTimerExpired = false;
+  Timer? _timer;
+  late Razorpay _razorpay;
+
+  // Validation & Hints
+  final GlobalKey _contactCardKey = GlobalKey();
+  final GlobalKey _travellerCardKey = GlobalKey();
+  late AnimationController _shakeController;
+  int _shakeTargetIndex = -1; // -1: none, 1: contact, 2: travellers
+  String? _hintMessage;
+  Timer? _hintTimer;
+
+  bool get _isFlexiblePolicy => travelData.cancellationPolicy?.id == 5;
 
   @override
   void initState() {
     super.initState();
     travelData = _trekC.trekDetailData.value;
-    debugPrint("========== POLICY DEBUG ==========");
-    debugPrint("Trek ID: ${travelData.id}");
-    debugPrint("Cancellation Policy ID: ${travelData.cancellationPolicy?.id}");
-    debugPrint(
-      "Cancellation Policy Title: ${travelData.cancellationPolicy?.title}",
-    );
-    debugPrint("==================================");
 
-    // ── Pick the right default payment option based on policy ──────────
-    // If the trek supports a flexible policy, default to 'flexible'
-    // (partial payment). Otherwise, fall back to 'standard' (full payment).
+    // Initialize Shake Controller
+    _shakeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+
     _selectedPaymentOption = _isFlexiblePolicy ? 'flexible' : 'standard';
 
-    // Preserve any coupon code the user already applied before reaching this screen.
-    // Resetting couponCode to '' here was the root cause of the discount being
-    // wiped on every calculateFare() call triggered by initState.
     final existingCoupon = _trekC.calculateFareRequestModel.value.couponCode;
-
-    // Restore previously selected travellers (e.g. back-navigation).
     selectedTravellers = List.from(_trekC.travellerDetailList);
 
-    // travelerCount must reflect the actual number of selected travellers.
-    // Fall back to 1 only when starting fresh (no travellers selected yet).
     final restoredCount = selectedTravellers.isNotEmpty
         ? selectedTravellers.length
         : 1;
@@ -328,11 +135,32 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
     debounce(_trekC.calculateFareRequestModel, (value) {
       _trekC.calculateFare();
     }, time: const Duration(milliseconds: 500));
+
+    _razorpay = Razorpay();
+    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
+    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
+    _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _syncTimerToExpiry(_currentFareResponse()?.expiresAt);
+    });
+    ever(_trekC.calculateFareResponseModel, (result) {
+      result.maybeWhen(
+        success: (r) =>
+            _syncTimerToExpiry((r as CalculateFareResponseModel).expiresAt),
+        orElse: () {},
+      );
+    });
+
+    _startTimer();
   }
 
   @override
   void dispose() {
-    _removeOverlay();
+    _timer?.cancel();
+    _hintTimer?.cancel();
+    _shakeController.dispose();
+    _razorpay.clear();
     nameNode.dispose();
     _userC.nameControllerTraveller.value.clear();
     _userC.ageControllerTraveller.value.clear();
@@ -340,166 +168,316 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
     super.dispose();
   }
 
-  void _removeOverlay() {
-    _overlayEntry?.remove();
-    _overlayEntry = null;
-  }
-
-  String _formatDate(String? dateString) {
-    if (dateString == null || dateString.isEmpty) return '-';
-    try {
-      final parts = dateString.split('-');
-      if (parts.length == 3) return '${parts[2]}-${parts[1]}-${parts[0]}';
-      return dateString;
-    } catch (_) {
-      return dateString;
-    }
-  }
-
-  String _calculateEndDate(String? startDate, int? durationDays) {
-    if (startDate == null || startDate.isEmpty || durationDays == null)
-      return '-';
-    try {
-      final start = DateTime.parse(startDate);
-      final end = start.add(Duration(days: durationDays));
-      return '${end.day.toString().padLeft(2, '0')}-'
-          '${end.month.toString().padLeft(2, '0')}-${end.year}';
-    } catch (_) {
-      return '-';
-    }
-  }
-
-  void _showTickOverlay(BuildContext context) {
-    _removeOverlay();
-    final RenderBox? checkbox =
-        _checkboxKey.currentContext?.findRenderObject() as RenderBox?;
-    if (checkbox == null) return;
-    final position = checkbox.localToGlobal(Offset.zero);
-    final size = checkbox.size;
-    final cx = position.dx + (size.width / 2);
-    final cy = position.dy + (size.height / 2);
-
-    final List<Widget> particles = [];
-
-    // 12 small dots radiating outward
-    for (int i = 0; i < 12; i++) {
-      final angle = (i * (360 / 12)) * (pi / 180);
-      particles.add(
-        Positioned(
-          left: cx - 2,
-          top: cy - 2,
-          child: TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0.0, end: 1.0),
-            duration: const Duration(milliseconds: 400),
-            curve: Curves.easeOut,
-            builder: (_, v, __) => Transform.translate(
-              offset: Offset(cos(angle) * 40 * v, sin(angle) * 40 * v),
-              child: Opacity(
-                opacity: 1 - v,
-                child: Container(
-                  width: 4,
-                  height: 4,
-                  decoration: const BoxDecoration(
-                    color: CommonColors.lightBlueColor,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-
-    // 6 check badges radiating outward
-    for (int i = 0; i < 6; i++) {
-      final angle = (i * (360 / 6)) * (pi / 180);
-      final delay = i * 100;
-      particles.add(
-        Positioned(
-          left: cx - 15,
-          top: cy - 15,
-          child: TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0.0, end: 1.0),
-            duration: const Duration(milliseconds: 800),
-            curve: Curves.easeOutCubic,
-            onEnd: i == 0 ? _removeOverlay : null,
-            builder: (_, v, __) {
-              final dv = v == 0
-                  ? 0.0
-                  : ((v * 1000 - delay) / (800 - delay)).clamp(0.0, 1.0);
-              final dist = 60 * dv;
-              return Transform.translate(
-                offset: Offset(
-                  cos(angle) * dist,
-                  sin(angle) * dist + sin(v * pi * 2) * 20,
-                ),
-                child: Transform.scale(
-                  scale: dv * (1 - dv * 0.5),
-                  child: Opacity(
-                    opacity: 1 - dv,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: CommonColors.lightBlueColor,
-                            blurRadius: 4,
-                            spreadRadius: 1,
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        Icons.check,
-                        color: CommonColors.lightBlueColor,
-                        size: 16,
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      );
-    }
-
-    _overlayEntry = OverlayEntry(
-      builder: (context) => Stack(children: particles),
+  CalculateFareResponseModel? _currentFareResponse() {
+    return _trekC.calculateFareResponseModel.value.maybeWhen(
+      success: (r) => r as CalculateFareResponseModel,
+      orElse: () => null,
     );
-    Overlay.of(context).insert(_overlayEntry!);
   }
 
-  // ── SHARED UI HELPERS ─────────────────────────────────────────────────────
+  void _syncTimerToExpiry(dynamic expiresAtRaw) {
+    if (expiresAtRaw == null) return;
+    final expiresAt = DateTime.tryParse(expiresAtRaw.toString());
+    if (expiresAt == null) return;
 
-  Widget _card({required Widget child, int index = 0}) {
-    return _AnimatedCard(
-      index: index,
-      child: Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: _TI.cardBg,
-          borderRadius: BorderRadius.circular(4.w),
-          boxShadow: [
-            BoxShadow(
-              color: CommonColors.blackColor.withValues(alpha: 0.07),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
+    final secsLeft = expiresAt.difference(DateTime.now()).inSeconds;
+    _remainingSecs.value = secsLeft.clamp(0, _totalTimerSecs);
+
+    if (_remainingSecs.value <= 0) {
+      _timer?.cancel();
+      _handleTimerExpired();
+    }
+  }
+
+  void _startTimer() {
+    _timer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) return;
+      if (_remainingSecs.value > 0) {
+        _remainingSecs.value--;
+      } else {
+        t.cancel();
+        _handleTimerExpired();
+      }
+    });
+  }
+
+  void _handleTimerExpired() {
+    if (!mounted || _isProcessingPayment) return;
+    _isTimerExpired = true;
+    CustomSnackBar.show(
+      context,
+      message: 'Payment session timed out. Please start over.',
+    );
+    Get.back();
+  }
+
+  void _triggerHint(String message, GlobalKey key, int targetIndex) {
+    HapticFeedback.mediumImpact();
+    setState(() {
+      _hintMessage = message;
+      _shakeTargetIndex = targetIndex;
+    });
+
+    _shakeController.forward(from: 0.0);
+
+    final context = key.currentContext;
+    if (context != null) {
+      Scrollable.ensureVisible(
+        context,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+        alignment: 0.3,
+      );
+    }
+
+    _hintTimer?.cancel();
+    _hintTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted) setState(() => _hintMessage = null);
+    });
+  }
+
+  bool _validateBeforePayment() {
+    final customer = _userC.userProfileData.value.customer;
+
+    // 1. Validate Contact Details
+    if (customer?.email == null ||
+        customer?.phone == null ||
+        customer?.state?.id == null) {
+      _triggerHint(
+        'Please add your contact details to continue',
+        _contactCardKey,
+        1,
+      );
+      return false;
+    }
+
+    // 2. Validate Traveller Selection
+    final adultCount = _trekC.calculateFareRequestModel.value.travelerCount;
+    if (selectedTravellers.length < adultCount) {
+      final needed = adultCount - selectedTravellers.length;
+      _triggerHint(
+        'Please select $needed more traveller${needed > 1 ? 's' : ''} for the trip',
+        _travellerCardKey,
+        2,
+      );
+      return false;
+    }
+
+    return true;
+  }
+
+  // ── PAYMENT LOGIC ────────────────────────────────────────────────────────
+  void _openRazorpay(BreakDownDataModel? breakdown) async {
+    try {
+      final params = _trekC.orderNextActionParams;
+      final options = {
+        'key': params['key'] ?? BookingConstants.razorpayKey,
+        'order_id': params['order_id'] ?? '${_trekC.orderData.value.id}',
+        'amount':
+            params['amount'] ??
+            ((breakdown?.amountToPayNow ?? 0) * 100).toInt(),
+        'currency': params['currency'] ?? 'INR',
+        'name': params['name'] ?? '${_trekC.trekDetailData.value.title}',
+        'description':
+            params['description'] ??
+            '${_trekC.trekDetailData.value.description}',
+        'prefill': {
+          'contact': '${_userC.userProfileData.value.customer?.phone}',
+          'email': '${_userC.userProfileData.value.customer?.email}',
+        },
+      };
+      _razorpay.open(options);
+    } catch (e) {
+      CustomSnackBar.show(
+        context,
+        message: 'Failed to open payment: ${e.toString()}',
+      );
+    }
+  }
+
+  Future<void> _handlePaymentSuccess(PaymentSuccessResponse r) async {
+    _trekC.orderId.value = r.orderId ?? '';
+    _trekC.paymentId.value = r.paymentId ?? '';
+    _trekC.signature.value = r.signature ?? '';
+
+    final verified = await _trekC.verifyTrekOrder(
+      razorpayOrderId: r.orderId ?? '',
+      razorpayPaymentId: r.paymentId ?? '',
+      razorpaySignature: r.signature ?? '',
+    );
+
+    if (!verified && mounted) {
+      setState(() {
+        _isProcessingPayment = false;
+        _showPaymentError = true;
+        _paymentErrorMessage = _trekC.errorMessage.value.isNotEmpty
+            ? _trekC.errorMessage.value
+            : 'Your payment went through, but we could not confirm it yet. Please retry.';
+      });
+    }
+  }
+
+  Future<void> _handlePaymentError(PaymentFailureResponse r) async {
+    if (!mounted) return;
+
+    final orderId =
+        _trekC.orderData.value.id ??
+        _trekC.orderNextActionParams['order_id']?.toString() ??
+        '';
+    if (orderId.isNotEmpty) {
+      final status = await _trekC.checkOrderStatus(orderId);
+      if (status?['status'] == 'paid' && mounted) {
+        setState(() => _isProcessingPayment = false);
+        _trekC.clearBookingData();
+        Get.offNamedUntil('/my-bookings', ModalRoute.withName('/dashboard'));
+        CustomSnackBar.show(
+          Get.context!,
+          message: 'Good news — your payment actually went through.',
+        );
+        return;
+      }
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _isProcessingPayment = false;
+      _showPaymentError = true;
+      _paymentErrorMessage = (r.message?.isNotEmpty ?? false)
+          ? r.message!
+          : 'Payment was not completed.';
+    });
+  }
+
+  Future<void> _handlePayNow() async {
+    if (!_validateBeforePayment()) return;
+
+    setState(() {
+      _isProcessingPayment = true;
+      _showPaymentError = false;
+    });
+
+    _trekC.createOrderRequestModel.value = _trekC.createOrderRequestModel.value
+        .copyWith(travelers: selectedTravellers.toList());
+
+    await _trekC.createTrekOrder();
+    if (_trekC.orderModal.value.success ?? false) {
+      _openRazorpay(
+        _trekC.calculateFareResponseModel.value.maybeWhen(
+          success: (r) => (r as CalculateFareResponseModel).breakdown,
+          orElse: () => null,
+        ),
+      );
+    } else if (mounted) {
+      setState(() {
+        _isProcessingPayment = false;
+        _showPaymentError = true;
+        _paymentErrorMessage = _trekC.errorMessage.value.isNotEmpty
+            ? _trekC.errorMessage.value
+            : 'Could not start payment. Please try again.';
+      });
+    }
+  }
+
+  Future<void> _retryPayment() async {
+    setState(() {
+      _showPaymentError = false;
+      _isProcessingPayment = true;
+    });
+
+    final hasCapturedPayment = _trekC.paymentId.value.isNotEmpty;
+    final existingOrderId =
+        _trekC.orderData.value.id ??
+        _trekC.orderNextActionParams['order_id']?.toString();
+    final hasExistingOrder = (existingOrderId ?? '').isNotEmpty;
+
+    if (hasCapturedPayment) {
+      final verified = await _trekC.verifyTrekOrder(
+        razorpayOrderId: _trekC.orderId.value,
+        razorpayPaymentId: _trekC.paymentId.value,
+        razorpaySignature: _trekC.signature.value,
+      );
+      if (!verified && mounted) {
+        setState(() {
+          _isProcessingPayment = false;
+          _showPaymentError = true;
+          _paymentErrorMessage =
+              'Still could not confirm your payment. Please try again.';
+        });
+      }
+    } else if (hasExistingOrder) {
+      _openRazorpay(
+        _trekC.calculateFareResponseModel.value.maybeWhen(
+          success: (r) => (r as CalculateFareResponseModel).breakdown,
+          orElse: () => null,
+        ),
+      );
+    } else {
+      await _trekC.calculateFare();
+      final refreshed = _trekC.calculateFareResponseModel.value.maybeWhen(
+        success: (_) => true,
+        orElse: () => false,
+      );
+      if (!refreshed) {
+        if (mounted) {
+          setState(() {
+            _isProcessingPayment = false;
+            _showPaymentError = true;
+            _paymentErrorMessage = 'Could not refresh fare. Please try again.';
+          });
+        }
+        return;
+      }
+      await _handlePayNow();
+    }
+  }
+
+  void _handleExternalWallet(ExternalWalletResponse r) {
+    CustomSnackBar.show(
+      context,
+      message:
+          'You have chosen to pay via ${r.walletName}. It may take some time to reflect.',
+    );
+  }
+
+  Future<void> _showCancelPaymentDialog() async {
+    final leave = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Cancel Payment?'),
+        content: const Text(
+          'Your payment is still being processed. If any amount was already '
+          'deducted, it will never be charged twice — your booking will still '
+          'go through safely once confirmed. Are you sure you want to leave?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Stay'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(
+              'Leave Anyway',
+              style: TextStyle(color: CommonColors.appRedColor),
             ),
-          ],
-        ),
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
-          child: child,
-        ),
+          ),
+        ],
       ),
     );
+    if (leave == true && mounted) {
+      setState(() => _isProcessingPayment = false);
+      Get.back();
+    }
   }
 
-  Widget _sectionHeader(String title, IconData icon) {
+  // ── UI HELPERS ───────────────────────────────────────────────────────────
+  Widget _sectionHeader(
+    String title,
+    IconData icon, {
+    bool isCompleted = false,
+  }) {
     return Row(
+      mainAxisSize: MainAxisSize.min, // Prevents unbounded width issues
       children: [
         Container(
           width: 9.w,
@@ -513,23 +491,64 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
           ),
         ),
         SizedBox(width: 3.w),
-        Text(
-          title,
-          textScaler: const TextScaler.linear(1.0),
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w700,
-            color: _TI.ink,
+        Flexible(
+          // Changed to Flexible to prevent overflow when placed in other Rows
+          child: Text(
+            title,
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w700,
+              color: _TI.ink,
+            ),
           ),
         ),
+        if (isCompleted) ...[
+          SizedBox(width: 2.w),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
+            decoration: BoxDecoration(
+              color: _TI.tealSoft,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.check_circle, size: 10.sp, color: _TI.teal),
+                SizedBox(width: 1.w),
+                Text(
+                  'Done',
+                  style: TextStyle(
+                    fontSize: 9.sp,
+                    color: _TI.teal,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
+    );
+  }
+
+  Widget _shakeBuilder({required int targetIndex, required Widget child}) {
+    return AnimatedBuilder(
+      animation: _shakeController,
+      builder: (context, _) {
+        final shouldShake =
+            _shakeTargetIndex == targetIndex && _shakeController.isAnimating;
+        if (!shouldShake) return child;
+
+        final sineValue = sin(_shakeController.value * 3 * pi) * 8;
+        return Transform.translate(offset: Offset(sineValue, 0), child: child);
+      },
     );
   }
 
   Widget _infoRow(String svgAsset, String value) {
     return Padding(
-      padding: EdgeInsets.only(bottom: 1.2.h),
+      padding: EdgeInsets.only(bottom: 1.h),
       child: Row(
         children: [
           Container(
@@ -547,7 +566,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
           Expanded(
             child: Text(
               value,
-              textScaler: const TextScaler.linear(1.0),
               style: TextStyle(
                 fontFamily: 'Poppins',
                 fontSize: 11.sp,
@@ -560,8 +578,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
       ),
     );
   }
-
-  // ── SHEET HELPERS ─────────────────────────────────────────────────────────
 
   Widget _sheetHandle() => Center(
     child: Container(
@@ -580,7 +596,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
     children: [
       Text(
         title,
-        textScaler: const TextScaler.linear(1.0),
         style: GoogleFonts.alexandria(
           fontSize: 16.sp,
           fontWeight: FontWeight.w600,
@@ -621,7 +636,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
           children: [
             Text(
               label,
-              textScaler: const TextScaler.linear(1.0),
               style: GoogleFonts.poppins(
                 fontSize: 7.sp,
                 color: _TI.sheetInkMid,
@@ -659,7 +673,21 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
     ),
   );
 
-  // ── CONTACT BOTTOM SHEET ──────────────────────────────────────────────────
+  // ── BOTTOM SHEETS ────────────────────────────────────────────────────────
+  void _showStateSelectionBottomSheet(StateSetter setModalState) {
+    showStateSelectionBottomSheet(
+      context: context,
+      stateList: _dashboardC.stateList,
+      selectedStateId: _userC.stateUpdateId.value,
+      onStateSelected: (state) {
+        setModalState(() {
+          _userC.stateUpdateId.value = state.id ?? 0;
+          _selectedState = state.name ?? '';
+        });
+      },
+    );
+  }
+
   void _showContactDetailsBottomSheet({bool isEdit = false}) {
     _userC.phoneNumberController.value.text =
         (isEdit && _userC.userProfileData.value.customer?.phone != null)
@@ -708,18 +736,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                 _sheetHeader(
                   isEdit ? 'Edit Contact Details' : 'Add Contact Details',
                 ),
-                SizedBox(height: 0.5.h),
-                Text(
-                  'Trip ticket details will be provided to',
-                  textScaler: const TextScaler.linear(1.0),
-                  style: GoogleFonts.poppins(
-                    fontSize: 8.sp,
-                    color: _TI.sheetInkMid,
-                  ),
-                ),
                 SizedBox(height: 2.h),
-
-                // Phone
                 Container(
                   decoration: BoxDecoration(
                     color: _TI.sheetSurface,
@@ -737,21 +754,17 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                           ),
                         ),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Text(
                               'Country Code',
-                              textScaler: const TextScaler.linear(1.0),
                               style: GoogleFonts.poppins(
                                 fontSize: 7.sp,
                                 color: _TI.sheetInkMid,
-                                fontWeight: FontWeight.w300,
                               ),
                             ),
                             SizedBox(height: 0.4.h),
                             Text(
                               '+91 (IND)',
-                              textScaler: const TextScaler.linear(1.0),
                               style: GoogleFonts.poppins(
                                 fontSize: 10.sp,
                                 fontWeight: FontWeight.w600,
@@ -776,8 +789,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                   ),
                 ),
                 SizedBox(height: 1.8.h),
-
-                // Email
                 _sheetInputContainer(
                   label: 'Email ID',
                   child: _sheetTextField(
@@ -787,8 +798,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                   ),
                 ),
                 SizedBox(height: 1.8.h),
-
-                // State
                 Container(
                   width: double.infinity,
                   decoration: BoxDecoration(
@@ -815,17 +824,14 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                               children: [
                                 Text(
                                   'State of Residence',
-                                  textScaler: const TextScaler.linear(1.0),
                                   style: GoogleFonts.poppins(
                                     fontSize: 7.sp,
                                     color: _TI.sheetInkMid,
-                                    fontWeight: FontWeight.w300,
                                   ),
                                 ),
                                 SizedBox(height: 0.25.h),
                                 Text(
                                   _selectedState,
-                                  textScaler: const TextScaler.linear(1.0),
                                   style: GoogleFonts.poppins(
                                     fontSize: 11.sp,
                                     fontWeight: FontWeight.w500,
@@ -845,8 +851,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                     ),
                   ),
                 ),
-                SizedBox(height: 3.h),
-
+                Spacer(),
                 CommonButton(
                   height: 48,
                   gradient: CommonColors.filterGradient,
@@ -862,12 +867,10 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                         SnackBar(
                           content: Text(
                             isEdit
-                                ? 'Contact details updated successfully'
-                                : 'Contact details saved successfully',
-                            textScaler: const TextScaler.linear(1.0),
+                                ? 'Contact details updated'
+                                : 'Contact details saved',
                           ),
                           backgroundColor: CommonColors.completedColor,
-                          duration: const Duration(seconds: 2),
                         ),
                       );
                     }
@@ -881,7 +884,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
     );
   }
 
-  // ── TRAVELLER BOTTOM SHEET ────────────────────────────────────────────────
   void _showTravellerBottomSheet({Traveler? traveller, bool isEdit = false}) {
     if (isEdit && traveller != null) {
       _userC.travellerId.value = traveller.id ?? 0;
@@ -922,7 +924,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                 _sheetHandle(),
                 _sheetHeader(isEdit ? 'Edit Traveller' : 'Add New Traveller'),
                 SizedBox(height: 2.h),
-
                 _sheetInputContainer(
                   label: 'Full Name',
                   child: _sheetTextField(
@@ -932,7 +933,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                   ),
                 ),
                 SizedBox(height: 1.8.h),
-
                 _sheetInputContainer(
                   label: 'Age',
                   child: _sheetTextField(
@@ -942,18 +942,14 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                   ),
                 ),
                 SizedBox(height: 2.h),
-
                 Text(
                   'Gender',
-                  textScaler: const TextScaler.linear(1.0),
                   style: GoogleFonts.poppins(
                     fontSize: 11.sp,
-                    fontWeight: FontWeight.w400,
                     color: _TI.sheetInkMid,
                   ),
                 ),
                 SizedBox(height: 1.h),
-
                 Row(
                   children: [
                     _buildGenderButtonInSheet('Male', setModalState),
@@ -961,8 +957,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                     _buildGenderButtonInSheet('Female', setModalState),
                   ],
                 ),
-                SizedBox(height: 3.h),
-
+                Spacer(),
                 CommonButton(
                   height: 48,
                   gradient: CommonColors.filterGradient,
@@ -996,8 +991,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                               _trekC.travellerDetailList.value = List.from(
                                 selectedTravellers,
                               );
-                              // Sync travelerCount so fare reflects the
-                              // newly auto-selected traveller.
                               _trekC.calculateFareRequestModel.value = _trekC
                                   .calculateFareRequestModel
                                   .value
@@ -1016,13 +1009,9 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
-                            isEdit
-                                ? 'Traveller updated successfully'
-                                : 'Traveller added successfully',
-                            textScaler: const TextScaler.linear(1.0),
+                            isEdit ? 'Traveller updated' : 'Traveller added',
                           ),
                           backgroundColor: CommonColors.completedColor,
-                          duration: const Duration(seconds: 2),
                         ),
                       );
                     }
@@ -1034,19 +1023,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
         ),
       ),
     );
-  }
-
-  List<Traveler> _sortedAvailableTravellers() {
-    final travelers = List<Traveler>.from(
-      _userC.userProfileData.value.customer?.travelers ?? const <Traveler>[],
-    );
-    travelers.sort((a, b) {
-      final aS = selectedTravellers.any((t) => t.id == a.id);
-      final bS = selectedTravellers.any((t) => t.id == b.id);
-      if (aS == bS) return 0;
-      return aS ? -1 : 1;
-    });
-    return travelers;
   }
 
   Widget _buildGenderButtonInSheet(String gender, StateSetter setModalState) {
@@ -1066,43 +1042,24 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
             ),
             borderRadius: BorderRadius.circular(3.w),
           ),
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 4.w),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  gender,
-                  textScaler: const TextScaler.linear(1.0),
-                  style: GoogleFonts.poppins(
-                    fontSize: 11.sp,
-                    fontWeight: FontWeight.w600,
-                    color: isSelected ? _TI.sheetInk : _TI.sheetInkMid,
-                  ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                gender,
+                style: GoogleFonts.poppins(
+                  fontSize: 11.sp,
+                  fontWeight: FontWeight.w600,
+                  color: isSelected ? _TI.sheetInk : _TI.sheetInkMid,
                 ),
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: 5.w,
-                  height: 5.w,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isSelected ? _TI.teal : Colors.transparent,
-                    border: isSelected
-                        ? null
-                        : Border.all(color: _TI.sheetBorder, width: 1.5),
-                  ),
-                  child: isSelected
-                      ? const Center(
-                          child: Icon(
-                            Icons.check_rounded,
-                            color: Colors.white,
-                            size: 12,
-                          ),
-                        )
-                      : null,
-                ),
-              ],
-            ),
+              ),
+              SizedBox(width: 2.w),
+              Icon(
+                isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+                size: 4.w,
+                color: isSelected ? _TI.teal : _TI.sheetInkMid,
+              ),
+            ],
           ),
         ),
       ),
@@ -1114,32 +1071,26 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
     final email = _userC.emailController.value.text.trim();
 
     if (phone.length != 10 || !RegExp(r'^[0-9]{10}$').hasMatch(phone)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please enter a valid 10-digit phone number'),
-          backgroundColor: CommonColors.appRedColor,
-        ),
+      CustomSnackBar.show(
+        context,
+        message: 'Please enter a valid 10-digit phone number',
       );
       return false;
     }
     if (email.isEmpty ||
         !RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please enter a valid email address'),
-          backgroundColor: CommonColors.appRedColor,
-        ),
+      CustomSnackBar.show(
+        context,
+        message: 'Please enter a valid email address',
       );
       return false;
     }
     if (_userC.stateUpdateId.value == 0 ||
         _selectedState.isEmpty ||
         _selectedState == '-') {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please select your state of residence'),
-          backgroundColor: CommonColors.appRedColor,
-        ),
+      CustomSnackBar.show(
+        context,
+        message: 'Please select your state of residence',
       );
       return false;
     }
@@ -1152,40 +1103,20 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
     final gender = _userC.selectedGender.value;
 
     if (name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please enter traveller name'),
-          backgroundColor: CommonColors.appRedColor,
-        ),
-      );
+      CustomSnackBar.show(context, message: 'Please enter traveller name');
       return false;
     }
     if (age.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please enter traveller age'),
-          backgroundColor: CommonColors.appRedColor,
-        ),
-      );
+      CustomSnackBar.show(context, message: 'Please enter traveller age');
       return false;
     }
     final ageVal = int.tryParse(age);
     if (ageVal == null || ageVal <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please enter a valid age'),
-          backgroundColor: CommonColors.appRedColor,
-        ),
-      );
+      CustomSnackBar.show(context, message: 'Please enter a valid age');
       return false;
     }
     if (gender.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please select gender'),
-          backgroundColor: CommonColors.appRedColor,
-        ),
-      );
+      CustomSnackBar.show(context, message: 'Please select gender');
       return false;
     }
     return true;
@@ -1194,839 +1125,1059 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
   // ── BUILD ─────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _TI.bg,
-      appBar: _buildAppBar(),
-      bottomNavigationBar: _buildBottomBar(),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            physics: const ClampingScrollPhysics(),
-            child: Padding(
+    return PopScope(
+      canPop: !_isProcessingPayment,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _showCancelPaymentDialog();
+      },
+      child: Scaffold(
+        backgroundColor: _TI.bg,
+        appBar: _buildAppBar(),
+        bottomNavigationBar: _buildBottomBar(),
+        body: Stack(
+          children: [
+            SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
               padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ── Trip Summary ──────────────────────────────────────
-                  _card(
-                    index: 0,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _sectionHeader('Trip Summary', Icons.route_rounded),
-                        SizedBox(height: 2.h),
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 4.w,
-                            vertical: 1.5.h,
-                          ),
-                          decoration: BoxDecoration(
-                            color: _TI.brand.withValues(alpha: 0.06),
-                            borderRadius: BorderRadius.circular(3.w),
-                            border: Border.all(
-                              color: _TI.brand.withValues(alpha: 0.15),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'FROM',
-                                      textScaler: const TextScaler.linear(1.0),
-                                      style: TextStyle(
-                                        fontFamily: 'Poppins',
-                                        fontSize: 7.sp,
-                                        fontWeight: FontWeight.w600,
-                                        color: _TI.inkLight,
-                                        letterSpacing: 0.8,
-                                      ),
-                                    ),
-                                    SizedBox(height: 0.3.h),
-                                    Text(
-                                      _formatDate(travelData.startDate),
-                                      textScaler: const TextScaler.linear(1.0),
-                                      style: TextStyle(
-                                        fontFamily: 'Poppins',
-                                        fontSize: 11.sp,
-                                        fontWeight: FontWeight.w700,
-                                        color: _TI.ink,
-                                      ),
-                                    ),
-                                    Text(
-                                      _dashboardC.fromController.value.text,
-                                      textScaler: const TextScaler.linear(1.0),
-                                      style: TextStyle(
-                                        fontFamily: 'Poppins',
-                                        fontSize: 9.sp,
-                                        color: _TI.inkMid,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 3.w,
-                                  vertical: 0.8.h,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: _TI.brand,
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Column(
-                                  children: [
-                                    Icon(
-                                      Icons.swap_horiz_rounded,
-                                      color: Colors.white,
-                                      size: 4.w,
-                                    ),
-                                    SizedBox(height: 0.2.h),
-                                    Text(
-                                      '${travelData.durationDays}D|'
-                                      '${travelData.durationNights}N',
-                                      textScaler: const TextScaler.linear(1.0),
-                                      style: TextStyle(
-                                        fontFamily: 'Poppins',
-                                        fontSize: 8.sp,
-                                        fontWeight: FontWeight.w700,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Text(
-                                      'TO',
-                                      textScaler: const TextScaler.linear(1.0),
-                                      style: TextStyle(
-                                        fontFamily: 'Poppins',
-                                        fontSize: 7.sp,
-                                        fontWeight: FontWeight.w600,
-                                        color: _TI.inkLight,
-                                        letterSpacing: 0.8,
-                                      ),
-                                    ),
-                                    SizedBox(height: 0.3.h),
-                                    Text(
-                                      _calculateEndDate(
-                                        travelData.startDate,
-                                        travelData.durationDays,
-                                      ),
-                                      textScaler: const TextScaler.linear(1.0),
-                                      style: TextStyle(
-                                        fontFamily: 'Poppins',
-                                        fontSize: 11.sp,
-                                        fontWeight: FontWeight.w700,
-                                        color: _TI.ink,
-                                      ),
-                                    ),
-                                    Text(
-                                      _dashboardC.toController.value.text,
-                                      textScaler: const TextScaler.linear(1.0),
-                                      style: TextStyle(
-                                        fontFamily: 'Poppins',
-                                        fontSize: 9.sp,
-                                        color: _TI.inkMid,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(height: 1.5.h),
-                        Text(
-                          'A round-trip trek covering '
-                          '${travelData.title ?? '-'}',
-                          textScaler: const TextScaler.linear(1.0),
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 9.sp,
-                            color: _TI.inkMid,
-                            height: 1.5,
-                          ),
-                        ),
-                      ],
-                    ),
+                  // ── 1. Trip Summary ──────────────────────────────────────
+                  _buildTripSummary(),
+                  SizedBox(height: 2.h),
+
+                  // ── 2. Contact Details ──────────────────────────────────
+                  _shakeBuilder(targetIndex: 1, child: _buildContactSection()),
+                  SizedBox(height: 2.h),
+
+                  // ── 3. Traveller Details ────────────────────────────────
+                  _shakeBuilder(
+                    targetIndex: 2,
+                    child: _buildTravellerSection(),
                   ),
-
                   SizedBox(height: 2.h),
 
-                  // ── Travellers ────────────────────────────────────────
-                  _card(
-                    index: 1,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _sectionHeader(
-                          'Travellers',
-                          Icons.people_outline_rounded,
-                        ),
-                        SizedBox(height: 2.h),
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 4.w,
-                            vertical: 1.5.h,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF8F9FF),
-                            borderRadius: BorderRadius.circular(3.w),
-                            border: Border.all(
-                              color: _TI.brand.withValues(alpha: 0.12),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Adults',
-                                    textScaler: const TextScaler.linear(1.0),
-                                    style: TextStyle(
-                                      fontFamily: 'Poppins',
-                                      fontSize: 12.sp,
-                                      fontWeight: FontWeight.w600,
-                                      color: _TI.ink,
-                                    ),
-                                  ),
-                                  Text(
-                                    '18+ years',
-                                    textScaler: const TextScaler.linear(1.0),
-                                    style: TextStyle(
-                                      fontFamily: 'Poppins',
-                                      fontSize: 9.sp,
-                                      color: _TI.inkMid,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Obx(() {
-                                final adultCount = _trekC
-                                    .calculateFareRequestModel
-                                    .value
-                                    .travelerCount;
-                                return Row(
-                                  children: [
-                                    _counterBtn(Icons.remove, () {
-                                      setState(() {
-                                        if (adultCount > 1) {
-                                          _trekC
-                                              .calculateFareRequestModel
-                                              .value = _trekC
-                                              .calculateFareRequestModel
-                                              .value
-                                              .copyWith(
-                                                travelerCount: adultCount - 1,
-                                              );
-                                          if (selectedTravellers.length >
-                                              adultCount - 1) {
-                                            selectedTravellers =
-                                                selectedTravellers
-                                                    .take(adultCount - 1)
-                                                    .toList();
-                                          }
-                                        }
-                                      });
-                                      _trekC.trekPersonCount.value = adultCount;
-                                      _trekC.travellerDetailList.value =
-                                          selectedTravellers;
-                                    }, active: adultCount > 1),
-                                    Padding(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: 4.w,
-                                      ),
-                                      child: TweenAnimationBuilder<double>(
-                                        tween: Tween(
-                                          begin: adultCount.toDouble(),
-                                          end: adultCount.toDouble(),
-                                        ),
-                                        duration: const Duration(
-                                          milliseconds: 200,
-                                        ),
-                                        builder: (_, v, __) => Text(
-                                          '$adultCount',
-                                          textScaler: const TextScaler.linear(
-                                            1.0,
-                                          ),
-                                          style: TextStyle(
-                                            fontFamily: 'Poppins',
-                                            fontSize: 16.sp,
-                                            fontWeight: FontWeight.w700,
-                                            color: _TI.ink,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    _counterBtn(Icons.add, () {
-                                      _trekC.calculateFareRequestModel.value =
-                                          _trekC.calculateFareRequestModel.value
-                                              .copyWith(
-                                                travelerCount: adultCount + 1,
-                                              );
-                                      _trekC.trekPersonCount.value = adultCount;
-                                    }, active: true),
-                                  ],
-                                );
-                              }),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
+                  // ── 4. Payment Options ──────────────────────────────────
+                  _buildPaymentOptionsSection(),
+                  SizedBox(height: 2.h),
+
+                  // ── 5. Fare Breakdown ───────────────────────────────────
+                  // _buildFareBreakdownSection(),
+                  // SizedBox(height: 3.h),
+
+                  // ── 6. Coupon Code ──────────────────────────────────────
+                  _buildCouponSection(),
+                  SizedBox(height: 2.h),
+
+                  // ── 7. Payment Method ───────────────────────────────────
+                  _buildPaymentMethodSection(),
+                  SizedBox(height: 3.h),
+                ],
+              ),
+            ),
+
+            // Loading overlay
+            Obx(
+              () => _trekC.calculateFareResponseModel.value.maybeWhen(
+                loading: (_) => Container(
+                  color: Colors.black.withValues(alpha: 0.2),
+                  child: Center(
+                    child: CircularProgressIndicator(color: _TI.brand),
                   ),
+                ),
+                orElse: () => const SizedBox(),
+              ),
+            ),
 
-                  SizedBox(height: 2.h),
-
-                  // ── Contact Details ───────────────────────────────────
-                  _card(
-                    index: 2,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: _sectionHeader(
-                                'Contact Details',
-                                Icons.contact_phone_outlined,
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: () => _showContactDetailsBottomSheet(
-                                isEdit:
-                                    _userC
-                                            .userProfileData
-                                            .value
-                                            .customer
-                                            ?.email !=
-                                        null &&
-                                    _userC
-                                            .userProfileData
-                                            .value
-                                            .customer
-                                            ?.phone !=
-                                        null,
-                              ),
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 3.w,
-                                  vertical: 0.5.h,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: _TI.brand.withValues(alpha: 0.08),
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: _TI.brand.withValues(alpha: 0.25),
-                                  ),
-                                ),
-                                child: Text(
-                                  (_userC
-                                                  .userProfileData
-                                                  .value
-                                                  .customer
-                                                  ?.email !=
-                                              null &&
-                                          _userC
-                                                  .userProfileData
-                                                  .value
-                                                  .customer
-                                                  ?.phone !=
-                                              null)
-                                      ? 'Edit'
-                                      : 'Add',
-                                  textScaler: const TextScaler.linear(1.0),
-                                  style: TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontSize: 9.sp,
-                                    fontWeight: FontWeight.w600,
-                                    color: _TI.brand,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 0.5.h),
-                        Text(
-                          'Trip ticket details will be provided to',
-                          textScaler: const TextScaler.linear(1.0),
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 8.sp,
-                            color: _TI.inkMid,
-                          ),
-                        ),
-                        SizedBox(height: 2.h),
-                        _infoRow(
-                          CommonImages.phone,
-                          _userC.userProfileData.value.customer?.phone ?? '-',
-                        ),
-                        _infoRow(
-                          CommonImages.email,
-                          _userC.userProfileData.value.customer?.email ?? '-',
-                        ),
-                        _infoRow(
-                          CommonImages.location4,
-                          _userC.userProfileData.value.customer?.state?.id !=
-                                  null
-                              ? _dashboardC
-                                        .stateList[_dashboardC.stateList
-                                            .indexWhere(
-                                              (e) =>
-                                                  e.id ==
-                                                  _userC
-                                                      .userProfileData
-                                                      .value
-                                                      .customer
-                                                      ?.state
-                                                      ?.id,
-                                            )]
-                                        .name ??
-                                    '-'
-                              : '-',
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  SizedBox(height: 2.h),
-
-                  // ── Traveller Details ─────────────────────────────────
-                  _card(
-                    index: 3,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: _sectionHeader(
-                                'Traveller Details',
-                                Icons.badge_outlined,
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: () =>
-                                  _showTravellerBottomSheet(isEdit: false),
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 3.w,
-                                  vertical: 0.5.h,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: _TI.iconBadge,
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.add_rounded,
-                                      color: Colors.white,
-                                      size: 3.5.w,
-                                    ),
-                                    SizedBox(width: 1.w),
-                                    Text(
-                                      'Add New',
-                                      textScaler: const TextScaler.linear(1.0),
-                                      style: TextStyle(
-                                        fontFamily: 'Poppins',
-                                        fontSize: 9.sp,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 1.h),
-                        Obx(() {
-                          final adultCount = _trekC
-                              .calculateFareRequestModel
-                              .value
-                              .travelerCount;
-                          return Text(
-                            'Select up to $adultCount '
-                            'traveller${adultCount > 1 ? 's' : ''} '
-                            '(${selectedTravellers.length}/$adultCount selected)',
-                            textScaler: const TextScaler.linear(1.0),
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 9.sp,
-                              color: _TI.inkMid,
-                            ),
-                          );
-                        }),
-                        SizedBox(height: 1.5.h),
-
-                        if (_userC
-                                .userProfileData
-                                .value
-                                .customer
-                                ?.travelers
-                                ?.isEmpty ??
-                            true)
-                          GestureDetector(
-                            onTap: () =>
-                                _showTravellerBottomSheet(isEdit: false),
-                            child: Container(
-                              width: double.infinity,
-                              padding: EdgeInsets.symmetric(vertical: 2.5.h),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF8F9FF),
-                                borderRadius: BorderRadius.circular(3.w),
-                                border: Border.all(
-                                  color: _TI.brand.withValues(alpha: 0.2),
-                                  width: 1.5,
-                                ),
-                              ),
-                              child: Column(
-                                children: [
-                                  SvgPicture.asset(
-                                    CommonImages.adduser,
-                                    width: 10.w,
-                                    height: 10.w,
-                                  ),
-                                  SizedBox(height: 1.h),
-                                  Text(
-                                    'Tap to add traveller details',
-                                    textScaler: const TextScaler.linear(1.0),
-                                    style: TextStyle(
-                                      fontFamily: 'Poppins',
-                                      fontSize: 11.sp,
-                                      fontWeight: FontWeight.w500,
-                                      color: _TI.brand,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          )
-                        else
-                          Builder(
-                            builder: (context) {
-                              final travelers = _sortedAvailableTravellers();
-                              return ListView.separated(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemCount: travelers.length,
-                                separatorBuilder: (_, __) =>
-                                    SizedBox(height: 1.h),
-                                itemBuilder: (context, index) {
-                                  final traveler = travelers[index];
-                                  return _buildExistingTravellerItem(
-                                    travelData: traveler,
-                                    isSelected: selectedTravellers.any(
-                                      (t) => t.id == traveler.id,
-                                    ),
-                                  );
-                                },
-                              );
-                            },
-                          ),
-                      ],
-                    ),
-                  ),
-
-                  SizedBox(height: 2.h),
-
-                  // ── Free Cancellation (COMMENTED OUT) ─────────────────
-                  // Obx(() {
-                  //   final fareResp =
-                  //       _trekC.calculateFareResponseModel.value.maybeWhen(
-                  //     success: (r) => r, orElse: () => null);
-                  //   return Visibility(
-                  //     visible: fareResp?.allowCancellation ?? true,
-                  //     child: _card(
-                  //       index: 4,
-                  //       child: Column(
-                  //         crossAxisAlignment: CrossAxisAlignment.start,
-                  //         children: [
-                  //           _sectionHeader('Free Cancellation',
-                  //               Icons.shield_outlined),
-                  //           SizedBox(height: 1.5.h),
-                  //           RichText(
-                  //             textScaler: const TextScaler.linear(1.0),
-                  //             text: TextSpan(children: [
-                  //               TextSpan(
-                  //                 text:
-                  //                   'A fee of ₹90 per person will be '
-                  //                   'charged for a full refund on '
-                  //                   'cancellations made ',
-                  //                 style: TextStyle(fontFamily:'Poppins',
-                  //                   fontSize: 9.sp,
-                  //                   fontWeight: FontWeight.w300,
-                  //                   color: _TI.ink)),
-                  //               TextSpan(text: 'T&C',
-                  //                 style: TextStyle(fontFamily:'Poppins',
-                  //                   fontSize: 9.sp,
-                  //                   fontWeight: FontWeight.w600,
-                  //                   color: CommonColors.blueColor)),
-                  //               TextSpan(
-                  //                 text:
-                  //                   ' at least 24 hours prior to departure.',
-                  //                 style: TextStyle(fontFamily:'Poppins',
-                  //                   fontSize: 9.sp,
-                  //                   fontWeight: FontWeight.w300,
-                  //                   color: _TI.ink)),
-                  //             ]),
-                  //           ),
-                  //           SizedBox(height: 2.h),
-                  //           Obx(() {
-                  //             final freeCancellation = _trekC
-                  //                 .calculateFareRequestModel
-                  //                 .value
-                  //                 .addFreeCancellationProtection;
-                  //             return GestureDetector(
-                  //               onTap: () {
-                  //                 _trekC.calculateFareRequestModel.value =
-                  //                     _trekC.calculateFareRequestModel
-                  //                         .value.copyWith(
-                  //                   addFreeCancellationProtection:
-                  //                       !freeCancellation);
-                  //                 if (_trekC.calculateFareRequestModel
-                  //                     .value
-                  //                     .addFreeCancellationProtection) {
-                  //                   _showTickOverlay(context);
-                  //                 }
-                  //               },
-                  //               child: AnimatedContainer(
-                  //                 duration:
-                  //                     const Duration(milliseconds: 250),
-                  //                 padding: EdgeInsets.symmetric(
-                  //                     horizontal: 4.w, vertical: 1.5.h),
-                  //                 decoration: BoxDecoration(
-                  //                   color: freeCancellation
-                  //                       ? _TI.brand.withValues(alpha: 0.06)
-                  //                       : const Color(0xFFF8F9FF),
-                  //                   borderRadius:
-                  //                       BorderRadius.circular(3.w),
-                  //                   border: Border.all(
-                  //                     color: freeCancellation
-                  //                         ? _TI.brand.withValues(alpha: 0.3)
-                  //                         : _TI.divider),
-                  //                 ),
-                  //                 child: Row(children: [
-                  //                   AnimatedContainer(
-                  //                     key: _checkboxKey,
-                  //                     duration: const Duration(
-                  //                         milliseconds: 200),
-                  //                     width: 6.25.w,
-                  //                     height: 6.25.w,
-                  //                     decoration: BoxDecoration(
-                  //                       border: Border.all(
-                  //                         color: CommonColors
-                  //                             .lightBlueColor
-                  //                             .withValues(alpha: 0.7),
-                  //                         width: 0.5.w),
-                  //                       borderRadius:
-                  //                           BorderRadius.circular(5),
-                  //                       color: freeCancellation
-                  //                           ? CommonColors.blueColor
-                  //                           : Colors.white,
-                  //                     ),
-                  //                     child: freeCancellation
-                  //                         ? Icon(Icons.check,
-                  //                             size: 5.w,
-                  //                             color: Colors.white)
-                  //                         : null,
-                  //                   ),
-                  //                   SizedBox(width: 3.w),
-                  //                   Expanded(child: Text(
-                  //                     'I would like to choose the '
-                  //                     'free cancellation option',
-                  //                     textScaler:
-                  //                         const TextScaler.linear(1.0),
-                  //                     style: TextStyle(
-                  //                       fontFamily: 'Poppins',
-                  //                       fontSize: 10.sp,
-                  //                       fontWeight: FontWeight.w500,
-                  //                       color: _TI.ink))),
-                  //                 ]),
-                  //               ),
-                  //             );
-                  //           }),
-                  //         ],
-                  //       ),
-                  //     ),
-                  //   );
-                  // }),
-                  //
-                  // SizedBox(height: 2.h),
-
-                  // ── Travel Insurance (COMMENTED OUT) ───────────────────
-                  // Obx(() {
-                  //   final selectedInsuranceOption = _trekC
-                  //       .calculateFareRequestModel.value.addInsurance;
-                  //   return _card(
-                  //     index: 5,
-                  //     child: Column(
-                  //       crossAxisAlignment: CrossAxisAlignment.start,
-                  //       children: [
-                  //         Row(children: [
-                  //           Container(
-                  //             width: 9.w, height: 9.w,
-                  //             decoration: BoxDecoration(
-                  //               color: _TI.iconBadge,
-                  //               borderRadius:
-                  //                   BorderRadius.circular(2.5.w)),
-                  //             child: ClipRRect(
-                  //               borderRadius:
-                  //                   BorderRadius.circular(2.5.w),
-                  //               child: Image.asset(CommonImages.logo,
-                  //                   fit: BoxFit.contain)),
-                  //           ),
-                  //           SizedBox(width: 3.w),
-                  //           Expanded(child: Column(
-                  //             crossAxisAlignment: CrossAxisAlignment.start,
-                  //             children: [
-                  //               Text('Travel Insurance',
-                  //                 textScaler:
-                  //                     const TextScaler.linear(1.0),
-                  //                 style: TextStyle(fontFamily:'Poppins',
-                  //                   fontSize: 14.sp,
-                  //                   fontWeight: FontWeight.w700,
-                  //                   color: _TI.ink)),
-                  //               Text(
-                  //                 'Secure your trek, enjoy the adventure',
-                  //                 textScaler:
-                  //                     const TextScaler.linear(1.0),
-                  //                 style: TextStyle(fontFamily:'Poppins',
-                  //                   fontSize: 8.sp,
-                  //                   color: _TI.inkMid)),
-                  //             ],
-                  //           )),
-                  //           GestureDetector(
-                  //             onTap: () {},
-                  //             child: Text('View covers',
-                  //               textScaler:
-                  //                   const TextScaler.linear(1.0),
-                  //               style: TextStyle(fontFamily:'Poppins',
-                  //                 fontSize: 9.sp,
-                  //                 fontWeight: FontWeight.w600,
-                  //                 color: CommonColors.blueColor)),
-                  //           ),
-                  //         ]),
-                  //         SizedBox(height: 2.h),
-                  //         _insuranceOption(
-                  //           title: 'Add Travel Insurance',
-                  //           subtitle: '₹80 for 1 Traveller',
-                  //           isSelected: selectedInsuranceOption == true,
-                  //           onTap: () => _trekC
-                  //               .calculateFareRequestModel.value = _trekC
-                  //               .calculateFareRequestModel.value
-                  //               .copyWith(addInsurance: true),
-                  //         ),
-                  //         SizedBox(height: 1.2.h),
-                  //         _insuranceOption(
-                  //           title: "Don't add Travel Insurance",
-                  //           isSelected: selectedInsuranceOption == false,
-                  //           onTap: () => _trekC
-                  //               .calculateFareRequestModel.value = _trekC
-                  //               .calculateFareRequestModel.value
-                  //               .copyWith(addInsurance: false),
-                  //         ),
-                  //       ],
-                  //     ),
-                  //   );
-                  // }),
-                  SizedBox(height: 2.h),
-
-                  // ── Payment Options ───────────────────────────────────
-                  // Only show the Payment Options card for flexible policy treks.
-                  if (_isFlexiblePolicy)
-                    _card(
-                      index: 6,
+            // Processing Payment Overlay
+            if (_isProcessingPayment && !_showPaymentError)
+              Positioned.fill(
+                child: Container(
+                  color: Colors.black.withValues(alpha: 0.18),
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: _TI.cardBg,
+                        borderRadius: BorderRadius.circular(4.w),
+                      ),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          _sectionHeader(
-                            'Payment Options',
-                            Icons.payment_outlined,
+                          const CircularProgressIndicator(
+                            color: _TI.brand,
+                            strokeWidth: 2.5,
                           ),
-                          SizedBox(height: 0.5.h),
+                          const SizedBox(height: 12),
                           Text(
-                            "Lock your spot. Adventure's calling!",
-                            textScaler: const TextScaler.linear(1.0),
+                            'Processing payment…',
                             style: TextStyle(
                               fontFamily: 'Poppins',
-                              fontSize: 9.sp,
+                              fontSize: 11.sp,
                               color: _TI.inkMid,
                             ),
-                          ),
-                          SizedBox(height: 2.h),
-
-                          // Option 1: Partial Payment (Flexible)
-                          _paymentOption(
-                            title: 'Pay ₹999',
-                            subtitle: _getTotalFareSubtitleText(),
-                            isSelected: _selectedPaymentOption == 'flexible',
-                            isEnabled:
-                                true, // Always enabled since card only shows for flexible
-                            onTap: () {
-                              setState(
-                                () => _selectedPaymentOption = 'flexible',
-                              );
-                              _trekC.calculateFareRequestModel.value = _trekC
-                                  .calculateFareRequestModel
-                                  .value
-                                  .copyWith(cancellationPolicyType: 'flexible');
-                            },
-                          ),
-                          SizedBox(height: 1.2.h),
-
-                          // Option 2: Full Payment (Standard)
-                          _paymentOption(
-                            title: 'Pay Full Payment',
-                            subtitle: 'Secure your booking with full payment',
-                            isSelected: _selectedPaymentOption == 'standard',
-                            onTap: () {
-                              setState(
-                                () => _selectedPaymentOption = 'standard',
-                              );
-                              _trekC.calculateFareRequestModel.value = _trekC
-                                  .calculateFareRequestModel
-                                  .value
-                                  .copyWith(cancellationPolicyType: 'standard');
-                            },
                           ),
                         ],
                       ),
                     ),
-
-                  SizedBox(height: 4.h),
-                ],
-              ),
-            ),
-          ),
-
-          // Loading overlay
-          Obx(
-            () => _trekC.calculateFareResponseModel.value.maybeWhen(
-              loading: (_) => Container(
-                color: CommonColors.grey400,
-                child: Center(
-                  child: CircularProgressIndicator(
-                    color: CommonColors.blueColor,
                   ),
                 ),
               ),
-              orElse: () => const SizedBox(),
+
+            if (_showPaymentError) _buildPaymentErrorOverlay(),
+            if (_hintMessage != null) _buildHintPopup(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── SECTIONS BUILDER ──────────────────────────────────────────────────────
+
+  String _getInitials(String? name) {
+    if (name == null || name.isEmpty) return 'A';
+    final parts = name.split(' ').where((e) => e.trim().isNotEmpty).toList();
+    if (parts.isEmpty) return 'A';
+    if (parts.length == 1) return parts.first[0].toUpperCase();
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+
+  Widget _buildTripSummary() {
+    final vendorName = travelData.vendor?.user?.name ?? 'Aorbo Treks';
+    final hasBadge =
+        travelData.badge?.name != null && travelData.badge!.name!.isNotEmpty;
+    final hasSlots = (travelData.availableSlots ?? 0) > 0;
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+      decoration: BoxDecoration(
+        color: _TI.cardBg,
+        borderRadius: BorderRadius.circular(4.w),
+        border: Border.all(color: _TI.divider, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Header Row (Logo Completely Removed) ──
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                travelData.title ?? 'Trek',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w800,
+                  color: _TI.ink,
+                ),
+              ),
+              Text(
+                vendorName,
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 11.sp,
+                  color: _TI.inkMid,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+
+          Divider(color: _TI.divider, height: 3.h),
+
+          // ── From and To Dates Row ──
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'FROM',
+                      style: TextStyle(
+                        fontSize: 8.sp,
+                        fontWeight: FontWeight.w600,
+                        color: _TI.inkLight,
+                      ),
+                    ),
+                    Text(
+                      _formatDate(travelData.startDate),
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w700,
+                        color: _TI.ink,
+                      ),
+                    ),
+                    Text(
+                      _dashboardC.fromController.value.text,
+                      style: TextStyle(fontSize: 9.sp, color: _TI.inkMid),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 0.8.h),
+                decoration: BoxDecoration(
+                  color: _TI.brand,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${travelData.durationDays ?? 0}D | ${travelData.durationNights ?? 0}N',
+                  style: TextStyle(
+                    fontSize: 9.sp,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      'TO',
+                      style: TextStyle(
+                        fontSize: 8.sp,
+                        fontWeight: FontWeight.w600,
+                        color: _TI.inkLight,
+                      ),
+                    ),
+                    Text(
+                      _calculateEndDate(
+                        travelData.startDate,
+                        travelData.durationDays,
+                      ),
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w700,
+                        color: _TI.ink,
+                      ),
+                    ),
+                    Text(
+                      _dashboardC.toController.value.text,
+                      style: TextStyle(fontSize: 9.sp, color: _TI.inkMid),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          // ── Combined bottom row: CTA Badge (left) + Slots Left (right) ──
+          if (hasBadge || hasSlots) ...[
+            SizedBox(height: 1.5.h),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // CTA Badge — bottom LEFT
+                if (hasBadge)
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 2.5.w,
+                      vertical: 0.5.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _TI.tealSoft,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: _TI.teal.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Text(
+                      travelData.badge!.name!.toUpperCase(),
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 8.sp,
+                        fontWeight: FontWeight.w800,
+                        color: _TI.teal,
+                      ),
+                    ),
+                  )
+                else
+                  const SizedBox.shrink(),
+
+                // Slots Left — bottom RIGHT
+                if (hasSlots)
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.local_fire_department_rounded,
+                        size: 4.w,
+                        color: CommonColors.appRedColor,
+                      ),
+                      SizedBox(width: 1.5.w),
+                      Text(
+                        '${travelData.availableSlots} slots left',
+                        style: TextStyle(
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.w700,
+                          color: CommonColors.appRedColor,
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  const SizedBox.shrink(),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContactSection() {
+    final customer = _userC.userProfileData.value.customer;
+    final isCompleted =
+        customer?.email != null &&
+        customer?.phone != null &&
+        customer?.state?.id != null;
+
+    return Container(
+      key: _contactCardKey,
+      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+      decoration: BoxDecoration(
+        color: _TI.cardBg,
+        borderRadius: BorderRadius.circular(4.w),
+        border: Border.all(color: _TI.divider, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _sectionHeader(
+                'Contact Details',
+                Icons.contact_phone_outlined,
+                isCompleted: isCompleted,
+              ),
+              GestureDetector(
+                onTap: () =>
+                    _showContactDetailsBottomSheet(isEdit: isCompleted),
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 3.w,
+                    vertical: 0.5.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _TI.brand.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: _TI.brand.withValues(alpha: 0.25),
+                    ),
+                  ),
+                  child: Text(
+                    isCompleted ? 'Edit' : 'Add',
+                    style: TextStyle(
+                      fontSize: 9.sp,
+                      fontWeight: FontWeight.w600,
+                      color: _TI.brand,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 0.5.h),
+          Text(
+            'Ticket details will be sent to this contact information',
+            style: TextStyle(
+              fontSize: 8.sp,
+              color: _TI.inkMid,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+          SizedBox(height: 1.h),
+          if (!isCompleted)
+            Text(
+              'Tap "Add" to enter your phone, email and state.',
+              style: TextStyle(fontSize: 9.sp, color: _TI.inkMid),
+            )
+          else ...[
+            _infoRow(CommonImages.phone, customer?.phone ?? '-'),
+            _infoRow(CommonImages.email, customer?.email ?? '-'),
+            _infoRow(CommonImages.location4, customer?.state?.name ?? '-'),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTravellerSection() {
+    final isCompleted =
+        selectedTravellers.length >=
+        _trekC.calculateFareRequestModel.value.travelerCount;
+
+    return Container(
+      key: _travellerCardKey,
+      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+      decoration: BoxDecoration(
+        color: _TI.cardBg,
+        borderRadius: BorderRadius.circular(4.w),
+        border: Border.all(color: _TI.divider, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Wrapped in Expanded to prevent right-side overflow and congestion
+              Expanded(
+                child: _sectionHeader(
+                  'Traveller Details',
+                  Icons.badge_outlined,
+                  isCompleted: isCompleted,
+                ),
+              ),
+              SizedBox(width: 2.w),
+              GestureDetector(
+                onTap: () => _showTravellerBottomSheet(isEdit: false),
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 3.w,
+                    vertical: 0.5.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _TI.iconBadge,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.add_rounded, color: Colors.white, size: 3.5.w),
+                      SizedBox(width: 1.w),
+                      Text(
+                        'Add New',
+                        style: TextStyle(
+                          fontSize: 9.sp,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 1.h),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Adults (18+ years)',
+                style: TextStyle(
+                  fontSize: 11.sp,
+                  fontWeight: FontWeight.w600,
+                  color: _TI.ink,
+                ),
+              ),
+              Obx(() {
+                final adultCount =
+                    _trekC.calculateFareRequestModel.value.travelerCount;
+                return Row(
+                  children: [
+                    _counterBtn(Icons.remove, () {
+                      setState(() {
+                        if (adultCount > 1) {
+                          _trekC.calculateFareRequestModel.value = _trekC
+                              .calculateFareRequestModel
+                              .value
+                              .copyWith(travelerCount: adultCount - 1);
+                          if (selectedTravellers.length > adultCount - 1) {
+                            selectedTravellers = selectedTravellers
+                                .take(adultCount - 1)
+                                .toList();
+                          }
+                        }
+                      });
+                      _trekC.trekPersonCount.value = adultCount;
+                      _trekC.travellerDetailList.value = selectedTravellers;
+                    }, active: adultCount > 1),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 4.w),
+                      child: Text(
+                        '$adultCount',
+                        style: TextStyle(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w700,
+                          color: _TI.ink,
+                        ),
+                      ),
+                    ),
+                    _counterBtn(Icons.add, () {
+                      setState(() {
+                        _trekC.calculateFareRequestModel.value = _trekC
+                            .calculateFareRequestModel
+                            .value
+                            .copyWith(travelerCount: adultCount + 1);
+                      });
+                      _trekC.trekPersonCount.value = adultCount;
+                    }, active: true),
+                  ],
+                );
+              }),
+            ],
+          ),
+          SizedBox(height: 1.5.h),
+          if (_userC.userProfileData.value.customer?.travelers?.isEmpty ?? true)
+            Text(
+              'No travellers added yet. Tap "Add New" to create one.',
+              style: TextStyle(fontSize: 9.sp, color: _TI.inkMid),
+            )
+          else
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount:
+                  _userC.userProfileData.value.customer!.travelers!.length,
+              separatorBuilder: (_, __) => SizedBox(height: 1.h),
+              itemBuilder: (context, index) {
+                final traveler =
+                    _userC.userProfileData.value.customer!.travelers![index];
+                final isSelected = selectedTravellers.any(
+                  (t) => t.id == traveler.id,
+                );
+                return _buildExistingTravellerItem(traveler, isSelected);
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentOptionsSection() {
+    if (!_isFlexiblePolicy) return const SizedBox.shrink();
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+      decoration: BoxDecoration(
+        color: _TI.cardBg,
+        borderRadius: BorderRadius.circular(4.w),
+        border: Border.all(color: _TI.divider, width: 1),
+      ),
+      child: Obx(() {
+        final fareResp = _trekC.calculateFareResponseModel.value.maybeWhen(
+          success: (r) => r as CalculateFareResponseModel,
+          orElse: () => null,
+        );
+        final bd = fareResp?.breakdown;
+
+        String advanceText = '₹${bd?.amountToPayNow ?? '--'}';
+        String remainingText = '₹${bd?.remainingAmount ?? '--'}';
+        String fullText = '₹${bd?.finalAmount ?? '--'}';
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _sectionHeader('Payment Options', Icons.payment_outlined),
+            SizedBox(height: 1.5.h),
+
+            // Flexible Option
+            GestureDetector(
+              onTap: () {
+                setState(() => _selectedPaymentOption = 'flexible');
+                _trekC.calculateFareRequestModel.value = _trekC
+                    .calculateFareRequestModel
+                    .value
+                    .copyWith(cancellationPolicyType: 'flexible');
+              },
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
+                decoration: BoxDecoration(
+                  color: _selectedPaymentOption == 'flexible'
+                      ? _TI.tealSoft
+                      : _TI.bg,
+                  borderRadius: BorderRadius.circular(3.w),
+                  border: Border.all(
+                    color: _selectedPaymentOption == 'flexible'
+                        ? _TI.brand.withValues(alpha: 0.4)
+                        : _TI.divider,
+                    width: _selectedPaymentOption == 'flexible' ? 1.5 : 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      _selectedPaymentOption == 'flexible'
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                      size: 18,
+                      color: _selectedPaymentOption == 'flexible'
+                          ? _TI.brand
+                          : _TI.inkLight,
+                    ),
+                    SizedBox(width: 3.w),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Pay $advanceText Advance',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w600,
+                              color: _TI.ink,
+                            ),
+                          ),
+                          Text(
+                            'Pay remaining $remainingText before trek start',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 9.sp,
+                              color: _TI.inkMid,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            SizedBox(height: 1.5.h),
+
+            // Standard Option
+            GestureDetector(
+              onTap: () {
+                setState(() => _selectedPaymentOption = 'standard');
+                _trekC.calculateFareRequestModel.value = _trekC
+                    .calculateFareRequestModel
+                    .value
+                    .copyWith(cancellationPolicyType: 'standard');
+              },
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
+                decoration: BoxDecoration(
+                  color: _selectedPaymentOption == 'standard'
+                      ? _TI.tealSoft
+                      : _TI.bg,
+                  borderRadius: BorderRadius.circular(3.w),
+                  border: Border.all(
+                    color: _selectedPaymentOption == 'standard'
+                        ? _TI.brand.withValues(alpha: 0.4)
+                        : _TI.divider,
+                    width: _selectedPaymentOption == 'standard' ? 1.5 : 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      _selectedPaymentOption == 'standard'
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                      size: 18,
+                      color: _selectedPaymentOption == 'standard'
+                          ? _TI.brand
+                          : _TI.inkLight,
+                    ),
+                    SizedBox(width: 3.w),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Pay $fullText Full Amount',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w600,
+                              color: _TI.ink,
+                            ),
+                          ),
+                          Text(
+                            'Secure your booking now',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 9.sp,
+                              color: _TI.inkMid,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      }),
+    );
+  }
+
+  Widget _buildFareBreakdownSection() {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+      decoration: BoxDecoration(
+        color: _TI.cardBg,
+        borderRadius: BorderRadius.circular(4.w),
+        border: Border.all(color: _TI.divider, width: 1),
+      ),
+      child: Obx(() {
+        final fareResp = _trekC.calculateFareResponseModel.value.maybeWhen(
+          success: (r) => r as CalculateFareResponseModel,
+          orElse: () => null,
+        );
+        final fareReq = _trekC.calculateFareRequestModel.value;
+        final bd = fareResp?.breakdown;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _sectionHeader('Fare Breakdown', Icons.receipt_long_outlined),
+                GestureDetector(
+                  onTap: () {
+                    showModalBottomSheet(
+                      context: context,
+                      backgroundColor: Colors.transparent,
+                      builder: (_) => TotalFareModal(
+                        breakDown: bd,
+                        adultCount: fareReq.travelerCount,
+                        onClose: () => Navigator.pop(context),
+                      ),
+                    );
+                  },
+                  child: Text(
+                    'View full',
+                    style: TextStyle(
+                      fontSize: 9.sp,
+                      fontWeight: FontWeight.w600,
+                      color: _TI.brand,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 1.5.h),
+            if (bd == null)
+              Text(
+                'Calculating fare…',
+                style: TextStyle(fontSize: 10.sp, color: _TI.inkMid),
+              )
+            else ...[
+              _fareRow(
+                'Base Price (${bd.travelerCount} Travellers)',
+                '₹${bd.basePrice ?? '--'}',
+              ),
+              _fareRow('Base Total', '₹${bd.baseTotal ?? '--'}'),
+
+              if ((double.tryParse(bd.discount?.toString() ?? '0') ?? 0) !=
+                  0) ...[
+                _fareRow(
+                  'Discount',
+                  '− ₹${bd.discount ?? '--'}',
+                  valueColor: _TI.teal,
+                ),
+                if (bd.couponCode != null &&
+                    bd.couponCode.toString().isNotEmpty)
+                  _fareRow(
+                    'Coupon Applied',
+                    '${bd.couponCode}',
+                    valueColor: _TI.teal,
+                  ),
+              ],
+
+              _fareRow(
+                'Amount After Discount',
+                '₹${bd.amountAfterDiscount ?? '--'}',
+              ),
+
+              if ((double.tryParse(bd.gst?.toString() ?? '0') ?? 0) != 0)
+                _fareRow('GST', '₹${bd.gst ?? '--'}'),
+              if ((double.tryParse(bd.totalTax?.toString() ?? '0') ?? 0) != 0)
+                _fareRow('Total Tax', '₹${bd.totalTax ?? '--'}'),
+              if ((double.tryParse(bd.platformFee?.toString() ?? '0') ?? 0) !=
+                  0)
+                _fareRow('Platform Fee', '₹${bd.platformFee ?? '--'}'),
+              if ((double.tryParse(bd.insuranceFee?.toString() ?? '0') ?? 0) !=
+                  0)
+                _fareRow('Insurance Fee', '₹${bd.insuranceFee ?? '--'}'),
+              if ((double.tryParse(bd.cancellationFee?.toString() ?? '0') ??
+                      0) !=
+                  0)
+                _fareRow('Cancellation Fee', '₹${bd.cancellationFee ?? '--'}'),
+
+              Divider(color: _TI.divider, height: 2.h),
+
+              // Check if it's a partial/flexible payment
+              if (fareReq.cancellationPolicyType == 'flexible' ||
+                  bd.cancellationPolicyType == 'flexible') ...[
+                _fareRow(
+                  'Advance Amount',
+                  '₹${bd.advanceAmount ?? '--'}',
+                  isBold: true,
+                  valueColor: _TI.brand,
+                ),
+                _fareRow(
+                  'Amount to Pay Now',
+                  '₹${bd.amountToPayNow ?? '--'}',
+                  isBold: true,
+                  valueColor: _TI.brand,
+                ),
+                _fareRow(
+                  'Remaining Amount',
+                  '₹${bd.remainingAmount ?? '--'}',
+                  valueColor: _TI.inkMid,
+                ),
+              ] else ...[
+                _fareRow(
+                  'Final Amount',
+                  '₹${bd.finalAmount ?? '--'}',
+                  isBold: true,
+                  valueColor: _TI.brand,
+                ),
+                _fareRow(
+                  'Amount to Pay Now',
+                  '₹${bd.amountToPayNow ?? '--'}',
+                  isBold: true,
+                  valueColor: _TI.brand,
+                ),
+              ],
+            ],
+          ],
+        );
+      }),
+    );
+  }
+
+  Widget _buildCouponSection() {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+      decoration: BoxDecoration(
+        color: _TI.cardBg,
+        borderRadius: BorderRadius.circular(4.w),
+        border: Border.all(color: _TI.divider, width: 1),
+      ),
+      child: Obx(() {
+        final fareReq = _trekC.calculateFareRequestModel.value;
+        final fareResponse = _trekC.calculateFareResponseModel.value.maybeWhen(
+          success: (r) => r as CalculateFareResponseModel,
+          orElse: () => null,
+        );
+
+        final appliedCode = fareReq.couponCode ?? '';
+        final discountText = fareResponse?.breakdown?.discount?.toStringAsFixed(
+          2,
+        );
+        final isCouponApplied = discountText != null;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.local_offer_outlined, size: 5.w, color: _TI.ink),
+                SizedBox(width: 3.w),
+                Expanded(
+                  child: Text(
+                    'Coupon Code',
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w700,
+                      color: _TI.ink,
+                    ),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () =>
+                      setState(() => _isCouponExpanded = !_isCouponExpanded),
+                  child: AnimatedRotation(
+                    turns: _isCouponExpanded ? 0 : 0.5,
+                    duration: const Duration(milliseconds: 250),
+                    child: Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      size: 6.w,
+                      color: _TI.inkMid,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            AnimatedCrossFade(
+              duration: const Duration(milliseconds: 280),
+              crossFadeState: _isCouponExpanded
+                  ? CrossFadeState.showFirst
+                  : CrossFadeState.showSecond,
+              firstChild: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(height: 1.5.h),
+                  if (appliedCode.isNotEmpty)
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 4.w,
+                        vertical: 1.2.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isCouponApplied
+                            ? _TI.tealSoft
+                            : CommonColors.appRedColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(3.w),
+                        border: Border.all(
+                          color: isCouponApplied
+                              ? _TI.teal.withValues(alpha: 0.3)
+                              : CommonColors.appRedColor.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            isCouponApplied
+                                ? Icons.check_circle_outline_rounded
+                                : Icons.cancel_outlined,
+                            size: 18,
+                            color: isCouponApplied
+                                ? _TI.teal
+                                : CommonColors.appRedColor,
+                          ),
+                          SizedBox(width: 2.w),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  appliedCode,
+                                  style: TextStyle(
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.w700,
+                                    color: isCouponApplied
+                                        ? _TI.teal
+                                        : CommonColors.appRedColor,
+                                  ),
+                                ),
+                                if (isCouponApplied)
+                                  Text(
+                                    'You save ₹$discountText',
+                                    style: TextStyle(
+                                      fontSize: 9.sp,
+                                      color: _TI.teal,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              _trekC.calculateFareRequestModel.value = _trekC
+                                  .calculateFareRequestModel
+                                  .value
+                                  .copyWith(couponCode: '');
+                            },
+                            child: Text(
+                              'Remove',
+                              style: TextStyle(
+                                fontSize: 9.sp,
+                                fontWeight: FontWeight.w600,
+                                color: CommonColors.appRedColor,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    GestureDetector(
+                      onTap: () => Get.to(() => CouponCodeScreen()),
+                      child: Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 4.w,
+                          vertical: 1.5.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _TI.bg,
+                          borderRadius: BorderRadius.circular(3.w),
+                          border: Border.all(
+                            color: _TI.brand.withValues(alpha: 0.3),
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.add_circle_outline,
+                              size: 16,
+                              color: _TI.brand,
+                            ),
+                            SizedBox(width: 2.5.w),
+                            Expanded(
+                              child: Text(
+                                'Browse & apply coupon codes',
+                                style: TextStyle(
+                                  fontSize: 11.sp,
+                                  color: _TI.brand,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              secondChild: const SizedBox.shrink(),
+            ),
+          ],
+        );
+      }),
+    );
+  }
+
+  Widget _buildPaymentMethodSection() {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+      decoration: BoxDecoration(
+        color: _TI.cardBg,
+        borderRadius: BorderRadius.circular(4.w),
+        border: Border.all(color: _TI.divider, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _sectionHeader('Payment Method', Icons.payment_rounded),
+          SizedBox(height: 1.5.h),
+          _paymentMethodOption(
+            icon: _razorpayLogo(),
+            label: 'Razorpay',
+            subtitle: 'Credit card, Debit card, UPI, Wallets & more',
+            isSelected: _selectedUPI == PaymentMethods.razorpay,
+            onTap: () => setState(() => _selectedUPI = PaymentMethods.razorpay),
+          ),
+          Divider(color: _TI.divider, height: 2.h),
+          Opacity(
+            opacity: 0.45,
+            child: _paymentMethodOption(
+              icon: _lockedIcon(CommonImages.phonePeIcon),
+              label: 'PhonePe UPI',
+              subtitle: 'Coming soon',
+              isSelected: false,
+              isLocked: true,
+              onTap: () {},
+            ),
+          ),
+          SizedBox(height: 1.h),
+          Opacity(
+            opacity: 0.45,
+            child: _paymentMethodOption(
+              icon: _lockedIcon(CommonImages.paytmIcon),
+              label: 'Paytm UPI',
+              subtitle: 'Coming soon',
+              isSelected: false,
+              isLocked: true,
+              onTap: () {},
             ),
           ),
         ],
@@ -2034,7 +2185,257 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
     );
   }
 
-  // ── APP BAR ───────────────────────────────────────────────────────────────
+  // ── BOTTOM BAR & OVERLAYS ─────────────────────────────────────────────────
+  Widget _buildBottomBar() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, -3),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Left side: Total Fare
+              Expanded(
+                child: GestureDetector(
+                  onTap: () {
+                    final fareReq = _trekC.calculateFareRequestModel.value;
+                    final fareResp = _trekC.calculateFareResponseModel.value
+                        .maybeWhen(
+                          success: (r) => r as CalculateFareResponseModel,
+                          orElse: () => null,
+                        );
+                    showModalBottomSheet(
+                      context: context,
+                      backgroundColor: Colors.transparent,
+                      builder: (_) => TotalFareModal(
+                        breakDown: fareResp?.breakdown,
+                        adultCount: fareReq.travelerCount,
+                        onClose: () => Navigator.pop(context),
+                      ),
+                    );
+                  },
+                  child: Obx(() {
+                    final fareRespModel = _trekC
+                        .calculateFareResponseModel
+                        .value
+                        .maybeWhen(success: (r) => r, orElse: () => null);
+                    final fareReq = _trekC.calculateFareRequestModel.value;
+                    final isFlexible =
+                        fareReq.cancellationPolicyType == 'flexible';
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              'Total Payable',
+                              style: TextStyle(
+                                fontSize: 9.sp,
+                                color: _TI.inkMid,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              size: 14,
+                              color: _TI.inkMid,
+                            ),
+                          ],
+                        ),
+                        RichText(
+                          text: TextSpan(
+                            children: [
+                              TextSpan(
+                                text: '₹ ',
+                                style: GoogleFonts.roboto(
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: CommonColors.softGreen2,
+                                ),
+                              ),
+                              TextSpan(
+                                text:
+                                    '${fareRespModel?.breakdown?.amountToPayNow ?? "--"}',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 16.sp,
+                                  fontWeight: FontWeight.w800,
+                                  color: CommonColors.softGreen2,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (isFlexible)
+                          Text(
+                            'Advance Payment',
+                            style: TextStyle(
+                              fontSize: 8.sp,
+                              color: CommonColors.orangeColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                      ],
+                    );
+                  }),
+                ),
+              ),
+              SizedBox(width: 4.w),
+              // Right side: Pay Now Button
+              SizedBox(
+                width: 42.w,
+                child: CommonButton(
+                  text: 'Pay Now',
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w600,
+                  fontFamily: 'Poppins',
+                  isDisabled: _isProcessingPayment,
+                  onPressed: _handlePayNow,
+                  gradient: CommonColors.filterGradient,
+                  textColor: CommonColors.whiteColor,
+                  height: 52, // Taller button for easier tapping
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHintPopup() {
+    return Positioned(
+      bottom: 18.h,
+      left: 4.w,
+      right: 4.w,
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1C1C1E),
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.3),
+                blurRadius: 20,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.info_outline_rounded,
+                color: Colors.white.withValues(alpha: 0.9),
+                size: 16,
+              ),
+              SizedBox(width: 2.w),
+              Expanded(
+                child: Text(
+                  _hintMessage!,
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPaymentErrorOverlay() {
+    return Positioned.fill(
+      child: Container(
+        color: Colors.black.withValues(alpha: 0.45),
+        child: Center(
+          child: Container(
+            margin: EdgeInsets.symmetric(horizontal: 8.w),
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: _TI.cardBg,
+              borderRadius: BorderRadius.circular(4.w),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.error_outline_rounded,
+                  size: 40,
+                  color: CommonColors.appRedColor,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Something went wrong',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w700,
+                    color: _TI.ink,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  _paymentErrorMessage,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 10.sp,
+                    color: _TI.inkMid,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Get.back(),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: _TI.inkMid,
+                          side: BorderSide(color: _TI.divider),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: const Text('GO BACK'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: _isProcessingPayment ? null : _retryPayment,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _TI.brand,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: const Text('RETRY'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
       backgroundColor: _TI.cardBg,
@@ -2048,202 +2449,66 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
         preferredSize: const Size.fromHeight(1),
         child: Container(height: 1, color: _TI.divider),
       ),
-      title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Traveller Information',
-            textScaler: const TextScaler.linear(1.0),
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 13.sp,
-              fontWeight: FontWeight.w700,
-              color: _TI.ink,
-            ),
-          ),
-          Row(
-            children: [
-              if (_dashboardC.fromController.value.text.isNotEmpty)
-                Flexible(
-                  child: Text(
-                    _dashboardC.fromController.value.text,
-                    textScaler: const TextScaler.linear(1.0),
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 9.sp,
-                      color: _TI.inkMid,
-                    ),
-                  ),
-                ),
-              if (_dashboardC.fromController.value.text.isNotEmpty &&
-                  _dashboardC.toController.value.text.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: Icon(
-                    Icons.arrow_forward_rounded,
-                    color: _TI.inkLight,
-                    size: 12,
-                  ),
-                ),
-              if (_dashboardC.toController.value.text.isNotEmpty)
-                Flexible(
-                  child: Text(
-                    _dashboardC.toController.value.text,
-                    textScaler: const TextScaler.linear(1.0),
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 9.sp,
-                      color: _TI.inkMid,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ],
+      title: Text(
+        'Checkout',
+        style: TextStyle(
+          fontFamily: 'Poppins',
+          fontSize: 13.sp,
+          fontWeight: FontWeight.w700,
+          color: _TI.ink,
+        ),
       ),
+      actions: [
+        Padding(
+          padding: EdgeInsets.only(right: 4.w),
+          child: _buildTimerAndProgress(),
+        ),
+      ],
     );
   }
 
-  // ── BOTTOM BAR ────────────────────────────────────────────────────────────
-  Widget _buildBottomBar() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, -3),
-          ),
-        ],
-      ),
+  Widget _buildTimerAndProgress() {
+    return Center(
       child: Obx(() {
-        final fareReqModel = _trekC.calculateFareRequestModel.value;
-        final fareRespModel = _trekC.calculateFareResponseModel.value.maybeWhen(
-          success: (r) => r,
-          orElse: () => null,
-        );
+        final minutes = _remainingSecs.value ~/ 60;
+        final seconds = _remainingSecs.value % 60;
+        final formattedTime =
+            '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
 
         return Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            if (fareReqModel.travelerCount > 0)
-              Container(
-                margin: const EdgeInsets.only(left: 27, right: 25, top: 14),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    GestureDetector(
-                      onTap: () => showModalBottomSheet(
-                        context: context,
-                        backgroundColor: Colors.transparent,
-                        builder: (context) => TotalFareModal(
-                          breakDown: fareRespModel?.breakdown,
-                          adultCount: fareReqModel.travelerCount,
-                          onClose: () => Navigator.pop(context),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Total Fare',
-                                textScaler: const TextScaler.linear(1.0),
-                                style: TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontSize: 10.sp,
-                                  fontWeight: FontWeight.w600,
-                                  color: _TI.ink,
-                                ),
-                              ),
-                              Text(
-                                'Tax Included',
-                                textScaler: const TextScaler.linear(1.0),
-                                style: TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontSize: 8.sp,
-                                  color: _TI.inkMid,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(width: 6),
-                          Icon(
-                            Icons.keyboard_arrow_down_rounded,
-                            size: 20,
-                            color: _TI.inkMid,
-                          ),
-                        ],
-                      ),
-                    ),
-                    RichText(
-                      textScaler: const TextScaler.linear(1.0),
-                      text: TextSpan(
-                        children: [
-                          TextSpan(
-                            text: '₹ ',
-                            style: GoogleFonts.roboto(
-                              fontSize: 15.sp,
-                              fontWeight: FontWeight.w600,
-                              color: CommonColors.softGreen2,
-                            ),
-                          ),
-                          TextSpan(
-                            text:
-                                '${fareRespModel?.breakdown?.amountToPayNow ?? "--"}',
-                            style: GoogleFonts.poppins(
-                              fontSize: 16.sp,
-                              fontWeight: FontWeight.w700,
-                              color: CommonColors.softGreen2,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.timer_outlined,
+                  size: 4.w,
+                  color: CommonColors.orangeColor,
                 ),
-              ),
-
-            if (fareReqModel.travelerCount > 0) SizedBox(height: 1.5.h),
-
-            Padding(
-              padding: const EdgeInsets.only(left: 41, right: 41, bottom: 20),
-              child: Obx(() {
-                final isFormValid =
-                    _trekC.calculateFareRequestModel.value.travelerCount > 0 &&
-                    _userC.userProfileData.value.customer?.email != null &&
-                    _userC.userProfileData.value.customer?.phone != null &&
-                    _userC.userProfileData.value.customer?.state?.id != null &&
-                    selectedTravellers.length >=
-                        _trekC.calculateFareRequestModel.value.travelerCount;
-
-                return AnimatedScale(
-                  scale: isFormValid ? 1.0 : 0.97,
-                  duration: const Duration(milliseconds: 200),
-                  child: CommonButton(
-                    text: 'Pay Now',
-                    fontSize: 14.sp,
+                SizedBox(width: 1.w),
+                Text(
+                  formattedTime,
+                  style: GoogleFonts.poppins(
+                    fontSize: 11.sp,
                     fontWeight: FontWeight.w600,
-                    fontFamily: 'Poppins',
-                    onPressed: () {
-                      if (isFormValid) {
-                        _trekC.createOrderRequestModel.value = _trekC
-                            .createOrderRequestModel
-                            .value
-                            .copyWith(travelers: selectedTravellers.toList());
-                        _handlePayment(fareRespModel?.breakdown);
-                      }
-                    },
-                    gradient: isFormValid
-                        ? CommonColors.filterGradient
-                        : CommonColors.disableBtnGradient,
-                    textColor: CommonColors.whiteColor,
-                    height: 48,
+                    color: CommonColors.orangeColor,
                   ),
-                );
-              }),
+                ),
+              ],
+            ),
+            SizedBox(height: 0.5.h),
+            SizedBox(
+              width: 17.w,
+              height: 0.5.h,
+              child: LinearProgressIndicator(
+                value: _remainingSecs.value / _totalTimerSecs,
+                backgroundColor: CommonColors.greyColor.withValues(alpha: 0.3),
+                color: CommonColors.orangeColor,
+                minHeight: 0.1.h,
+                borderRadius: BorderRadius.circular(200),
+              ),
             ),
           ],
         );
@@ -2251,10 +2516,10 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
     );
   }
 
-  // ── HELPERS ───────────────────────────────────────────────────────────────
+  // ── SMALL UI COMPONENTS ───────────────────────────────────────────────────
   Widget _counterBtn(IconData icon, VoidCallback onTap, {bool active = true}) {
-    return _ScaleOnTap(
-      onTap: onTap,
+    return GestureDetector(
+      onTap: active ? onTap : null,
       child: Container(
         width: 8.w,
         height: 8.w,
@@ -2271,87 +2536,99 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
     );
   }
 
-  Widget _insuranceOption({
-    required String title,
-    String? subtitle,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? _TI.brand.withValues(alpha: 0.05)
-              : const Color(0xFFF8F9FF),
-          borderRadius: BorderRadius.circular(3.w),
-          border: Border.all(
-            color: isSelected ? _TI.brand.withValues(alpha: 0.4) : _TI.divider,
-            width: isSelected ? 1.5 : 1,
+  Widget _buildExistingTravellerItem(Traveler traveler, bool isSelected) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.h),
+      decoration: BoxDecoration(
+        color: isSelected
+            ? _TI.brand.withValues(alpha: 0.04)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(3.w),
+        border: Border.all(
+          color: isSelected ? _TI.brand.withValues(alpha: 0.3) : _TI.divider,
+          width: isSelected ? 1.5 : 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 24,
+            height: 24,
+            child: Checkbox(
+              value: isSelected,
+              onChanged: (bool? value) async {
+                HapticFeedback.selectionClick();
+                setState(() {
+                  if (value ?? false) {
+                    if (!selectedTravellers.any((t) => t.id == traveler.id)) {
+                      selectedTravellers.add(traveler);
+                    }
+                  } else {
+                    selectedTravellers.removeWhere((t) => t.id == traveler.id);
+                  }
+                  _trekC.travellerDetailList.value = List.from(
+                    selectedTravellers,
+                  );
+                  _trekC.calculateFareRequestModel.value = _trekC
+                      .calculateFareRequestModel
+                      .value
+                      .copyWith(travelerCount: selectedTravellers.length);
+                });
+              },
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(4),
+              ),
+              activeColor: _TI.brand,
+            ),
           ),
-        ),
-        child: Row(
-          children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: 6.w,
-              height: 6.w,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: isSelected ? CommonColors.radioBtnGradient : null,
-                border: isSelected
-                    ? null
-                    : Border.all(
-                        color: CommonColors.greyColor585858,
-                        width: 0.5.w,
-                      ),
-                color: Colors.white,
-              ),
-              child: isSelected
-                  ? Center(
-                      child: Container(
-                        width: 2.w,
-                        height: 2.w,
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    )
-                  : null,
-            ),
-            SizedBox(width: 3.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    textScaler: const TextScaler.linear(1.0),
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 11.sp,
-                      fontWeight: FontWeight.w500,
-                      color: _TI.ink,
-                    ),
+          SizedBox(width: 3.w),
+          // Wrapped in Expanded to prevent right-side overflow
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  traveler.name ?? '-',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w600,
+                    color: _TI.ink,
                   ),
-                  if (subtitle != null)
-                    Text(
-                      subtitle,
-                      textScaler: const TextScaler.linear(1.0),
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 8.sp,
-                        color: _TI.inkMid,
-                      ),
-                    ),
-                ],
+                ),
+                Text(
+                  '${traveler.gender ?? '-'} • ${traveler.age ?? '-'} yrs',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 9.sp,
+                    color: _TI.inkMid,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(width: 2.w),
+          GestureDetector(
+            onTap: () =>
+                _showTravellerBottomSheet(traveller: traveler, isEdit: true),
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 2.5.w, vertical: 0.4.h),
+              decoration: BoxDecoration(
+                color: _TI.brand.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: _TI.brand.withValues(alpha: 0.2)),
+              ),
+              child: Text(
+                'Edit',
+                style: TextStyle(
+                  fontSize: 9.sp,
+                  fontWeight: FontWeight.w600,
+                  color: _TI.brand,
+                ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -2361,320 +2638,207 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
     required String subtitle,
     required bool isSelected,
     required VoidCallback onTap,
-    bool isEnabled = true,
   }) {
-    return Opacity(
-      opacity: isEnabled ? 1.0 : 0.45,
-      child: GestureDetector(
-        onTap: isEnabled ? onTap : null,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.8.h),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? _TI.brand.withValues(alpha: 0.05)
-                : const Color(0xFFF8F9FF),
-            borderRadius: BorderRadius.circular(3.w),
-            border: Border.all(
-              color: isSelected
-                  ? _TI.brand.withValues(alpha: 0.4)
-                  : _TI.divider,
-              width: isSelected ? 1.5 : 1,
-            ),
-          ),
-          child: Row(
-            children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: 6.w,
-                height: 6.w,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: isSelected && isEnabled
-                      ? CommonColors.radioBtnGradient
-                      : null,
-                  border: isSelected && isEnabled
-                      ? null
-                      : Border.all(
-                          color: CommonColors.greyColor585858,
-                          width: 0.5.w,
-                        ),
-                  color: Colors.white,
-                ),
-                child: isSelected && isEnabled
-                    ? Center(
-                        child: Container(
-                          width: 2.w,
-                          height: 2.w,
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      )
-                    : null,
-              ),
-              SizedBox(width: 3.w),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      textScaler: const TextScaler.linear(1.0),
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 11.sp,
-                        fontWeight: FontWeight.w600,
-                        color: _TI.ink,
-                      ),
-                    ),
-                    Text(
-                      subtitle,
-                      textScaler: const TextScaler.linear(1.0),
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 8.sp,
-                        color: _TI.inkMid,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildExistingTravellerItem({
-    required Traveler travelData,
-    required bool isSelected,
-  }) {
-    return Obx(() {
-      final adultCount = _trekC.calculateFareRequestModel.value.travelerCount;
-      final bool isTravellerSelected = selectedTravellers.any(
-        (t) => t.id == travelData.id,
-      );
-
-      return AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOutCubic,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
         decoration: BoxDecoration(
-          color: isTravellerSelected
-              ? _TI.brand.withValues(alpha: 0.04)
-              : const Color(0xFFF8F9FF),
+          color: isSelected ? _TI.tealSoft : _TI.bg,
           borderRadius: BorderRadius.circular(3.w),
           border: Border.all(
-            color: isTravellerSelected
-                ? _TI.brand.withValues(alpha: 0.3)
-                : _TI.divider,
-            width: isTravellerSelected ? 1.5 : 1,
+            color: isSelected ? _TI.brand.withValues(alpha: 0.4) : _TI.divider,
+            width: isSelected ? 1.5 : 1,
           ),
-          boxShadow: isTravellerSelected
-              ? [
-                  BoxShadow(
-                    color: _TI.brand.withValues(alpha: 0.08),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : [],
         ),
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.h),
-          child: Row(
-            children: [
-              SizedBox(
-                width: 24,
-                height: 24,
-                child: Checkbox(
-                  value: isTravellerSelected,
-                  onChanged: (bool? value) async {
-                    final shouldSelect = value ?? false;
-                    HapticFeedback.selectionClick();
-                    setState(() {
-                      if (shouldSelect) {
-                        if (!selectedTravellers.any(
-                          (t) => t.id == travelData.id,
-                        )) {
-                          selectedTravellers.add(travelData);
-                        }
-                      } else {
-                        selectedTravellers.removeWhere(
-                          (t) => t.id == travelData.id,
-                        );
-                      }
-                      _trekC.travellerDetailList.value = List.from(
-                        selectedTravellers,
-                      );
-                      // Sync travelerCount so fare is calculated for all
-                      // selected travellers, not just the stepper value.
-                      _trekC.calculateFareRequestModel.value = _trekC
-                          .calculateFareRequestModel
-                          .value
-                          .copyWith(travelerCount: selectedTravellers.length);
-                    });
-                  },
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  activeColor: _TI.brand,
-                ),
-              ),
-              SizedBox(width: 3.w),
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 220),
-                width: 9.w,
-                height: 9.w,
-                decoration: BoxDecoration(
-                  color: isTravellerSelected
-                      ? _TI.brand.withValues(alpha: 0.12)
-                      : const Color(0xFFE2E8F0),
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(
-                    (travelData.name?.isNotEmpty == true)
-                        ? travelData.name![0].toUpperCase()
-                        : '?',
+        child: Row(
+          children: [
+            Icon(
+              isSelected
+                  ? Icons.radio_button_checked
+                  : Icons.radio_button_unchecked,
+              size: 18,
+              color: isSelected ? _TI.brand : _TI.inkLight,
+            ),
+            SizedBox(width: 3.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontSize: 12.sp,
-                      fontWeight: FontWeight.w700,
-                      color: isTravellerSelected ? _TI.brand : _TI.inkMid,
+                      fontWeight: FontWeight.w600,
+                      color: _TI.ink,
                     ),
                   ),
-                ),
-              ),
-              SizedBox(width: 3.w),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      travelData.name ?? '-',
-                      textScaler: const TextScaler.linear(1.0),
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 11.sp,
-                        fontWeight: FontWeight.w600,
-                        color: _TI.ink,
-                      ),
-                    ),
-                    Text(
-                      '${travelData.gender ?? ''}, '
-                      '${travelData.age ?? ''}',
-                      textScaler: const TextScaler.linear(1.0),
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 9.sp,
-                        color: _TI.inkMid,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              GestureDetector(
-                onTap: () => _showTravellerBottomSheet(
-                  traveller: travelData,
-                  isEdit: true,
-                ),
-                child: Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 2.5.w,
-                    vertical: 0.4.h,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _TI.brand.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: _TI.brand.withValues(alpha: 0.2)),
-                  ),
-                  child: Text(
-                    'Edit',
-                    textScaler: const TextScaler.linear(1.0),
+                  Text(
+                    subtitle,
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontSize: 9.sp,
-                      fontWeight: FontWeight.w600,
-                      color: _TI.brand,
+                      color: _TI.inkMid,
                     ),
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-      );
-    });
-  }
-
-  void _handlePayment(BreakDownDataModel? breakDown) {
-    Get.toNamed(BookingRoutes.payment);
-  }
-
-  String _getTotalFareSubtitleText() {
-    if (_selectedPaymentOption == BookingConstants.partialPayment) {
-      return 'Advance Paid ₹999, pay remaining before trek start';
-    }
-    return 'Secure your booking with full payment';
-  }
-}
-
-// ─────────────────────────────────────────────
-//  SCALE-ON-TAP UTILITY WIDGET
-// ─────────────────────────────────────────────
-class _ScaleOnTap extends StatefulWidget {
-  final Widget child;
-  final VoidCallback onTap;
-  const _ScaleOnTap({required this.child, required this.onTap});
-
-  @override
-  State<_ScaleOnTap> createState() => _ScaleOnTapState();
-}
-
-class _ScaleOnTapState extends State<_ScaleOnTap>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-  late Animation<double> _scale;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 100),
-      lowerBound: 0.0,
-      upperBound: 1.0,
-    );
-    _scale = Tween<double>(
-      begin: 1.0,
-      end: 0.88,
-    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => _ctrl.forward(),
-      onTapUp: (_) async {
-        await _ctrl.reverse();
-        widget.onTap();
-      },
-      onTapCancel: () => _ctrl.reverse(),
-      child: AnimatedBuilder(
-        animation: _scale,
-        builder: (_, child) =>
-            Transform.scale(scale: _scale.value, child: child),
-        child: widget.child,
       ),
     );
+  }
+
+  Widget _fareRow(
+    String label,
+    String value, {
+    bool isBold = false,
+    Color? valueColor,
+  }) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 1.h),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 10.sp,
+              fontWeight: isBold ? FontWeight.w700 : FontWeight.w400,
+              color: isBold ? _TI.ink : _TI.inkMid,
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: isBold ? 13.sp : 10.sp,
+              fontWeight: isBold ? FontWeight.w700 : FontWeight.w500,
+              color: valueColor ?? _TI.ink,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _paymentMethodOption({
+    required Widget icon,
+    required String label,
+    required String subtitle,
+    required bool isSelected,
+    bool isLocked = false,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.h),
+        decoration: BoxDecoration(
+          color: isSelected ? _TI.tealSoft : Colors.transparent,
+          borderRadius: BorderRadius.circular(3.w),
+        ),
+        child: Row(
+          children: [
+            icon,
+            SizedBox(width: 3.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w600,
+                      color: _TI.ink,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 8.sp,
+                      color: _TI.inkMid,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (isLocked)
+              Icon(Icons.lock_outline_rounded, size: 16, color: _TI.inkLight)
+            else
+              Icon(
+                isSelected
+                    ? Icons.radio_button_checked
+                    : Icons.radio_button_unchecked,
+                size: 18,
+                color: isSelected ? _TI.brand : _TI.inkLight,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _razorpayLogo() {
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        color: const Color(0xFF3395FF),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Center(
+        child: Text(
+          'R',
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w800,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _lockedIcon(String svgPath) {
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        color: _TI.divider,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Center(child: SvgPicture.asset(svgPath, width: 22, height: 22)),
+    );
+  }
+
+  String _formatDate(String? dateString) {
+    if (dateString == null || dateString.isEmpty) return '-';
+    try {
+      final parts = dateString.split('-');
+      if (parts.length == 3) return '${parts[2]}-${parts[1]}-${parts[0]}';
+      return dateString;
+    } catch (_) {
+      return dateString;
+    }
+  }
+
+  String _calculateEndDate(String? startDate, int? durationDays) {
+    if (startDate == null || startDate.isEmpty || durationDays == null)
+      return '-';
+    try {
+      final start = DateTime.parse(startDate);
+      final end = start.add(Duration(days: durationDays));
+      return '${end.day.toString().padLeft(2, '0')}-${end.month.toString().padLeft(2, '0')}-${end.year}';
+    } catch (_) {
+      return '-';
+    }
   }
 }
