@@ -13,6 +13,7 @@ _$CreateRazorpayRequestModelImpl _$$CreateRazorpayRequestModelImplFromJson(
       travelers: (json['travelers'] as List<dynamic>)
           .map((e) => Traveler.fromJson(e as Map<String, dynamic>))
           .toList(),
+      payFull: json['pay_full'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$$CreateRazorpayRequestModelImplToJson(
@@ -20,6 +21,7 @@ Map<String, dynamic> _$$CreateRazorpayRequestModelImplToJson(
     <String, dynamic>{
       'fare_token': instance.fareToken,
       'travelers': instance.travelers,
+      'pay_full': instance.payFull,
     };
 
 _$BookingResponseImpl _$$BookingResponseImplFromJson(

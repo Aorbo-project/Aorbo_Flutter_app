@@ -9,7 +9,12 @@ part 'booking_data_model.g.dart';
 class CreateRazorpayRequestModel with _$CreateRazorpayRequestModel {
   const factory CreateRazorpayRequestModel({
     @JsonKey(name: 'fare_token') required String fareToken,
-    required List<Traveler> travelers
+    required List<Traveler> travelers,
+    // Only meaningful for a flexible-policy trek — true means the customer
+    // chose to pay the full amount now instead of the default advance-only.
+    // See Backend's paymentService.createOrder for how this changes the
+    // actual Razorpay charge amount and the resulting payment_status.
+    @JsonKey(name: 'pay_full') @Default(false) bool payFull
   }) = _CreateRazorpayRequestModel;
 
   factory CreateRazorpayRequestModel.fromJson(Map<String, dynamic> json) =>

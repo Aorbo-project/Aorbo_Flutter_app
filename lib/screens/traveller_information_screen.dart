@@ -69,7 +69,10 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
   final nameNode = FocusNode();
 
   String _selectedState = BookingConstants.defaultState;
-  String _selectedPaymentOption = 'standard';
+  // 'advance' (flexible-policy trek, default) or 'full' (pay everything
+  // now) — this is a payment-timing choice, not the trek's cancellation
+  // policy type, which is fixed per-trek and never selected by the customer.
+  String _selectedPaymentOption = 'full';
   String? _selectedUPI = PaymentMethods.razorpay;
 
   List<Traveler> selectedTravellers = [];
@@ -108,7 +111,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
       duration: const Duration(milliseconds: 500),
     );
 
-    _selectedPaymentOption = _isFlexiblePolicy ? 'flexible' : 'standard';
+    _selectedPaymentOption = _isFlexiblePolicy ? 'advance' : 'full';
 
     final existingCoupon = _trekC.calculateFareRequestModel.value.couponCode;
     selectedTravellers = List.from(_trekC.travellerDetailList);
@@ -128,7 +131,10 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
           couponCode: (existingCoupon != null && existingCoupon.isNotEmpty)
               ? existingCoupon
               : '',
-          cancellationPolicyType: _selectedPaymentOption,
+          // cancellation_policy_type is never read server-side (see
+          // fareCalculationService.js — it derives the trek's real policy
+          // from the trek itself, not the client). Not sending it at all,
+          // rather than a value that doesn't mean what its name implies.
         );
     _trekC.calculateFare();
 
@@ -273,9 +279,18 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
       final options = {
         'key': params['key'] ?? BookingConstants.razorpayKey,
         'order_id': params['order_id'] ?? '${_trekC.orderData.value.id}',
+        // params['amount'] (the real Razorpay order amount, decided
+        // server-side in createOrder from pay_full) should always be
+        // present by this point — this fallback only matters if that's ever
+        // missing, and should match the same amount the customer was shown.
         'amount':
             params['amount'] ??
-            ((breakdown?.amountToPayNow ?? 0) * 100).toInt(),
+            (((_selectedPaymentOption == 'full'
+                                ? breakdown?.finalAmount
+                                : breakdown?.amountToPayNow) ??
+                            0) *
+                        100)
+                    .toInt(),
         'currency': params['currency'] ?? 'INR',
         'name': params['name'] ?? '${_trekC.trekDetailData.value.title}',
         'description':
@@ -1679,37 +1694,35 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
             _sectionHeader('Payment Options', Icons.payment_outlined),
             SizedBox(height: 1.5.h),
 
-            // Flexible Option
+            // Advance-only Option
             GestureDetector(
               onTap: () {
-                setState(() => _selectedPaymentOption = 'flexible');
-                _trekC.calculateFareRequestModel.value = _trekC
-                    .calculateFareRequestModel
-                    .value
-                    .copyWith(cancellationPolicyType: 'flexible');
+                setState(() => _selectedPaymentOption = 'advance');
+                _trekC.createOrderRequestModel.value =
+                    _trekC.createOrderRequestModel.value.copyWith(payFull: false);
               },
               child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
                 decoration: BoxDecoration(
-                  color: _selectedPaymentOption == 'flexible'
+                  color: _selectedPaymentOption == 'advance'
                       ? _TI.tealSoft
                       : _TI.bg,
                   borderRadius: BorderRadius.circular(3.w),
                   border: Border.all(
-                    color: _selectedPaymentOption == 'flexible'
+                    color: _selectedPaymentOption == 'advance'
                         ? _TI.brand.withValues(alpha: 0.4)
                         : _TI.divider,
-                    width: _selectedPaymentOption == 'flexible' ? 1.5 : 1,
+                    width: _selectedPaymentOption == 'advance' ? 1.5 : 1,
                   ),
                 ),
                 child: Row(
                   children: [
                     Icon(
-                      _selectedPaymentOption == 'flexible'
+                      _selectedPaymentOption == 'advance'
                           ? Icons.radio_button_checked
                           : Icons.radio_button_unchecked,
                       size: 18,
-                      color: _selectedPaymentOption == 'flexible'
+                      color: _selectedPaymentOption == 'advance'
                           ? _TI.brand
                           : _TI.inkLight,
                     ),
@@ -1745,37 +1758,35 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
 
             SizedBox(height: 1.5.h),
 
-            // Standard Option
+            // Full Payment Option
             GestureDetector(
               onTap: () {
-                setState(() => _selectedPaymentOption = 'standard');
-                _trekC.calculateFareRequestModel.value = _trekC
-                    .calculateFareRequestModel
-                    .value
-                    .copyWith(cancellationPolicyType: 'standard');
+                setState(() => _selectedPaymentOption = 'full');
+                _trekC.createOrderRequestModel.value =
+                    _trekC.createOrderRequestModel.value.copyWith(payFull: true);
               },
               child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
                 decoration: BoxDecoration(
-                  color: _selectedPaymentOption == 'standard'
+                  color: _selectedPaymentOption == 'full'
                       ? _TI.tealSoft
                       : _TI.bg,
                   borderRadius: BorderRadius.circular(3.w),
                   border: Border.all(
-                    color: _selectedPaymentOption == 'standard'
+                    color: _selectedPaymentOption == 'full'
                         ? _TI.brand.withValues(alpha: 0.4)
                         : _TI.divider,
-                    width: _selectedPaymentOption == 'standard' ? 1.5 : 1,
+                    width: _selectedPaymentOption == 'full' ? 1.5 : 1,
                   ),
                 ),
                 child: Row(
                   children: [
                     Icon(
-                      _selectedPaymentOption == 'standard'
+                      _selectedPaymentOption == 'full'
                           ? Icons.radio_button_checked
                           : Icons.radio_button_unchecked,
                       size: 18,
-                      color: _selectedPaymentOption == 'standard'
+                      color: _selectedPaymentOption == 'full'
                           ? _TI.brand
                           : _TI.inkLight,
                     ),
@@ -1911,26 +1922,47 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
 
               Divider(color: _TI.divider, height: 2.h),
 
-              // Check if it's a partial/flexible payment
+              // Trek's real policy is flexible (bd.cancellationPolicyType,
+              // derived server-side from the trek itself — never the
+              // client's choice). Within that, branch on the LOCAL
+              // _selectedPaymentOption: the breakdown response already
+              // contains both the advance and full amounts together (see
+              // fareCalculationService.js), so no refetch is needed to
+              // switch between them, just picking the right fields here.
               if (fareReq.cancellationPolicyType == 'flexible' ||
                   bd.cancellationPolicyType == 'flexible') ...[
-                _fareRow(
-                  'Advance Amount',
-                  '₹${bd.advanceAmount ?? '--'}',
-                  isBold: true,
-                  valueColor: _TI.brand,
-                ),
-                _fareRow(
-                  'Amount to Pay Now',
-                  '₹${bd.amountToPayNow ?? '--'}',
-                  isBold: true,
-                  valueColor: _TI.brand,
-                ),
-                _fareRow(
-                  'Remaining Amount',
-                  '₹${bd.remainingAmount ?? '--'}',
-                  valueColor: _TI.inkMid,
-                ),
+                if (_selectedPaymentOption == 'full') ...[
+                  _fareRow(
+                    'Final Amount',
+                    '₹${bd.finalAmount ?? '--'}',
+                    isBold: true,
+                    valueColor: _TI.brand,
+                  ),
+                  _fareRow(
+                    'Amount to Pay Now',
+                    '₹${bd.finalAmount ?? '--'}',
+                    isBold: true,
+                    valueColor: _TI.brand,
+                  ),
+                ] else ...[
+                  _fareRow(
+                    'Advance Amount',
+                    '₹${bd.advanceAmount ?? '--'}',
+                    isBold: true,
+                    valueColor: _TI.brand,
+                  ),
+                  _fareRow(
+                    'Amount to Pay Now',
+                    '₹${bd.amountToPayNow ?? '--'}',
+                    isBold: true,
+                    valueColor: _TI.brand,
+                  ),
+                  _fareRow(
+                    'Remaining Amount',
+                    '₹${bd.remainingAmount ?? '--'}',
+                    valueColor: _TI.inkMid,
+                  ),
+                ],
               ] else ...[
                 _fareRow(
                   'Final Amount',
@@ -2230,9 +2262,15 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                         .calculateFareResponseModel
                         .value
                         .maybeWhen(success: (r) => r, orElse: () => null);
-                    final fareReq = _trekC.calculateFareRequestModel.value;
-                    final isFlexible =
-                        fareReq.cancellationPolicyType == 'flexible';
+                    // _isFlexiblePolicy reflects the trek's real assigned
+                    // policy (never a client choice). Within that, whether
+                    // ADVANCE or FULL is actually payable now depends on the
+                    // local _selectedPaymentOption toggle.
+                    final isFlexible = _isFlexiblePolicy;
+                    final isPayingFull = !isFlexible || _selectedPaymentOption == 'full';
+                    final payableNow = isPayingFull
+                        ? fareRespModel?.breakdown?.finalAmount
+                        : fareRespModel?.breakdown?.amountToPayNow;
 
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2267,8 +2305,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                                 ),
                               ),
                               TextSpan(
-                                text:
-                                    '${fareRespModel?.breakdown?.amountToPayNow ?? "--"}',
+                                text: '${payableNow ?? "--"}',
                                 style: GoogleFonts.poppins(
                                   fontSize: 16.sp,
                                   fontWeight: FontWeight.w800,
@@ -2278,7 +2315,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                             ],
                           ),
                         ),
-                        if (isFlexible)
+                        if (!isPayingFull)
                           Text(
                             'Advance Payment',
                             style: TextStyle(

@@ -23,7 +23,13 @@ CreateRazorpayRequestModel _$CreateRazorpayRequestModelFromJson(
 mixin _$CreateRazorpayRequestModel {
   @JsonKey(name: 'fare_token')
   String get fareToken => throw _privateConstructorUsedError;
-  List<Traveler> get travelers => throw _privateConstructorUsedError;
+  List<Traveler> get travelers =>
+      throw _privateConstructorUsedError; // Only meaningful for a flexible-policy trek — true means the customer
+// chose to pay the full amount now instead of the default advance-only.
+// See Backend's paymentService.createOrder for how this changes the
+// actual Razorpay charge amount and the resulting payment_status.
+  @JsonKey(name: 'pay_full')
+  bool get payFull => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -40,7 +46,8 @@ abstract class $CreateRazorpayRequestModelCopyWith<$Res> {
   @useResult
   $Res call(
       {@JsonKey(name: 'fare_token') String fareToken,
-      List<Traveler> travelers});
+      List<Traveler> travelers,
+      @JsonKey(name: 'pay_full') bool payFull});
 }
 
 /// @nodoc
@@ -59,6 +66,7 @@ class _$CreateRazorpayRequestModelCopyWithImpl<$Res,
   $Res call({
     Object? fareToken = null,
     Object? travelers = null,
+    Object? payFull = null,
   }) {
     return _then(_value.copyWith(
       fareToken: null == fareToken
@@ -69,6 +77,10 @@ class _$CreateRazorpayRequestModelCopyWithImpl<$Res,
           ? _value.travelers
           : travelers // ignore: cast_nullable_to_non_nullable
               as List<Traveler>,
+      payFull: null == payFull
+          ? _value.payFull
+          : payFull // ignore: cast_nullable_to_non_nullable
+              as bool,
     ) as $Val);
   }
 }
@@ -84,7 +96,8 @@ abstract class _$$CreateRazorpayRequestModelImplCopyWith<$Res>
   @useResult
   $Res call(
       {@JsonKey(name: 'fare_token') String fareToken,
-      List<Traveler> travelers});
+      List<Traveler> travelers,
+      @JsonKey(name: 'pay_full') bool payFull});
 }
 
 /// @nodoc
@@ -102,6 +115,7 @@ class __$$CreateRazorpayRequestModelImplCopyWithImpl<$Res>
   $Res call({
     Object? fareToken = null,
     Object? travelers = null,
+    Object? payFull = null,
   }) {
     return _then(_$CreateRazorpayRequestModelImpl(
       fareToken: null == fareToken
@@ -112,6 +126,10 @@ class __$$CreateRazorpayRequestModelImplCopyWithImpl<$Res>
           ? _value._travelers
           : travelers // ignore: cast_nullable_to_non_nullable
               as List<Traveler>,
+      payFull: null == payFull
+          ? _value.payFull
+          : payFull // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -121,7 +139,8 @@ class __$$CreateRazorpayRequestModelImplCopyWithImpl<$Res>
 class _$CreateRazorpayRequestModelImpl implements _CreateRazorpayRequestModel {
   const _$CreateRazorpayRequestModelImpl(
       {@JsonKey(name: 'fare_token') required this.fareToken,
-      required final List<Traveler> travelers})
+      required final List<Traveler> travelers,
+      @JsonKey(name: 'pay_full') this.payFull = false})
       : _travelers = travelers;
 
   factory _$CreateRazorpayRequestModelImpl.fromJson(
@@ -139,9 +158,17 @@ class _$CreateRazorpayRequestModelImpl implements _CreateRazorpayRequestModel {
     return EqualUnmodifiableListView(_travelers);
   }
 
+// Only meaningful for a flexible-policy trek — true means the customer
+// chose to pay the full amount now instead of the default advance-only.
+// See Backend's paymentService.createOrder for how this changes the
+// actual Razorpay charge amount and the resulting payment_status.
+  @override
+  @JsonKey(name: 'pay_full')
+  final bool payFull;
+
   @override
   String toString() {
-    return 'CreateRazorpayRequestModel(fareToken: $fareToken, travelers: $travelers)';
+    return 'CreateRazorpayRequestModel(fareToken: $fareToken, travelers: $travelers, payFull: $payFull)';
   }
 
   @override
@@ -152,13 +179,14 @@ class _$CreateRazorpayRequestModelImpl implements _CreateRazorpayRequestModel {
             (identical(other.fareToken, fareToken) ||
                 other.fareToken == fareToken) &&
             const DeepCollectionEquality()
-                .equals(other._travelers, _travelers));
+                .equals(other._travelers, _travelers) &&
+            (identical(other.payFull, payFull) || other.payFull == payFull));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(
-      runtimeType, fareToken, const DeepCollectionEquality().hash(_travelers));
+  int get hashCode => Object.hash(runtimeType, fareToken,
+      const DeepCollectionEquality().hash(_travelers), payFull);
 
   @JsonKey(ignore: true)
   @override
@@ -179,7 +207,8 @@ abstract class _CreateRazorpayRequestModel
     implements CreateRazorpayRequestModel {
   const factory _CreateRazorpayRequestModel(
           {@JsonKey(name: 'fare_token') required final String fareToken,
-          required final List<Traveler> travelers}) =
+          required final List<Traveler> travelers,
+          @JsonKey(name: 'pay_full') final bool payFull}) =
       _$CreateRazorpayRequestModelImpl;
 
   factory _CreateRazorpayRequestModel.fromJson(Map<String, dynamic> json) =
@@ -190,6 +219,12 @@ abstract class _CreateRazorpayRequestModel
   String get fareToken;
   @override
   List<Traveler> get travelers;
+  @override // Only meaningful for a flexible-policy trek — true means the customer
+// chose to pay the full amount now instead of the default advance-only.
+// See Backend's paymentService.createOrder for how this changes the
+// actual Razorpay charge amount and the resulting payment_status.
+  @JsonKey(name: 'pay_full')
+  bool get payFull;
   @override
   @JsonKey(ignore: true)
   _$$CreateRazorpayRequestModelImplCopyWith<_$CreateRazorpayRequestModelImpl>
