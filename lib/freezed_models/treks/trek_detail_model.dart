@@ -261,6 +261,13 @@ class CancellationPolicy with _$CancellationPolicy {
     String? description,
     List<Rules>? rules,
     @JsonKey(name: 'descriptionPoints') List<String>? descriptionPoints,
+    // Live, admin-editable numbers (see Backend's utils/cancellationPolicyLive.js)
+    // — the single source of truth for the actual deduction math. `rules`/
+    // `descriptionPoints` above are static, hand-authored text that can (and
+    // did) drift out of sync with what's really deducted on a booking; the
+    // widget computes its display from policyType + settings instead.
+    @JsonKey(name: 'policyType') String? policyType,
+    Map<String, dynamic>? settings,
   }) = _CancellationPolicy;
 
   factory CancellationPolicy.fromJson(Map<String, dynamic> json) =>

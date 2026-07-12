@@ -721,6 +721,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
           CancellationPolicyWidget(
             policy: _trekC.trekDetailData.value.cancellationPolicy,
             departureDate: departure.toString(),
+            basePrice: _trekC.trekDetailData.value.basePrice,
           ),
         ],
       ),

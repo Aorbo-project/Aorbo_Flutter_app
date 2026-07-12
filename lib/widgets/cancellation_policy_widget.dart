@@ -2,29 +2,28 @@
 
 import 'package:arobo_app/utils/auth_utils.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../freezed_models/treks/trek_detail_model.dart';
 
 class CancellationPolicyWidget extends StatelessWidget {
   final String? departureDate;
   final CancellationPolicy? policy;
+  // Real trek/booking price — needed to compute the rupee amount per slab.
+  // Falls back to 0 (shows "₹0" rows) if not supplied, same as the React
+  // vendor preview does when a price hasn't been entered yet.
+  final String? basePrice;
 
-  const CancellationPolicyWidget({super.key, required this.policy,required this.departureDate});
-
-  // BUGFIX: Rules.hours is typed `dynamic` (the API can omit it entirely),
-  // so a null value passed `row.hours != 0` unharmed (null != 0 is true in
-  // Dart) and was then handed straight to
-  // AuthUtils.formatDateTimeWithHourDecrease's non-nullable `int` parameter,
-  // throwing "type 'Null' is not a subtype of type 'int'" at the call site
-  // and taking down the whole cancellation policy section.
-  int? _hoursAsInt(dynamic hours) {
-    if (hours == null) return null;
-    if (hours is int) return hours;
-    if (hours is num) return hours.toInt();
-    return int.tryParse(hours.toString());
-  }
+  const CancellationPolicyWidget({
+    super.key,
+    required this.policy,
+    required this.departureDate,
+    this.basePrice,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final rows = _buildRows();
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: Column(
@@ -47,8 +46,9 @@ class CancellationPolicyWidget extends StatelessWidget {
           const Divider(height: 1, thickness: 0.5),
           const SizedBox(height: 4),
 
-          // ── Policy rows
-          ...(policy?.rules ?? []).map((row) => _buildPolicyRow(row)),
+          // ── Policy rows — computed from policy.settings (the live,
+          // admin-editable numbers), not the static policy.rules text.
+          ...rows.map((row) => _buildPolicyRow(row)),
 
           const SizedBox(height: 16),
 
@@ -60,6 +60,80 @@ class CancellationPolicyWidget extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  double get _price => double.tryParse(basePrice ?? '') ?? 0;
+
+  DateTime? get _departure {
+    if (departureDate == null || departureDate!.isEmpty) return null;
+    return DateTime.tryParse(departureDate!);
+  }
+
+  String _cutoffLabel(int hoursBefore) {
+    final d = _departure;
+    if (d == null) return '$hoursBefore+ hours before departure';
+    return AuthUtils.formatDateTimeWithHourDecrease(
+      d.toIso8601String(),
+      hoursBefore,
+    );
+  }
+
+  String _amount(num pct) {
+    final amount = (_price * pct / 100).round();
+    return NumberFormat('#,##0', 'en_IN').format(amount);
+  }
+
+  // Builds the exact rows to render from policy.settings (live admin-set
+  // percentages — see Backend utils/cancellationPolicyLive.js) plus the real
+  // price and departure date, mirroring the React vendor preview
+  // (PoliciesSection.jsx) so both surfaces show the same honest numbers.
+  List<_PolicyPreviewRow> _buildRows() {
+    final settings = policy?.settings;
+    if (settings == null) return [];
+
+    if (policy?.policyType == 'flexible') {
+      final advanceAmount = settings['advanceAmount'] ?? 999;
+      final advanceNonRefundable = settings['advanceNonRefundable'] ?? true;
+      final fullPayment24hDeductionPct =
+          settings['fullPayment24hDeductionPct'] ?? 100;
+      return [
+        _PolicyPreviewRow(
+          'Advance Payment (₹$advanceAmount)',
+          advanceNonRefundable == true ? 'Non-refundable' : 'Refundable',
+        ),
+        _PolicyPreviewRow(
+          'Full Payment, cancelled more than 24h before departure',
+          '₹$advanceAmount forfeited, rest refunded',
+        ),
+        _PolicyPreviewRow(
+          'Cancellation within 24 hours of departure',
+          '$fullPayment24hDeductionPct% (₹${_amount(fullPayment24hDeductionPct)})',
+        ),
+      ];
+    }
+
+    final slab72 = settings['slab72hPlusPct'] ?? 20;
+    final slab48 = settings['slab48to72hPct'] ?? 50;
+    final slab24 = settings['slab24to48hPct'] ?? 70;
+    final slabUnder24 = settings['slabUnder24hPct'] ?? 100;
+    return [
+      _PolicyPreviewRow(
+        'Cancelled before ${_cutoffLabel(72)}',
+        '$slab72% (₹${_amount(slab72)})',
+      ),
+      _PolicyPreviewRow(
+        'From ${_cutoffLabel(72)} to ${_cutoffLabel(48)}',
+        '$slab48% (₹${_amount(slab48)})',
+      ),
+      _PolicyPreviewRow(
+        'From ${_cutoffLabel(48)} to ${_cutoffLabel(24)}',
+        '$slab24% (₹${_amount(slab24)})',
+      ),
+      _PolicyPreviewRow(
+        'No refund after ${_cutoffLabel(24)}',
+        '$slabUnder24% (₹${_amount(slabUnder24)})',
+      ),
+    ];
   }
 
   Widget _buildTableHeader() {
@@ -93,41 +167,32 @@ class CancellationPolicyWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildPolicyRow(Rules row) {
+  Widget _buildPolicyRow(_PolicyPreviewRow row) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 7),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                flex: 6,
-                child: Text(
-                  row.rule ?? "",
-                  style: const TextStyle(fontSize: 12, height: 1.4),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                flex: 4,
-                child: Text(
-                  row.deductionType == "fixed" ? "₹${row.deduction}" : "${row.deduction}%",
-                  textAlign: TextAlign.right,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    height: 1.4,
-                  ),
-                ),
-              ),
-            ],
+          Expanded(
+            flex: 6,
+            child: Text(
+              row.label,
+              style: const TextStyle(fontSize: 12, height: 1.4),
+            ),
           ),
-          if(_hoursAsInt(row.hours) != null && _hoursAsInt(row.hours) != 0) Text(
-            "Before ${AuthUtils.formatDateTimeWithHourDecrease(departureDate ?? "", _hoursAsInt(row.hours)!)}",
-            style: const TextStyle(fontSize: 12, height: 1.4),
-          )
+          const SizedBox(width: 8),
+          Expanded(
+            flex: 4,
+            child: Text(
+              row.value,
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                height: 1.4,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -157,4 +222,10 @@ class CancellationPolicyWidget extends StatelessWidget {
       ),
     );
   }
+}
+
+class _PolicyPreviewRow {
+  final String label;
+  final String value;
+  const _PolicyPreviewRow(this.label, this.value);
 }
