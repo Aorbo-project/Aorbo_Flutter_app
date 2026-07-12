@@ -90,6 +90,12 @@ class SocketService {
         _notifyListeners('chat:joined', data);
       });
 
+      // FAQ lifecycle updates — refresh FAQ/chat content when admin changes FAQs.
+      _socket!.on('faq:updated', (data) {
+        log('📢 FAQ updated: $data');
+        _notifyListeners('faq:updated', data);
+      });
+
       // Refund lifecycle events — emitted from backend after Razorpay webhook fires.
       // All three events carry bookingId so the UI can match to the right booking.
       _socket!.on('refund:initiated', (data) {

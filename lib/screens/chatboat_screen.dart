@@ -6,6 +6,8 @@ import 'package:get/get.dart';
 import '../models/chat_data.dart';
 import '../controller/chat_controller.dart';
 import '../utils/screen_constants.dart';
+import '../repository/faq_repository.dart';
+import '../services/socket_service.dart';
 
 class Message {
   final String text;
@@ -58,6 +60,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
   // Chat controller for live chat
   final ChatController _chatController = Get.put(ChatController());
+  final FaqRepository _faqRepository = FaqRepository();
+  final SocketService _socketService = SocketService();
 
   List<String> get categories => chatbotData.keys.toList();
 
@@ -108,8 +112,16 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       true,
       MessageType.welcome,
     );
-    // Show mode selector after welcome
-    _showModeSelector();
+
+    // Check if arguments specify starting live chat instantly
+    final args = Get.arguments as Map<String, dynamic>?;
+    if (args != null && args['mode'] == 'liveChat') {
+      currentMode = ChatMode.liveChat;
+      _initializeLiveChat();
+    } else {
+      // Show mode selector after welcome
+      _showModeSelector();
+    }
 
     // Listen to ChatController messages for updates
     _chatController.messages.listen((_) {
@@ -124,6 +136,57 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         setState(() {});
       }
     });
+
+    _loadChatbotFaqs();
+    _socketService.addListener('faq:updated', _handleFaqRefresh);
+  }
+
+  Future<void> _handleFaqRefresh(dynamic _) async {
+    if (mounted) {
+      await _loadChatbotFaqs();
+    }
+  }
+
+  Future<void> _loadChatbotFaqs() async {
+    try {
+      final categories = await _faqRepository.fetchCustomerFaqs();
+      if (categories.isNotEmpty) {
+        final Map<String, dynamic> newChatbotData = {};
+        for (var cat in categories) {
+          final String catName = cat['name'] ?? '';
+          if (catName.isEmpty) continue;
+
+          final faqs = cat['faqs'] as List<dynamic>;
+          final List<String> questions = [];
+          final Map<String, String> answers = {};
+
+          for (var faq in faqs) {
+            final String q = faq['question'] ?? '';
+            final String a = faq['answer'] ?? '';
+            if (q.isNotEmpty && a.isNotEmpty) {
+              questions.add(q);
+              answers[q] = a;
+            }
+          }
+
+          if (questions.isNotEmpty) {
+            newChatbotData[catName] = {
+              'questions': questions,
+              'answers': answers,
+            };
+          }
+        }
+
+        if (mounted && newChatbotData.isNotEmpty) {
+          setState(() {
+            chatbotData.clear();
+            chatbotData.addAll(newChatbotData);
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error loading FAQs in ChatScreen: $e');
+    }
   }
 
   @override
@@ -267,7 +330,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     }
   }
 
-  void _handleSendMessage() {
+  void _handleSendMessage() async {
     if (currentMode == ChatMode.liveChat && isConnectedToSupport) {
       // Use ChatController for live chat
       _chatController.sendMessage();
@@ -278,6 +341,34 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
       _addMessage(text, false, MessageType.liveMessage);
       _messageController.clear();
+
+      setState(() {
+        isTyping = true;
+      });
+
+      try {
+        final result = await _faqRepository.fetchChatbotReply(text);
+        
+        setState(() {
+          isTyping = false;
+        });
+
+        if (result != null && result['match'] == true && result['faq'] != null) {
+          final faq = result['faq'];
+          _addMessage(faq['answer'] ?? '', true, MessageType.answer);
+        } else {
+          // Fallback message if no match found
+          _addMessage("I'm sorry, I couldn't quite understand that. Would you like to check our FAQs or connect with support?", true, MessageType.answer);
+          Future.delayed(const Duration(milliseconds: 600), () {
+            _showPostAnswerOptions();
+          });
+        }
+      } catch (e) {
+        setState(() {
+          isTyping = false;
+        });
+        _addMessage("An error occurred. Please try again.", true, MessageType.answer);
+      }
     }
   }
 
@@ -623,6 +714,17 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               );
         break;
 
+      case MessageType.answer:
+        content = MarkdownText(
+          text: message.text,
+          style: GoogleFonts.poppins(
+            fontSize: FontSize.s11,
+            color: isBot ? Colors.black87 : Colors.white,
+            fontWeight: FontWeight.w500,
+          ),
+        );
+        break;
+
       default:
         content = Text(
           message.text,
@@ -803,6 +905,140 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           _buildInputArea(),
         ],
       ),
+    );
+  }
+}
+
+class MarkdownText extends StatelessWidget {
+  final String text;
+  final TextStyle style;
+
+  const MarkdownText({
+    super.key,
+    required this.text,
+    required this.style,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final List<String> lines = text.split('\n');
+    final List<Widget> children = [];
+
+    for (var line in lines) {
+      final trimmed = line.trim();
+      if (trimmed.isEmpty) {
+        children.add(SizedBox(height: 1.h));
+        continue;
+      }
+
+      if (trimmed.startsWith('# ')) {
+        children.add(Padding(
+          padding: EdgeInsets.only(top: 1.h, bottom: 0.5.h),
+          child: Text(
+            trimmed.substring(2),
+            style: style.copyWith(
+              fontWeight: FontWeight.bold,
+              fontSize: style.fontSize! * 1.3,
+            ),
+          ),
+        ));
+      } else if (trimmed.startsWith('## ')) {
+        children.add(Padding(
+          padding: EdgeInsets.only(top: 1.h, bottom: 0.5.h),
+          child: Text(
+            trimmed.substring(3),
+            style: style.copyWith(
+              fontWeight: FontWeight.bold,
+              fontSize: style.fontSize! * 1.15,
+            ),
+          ),
+        ));
+      } else if (trimmed.startsWith('### ')) {
+        children.add(Padding(
+          padding: EdgeInsets.only(top: 0.8.h, bottom: 0.4.h),
+          child: Text(
+            trimmed.substring(4),
+            style: style.copyWith(
+              fontWeight: FontWeight.bold,
+              fontSize: style.fontSize! * 1.05,
+            ),
+          ),
+        ));
+      } else if (trimmed.startsWith('* ') || trimmed.startsWith('- ')) {
+        children.add(Padding(
+          padding: EdgeInsets.only(left: 2.w, top: 0.4.h, bottom: 0.4.h),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text("• ", style: style.copyWith(fontWeight: FontWeight.bold)),
+              Expanded(
+                child: _buildRichText(trimmed.substring(2)),
+              ),
+            ],
+          ),
+        ));
+      } else {
+        children.add(Padding(
+          padding: EdgeInsets.only(bottom: 0.8.h),
+          child: _buildRichText(trimmed),
+        ));
+      }
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: children,
+    );
+  }
+
+  Widget _buildRichText(String rawText) {
+    final List<InlineSpan> spans = [];
+    final RegExp regex = RegExp(r'(\*\*.*?\*\*|\*.*?\*|`.*?`)');
+    
+    int lastIndex = 0;
+    final matches = regex.allMatches(rawText);
+
+    for (var match in matches) {
+      if (match.start > lastIndex) {
+        spans.add(TextSpan(
+          text: rawText.substring(lastIndex, match.start),
+          style: style,
+        ));
+      }
+
+      final matchedStr = match.group(0)!;
+      if (matchedStr.startsWith('**') && matchedStr.endsWith('**')) {
+        spans.add(TextSpan(
+          text: matchedStr.substring(2, matchedStr.length - 2),
+          style: style.copyWith(fontWeight: FontWeight.bold),
+        ));
+      } else if (matchedStr.startsWith('*') && matchedStr.endsWith('*')) {
+        spans.add(TextSpan(
+          text: matchedStr.substring(1, matchedStr.length - 1),
+          style: style.copyWith(fontStyle: FontStyle.italic),
+        ));
+      } else if (matchedStr.startsWith('`') && matchedStr.endsWith('`')) {
+        spans.add(TextSpan(
+          text: matchedStr.substring(1, matchedStr.length - 1),
+          style: style.copyWith(
+            fontFamily: 'monospace',
+            backgroundColor: Colors.grey.withValues(alpha: 0.1),
+          ),
+        ));
+      }
+
+      lastIndex = match.end;
+    }
+
+    if (lastIndex < rawText.length) {
+      spans.add(TextSpan(
+        text: rawText.substring(lastIndex),
+        style: style,
+      ));
+    }
+
+    return RichText(
+      text: TextSpan(children: spans),
     );
   }
 }

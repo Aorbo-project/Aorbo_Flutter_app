@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sizer/sizer.dart';
+import '../repository/faq_repository.dart';
 
 import '../utils/common_btn.dart';
 import '../utils/common_colors.dart';
@@ -36,7 +37,7 @@ class _NC {
 class _HelpScreenState extends State<HelpScreen>
     with SingleTickerProviderStateMixin {
   // ── Same data + state as original ──────────
-  final List<Map<String, dynamic>> faqList = [
+  List<Map<String, dynamic>> faqList = [
     {
       'question': 'How do I know if a trek organizer is trustworthy?',
       'answer':
@@ -56,6 +57,7 @@ class _HelpScreenState extends State<HelpScreen>
 
   List<bool> expandedList = [];
   List<String?> _faqReactions = [];
+  bool _isLoadingFaqs = false;
 
   // Fade-in animation on load
   late final AnimationController _fadeCtrl;
@@ -72,6 +74,59 @@ class _HelpScreenState extends State<HelpScreen>
       duration: const Duration(milliseconds: 500),
     )..forward();
     _fade = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
+
+    _loadFaqs();
+  }
+
+  Future<void> _loadFaqs() async {
+    setState(() {
+      _isLoadingFaqs = true;
+    });
+    try {
+      final categories = await FaqRepository().fetchCustomerFaqs();
+      if (categories.isNotEmpty) {
+        final List<Map<String, dynamic>> loadedFaqs = [];
+        for (var cat in categories) {
+          final faqs = cat['faqs'] as List<dynamic>;
+          for (var faq in faqs) {
+            final bool isActive = faq['is_active'] ?? true;
+            if (!isActive) continue;
+
+            final List<String> tags = [];
+            final rawTags = faq['tag'] ?? faq['tags'];
+            if (rawTags is List) {
+              for (var t in rawTags) {
+                if (t != null) {
+                  tags.add(t.toString());
+                }
+              }
+            }
+
+            loadedFaqs.add({
+              'question': faq['question'] ?? '',
+              'answer': faq['answer'] ?? '',
+              'chat_support': faq['chat_support'] ?? false,
+              'tags': tags,
+            });
+          }
+        }
+        if (mounted && loadedFaqs.isNotEmpty) {
+          setState(() {
+            faqList = loadedFaqs;
+            expandedList = List<bool>.filled(faqList.length, false);
+            _faqReactions = List<String?>.filled(faqList.length, null);
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error loading FAQs in HelpScreen: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingFaqs = false;
+        });
+      }
+    }
   }
 
   @override
@@ -361,9 +416,9 @@ class _HelpScreenState extends State<HelpScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Answer text
-                  Text(
-                    faq['answer'],
+                  // Answer text with Markdown support
+                  MarkdownText(
+                    text: faq['answer'],
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontSize: FontSize.s10,
@@ -371,6 +426,33 @@ class _HelpScreenState extends State<HelpScreen>
                       height: 1.6,
                     ),
                   ),
+
+                  // Tags display
+                  if (faq['tags'] != null && (faq['tags'] as List).isNotEmpty) ...[
+                    SizedBox(height: 1.5.h),
+                    Wrap(
+                      spacing: 1.5.w,
+                      runSpacing: 1.h,
+                      children: (faq['tags'] as List).map<Widget>((tag) {
+                        return Container(
+                          padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
+                          decoration: BoxDecoration(
+                            color: CommonColors.cFFF3F4F6,
+                            borderRadius: BorderRadius.circular(1.w),
+                          ),
+                          child: Text(
+                            '#$tag',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: FontSize.s8,
+                              color: _C.inkMid,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
 
                   SizedBox(height: 2.h),
                   // ── "Is this useful?" reaction ──
@@ -398,20 +480,19 @@ class _HelpScreenState extends State<HelpScreen>
                     ],
                   ),
 
-                  // Chat with us — only shows when No is tapped
-                  if (_faqReactions[index] == 'no') ...[
+                  // Chat with us — only shows when No is tapped AND chat_support is enabled
+                  if (_faqReactions[index] == 'no' && faq['chat_support'] == true) ...[
                     SizedBox(height: 1.5.h),
                     CommonButton(
-  fontSize: FontSize.s11,
-  width: 43.w,
-  isFullWidth: false,
-  textColor: CommonColors.whiteColor,
-  fontFamily: 'Poppins',
-  text: 'Contact us',
-  onPressed: () => Get.toNamed('/contact-support'), // ← updated route
-  gradient: CommonColors.filterGradient,
-),
-
+                      fontSize: FontSize.s11,
+                      width: 43.w,
+                      isFullWidth: false,
+                      textColor: CommonColors.whiteColor,
+                      fontFamily: 'Poppins',
+                      text: 'Contact us',
+                      onPressed: () => Get.toNamed('/chatboat', arguments: {'mode': 'liveChat'}),
+                      gradient: CommonColors.filterGradient,
+                    ),
                   ],
                 ],
               ),
@@ -553,6 +634,140 @@ class _HelpScreenState extends State<HelpScreen>
           ),
         ],
       ),
+    );
+  }
+}
+
+class MarkdownText extends StatelessWidget {
+  final String text;
+  final TextStyle style;
+
+  const MarkdownText({
+    super.key,
+    required this.text,
+    required this.style,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final List<String> lines = text.split('\n');
+    final List<Widget> children = [];
+
+    for (var line in lines) {
+      final trimmed = line.trim();
+      if (trimmed.isEmpty) {
+        children.add(SizedBox(height: 1.h));
+        continue;
+      }
+
+      if (trimmed.startsWith('# ')) {
+        children.add(Padding(
+          padding: EdgeInsets.only(top: 1.h, bottom: 0.5.h),
+          child: Text(
+            trimmed.substring(2),
+            style: style.copyWith(
+              fontWeight: FontWeight.bold,
+              fontSize: style.fontSize! * 1.3,
+            ),
+          ),
+        ));
+      } else if (trimmed.startsWith('## ')) {
+        children.add(Padding(
+          padding: EdgeInsets.only(top: 1.h, bottom: 0.5.h),
+          child: Text(
+            trimmed.substring(3),
+            style: style.copyWith(
+              fontWeight: FontWeight.bold,
+              fontSize: style.fontSize! * 1.15,
+            ),
+          ),
+        ));
+      } else if (trimmed.startsWith('### ')) {
+        children.add(Padding(
+          padding: EdgeInsets.only(top: 0.8.h, bottom: 0.4.h),
+          child: Text(
+            trimmed.substring(4),
+            style: style.copyWith(
+              fontWeight: FontWeight.bold,
+              fontSize: style.fontSize! * 1.05,
+            ),
+          ),
+        ));
+      } else if (trimmed.startsWith('* ') || trimmed.startsWith('- ')) {
+        children.add(Padding(
+          padding: EdgeInsets.only(left: 2.w, top: 0.4.h, bottom: 0.4.h),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text("• ", style: style.copyWith(fontWeight: FontWeight.bold)),
+              Expanded(
+                child: _buildRichText(trimmed.substring(2)),
+              ),
+            ],
+          ),
+        ));
+      } else {
+        children.add(Padding(
+          padding: EdgeInsets.only(bottom: 0.8.h),
+          child: _buildRichText(trimmed),
+        ));
+      }
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: children,
+    );
+  }
+
+  Widget _buildRichText(String rawText) {
+    final List<InlineSpan> spans = [];
+    final RegExp regex = RegExp(r'(\*\*.*?\*\*|\*.*?\*|`.*?`)');
+    
+    int lastIndex = 0;
+    final matches = regex.allMatches(rawText);
+
+    for (var match in matches) {
+      if (match.start > lastIndex) {
+        spans.add(TextSpan(
+          text: rawText.substring(lastIndex, match.start),
+          style: style,
+        ));
+      }
+
+      final matchedStr = match.group(0)!;
+      if (matchedStr.startsWith('**') && matchedStr.endsWith('**')) {
+        spans.add(TextSpan(
+          text: matchedStr.substring(2, matchedStr.length - 2),
+          style: style.copyWith(fontWeight: FontWeight.bold),
+        ));
+      } else if (matchedStr.startsWith('*') && matchedStr.endsWith('*')) {
+        spans.add(TextSpan(
+          text: matchedStr.substring(1, matchedStr.length - 1),
+          style: style.copyWith(fontStyle: FontStyle.italic),
+        ));
+      } else if (matchedStr.startsWith('`') && matchedStr.endsWith('`')) {
+        spans.add(TextSpan(
+          text: matchedStr.substring(1, matchedStr.length - 1),
+          style: style.copyWith(
+            fontFamily: 'monospace',
+            backgroundColor: Colors.grey.withValues(alpha: 0.1),
+          ),
+        ));
+      }
+
+      lastIndex = match.end;
+    }
+
+    if (lastIndex < rawText.length) {
+      spans.add(TextSpan(
+        text: rawText.substring(lastIndex),
+        style: style,
+      ));
+    }
+
+    return RichText(
+      text: TextSpan(children: spans),
     );
   }
 }
