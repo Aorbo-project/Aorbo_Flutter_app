@@ -705,6 +705,12 @@ final response = await repository.postApiCall(
             // Booking is confirmed — nothing left to resume on next launch.
             final pref = await SpUtil.getInstance();
             await pref.remove(SpUtil.pendingOrderId);
+            // BUGFIX: unlike the review-submit and cancellation flows below,
+            // this success path never invalidated the cached bookings list —
+            // "My Bookings" kept showing whatever was loaded before this
+            // payment, with the new booking missing until a manual pull-to-
+            // refresh or app restart.
+            Get.find<DashboardController>().getBookingHistory(refresh: true);
             Get.offNamedUntil(
               '/payment-success',
               ModalRoute.withName('/dashboard'),
@@ -769,6 +775,9 @@ final response = await repository.postApiCall(
           // webhook completed it) even though this device never found out.
           await pref.remove(SpUtil.pendingOrderId);
           logger.d('checkPendingOrderOnResume: order already paid — booking exists, nothing to reopen');
+          // Refresh so "check My Bookings" below is actually true by the
+          // time the user taps it, not stale from before this booking.
+          Get.find<DashboardController>().getBookingHistory(refresh: true);
           if (Get.context != null) {
             CustomSnackBar.show(
               Get.context!,
