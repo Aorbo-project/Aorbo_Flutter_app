@@ -2,6 +2,7 @@ import 'dart:math';
 import 'dart:async';
 
 import 'package:arobo_app/freezed_models/booking/booking_data_model.dart';
+import 'package:arobo_app/screens/booking_upcoming_screen.dart';
 import 'package:arobo_app/screens/coupon_code_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -69,9 +70,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
   final nameNode = FocusNode();
 
   String _selectedState = BookingConstants.defaultState;
-  // 'advance' (flexible-policy trek, default) or 'full' (pay everything
-  // now) — this is a payment-timing choice, not the trek's cancellation
-  // policy type, which is fixed per-trek and never selected by the customer.
   String _selectedPaymentOption = 'full';
   String? _selectedUPI = PaymentMethods.razorpay;
 
@@ -105,7 +103,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
     super.initState();
     travelData = _trekC.trekDetailData.value;
 
-    // Initialize Shake Controller
     _shakeController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
@@ -131,10 +128,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
           couponCode: (existingCoupon != null && existingCoupon.isNotEmpty)
               ? existingCoupon
               : '',
-          // cancellation_policy_type is never read server-side (see
-          // fareCalculationService.js — it derives the trek's real policy
-          // from the trek itself, not the client). Not sending it at all,
-          // rather than a value that doesn't mean what its name implies.
         );
     _trekC.calculateFare();
 
@@ -245,7 +238,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
   bool _validateBeforePayment() {
     final customer = _userC.userProfileData.value.customer;
 
-    // 1. Validate Contact Details
     if (customer?.email == null ||
         customer?.phone == null ||
         customer?.state?.id == null) {
@@ -257,7 +249,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
       return false;
     }
 
-    // 2. Validate Traveller Selection
     final adultCount = _trekC.calculateFareRequestModel.value.travelerCount;
     if (selectedTravellers.length < adultCount) {
       final needed = adultCount - selectedTravellers.length;
@@ -279,10 +270,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
       final options = {
         'key': params['key'] ?? BookingConstants.razorpayKey,
         'order_id': params['order_id'] ?? '${_trekC.orderData.value.id}',
-        // params['amount'] (the real Razorpay order amount, decided
-        // server-side in createOrder from pay_full) should always be
-        // present by this point — this fallback only matters if that's ever
-        // missing, and should match the same amount the customer was shown.
         'amount':
             params['amount'] ??
             (((_selectedPaymentOption == 'full'
@@ -329,6 +316,26 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
             ? _trekC.errorMessage.value
             : 'Your payment went through, but we could not confirm it yet. Please retry.';
       });
+      return;
+    }
+
+    if (verified && mounted) {
+      final String bookingId =
+          (_trekC.verifyOrderModal.value.data?.id ??
+                  _trekC.orderData.value.id ??
+                  '')
+              .toString();
+
+      setState(() => _isProcessingPayment = false);
+
+      _trekC.clearBookingData();
+      _dashboardC.clearSearchAndBookingData();
+
+      Get.off(
+        () => BookingsUpcomingScreen(bookingId: bookingId),
+        transition: Transition.rightToLeftWithFade,
+        duration: const Duration(milliseconds: 350),
+      );
     }
   }
 
@@ -492,7 +499,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
     bool isCompleted = false,
   }) {
     return Row(
-      mainAxisSize: MainAxisSize.min, // Prevents unbounded width issues
+      mainAxisSize: MainAxisSize.min,
       children: [
         Container(
           width: 9.w,
@@ -507,7 +514,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
         ),
         SizedBox(width: 3.w),
         Flexible(
-          // Changed to Flexible to prevent overflow when placed in other Rows
           child: Text(
             title,
             style: TextStyle(
@@ -1158,34 +1164,19 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ── 1. Trip Summary ──────────────────────────────────────
                   _buildTripSummary(),
                   SizedBox(height: 2.h),
-
-                  // ── 2. Contact Details ──────────────────────────────────
                   _shakeBuilder(targetIndex: 1, child: _buildContactSection()),
                   SizedBox(height: 2.h),
-
-                  // ── 3. Traveller Details ────────────────────────────────
                   _shakeBuilder(
                     targetIndex: 2,
                     child: _buildTravellerSection(),
                   ),
                   SizedBox(height: 2.h),
-
-                  // ── 4. Payment Options ──────────────────────────────────
                   _buildPaymentOptionsSection(),
                   SizedBox(height: 2.h),
-
-                  // ── 5. Fare Breakdown ───────────────────────────────────
-                  // _buildFareBreakdownSection(),
-                  // SizedBox(height: 3.h),
-
-                  // ── 6. Coupon Code ──────────────────────────────────────
                   _buildCouponSection(),
                   SizedBox(height: 2.h),
-
-                  // ── 7. Payment Method ───────────────────────────────────
                   _buildPaymentMethodSection(),
                   SizedBox(height: 3.h),
                 ],
@@ -1209,13 +1200,22 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
             if (_isProcessingPayment && !_showPaymentError)
               Positioned.fill(
                 child: Container(
-                  color: Colors.black.withValues(alpha: 0.18),
+                  // Use a completely opaque color (white or _TI.bg)
+                  // so the underlying TravellerInformationScreen is 100% hidden.
+                  color: _TI.bg,
                   child: Center(
                     child: Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
                         color: _TI.cardBg,
                         borderRadius: BorderRadius.circular(4.w),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 20,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -1224,13 +1224,14 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                             color: _TI.brand,
                             strokeWidth: 2.5,
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 16),
                           Text(
-                            'Processing payment…',
+                            'Confirming your payment...',
                             style: TextStyle(
                               fontFamily: 'Poppins',
-                              fontSize: 11.sp,
+                              fontSize: 12.sp,
                               color: _TI.inkMid,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ],
@@ -1274,7 +1275,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Header Row (Logo Completely Removed) ──
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1303,7 +1303,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
 
           Divider(color: _TI.divider, height: 3.h),
 
-          // ── From and To Dates Row ──
           Row(
             children: [
               Expanded(
@@ -1381,14 +1380,12 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
             ],
           ),
 
-          // ── Combined bottom row: CTA Badge (left) + Slots Left (right) ──
           if (hasBadge || hasSlots) ...[
             SizedBox(height: 1.5.h),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // CTA Badge — bottom LEFT
                 if (hasBadge)
                   Container(
                     padding: EdgeInsets.symmetric(
@@ -1415,7 +1412,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                 else
                   const SizedBox.shrink(),
 
-                // Slots Left — bottom RIGHT
                 if (hasSlots)
                   Row(
                     children: [
@@ -1542,7 +1538,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Wrapped in Expanded to prevent right-side overflow and congestion
               Expanded(
                 child: _sectionHeader(
                   'Traveller Details',
@@ -1694,7 +1689,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
             _sectionHeader('Payment Options', Icons.payment_outlined),
             SizedBox(height: 1.5.h),
 
-            // Advance-only Option
             GestureDetector(
               onTap: () {
                 setState(() => _selectedPaymentOption = 'advance');
@@ -1760,7 +1754,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
 
             SizedBox(height: 1.5.h),
 
-            // Full Payment Option
             GestureDetector(
               onTap: () {
                 setState(() => _selectedPaymentOption = 'full');
@@ -1823,165 +1816,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                 ),
               ),
             ),
-          ],
-        );
-      }),
-    );
-  }
-
-  Widget _buildFareBreakdownSection() {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
-      decoration: BoxDecoration(
-        color: _TI.cardBg,
-        borderRadius: BorderRadius.circular(4.w),
-        border: Border.all(color: _TI.divider, width: 1),
-      ),
-      child: Obx(() {
-        final fareResp = _trekC.calculateFareResponseModel.value.maybeWhen(
-          success: (r) => r as CalculateFareResponseModel,
-          orElse: () => null,
-        );
-        final fareReq = _trekC.calculateFareRequestModel.value;
-        final bd = fareResp?.breakdown;
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _sectionHeader('Fare Breakdown', Icons.receipt_long_outlined),
-                GestureDetector(
-                  onTap: () {
-                    showModalBottomSheet(
-                      context: context,
-                      backgroundColor: Colors.transparent,
-                      builder: (_) => TotalFareModal(
-                        breakDown: bd,
-                        adultCount: fareReq.travelerCount,
-                        onClose: () => Navigator.pop(context),
-                      ),
-                    );
-                  },
-                  child: Text(
-                    'View full',
-                    style: TextStyle(
-                      fontSize: 9.sp,
-                      fontWeight: FontWeight.w600,
-                      color: _TI.brand,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 1.5.h),
-            if (bd == null)
-              Text(
-                'Calculating fare…',
-                style: TextStyle(fontSize: 10.sp, color: _TI.inkMid),
-              )
-            else ...[
-              _fareRow(
-                'Base Price (${bd.travelerCount} Travellers)',
-                '₹${bd.basePrice ?? '--'}',
-              ),
-              _fareRow('Base Total', '₹${bd.baseTotal ?? '--'}'),
-
-              if ((double.tryParse(bd.discount?.toString() ?? '0') ?? 0) !=
-                  0) ...[
-                _fareRow(
-                  'Discount',
-                  '− ₹${bd.discount ?? '--'}',
-                  valueColor: _TI.teal,
-                ),
-                if (bd.couponCode != null &&
-                    bd.couponCode.toString().isNotEmpty)
-                  _fareRow(
-                    'Coupon Applied',
-                    '${bd.couponCode}',
-                    valueColor: _TI.teal,
-                  ),
-              ],
-
-              _fareRow(
-                'Amount After Discount',
-                '₹${bd.amountAfterDiscount ?? '--'}',
-              ),
-
-              if ((double.tryParse(bd.gst?.toString() ?? '0') ?? 0) != 0)
-                _fareRow('GST', '₹${bd.gst ?? '--'}'),
-              if ((double.tryParse(bd.totalTax?.toString() ?? '0') ?? 0) != 0)
-                _fareRow('Total Tax', '₹${bd.totalTax ?? '--'}'),
-              if ((double.tryParse(bd.platformFee?.toString() ?? '0') ?? 0) !=
-                  0)
-                _fareRow('Platform Fee', '₹${bd.platformFee ?? '--'}'),
-              if ((double.tryParse(bd.insuranceFee?.toString() ?? '0') ?? 0) !=
-                  0)
-                _fareRow('Insurance Fee', '₹${bd.insuranceFee ?? '--'}'),
-              if ((double.tryParse(bd.cancellationFee?.toString() ?? '0') ??
-                      0) !=
-                  0)
-                _fareRow('Cancellation Fee', '₹${bd.cancellationFee ?? '--'}'),
-
-              Divider(color: _TI.divider, height: 2.h),
-
-              // Trek's real policy is flexible (bd.cancellationPolicyType,
-              // derived server-side from the trek itself — never the
-              // client's choice). Within that, branch on the LOCAL
-              // _selectedPaymentOption: the breakdown response already
-              // contains both the advance and full amounts together (see
-              // fareCalculationService.js), so no refetch is needed to
-              // switch between them, just picking the right fields here.
-              if (fareReq.cancellationPolicyType == 'flexible' ||
-                  bd.cancellationPolicyType == 'flexible') ...[
-                if (_selectedPaymentOption == 'full') ...[
-                  _fareRow(
-                    'Final Amount',
-                    '₹${bd.finalAmount ?? '--'}',
-                    isBold: true,
-                    valueColor: _TI.brand,
-                  ),
-                  _fareRow(
-                    'Amount to Pay Now',
-                    '₹${bd.finalAmount ?? '--'}',
-                    isBold: true,
-                    valueColor: _TI.brand,
-                  ),
-                ] else ...[
-                  _fareRow(
-                    'Advance Amount',
-                    '₹${bd.advanceAmount ?? '--'}',
-                    isBold: true,
-                    valueColor: _TI.brand,
-                  ),
-                  _fareRow(
-                    'Amount to Pay Now',
-                    '₹${bd.amountToPayNow ?? '--'}',
-                    isBold: true,
-                    valueColor: _TI.brand,
-                  ),
-                  _fareRow(
-                    'Remaining Amount',
-                    '₹${bd.remainingAmount ?? '--'}',
-                    valueColor: _TI.inkMid,
-                  ),
-                ],
-              ] else ...[
-                _fareRow(
-                  'Final Amount',
-                  '₹${bd.finalAmount ?? '--'}',
-                  isBold: true,
-                  valueColor: _TI.brand,
-                ),
-                _fareRow(
-                  'Amount to Pay Now',
-                  '₹${bd.amountToPayNow ?? '--'}',
-                  isBold: true,
-                  valueColor: _TI.brand,
-                ),
-              ],
-            ],
           ],
         );
       }),
@@ -2222,7 +2056,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
   }
 
   // ── BOTTOM BAR & OVERLAYS ─────────────────────────────────────────────────
-  // ── BOTTOM BAR & OVERLAYS ─────────────────────────────────────────────────
   Widget _buildBottomBar() {
     return Container(
       decoration: BoxDecoration(
@@ -2242,7 +2075,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Left side: Total Fare
               Expanded(
                 child: GestureDetector(
                   onTap: () {
@@ -2253,17 +2085,14 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                           orElse: () => null,
                         );
 
-                    // OPEN THE TOTAL FARE MODAL HERE
                     showModalBottomSheet(
                       context: context,
                       backgroundColor: Colors.transparent,
-                      isScrollControlled:
-                          true, // Added to prevent overflow issues
+                      isScrollControlled: true,
                       builder: (_) => TotalFareModal(
                         breakDown: fareResp?.breakdown,
                         adultCount: fareReq.travelerCount,
                         onClose: () => Navigator.pop(context),
-                        // PASS THIS BOOLEAN TO CONTROL THE GREEN CONTAINER
                         isPayingAdvance:
                             _isFlexiblePolicy &&
                             _selectedPaymentOption == 'advance',
@@ -2275,10 +2104,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                         .calculateFareResponseModel
                         .value
                         .maybeWhen(success: (r) => r, orElse: () => null);
-                    // _isFlexiblePolicy reflects the trek's real assigned
-                    // policy (never a client choice). Within that, whether
-                    // ADVANCE or FULL is actually payable now depends on the
-                    // local _selectedPaymentOption toggle.
                     final isFlexible = _isFlexiblePolicy;
                     final isPayingFull =
                         !isFlexible || _selectedPaymentOption == 'full';
@@ -2344,7 +2169,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                 ),
               ),
               SizedBox(width: 4.w),
-              // Right side: Pay Now Button
               SizedBox(
                 width: 42.w,
                 child: CommonButton(
@@ -2356,7 +2180,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                   onPressed: _handlePayNow,
                   gradient: CommonColors.filterGradient,
                   textColor: CommonColors.whiteColor,
-                  height: 52, // Taller button for easier tapping
+                  height: 52,
                 ),
               ),
             ],
@@ -2633,7 +2457,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
             ),
           ),
           SizedBox(width: 3.w),
-          // Wrapped in Expanded to prevent right-side overflow
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
