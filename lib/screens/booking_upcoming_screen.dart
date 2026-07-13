@@ -12,11 +12,12 @@ import 'package:dotted_line/dotted_line.dart';
 
 import '../freezed_models/booking/booking_history_model.dart';
 import '../models/dispute/dispute_detail_modal.dart';
+import '../models/refund/refund_status_model.dart'; // ── NEW ──
 import '../controller/dashboard_controller.dart';
 import '../utils/common_colors.dart';
 import '../utils/screen_constants.dart';
 import '../utils/custom_snackbar.dart';
-import '../services/invoice_pdf_service.dart'; // ← make sure this path matches
+import '../services/invoice_pdf_service.dart';
 import '../utils/ist_date_utils.dart';
 
 // ─────────────────────────────────────────────
@@ -37,6 +38,12 @@ class _TC {
   static const shadow = Color(0x0A000000);
   static const gold = Color(0xFFFFB800);
   static const goldDark = Color(0xFFE89B00);
+
+  // ── NEW: Status Colors ──
+  static const red = Color(0xFFDC2626);
+  static const redLight = Color(0xFFFFE4E4);
+  static const amber = Color(0xFFF59E0B);
+  static const amberLight = Color(0xFFFEF3C7);
 }
 
 // ─────────────────────────────────────────────
@@ -116,6 +123,10 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
   final GlobalKey _dottedKey = GlobalKey();
   final GlobalKey _cardKey = GlobalKey();
   double cutoutOffset = 0;
+
+  // ── NEW: Refund polling state ──
+  bool _refundPollingStarted = false;
+  Worker? _bookingDetailWorker;
 
   Future<void> _handleTicketDownload(BookingHistoryData? booking) async {
     if (booking == null) {
@@ -216,6 +227,22 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
       CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
     );
 
+    // ── NEW: Listen for booking detail load to start refund polling ──
+    _bookingDetailWorker = ever(_dashboardC.bookingDetailsObserver, (result) {
+      result.maybeWhen(
+        success: (r) {
+          final booking = (r as BookingDetailsResponseModel).data;
+          if (booking?.status == 'cancelled' &&
+              booking?.id != null &&
+              !_refundPollingStarted) {
+            _refundPollingStarted = true;
+            _trekC.startRefundPolling(booking!.id!.toString());
+          }
+        },
+        orElse: () {},
+      );
+    });
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _updateCutoutOffset();
     });
@@ -223,6 +250,10 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
 
   @override
   void dispose() {
+    // ── NEW: Stop refund polling and dispose worker ──
+    _trekC.stopRefundPolling();
+    _bookingDetailWorker?.dispose();
+
     _animationController.dispose();
     _ratingPanelController.dispose();
     _pulseController.dispose();
@@ -1367,6 +1398,716 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
     );
   }
 
+  // ═════════════════════════════════════════════════════════════════════════
+  //  ── NEW: REFUND TRACKER CARD ──
+  // ═════════════════════════════════════════════════════════════════════════
+  Widget _buildRefundTrackerCard(BookingHistoryData booking) {
+    return Obx(() {
+      final result = _trekC.refundStatusObserver.value;
+      RefundStatusData? statusData;
+      result.maybeWhen(success: (m) => statusData = m?.data, orElse: () {});
+      final isPolling = result.maybeWhen(
+        loading: (_) => true,
+        orElse: () => false,
+      );
+
+      final bool isProcessed = statusData?.isProcessed ?? false;
+      final bool isFailed = statusData?.isFailed ?? false;
+
+      // Determine current status display
+      String statusText;
+      String statusSubText;
+      Color statusColor;
+      Color statusBg;
+      IconData statusIcon;
+
+      if (isFailed) {
+        statusText = 'Refund Failed';
+        statusSubText =
+            statusData?.refundFailureReason ??
+            'Please contact support for help.';
+        statusColor = _TC.red;
+        statusBg = _TC.redLight;
+        statusIcon = Icons.error_outline_rounded;
+      } else if (isProcessed) {
+        statusText = 'Refund Credited';
+        statusSubText =
+            statusData?.statusMessage ??
+            'Your refund has been credited to your account.';
+        statusColor = _TC.teal;
+        statusBg = _TC.tealLight;
+        statusIcon = Icons.check_circle_rounded;
+      } else if (statusData?.refundStatus == 'processing' ||
+          statusData?.refundStatus == 'initiated') {
+        statusText = 'Refund Processing';
+        statusSubText =
+            statusData?.statusMessage ?? 'Your bank is processing the refund.';
+        statusColor = _TC.brand;
+        statusBg = _TC.brandLight;
+        statusIcon = Icons.sync_rounded;
+      } else {
+        statusText = isPolling ? 'Checking Refund Status...' : 'Refund Pending';
+        statusSubText = 'We are checking your refund status.';
+        statusColor = _TC.inkMid;
+        statusBg = const Color(0xFFF1F5F9);
+        statusIcon = Icons.hourglass_top_rounded;
+      }
+
+      return Container(
+        margin: EdgeInsets.symmetric(horizontal: 4.w),
+        padding: EdgeInsets.all(4.w),
+        decoration: BoxDecoration(
+          color: _TC.cardBg,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isFailed
+                ? _TC.red.withValues(alpha: 0.25)
+                : isProcessed
+                ? _TC.teal.withValues(alpha: 0.25)
+                : _TC.divider,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 12,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Header ──
+            Row(
+              children: [
+                Container(
+                  width: 9.w,
+                  height: 9.w,
+                  decoration: BoxDecoration(
+                    color: _TC.accent,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.account_balance_wallet_outlined,
+                    color: Colors.white,
+                    size: 4.5.w,
+                  ),
+                ),
+                SizedBox(width: 3.w),
+                Expanded(
+                  child: Text(
+                    'Refund Tracker',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: FontSize.s13,
+                      fontWeight: FontWeight.w700,
+                      color: _TC.ink,
+                    ),
+                  ),
+                ),
+                if (isPolling && !isProcessed && !isFailed)
+                  SizedBox(
+                    width: 4.w,
+                    height: 4.w,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: _TC.brand,
+                    ),
+                  ),
+                if (isProcessed)
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 2.5.w,
+                      vertical: 0.4.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _TC.tealLight,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      'COMPLETED',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: FontSize.s7,
+                        fontWeight: FontWeight.w800,
+                        color: _TC.teal,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            SizedBox(height: 2.h),
+
+            // ── Status indicator ──
+            Container(
+              padding: EdgeInsets.all(3.w),
+              decoration: BoxDecoration(
+                color: statusBg,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 10.w,
+                    height: 10.w,
+                    decoration: BoxDecoration(
+                      color: statusColor.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(statusIcon, color: statusColor, size: 5.w),
+                  ),
+                  SizedBox(width: 3.w),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          statusText,
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: FontSize.s11,
+                            fontWeight: FontWeight.w700,
+                            color: statusColor,
+                          ),
+                        ),
+                        SizedBox(height: 0.3.h),
+                        Text(
+                          statusSubText,
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: FontSize.s8,
+                            color: _TC.inkMid,
+                            height: 1.4,
+                          ),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // ── Amount Details ──
+            if (statusData?.refundAmount != null) ...[
+              SizedBox(height: 1.5.h),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Refund Amount',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: FontSize.s10,
+                      color: _TC.inkMid,
+                    ),
+                  ),
+                  Text(
+                    '₹ ${statusData?.refundAmount?.toStringAsFixed(2)}',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: FontSize.s12,
+                      fontWeight: FontWeight.w700,
+                      color: _TC.ink,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+
+            // ── Refund speed ──
+            if (statusData?.refundSpeed != null &&
+                !isProcessed &&
+                !isFailed) ...[
+              SizedBox(height: 1.h),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.h),
+                decoration: BoxDecoration(
+                  color:
+                      (statusData?.refundSpeed == 'instant'
+                              ? _TC.teal
+                              : _TC.amber)
+                          .withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      statusData?.refundSpeed == 'instant'
+                          ? Icons.bolt_rounded
+                          : Icons.schedule_outlined,
+                      size: 3.8.w,
+                      color: statusData?.refundSpeed == 'instant'
+                          ? _TC.teal
+                          : _TC.amber,
+                    ),
+                    SizedBox(width: 2.w),
+                    Expanded(
+                      child: Text(
+                        statusData?.refundSpeed == 'instant'
+                            ? 'Instant refund — credited within minutes'
+                            : 'Normal refund — 3 to 5 business days',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: FontSize.s8,
+                          fontWeight: FontWeight.w500,
+                          color: statusData?.refundSpeed == 'instant'
+                              ? _TC.teal
+                              : _TC.amber,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
+            // ── Credited date ──
+            if (isProcessed && statusData?.refundProcessedAt != null) ...[
+              SizedBox(height: 1.2.h),
+              Row(
+                children: [
+                  Icon(
+                    Icons.event_available_rounded,
+                    size: 3.8.w,
+                    color: _TC.teal,
+                  ),
+                  SizedBox(width: 2.w),
+                  Text(
+                    'Credited on ${_formatSettledAt(statusData?.refundProcessedAt)}',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: FontSize.s9,
+                      fontWeight: FontWeight.w600,
+                      color: _TC.teal,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+
+            // ── Failed action ──
+            if (isFailed) ...[
+              SizedBox(height: 1.2.h),
+              GestureDetector(
+                onTap: () {
+                  CustomSnackBar.show(
+                    context,
+                    message: 'Please contact support for refund assistance.',
+                  );
+                },
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.h),
+                  decoration: BoxDecoration(
+                    color: _TC.redLight,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: _TC.red.withValues(alpha: 0.2)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.support_agent_rounded,
+                        size: 4.w,
+                        color: _TC.red,
+                      ),
+                      SizedBox(width: 2.w),
+                      Text(
+                        'Contact Support',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: FontSize.s10,
+                          fontWeight: FontWeight.w700,
+                          color: _TC.red,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+
+            SizedBox(height: 1.5.h),
+
+            // ── Divider ──
+            Container(height: 1, color: _TC.divider),
+
+            SizedBox(height: 1.5.h),
+
+            // ── Track Refund button ──
+            GestureDetector(
+              onTap: () => _showRefundStatusSheet(context),
+              child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.2.h),
+                decoration: BoxDecoration(
+                  color: _TC.brandLight,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.track_changes_rounded,
+                      size: 4.w,
+                      color: _TC.brand,
+                    ),
+                    SizedBox(width: 2.w),
+                    Text(
+                      'Track Refund',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: FontSize.s11,
+                        fontWeight: FontWeight.w700,
+                        color: _TC.brand,
+                      ),
+                    ),
+                    SizedBox(width: 1.w),
+                    Icon(
+                      Icons.arrow_forward_rounded,
+                      size: 4.w,
+                      color: _TC.brand,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  // ═════════════════════════════════════════════════════════════════════════
+  //  ── NEW: REFUND STATUS BOTTOM SHEET ──
+  // ═════════════════════════════════════════════════════════════════════════
+  void _showRefundStatusSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(5.w)),
+      ),
+      builder: (_) => Container(
+        decoration: BoxDecoration(
+          color: _TC.cardBg,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(5.w)),
+        ),
+        padding: EdgeInsets.fromLTRB(5.w, 2.h, 5.w, 4.h),
+        child: Obx(() {
+          final result = _trekC.refundStatusObserver.value;
+          RefundStatusData? statusData;
+          result.maybeWhen(success: (m) => statusData = m?.data, orElse: () {});
+          final isPolling = result.maybeWhen(
+            loading: (_) => true,
+            orElse: () => false,
+          );
+
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Handle bar
+              Center(
+                child: Container(
+                  width: 10.w,
+                  height: 0.5.h,
+                  decoration: BoxDecoration(
+                    color: _TC.inkLight,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+              SizedBox(height: 2.h),
+
+              // Title row
+              Row(
+                children: [
+                  Container(
+                    width: 9.w,
+                    height: 9.w,
+                    decoration: BoxDecoration(
+                      color: _TC.accent,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      Icons.account_balance_wallet_outlined,
+                      color: Colors.white,
+                      size: 4.5.w,
+                    ),
+                  ),
+                  SizedBox(width: 3.w),
+                  Text(
+                    'Refund Status',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: FontSize.s14,
+                      fontWeight: FontWeight.w700,
+                      color: _TC.ink,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (isPolling)
+                    SizedBox(
+                      width: 4.w,
+                      height: 4.w,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: _TC.brand,
+                      ),
+                    ),
+                ],
+              ),
+              SizedBox(height: 2.h),
+
+              // Status steps
+              if (isPolling && statusData == null)
+                Padding(
+                  padding: EdgeInsets.symmetric(vertical: 4.h),
+                  child: const Center(child: CircularProgressIndicator()),
+                )
+              else ...[
+                // Step 1: Cancellation Confirmed
+                _buildStatusStep(
+                  'Cancellation Confirmed',
+                  true,
+                  Icons.check_circle_rounded,
+                ),
+                _buildStatusConnector(true),
+
+                // Step 2: Refund Initiated
+                _buildStatusStep(
+                  'Refund Initiated',
+                  statusData?.refundStatus != null,
+                  Icons.currency_rupee_rounded,
+                ),
+                _buildStatusConnector(statusData?.refundStatus != null),
+
+                // Step 3: Being Processed by Bank
+                _buildStatusStep(
+                  'Being Processed by Bank',
+                  statusData?.refundStatus == 'processing' ||
+                      statusData?.refundStatus == 'processed',
+                  Icons.account_balance_rounded,
+                ),
+                _buildStatusConnector(
+                  statusData?.refundStatus == 'processing' ||
+                      statusData?.refundStatus == 'processed',
+                ),
+
+                // Step 4: Credited / Failed
+                _buildStatusStep(
+                  (statusData?.isProcessed ?? false)
+                      ? 'Credited — ${_formatSettledAt(statusData?.refundProcessedAt)}'
+                      : (statusData?.isFailed ?? false)
+                      ? 'Failed — Contact Support'
+                      : 'Awaiting Credit',
+                  statusData?.isProcessed ?? false,
+                  (statusData?.isFailed ?? false)
+                      ? Icons.error_outline_rounded
+                      : Icons.done_all_rounded,
+                  isFailed: statusData?.isFailed ?? false,
+                ),
+
+                SizedBox(height: 2.5.h),
+
+                // Status message
+                if (statusData?.statusMessage != null)
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 3.w,
+                      vertical: 1.2.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: (statusData?.isFailed ?? false)
+                          ? _TC.redLight
+                          : (statusData?.isProcessed ?? false)
+                          ? _TC.tealLight
+                          : _TC.brandLight,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          (statusData?.isFailed ?? false)
+                              ? Icons.info_outline_rounded
+                              : (statusData?.isProcessed ?? false)
+                              ? Icons.check_circle_outline_rounded
+                              : Icons.info_outline_rounded,
+                          size: 4.w,
+                          color: (statusData?.isFailed ?? false)
+                              ? _TC.red
+                              : (statusData?.isProcessed ?? false)
+                              ? _TC.teal
+                              : _TC.brand,
+                        ),
+                        SizedBox(width: 2.w),
+                        Expanded(
+                          child: Text(
+                            statusData?.statusMessage ??
+                                'Checking refund status...',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: FontSize.s9,
+                              color: (statusData?.isFailed ?? false)
+                                  ? _TC.red
+                                  : (statusData?.isProcessed ?? false)
+                                  ? _TC.teal
+                                  : _TC.inkMid,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                // Refund speed info
+                if (statusData?.refundSpeed != null) ...[
+                  SizedBox(height: 1.h),
+                  Row(
+                    children: [
+                      Icon(
+                        statusData?.refundSpeed == 'instant'
+                            ? Icons.bolt_rounded
+                            : Icons.schedule_outlined,
+                        size: 3.8.w,
+                        color: statusData?.refundSpeed == 'instant'
+                            ? _TC.teal
+                            : _TC.amber,
+                      ),
+                      SizedBox(width: 2.w),
+                      Text(
+                        'Speed: ${statusData?.refundSpeed == 'instant' ? 'Instant (within minutes)' : 'Normal (3–5 business days)'}',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: FontSize.s9,
+                          color: _TC.inkMid,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+
+                SizedBox(height: 2.h),
+
+                // Close button
+                SizedBox(
+                  width: double.infinity,
+                  height: 5.h,
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: _TC.brand.withValues(alpha: 0.3)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: Text(
+                      'Close',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: FontSize.s12,
+                        fontWeight: FontWeight.w600,
+                        color: _TC.brand,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildStatusStep(
+    String label,
+    bool done,
+    IconData icon, {
+    bool isFailed = false,
+  }) {
+    final color = isFailed
+        ? _TC.red
+        : done
+        ? _TC.teal
+        : _TC.inkLight;
+
+    return Row(
+      children: [
+        Container(
+          width: 10.w,
+          height: 10.w,
+          decoration: BoxDecoration(
+            color: isFailed
+                ? _TC.redLight
+                : done
+                ? _TC.tealLight
+                : const Color(0xFFF1F5F9),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, size: 5.w, color: color),
+        ),
+        SizedBox(width: 3.w),
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: FontSize.s11,
+              color: isFailed
+                  ? _TC.red
+                  : done
+                  ? _TC.ink
+                  : _TC.inkLight,
+              fontWeight: done ? FontWeight.w600 : FontWeight.w400,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatusConnector(bool active) {
+    return Padding(
+      padding: EdgeInsets.only(left: 4.5.w),
+      child: Container(
+        width: 1,
+        height: 2.5.h,
+        color: active ? _TC.teal.withValues(alpha: 0.4) : _TC.divider,
+      ),
+    );
+  }
+
+  String _formatSettledAt(String? iso) {
+    if (iso == null || iso.isEmpty) return '';
+    try {
+      final dt = DateTime.parse(iso).toLocal();
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
+      return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
+    } catch (_) {
+      return '';
+    }
+  }
+
   Widget _buildFloatingRatingButton({required BookingHistoryData bookingData}) {
     final bool isCancelled = bookingData.status == 'cancelled';
     final bool trekEnded =
@@ -1894,6 +2635,13 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                         padding: EdgeInsets.symmetric(horizontal: 4.w),
                         child: _buildTicketCard(booking),
                       ),
+
+                      // ══ NEW: Refund Tracker Card for cancelled bookings ══
+                      if (status == 'cancelled' && booking != null) ...[
+                        SizedBox(height: 2.5.h),
+                        _buildRefundTrackerCard(booking),
+                      ],
+
                       SizedBox(height: 2.5.h),
 
                       // Contact card
