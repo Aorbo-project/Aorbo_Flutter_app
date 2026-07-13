@@ -286,11 +286,11 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
         'amount':
             params['amount'] ??
             (((_selectedPaymentOption == 'full'
-                                ? breakdown?.finalAmount
-                                : breakdown?.amountToPayNow) ??
-                            0) *
-                        100)
-                    .toInt(),
+                            ? breakdown?.finalAmount
+                            : breakdown?.amountToPayNow) ??
+                        0) *
+                    100)
+                .toInt(),
         'currency': params['currency'] ?? 'INR',
         'name': params['name'] ?? '${_trekC.trekDetailData.value.title}',
         'description':
@@ -1698,8 +1698,10 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
             GestureDetector(
               onTap: () {
                 setState(() => _selectedPaymentOption = 'advance');
-                _trekC.createOrderRequestModel.value =
-                    _trekC.createOrderRequestModel.value.copyWith(payFull: false);
+                _trekC.createOrderRequestModel.value = _trekC
+                    .createOrderRequestModel
+                    .value
+                    .copyWith(payFull: false);
               },
               child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
@@ -1762,8 +1764,10 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
             GestureDetector(
               onTap: () {
                 setState(() => _selectedPaymentOption = 'full');
-                _trekC.createOrderRequestModel.value =
-                    _trekC.createOrderRequestModel.value.copyWith(payFull: true);
+                _trekC.createOrderRequestModel.value = _trekC
+                    .createOrderRequestModel
+                    .value
+                    .copyWith(payFull: true);
               },
               child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
@@ -2218,6 +2222,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
   }
 
   // ── BOTTOM BAR & OVERLAYS ─────────────────────────────────────────────────
+  // ── BOTTOM BAR & OVERLAYS ─────────────────────────────────────────────────
   Widget _buildBottomBar() {
     return Container(
       decoration: BoxDecoration(
@@ -2247,13 +2252,21 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                           success: (r) => r as CalculateFareResponseModel,
                           orElse: () => null,
                         );
+
+                    // OPEN THE TOTAL FARE MODAL HERE
                     showModalBottomSheet(
                       context: context,
                       backgroundColor: Colors.transparent,
+                      isScrollControlled:
+                          true, // Added to prevent overflow issues
                       builder: (_) => TotalFareModal(
                         breakDown: fareResp?.breakdown,
                         adultCount: fareReq.travelerCount,
                         onClose: () => Navigator.pop(context),
+                        // PASS THIS BOOLEAN TO CONTROL THE GREEN CONTAINER
+                        isPayingAdvance:
+                            _isFlexiblePolicy &&
+                            _selectedPaymentOption == 'advance',
                       ),
                     );
                   },
@@ -2267,7 +2280,8 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                     // ADVANCE or FULL is actually payable now depends on the
                     // local _selectedPaymentOption toggle.
                     final isFlexible = _isFlexiblePolicy;
-                    final isPayingFull = !isFlexible || _selectedPaymentOption == 'full';
+                    final isPayingFull =
+                        !isFlexible || _selectedPaymentOption == 'full';
                     final payableNow = isPayingFull
                         ? fareRespModel?.breakdown?.finalAmount
                         : fareRespModel?.breakdown?.amountToPayNow;

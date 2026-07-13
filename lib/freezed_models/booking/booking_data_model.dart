@@ -14,7 +14,7 @@ class CreateRazorpayRequestModel with _$CreateRazorpayRequestModel {
     // chose to pay the full amount now instead of the default advance-only.
     // See Backend's paymentService.createOrder for how this changes the
     // actual Razorpay charge amount and the resulting payment_status.
-    @JsonKey(name: 'pay_full') @Default(false) bool payFull
+    @JsonKey(name: 'pay_full') @Default(false) bool payFull,
   }) = _CreateRazorpayRequestModel;
 
   factory CreateRazorpayRequestModel.fromJson(Map<String, dynamic> json) =>
@@ -39,10 +39,10 @@ class BookingResponse with _$BookingResponse {
 class Order with _$Order {
   const factory Order({
     dynamic amount,
-    @JsonKey(name: 'amount_due')  dynamic amountDue,
+    @JsonKey(name: 'amount_due') dynamic amountDue,
     @JsonKey(name: 'amount_paid') dynamic amountPaid,
     int? attempts,
-    @JsonKey(name: 'created_at')  dynamic createdAt,
+    @JsonKey(name: 'created_at') dynamic createdAt,
     String? currency,
     String? entity,
     String? id,
@@ -54,8 +54,7 @@ class Order with _$Order {
     String? status,
   }) = _Order;
 
-  factory Order.fromJson(Map<String, dynamic> json) =>
-      _$OrderFromJson(json);
+  factory Order.fromJson(Map<String, dynamic> json) => _$OrderFromJson(json);
 }
 
 @freezed
@@ -89,20 +88,16 @@ class BookingData with _$BookingData {
       _$BookingDataFromJson(json);
 }
 
-
-
-
-
-
 @freezed
 class CalculateFareRequestModel with _$CalculateFareRequestModel {
   const factory CalculateFareRequestModel({
     @JsonKey(name: 'batch_id') required int? batchId,
     @JsonKey(name: 'traveler_count') required int travelerCount,
-    @JsonKey(name : 'coupon_code') required String? couponCode,
+    @JsonKey(name: 'coupon_code') required String? couponCode,
     @JsonKey(name: 'cancellation_policy_type') String? cancellationPolicyType,
     @JsonKey(name: 'add_insurance') required bool addInsurance,
-    @JsonKey(name: 'add_cancellation_protection') required bool addFreeCancellationProtection
+    @JsonKey(name: 'add_cancellation_protection')
+    required bool addFreeCancellationProtection,
   }) = _CalculateFareRequestModel;
 
   factory CalculateFareRequestModel.fromJson(Map<String, dynamic> json) =>
@@ -119,7 +114,7 @@ class CalculateFareResponseModel with _$CalculateFareResponseModel {
     @JsonKey(name: 'coupon_details') dynamic couponDetails,
     @JsonKey(name: 'expires_at') dynamic expiresAt,
     @JsonKey(name: 'allow_cancellation') dynamic allowCancellation,
-    @JsonKey(name: 'allow_insurance') dynamic allowInsurance
+    @JsonKey(name: 'allow_insurance') dynamic allowInsurance,
   }) = _CalculateFareResponseModel;
 
   factory CalculateFareResponseModel.fromJson(Map<String, dynamic> json) =>
@@ -133,6 +128,9 @@ class BreakDownDataModel with _$BreakDownDataModel {
     @JsonKey(name: 'base_price') dynamic basePrice,
     @JsonKey(name: 'traveler_count') dynamic travelerCount,
     @JsonKey(name: 'base_total') dynamic baseTotal,
+    @JsonKey(name: 'vendor_discount') dynamic vendorDiscount, // CHANGED HERE
+    @JsonKey(name: 'coupon_discount')
+    dynamic couponDiscount, // ADDED FOR CLARITY
     dynamic discount,
     @JsonKey(name: 'coupon_code') dynamic couponCode,
     @JsonKey(name: 'amount_after_discount') dynamic amountAfterDiscount,

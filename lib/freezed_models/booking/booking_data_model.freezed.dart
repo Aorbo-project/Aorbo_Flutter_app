@@ -2119,6 +2119,12 @@ mixin _$BreakDownDataModel {
   dynamic get travelerCount => throw _privateConstructorUsedError;
   @JsonKey(name: 'base_total')
   dynamic get baseTotal => throw _privateConstructorUsedError;
+  @JsonKey(name: 'vendor_discount')
+  dynamic get vendorDiscount =>
+      throw _privateConstructorUsedError; // CHANGED HERE
+  @JsonKey(name: 'coupon_discount')
+  dynamic get couponDiscount =>
+      throw _privateConstructorUsedError; // ADDED FOR CLARITY
   dynamic get discount => throw _privateConstructorUsedError;
   @JsonKey(name: 'coupon_code')
   dynamic get couponCode => throw _privateConstructorUsedError;
@@ -2162,6 +2168,8 @@ abstract class $BreakDownDataModelCopyWith<$Res> {
       @JsonKey(name: 'base_price') dynamic basePrice,
       @JsonKey(name: 'traveler_count') dynamic travelerCount,
       @JsonKey(name: 'base_total') dynamic baseTotal,
+      @JsonKey(name: 'vendor_discount') dynamic vendorDiscount,
+      @JsonKey(name: 'coupon_discount') dynamic couponDiscount,
       dynamic discount,
       @JsonKey(name: 'coupon_code') dynamic couponCode,
       @JsonKey(name: 'amount_after_discount') dynamic amountAfterDiscount,
@@ -2195,6 +2203,8 @@ class _$BreakDownDataModelCopyWithImpl<$Res, $Val extends BreakDownDataModel>
     Object? basePrice = freezed,
     Object? travelerCount = freezed,
     Object? baseTotal = freezed,
+    Object? vendorDiscount = freezed,
+    Object? couponDiscount = freezed,
     Object? discount = freezed,
     Object? couponCode = freezed,
     Object? amountAfterDiscount = freezed,
@@ -2226,6 +2236,14 @@ class _$BreakDownDataModelCopyWithImpl<$Res, $Val extends BreakDownDataModel>
       baseTotal: freezed == baseTotal
           ? _value.baseTotal
           : baseTotal // ignore: cast_nullable_to_non_nullable
+              as dynamic,
+      vendorDiscount: freezed == vendorDiscount
+          ? _value.vendorDiscount
+          : vendorDiscount // ignore: cast_nullable_to_non_nullable
+              as dynamic,
+      couponDiscount: freezed == couponDiscount
+          ? _value.couponDiscount
+          : couponDiscount // ignore: cast_nullable_to_non_nullable
               as dynamic,
       discount: freezed == discount
           ? _value.discount
@@ -2300,6 +2318,8 @@ abstract class _$$BreakDownDataModelImplCopyWith<$Res>
       @JsonKey(name: 'base_price') dynamic basePrice,
       @JsonKey(name: 'traveler_count') dynamic travelerCount,
       @JsonKey(name: 'base_total') dynamic baseTotal,
+      @JsonKey(name: 'vendor_discount') dynamic vendorDiscount,
+      @JsonKey(name: 'coupon_discount') dynamic couponDiscount,
       dynamic discount,
       @JsonKey(name: 'coupon_code') dynamic couponCode,
       @JsonKey(name: 'amount_after_discount') dynamic amountAfterDiscount,
@@ -2331,6 +2351,8 @@ class __$$BreakDownDataModelImplCopyWithImpl<$Res>
     Object? basePrice = freezed,
     Object? travelerCount = freezed,
     Object? baseTotal = freezed,
+    Object? vendorDiscount = freezed,
+    Object? couponDiscount = freezed,
     Object? discount = freezed,
     Object? couponCode = freezed,
     Object? amountAfterDiscount = freezed,
@@ -2362,6 +2384,14 @@ class __$$BreakDownDataModelImplCopyWithImpl<$Res>
       baseTotal: freezed == baseTotal
           ? _value.baseTotal
           : baseTotal // ignore: cast_nullable_to_non_nullable
+              as dynamic,
+      vendorDiscount: freezed == vendorDiscount
+          ? _value.vendorDiscount
+          : vendorDiscount // ignore: cast_nullable_to_non_nullable
+              as dynamic,
+      couponDiscount: freezed == couponDiscount
+          ? _value.couponDiscount
+          : couponDiscount // ignore: cast_nullable_to_non_nullable
               as dynamic,
       discount: freezed == discount
           ? _value.discount
@@ -2431,6 +2461,8 @@ class _$BreakDownDataModelImpl implements _BreakDownDataModel {
       @JsonKey(name: 'base_price') this.basePrice,
       @JsonKey(name: 'traveler_count') this.travelerCount,
       @JsonKey(name: 'base_total') this.baseTotal,
+      @JsonKey(name: 'vendor_discount') this.vendorDiscount,
+      @JsonKey(name: 'coupon_discount') this.couponDiscount,
       this.discount,
       @JsonKey(name: 'coupon_code') this.couponCode,
       @JsonKey(name: 'amount_after_discount') this.amountAfterDiscount,
@@ -2460,6 +2492,14 @@ class _$BreakDownDataModelImpl implements _BreakDownDataModel {
   @override
   @JsonKey(name: 'base_total')
   final dynamic baseTotal;
+  @override
+  @JsonKey(name: 'vendor_discount')
+  final dynamic vendorDiscount;
+// CHANGED HERE
+  @override
+  @JsonKey(name: 'coupon_discount')
+  final dynamic couponDiscount;
+// ADDED FOR CLARITY
   @override
   final dynamic discount;
   @override
@@ -2502,7 +2542,7 @@ class _$BreakDownDataModelImpl implements _BreakDownDataModel {
 
   @override
   String toString() {
-    return 'BreakDownDataModel(id: $id, basePrice: $basePrice, travelerCount: $travelerCount, baseTotal: $baseTotal, discount: $discount, couponCode: $couponCode, amountAfterDiscount: $amountAfterDiscount, taxes: $taxes, totalTax: $totalTax, gst: $gst, platformFee: $platformFee, insuranceFee: $insuranceFee, cancellationFee: $cancellationFee, finalAmount: $finalAmount, cancellationPolicyType: $cancellationPolicyType, advanceAmount: $advanceAmount, amountToPayNow: $amountToPayNow, remainingAmount: $remainingAmount)';
+    return 'BreakDownDataModel(id: $id, basePrice: $basePrice, travelerCount: $travelerCount, baseTotal: $baseTotal, vendorDiscount: $vendorDiscount, couponDiscount: $couponDiscount, discount: $discount, couponCode: $couponCode, amountAfterDiscount: $amountAfterDiscount, taxes: $taxes, totalTax: $totalTax, gst: $gst, platformFee: $platformFee, insuranceFee: $insuranceFee, cancellationFee: $cancellationFee, finalAmount: $finalAmount, cancellationPolicyType: $cancellationPolicyType, advanceAmount: $advanceAmount, amountToPayNow: $amountToPayNow, remainingAmount: $remainingAmount)';
   }
 
   @override
@@ -2515,6 +2555,10 @@ class _$BreakDownDataModelImpl implements _BreakDownDataModel {
             const DeepCollectionEquality()
                 .equals(other.travelerCount, travelerCount) &&
             const DeepCollectionEquality().equals(other.baseTotal, baseTotal) &&
+            const DeepCollectionEquality()
+                .equals(other.vendorDiscount, vendorDiscount) &&
+            const DeepCollectionEquality()
+                .equals(other.couponDiscount, couponDiscount) &&
             const DeepCollectionEquality().equals(other.discount, discount) &&
             const DeepCollectionEquality()
                 .equals(other.couponCode, couponCode) &&
@@ -2543,26 +2587,29 @@ class _$BreakDownDataModelImpl implements _BreakDownDataModel {
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(
-      runtimeType,
-      id,
-      const DeepCollectionEquality().hash(basePrice),
-      const DeepCollectionEquality().hash(travelerCount),
-      const DeepCollectionEquality().hash(baseTotal),
-      const DeepCollectionEquality().hash(discount),
-      const DeepCollectionEquality().hash(couponCode),
-      const DeepCollectionEquality().hash(amountAfterDiscount),
-      const DeepCollectionEquality().hash(taxes),
-      const DeepCollectionEquality().hash(totalTax),
-      const DeepCollectionEquality().hash(gst),
-      const DeepCollectionEquality().hash(platformFee),
-      const DeepCollectionEquality().hash(insuranceFee),
-      const DeepCollectionEquality().hash(cancellationFee),
-      const DeepCollectionEquality().hash(finalAmount),
-      const DeepCollectionEquality().hash(cancellationPolicyType),
-      const DeepCollectionEquality().hash(advanceAmount),
-      const DeepCollectionEquality().hash(amountToPayNow),
-      const DeepCollectionEquality().hash(remainingAmount));
+  int get hashCode => Object.hashAll([
+        runtimeType,
+        id,
+        const DeepCollectionEquality().hash(basePrice),
+        const DeepCollectionEquality().hash(travelerCount),
+        const DeepCollectionEquality().hash(baseTotal),
+        const DeepCollectionEquality().hash(vendorDiscount),
+        const DeepCollectionEquality().hash(couponDiscount),
+        const DeepCollectionEquality().hash(discount),
+        const DeepCollectionEquality().hash(couponCode),
+        const DeepCollectionEquality().hash(amountAfterDiscount),
+        const DeepCollectionEquality().hash(taxes),
+        const DeepCollectionEquality().hash(totalTax),
+        const DeepCollectionEquality().hash(gst),
+        const DeepCollectionEquality().hash(platformFee),
+        const DeepCollectionEquality().hash(insuranceFee),
+        const DeepCollectionEquality().hash(cancellationFee),
+        const DeepCollectionEquality().hash(finalAmount),
+        const DeepCollectionEquality().hash(cancellationPolicyType),
+        const DeepCollectionEquality().hash(advanceAmount),
+        const DeepCollectionEquality().hash(amountToPayNow),
+        const DeepCollectionEquality().hash(remainingAmount)
+      ]);
 
   @JsonKey(ignore: true)
   @override
@@ -2585,6 +2632,8 @@ abstract class _BreakDownDataModel implements BreakDownDataModel {
       @JsonKey(name: 'base_price') final dynamic basePrice,
       @JsonKey(name: 'traveler_count') final dynamic travelerCount,
       @JsonKey(name: 'base_total') final dynamic baseTotal,
+      @JsonKey(name: 'vendor_discount') final dynamic vendorDiscount,
+      @JsonKey(name: 'coupon_discount') final dynamic couponDiscount,
       final dynamic discount,
       @JsonKey(name: 'coupon_code') final dynamic couponCode,
       @JsonKey(name: 'amount_after_discount') final dynamic amountAfterDiscount,
@@ -2617,6 +2666,12 @@ abstract class _BreakDownDataModel implements BreakDownDataModel {
   @JsonKey(name: 'base_total')
   dynamic get baseTotal;
   @override
+  @JsonKey(name: 'vendor_discount')
+  dynamic get vendorDiscount;
+  @override // CHANGED HERE
+  @JsonKey(name: 'coupon_discount')
+  dynamic get couponDiscount;
+  @override // ADDED FOR CLARITY
   dynamic get discount;
   @override
   @JsonKey(name: 'coupon_code')
