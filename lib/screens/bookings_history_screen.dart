@@ -41,8 +41,8 @@ class BookingsScreen extends StatefulWidget {
   State<BookingsScreen> createState() => _BookingsScreenState();
 }
 
-class _BookingsScreenState extends State<BookingsScreen> with SingleTickerProviderStateMixin {
-  // ── ALL ORIGINAL LOGIC UNTOUCHED ─────────────────────────────────────────
+class _BookingsScreenState extends State<BookingsScreen>
+    with SingleTickerProviderStateMixin {
   final DashboardController _dashboardC = Get.find<DashboardController>();
   final ScrollController _scrollController = ScrollController();
 
@@ -83,7 +83,8 @@ class _BookingsScreenState extends State<BookingsScreen> with SingleTickerProvid
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
       print("Load More DAta");
       _loadMoreData();
     }
@@ -91,6 +92,10 @@ class _BookingsScreenState extends State<BookingsScreen> with SingleTickerProvid
 
   Future<void> _loadMoreData() async {
     await _dashboardC.getBookingHistory(refresh: false);
+  }
+
+  void _goBack() {
+    _dashboardC.selectedScreen.value = 0;
   }
 
   // ── STATUS HELPERS — ORIGINAL LOGIC ──────────────────────────────────────
@@ -132,40 +137,33 @@ class _BookingsScreenState extends State<BookingsScreen> with SingleTickerProvid
   }
 
   // ── BUILD ─────────────────────────────────────────────────────────────────
-@override
-Widget build(BuildContext context) {
-  return PopScope(
-    canPop: false,
-    onPopInvokedWithResult: (didPop, result) {
-      if (didPop) return;
-
-      Get.offAllNamed('/dashboard');
-    },
-    child: Scaffold(
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
       backgroundColor: _BkColors.bg,
       appBar: _buildAppBar(),
       body: FadeTransition(
         opacity: _fade,
         child: Obx(() {
           final loading = _dashboardC.bookingHistoryObserver.value.data.value
-              .maybeWhen(
-            loading: (data) => true,
-            orElse: () => false,
-          );
+              .maybeWhen(loading: (data) => true, orElse: () => false);
 
           List<BookingHistoryData>? bookingList = _dashboardC
-              .bookingHistoryObserver.value.data.value
+              .bookingHistoryObserver
+              .value
+              .data
+              .value
               .maybeWhen(
-            success: (bookingResponse) =>
-                (bookingResponse as BookingHistoryModel).data,
-            error: (sc) => [],
-            orElse: () => [
-              BookingHistoryData(),
-              BookingHistoryData(),
-              BookingHistoryData(),
-              BookingHistoryData(),
-            ],
-          );
+                success: (bookingResponse) =>
+                    (bookingResponse as BookingHistoryModel).data,
+                error: (sc) => [],
+                orElse: () => [
+                  BookingHistoryData(),
+                  BookingHistoryData(),
+                  BookingHistoryData(),
+                  BookingHistoryData(),
+                ],
+              );
 
           final isLoadingMore =
               _dashboardC.bookingHistoryObserver.value.isLoading;
@@ -193,84 +191,79 @@ Widget build(BuildContext context) {
           );
         }),
       ),
-    ),
-  );
-}
+    );
+  }
 
-
-PreferredSizeWidget _buildAppBar() {
-  return AppBar(
-    backgroundColor: _BkColors.cardBg,
-    scrolledUnderElevation: 0,
-    elevation: 0,
-    automaticallyImplyLeading: false,
-    leading: IconButton(
-      icon: const Icon(Icons.arrow_back),
-      onPressed: () {
-        Get.offAllNamed('/dashboard');
-      },
-    ),
-    centerTitle: false,
-    iconTheme: const IconThemeData(color: _BkColors.ink),
-    title: Text(
-      'My Bookings',
-      style: TextStyle(
-        fontFamily: 'Poppins',
-        fontSize: FontSize.s15,
-        fontWeight: FontWeight.w700,
-        color: _BkColors.ink,
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      backgroundColor: _BkColors.cardBg,
+      scrolledUnderElevation: 0,
+      elevation: 0,
+      automaticallyImplyLeading: false,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back),
+        onPressed: _goBack,
       ),
-    ),
-    bottom: PreferredSize(
-      preferredSize: const Size.fromHeight(1),
-      child: Container(height: 1, color: _BkColors.border),
-    ),
-    actions: [
-      Obx(
-        () => GestureDetector(
-          onTap: () => _showFilterBottomSheet(context),
-          child: Container(
-            margin: EdgeInsets.only(right: 4.w),
-            padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 0.7.h),
-            decoration: BoxDecoration(
-              color: _dashboardC.selectedFilter.value == 'All Bookings'
-                  ? _BkColors.badgeBg
-                  : _pillBg(_dashboardC.selectedFilter.value),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  _dashboardC.selectedFilter.value == 'All Bookings'
-                      ? 'Filter'
-                      : _capitalize(_dashboardC.selectedFilter.value),
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: FontSize.s9,
-                    fontWeight: FontWeight.w600,
+      centerTitle: false,
+      iconTheme: const IconThemeData(color: _BkColors.ink),
+      title: Text(
+        'My Bookings',
+        style: TextStyle(
+          fontFamily: 'Poppins',
+          fontSize: FontSize.s15,
+          fontWeight: FontWeight.w700,
+          color: _BkColors.ink,
+        ),
+      ),
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(1),
+        child: Container(height: 1, color: _BkColors.border),
+      ),
+      actions: [
+        Obx(
+          () => GestureDetector(
+            onTap: () => _showFilterBottomSheet(context),
+            child: Container(
+              margin: EdgeInsets.only(right: 4.w),
+              padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 0.7.h),
+              decoration: BoxDecoration(
+                color: _dashboardC.selectedFilter.value == 'All Bookings'
+                    ? _BkColors.badgeBg
+                    : _pillBg(_dashboardC.selectedFilter.value),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _dashboardC.selectedFilter.value == 'All Bookings'
+                        ? 'Filter'
+                        : _capitalize(_dashboardC.selectedFilter.value),
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: FontSize.s9,
+                      fontWeight: FontWeight.w600,
+                      color: _dashboardC.selectedFilter.value == 'All Bookings'
+                          ? Colors.white
+                          : _pillFg(_dashboardC.selectedFilter.value),
+                    ),
+                  ),
+                  SizedBox(width: 1.w),
+                  Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    size: 4.5.w,
                     color: _dashboardC.selectedFilter.value == 'All Bookings'
                         ? Colors.white
                         : _pillFg(_dashboardC.selectedFilter.value),
                   ),
-                ),
-                SizedBox(width: 1.w),
-                Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  size: 4.5.w,
-                  color: _dashboardC.selectedFilter.value == 'All Bookings'
-                      ? Colors.white
-                      : _pillFg(_dashboardC.selectedFilter.value),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
-      ),
-    ],
-  );
-}
-
+      ],
+    );
+  }
 
   // ── BOOKING CARD ──────────────────────────────────────────────────────────
   Widget _buildBookingCard(dynamic booking, int index) {
