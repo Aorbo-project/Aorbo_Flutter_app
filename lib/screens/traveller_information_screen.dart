@@ -25,6 +25,7 @@ import 'package:arobo_app/utils/total_fare_modal.dart';
 
 import '../freezed_models/profile/user_profile_model.dart';
 import '../freezed_models/treks/trek_detail_model.dart';
+import '../utils/traveller_selection_utils.dart';
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS
@@ -1011,42 +1012,38 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                           await _userC.addTraveler();
                         }
 
-                        if (!isEdit) {
-                          final adultCount = _trekC
-                              .calculateFareRequestModel
-                              .value
-                              .travelerCount;
-                          final travelers =
-                              _userC
-                                  .userProfileData
+                      if (!isEdit) {
+                        final adultCount = _trekC
+                            .calculateFareRequestModel
+                            .value
+                            .travelerCount;
+                        final travelers =
+                            _userC.userProfileData.value.customer?.travelers ??
+                            [];
+                        if (travelers.isNotEmpty) {
+                          final newTraveler = travelers.last;
+                          final alreadySelected = selectedTravellers.any(
+                            (t) => t.id == newTraveler.id,
+                          );
+                          if (!alreadySelected &&
+                              selectedTravellers.length < adultCount) {
+                            setState(() {
+                              selectedTravellers.add(newTraveler);
+                              _trekC.travellerDetailList.value = List.from(
+                                selectedTravellers,
+                              );
+                              _trekC.calculateFareRequestModel.value = _trekC
+                                  .calculateFareRequestModel
                                   .value
-                                  .customer
-                                  ?.travelers ??
-                              [];
-                          if (travelers.isNotEmpty) {
-                            final newTraveler = travelers.last;
-                            final alreadySelected = selectedTravellers.any(
-                              (t) => t.id == newTraveler.id,
-                            );
-                            if (!alreadySelected &&
-                                selectedTravellers.length < adultCount) {
-                              setState(() {
-                                selectedTravellers.add(newTraveler);
-                                _trekC.travellerDetailList.value = List.from(
-                                  selectedTravellers,
-                                );
-                                _trekC.calculateFareRequestModel.value = _trekC
-                                    .calculateFareRequestModel
-                                    .value
-                                    .copyWith(
-                                      travelerCount: selectedTravellers.length,
-                                    );
-                              });
-                            }
+                                  .copyWith(
+                                    travelerCount: selectedTravellers.length,
+                                  );
+                            });
                           }
-                        } else {
-                          setState(() {});
                         }
+                      } else {
+                        setState(() {});
+                      }
 
                         if (!context.mounted) return;
                         Navigator.pop(context);
@@ -2464,7 +2461,15 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                   _trekC.calculateFareRequestModel.value = _trekC
                       .calculateFareRequestModel
                       .value
-                      .copyWith(travelerCount: selectedTravellers.length);
+                      .copyWith(
+                        travelerCount: resolveRequiredTravelerCount(
+                          currentRequiredCount: _trekC
+                              .calculateFareRequestModel
+                              .value
+                              .travelerCount,
+                          selectedCount: selectedTravellers.length,
+                        ),
+                      );
                 });
               },
               shape: RoundedRectangleBorder(
