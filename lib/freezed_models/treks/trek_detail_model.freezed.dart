@@ -4502,7 +4502,15 @@ mixin _$CancellationPolicy {
   String? get description => throw _privateConstructorUsedError;
   List<Rules>? get rules => throw _privateConstructorUsedError;
   @JsonKey(name: 'descriptionPoints')
-  List<String>? get descriptionPoints => throw _privateConstructorUsedError;
+  List<String>? get descriptionPoints =>
+      throw _privateConstructorUsedError; // Live, admin-editable numbers (see Backend's utils/cancellationPolicyLive.js)
+// — the single source of truth for the actual deduction math. `rules`/
+// `descriptionPoints` above are static, hand-authored text that can (and
+// did) drift out of sync with what's really deducted on a booking; the
+// widget computes its display from policyType + settings instead.
+  @JsonKey(name: 'policyType')
+  String? get policyType => throw _privateConstructorUsedError;
+  Map<String, dynamic>? get settings => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -4522,7 +4530,9 @@ abstract class $CancellationPolicyCopyWith<$Res> {
       String? title,
       String? description,
       List<Rules>? rules,
-      @JsonKey(name: 'descriptionPoints') List<String>? descriptionPoints});
+      @JsonKey(name: 'descriptionPoints') List<String>? descriptionPoints,
+      @JsonKey(name: 'policyType') String? policyType,
+      Map<String, dynamic>? settings});
 }
 
 /// @nodoc
@@ -4544,6 +4554,8 @@ class _$CancellationPolicyCopyWithImpl<$Res, $Val extends CancellationPolicy>
     Object? description = freezed,
     Object? rules = freezed,
     Object? descriptionPoints = freezed,
+    Object? policyType = freezed,
+    Object? settings = freezed,
   }) {
     return _then(_value.copyWith(
       id: freezed == id
@@ -4570,6 +4582,14 @@ class _$CancellationPolicyCopyWithImpl<$Res, $Val extends CancellationPolicy>
           ? _value.descriptionPoints
           : descriptionPoints // ignore: cast_nullable_to_non_nullable
               as List<String>?,
+      policyType: freezed == policyType
+          ? _value.policyType
+          : policyType // ignore: cast_nullable_to_non_nullable
+              as String?,
+      settings: freezed == settings
+          ? _value.settings
+          : settings // ignore: cast_nullable_to_non_nullable
+              as Map<String, dynamic>?,
     ) as $Val);
   }
 }
@@ -4588,7 +4608,9 @@ abstract class _$$CancellationPolicyImplCopyWith<$Res>
       String? title,
       String? description,
       List<Rules>? rules,
-      @JsonKey(name: 'descriptionPoints') List<String>? descriptionPoints});
+      @JsonKey(name: 'descriptionPoints') List<String>? descriptionPoints,
+      @JsonKey(name: 'policyType') String? policyType,
+      Map<String, dynamic>? settings});
 }
 
 /// @nodoc
@@ -4608,6 +4630,8 @@ class __$$CancellationPolicyImplCopyWithImpl<$Res>
     Object? description = freezed,
     Object? rules = freezed,
     Object? descriptionPoints = freezed,
+    Object? policyType = freezed,
+    Object? settings = freezed,
   }) {
     return _then(_$CancellationPolicyImpl(
       id: freezed == id
@@ -4634,6 +4658,14 @@ class __$$CancellationPolicyImplCopyWithImpl<$Res>
           ? _value._descriptionPoints
           : descriptionPoints // ignore: cast_nullable_to_non_nullable
               as List<String>?,
+      policyType: freezed == policyType
+          ? _value.policyType
+          : policyType // ignore: cast_nullable_to_non_nullable
+              as String?,
+      settings: freezed == settings
+          ? _value._settings
+          : settings // ignore: cast_nullable_to_non_nullable
+              as Map<String, dynamic>?,
     ));
   }
 }
@@ -4647,10 +4679,12 @@ class _$CancellationPolicyImpl implements _CancellationPolicy {
       this.title,
       this.description,
       final List<Rules>? rules,
-      @JsonKey(name: 'descriptionPoints')
-      final List<String>? descriptionPoints})
+      @JsonKey(name: 'descriptionPoints') final List<String>? descriptionPoints,
+      @JsonKey(name: 'policyType') this.policyType,
+      final Map<String, dynamic>? settings})
       : _rules = rules,
-        _descriptionPoints = descriptionPoints;
+        _descriptionPoints = descriptionPoints,
+        _settings = settings;
 
   factory _$CancellationPolicyImpl.fromJson(Map<String, dynamic> json) =>
       _$$CancellationPolicyImplFromJson(json);
@@ -4685,9 +4719,27 @@ class _$CancellationPolicyImpl implements _CancellationPolicy {
     return EqualUnmodifiableListView(value);
   }
 
+// Live, admin-editable numbers (see Backend's utils/cancellationPolicyLive.js)
+// — the single source of truth for the actual deduction math. `rules`/
+// `descriptionPoints` above are static, hand-authored text that can (and
+// did) drift out of sync with what's really deducted on a booking; the
+// widget computes its display from policyType + settings instead.
+  @override
+  @JsonKey(name: 'policyType')
+  final String? policyType;
+  final Map<String, dynamic>? _settings;
+  @override
+  Map<String, dynamic>? get settings {
+    final value = _settings;
+    if (value == null) return null;
+    if (_settings is EqualUnmodifiableMapView) return _settings;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableMapView(value);
+  }
+
   @override
   String toString() {
-    return 'CancellationPolicy(id: $id, type: $type, title: $title, description: $description, rules: $rules, descriptionPoints: $descriptionPoints)';
+    return 'CancellationPolicy(id: $id, type: $type, title: $title, description: $description, rules: $rules, descriptionPoints: $descriptionPoints, policyType: $policyType, settings: $settings)';
   }
 
   @override
@@ -4702,7 +4754,10 @@ class _$CancellationPolicyImpl implements _CancellationPolicy {
                 other.description == description) &&
             const DeepCollectionEquality().equals(other._rules, _rules) &&
             const DeepCollectionEquality()
-                .equals(other._descriptionPoints, _descriptionPoints));
+                .equals(other._descriptionPoints, _descriptionPoints) &&
+            (identical(other.policyType, policyType) ||
+                other.policyType == policyType) &&
+            const DeepCollectionEquality().equals(other._settings, _settings));
   }
 
   @JsonKey(ignore: true)
@@ -4714,7 +4769,9 @@ class _$CancellationPolicyImpl implements _CancellationPolicy {
       title,
       description,
       const DeepCollectionEquality().hash(_rules),
-      const DeepCollectionEquality().hash(_descriptionPoints));
+      const DeepCollectionEquality().hash(_descriptionPoints),
+      policyType,
+      const DeepCollectionEquality().hash(_settings));
 
   @JsonKey(ignore: true)
   @override
@@ -4738,8 +4795,9 @@ abstract class _CancellationPolicy implements CancellationPolicy {
       final String? title,
       final String? description,
       final List<Rules>? rules,
-      @JsonKey(name: 'descriptionPoints')
-      final List<String>? descriptionPoints}) = _$CancellationPolicyImpl;
+      @JsonKey(name: 'descriptionPoints') final List<String>? descriptionPoints,
+      @JsonKey(name: 'policyType') final String? policyType,
+      final Map<String, dynamic>? settings}) = _$CancellationPolicyImpl;
 
   factory _CancellationPolicy.fromJson(Map<String, dynamic> json) =
       _$CancellationPolicyImpl.fromJson;
@@ -4757,6 +4815,15 @@ abstract class _CancellationPolicy implements CancellationPolicy {
   @override
   @JsonKey(name: 'descriptionPoints')
   List<String>? get descriptionPoints;
+  @override // Live, admin-editable numbers (see Backend's utils/cancellationPolicyLive.js)
+// — the single source of truth for the actual deduction math. `rules`/
+// `descriptionPoints` above are static, hand-authored text that can (and
+// did) drift out of sync with what's really deducted on a booking; the
+// widget computes its display from policyType + settings instead.
+  @JsonKey(name: 'policyType')
+  String? get policyType;
+  @override
+  Map<String, dynamic>? get settings;
   @override
   @JsonKey(ignore: true)
   _$$CancellationPolicyImplCopyWith<_$CancellationPolicyImpl> get copyWith =>

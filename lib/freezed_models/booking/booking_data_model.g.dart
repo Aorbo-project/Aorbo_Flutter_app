@@ -13,6 +13,7 @@ _$CreateRazorpayRequestModelImpl _$$CreateRazorpayRequestModelImplFromJson(
       travelers: (json['travelers'] as List<dynamic>)
           .map((e) => Traveler.fromJson(e as Map<String, dynamic>))
           .toList(),
+      payFull: json['pay_full'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$$CreateRazorpayRequestModelImplToJson(
@@ -20,6 +21,7 @@ Map<String, dynamic> _$$CreateRazorpayRequestModelImplToJson(
     <String, dynamic>{
       'fare_token': instance.fareToken,
       'travelers': instance.travelers,
+      'pay_full': instance.payFull,
     };
 
 _$BookingResponseImpl _$$BookingResponseImplFromJson(
@@ -186,6 +188,8 @@ _$BreakDownDataModelImpl _$$BreakDownDataModelImplFromJson(
       basePrice: json['base_price'],
       travelerCount: json['traveler_count'],
       baseTotal: json['base_total'],
+      vendorDiscount: json['vendor_discount'],
+      couponDiscount: json['coupon_discount'],
       discount: json['discount'],
       couponCode: json['coupon_code'],
       amountAfterDiscount: json['amount_after_discount'],
@@ -209,6 +213,8 @@ Map<String, dynamic> _$$BreakDownDataModelImplToJson(
       'base_price': instance.basePrice,
       'traveler_count': instance.travelerCount,
       'base_total': instance.baseTotal,
+      'vendor_discount': instance.vendorDiscount,
+      'coupon_discount': instance.couponDiscount,
       'discount': instance.discount,
       'coupon_code': instance.couponCode,
       'amount_after_discount': instance.amountAfterDiscount,

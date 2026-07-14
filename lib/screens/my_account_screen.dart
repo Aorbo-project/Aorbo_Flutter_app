@@ -1,3 +1,4 @@
+import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/controller/user_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
@@ -38,6 +39,7 @@ class MyAccountScreen extends StatefulWidget {
 class _MyAccountScreenState extends State<MyAccountScreen>
     with TickerProviderStateMixin {
   final UserController _userC = Get.find<UserController>();
+  final DashboardController _dashboardC = Get.find<DashboardController>();
 
   late final AnimationController _fadeCtrl;
   late final Animation<double> _fade;
@@ -65,25 +67,17 @@ class _MyAccountScreenState extends State<MyAccountScreen>
       duration: const Duration(milliseconds: 400),
     )..forward();
 
-    _fade = CurvedAnimation(
-      parent: _fadeCtrl,
-      curve: Curves.easeOut,
-    );
+    _fade = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
 
     _headerSlideCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
     );
 
-    _headerSlide = Tween<Offset>(
-      begin: const Offset(0, -0.3),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _headerSlideCtrl,
-        curve: Curves.easeOutCubic,
-      ),
-    );
+    _headerSlide = Tween<Offset>(begin: const Offset(0, -0.3), end: Offset.zero)
+        .animate(
+          CurvedAnimation(parent: _headerSlideCtrl, curve: Curves.easeOutCubic),
+        );
 
     _headerFade = CurvedAnimation(
       parent: _headerSlideCtrl,
@@ -103,22 +97,12 @@ class _MyAccountScreenState extends State<MyAccountScreen>
           (c) => Tween<Offset>(
             begin: const Offset(0, 0.25),
             end: Offset.zero,
-          ).animate(
-            CurvedAnimation(
-              parent: c,
-              curve: Curves.easeOutCubic,
-            ),
-          ),
+          ).animate(CurvedAnimation(parent: c, curve: Curves.easeOutCubic)),
         )
         .toList();
 
     _cardFades = _cardCtrls
-        .map(
-          (c) => CurvedAnimation(
-            parent: c,
-            curve: Curves.easeOut,
-          ),
-        )
+        .map((c) => CurvedAnimation(parent: c, curve: Curves.easeOut))
         .toList();
 
     _logoutCtrl = AnimationController(
@@ -129,17 +113,9 @@ class _MyAccountScreenState extends State<MyAccountScreen>
     _logoutSlide = Tween<Offset>(
       begin: const Offset(0, 0.4),
       end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _logoutCtrl,
-        curve: Curves.easeOutCubic,
-      ),
-    );
+    ).animate(CurvedAnimation(parent: _logoutCtrl, curve: Curves.easeOutCubic));
 
-    _logoutFade = CurvedAnimation(
-      parent: _logoutCtrl,
-      curve: Curves.easeOut,
-    );
+    _logoutFade = CurvedAnimation(parent: _logoutCtrl, curve: Curves.easeOut);
 
     _runStaggeredEntrance();
   }
@@ -162,7 +138,7 @@ class _MyAccountScreenState extends State<MyAccountScreen>
   }
 
   void _goToDashboard() {
-    Get.offAllNamed('/dashboard');
+    _dashboardC.selectedScreen.value = 0;
   }
 
   @override
@@ -180,151 +156,144 @@ class _MyAccountScreenState extends State<MyAccountScreen>
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        _goToDashboard();
-      },
-      child: Scaffold(
-        backgroundColor: _C.bg,
-        appBar: _buildAppBar(),
-        body: FadeTransition(
-          opacity: _fade,
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SlideTransition(
-                    position: _headerSlide,
-                    child: FadeTransition(
-                      opacity: _headerFade,
-                      child: _buildUserHeader(),
-                    ),
+    return Scaffold(
+      backgroundColor: _C.bg,
+      appBar: _buildAppBar(),
+      body: FadeTransition(
+        opacity: _fade,
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SlideTransition(
+                  position: _headerSlide,
+                  child: FadeTransition(
+                    opacity: _headerFade,
+                    child: _buildUserHeader(),
                   ),
+                ),
 
-                  SizedBox(height: 2.5.h),
+                SizedBox(height: 2.5.h),
 
-                  _buildAnimatedSection(
-                    index: 0,
-                    label: 'TRAVEL MANAGEMENT',
-                    child: _buildCard(
-                      children: [
-                        _buildMenuItem(
-                          icon: CommonImages.account,
-                          title: 'Traveller Information',
-                          onTap: () async {
-                            await _userC.getUserProfile();
-                            Get.toNamed('/traveller-information');
-                          },
-                        ),
-                        _buildDivider(),
-                        _buildMenuItem(
-                          icon: CommonImages.appointment,
-                          title: 'My Bookings',
-                          onTap: () => Get.toNamed('/my-bookings'),
-                        ),
-                      ],
-                    ),
+                _buildAnimatedSection(
+                  index: 0,
+                  label: 'TRAVEL MANAGEMENT',
+                  child: _buildCard(
+                    children: [
+                      _buildMenuItem(
+                        icon: CommonImages.account,
+                        title: 'Traveller Information',
+                        onTap: () async {
+                          await _userC.getUserProfile();
+                          Get.toNamed('/traveller-information');
+                        },
+                      ),
+                      _buildDivider(),
+                      _buildMenuItem(
+                        icon: CommonImages.appointment,
+                        title: 'My Bookings',
+                        onTap: () => Get.toNamed('/my-bookings'),
+                      ),
+                    ],
                   ),
+                ),
 
-                  SizedBox(height: 2.h),
+                SizedBox(height: 2.h),
 
-                  _buildAnimatedSection(
-                    index: 1,
-                    label: 'SECURITY & HELP',
-                    child: _buildCard(
-                      children: [
-                        _buildMenuItem(
-                          icon: CommonImages.safety,
-                          title: 'Safety',
-                          onTap: () => Get.toNamed('/safety'),
-                        ),
-                        _buildDivider(),
-                        _buildMenuItem(
-                          icon: CommonImages.help,
-                          title: 'Help',
-                          onTap: () => Get.toNamed('/help'),
-                        ),
-                        _buildDivider(),
-                        _buildMenuItem(
-                          icon: CommonImages.notification,
-                          title: 'Notifications',
-                          onTap: () => Get.toNamed('/notifications'),
-                        ),
-                      ],
-                    ),
+                _buildAnimatedSection(
+                  index: 1,
+                  label: 'SECURITY & HELP',
+                  child: _buildCard(
+                    children: [
+                      _buildMenuItem(
+                        icon: CommonImages.safety,
+                        title: 'Safety',
+                        onTap: () => Get.toNamed('/safety'),
+                      ),
+                      _buildDivider(),
+                      _buildMenuItem(
+                        icon: CommonImages.help,
+                        title: 'Help',
+                        onTap: () => Get.toNamed('/help'),
+                      ),
+                      _buildDivider(),
+                      _buildMenuItem(
+                        icon: CommonImages.notification,
+                        title: 'Notifications',
+                        onTap: () => Get.toNamed('/notifications'),
+                      ),
+                    ],
                   ),
+                ),
 
-                  SizedBox(height: 2.h),
+                SizedBox(height: 2.h),
 
-                  _buildAnimatedSection(
-                    index: 2,
-                    label: 'EARNINGS & CLAIMS',
-                    child: _buildCard(
-                      children: [
-                        _buildMenuItem(
-                          icon: CommonImages.claims,
-                          title: 'Claims',
-                          onTap: () {},
-                          isComingSoon: true,
-                        ),
-                        _buildDivider(),
-                        _buildMenuItem(
-                          icon: CommonImages.refer,
-                          title: 'Refer & Earn',
-                          onTap: () => Get.toNamed('/refers'),
-                        ),
-                      ],
-                    ),
+                _buildAnimatedSection(
+                  index: 2,
+                  label: 'EARNINGS & CLAIMS',
+                  child: _buildCard(
+                    children: [
+                      _buildMenuItem(
+                        icon: CommonImages.claims,
+                        title: 'Claims',
+                        onTap: () {},
+                        isComingSoon: true,
+                      ),
+                      _buildDivider(),
+                      _buildMenuItem(
+                        icon: CommonImages.refer,
+                        title: 'Refer & Earn',
+                        onTap: () => Get.toNamed('/refers'),
+                      ),
+                    ],
                   ),
+                ),
 
-                  SizedBox(height: 2.h),
+                SizedBox(height: 2.h),
 
-                  _buildAnimatedSection(
-                    index: 3,
-                    label: 'MORE',
-                    child: _buildCard(
-                      children: [
-                        _buildMenuItem(
-                          icon: CommonImages.partner,
-                          title: 'Become Partner',
-                          onTap: () {},
-                          isComingSoon: true,
-                        ),
-                        _buildDivider(),
-                        _buildMenuItem(
-                          icon: CommonImages.rate,
-                          title: 'Rate us',
-                          onTap: () {},
-                          isComingSoon: true,
-                        ),
-                        _buildDivider(),
-                        _buildMenuItem(
-                          icon: CommonImages.info,
-                          title: 'About Aorbo Treks',
-                          onTap: () => Get.toNamed('/about-us'),
-                        ),
-                      ],
-                    ),
+                _buildAnimatedSection(
+                  index: 3,
+                  label: 'MORE',
+                  child: _buildCard(
+                    children: [
+                      _buildMenuItem(
+                        icon: CommonImages.partner,
+                        title: 'Become Partner',
+                        onTap: () {},
+                        isComingSoon: true,
+                      ),
+                      _buildDivider(),
+                      _buildMenuItem(
+                        icon: CommonImages.rate,
+                        title: 'Rate us',
+                        onTap: () {},
+                        isComingSoon: true,
+                      ),
+                      _buildDivider(),
+                      _buildMenuItem(
+                        icon: CommonImages.info,
+                        title: 'About Aorbo Treks',
+                        onTap: () => Get.toNamed('/about-us'),
+                      ),
+                    ],
                   ),
+                ),
 
-                  SizedBox(height: 3.h),
+                SizedBox(height: 3.h),
 
-                  SlideTransition(
-                    position: _logoutSlide,
-                    child: FadeTransition(
-                      opacity: _logoutFade,
-                      child: _buildLogoutButton(),
-                    ),
+                SlideTransition(
+                  position: _logoutSlide,
+                  child: FadeTransition(
+                    opacity: _logoutFade,
+                    child: _buildLogoutButton(),
                   ),
+                ),
 
-                  SizedBox(height: 4.h),
-                ],
-              ),
+                SizedBox(height: 4.h),
+              ],
             ),
           ),
         ),
@@ -364,10 +333,7 @@ class _MyAccountScreenState extends State<MyAccountScreen>
       titleSpacing: 4.w,
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(1),
-        child: Container(
-          height: 1,
-          color: _C.divider,
-        ),
+        child: Container(height: 1, color: _C.divider),
       ),
       title: Row(
         children: [
@@ -450,9 +416,7 @@ class _MyAccountScreenState extends State<MyAccountScreen>
               decoration: BoxDecoration(
                 color: _C.brand.withValues(alpha: 0.10),
                 shape: BoxShape.circle,
-                border: Border.all(
-                  color: _C.brand.withValues(alpha: 0.25),
-                ),
+                border: Border.all(color: _C.brand.withValues(alpha: 0.25)),
               ),
               child: Center(
                 child: Text(
@@ -528,10 +492,7 @@ class _MyAccountScreenState extends State<MyAccountScreen>
           ),
         ],
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: children,
-      ),
+      child: Column(mainAxisSize: MainAxisSize.min, children: children),
     );
   }
 
@@ -560,9 +521,7 @@ class _MyAccountScreenState extends State<MyAccountScreen>
   }
 
   Widget _buildLogoutButton() {
-    return _AnimatedLogoutButton(
-      onTap: () => Get.toNamed('/logout'),
-    );
+    return _AnimatedLogoutButton(onTap: () => Get.toNamed('/logout'));
   }
 }
 
@@ -608,12 +567,7 @@ class _AnimatedMenuTileState extends State<_AnimatedMenuTile>
     _scale = Tween<double>(
       begin: 1.0,
       end: 0.97,
-    ).animate(
-      CurvedAnimation(
-        parent: _pressCtrl,
-        curve: Curves.easeInOut,
-      ),
-    );
+    ).animate(CurvedAnimation(parent: _pressCtrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -689,11 +643,7 @@ class _AnimatedMenuTileState extends State<_AnimatedMenuTile>
               if (widget.trailingWidget != null) ...[
                 widget.trailingWidget!,
                 SizedBox(width: 2.w),
-                Icon(
-                  Icons.chevron_right,
-                  size: 18,
-                  color: _C.inkMid,
-                ),
+                Icon(Icons.chevron_right, size: 18, color: _C.inkMid),
               ] else if (widget.isComingSoon) ...[
                 Container(
                   padding: EdgeInsets.symmetric(
@@ -715,17 +665,9 @@ class _AnimatedMenuTileState extends State<_AnimatedMenuTile>
                   ),
                 ),
                 SizedBox(width: 1.w),
-                Icon(
-                  Icons.lock_outline_rounded,
-                  size: 15,
-                  color: _C.inkMid,
-                ),
+                Icon(Icons.lock_outline_rounded, size: 15, color: _C.inkMid),
               ] else
-                Icon(
-                  Icons.chevron_right,
-                  size: 18,
-                  color: _C.inkMid,
-                ),
+                Icon(Icons.chevron_right, size: 18, color: _C.inkMid),
             ],
           ),
         ),
@@ -740,9 +682,7 @@ class _AnimatedMenuTileState extends State<_AnimatedMenuTile>
 class _AnimatedLogoutButton extends StatefulWidget {
   final VoidCallback onTap;
 
-  const _AnimatedLogoutButton({
-    required this.onTap,
-  });
+  const _AnimatedLogoutButton({required this.onTap});
 
   @override
   State<_AnimatedLogoutButton> createState() => _AnimatedLogoutButtonState();
@@ -767,22 +707,12 @@ class _AnimatedLogoutButtonState extends State<_AnimatedLogoutButton>
     _scale = Tween<double>(
       begin: 1.0,
       end: 0.97,
-    ).animate(
-      CurvedAnimation(
-        parent: _ctrl,
-        curve: Curves.easeInOut,
-      ),
-    );
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
 
     _bgColor = ColorTween(
       begin: CommonColors.whiteColor,
       end: CommonColors.cFFFFE4E4,
-    ).animate(
-      CurvedAnimation(
-        parent: _ctrl,
-        curve: Curves.easeInOut,
-      ),
-    );
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -822,10 +752,7 @@ class _AnimatedLogoutButtonState extends State<_AnimatedLogoutButton>
               decoration: BoxDecoration(
                 color: _bgColor.value,
                 borderRadius: BorderRadius.circular(4.w),
-                border: Border.all(
-                  color: _C.redBorder,
-                  width: 1.5,
-                ),
+                border: Border.all(color: _C.redBorder, width: 1.5),
                 boxShadow: [
                   BoxShadow(
                     color: CommonColors.blackColor.withValues(alpha: 0.05),
@@ -841,11 +768,7 @@ class _AnimatedLogoutButtonState extends State<_AnimatedLogoutButton>
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.logout_rounded,
-              color: _C.redText,
-              size: 18,
-            ),
+            Icon(Icons.logout_rounded, color: _C.redText, size: 18),
             SizedBox(width: 2.w),
             Text(
               'Logout Account',
@@ -878,19 +801,12 @@ class _LanguageChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: CommonColors.whiteColor,
           borderRadius: BorderRadius.circular(2.5.w),
-          border: Border.all(
-            color: CommonColors.cFFE5E7EB,
-            width: 1,
-          ),
+          border: Border.all(color: CommonColors.cFFE5E7EB, width: 1),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.language_rounded,
-              size: 14,
-              color: _C.inkMid,
-            ),
+            Icon(Icons.language_rounded, size: 14, color: _C.inkMid),
             SizedBox(width: 1.w),
             Text(
               'ENG',
@@ -902,11 +818,7 @@ class _LanguageChip extends StatelessWidget {
               ),
             ),
             SizedBox(width: 0.5.w),
-            Icon(
-              Icons.keyboard_arrow_down_rounded,
-              size: 14,
-              color: _C.inkMid,
-            ),
+            Icon(Icons.keyboard_arrow_down_rounded, size: 14, color: _C.inkMid),
           ],
         ),
       ),
@@ -920,9 +832,7 @@ class _LanguageChip extends StatelessWidget {
 class _PendingBadge extends StatelessWidget {
   final String amount;
 
-  const _PendingBadge({
-    required this.amount,
-  });
+  const _PendingBadge({required this.amount});
 
   @override
   Widget build(BuildContext context) {
@@ -931,10 +841,7 @@ class _PendingBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: CommonColors.cFFFFF7ED,
         borderRadius: BorderRadius.circular(2.w),
-        border: Border.all(
-          color: CommonColors.cFFFED7AA,
-          width: 1,
-        ),
+        border: Border.all(color: CommonColors.cFFFED7AA, width: 1),
       ),
       child: Text(
         amount,

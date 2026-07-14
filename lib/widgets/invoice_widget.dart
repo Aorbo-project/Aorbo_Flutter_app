@@ -117,6 +117,7 @@ class _InvoiceCard extends StatelessWidget {
             child: CancellationPolicyWidget(
               policy: invoice.cancellationPolicy,
               departureDate: "",
+              basePrice: invoice.payment.totalAmount.toString(),
             ),
           ),
           _divider(),

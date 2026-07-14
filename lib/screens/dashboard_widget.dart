@@ -106,19 +106,12 @@ class _DashboardState extends State<Dashboard>
     return 'https://api.aorbotreks.co.in$path';
   }
 
-  List<String> _safeGradient(
-  List<dynamic>? gradient,
-  List<String> fallback,
-) {
-
-  if (gradient == null || gradient.isEmpty) {
-    return fallback;
+  List<String> _safeGradient(List<dynamic>? gradient, List<String> fallback) {
+    if (gradient == null || gradient.isEmpty) {
+      return fallback;
+    }
+    return gradient.map((e) => e.toString()).toList();
   }
-
-  return gradient
-      .map((e) => e.toString())
-      .toList();
-}
 
   // ---------------------------------------------------------------------------
   // Lifecycle
@@ -227,13 +220,16 @@ class _DashboardState extends State<Dashboard>
     final DateTime threeMonthsLater = currentDate.add(const Duration(days: 90));
 
     if (!_dashboardC.isDateAvailable(currentDate)) {
-      final DateTime? first =
-          _getFirstAvailableDate(currentDate, threeMonthsLater);
+      final DateTime? first = _getFirstAvailableDate(
+        currentDate,
+        threeMonthsLater,
+      );
       if (first != null) {
         setState(() {
           _dashboardC.selectedDate.value = first;
-          _dashboardC.dateController.value.text =
-              DateFormat('dd/MM/yyyy').format(first);
+          _dashboardC.dateController.value.text = DateFormat(
+            'dd/MM/yyyy',
+          ).format(first);
           _selectedDay = first;
           _focusedDay = first;
           _updateNearestWeekendDates();
@@ -252,20 +248,22 @@ class _DashboardState extends State<Dashboard>
 
     DateTime currentDate = selectedDate;
     if (_ntpTime != null) {
-      final DateTime normalizedNTP =
-          DateTime(_ntpTime!.year, _ntpTime!.month, _ntpTime!.day);
-      final DateTime normalizedCurrent =
-          DateTime(currentDate.year, currentDate.month, currentDate.day);
+      final DateTime normalizedNTP = DateTime(
+        _ntpTime!.year,
+        _ntpTime!.month,
+        _ntpTime!.day,
+      );
+      final DateTime normalizedCurrent = DateTime(
+        currentDate.year,
+        currentDate.month,
+        currentDate.day,
+      );
       if (normalizedCurrent.isBefore(normalizedNTP)) {
         currentDate = _ntpTime!;
       }
     }
 
-    const weekendDays = [
-      DateTime.thursday,
-      DateTime.friday,
-      DateTime.saturday,
-    ];
+    const weekendDays = [DateTime.thursday, DateTime.friday, DateTime.saturday];
 
     final bool isSelectedAWeekend = weekendDays.contains(selectedDate.weekday);
     if (!isSelectedAWeekend && _dashboardC.isDateAvailable(selectedDate)) {
@@ -367,9 +365,11 @@ class _DashboardState extends State<Dashboard>
     }
     if (_dashboardC.selectedDate.value != null &&
         !_dashboardC.isDateAvailable(_dashboardC.selectedDate.value!)) {
-      CustomSnackBar.show(context,
-          message:
-              'Selected date has no available treks. Please pick another date.');
+      CustomSnackBar.show(
+        context,
+        message:
+            'Selected date has no available treks. Please pick another date.',
+      );
       return;
     }
     _resetAllScrolls();
@@ -404,7 +404,8 @@ class _DashboardState extends State<Dashboard>
   // ---------------------------------------------------------------------------
 
   Future<void> _selectDate(BuildContext context) async {
-    final bool isCityTrekSelected = _dashboardC.selectedCityId.value != 0 &&
+    final bool isCityTrekSelected =
+        _dashboardC.selectedCityId.value != 0 &&
         _dashboardC.selectedTrekId.value != 0;
 
     if (!isCityTrekSelected) {
@@ -424,8 +425,9 @@ class _DashboardState extends State<Dashboard>
       currentTime.month,
       currentTime.day,
     );
-    final DateTime threeMonthsLater =
-        normalizedCurrent.add(const Duration(days: 90));
+    final DateTime threeMonthsLater = normalizedCurrent.add(
+      const Duration(days: 90),
+    );
 
     await _showCustomDatePicker(context, normalizedCurrent, threeMonthsLater);
   }
@@ -461,8 +463,7 @@ class _DashboardState extends State<Dashboard>
                 constraints: BoxConstraints(maxHeight: screenHeight * 0.82),
                 decoration: const BoxDecoration(
                   color: _C.cardBg,
-                  borderRadius:
-                      BorderRadius.vertical(top: Radius.circular(28)),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
                   boxShadow: [
                     BoxShadow(
                       color: Color(0x1A000000),
@@ -480,9 +481,11 @@ class _DashboardState extends State<Dashboard>
                       decoration: BoxDecoration(
                         color: _C.fieldBg,
                         borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(28)),
+                          top: Radius.circular(28),
+                        ),
                         border: const Border(
-                            bottom: BorderSide(color: _C.fieldBorder)),
+                          bottom: BorderSide(color: _C.fieldBorder),
+                        ),
                       ),
                       child: Column(
                         children: [
@@ -496,14 +499,12 @@ class _DashboardState extends State<Dashboard>
                             ),
                           ),
                           Padding(
-                            padding:
-                                const EdgeInsets.fromLTRB(18, 12, 18, 12),
+                            padding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
                             child: Row(
                               children: [
                                 TweenAnimationBuilder<double>(
                                   tween: Tween(begin: 0.85, end: 1.0),
-                                  duration:
-                                      const Duration(milliseconds: 380),
+                                  duration: const Duration(milliseconds: 380),
                                   curve: Curves.elasticOut,
                                   builder: (_, v, child) =>
                                       Transform.scale(scale: v, child: child),
@@ -511,10 +512,10 @@ class _DashboardState extends State<Dashboard>
                                     padding: const EdgeInsets.all(10),
                                     decoration: BoxDecoration(
                                       color: _C.tealSoft,
-                                      borderRadius:
-                                          BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(12),
                                       border: Border.all(
-                                          color: _C.teal.withValues(alpha: 0.25)),
+                                        color: _C.teal.withValues(alpha: 0.25),
+                                      ),
                                     ),
                                     child: const Icon(
                                       Icons.calendar_month_rounded,
@@ -554,14 +555,12 @@ class _DashboardState extends State<Dashboard>
                                 GestureDetector(
                                   onTap: () => Navigator.pop(context),
                                   child: AnimatedContainer(
-                                    duration:
-                                        const Duration(milliseconds: 200),
+                                    duration: const Duration(milliseconds: 200),
                                     padding: const EdgeInsets.all(7),
                                     decoration: BoxDecoration(
                                       color: _C.cardBg,
                                       shape: BoxShape.circle,
-                                      border: Border.all(
-                                          color: _C.fieldBorder),
+                                      border: Border.all(color: _C.fieldBorder),
                                     ),
                                     child: const Icon(
                                       Icons.close_rounded,
@@ -574,8 +573,7 @@ class _DashboardState extends State<Dashboard>
                             ),
                           ),
                           Padding(
-                            padding:
-                                const EdgeInsets.fromLTRB(18, 0, 18, 12),
+                            padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
                             child: Row(
                               children: [
                                 _legendItem(
@@ -605,31 +603,29 @@ class _DashboardState extends State<Dashboard>
                     Flexible(
                       child: SingleChildScrollView(
                         physics: const BouncingScrollPhysics(),
-                        padding:
-                            const EdgeInsets.fromLTRB(12, 10, 12, 16),
+                        padding: const EdgeInsets.fromLTRB(12, 10, 12, 16),
                         child: Container(
                           decoration: BoxDecoration(
                             color: _C.cardBg,
                             borderRadius: BorderRadius.circular(18),
                             border: Border.all(color: _C.fieldBorder),
                           ),
-                          padding:
-                              const EdgeInsets.fromLTRB(4, 4, 4, 10),
+                          padding: const EdgeInsets.fromLTRB(4, 4, 4, 10),
                           child: Obx(() {
                             final isLoading = _dashboardC
-                                .calenderTrekDatesObserver.value
+                                .calenderTrekDatesObserver
+                                .value
                                 .maybeWhen(
-                              loading: (_) => true,
-                              orElse: () => false,
-                            );
+                                  loading: (_) => true,
+                                  orElse: () => false,
+                                );
 
                             if (isLoading) {
                               return SizedBox(
                                 height: 280,
                                 child: Center(
                                   child: Column(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.center,
+                                    mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       const SizedBox(
                                         width: 28,
@@ -676,15 +672,14 @@ class _DashboardState extends State<Dashboard>
                                 rowHeight: 50,
                                 daysOfWeekHeight: 28,
                                 shouldFillViewport: false,
-                                onFormatChanged: (f) => setSheet(
-                                    () => tempCalendarFormat = f),
-                                onPageChanged: (foc) =>
-                                    tempFocusedDay = foc,
+                                onFormatChanged: (f) =>
+                                    setSheet(() => tempCalendarFormat = f),
+                                onPageChanged: (foc) => tempFocusedDay = foc,
                                 selectedDayPredicate: (d) =>
                                     isSameDay(d, tempSelectedDate),
                                 onDaySelected: (sel, foc) {
-                                  final bool isAvailable =
-                                      _dashboardC.isDateAvailable(sel);
+                                  final bool isAvailable = _dashboardC
+                                      .isDateAvailable(sel);
 
                                   if (!isAvailable) {
                                     CustomSnackBar.show(
@@ -697,9 +692,8 @@ class _DashboardState extends State<Dashboard>
 
                                   setState(() {
                                     _dashboardC.selectedDate.value = sel;
-                                    _dashboardC.dateController.value
-                                        .text = DateFormat('dd/MM/yyyy')
-                                        .format(sel);
+                                    _dashboardC.dateController.value.text =
+                                        DateFormat('dd/MM/yyyy').format(sel);
                                     _selectedDay = sel;
                                     _focusedDay = foc;
                                     _calendarFormat = tempCalendarFormat;
@@ -714,30 +708,34 @@ class _DashboardState extends State<Dashboard>
                                   cellMargin: EdgeInsets.all(2),
                                   tableBorder: TableBorder.symmetric(
                                     inside: BorderSide(
-                                        color: Color(0xFFF3F4F6)),
+                                      color: Color(0xFFF3F4F6),
+                                    ),
                                   ),
                                 ),
                                 calendarBuilders: CalendarBuilders(
                                   defaultBuilder: (ctx, day, _) =>
                                       _buildDayCell(
+                                        day: day,
+                                        isSelected: false,
+                                        isToday: false,
+                                      ),
+                                  todayBuilder: (ctx, day, _) => _buildDayCell(
                                     day: day,
-                                    isSelected: false,
-                                    isToday: false,
-                                  ),
-                                  todayBuilder: (ctx, day, _) =>
-                                      _buildDayCell(
-                                    day: day,
-                                    isSelected:
-                                        isSameDay(day, tempSelectedDate),
+                                    isSelected: isSameDay(
+                                      day,
+                                      tempSelectedDate,
+                                    ),
                                     isToday: true,
                                   ),
                                   selectedBuilder: (ctx, day, _) =>
                                       _buildDayCell(
-                                    day: day,
-                                    isSelected: true,
-                                    isToday: isSameDay(
-                                        day, _ntpTime ?? DateTime.now()),
-                                  ),
+                                        day: day,
+                                        isSelected: true,
+                                        isToday: isSameDay(
+                                          day,
+                                          _ntpTime ?? DateTime.now(),
+                                        ),
+                                      ),
                                   markerBuilder: (_, __, ___) => null,
                                 ),
                                 headerStyle: HeaderStyle(
@@ -758,9 +756,9 @@ class _DashboardState extends State<Dashboard>
                                     Icons.chevron_right_rounded,
                                     _C.teal,
                                   ),
-                                  headerPadding:
-                                      const EdgeInsets.symmetric(
-                                          vertical: 6),
+                                  headerPadding: const EdgeInsets.symmetric(
+                                    vertical: 6,
+                                  ),
                                 ),
                                 daysOfWeekStyle: DaysOfWeekStyle(
                                   weekdayStyle: const TextStyle(
@@ -838,12 +836,14 @@ class _DashboardState extends State<Dashboard>
                 decoration: BoxDecoration(
                   color: solid ? color : Colors.transparent,
                   shape: BoxShape.circle,
-                  border:
-                      solid ? null : Border.all(color: color, width: 1.5),
+                  border: solid ? null : Border.all(color: color, width: 1.5),
                 ),
                 child: solid
-                    ? const Icon(Icons.check_rounded,
-                        size: 8, color: Colors.white)
+                    ? const Icon(
+                        Icons.check_rounded,
+                        size: 8,
+                        color: Colors.white,
+                      )
                     : null,
               ),
         const SizedBox(width: 5),
@@ -902,14 +902,14 @@ class _DashboardState extends State<Dashboard>
           color: isSelected
               ? null
               : isAvailable
-                  ? _C.tealSoft
-                  : Colors.transparent,
+              ? _C.tealSoft
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(radius),
           border: isToday && !isSelected
               ? Border.all(color: _C.teal, width: 1.6)
               : isAvailable && !isSelected
-                  ? Border.all(color: _C.teal.withValues(alpha: 0.35), width: 1)
-                  : null,
+              ? Border.all(color: _C.teal.withValues(alpha: 0.35), width: 1)
+              : null,
           boxShadow: isSelected
               ? [
                   BoxShadow(
@@ -935,10 +935,10 @@ class _DashboardState extends State<Dashboard>
                 color: isSelected
                     ? Colors.white
                     : isAvailable
-                        ? _C.teal
-                        : isWeekend
-                            ? _C.danger.withValues(alpha: 0.7)
-                            : _C.ink,
+                    ? _C.teal
+                    : isWeekend
+                    ? _C.danger.withValues(alpha: 0.7)
+                    : _C.ink,
                 height: 1.0,
               ),
             ),
@@ -990,7 +990,11 @@ class _DashboardState extends State<Dashboard>
                 ),
               ),
               margin: const EdgeInsets.only(
-                  left: 0, right: 0, top: 0, bottom: 5),
+                left: 0,
+                right: 0,
+                top: 0,
+                bottom: 5,
+              ),
               child: Container(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
@@ -1007,18 +1011,17 @@ class _DashboardState extends State<Dashboard>
                   bottom: false,
                   child: Padding(
                     padding: EdgeInsets.symmetric(
-                        horizontal: ScreenConstant.size16),
+                      horizontal: ScreenConstant.size16,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         SizedBox(height: ScreenConstant.size20),
                         // Logo + Help
                         Container(
-                          margin:
-                              const EdgeInsets.only(left: 18, right: 18),
+                          margin: const EdgeInsets.only(left: 18, right: 18),
                           child: Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment.spaceBetween,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Image.asset(
                                 CommonImages.logo1,
@@ -1030,7 +1033,9 @@ class _DashboardState extends State<Dashboard>
                                 child: SvgPicture.asset(
                                   CommonImages.help,
                                   colorFilter: const ColorFilter.mode(
-                                      _C.ink, BlendMode.srcIn),
+                                    _C.ink,
+                                    BlendMode.srcIn,
+                                  ),
                                   height: 2.8.h,
                                   width: 3.w,
                                 ),
@@ -1055,13 +1060,13 @@ class _DashboardState extends State<Dashboard>
 
                         // ---- Search Card ----
                         Container(
-                          margin:
-                              const EdgeInsets.only(left: 30, right: 30),
+                          margin: const EdgeInsets.only(left: 30, right: 30),
                           child: Card(
                             color: CommonColors.whiteColor,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(
-                                  ScreenConstant.size20),
+                                ScreenConstant.size20,
+                              ),
                             ),
                             elevation: 3,
                             child: Padding(
@@ -1081,60 +1086,58 @@ class _DashboardState extends State<Dashboard>
                                           GestureDetector(
                                             onTap: _selectSourceLocation,
                                             child: Padding(
-                                              padding:
-                                                  const EdgeInsets.only(
-                                                      right: 8),
+                                              padding: const EdgeInsets.only(
+                                                right: 8,
+                                              ),
                                               child: SvgPicture.asset(
                                                 CommonImages.location3,
-                                                height:
-                                                    ScreenConstant.size24,
-                                                width:
-                                                    ScreenConstant.size24,
+                                                height: ScreenConstant.size24,
+                                                width: ScreenConstant.size24,
                                                 colorFilter:
                                                     const ColorFilter.mode(
-                                                        _C.teal,
-                                                        BlendMode.srcIn),
+                                                      _C.teal,
+                                                      BlendMode.srcIn,
+                                                    ),
                                               ),
                                             ),
                                           ),
                                           SizedBox(
-                                              width:
-                                                  ScreenConstant.size12),
+                                            width: ScreenConstant.size12,
+                                          ),
                                           Expanded(
                                             child: MediaQuery(
                                               data: MediaQuery.of(context)
                                                   .copyWith(
-                                                textScaler:
-                                                    const TextScaler
-                                                        .linear(1.0),
-                                              ),
+                                                    textScaler:
+                                                        const TextScaler.linear(
+                                                          1.0,
+                                                        ),
+                                                  ),
                                               child: TextFormField(
                                                 controller: _dashboardC
-                                                    .fromController.value,
+                                                    .fromController
+                                                    .value,
                                                 readOnly: true,
-                                                onTap:
-                                                    _selectSourceLocation,
+                                                onTap: _selectSourceLocation,
                                                 style: TextStyle(
                                                   fontFamily: 'Poppins',
                                                   fontSize: FontSize.s14,
-                                                  fontWeight:
-                                                      FontWeight.w600,
+                                                  fontWeight: FontWeight.w600,
                                                   color: _C.ink,
                                                 ),
-                                                decoration:
-                                                    InputDecoration(
+                                                decoration: InputDecoration(
                                                   border: InputBorder.none,
                                                   hintText: 'From',
                                                   hintStyle: TextStyle(
                                                     fontFamily: 'Poppins',
                                                     fontSize: FontSize.s14,
-                                                    fontWeight:
-                                                        FontWeight.w500,
+                                                    fontWeight: FontWeight.w500,
                                                     color: _C.inkLight,
                                                   ),
                                                   contentPadding:
-                                                      const EdgeInsets
-                                                          .only(right: 36),
+                                                      const EdgeInsets.only(
+                                                        right: 36,
+                                                      ),
                                                 ),
                                               ),
                                             ),
@@ -1143,11 +1146,11 @@ class _DashboardState extends State<Dashboard>
                                       ),
                                       Positioned.fill(
                                         child: TouchRipple(
-                                          rippleColor:
-                                              _C.teal.withValues(alpha: 0.08),
+                                          rippleColor: _C.teal.withValues(
+                                            alpha: 0.08,
+                                          ),
                                           onTap: _selectSourceLocation,
-                                          child:
-                                              const SizedBox.expand(),
+                                          child: const SizedBox.expand(),
                                         ),
                                       ),
                                     ],
@@ -1162,60 +1165,58 @@ class _DashboardState extends State<Dashboard>
                                           GestureDetector(
                                             onTap: _selectDestinationTrek,
                                             child: Padding(
-                                              padding:
-                                                  const EdgeInsets.only(
-                                                      right: 8),
+                                              padding: const EdgeInsets.only(
+                                                right: 8,
+                                              ),
                                               child: SvgPicture.asset(
                                                 CommonImages.location2,
-                                                height:
-                                                    ScreenConstant.size24,
-                                                width:
-                                                    ScreenConstant.size24,
+                                                height: ScreenConstant.size24,
+                                                width: ScreenConstant.size24,
                                                 colorFilter:
                                                     const ColorFilter.mode(
-                                                        _C.teal,
-                                                        BlendMode.srcIn),
+                                                      _C.teal,
+                                                      BlendMode.srcIn,
+                                                    ),
                                               ),
                                             ),
                                           ),
                                           SizedBox(
-                                              width:
-                                                  ScreenConstant.size12),
+                                            width: ScreenConstant.size12,
+                                          ),
                                           Expanded(
                                             child: MediaQuery(
                                               data: MediaQuery.of(context)
                                                   .copyWith(
-                                                textScaler:
-                                                    const TextScaler
-                                                        .linear(1.0),
-                                              ),
+                                                    textScaler:
+                                                        const TextScaler.linear(
+                                                          1.0,
+                                                        ),
+                                                  ),
                                               child: TextFormField(
                                                 controller: _dashboardC
-                                                    .toController.value,
+                                                    .toController
+                                                    .value,
                                                 readOnly: true,
-                                                onTap:
-                                                    _selectDestinationTrek,
+                                                onTap: _selectDestinationTrek,
                                                 style: TextStyle(
                                                   fontFamily: 'Poppins',
                                                   fontSize: FontSize.s14,
-                                                  fontWeight:
-                                                      FontWeight.w600,
+                                                  fontWeight: FontWeight.w600,
                                                   color: _C.ink,
                                                 ),
-                                                decoration:
-                                                    InputDecoration(
+                                                decoration: InputDecoration(
                                                   border: InputBorder.none,
                                                   hintText: 'To',
                                                   hintStyle: TextStyle(
                                                     fontFamily: 'Poppins',
                                                     fontSize: FontSize.s14,
-                                                    fontWeight:
-                                                        FontWeight.w500,
+                                                    fontWeight: FontWeight.w500,
                                                     color: _C.inkLight,
                                                   ),
                                                   contentPadding:
-                                                      const EdgeInsets
-                                                          .only(right: 36),
+                                                      const EdgeInsets.only(
+                                                        right: 36,
+                                                      ),
                                                 ),
                                               ),
                                             ),
@@ -1224,11 +1225,11 @@ class _DashboardState extends State<Dashboard>
                                       ),
                                       Positioned.fill(
                                         child: TouchRipple(
-                                          rippleColor:
-                                              _C.teal.withValues(alpha: 0.08),
+                                          rippleColor: _C.teal.withValues(
+                                            alpha: 0.08,
+                                          ),
                                           onTap: _selectDestinationTrek,
-                                          child:
-                                              const SizedBox.expand(),
+                                          child: const SizedBox.expand(),
                                         ),
                                       ),
                                     ],
@@ -1238,119 +1239,112 @@ class _DashboardState extends State<Dashboard>
                                   // Date field
                                   InkWell(
                                     onTap: () => _selectDate(context),
-                                    borderRadius:
-                                        BorderRadius.circular(8),
-                                    splashColor:
-                                        _C.teal.withValues(alpha: 0.08),
-                                    highlightColor:
-                                        _C.teal.withValues(alpha: 0.04),
+                                    borderRadius: BorderRadius.circular(8),
+                                    splashColor: _C.teal.withValues(
+                                      alpha: 0.08,
+                                    ),
+                                    highlightColor: _C.teal.withValues(
+                                      alpha: 0.04,
+                                    ),
                                     child: Padding(
-                                      padding:
-                                          const EdgeInsets.symmetric(
-                                              vertical: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 4,
+                                      ),
                                       child: Row(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
                                           Padding(
                                             padding: EdgeInsets.only(
-                                                top: 18, right: 8),
+                                              top: 18,
+                                              right: 8,
+                                            ),
                                             child: SvgPicture.asset(
                                               CommonImages.calendar,
-                                              height:
-                                                  ScreenConstant.size24,
-                                              width:
-                                                  ScreenConstant.size24,
+                                              height: ScreenConstant.size24,
+                                              width: ScreenConstant.size24,
                                               colorFilter:
                                                   const ColorFilter.mode(
-                                                      _C.teal,
-                                                      BlendMode.srcIn),
+                                                    _C.teal,
+                                                    BlendMode.srcIn,
+                                                  ),
                                             ),
                                           ),
                                           SizedBox(
-                                              width:
-                                                  ScreenConstant.size12),
+                                            width: ScreenConstant.size12,
+                                          ),
                                           Expanded(
                                             child: Column(
                                               crossAxisAlignment:
-                                                  CrossAxisAlignment
-                                                      .start,
+                                                  CrossAxisAlignment.start,
                                               children: [
                                                 SizedBox(height: 1.h),
                                                 Text(
                                                   'Departure Date',
                                                   textScaler:
-                                                      const TextScaler
-                                                          .linear(1.0),
+                                                      const TextScaler.linear(
+                                                        1.0,
+                                                      ),
                                                   style: TextStyle(
                                                     fontFamily: 'Poppins',
                                                     color: _C.inkLight,
-                                                    fontSize:
-                                                        FontSize.s10,
-                                                    fontWeight:
-                                                        FontWeight.w500,
+                                                    fontSize: FontSize.s10,
+                                                    fontWeight: FontWeight.w500,
                                                   ),
                                                 ),
                                                 SizedBox(height: 0.2.h),
                                                 Obx(() {
-                                                  final cityId =
-                                                      _dashboardC
-                                                          .selectedCityId
-                                                          .value;
-                                                  final trekId =
-                                                      _dashboardC
-                                                          .selectedTrekId
-                                                          .value;
+                                                  final cityId = _dashboardC
+                                                      .selectedCityId
+                                                      .value;
+                                                  final trekId = _dashboardC
+                                                      .selectedTrekId
+                                                      .value;
                                                   final selectedDateValue =
                                                       _dashboardC
                                                           .selectedDate
                                                           .value;
-                                                  final dateText =
-                                                      _dashboardC
-                                                          .dateController
-                                                          .value
-                                                          .text;
-                                                  final observerState =
-                                                      _dashboardC
-                                                          .calenderTrekDatesObserver
-                                                          .value;
+                                                  final dateText = _dashboardC
+                                                      .dateController
+                                                      .value
+                                                      .text;
+                                                  final observerState = _dashboardC
+                                                      .calenderTrekDatesObserver
+                                                      .value;
 
                                                   final bool
-                                                      isCityTrekSelected =
+                                                  isCityTrekSelected =
                                                       cityId != 0 &&
-                                                          trekId != 0;
+                                                      trekId != 0;
 
                                                   if (!isCityTrekSelected) {
                                                     return Padding(
                                                       padding:
-                                                          const EdgeInsets
-                                                              .only(
-                                                              top: 4.0),
+                                                          const EdgeInsets.only(
+                                                            top: 4.0,
+                                                          ),
                                                       child: Text(
                                                         'Select source & destination first',
                                                         style: TextStyle(
-                                                          fontFamily:
-                                                              'Poppins',
+                                                          fontFamily: 'Poppins',
                                                           fontSize:
                                                               FontSize.s10,
-                                                          color:
-                                                              _C.inkLight,
+                                                          color: _C.inkLight,
                                                           fontStyle:
-                                                              FontStyle
-                                                                  .italic,
+                                                              FontStyle.italic,
                                                         ),
                                                       ),
                                                     );
                                                   }
 
                                                   if (dateText.isNotEmpty) {
-                                                    final bool
-                                                        isAvailable =
+                                                    final bool isAvailable =
                                                         selectedDateValue !=
-                                                                null &&
-                                                            _dashboardC
-                                                                .isDateAvailable(
-                                                                    selectedDateValue);
+                                                            null &&
+                                                        _dashboardC
+                                                            .isDateAvailable(
+                                                              selectedDateValue,
+                                                            );
                                                     return Column(
                                                       crossAxisAlignment:
                                                           CrossAxisAlignment
@@ -1361,11 +1355,10 @@ class _DashboardState extends State<Dashboard>
                                                             Text(
                                                               dateText,
                                                               textScaler:
-                                                                  const TextScaler
-                                                                      .linear(
-                                                                      1.0),
-                                                              style:
-                                                                  TextStyle(
+                                                                  const TextScaler.linear(
+                                                                    1.0,
+                                                                  ),
+                                                              style: TextStyle(
                                                                 fontFamily:
                                                                     'Poppins',
                                                                 fontSize:
@@ -1374,27 +1367,25 @@ class _DashboardState extends State<Dashboard>
                                                                 fontWeight:
                                                                     FontWeight
                                                                         .w600,
-                                                                color:
-                                                                    _C.ink,
+                                                                color: _C.ink,
                                                               ),
                                                             ),
                                                             if (selectedDateValue !=
                                                                 null)
                                                               Padding(
-                                                                padding: const EdgeInsets
-                                                                    .only(
-                                                                    left:
-                                                                        8.0),
-                                                                child:
-                                                                    Icon(
+                                                                padding:
+                                                                    const EdgeInsets.only(
+                                                                      left: 8.0,
+                                                                    ),
+                                                                child: Icon(
                                                                   isAvailable
                                                                       ? Icons
-                                                                          .check_circle
+                                                                            .check_circle
                                                                       : Icons
-                                                                          .warning,
-                                                                  size:
-                                                                      14,
-                                                                  color: isAvailable
+                                                                            .warning,
+                                                                  size: 14,
+                                                                  color:
+                                                                      isAvailable
                                                                       ? _C.teal
                                                                       : _C.danger,
                                                                 ),
@@ -1405,23 +1396,21 @@ class _DashboardState extends State<Dashboard>
                                                                 null &&
                                                             isAvailable)
                                                           Padding(
-                                                            padding: const EdgeInsets
-                                                                .only(
-                                                                top: 4.0),
+                                                            padding:
+                                                                const EdgeInsets.only(
+                                                                  top: 4.0,
+                                                                ),
                                                             child: Text(
                                                               '${_dashboardC.getTrekCountForDate(selectedDateValue)} trek${_dashboardC.getTrekCountForDate(selectedDateValue) > 1 ? 's' : ''} available',
-                                                              style:
-                                                                  TextStyle(
+                                                              style: TextStyle(
                                                                 fontFamily:
                                                                     'Poppins',
                                                                 fontSize:
-                                                                    FontSize
-                                                                        .s8,
+                                                                    FontSize.s8,
                                                                 fontWeight:
                                                                     FontWeight
                                                                         .w500,
-                                                                color:
-                                                                    _C.teal,
+                                                                color: _C.teal,
                                                               ),
                                                             ),
                                                           ),
@@ -1430,55 +1419,54 @@ class _DashboardState extends State<Dashboard>
                                                   }
 
                                                   final datesLoading =
-                                                      observerState
-                                                          .maybeWhen(
-                                                    loading: (_) => true,
-                                                    orElse: () => false,
-                                                  );
+                                                      observerState.maybeWhen(
+                                                        loading: (_) => true,
+                                                        orElse: () => false,
+                                                      );
 
-                                                  final List<
-                                                          TrekDatesModel>?
-                                                      calenderTrekDates =
-                                                      observerState
-                                                          .maybeWhen(
-                                                    success: (r) =>
-                                                        (r as CalenderDatesResponseModel)
-                                                            .data
-                                                            ?.dates,
-                                                    error: (_) => [],
-                                                    orElse: () => [],
-                                                  );
+                                                  final List<TrekDatesModel>?
+                                                  calenderTrekDates =
+                                                      observerState.maybeWhen(
+                                                        success: (r) =>
+                                                            (r
+                                                                    as CalenderDatesResponseModel)
+                                                                .data
+                                                                ?.dates,
+                                                        error: (_) => [],
+                                                        orElse: () => [],
+                                                      );
 
                                                   final DateTime now =
                                                       _ntpTime ??
-                                                          DateTime.now();
+                                                      DateTime.now();
                                                   final today = DateTime(
-                                                      now.year,
-                                                      now.month,
-                                                      now.day);
+                                                    now.year,
+                                                    now.month,
+                                                    now.day,
+                                                  );
 
-                                                  final List<
-                                                          TrekDatesModel>
-                                                      first10Dates =
-                                                      (calenderTrekDates ??
-                                                              [])
+                                                  final List<TrekDatesModel>
+                                                  first10Dates =
+                                                      (calenderTrekDates ?? [])
                                                           .where((d) {
                                                             if (d.date ==
                                                                 null) {
                                                               return false;
                                                             }
                                                             final dt =
-                                                                DateTime
-                                                                    .tryParse(
-                                                                        d.date!);
+                                                                DateTime.tryParse(
+                                                                  d.date!,
+                                                                );
                                                             if (dt == null) {
                                                               return false;
                                                             }
                                                             return dt.isAfter(
-                                                                today.subtract(
-                                                                    const Duration(
-                                                                        days:
-                                                                            1)));
+                                                              today.subtract(
+                                                                const Duration(
+                                                                  days: 1,
+                                                                ),
+                                                              ),
+                                                            );
                                                           })
                                                           .take(10)
                                                           .toList();
@@ -1486,18 +1474,16 @@ class _DashboardState extends State<Dashboard>
                                                   if (first10Dates.isEmpty) {
                                                     return Padding(
                                                       padding:
-                                                          const EdgeInsets
-                                                              .only(
-                                                              top: 8.0),
+                                                          const EdgeInsets.only(
+                                                            top: 8.0,
+                                                          ),
                                                       child: Text(
                                                         'No available dates found',
                                                         style: TextStyle(
-                                                          fontFamily:
-                                                              'Poppins',
+                                                          fontFamily: 'Poppins',
                                                           fontSize:
                                                               FontSize.s10,
-                                                          color:
-                                                              _C.inkLight,
+                                                          color: _C.inkLight,
                                                         ),
                                                       ),
                                                     );
@@ -1505,72 +1491,69 @@ class _DashboardState extends State<Dashboard>
 
                                                   return Container(
                                                     margin: EdgeInsets.only(
-                                                        top: 1.h),
+                                                      top: 1.h,
+                                                    ),
                                                     height: 6.h,
-                                                    child:
-                                                        ListView.builder(
+                                                    child: ListView.builder(
                                                       key: ValueKey(
-                                                          'date_list_${observerState.hashCode}_${first10Dates.length}'),
+                                                        'date_list_${observerState.hashCode}_${first10Dates.length}',
+                                                      ),
                                                       scrollDirection:
                                                           Axis.horizontal,
                                                       physics:
                                                           const BouncingScrollPhysics(),
                                                       itemCount:
-                                                          first10Dates
-                                                              .length,
-                                                      itemBuilder:
-                                                          (ctx, index) {
+                                                          first10Dates.length,
+                                                      itemBuilder: (ctx, index) {
                                                         final cardData =
-                                                            first10Dates[
-                                                                index];
-                                                        final DateTime?
-                                                            date =
+                                                            first10Dates[index];
+                                                        final DateTime? date =
                                                             DateTime.tryParse(
-                                                                cardData
-                                                                        .date ??
-                                                                    '');
+                                                              cardData.date ??
+                                                                  '',
+                                                            );
                                                         if (date == null) {
                                                           return const SizedBox();
                                                         }
 
                                                         final String
-                                                            formattedDate =
+                                                        formattedDate =
                                                             DateFormat(
-                                                                    'd MMM')
-                                                                .format(
-                                                                    date);
-                                                        final bool
-                                                            isSelected =
+                                                              'd MMM',
+                                                            ).format(date);
+                                                        final bool isSelected =
                                                             isSameDay(
-                                                                _dashboardC
-                                                                    .selectedDate
-                                                                    .value,
-                                                                date);
+                                                              _dashboardC
+                                                                  .selectedDate
+                                                                  .value,
+                                                              date,
+                                                            );
                                                         final bool
-                                                            isDateAvailable =
+                                                        isDateAvailable =
                                                             _dashboardC
                                                                 .isDateAvailable(
-                                                                    date);
+                                                                  date,
+                                                                );
                                                         final int
-                                                            trekCount =
-                                                            _dashboardC
-                                                                .getTrekCountForDate(
-                                                                    date);
+                                                        trekCount = _dashboardC
+                                                            .getTrekCountForDate(
+                                                              date,
+                                                            );
 
                                                         return GestureDetector(
                                                           onTap: () {
                                                             if (isDateAvailable) {
-                                                              setState(
-                                                                  () {
-                                                                _dashboardC.selectedDate.value =
+                                                              setState(() {
+                                                                _dashboardC
+                                                                        .selectedDate
+                                                                        .value =
                                                                     date;
                                                                 _dashboardC
                                                                     .dateController
                                                                     .value
                                                                     .text = DateFormat(
-                                                                        'dd/MM/yyyy')
-                                                                    .format(
-                                                                        date);
+                                                                  'dd/MM/yyyy',
+                                                                ).format(date);
                                                                 _selectedDay =
                                                                     date;
                                                                 _focusedDay =
@@ -1590,99 +1573,114 @@ class _DashboardState extends State<Dashboard>
                                                               );
                                                             }
                                                           },
-                                                          child: Container(
-                                                            margin: EdgeInsets.only(
-                                                              left: index == 0
-                                                                  ? 0
-                                                                  : ScreenConstant
-                                                                      .size6,
-                                                              right: index ==
-                                                                      first10Dates.length -
-                                                                          1
-                                                                  ? 0
-                                                                  : ScreenConstant
-                                                                      .size6,
-                                                            ),
-                                                            padding: const EdgeInsets.symmetric(
-                                                                horizontal:
-                                                                    12,
-                                                                vertical:
-                                                                    8),
-                                                            decoration:
-                                                                BoxDecoration(
-                                                              border:
-                                                                  Border.all(
-                                                                color: isSelected
-                                                                    ? _C.teal
-                                                                    : isDateAvailable
-                                                                        ? _C.teal.withValues(alpha: 0.35)
-                                                                        : _C.fieldBorder,
-                                                                width: isSelected
-                                                                    ? 1.5
-                                                                    : 0.8,
-                                                              ),
-                                                              borderRadius:
-                                                                  BorderRadius.circular(
-                                                                      12),
-                                                              color: isSelected
-                                                                  ? _C.tealSoft
-                                                                  : isDateAvailable
-                                                                      ? _C.tealSoft.withValues(alpha: 0.4)
-                                                                      : _C.fieldBg,
-                                                            ),
-                                                            child: Column(
-                                                              mainAxisSize:
-                                                                  MainAxisSize
-                                                                      .min,
-                                                              mainAxisAlignment:
-                                                                  MainAxisAlignment
-                                                                      .center,
-                                                              children: [
-                                                                Text(
-                                                                  formattedDate,
-                                                                  style:
-                                                                      TextStyle(
-                                                                    fontFamily:
-                                                                        'Poppins',
-                                                                    fontSize:
-                                                                        FontSize.s10,
-                                                                    fontWeight: isSelected
-                                                                        ? FontWeight.w700
-                                                                        : FontWeight.w500,
-                                                                    color: isSelected
+                                                          child:
+                                                              Container(
+                                                                margin: EdgeInsets.only(
+                                                                  left:
+                                                                      index == 0
+                                                                      ? 0
+                                                                      : ScreenConstant
+                                                                            .size6,
+                                                                  right:
+                                                                      index ==
+                                                                          first10Dates.length -
+                                                                              1
+                                                                      ? 0
+                                                                      : ScreenConstant
+                                                                            .size6,
+                                                                ),
+                                                                padding:
+                                                                    const EdgeInsets.symmetric(
+                                                                      horizontal:
+                                                                          12,
+                                                                      vertical:
+                                                                          8,
+                                                                    ),
+                                                                decoration: BoxDecoration(
+                                                                  border: Border.all(
+                                                                    color:
+                                                                        isSelected
                                                                         ? _C.teal
                                                                         : isDateAvailable
-                                                                            ? _C.teal
-                                                                            : _C.inkMid,
+                                                                        ? _C.teal.withValues(
+                                                                            alpha:
+                                                                                0.35,
+                                                                          )
+                                                                        : _C.fieldBorder,
+                                                                    width:
+                                                                        isSelected
+                                                                        ? 1.5
+                                                                        : 0.8,
                                                                   ),
+                                                                  borderRadius:
+                                                                      BorderRadius.circular(
+                                                                        12,
+                                                                      ),
+                                                                  color:
+                                                                      isSelected
+                                                                      ? _C.tealSoft
+                                                                      : isDateAvailable
+                                                                      ? _C.tealSoft.withValues(
+                                                                          alpha:
+                                                                              0.4,
+                                                                        )
+                                                                      : _C.fieldBg,
                                                                 ),
-                                                                if (isDateAvailable &&
-                                                                    trekCount >
-                                                                        0)
-                                                                  Padding(
-                                                                    padding:
-                                                                        const EdgeInsets.only(top: 2.0),
-                                                                    child:
-                                                                        Text(
-                                                                      '$trekCount',
-                                                                      style:
-                                                                          TextStyle(
+                                                                child: Column(
+                                                                  mainAxisSize:
+                                                                      MainAxisSize
+                                                                          .min,
+                                                                  mainAxisAlignment:
+                                                                      MainAxisAlignment
+                                                                          .center,
+                                                                  children: [
+                                                                    Text(
+                                                                      formattedDate,
+                                                                      style: TextStyle(
                                                                         fontFamily:
                                                                             'Poppins',
                                                                         fontSize:
-                                                                            FontSize.s8,
+                                                                            FontSize.s10,
                                                                         fontWeight:
-                                                                            FontWeight.w700,
+                                                                            isSelected
+                                                                            ? FontWeight.w700
+                                                                            : FontWeight.w500,
                                                                         color:
-                                                                            _C.teal,
+                                                                            isSelected
+                                                                            ? _C.teal
+                                                                            : isDateAvailable
+                                                                            ? _C.teal
+                                                                            : _C.inkMid,
                                                                       ),
                                                                     ),
-                                                                  ),
-                                                              ],
-                                                            ),
-                                                          ).withShimmerAi(
-                                                              loading:
-                                                                  datesLoading),
+                                                                    if (isDateAvailable &&
+                                                                        trekCount >
+                                                                            0)
+                                                                      Padding(
+                                                                        padding: const EdgeInsets.only(
+                                                                          top:
+                                                                              2.0,
+                                                                        ),
+                                                                        child: Text(
+                                                                          '$trekCount',
+                                                                          style: TextStyle(
+                                                                            fontFamily:
+                                                                                'Poppins',
+                                                                            fontSize:
+                                                                                FontSize.s8,
+                                                                            fontWeight:
+                                                                                FontWeight.w700,
+                                                                            color:
+                                                                                _C.teal,
+                                                                          ),
+                                                                        ),
+                                                                      ),
+                                                                  ],
+                                                                ),
+                                                              ).withShimmerAi(
+                                                                loading:
+                                                                    datesLoading,
+                                                              ),
                                                         );
                                                       },
                                                     ),
@@ -1704,26 +1702,27 @@ class _DashboardState extends State<Dashboard>
 
                         // ---- Trek Types Card ----
                         Container(
-                          margin:
-                              const EdgeInsets.only(left: 20, right: 20),
+                          margin: const EdgeInsets.only(left: 20, right: 20),
                           child: Card(
                             color: CommonColors.whiteColor,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(
-                                  ScreenConstant.size12),
+                                ScreenConstant.size12,
+                              ),
                             ),
                             child: Padding(
-                              padding:
-                                  EdgeInsets.all(ScreenConstant.size15),
+                              padding: EdgeInsets.all(ScreenConstant.size15),
                               child: Row(
                                 children: [
                                   Expanded(
                                     child: InkWell(
                                       onTap: () async {
                                         if (!_isFormValid) {
-                                          CustomSnackBar.show(context,
-                                              message:
-                                                  'Please provide valid inputs');
+                                          CustomSnackBar.show(
+                                            context,
+                                            message:
+                                                'Please provide valid inputs',
+                                          );
                                           return;
                                         }
                                         if (_nearestWeekendDates.isEmpty) {
@@ -1731,36 +1730,46 @@ class _DashboardState extends State<Dashboard>
                                         }
                                         await _trekC.fetchWeekendTreks(
                                           cityId: _dashboardC
-                                              .fromController.value.text,
+                                              .fromController
+                                              .value
+                                              .text,
                                           trekId: _dashboardC
-                                              .toController.value.text,
+                                              .toController
+                                              .value
+                                              .text,
                                           date: _dashboardC
-                                              .dateController.value.text,
+                                              .dateController
+                                              .value
+                                              .text,
                                           refresh: true,
                                         );
-                                        Get.toNamed('/weekend-treks',
-                                            arguments: {
-                                              'city': _dashboardC
-                                                  .fromController
-                                                  .value
-                                                  .text,
-                                              'trek': _dashboardC
-                                                  .toController.value.text,
-                                              'date': _dashboardC
-                                                  .dateController
-                                                  .value
-                                                  .text,
-                                              'weekendDates':
-                                                  _nearestWeekendDates,
-                                            });
+                                        Get.toNamed(
+                                          '/weekend-treks',
+                                          arguments: {
+                                            'city': _dashboardC
+                                                .fromController
+                                                .value
+                                                .text,
+                                            'trek': _dashboardC
+                                                .toController
+                                                .value
+                                                .text,
+                                            'date': _dashboardC
+                                                .dateController
+                                                .value
+                                                .text,
+                                            'weekendDates':
+                                                _nearestWeekendDates,
+                                          },
+                                        );
                                       },
                                       child: Column(
                                         children: [
                                           Text(
                                             'Weekend Treks',
-                                            textScaler:
-                                                const TextScaler.linear(
-                                                    1.0),
+                                            textScaler: const TextScaler.linear(
+                                              1.0,
+                                            ),
                                             style: TextStyle(
                                               fontFamily: 'Poppins',
                                               fontSize: FontSize.s10,
@@ -1771,8 +1780,8 @@ class _DashboardState extends State<Dashboard>
                                             ),
                                           ),
                                           SizedBox(
-                                              height:
-                                                  ScreenConstant.size4),
+                                            height: ScreenConstant.size4,
+                                          ),
                                           SvgPicture.asset(
                                             CommonImages.weekend,
                                             height: ScreenConstant.size25,
@@ -1785,23 +1794,22 @@ class _DashboardState extends State<Dashboard>
                                             ),
                                           ),
                                           if (_isFormValid &&
-                                              _nearestWeekendDates
-                                                  .isNotEmpty)
+                                              _nearestWeekendDates.isNotEmpty)
                                             Padding(
-                                              padding:
-                                                  const EdgeInsets.only(
-                                                      top: 4),
+                                              padding: const EdgeInsets.only(
+                                                top: 4,
+                                              ),
                                               child: Text(
                                                 'Next: ${DateFormat('EEE, MMM d').format(_nearestWeekendDates.first)}',
                                                 textScaler:
-                                                    const TextScaler
-                                                        .linear(1.0),
+                                                    const TextScaler.linear(
+                                                      1.0,
+                                                    ),
                                                 style: TextStyle(
                                                   fontFamily: 'Poppins',
                                                   fontSize: FontSize.s8,
                                                   color: _C.inkMid,
-                                                  fontWeight:
-                                                      FontWeight.w500,
+                                                  fontWeight: FontWeight.w500,
                                                 ),
                                               ),
                                             ),
@@ -1818,33 +1826,38 @@ class _DashboardState extends State<Dashboard>
                                     child: InkWell(
                                       onTap: () {
                                         if (!_isFormValid) {
-                                          CustomSnackBar.show(context,
-                                              message:
-                                                  'Please provide valid inputs');
+                                          CustomSnackBar.show(
+                                            context,
+                                            message:
+                                                'Please provide valid inputs',
+                                          );
                                           return;
                                         }
                                         Get.toNamed(
-                                            '/personalized-treks',
-                                            arguments: {
-                                              'city': _dashboardC
-                                                  .fromController
-                                                  .value
-                                                  .text,
-                                              'trek': _dashboardC
-                                                  .toController.value.text,
-                                              'date': _dashboardC
-                                                  .dateController
-                                                  .value
-                                                  .text,
-                                            });
+                                          '/personalized-treks',
+                                          arguments: {
+                                            'city': _dashboardC
+                                                .fromController
+                                                .value
+                                                .text,
+                                            'trek': _dashboardC
+                                                .toController
+                                                .value
+                                                .text,
+                                            'date': _dashboardC
+                                                .dateController
+                                                .value
+                                                .text,
+                                          },
+                                        );
                                       },
                                       child: Column(
                                         children: [
                                           Text(
                                             'Personalized Treks',
-                                            textScaler:
-                                                const TextScaler.linear(
-                                                    1.0),
+                                            textScaler: const TextScaler.linear(
+                                              1.0,
+                                            ),
                                             style: TextStyle(
                                               fontFamily: 'Poppins',
                                               fontSize: FontSize.s10,
@@ -1855,8 +1868,8 @@ class _DashboardState extends State<Dashboard>
                                             ),
                                           ),
                                           SizedBox(
-                                              height:
-                                                  ScreenConstant.size4),
+                                            height: ScreenConstant.size4,
+                                          ),
                                           SvgPicture.asset(
                                             CommonImages.weekend2,
                                             height: ScreenConstant.size25,
@@ -1869,23 +1882,22 @@ class _DashboardState extends State<Dashboard>
                                             ),
                                           ),
                                           if (_isFormValid &&
-                                              _nearestWeekendDates
-                                                  .isNotEmpty)
+                                              _nearestWeekendDates.isNotEmpty)
                                             Padding(
-                                              padding:
-                                                  const EdgeInsets.only(
-                                                      top: 4),
+                                              padding: const EdgeInsets.only(
+                                                top: 4,
+                                              ),
                                               child: Text(
                                                 'Unique Trekking Routes',
                                                 textScaler:
-                                                    const TextScaler
-                                                        .linear(1.0),
+                                                    const TextScaler.linear(
+                                                      1.0,
+                                                    ),
                                                 style: TextStyle(
                                                   fontFamily: 'Poppins',
                                                   fontSize: FontSize.s8,
                                                   color: _C.inkMid,
-                                                  fontWeight:
-                                                      FontWeight.w500,
+                                                  fontWeight: FontWeight.w500,
                                                 ),
                                               ),
                                             ),
@@ -1907,13 +1919,10 @@ class _DashboardState extends State<Dashboard>
                             builder: (context, child) => Transform.scale(
                               scale: _scaleAnimation.value,
                               child: Container(
-                                width:
-                                    MediaQuery.of(context).size.width *
-                                        0.75,
+                                width: MediaQuery.of(context).size.width * 0.75,
                                 height: ScreenConstant.size44,
                                 decoration: BoxDecoration(
-                                  borderRadius:
-                                      BorderRadius.circular(30),
+                                  borderRadius: BorderRadius.circular(30),
                                   boxShadow: [
                                     BoxShadow(
                                       color: _isPressed
@@ -1955,34 +1964,33 @@ class _DashboardState extends State<Dashboard>
                 children: [
                   // ── What's New ──
                   Obx(() {
-                    final knowMoreLoading = _dashboardC
-                        .whatsNewObserver.value
-                        .maybeWhen(
-                            loading: (_) => true, orElse: () => false);
+                    final knowMoreLoading = _dashboardC.whatsNewObserver.value
+                        .maybeWhen(loading: (_) => true, orElse: () => false);
 
-                    final whatsNewResponse = _dashboardC
-                        .whatsNewObserver.value
+                    final whatsNewResponse = _dashboardC.whatsNewObserver.value
                         .maybeWhen(
-                      success: (data) => data.data ?? [],
-                      orElse: () => [],
-                    );
+                          success: (data) => data.data ?? [],
+                          orElse: () => [],
+                        );
 
                     final List<KnowMoreData> knowMoreCardsData =
                         whatsNewResponse.map<KnowMoreData>((e) {
-                      return KnowMoreData(
-                        title: e.title ?? '',
-                        subtitle: e.subtitle ?? '',
-                        hasKnowMore: e.hasKnowMore ?? false,
-                        imagePath: getFullImageUrl(e.imagePath),
-                        textColour: e.textColour ?? '#FFFFFF',
-                        gradient: _safeGradient(
-                            e.gradient, ['#0F7B6C', '#1AA090']),
-                        detailedTitle: e.detailedTitle,
-                        detailedDescription: e.detailedDescription,
-                        bulletPoints: e.bulletPoints,
-                        callToAction: e.callToAction,
-                      );
-                    }).toList();
+                          return KnowMoreData(
+                            title: e.title ?? '',
+                            subtitle: e.subtitle ?? '',
+                            hasKnowMore: e.hasKnowMore ?? false,
+                            imagePath: getFullImageUrl(e.imagePath),
+                            textColour: e.textColour ?? '#FFFFFF',
+                            gradient: _safeGradient(e.gradient, [
+                              '#0F7B6C',
+                              '#1AA090',
+                            ]),
+                            detailedTitle: e.detailedTitle,
+                            detailedDescription: e.detailedDescription,
+                            bulletPoints: e.bulletPoints,
+                            callToAction: e.callToAction,
+                          );
+                        }).toList();
 
                     log('WHATS NEW COUNT => ${knowMoreCardsData.length}');
 
@@ -1999,17 +2007,14 @@ class _DashboardState extends State<Dashboard>
                             top: ScreenConstant.size10,
                           ),
                           child: Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment.spaceBetween,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     "What's New",
-                                    textScaler:
-                                        const TextScaler.linear(1.0),
+                                    textScaler: const TextScaler.linear(1.0),
                                     style: TextStyle(
                                       fontFamily: 'Poppins',
                                       fontSize: FontSize.s13,
@@ -2017,25 +2022,21 @@ class _DashboardState extends State<Dashboard>
                                       color: _C.ink,
                                       letterSpacing: -0.2,
                                     ),
-                                  ).withShimmerAi(
-                                      loading: knowMoreLoading),
+                                  ).withShimmerAi(loading: knowMoreLoading),
                                   SizedBox(height: 0.3.h),
                                   Text(
                                     'Adventure simplified combo delivers!',
-                                    textScaler:
-                                        const TextScaler.linear(1.0),
+                                    textScaler: const TextScaler.linear(1.0),
                                     style: TextStyle(
                                       fontFamily: 'Poppins',
                                       fontSize: FontSize.s10,
                                       color: _C.inkMid,
                                     ),
-                                  ).withShimmerAi(
-                                      loading: knowMoreLoading),
+                                  ).withShimmerAi(loading: knowMoreLoading),
                                 ],
                               ),
                               InkWell(
-                                onTap: () =>
-                                    Get.toNamed('/know-more-screen'),
+                                onTap: () => Get.toNamed('/know-more-screen'),
                                 child: Text(
                                   'View more',
                                   style: TextStyle(
@@ -2045,8 +2046,7 @@ class _DashboardState extends State<Dashboard>
                                     letterSpacing: 0.4,
                                     fontWeight: FontWeight.w600,
                                   ),
-                                ).withShimmerAi(
-                                    loading: knowMoreLoading),
+                                ).withShimmerAi(loading: knowMoreLoading),
                               ),
                             ],
                           ),
@@ -2075,47 +2075,44 @@ class _DashboardState extends State<Dashboard>
                                     itemCount: null,
                                     onPageChanged: (page) {
                                       if (knowMoreCardsData.isNotEmpty) {
-                                        _currentPage = page %
-                                            knowMoreCardsData.length;
+                                        _currentPage =
+                                            page % knowMoreCardsData.length;
                                       }
                                     },
-                                    physics:
-                                        const BouncingScrollPhysics(),
+                                    physics: const BouncingScrollPhysics(),
                                     itemBuilder: (context, index) {
                                       if (knowMoreCardsData.isEmpty) {
                                         return const SizedBox();
                                       }
-                                      final cardData = knowMoreCardsData[
-                                          index %
+                                      final cardData =
+                                          knowMoreCardsData[index %
                                               knowMoreCardsData.length];
                                       return Container(
                                         margin: EdgeInsets.only(
-                                            right: ScreenConstant.size6),
+                                          right: ScreenConstant.size6,
+                                        ),
                                         child: KnowMoreCard(
                                           customGradient:
                                               AppTheme.customGradient(
-                                                  cardData.gradient ??
-                                                      []),
-                                          imagePath:
-                                              cardData.imagePath ?? '',
+                                                cardData.gradient ?? [],
+                                              ),
+                                          imagePath: cardData.imagePath ?? '',
                                           title: cardData.title ?? '',
-                                          subtitle:
-                                              cardData.subtitle ?? '',
+                                          subtitle: cardData.subtitle ?? '',
                                           onKnowMoreTap:
-                                              cardData.hasKnowMore ==
-                                                      false
-                                                  ? null
-                                                  : () {
-                                                      Get.toNamed(
-                                                        '/know-more-details',
-                                                        arguments: {
-                                                          'knowMoreData':
-                                                              cardData,
-                                                        },
-                                                      );
+                                              cardData.hasKnowMore == false
+                                              ? null
+                                              : () {
+                                                  Get.toNamed(
+                                                    '/know-more-details',
+                                                    arguments: {
+                                                      'knowMoreData': cardData,
                                                     },
+                                                  );
+                                                },
                                           textColor: AppTheme.hexToColor(
-                                              cardData.textColour),
+                                            cardData.textColour,
+                                          ),
                                         ),
                                       );
                                     },
@@ -2128,30 +2125,29 @@ class _DashboardState extends State<Dashboard>
 
                   // ── Top Treks ──
                   Obx(() {
-                    final topTreksLoading = _dashboardC
-                        .topTreksObserver.value
-                        .maybeWhen(
-                            loading: (_) => true, orElse: () => false);
+                    final topTreksLoading = _dashboardC.topTreksObserver.value
+                        .maybeWhen(loading: (_) => true, orElse: () => false);
 
-                    final topTreksResponse = _dashboardC
-                        .topTreksObserver.value
+                    final topTreksResponse = _dashboardC.topTreksObserver.value
                         .maybeWhen(
-                      success: (data) => data.data ?? [],
-                      orElse: () => [],
-                    );
+                          success: (data) => data.data ?? [],
+                          orElse: () => [],
+                        );
 
                     final List<TopTreksData> topTreksCardsData =
                         topTreksResponse.map<TopTreksData>((e) {
-                      return TopTreksData(
-                        title: e.title ?? '',
-                        description: e.description ?? '',
-                        imagePath: getFullImageUrl(e.imagePath),
-                        textColour: e.textColour ?? '#FFFFFF',
-                        gradient: _safeGradient(
-                            e.gradient, ['#134E5E', '#71B280']),
-                        isFavorite: e.isFavorite ?? false,
-                      );
-                    }).toList();
+                          return TopTreksData(
+                            title: e.title ?? '',
+                            description: e.description ?? '',
+                            imagePath: getFullImageUrl(e.imagePath),
+                            textColour: e.textColour ?? '#FFFFFF',
+                            gradient: _safeGradient(e.gradient, [
+                              '#134E5E',
+                              '#71B280',
+                            ]),
+                            isFavorite: e.isFavorite ?? false,
+                          );
+                        }).toList();
 
                     log('TOP TREKS COUNT => ${topTreksCardsData.length}');
 
@@ -2168,17 +2164,14 @@ class _DashboardState extends State<Dashboard>
                             top: ScreenConstant.size10,
                           ),
                           child: Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment.spaceBetween,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     'Top Treks',
-                                    textScaler:
-                                        const TextScaler.linear(1.0),
+                                    textScaler: const TextScaler.linear(1.0),
                                     style: TextStyle(
                                       fontFamily: 'Poppins',
                                       fontSize: FontSize.s13,
@@ -2186,25 +2179,21 @@ class _DashboardState extends State<Dashboard>
                                       color: _C.ink,
                                       letterSpacing: -0.2,
                                     ),
-                                  ).withShimmerAi(
-                                      loading: topTreksLoading),
+                                  ).withShimmerAi(loading: topTreksLoading),
                                   SizedBox(height: 0.3.h),
                                   Text(
                                     "Season's Best Treks, Ready for you!",
-                                    textScaler:
-                                        const TextScaler.linear(1.0),
+                                    textScaler: const TextScaler.linear(1.0),
                                     style: TextStyle(
                                       fontFamily: 'Poppins',
                                       fontSize: FontSize.s10,
                                       color: _C.inkMid,
                                     ),
-                                  ).withShimmerAi(
-                                      loading: topTreksLoading),
+                                  ).withShimmerAi(loading: topTreksLoading),
                                 ],
                               ),
                               InkWell(
-                                onTap: () =>
-                                    Get.toNamed('/popular-treks'),
+                                onTap: () => Get.toNamed('/popular-treks'),
                                 child: Text(
                                   'View more',
                                   style: TextStyle(
@@ -2214,8 +2203,7 @@ class _DashboardState extends State<Dashboard>
                                     letterSpacing: 0.4,
                                     fontWeight: FontWeight.w600,
                                   ),
-                                ).withShimmerAi(
-                                    loading: topTreksLoading),
+                                ).withShimmerAi(loading: topTreksLoading),
                               ),
                             ],
                           ),
@@ -2232,41 +2220,38 @@ class _DashboardState extends State<Dashboard>
                                 ? _buildShimmerRowPlaceholder()
                                 : Row(
                                     children: topTreksCardsData
-                                        .map((trekData) => Container(
-                                              margin: EdgeInsets.only(
-                                                right:
-                                                    ScreenConstant.size15,
+                                        .map(
+                                          (trekData) => Container(
+                                            margin: EdgeInsets.only(
+                                              right: ScreenConstant.size15,
+                                            ),
+                                            child: TopTreksCard(
+                                              gradientEndColor:
+                                                  Colors.transparent,
+                                              imagePath:
+                                                  trekData.imagePath ?? '',
+                                              title: trekData.title ?? '',
+                                              description:
+                                                  trekData.description ?? '',
+                                              customGradient:
+                                                  AppTheme.customGradient(
+                                                    trekData.gradient,
+                                                  ),
+                                              textColor: AppTheme.hexToColor(
+                                                trekData.textColour,
                                               ),
-                                              child: TopTreksCard(
-                                                gradientEndColor:
-                                                    Colors.transparent,
-                                                imagePath:
-                                                    trekData.imagePath ??
-                                                        '',
-                                                title:
+                                              isFavorite:
+                                                  _favoriteTreks[trekData
+                                                      .title] ??
+                                                  (trekData.isFavorite ??
+                                                      false),
+                                              onFavoriteTap: () =>
+                                                  _toggleFavorite(
                                                     trekData.title ?? '',
-                                                description: trekData
-                                                        .description ??
-                                                    '',
-                                                customGradient:
-                                                    AppTheme.customGradient(
-                                                        trekData.gradient),
-                                                textColor:
-                                                    AppTheme.hexToColor(
-                                                        trekData
-                                                            .textColour),
-                                                isFavorite:
-                                                    _favoriteTreks[trekData
-                                                            .title] ??
-                                                        (trekData
-                                                                .isFavorite ??
-                                                            false),
-                                                onFavoriteTap: () =>
-                                                    _toggleFavorite(
-                                                        trekData.title ??
-                                                            ''),
-                                              ),
-                                            ))
+                                                  ),
+                                            ),
+                                          ),
+                                        )
                                         .toList(),
                                   ),
                           ),
@@ -2277,30 +2262,27 @@ class _DashboardState extends State<Dashboard>
 
                   // ── Trek Shorts ──
                   Obx(() {
-                    final shortsLoading = _dashboardC
-                        .shortsTreksObserver.value
-                        .maybeWhen(
-                            loading: (_) => true, orElse: () => false);
+                    final shortsLoading = _dashboardC.shortsTreksObserver.value
+                        .maybeWhen(loading: (_) => true, orElse: () => false);
 
-                    final shortsResponse = _dashboardC
-                        .shortsTreksObserver.value
+                    final shortsResponse = _dashboardC.shortsTreksObserver.value
                         .maybeWhen(
-                      success: (data) => data.data ?? [],
-                      orElse: () => [],
-                    );
+                          success: (data) => data.data ?? [],
+                          orElse: () => [],
+                        );
 
                     final List<ShortsTreksData> shortsTreksCardsData =
                         shortsResponse.map<ShortsTreksData>((e) {
-                      return ShortsTreksData(
-                        title: e.title ?? '',
-                        description: e.description ?? '',
-                        textColour: e.textColour ?? '#FFFFFF',
-                        imagePath: getFullImageUrl(e.imagePath),
-                        videoPath: e.videoPath ?? '',
-                        shortVideoPath:
-                            e.shortVideoPath ?? e.videoPath ?? '',
-                      );
-                    }).toList();
+                          return ShortsTreksData(
+                            title: e.title ?? '',
+                            description: e.description ?? '',
+                            textColour: e.textColour ?? '#FFFFFF',
+                            imagePath: getFullImageUrl(e.imagePath),
+                            videoPath: e.videoPath ?? '',
+                            shortVideoPath:
+                                e.shortVideoPath ?? e.videoPath ?? '',
+                          );
+                        }).toList();
 
                     log('SHORTS COUNT => ${shortsTreksCardsData.length}');
 
@@ -2317,17 +2299,14 @@ class _DashboardState extends State<Dashboard>
                             top: ScreenConstant.size10,
                           ),
                           child: Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment.spaceBetween,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     'Trek Shorts',
-                                    textScaler:
-                                        const TextScaler.linear(1.0),
+                                    textScaler: const TextScaler.linear(1.0),
                                     style: TextStyle(
                                       fontFamily: 'Poppins',
                                       fontSize: FontSize.s13,
@@ -2335,26 +2314,22 @@ class _DashboardState extends State<Dashboard>
                                       color: _C.ink,
                                       letterSpacing: -0.2,
                                     ),
-                                  ).withShimmerAi(
-                                      loading: shortsLoading),
+                                  ).withShimmerAi(loading: shortsLoading),
                                   SizedBox(height: 0.3.h),
                                   Text(
                                     'Watch the Action Unfold!',
-                                    textScaler:
-                                        const TextScaler.linear(1.0),
+                                    textScaler: const TextScaler.linear(1.0),
                                     style: TextStyle(
                                       fontFamily: 'Poppins',
                                       fontSize: FontSize.s10,
                                       fontWeight: FontWeight.w400,
                                       color: _C.inkMid,
                                     ),
-                                  ).withShimmerAi(
-                                      loading: shortsLoading),
+                                  ).withShimmerAi(loading: shortsLoading),
                                 ],
                               ),
                               InkWell(
-                                onTap: () =>
-                                    Get.toNamed('/trek-shorts'),
+                                onTap: () => Get.toNamed('/trek-shorts'),
                                 child: Text(
                                   'View more',
                                   style: TextStyle(
@@ -2364,17 +2339,13 @@ class _DashboardState extends State<Dashboard>
                                     letterSpacing: 0.4,
                                     fontWeight: FontWeight.w600,
                                   ),
-                                ).withShimmerAi(
-                                    loading: shortsLoading),
+                                ).withShimmerAi(loading: shortsLoading),
                               ),
                             ],
                           ),
                         ),
                         Container(
-                          margin: EdgeInsets.only(
-                            left: 1.5.h,
-                            top: 1.h,
-                          ),
+                          margin: EdgeInsets.only(left: 1.5.h, top: 1.h),
                           height: 23.h,
                           child: Listener(
                             onPointerDown: (_) {
@@ -2392,28 +2363,27 @@ class _DashboardState extends State<Dashboard>
                             child: shortsLoading
                                 ? _buildShimmerPagePlaceholder()
                                 : PageView.builder(
-                                    controller:
-                                        _trekShortsPageController,
+                                    controller: _trekShortsPageController,
                                     // null = infinite scroll
                                     itemCount: null,
                                     pageSnapping: true,
-                                    physics:
-                                        const BouncingScrollPhysics(),
+                                    physics: const BouncingScrollPhysics(),
                                     itemBuilder: (context, index) {
                                       if (shortsTreksCardsData.isEmpty) {
                                         return const SizedBox();
                                       }
                                       final cardData =
                                           shortsTreksCardsData[index %
-                                              shortsTreksCardsData
-                                                  .length];
+                                              shortsTreksCardsData.length];
                                       return Align(
                                         alignment: Alignment.center,
                                         child: Padding(
                                           padding: EdgeInsets.symmetric(
-                                              horizontal: 1.w),
+                                            horizontal: 1.w,
+                                          ),
                                           child: TrekShorts(
-                                              shortsData: cardData),
+                                            shortsData: cardData,
+                                          ),
                                         ),
                                       );
                                     },
@@ -2427,52 +2397,55 @@ class _DashboardState extends State<Dashboard>
                   // ── Seasonal Forecast ──
                   Obx(() {
                     final seasonalLoading = _dashboardC
-                        .seasonalForcastObserver.value
-                        .maybeWhen(
-                            loading: (_) => true, orElse: () => false);
+                        .seasonalForcastObserver
+                        .value
+                        .maybeWhen(loading: (_) => true, orElse: () => false);
 
                     final seasonalResponse = _dashboardC
-                        .seasonalForcastObserver.value
+                        .seasonalForcastObserver
+                        .value
                         .maybeWhen(
-                      success: (data) => data.data ?? [],
-                      orElse: () => [],
-                    );
+                          success: (data) => data.data ?? [],
+                          orElse: () => [],
+                        );
 
                     final List<SeasonalForecastData> seasonalForecastData =
                         seasonalResponse.map<SeasonalForecastData>((e) {
-                      // Use body gradient from styling if available,
-                      // otherwise fall back to color field or default blue.
-                      final bodyGradientColors =
-                          e.styling?.body?.gradient?.colors;
-                      final List<String> gradient =
-                          (bodyGradientColors != null &&
+                          // Use body gradient from styling if available,
+                          // otherwise fall back to color field or default blue.
+                          final bodyGradientColors =
+                              e.styling?.body?.gradient?.colors;
+                          final List<String> gradient =
+                              (bodyGradientColors != null &&
                                   bodyGradientColors.isNotEmpty)
                               ? List<String>.from(bodyGradientColors)
                               : (e.color != null && e.color!.isNotEmpty)
-                                  ? [e.color!, e.color!]
-                                  : ['#2196F3', '#2196F3'];
+                              ? [e.color!, e.color!]
+                              : ['#2196F3', '#2196F3'];
 
-                      return SeasonalForecastData(
-                        title: e.title ?? '',
-                        description: e.description ??
-                            'Best season for trekking adventures.',
-                        imagePath: getFullImageUrl(e.imagePath),
-                        textColour: e.textColour ?? '#000000',
-                        gradient: gradient,
-                        styling: StylingModel(
-                          title: TitleStylingModel(
-                            textColour:
-                                e.styling?.title?.textColour ?? '#000000',
-                            gradient: _safeGradient(
-                                e.styling?.title?.gradient
-                                    ?.map((x) => x.toString())
-                                    .toList(),
-                                gradient),
-                            icon: e.styling?.title?.icon,
-                          ),
-                        ),
-                      );
-                    }).toList();
+                          return SeasonalForecastData(
+                            title: e.title ?? '',
+                            description:
+                                e.description ??
+                                'Best season for trekking adventures.',
+                            imagePath: getFullImageUrl(e.imagePath),
+                            textColour: e.textColour ?? '#000000',
+                            gradient: gradient,
+                            styling: StylingModel(
+                              title: TitleStylingModel(
+                                textColour:
+                                    e.styling?.title?.textColour ?? '#000000',
+                                gradient: _safeGradient(
+                                  e.styling?.title?.gradient
+                                      ?.map((x) => x.toString())
+                                      .toList(),
+                                  gradient,
+                                ),
+                                icon: e.styling?.title?.icon,
+                              ),
+                            ),
+                          );
+                        }).toList();
 
                     log('SEASONAL COUNT => ${seasonalForecastData.length}');
 
@@ -2489,17 +2462,14 @@ class _DashboardState extends State<Dashboard>
                             top: ScreenConstant.size10,
                           ),
                           child: Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment.spaceBetween,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     'Seasonal Forecast',
-                                    textScaler:
-                                        const TextScaler.linear(1.0),
+                                    textScaler: const TextScaler.linear(1.0),
                                     style: TextStyle(
                                       fontFamily: 'Poppins',
                                       fontSize: FontSize.s13,
@@ -2507,26 +2477,22 @@ class _DashboardState extends State<Dashboard>
                                       color: _C.ink,
                                       letterSpacing: -0.2,
                                     ),
-                                  ).withShimmerAi(
-                                      loading: seasonalLoading),
+                                  ).withShimmerAi(loading: seasonalLoading),
                                   SizedBox(height: 0.3.h),
                                   Text(
                                     'Weather Alerts for Safer Treks!',
-                                    textScaler:
-                                        const TextScaler.linear(1.0),
+                                    textScaler: const TextScaler.linear(1.0),
                                     style: TextStyle(
                                       fontFamily: 'Poppins',
                                       fontSize: FontSize.s10,
                                       fontWeight: FontWeight.w400,
                                       color: _C.inkMid,
                                     ),
-                                  ).withShimmerAi(
-                                      loading: seasonalLoading),
+                                  ).withShimmerAi(loading: seasonalLoading),
                                 ],
                               ),
                               InkWell(
-                                onTap: () =>
-                                    Get.toNamed('/seasonal-forecast'),
+                                onTap: () => Get.toNamed('/seasonal-forecast'),
                                 child: Text(
                                   'View more',
                                   style: TextStyle(
@@ -2536,8 +2502,7 @@ class _DashboardState extends State<Dashboard>
                                     fontSize: FontSize.s11,
                                     fontWeight: FontWeight.w600,
                                   ),
-                                ).withShimmerAi(
-                                    loading: seasonalLoading),
+                                ).withShimmerAi(loading: seasonalLoading),
                               ),
                             ],
                           ),
@@ -2555,31 +2520,30 @@ class _DashboardState extends State<Dashboard>
                                 ? _buildShimmerRowPlaceholder()
                                 : Row(
                                     children: seasonalForecastData
-                                        .map((cardData) => Padding(
-                                              padding: EdgeInsets.only(
-                                                  right: 2.h),
-                                              child: SeasonalForecast(
-                                                title:
-                                                    cardData.title ?? '',
-                                                description: cardData
-                                                        .description ??
-                                                    '',
-                                                imagePath:
-                                                    cardData.imagePath ??
-                                                        '',
-                                                gradient: AppTheme.customGradient(
-  (cardData.gradient ?? [])
-      .map((e) => e.toString())
-      .toList(),
-),
-                                                textColour:
-                                                    AppTheme.hexToColor(
-                                                        cardData
-                                                            .textColour),
-                                                titleStylingModel:
-                                                    cardData.styling?.title,
+                                        .map(
+                                          (cardData) => Padding(
+                                            padding: EdgeInsets.only(
+                                              right: 2.h,
+                                            ),
+                                            child: SeasonalForecast(
+                                              title: cardData.title ?? '',
+                                              description:
+                                                  cardData.description ?? '',
+                                              imagePath:
+                                                  cardData.imagePath ?? '',
+                                              gradient: AppTheme.customGradient(
+                                                (cardData.gradient ?? [])
+                                                    .map((e) => e.toString())
+                                                    .toList(),
                                               ),
-                                            ))
+                                              textColour: AppTheme.hexToColor(
+                                                cardData.textColour,
+                                              ),
+                                              titleStylingModel:
+                                                  cardData.styling?.title,
+                                            ),
+                                          ),
+                                        )
                                         .toList(),
                                   ),
                           ),
@@ -2593,7 +2557,10 @@ class _DashboardState extends State<Dashboard>
                   // Footer
                   Padding(
                     padding: const EdgeInsets.only(
-                        top: 10.0, bottom: 30.0, right: 80.0),
+                      top: 10.0,
+                      bottom: 30.0,
+                      right: 80.0,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -2603,8 +2570,9 @@ class _DashboardState extends State<Dashboard>
                           style: GoogleFonts.sourceSerif4(
                             fontSize: FontSize.s28,
                             fontWeight: FontWeight.bold,
-                            color: CommonColors.greyColorf7f7f7
-                                .withValues(alpha: 0.5),
+                            color: CommonColors.greyColorf7f7f7.withValues(
+                              alpha: 0.5,
+                            ),
                             height: 1.3,
                             letterSpacing: 1.8,
                           ),
@@ -2623,16 +2591,14 @@ class _DashboardState extends State<Dashboard>
                             children: [
                               const TextSpan(text: 'Crafted with passion '),
                               WidgetSpan(
-                                alignment:
-                                    PlaceholderAlignment.bottom,
+                                alignment: PlaceholderAlignment.bottom,
                                 child: Icon(
                                   Icons.favorite,
                                   color: CommonColors.red_B52424,
                                   size: FontSize.s12,
                                 ),
                               ),
-                              const TextSpan(
-                                  text: '\nrooted in Hyderabad.'),
+                              const TextSpan(text: '\nrooted in Hyderabad.'),
                             ],
                           ),
                         ),

@@ -403,6 +403,8 @@ _$CancellationPolicyImpl _$$CancellationPolicyImplFromJson(
       descriptionPoints: (json['descriptionPoints'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
+      policyType: json['policyType'] as String?,
+      settings: json['settings'] as Map<String, dynamic>?,
     );
 
 Map<String, dynamic> _$$CancellationPolicyImplToJson(
@@ -414,6 +416,8 @@ Map<String, dynamic> _$$CancellationPolicyImplToJson(
       'description': instance.description,
       'rules': instance.rules,
       'descriptionPoints': instance.descriptionPoints,
+      'policyType': instance.policyType,
+      'settings': instance.settings,
     };
 
 _$RulesImpl _$$RulesImplFromJson(Map<String, dynamic> json) => _$RulesImpl(
