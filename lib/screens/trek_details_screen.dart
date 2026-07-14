@@ -144,13 +144,36 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
 
     final double headerBottom =
         tabBarBox.localToGlobal(Offset.zero).dy + tabBarBox.size.height;
+
+    // If we are at the absolute bottom of the scroll view, force select
+    // the last available section. This fixes the issue where the last
+    // section can't physically scroll flush against the tab bar.
+    if (_scrollController.position.hasContentDimensions &&
+        _scrollController.offset >=
+            _scrollController.position.maxScrollExtent - 10.0) {
+      int lastVisible = -1;
+      for (int i = _sectionKeys.length - 1; i >= 0; i--) {
+        if (_sectionKeys[i].currentContext != null) {
+          lastVisible = i;
+          break;
+        }
+      }
+      if (lastVisible != -1 && _selectedTabIndex != lastVisible) {
+        setState(() => _selectedTabIndex = lastVisible);
+      }
+      return;
+    }
+
     int activeIndex = _selectedTabIndex;
 
     for (int i = 0; i < _sectionKeys.length; i++) {
       final key = _sectionKeys[i];
       if (key.currentContext == null) continue;
 
-      final RenderBox box = key.currentContext!.findRenderObject() as RenderBox;
+      final RenderBox? box =
+          key.currentContext!.findRenderObject() as RenderBox?;
+      if (box == null || !box.attached) continue;
+
       final Offset pos = box.localToGlobal(Offset.zero);
 
       if (pos.dy <= headerBottom + 10) {
@@ -167,11 +190,8 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
 
   void _scrollToSection(int index) {
     if (index < 0 || index >= _sectionKeys.length) return;
+    if (!_scrollController.hasClients) return;
 
-    // Some tabs correspond to sections that have no data and therefore
-    // never get mounted (their GlobalKey has no context). Tapping those
-    // used to silently do nothing — instead, redirect to the nearest
-    // section that actually exists so the tap always has visible effect.
     int targetIndex = index;
     if (_sectionKeys[targetIndex].currentContext == null) {
       int forward = targetIndex + 1;
@@ -201,16 +221,26 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
       final tabBarContext = _tabBarKey.currentContext;
 
       if (keyContext != null && tabBarContext != null) {
-        final RenderBox box = keyContext.findRenderObject() as RenderBox;
-        final RenderBox tabBarBox =
-            tabBarContext.findRenderObject() as RenderBox;
+        final RenderBox? box = keyContext.findRenderObject() as RenderBox?;
+        final RenderBox? tabBarBox =
+            tabBarContext.findRenderObject() as RenderBox?;
+
+        if (box == null || !box.attached || tabBarBox == null) {
+          _isUserScrolling = false;
+          return;
+        }
 
         final double headerBottom =
             tabBarBox.localToGlobal(Offset.zero).dy + tabBarBox.size.height;
+
+        // Small padding so the section header isn't flush against the bar.
+        final double padding = 1.h;
+
         final double target =
             _scrollController.offset +
             box.localToGlobal(Offset.zero).dy -
-            headerBottom;
+            headerBottom -
+            padding;
 
         final double maxExtent = _scrollController.position.hasContentDimensions
             ? _scrollController.position.maxScrollExtent
@@ -219,11 +249,12 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
         _scrollController
             .animateTo(
               target.clamp(0.0, maxExtent),
-              duration: const Duration(milliseconds: 400),
-              curve: Curves.easeInOut,
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.easeOutCubic,
             )
             .then((_) {
               _isUserScrolling = false;
+              _onScroll(); // Force sync once the animation finishes
             });
       } else {
         _isUserScrolling = false;
@@ -279,63 +310,73 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _C.bg,
-      body: CustomScrollView(
-        controller: _scrollController,
-        physics: const ClampingScrollPhysics(),
-        slivers: [
-          _buildSliverAppBar(),
-          if (_trekC.trekDetailData.value.images != null &&
-              _trekC.trekDetailData.value.images!.isNotEmpty)
-            SliverToBoxAdapter(
-              child: Container(
-                width: 100.w,
-                margin: EdgeInsets.only(top: 1.h, left: 4.w, bottom: 1.h),
-                child: GestureDetector(
-                  onTap: () => _showImageViewer(
-                    context,
-                    _trekC.trekDetailData.value.images
-                            ?.map((e) => e.url ?? '')
-                            .toList() ??
-                        [],
-                    0,
-                  ),
-                  child: CommonImageCard(
-                    images:
-                        _trekC.trekDetailData.value.images
-                            ?.map((e) => e.url ?? '')
-                            .toList() ??
-                        [],
+      body: NotificationListener<ScrollNotification>(
+        onNotification: (notification) {
+          if (notification is UserScrollNotification) {
+            _isUserScrolling = false;
+          }
+          return false;
+        },
+        child: CustomScrollView(
+          controller: _scrollController,
+          physics: const ClampingScrollPhysics(),
+          slivers: [
+            _buildSliverAppBar(),
+            if (_trekC.trekDetailData.value.images != null &&
+                _trekC.trekDetailData.value.images!.isNotEmpty)
+              SliverToBoxAdapter(
+                child: Container(
+                  width: 100.w,
+                  margin: EdgeInsets.only(top: 1.h, left: 4.w, bottom: 1.h),
+                  child: GestureDetector(
+                    onTap: () => _showImageViewer(
+                      context,
+                      _trekC.trekDetailData.value.images
+                              ?.map((e) => e.url ?? '')
+                              .toList() ??
+                          [],
+                      0,
+                    ),
+                    child: CommonImageCard(
+                      images:
+                          _trekC.trekDetailData.value.images
+                              ?.map((e) => e.url ?? '')
+                              .toList() ??
+                          [],
+                    ),
                   ),
                 ),
               ),
-            ),
-          SliverPersistentHeader(
-            pinned: true,
-            delegate: _StickyTrekDetailsBarDelegate(
-              child: Container(
-                key: _tabBarKey,
-                width: 100.w,
-                color: _C.cardBg,
+            SliverPersistentHeader(
+              pinned: true,
+              delegate: _StickyTrekDetailsBarDelegate(
                 child: Container(
-                  margin: EdgeInsets.symmetric(horizontal: 2.w),
-                  child: Center(
-                    child: CommonTrekDetailsBar(
-                      // Keying on the selected index forces this widget to
-                      // rebuild fresh whenever the active tab changes, so
-                      // its highlighted state always matches scroll
-                      // position / taps instead of getting stuck on the
-                      // value it was first constructed with.
-                      key: ValueKey(_selectedTabIndex),
-                      onTabSelected: _scrollToSection,
-                      initialIndex: _selectedTabIndex,
+                  key: _tabBarKey,
+                  width: 100.w,
+                  color: _C.cardBg,
+                  child: Container(
+                    margin: EdgeInsets.symmetric(horizontal: 2.w),
+                    child: Center(
+                      child: CommonTrekDetailsBar(
+                        onTabSelected: _scrollToSection,
+                        initialIndex: _selectedTabIndex,
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-          SliverList(delegate: SliverChildListDelegate(_buildSections())),
-        ],
+            // Replaced SliverList with SliverToBoxAdapter to eagerly build all
+            // sections. This prevents GlobalKeys from being destroyed when
+            // scrolled off-screen, fixing taps from extreme top to bottom.
+            SliverToBoxAdapter(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: _buildSections(),
+              ),
+            ),
+          ],
+        ),
       ),
       bottomNavigationBar: _buildBottomBar(),
     );
@@ -503,8 +544,6 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
   // ─────────────────────────────────────────────
   //  SECTION VISIBILITY (single source of truth)
   // ─────────────────────────────────────────────
-  // Used by both the section builder and the initial tab selection so the
-  // tab bar can never fall out of sync with what's actually rendered.
   List<bool> _sectionVisibilityFlags() {
     final detail = _trekC.trekDetailData.value;
     return [
@@ -833,10 +872,6 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                         ...activities
                             .take(_showFullItinerary ? activities.length : 4)
                             .map((a) => _bulletItem(a)),
-                        // FIX: this used to be a plain, non-interactive Text
-                        // widget, so tapping "+N more activities" (e.g. "+1
-                        // more activities") did nothing. It's now wrapped in
-                        // an InkWell that expands the itinerary.
                         if (!_showFullItinerary && activities.length > 4)
                           InkWell(
                             onTap: () =>
@@ -1619,11 +1654,6 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
     final visible = split[0];
     final hidden = split[1];
 
-    // Server sends every boarding stage unfiltered when city_id couldn't be
-    // resolved (e.g. before the customer has picked a source city) — picking
-    // firstWhere's array order (or falling back to routeList.first, which can
-    // be a meeting/waypoint stage entirely) mislabels the wrong city/time as
-    // "boarding". Pick the true earliest boarding stage by parsed time instead.
     final boardingCandidates = routeList
         .where((s) => s.isBoardingPoint == true)
         .toList();

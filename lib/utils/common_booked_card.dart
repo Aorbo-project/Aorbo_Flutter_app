@@ -12,113 +12,152 @@ import 'package:arobo_app/repository/repository.dart';
 // ─────────────────────────────────────────────
 class _BC {
   static const bg = CommonColors.whiteColor;
-
   static const ink = CommonColors.cFF111827;
   static const inkMid = CommonColors.cFF6B7280;
   static const inkLight = CommonColors.grey_AEAEAE;
-
   static const iconBadge = CommonColors.cFF111827;
-
   static const brand = CommonColors.lightBlueColor3;
-
   static const divider = CommonColors.trekroutecolorlight;
-
   static const upcoming = Color(0xFF2563EB);
-
   static const completed = CommonColors.completedColor2;
-
   static const ongoing = CommonColors.blueColor_367FEE;
-
   static const cancelled = CommonColors.cancelledColor;
+
+  static const success = Color(0xFF10B981);
+  static const warning = Color(0xFFF59E0B);
+  static const ratingBg = Color(0xFFFFF7ED);
 }
 
 class CommonBookedCard extends StatelessWidget {
   final BookingHistoryData booking;
-
   final VoidCallback? onViewDetailsTap;
+  final VoidCallback? onRateTrekTap;
 
   const CommonBookedCard({
     super.key,
     required this.booking,
     this.onViewDetailsTap,
+    this.onRateTrekTap,
   });
 
   // ─────────────────────────────────────────────
-  // STATUS COLOR
+  // HELPERS
   // ─────────────────────────────────────────────
 
-  Color _getStatusColor(String status) {
+  Color _getTrekStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'upcoming':
         return _BC.upcoming;
-
       case 'completed':
         return _BC.completed;
-
       case 'ongoing':
         return _BC.ongoing;
-
       case 'cancelled':
         return _BC.cancelled;
-
       default:
         return Colors.grey;
     }
   }
 
-  // ─────────────────────────────────────────────
-  // INITIALS
-  // ─────────────────────────────────────────────
-
   String _initials(String? name) {
-    if (name == null || name.trim().isEmpty) {
-      return '?';
-    }
-
+    if (name == null || name.trim().isEmpty) return '?';
     final parts = name.trim().split(' ');
-
-    if (parts.length == 1) {
-      return parts[0][0].toUpperCase();
-    }
-
+    if (parts.length == 1) return parts[0][0].toUpperCase();
     return (parts[0][0] + parts[1][0]).toUpperCase();
   }
 
-  // ─────────────────────────────────────────────
-  // INFO ITEM
-  // ─────────────────────────────────────────────
+  String _formatDate(String? rawDate) {
+    if (rawDate == null || rawDate.isEmpty) return '-';
+    try {
+      DateTime dt = DateTime.parse(rawDate).toLocal();
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
+      return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
+    } catch (e) {
+      return rawDate;
+    }
+  }
 
-  Widget _infoItem(String label, String value) {
-    if (value.isEmpty || value == '-') {
+  Widget _buildBadge(String text, Color color) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.4.h),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(1.5.w),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
+      ),
+      child: Text(
+        text,
+        textScaler: const TextScaler.linear(1),
+        style: TextStyle(
+          fontFamily: 'Poppins',
+          fontSize: FontSize.s8,
+          fontWeight: FontWeight.w700,
+          color: color,
+        ),
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  // INFO ITEM WITH ICON
+  // ─────────────────────────────────────────────
+  Widget _infoItem(IconData icon, String label, String value) {
+    // Hide if value is empty
+    if (value.isEmpty ||
+        value == '-' ||
+        value == '0 People' ||
+        value == '0D / 0N') {
       return const SizedBox.shrink();
     }
 
     return Padding(
-      padding: EdgeInsets.only(bottom: 0.6.h),
+      padding: EdgeInsets.only(bottom: 1.2.h),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            textScaler: const TextScaler.linear(1.0),
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: FontSize.s7,
-              fontWeight: FontWeight.w500,
-              color: _BC.inkMid,
-            ),
+          // Label & Icon Row
+          Row(
+            children: [
+              Icon(icon, size: 3.5.w, color: _BC.inkMid),
+              SizedBox(width: 1.5.w),
+              Text(
+                label,
+                textScaler: const TextScaler.linear(1.0),
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: FontSize.s8,
+                  fontWeight: FontWeight.w500,
+                  color: _BC.inkMid,
+                ),
+              ),
+            ],
           ),
-
-          SizedBox(height: 0.15.h),
-
-          Text(
-            value,
-            textScaler: const TextScaler.linear(1.0),
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: FontSize.s11,
-              fontWeight: FontWeight.w600,
-              color: _BC.ink,
+          SizedBox(height: 0.3.h),
+          // Value aligned under text
+          Padding(
+            padding: EdgeInsets.only(left: 5.w),
+            child: Text(
+              value,
+              textScaler: const TextScaler.linear(1.0),
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: FontSize.s11,
+                fontWeight: FontWeight.w600,
+                color: _BC.ink,
+              ),
             ),
           ),
         ],
@@ -129,59 +168,71 @@ class CommonBookedCard extends StatelessWidget {
   // ─────────────────────────────────────────────
   // BUILD
   // ─────────────────────────────────────────────
-
   @override
   Widget build(BuildContext context) {
     ScreenConstant.setScreenAwareConstant(context);
 
-    final vendorName =
-    booking.trek?.vendor?.businessName ??
-    'Unknown Vendor';
+    // Extracting fields
+    final String bookingId = booking.bookingNumber ?? '#${booking.id ?? '-'}';
+    final String totalTravelers = '${booking.totalTravelers ?? 0} People';
+    final String trekStatusRaw = booking.trekStatus ?? '';
+    final String paymentStatusRaw = booking.paymentStatus ?? '';
+    final String bookingDate = _formatDate(booking.bookingDate);
+    final String cancellationPolicy =
+        booking.cancellationPolicyType?.toString() ?? '-';
 
-    final vendorLogo =
-        booking.trek?.vendor?.businessLogo ?? '';
+    final bool isCompleted = trekStatusRaw.toLowerCase() == 'completed';
+    final bool ratingGiven = booking.ratingGiven ?? false;
+    final bool showRateHint = isCompleted && !ratingGiven;
 
-    final trekTitle =
-        booking.trek?.title ?? '-';
+    final String title = booking.trek?.title ?? '-';
 
-    final tbrId =
-        booking.batch?.tbrId ?? '-';
+    // Duration Logic (Days/Nights or fallback to string)
+    final String? durationDays = booking.trek?.durationDays?.toString();
+    final String? durationNights = booking.trek?.durationNights?.toString();
+    String durationStr = '-';
+    if (durationDays != null || durationNights != null) {
+      durationStr = '${durationDays ?? '0'}D / ${durationNights ?? '0'}N';
+    } else if (booking.trek?.duration != null &&
+        booking.trek!.duration!.isNotEmpty) {
+      durationStr = booking.trek!.duration!; // Fallback
+    }
 
-    final startDate =
-        booking.batch?.startDate ?? '-';
+    final String difficulty = booking.trek?.difficulty ?? '-';
 
-    final duration =
-        booking.trek?.duration ?? '-';
+    final String tbrId = booking.batch?.tbrId ?? '-';
+    final String startDateStr = _formatDate(booking.batch?.startDate);
+    final String startTimeStr = booking.batch?.startTime ?? '';
 
-   final bookedSlots =
-    booking.totalTravelers ?? 0;
+    final String startDateTime = startTimeStr.isNotEmpty
+        ? '$startDateStr, $startTimeStr'
+        : startDateStr;
 
-    final availableSlots =
-        booking.batch?.availableSlots ?? 0;
+    final String vendorName =
+        booking.trek?.vendor?.businessName ?? 'Unknown Vendor';
+    final String vendorLogo = booking.trek?.vendor?.businessLogo ?? '';
+    final String destinationName = booking.trek?.destination?.name ?? '';
 
-    final statusRaw =
-        booking.trekStatus ?? '';
+    // Format Status Labels
+    String statusLabel = trekStatusRaw.isNotEmpty
+        ? trekStatusRaw[0].toUpperCase() + trekStatusRaw.substring(1)
+        : '';
 
-    final statusLabel =
-        statusRaw.isNotEmpty
-            ? statusRaw[0].toUpperCase() +
-                statusRaw.substring(1)
-            : '-';
+    // Payment Badge Logic: Only show if Partial
+    String paymentBadgeText = '';
+    if (paymentStatusRaw.toLowerCase().contains('partial') ||
+        paymentStatusRaw.toLowerCase().contains('advance')) {
+      paymentBadgeText = 'Partial';
+    }
 
     return GestureDetector(
       onTap: onViewDetailsTap,
       child: Container(
-        margin: EdgeInsets.symmetric(
-          horizontal: 1.w,
-          vertical: 0.7.h,
-        ),
+        margin: EdgeInsets.symmetric(horizontal: 1.w, vertical: 0.7.h),
         decoration: BoxDecoration(
           color: _BC.bg,
           borderRadius: BorderRadius.circular(4.w),
-          border: Border.all(
-            color: _BC.divider,
-            width: 1,
-          ),
+          border: Border.all(color: _BC.divider, width: 1),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.06),
@@ -191,325 +242,258 @@ class CommonBookedCard extends StatelessWidget {
           ],
         ),
         child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            4.w,
-            2.h,
-            4.w,
-            1.2.h,
-          ),
+          padding: EdgeInsets.fromLTRB(4.w, 2.h, 4.w, 1.2.h),
           child: Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               // ─────────────────────────
-              // TOP ROW
+              // COMPACT HEADER
               // ─────────────────────────
-
-              Row(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
-                children: [
-
-                  Expanded(
-                    child: Text(
-                      trekTitle,
-                      maxLines: 2,
-                      overflow:
-                          TextOverflow.ellipsis,
-                      textScaler:
-                          const TextScaler.linear(1),
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: FontSize.s13,
-                        fontWeight:
-                            FontWeight.w700,
-                        color: _BC.ink,
-                        height: 1.3,
-                      ),
-                    ),
-                  ),
-
-                  SizedBox(width: 2.w),
-
-                  if (statusRaw.isNotEmpty)
-                    Container(
-                      padding:
-                          EdgeInsets.symmetric(
-                        horizontal: 2.5.w,
-                        vertical: 0.4.h,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _getStatusColor(
-                          statusRaw,
-                        ).withValues(alpha: 0.12),
-                        borderRadius:
-                            BorderRadius.circular(
-                          1.5.w,
-                        ),
-                        border: Border.all(
-                          color:
-                              _getStatusColor(
-                            statusRaw,
-                          ).withValues(alpha: 0.35),
-                        ),
-                      ),
-                      child: Text(
-                        statusLabel,
-                        textScaler:
-                            const TextScaler.linear(
-                          1,
-                        ),
-                        style: TextStyle(
-                          fontFamily:
-                              'Poppins',
-                          fontSize:
-                              FontSize.s8,
-                          fontWeight:
-                              FontWeight.w700,
-                          color:
-                              _getStatusColor(
-                            statusRaw,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-
-              SizedBox(height: 1.2.h),
-
-              // ─────────────────────────
-              // VENDOR ROW
-              // ─────────────────────────
-
               Row(
                 children: [
-
                   Container(
-                    width: 11.w,
-                    height: 11.w,
+                    width: 8.w,
+                    height: 8.w,
                     decoration: BoxDecoration(
                       color: _BC.iconBadge,
-                      borderRadius:
-                          BorderRadius.circular(
-                        2.5.w,
+                      borderRadius: BorderRadius.circular(2.w),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: vendorLogo.isNotEmpty
+                        ? CustomNetworkImage(
+                            accessToken: Repository.token,
+                            imageUrl: vendorLogo,
+                            width: 8.w,
+                            height: 8.w,
+                            fit: BoxFit.cover,
+                          )
+                        : Center(
+                            child: Text(
+                              _initials(vendorName),
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: FontSize.s8,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                  ),
+                  SizedBox(width: 2.w),
+                  Expanded(
+                    child: Text(
+                      vendorName,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: FontSize.s10,
+                        fontWeight: FontWeight.w600,
+                        color: _BC.inkMid,
                       ),
                     ),
-                    clipBehavior:
-                        Clip.antiAlias,
-                    child:
-                        vendorLogo.isNotEmpty
-                            ? CustomNetworkImage(
-                                accessToken:
-                                    Repository
-                                        .token,
-                                imageUrl:
-                                    vendorLogo,
-                                width: 11.w,
-                                height: 11.w,
-                                fit: BoxFit.cover,
-                              )
-                            : Center(
-                                child: Text(
-                                  _initials(
-                                    vendorName,
-                                  ),
-                                  textScaler:
-                                      const TextScaler.linear(
-                                    1,
-                                  ),
-                                  style: TextStyle(
-                                    fontFamily:
-                                        'Poppins',
-                                    fontSize:
-                                        FontSize
-                                            .s10,
-                                    fontWeight:
-                                        FontWeight
-                                            .w700,
-                                    color: Colors
-                                        .white,
-                                  ),
-                                ),
-                              ),
                   ),
-
-                  SizedBox(width: 3.w),
-
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment
-                              .start,
-                      children: [
-
-                        Text(
-                          vendorName,
-                          overflow:
-                              TextOverflow
-                                  .ellipsis,
-                          textScaler:
-                              const TextScaler.linear(
-                            1,
-                          ),
-                          style: TextStyle(
-                            fontFamily:
-                                'Poppins',
-                            fontSize:
-                                FontSize.s12,
-                            fontWeight:
-                                FontWeight.w600,
-                            color: _BC.ink,
-                          ),
-                        ),
-
-                        SizedBox(height: 0.2.h),
-
-                        Text(
-                          'TBR ID: $tbrId',
-                          textScaler:
-                              const TextScaler.linear(
-                            1,
-                          ),
-                          style: TextStyle(
-                            fontFamily:
-                                'Poppins',
-                            fontSize:
-                                FontSize.s8,
-                            color:
-                                _BC.inkLight,
-                          ),
-                        ),
-                      ],
+                  if (paymentBadgeText.isNotEmpty) ...[
+                    _buildBadge(paymentBadgeText, _BC.warning),
+                    SizedBox(width: 1.5.w),
+                  ],
+                  if (statusLabel.isNotEmpty)
+                    _buildBadge(
+                      statusLabel,
+                      _getTrekStatusColor(trekStatusRaw),
                     ),
-                  ),
                 ],
               ),
 
-              SizedBox(height: 1.4.h),
+              SizedBox(height: 1.5.h),
 
               // ─────────────────────────
-              // INFO ROW
+              // TITLE & DESTINATION
               // ─────────────────────────
-
-              Row(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
-                children: [
-
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment
-                              .start,
-                      children: [
-
-                        _infoItem(
-                          'Departure Date',
-                          startDate,
-                        ),
-
-                        _infoItem(
-                          'Duration',
-                          duration,
-                        ),
-
-                        _infoItem(
-                          'Available Slots',
-                          '$availableSlots seats',
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  SizedBox(width: 3.w),
-
-                  Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.end,
+              Text(
+                title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textScaler: const TextScaler.linear(1),
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: FontSize.s14,
+                  fontWeight: FontWeight.w700,
+                  color: _BC.ink,
+                  height: 1.3,
+                ),
+              ),
+              if (destinationName.isNotEmpty)
+                Padding(
+                  padding: EdgeInsets.only(top: 0.5.h),
+                  child: Row(
                     children: [
-
-                      Text(
-                        '$bookedSlots',
-                        textScaler:
-                            const TextScaler.linear(
-                          1,
-                        ),
-                        style: TextStyle(
-                          fontFamily:
-                              'Poppins',
-                          fontSize:
-                              FontSize.s16,
-                          fontWeight:
-                              FontWeight.w700,
-                          color: _BC.ink,
-                        ),
-                      ),
-
-                      Text(
-                        'slots booked',
-                        textScaler:
-                            const TextScaler.linear(
-                          1,
-                        ),
-                        style: TextStyle(
-                          fontFamily:
-                              'Poppins',
-                          fontSize:
-                              FontSize.s8,
-                          color:
-                              _BC.inkMid,
+                      Icon(Icons.location_on, size: 3.5.w, color: _BC.brand),
+                      SizedBox(width: 1.w),
+                      Expanded(
+                        child: Text(
+                          destinationName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: FontSize.s9,
+                            color: _BC.inkMid,
+                          ),
                         ),
                       ),
                     ],
                   ),
+                ),
+
+              SizedBox(height: 1.5.h),
+              Container(height: 0.5, color: _BC.divider),
+              SizedBox(height: 1.5.h),
+
+              // ─────────────────────────
+              // INFO GRID WITH ICONS
+              // ─────────────────────────
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Left Column
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _infoItem(
+                          Icons.receipt_long_outlined,
+                          'Booking ID',
+                          bookingId,
+                        ),
+                        _infoItem(Icons.tag_outlined, 'TBR ID', tbrId),
+                        _infoItem(
+                          Icons.calendar_today_outlined,
+                          'Booking Date',
+                          bookingDate,
+                        ),
+                        _infoItem(
+                          Icons.event_available_outlined,
+                          'Start Date',
+                          startDateTime,
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: 4.w),
+                  // Right Column
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _infoItem(
+                          Icons.people_alt_outlined,
+                          'Travelers',
+                          totalTravelers,
+                        ),
+                        _infoItem(
+                          Icons.hourglass_bottom_outlined,
+                          'Duration',
+                          durationStr,
+                        ),
+                        _infoItem(
+                          Icons.terrain_outlined,
+                          'Difficulty',
+                          difficulty,
+                        ),
+                        _infoItem(
+                          Icons.shield_outlined,
+                          'Cancellation',
+                          cancellationPolicy,
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
 
+              // ─────────────────────────
+              // RATE TREK HINT
+              // ─────────────────────────
+              if (showRateHint) ...[
+                SizedBox(height: 0.5.h),
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 3.w,
+                    vertical: 1.2.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _BC.ratingBg,
+                    borderRadius: BorderRadius.circular(2.w),
+                    border: Border.all(
+                      color: _BC.warning.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.star_rounded, color: _BC.warning, size: 5.w),
+                      SizedBox(width: 2.w),
+                      Expanded(
+                        child: Text(
+                          'You haven\'t rated this trek yet!',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: FontSize.s9,
+                            fontWeight: FontWeight.w600,
+                            color: _BC.ink,
+                          ),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: onRateTrekTap,
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 3.w,
+                            vertical: 0.6.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _BC.warning,
+                            borderRadius: BorderRadius.circular(1.5.w),
+                          ),
+                          child: Text(
+                            'Rate Now',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: FontSize.s8,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
               SizedBox(height: 1.h),
-
-              Container(
-                height: 0.5,
-                color: _BC.divider,
-              ),
-
+              Container(height: 0.5, color: _BC.divider),
               SizedBox(height: 1.h),
 
               // ─────────────────────────
               // CTA
               // ─────────────────────────
-
               Row(
-                mainAxisAlignment:
-                    MainAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-
                   Row(
                     children: [
-
                       Text(
                         'View details',
-                        textScaler:
-                            const TextScaler.linear(
-                          1,
-                        ),
                         style: TextStyle(
-                          fontFamily:
-                              'Poppins',
-                          fontSize:
-                              FontSize.s11,
-                          fontWeight:
-                              FontWeight.w600,
+                          fontFamily: 'Poppins',
+                          fontSize: FontSize.s11,
+                          fontWeight: FontWeight.w600,
                           color: _BC.brand,
                         ),
                       ),
-
                       SizedBox(width: 1.w),
-
                       Icon(
-                        Icons
-                            .arrow_forward_rounded,
+                        Icons.arrow_forward_rounded,
                         size: 4.w,
                         color: _BC.brand,
                       ),
