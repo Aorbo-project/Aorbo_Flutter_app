@@ -98,6 +98,7 @@ class CalculateFareRequestModel with _$CalculateFareRequestModel {
     @JsonKey(name: 'add_insurance') required bool addInsurance,
     @JsonKey(name: 'add_cancellation_protection')
     required bool addFreeCancellationProtection,
+    @JsonKey(name: 'boarding_city_id') int? boardingCityId,
   }) = _CalculateFareRequestModel;
 
   factory CalculateFareRequestModel.fromJson(Map<String, dynamic> json) =>

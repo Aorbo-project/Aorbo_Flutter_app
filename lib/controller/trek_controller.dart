@@ -79,6 +79,13 @@ class TrekController extends GetxController {
   Rx<TrekDetailData> trekDetailData = TrekDetailData().obs;
   RxInt trekDetailId = 0.obs;
 
+  // Customer's chosen boarding/source city for this booking (Booking.city_id
+  // on the backend). Auto-selected when the trek has exactly one boarding
+  // point; must be explicitly chosen by the customer on trek_details_screen
+  // when there's more than one, and survives navigation into
+  // traveller_information_screen where calculateFare() actually sends it.
+  Rx<int?> selectedBoardingCityId = Rx<int?>(null);
+
   //region AddTrek
   RxInt trekPersonCount = 0.obs;
   RxList<Traveler> travellerDetailList = <Traveler>[].obs;
@@ -553,6 +560,22 @@ class TrekController extends GetxController {
         if (response['success']) {
           trekDetailModal.value = TrekDetailModal.fromJson(response);
           trekDetailData.value = trekDetailModal.value.data ?? TrekDetailData();
+
+          // Reset per-trek, then auto-select when there's exactly one
+          // boarding option — matches trek_details_screen's existing
+          // boardingCandidates logic (is_boarding_point==true, deduped).
+          // When there's more than one, this stays null until the customer
+          // picks one on that screen.
+          selectedBoardingCityId.value = null;
+          final boardingStages = (trekDetailData.value.trekStages ?? [])
+              .where((s) => s.isBoardingPoint == true && s.cityId != null)
+              .toList();
+          final uniqueBoardingCityIds = boardingStages
+              .map((s) => s.cityId)
+              .toSet();
+          if (uniqueBoardingCityIds.length == 1) {
+            selectedBoardingCityId.value = uniqueBoardingCityIds.first;
+          }
         } else {
           errorMessage.value = response['message'];
           CustomSnackBar.show(Get.context!, message: errorMessage.value);
@@ -570,6 +593,12 @@ class TrekController extends GetxController {
   Future<void> calculateFare() async {
     try {
       calculateFareResponseModel.value = ApiResult.loading("");
+      // Always send the customer's current boarding-city selection (set on
+      // trek_details_screen, required when the trek has more than one
+      // boarding option) rather than whatever was in the model when it was
+      // first constructed.
+      calculateFareRequestModel.value = calculateFareRequestModel.value
+          .copyWith(boardingCityId: selectedBoardingCityId.value);
       final response = await repository.postApiCall(
         url: NetworkUrl.calculateFare,
         body: calculateFareRequestModel.value.toJson(),
