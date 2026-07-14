@@ -1508,6 +1508,8 @@ mixin _$CalculateFareRequestModel {
   bool get addInsurance => throw _privateConstructorUsedError;
   @JsonKey(name: 'add_cancellation_protection')
   bool get addFreeCancellationProtection => throw _privateConstructorUsedError;
+  @JsonKey(name: 'boarding_city_id')
+  int? get boardingCityId => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -1528,7 +1530,8 @@ abstract class $CalculateFareRequestModelCopyWith<$Res> {
       @JsonKey(name: 'cancellation_policy_type') String? cancellationPolicyType,
       @JsonKey(name: 'add_insurance') bool addInsurance,
       @JsonKey(name: 'add_cancellation_protection')
-      bool addFreeCancellationProtection});
+      bool addFreeCancellationProtection,
+      @JsonKey(name: 'boarding_city_id') int? boardingCityId});
 }
 
 /// @nodoc
@@ -1551,6 +1554,7 @@ class _$CalculateFareRequestModelCopyWithImpl<$Res,
     Object? cancellationPolicyType = freezed,
     Object? addInsurance = null,
     Object? addFreeCancellationProtection = null,
+    Object? boardingCityId = freezed,
   }) {
     return _then(_value.copyWith(
       batchId: freezed == batchId
@@ -1577,6 +1581,10 @@ class _$CalculateFareRequestModelCopyWithImpl<$Res,
           ? _value.addFreeCancellationProtection
           : addFreeCancellationProtection // ignore: cast_nullable_to_non_nullable
               as bool,
+      boardingCityId: freezed == boardingCityId
+          ? _value.boardingCityId
+          : boardingCityId // ignore: cast_nullable_to_non_nullable
+              as int?,
     ) as $Val);
   }
 }
@@ -1597,7 +1605,8 @@ abstract class _$$CalculateFareRequestModelImplCopyWith<$Res>
       @JsonKey(name: 'cancellation_policy_type') String? cancellationPolicyType,
       @JsonKey(name: 'add_insurance') bool addInsurance,
       @JsonKey(name: 'add_cancellation_protection')
-      bool addFreeCancellationProtection});
+      bool addFreeCancellationProtection,
+      @JsonKey(name: 'boarding_city_id') int? boardingCityId});
 }
 
 /// @nodoc
@@ -1619,6 +1628,7 @@ class __$$CalculateFareRequestModelImplCopyWithImpl<$Res>
     Object? cancellationPolicyType = freezed,
     Object? addInsurance = null,
     Object? addFreeCancellationProtection = null,
+    Object? boardingCityId = freezed,
   }) {
     return _then(_$CalculateFareRequestModelImpl(
       batchId: freezed == batchId
@@ -1645,6 +1655,10 @@ class __$$CalculateFareRequestModelImplCopyWithImpl<$Res>
           ? _value.addFreeCancellationProtection
           : addFreeCancellationProtection // ignore: cast_nullable_to_non_nullable
               as bool,
+      boardingCityId: freezed == boardingCityId
+          ? _value.boardingCityId
+          : boardingCityId // ignore: cast_nullable_to_non_nullable
+              as int?,
     ));
   }
 }
@@ -1659,7 +1673,8 @@ class _$CalculateFareRequestModelImpl implements _CalculateFareRequestModel {
       @JsonKey(name: 'cancellation_policy_type') this.cancellationPolicyType,
       @JsonKey(name: 'add_insurance') required this.addInsurance,
       @JsonKey(name: 'add_cancellation_protection')
-      required this.addFreeCancellationProtection});
+      required this.addFreeCancellationProtection,
+      @JsonKey(name: 'boarding_city_id') this.boardingCityId});
 
   factory _$CalculateFareRequestModelImpl.fromJson(Map<String, dynamic> json) =>
       _$$CalculateFareRequestModelImplFromJson(json);
@@ -1682,10 +1697,13 @@ class _$CalculateFareRequestModelImpl implements _CalculateFareRequestModel {
   @override
   @JsonKey(name: 'add_cancellation_protection')
   final bool addFreeCancellationProtection;
+  @override
+  @JsonKey(name: 'boarding_city_id')
+  final int? boardingCityId;
 
   @override
   String toString() {
-    return 'CalculateFareRequestModel(batchId: $batchId, travelerCount: $travelerCount, couponCode: $couponCode, cancellationPolicyType: $cancellationPolicyType, addInsurance: $addInsurance, addFreeCancellationProtection: $addFreeCancellationProtection)';
+    return 'CalculateFareRequestModel(batchId: $batchId, travelerCount: $travelerCount, couponCode: $couponCode, cancellationPolicyType: $cancellationPolicyType, addInsurance: $addInsurance, addFreeCancellationProtection: $addFreeCancellationProtection, boardingCityId: $boardingCityId)';
   }
 
   @override
@@ -1705,7 +1723,9 @@ class _$CalculateFareRequestModelImpl implements _CalculateFareRequestModel {
             (identical(other.addFreeCancellationProtection,
                     addFreeCancellationProtection) ||
                 other.addFreeCancellationProtection ==
-                    addFreeCancellationProtection));
+                    addFreeCancellationProtection) &&
+            (identical(other.boardingCityId, boardingCityId) ||
+                other.boardingCityId == boardingCityId));
   }
 
   @JsonKey(ignore: true)
@@ -1717,7 +1737,8 @@ class _$CalculateFareRequestModelImpl implements _CalculateFareRequestModel {
       couponCode,
       cancellationPolicyType,
       addInsurance,
-      addFreeCancellationProtection);
+      addFreeCancellationProtection,
+      boardingCityId);
 
   @JsonKey(ignore: true)
   @override
@@ -1743,7 +1764,8 @@ abstract class _CalculateFareRequestModel implements CalculateFareRequestModel {
           final String? cancellationPolicyType,
           @JsonKey(name: 'add_insurance') required final bool addInsurance,
           @JsonKey(name: 'add_cancellation_protection')
-          required final bool addFreeCancellationProtection}) =
+          required final bool addFreeCancellationProtection,
+          @JsonKey(name: 'boarding_city_id') final int? boardingCityId}) =
       _$CalculateFareRequestModelImpl;
 
   factory _CalculateFareRequestModel.fromJson(Map<String, dynamic> json) =
@@ -1767,6 +1789,9 @@ abstract class _CalculateFareRequestModel implements CalculateFareRequestModel {
   @override
   @JsonKey(name: 'add_cancellation_protection')
   bool get addFreeCancellationProtection;
+  @override
+  @JsonKey(name: 'boarding_city_id')
+  int? get boardingCityId;
   @override
   @JsonKey(ignore: true)
   _$$CalculateFareRequestModelImplCopyWith<_$CalculateFareRequestModelImpl>

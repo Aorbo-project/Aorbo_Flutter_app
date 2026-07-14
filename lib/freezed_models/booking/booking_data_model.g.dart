@@ -139,6 +139,7 @@ _$CalculateFareRequestModelImpl _$$CalculateFareRequestModelImplFromJson(
       addInsurance: json['add_insurance'] as bool,
       addFreeCancellationProtection:
           json['add_cancellation_protection'] as bool,
+      boardingCityId: json['boarding_city_id'] as int?,
     );
 
 Map<String, dynamic> _$$CalculateFareRequestModelImplToJson(
@@ -150,6 +151,7 @@ Map<String, dynamic> _$$CalculateFareRequestModelImplToJson(
       'cancellation_policy_type': instance.cancellationPolicyType,
       'add_insurance': instance.addInsurance,
       'add_cancellation_protection': instance.addFreeCancellationProtection,
+      'boarding_city_id': instance.boardingCityId,
     };
 
 _$CalculateFareResponseModelImpl _$$CalculateFareResponseModelImplFromJson(

@@ -19,6 +19,20 @@ import '../utils/common_btn.dart';
 import '../widgets/cancellation_policy_widget.dart';
 import '../utils/ist_date_utils.dart';
 
+// One entry per distinct boarding CITY (not per stage — two boarding stages
+// in the same city are still a single choice for the customer). Shared by
+// TrekRouteTab's picker and _TrekDetailsScreenState's "Continue" guard so
+// the two can never disagree on whether a selection is required.
+Map<int, TrekStages> boardingCitiesFor(List<TrekStages>? trekStages) {
+  final Map<int, TrekStages> result = {};
+  for (final s in trekStages ?? <TrekStages>[]) {
+    if (s.isBoardingPoint == true && s.cityId != null && !result.containsKey(s.cityId)) {
+      result[s.cityId!] = s;
+    }
+  }
+  return result;
+}
+
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS
 // ─────────────────────────────────────────────
@@ -486,6 +500,23 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
       child: CommonButton(
         text: 'Continue',
         onPressed: () async {
+          final boardingCities = boardingCitiesFor(
+            _trekC.trekDetailData.value.trekStages,
+          );
+          if (boardingCities.length > 1 &&
+              _trekC.selectedBoardingCityId.value == null) {
+            Get.snackbar(
+              'Select Boarding Point',
+              'Please select your boarding city in the Route section before continuing.',
+              snackPosition: SnackPosition.BOTTOM,
+              backgroundColor: Colors.black87,
+              colorText: Colors.white,
+              margin: const EdgeInsets.all(10),
+              borderRadius: 8,
+              duration: const Duration(seconds: 3),
+            );
+            return;
+          }
           await _userC.getUserProfile();
           _trekC.trekBatchId.value = _trekC.trekDetailData.value.batchId ?? 0;
           Get.toNamed('/traveller-info');
@@ -1610,6 +1641,96 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
     }).toList();
   }
 
+  // This trek has more than one boarding city — the customer must pick one
+  // (mandatory, not skippable) before proceeding, since the vendor needs to
+  // know which city each traveler boards from. Selection is stored on
+  // TrekController so it survives navigation into traveller_information_screen,
+  // where calculateFare() actually sends it as boarding_city_id.
+  Widget _buildBoardingCityPicker(
+    TrekController ctrl,
+    Map<int, TrekStages> boardingByCityId,
+  ) {
+    final entries = boardingByCityId.entries.toList();
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
+      decoration: BoxDecoration(
+        color: _C.brand.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(3.w),
+        border: Border.all(color: _C.brand.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.flag_rounded, color: _C.brand, size: 16),
+              SizedBox(width: 2.w),
+              Text(
+                'Select Your Boarding Point',
+                textScaler: const TextScaler.linear(1.0),
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 9.0.sp,
+                  fontWeight: FontWeight.w600,
+                  color: _C.brand,
+                  letterSpacing: 0.6,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 1.h),
+          Obx(() {
+            final selected = ctrl.selectedBoardingCityId.value;
+            return Wrap(
+              spacing: 2.w,
+              runSpacing: 1.h,
+              children: entries.map((entry) {
+                final cityId = entry.key;
+                final stage = entry.value;
+                final label = (stage.city?.cityName?.isNotEmpty ?? false)
+                    ? stage.city!.cityName!
+                    : (stage.destination ?? 'Unknown');
+                final isSelected = selected == cityId;
+                return ChoiceChip(
+                  label: Text(
+                    label,
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 9.5.sp,
+                      fontWeight: FontWeight.w500,
+                      color: isSelected ? Colors.white : _C.ink,
+                    ),
+                  ),
+                  selected: isSelected,
+                  selectedColor: _C.brand,
+                  backgroundColor: Colors.white,
+                  side: BorderSide(
+                    color: isSelected ? _C.brand : _C.brand.withValues(alpha: 0.3),
+                  ),
+                  onSelected: (_) => ctrl.selectedBoardingCityId.value = cityId,
+                );
+              }).toList(),
+            );
+          }),
+          if (ctrl.selectedBoardingCityId.value == null) ...[
+            SizedBox(height: 0.8.h),
+            Text(
+              'Please select a boarding city to continue',
+              textScaler: const TextScaler.linear(1.0),
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 8.5.sp,
+                fontWeight: FontWeight.w500,
+                color: Colors.red.shade600,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final ctrl = Get.find<TrekController>();
@@ -1636,6 +1757,9 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
             return currentDt.isBefore(earliestDt) ? current : earliest;
           })
         : (routeList.isNotEmpty ? routeList.first : null);
+
+    final boardingByCityId = boardingCitiesFor(trek.trekStages);
+    final needsBoardingCitySelection = boardingByCityId.length > 1;
     final firstName = routeList.isNotEmpty
         ? (routeList.first.isBoardingPoint == true
               ? (routeList.first.city?.cityName ?? '')
@@ -1690,7 +1814,10 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
             ],
           ),
           SizedBox(height: 2.h),
-          if (boarding != null) ...[
+          if (needsBoardingCitySelection) ...[
+            _buildBoardingCityPicker(ctrl, boardingByCityId),
+            SizedBox(height: 2.h),
+          ] else if (boarding != null) ...[
             Container(
               padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.2.h),
               decoration: BoxDecoration(
