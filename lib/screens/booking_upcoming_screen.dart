@@ -6,16 +6,16 @@ import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:sizer/sizer.dart';
 import 'package:shimmer_ai/shimmer_ai.dart';
 import 'package:dotted_line/dotted_line.dart';
 
 import '../freezed_models/booking/booking_history_model.dart';
 import '../models/dispute/dispute_detail_modal.dart';
-import '../models/refund/refund_status_model.dart'; // ── NEW ──
+import '../models/refund/refund_status_model.dart';
 import '../controller/dashboard_controller.dart';
 import '../utils/common_colors.dart';
-import '../utils/screen_constants.dart';
 import '../utils/custom_snackbar.dart';
 import '../services/invoice_pdf_service.dart';
 import '../utils/ist_date_utils.dart';
@@ -39,7 +39,6 @@ class _TC {
   static const gold = Color(0xFFFFB800);
   static const goldDark = Color(0xFFE89B00);
 
-  // ── NEW: Status Colors ──
   static const red = Color(0xFFDC2626);
   static const redLight = Color(0xFFFFE4E4);
   static const amber = Color(0xFFF59E0B);
@@ -124,7 +123,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
   final GlobalKey _cardKey = GlobalKey();
   double cutoutOffset = 0;
 
-  // ── NEW: Refund polling state ──
   bool _refundPollingStarted = false;
   Worker? _bookingDetailWorker;
 
@@ -153,7 +151,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                 'Generating ticket...',
                 style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: FontSize.s10,
+                  fontSize: 10.sp,
                   color: _TC.ink,
                 ),
               ),
@@ -176,6 +174,55 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
       CustomSnackBar.show(
         context,
         message: 'Failed to generate ticket. Please try again.',
+      );
+    }
+  }
+
+  Future<void> _handleShare(BookingHistoryData? booking) async {
+    if (booking == null) {
+      CustomSnackBar.show(context, message: 'Booking details not available');
+      return;
+    }
+
+    final trek = booking.trek;
+    final batch = booking.batch;
+    final startDate = ISTDateUtils.toIST(batch?.startDate);
+    final endDate = ISTDateUtils.toIST(batch?.endDate);
+
+    final StringBuffer sb = StringBuffer();
+    sb.writeln('🏔️  ${trek?.title ?? 'Trek Booking'}');
+    sb.writeln('━━━━━━━━━━━━━━━━━━━');
+    sb.writeln('Booking ID  : ${booking.bookingNumber ?? 'N/A'}');
+    sb.writeln('TBR ID      : ${batch?.tbrId ?? 'N/A'}');
+    if (startDate != null) {
+      sb.writeln(
+        'Departure   : ${DateFormat('E, dd MMM yyyy').format(startDate)}',
+      );
+    }
+    if (endDate != null) {
+      sb.writeln(
+        'Arrival     : ${DateFormat('E, dd MMM yyyy').format(endDate)}',
+      );
+    }
+    sb.writeln('Duration    : ${trek?.duration ?? '-'}');
+    sb.writeln('Travellers  : ${booking.totalTravelers ?? 1}');
+    sb.writeln('Operator    : ${trek?.vendor?.businessName ?? 'N/A'}');
+    sb.writeln('Source City : ${trek?.vendor?.city ?? '-'}');
+    sb.writeln('Boarding    : ${trek?.vendor?.address ?? 'To be announced'}');
+    sb.writeln('━━━━━━━━━━━━━━━━━━━');
+    sb.writeln('Booking confirmed with Aorbo! 🎉');
+    sb.writeln('Download the app to explore more treks.');
+
+    try {
+      await Share.share(
+        sb.toString(),
+        subject: 'My Trek Booking — ${trek?.title ?? ''}',
+      );
+    } catch (e) {
+      if (!mounted) return;
+      CustomSnackBar.show(
+        context,
+        message: 'Unable to share at the moment. Please try again.',
       );
     }
   }
@@ -227,7 +274,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
       CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
     );
 
-    // ── NEW: Listen for booking detail load to start refund polling ──
     _bookingDetailWorker = ever(_dashboardC.bookingDetailsObserver, (result) {
       result.maybeWhen(
         success: (r) {
@@ -250,7 +296,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
 
   @override
   void dispose() {
-    // ── NEW: Stop refund polling and dispose worker ──
     _trekC.stopRefundPolling();
     _bookingDetailWorker?.dispose();
 
@@ -370,7 +415,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                 title,
                 style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: FontSize.s12,
+                  fontSize: 12.sp,
                   fontWeight: FontWeight.w700,
                   color: _TC.ink,
                 ),
@@ -424,7 +469,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
               title,
               style: TextStyle(
                 fontFamily: 'Poppins',
-                fontSize: FontSize.s9,
+                fontSize: 9.sp,
                 color: _TC.inkMid,
               ),
             ),
@@ -436,7 +481,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
               textAlign: TextAlign.end,
               style: TextStyle(
                 fontFamily: 'Poppins',
-                fontSize: FontSize.s9,
+                fontSize: 9.sp,
                 fontWeight: isHighlight ? FontWeight.w700 : FontWeight.w500,
                 color: isHighlight ? _TC.brand : _TC.ink,
               ),
@@ -447,7 +492,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
     );
   }
 
-  // ── FINANCE SNAPSHOT HELPERS ───────────────────────────────────────────────
   Map<String, dynamic>? _parseFinanceSnapshot(String? jsonStr) {
     if (jsonStr == null || jsonStr.isEmpty) return null;
     try {
@@ -464,13 +508,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
       return '₹${hasDecimal ? value.toStringAsFixed(2) : value.toInt().toString()}';
     }
     return '₹$value';
-  }
-
-  String _fmtSnapshotDate(String? dateStr) {
-    if (dateStr == null || dateStr.isEmpty) return 'N/A';
-    final dt = DateTime.tryParse(dateStr);
-    if (dt == null) return dateStr;
-    return DateFormat('dd MMM yyyy, hh:mm a').format(dt);
   }
 
   String _capitalize(String? value) {
@@ -492,7 +529,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
           title,
           style: TextStyle(
             fontFamily: 'Poppins',
-            fontSize: FontSize.s8,
+            fontSize: 8.sp,
             fontWeight: FontWeight.w700,
             color: _TC.accent,
             letterSpacing: 0.5,
@@ -502,48 +539,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
     );
   }
 
-  Widget _ticketRowSmall(
-    String title,
-    String value, {
-    bool isHighlight = false,
-  }) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 0.9.h),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            flex: 4,
-            child: Text(
-              title,
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: FontSize.s8,
-                color: _TC.inkMid,
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 6,
-            child: Text(
-              value,
-              textAlign: TextAlign.end,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: FontSize.s8,
-                fontWeight: isHighlight ? FontWeight.w700 : FontWeight.w500,
-                color: isHighlight ? _TC.brand : _TC.ink,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ── TICKET CARD ───────────────────────────────────────────────────────────
   Widget _buildTicketCard(BookingHistoryData? booking) {
     if (booking == null) return const SizedBox.shrink();
 
@@ -592,7 +587,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                     trek?.title ?? 'Trek Details',
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: FontSize.s18,
+                      fontSize: 18.sp,
                       fontWeight: FontWeight.w800,
                       color: Colors.white,
                       height: 1.2,
@@ -628,7 +623,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                         _getStatusText(booking.status).toUpperCase(),
                         style: TextStyle(
                           fontFamily: 'Poppins',
-                          fontSize: FontSize.s8,
+                          fontSize: 8.sp,
                           fontWeight: FontWeight.w700,
                           color: Colors.white,
                           letterSpacing: 0.8,
@@ -655,7 +650,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                         'DEPARTURE',
                         style: TextStyle(
                           fontFamily: 'Poppins',
-                          fontSize: FontSize.s7,
+                          fontSize: 7.sp,
                           fontWeight: FontWeight.w600,
                           color: _TC.inkLight,
                           letterSpacing: 0.8,
@@ -668,7 +663,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                             : '-',
                         style: TextStyle(
                           fontFamily: 'Poppins',
-                          fontSize: FontSize.s13,
+                          fontSize: 13.sp,
                           fontWeight: FontWeight.w700,
                           color: _TC.ink,
                         ),
@@ -680,7 +675,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontFamily: 'Poppins',
-                          fontSize: FontSize.s8,
+                          fontSize: 8.sp,
                           color: _TC.inkMid,
                         ),
                       ),
@@ -709,7 +704,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                               '-',
                           style: TextStyle(
                             fontFamily: 'Poppins',
-                            fontSize: FontSize.s8,
+                            fontSize: 8.sp,
                             fontWeight: FontWeight.w600,
                             color: _TC.inkMid,
                           ),
@@ -727,7 +722,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                         'ARRIVAL',
                         style: TextStyle(
                           fontFamily: 'Poppins',
-                          fontSize: FontSize.s7,
+                          fontSize: 7.sp,
                           fontWeight: FontWeight.w600,
                           color: _TC.inkLight,
                           letterSpacing: 0.8,
@@ -741,7 +736,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                         textAlign: TextAlign.right,
                         style: TextStyle(
                           fontFamily: 'Poppins',
-                          fontSize: FontSize.s13,
+                          fontSize: 13.sp,
                           fontWeight: FontWeight.w700,
                           color: _TC.ink,
                         ),
@@ -754,7 +749,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontFamily: 'Poppins',
-                          fontSize: FontSize.s8,
+                          fontSize: 8.sp,
                           color: _TC.inkMid,
                         ),
                       ),
@@ -832,7 +827,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                             'Traveller Details',
                             style: TextStyle(
                               fontFamily: 'Poppins',
-                              fontSize: FontSize.s10,
+                              fontSize: 10.sp,
                               fontWeight: FontWeight.w700,
                               color: _TC.ink,
                             ),
@@ -912,7 +907,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                                       t.traveler?.name ?? '-',
                                       style: TextStyle(
                                         fontFamily: 'Poppins',
-                                        fontSize: FontSize.s9,
+                                        fontSize: 9.sp,
                                         fontWeight: FontWeight.w600,
                                         color: _TC.ink,
                                       ),
@@ -924,7 +919,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                                       t.traveler?.age?.toString() ?? '-',
                                       style: TextStyle(
                                         fontFamily: 'Poppins',
-                                        fontSize: FontSize.s9,
+                                        fontSize: 9.sp,
                                         color: _TC.inkMid,
                                       ),
                                     ),
@@ -935,7 +930,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                                       t.traveler?.gender ?? '-',
                                       style: TextStyle(
                                         fontFamily: 'Poppins',
-                                        fontSize: FontSize.s9,
+                                        fontSize: 9.sp,
                                         color: _TC.inkMid,
                                       ),
                                     ),
@@ -1014,7 +1009,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                         final snap = _parseFinanceSnapshot(
                           booking.financeSnapshot,
                         );
-                        final isPartial = booking.paymentStatus == 'partial';
 
                         final travelerCount =
                             snap?['traveler_count'] ??
@@ -1038,12 +1032,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                         final finalBaseFare = snap?['final_base_fare'];
                         final gst5 =
                             snap?['gst_5_percent'] ?? booking.gstAmount ?? '0';
-                        final commissionRate = snap?['commission_rate'] ?? 10;
-                        final commission10 = snap?['commission_10_percent'];
-                        final commissionGst18 =
-                            snap?['commission_gst_18_percent'];
-                        final tds1 = snap?['tds_1_percent'];
-                        final vendorShare = snap?['vendor_share'];
                         final platformFee =
                             snap?['platform_fee'] ??
                             booking.platformFees ??
@@ -1075,16 +1063,14 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                             snap?['payment_method'] ??
                             booking.paymentMethod ??
                             'N/A';
-                        final rzPayId =
-                            snap?['razorpay_payment_id'] ??
-                            booking.razorpayPaymentId ??
-                            'N/A';
-                        final rzOrderId =
-                            snap?['razorpay_order_id'] ??
-                            booking.razorpayOrderId ??
-                            'N/A';
-                        final snapshotVer = snap?['snapshot_version'];
-                        final calculatedAt = snap?['calculated_at'];
+
+                        final bool isFlexible =
+                            cancelPolicy?.toString().toLowerCase() ==
+                            'flexible';
+                        final bool isFullPaid =
+                            booking.paymentStatus == 'full_paid';
+                        final bool showAdvanceAndRemaining =
+                            !(isFlexible && isFullPaid) && !(!isFlexible);
 
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1158,35 +1144,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                               ),
                             ],
 
-                            _financeGroupHeader('Commission Breakdown'),
-                            _ticketRow('Commission Rate', '$commissionRate%'),
-                            if (commission10 != null) ...[
-                              _dividerLine(),
-                              _ticketRow(
-                                'Commission ($commissionRate%)',
-                                _fmtCurrency(commission10),
-                              ),
-                            ],
-                            if (commissionGst18 != null) ...[
-                              _dividerLine(),
-                              _ticketRow(
-                                'Commission GST (18%)',
-                                _fmtCurrency(commissionGst18),
-                              ),
-                            ],
-                            if (tds1 != null) ...[
-                              _dividerLine(),
-                              _ticketRow('TDS (1%)', _fmtCurrency(tds1)),
-                            ],
-                            if (vendorShare != null) ...[
-                              _dividerLine(),
-                              _ticketRow(
-                                'Vendor Share',
-                                _fmtCurrency(vendorShare),
-                                isHighlight: true,
-                              ),
-                            ],
-
                             _financeGroupHeader('Payment Summary'),
                             _ticketRow(
                               'Final Amount',
@@ -1198,25 +1155,27 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                               'Cancellation Policy',
                               _capitalize(cancelPolicy.toString()),
                             ),
-                            _dividerLine(),
-                            _ticketRow(
-                              'Advance Amount',
-                              _fmtCurrency(advanceAmt),
-                            ),
-                            if (amountPaidNow != null) ...[
+                            if (showAdvanceAndRemaining) ...[
                               _dividerLine(),
                               _ticketRow(
-                                'Amount Paid Now',
-                                _fmtCurrency(amountPaidNow),
-                                isHighlight: true,
+                                'Advance Amount',
+                                _fmtCurrency(advanceAmt),
+                              ),
+                              if (amountPaidNow != null) ...[
+                                _dividerLine(),
+                                _ticketRow(
+                                  'Amount Paid Now',
+                                  _fmtCurrency(amountPaidNow),
+                                  isHighlight: true,
+                                ),
+                              ],
+                              _dividerLine(),
+                              _ticketRow(
+                                'Remaining Amount',
+                                _fmtCurrency(remainingAmt),
+                                isHighlight: booking.paymentStatus == 'partial',
                               ),
                             ],
-                            _dividerLine(),
-                            _ticketRow(
-                              'Remaining Amount',
-                              _fmtCurrency(remainingAmt),
-                              isHighlight: isPartial,
-                            ),
                             _dividerLine(),
                             _ticketRow(
                               'Payment Method',
@@ -1227,28 +1186,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                               'Payment Status',
                               _getPaymentStatusText(booking.paymentStatus),
                               isHighlight: true,
-                            ),
-
-                            _financeGroupHeader('Payment References'),
-                            _ticketRowSmall(
-                              'Razorpay Payment ID',
-                              rzPayId ?? 'N/A',
-                            ),
-                            _dividerLine(),
-                            _ticketRowSmall(
-                              'Razorpay Order ID',
-                              rzOrderId ?? 'N/A',
-                            ),
-
-                            _financeGroupHeader('Snapshot Info'),
-                            _ticketRow(
-                              'Snapshot Version',
-                              snapshotVer != null ? 'v$snapshotVer' : 'N/A',
-                            ),
-                            _dividerLine(),
-                            _ticketRow(
-                              'Calculated At',
-                              _fmtSnapshotDate(calculatedAt),
                             ),
                           ],
                         );
@@ -1286,7 +1223,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                     '"Not Insta-perfect.\nBut soul-perfect...!!"',
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: FontSize.s10,
+                      fontSize: 10.sp,
                       fontWeight: FontWeight.w500,
                       fontStyle: FontStyle.italic,
                       color: _TC.inkLight,
@@ -1343,7 +1280,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
 
   TextStyle _tableHeaderStyle() => TextStyle(
     fontFamily: 'Poppins',
-    fontSize: FontSize.s8,
+    fontSize: 8.sp,
     fontWeight: FontWeight.w600,
     color: _TC.inkMid,
     letterSpacing: 0.4,
@@ -1387,7 +1324,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
               label,
               style: TextStyle(
                 fontFamily: 'Poppins',
-                fontSize: FontSize.s9,
+                fontSize: 9.sp,
                 fontWeight: FontWeight.w600,
                 color: _TC.ink,
               ),
@@ -1398,9 +1335,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
     );
   }
 
-  // ═════════════════════════════════════════════════════════════════════════
-  //  ── NEW: REFUND TRACKER CARD ──
-  // ═════════════════════════════════════════════════════════════════════════
   Widget _buildRefundTrackerCard(BookingHistoryData booking) {
     return Obx(() {
       final result = _trekC.refundStatusObserver.value;
@@ -1414,7 +1348,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
       final bool isProcessed = statusData?.isProcessed ?? false;
       final bool isFailed = statusData?.isFailed ?? false;
 
-      // Determine current status display
       String statusText;
       String statusSubText;
       Color statusColor;
@@ -1477,7 +1410,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Header ──
             Row(
               children: [
                 Container(
@@ -1499,7 +1431,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                     'Refund Tracker',
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: FontSize.s13,
+                      fontSize: 13.sp,
                       fontWeight: FontWeight.w700,
                       color: _TC.ink,
                     ),
@@ -1528,7 +1460,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                       'COMPLETED',
                       style: TextStyle(
                         fontFamily: 'Poppins',
-                        fontSize: FontSize.s7,
+                        fontSize: 7.sp,
                         fontWeight: FontWeight.w800,
                         color: _TC.teal,
                         letterSpacing: 0.5,
@@ -1538,8 +1470,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
               ],
             ),
             SizedBox(height: 2.h),
-
-            // ── Status indicator ──
             Container(
               padding: EdgeInsets.all(3.w),
               decoration: BoxDecoration(
@@ -1566,7 +1496,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                           statusText,
                           style: TextStyle(
                             fontFamily: 'Poppins',
-                            fontSize: FontSize.s11,
+                            fontSize: 11.sp,
                             fontWeight: FontWeight.w700,
                             color: statusColor,
                           ),
@@ -1576,7 +1506,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                           statusSubText,
                           style: TextStyle(
                             fontFamily: 'Poppins',
-                            fontSize: FontSize.s8,
+                            fontSize: 8.sp,
                             color: _TC.inkMid,
                             height: 1.4,
                           ),
@@ -1589,8 +1519,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                 ],
               ),
             ),
-
-            // ── Amount Details ──
             if (statusData?.refundAmount != null) ...[
               SizedBox(height: 1.5.h),
               Row(
@@ -1600,7 +1528,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                     'Refund Amount',
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: FontSize.s10,
+                      fontSize: 10.sp,
                       color: _TC.inkMid,
                     ),
                   ),
@@ -1608,7 +1536,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                     '₹ ${statusData?.refundAmount?.toStringAsFixed(2)}',
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: FontSize.s12,
+                      fontSize: 12.sp,
                       fontWeight: FontWeight.w700,
                       color: _TC.ink,
                     ),
@@ -1616,8 +1544,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                 ],
               ),
             ],
-
-            // ── Refund speed ──
             if (statusData?.refundSpeed != null &&
                 !isProcessed &&
                 !isFailed) ...[
@@ -1651,7 +1577,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                             : 'Normal refund — 3 to 5 business days',
                         style: TextStyle(
                           fontFamily: 'Poppins',
-                          fontSize: FontSize.s8,
+                          fontSize: 8.sp,
                           fontWeight: FontWeight.w500,
                           color: statusData?.refundSpeed == 'instant'
                               ? _TC.teal
@@ -1663,8 +1589,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                 ),
               ),
             ],
-
-            // ── Credited date ──
             if (isProcessed && statusData?.refundProcessedAt != null) ...[
               SizedBox(height: 1.2.h),
               Row(
@@ -1679,7 +1603,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                     'Credited on ${_formatSettledAt(statusData?.refundProcessedAt)}',
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: FontSize.s9,
+                      fontSize: 9.sp,
                       fontWeight: FontWeight.w600,
                       color: _TC.teal,
                     ),
@@ -1687,8 +1611,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                 ],
               ),
             ],
-
-            // ── Failed action ──
             if (isFailed) ...[
               SizedBox(height: 1.2.h),
               GestureDetector(
@@ -1718,7 +1640,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                         'Contact Support',
                         style: TextStyle(
                           fontFamily: 'Poppins',
-                          fontSize: FontSize.s10,
+                          fontSize: 10.sp,
                           fontWeight: FontWeight.w700,
                           color: _TC.red,
                         ),
@@ -1728,15 +1650,9 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                 ),
               ),
             ],
-
             SizedBox(height: 1.5.h),
-
-            // ── Divider ──
             Container(height: 1, color: _TC.divider),
-
             SizedBox(height: 1.5.h),
-
-            // ── Track Refund button ──
             GestureDetector(
               onTap: () => _showRefundStatusSheet(context),
               child: Container(
@@ -1759,7 +1675,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                       'Track Refund',
                       style: TextStyle(
                         fontFamily: 'Poppins',
-                        fontSize: FontSize.s11,
+                        fontSize: 11.sp,
                         fontWeight: FontWeight.w700,
                         color: _TC.brand,
                       ),
@@ -1780,9 +1696,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
     });
   }
 
-  // ═════════════════════════════════════════════════════════════════════════
-  //  ── NEW: REFUND STATUS BOTTOM SHEET ──
-  // ═════════════════════════════════════════════════════════════════════════
   void _showRefundStatusSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -1810,7 +1723,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Handle bar
               Center(
                 child: Container(
                   width: 10.w,
@@ -1822,8 +1734,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                 ),
               ),
               SizedBox(height: 2.h),
-
-              // Title row
               Row(
                 children: [
                   Container(
@@ -1844,7 +1754,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                     'Refund Status',
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: FontSize.s14,
+                      fontSize: 14.sp,
                       fontWeight: FontWeight.w700,
                       color: _TC.ink,
                     ),
@@ -1862,31 +1772,24 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                 ],
               ),
               SizedBox(height: 2.h),
-
-              // Status steps
               if (isPolling && statusData == null)
                 Padding(
                   padding: EdgeInsets.symmetric(vertical: 4.h),
                   child: const Center(child: CircularProgressIndicator()),
                 )
               else ...[
-                // Step 1: Cancellation Confirmed
                 _buildStatusStep(
                   'Cancellation Confirmed',
                   true,
                   Icons.check_circle_rounded,
                 ),
                 _buildStatusConnector(true),
-
-                // Step 2: Refund Initiated
                 _buildStatusStep(
                   'Refund Initiated',
                   statusData?.refundStatus != null,
                   Icons.currency_rupee_rounded,
                 ),
                 _buildStatusConnector(statusData?.refundStatus != null),
-
-                // Step 3: Being Processed by Bank
                 _buildStatusStep(
                   'Being Processed by Bank',
                   statusData?.refundStatus == 'processing' ||
@@ -1897,8 +1800,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                   statusData?.refundStatus == 'processing' ||
                       statusData?.refundStatus == 'processed',
                 ),
-
-                // Step 4: Credited / Failed
                 _buildStatusStep(
                   (statusData?.isProcessed ?? false)
                       ? 'Credited — ${_formatSettledAt(statusData?.refundProcessedAt)}'
@@ -1911,10 +1812,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                       : Icons.done_all_rounded,
                   isFailed: statusData?.isFailed ?? false,
                 ),
-
                 SizedBox(height: 2.5.h),
-
-                // Status message
                 if (statusData?.statusMessage != null)
                   Container(
                     width: double.infinity,
@@ -1952,7 +1850,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                                 'Checking refund status...',
                             style: TextStyle(
                               fontFamily: 'Poppins',
-                              fontSize: FontSize.s9,
+                              fontSize: 9.sp,
                               color: (statusData?.isFailed ?? false)
                                   ? _TC.red
                                   : (statusData?.isProcessed ?? false)
@@ -1965,8 +1863,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                       ],
                     ),
                   ),
-
-                // Refund speed info
                 if (statusData?.refundSpeed != null) ...[
                   SizedBox(height: 1.h),
                   Row(
@@ -1985,17 +1881,14 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                         'Speed: ${statusData?.refundSpeed == 'instant' ? 'Instant (within minutes)' : 'Normal (3–5 business days)'}',
                         style: TextStyle(
                           fontFamily: 'Poppins',
-                          fontSize: FontSize.s9,
+                          fontSize: 9.sp,
                           color: _TC.inkMid,
                         ),
                       ),
                     ],
                   ),
                 ],
-
                 SizedBox(height: 2.h),
-
-                // Close button
                 SizedBox(
                   width: double.infinity,
                   height: 5.h,
@@ -2011,7 +1904,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                       'Close',
                       style: TextStyle(
                         fontFamily: 'Poppins',
-                        fontSize: FontSize.s12,
+                        fontSize: 12.sp,
                         fontWeight: FontWeight.w600,
                         color: _TC.brand,
                       ),
@@ -2059,7 +1952,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
             label,
             style: TextStyle(
               fontFamily: 'Poppins',
-              fontSize: FontSize.s11,
+              fontSize: 11.sp,
               color: isFailed
                   ? _TC.red
                   : done
@@ -2179,7 +2072,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                                     : 'Rate your trek',
                                 style: TextStyle(
                                   fontFamily: 'Poppins',
-                                  fontSize: FontSize.s12,
+                                  fontSize: 12.sp,
                                   fontWeight: FontWeight.w800,
                                   color: _TC.ink,
                                 ),
@@ -2191,7 +2084,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                                     : 'Help other trekkers with your experience',
                                 style: TextStyle(
                                   fontFamily: 'Poppins',
-                                  fontSize: FontSize.s8,
+                                  fontSize: 8.sp,
                                   fontWeight: FontWeight.w500,
                                   color: _TC.inkMid,
                                 ),
@@ -2243,7 +2136,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                                       : 'Tap a star to rate',
                                   style: TextStyle(
                                     fontFamily: 'Poppins',
-                                    fontSize: FontSize.s10,
+                                    fontSize: 10.sp,
                                     fontWeight: FontWeight.w700,
                                     color: _TC.ink,
                                   ),
@@ -2255,7 +2148,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                                       : 'Your feedback helps other trekkers',
                                   style: TextStyle(
                                     fontFamily: 'Poppins',
-                                    fontSize: FontSize.s8,
+                                    fontSize: 8.sp,
                                     color: _TC.inkMid,
                                   ),
                                 ),
@@ -2373,7 +2266,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                       isReviewed ? 'View Your Review' : 'Rate Your Trek',
                       style: TextStyle(
                         fontFamily: 'Poppins',
-                        fontSize: FontSize.s11,
+                        fontSize: 11.sp,
                         fontWeight: FontWeight.w800,
                         color: _TC.ink,
                       ),
@@ -2385,7 +2278,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                           : 'Help other trekkers discover',
                       style: TextStyle(
                         fontFamily: 'Poppins',
-                        fontSize: FontSize.s7,
+                        fontSize: 7.sp,
                         fontWeight: FontWeight.w500,
                         color: _TC.inkMid,
                       ),
@@ -2473,7 +2366,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                 'Dispute Details',
                 style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: FontSize.s13,
+                  fontSize: 13.sp,
                   fontWeight: FontWeight.w700,
                   color: _TC.ink,
                 ),
@@ -2507,7 +2400,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: FontSize.s8,
+                      fontSize: 8.sp,
                       color: CommonColors.appRedColor,
                       fontWeight: FontWeight.w500,
                       height: 1.5,
@@ -2532,7 +2425,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
             label,
             style: TextStyle(
               fontFamily: 'Poppins',
-              fontSize: FontSize.s9,
+              fontSize: 9.sp,
               color: _TC.inkMid,
             ),
           ),
@@ -2540,7 +2433,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
             value,
             style: TextStyle(
               fontFamily: 'Poppins',
-              fontSize: FontSize.s9,
+              fontSize: 9.sp,
               fontWeight: FontWeight.w600,
               color: _TC.ink,
             ),
@@ -2594,7 +2487,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
               'Booking Details',
               style: TextStyle(
                 fontFamily: 'Poppins',
-                fontSize: FontSize.s15,
+                fontSize: 15.sp,
                 fontWeight: FontWeight.w700,
                 color: _TC.ink,
               ),
@@ -2635,16 +2528,11 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                         padding: EdgeInsets.symmetric(horizontal: 4.w),
                         child: _buildTicketCard(booking),
                       ),
-
-                      // ══ NEW: Refund Tracker Card for cancelled bookings ══
                       if (status == 'cancelled' && booking != null) ...[
                         SizedBox(height: 2.5.h),
                         _buildRefundTrackerCard(booking),
                       ],
-
                       SizedBox(height: 2.5.h),
-
-                      // Contact card
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: 4.w),
                         child: Container(
@@ -2684,7 +2572,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                                       'Trek details via contact',
                                       style: TextStyle(
                                         fontFamily: 'Poppins',
-                                        fontSize: FontSize.s8,
+                                        fontSize: 8.sp,
                                         color: _TC.inkMid,
                                       ),
                                     ),
@@ -2694,7 +2582,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                                         booking?.trek?.captainName ?? '',
                                         style: TextStyle(
                                           fontFamily: 'Poppins',
-                                          fontSize: FontSize.s11,
+                                          fontSize: 11.sp,
                                           fontWeight: FontWeight.w600,
                                           color: _TC.ink,
                                         ),
@@ -2704,7 +2592,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                                         booking?.trek?.captainPhone ?? '',
                                         style: TextStyle(
                                           fontFamily: 'Poppins',
-                                          fontSize: FontSize.s12,
+                                          fontSize: 12.sp,
                                           fontWeight: FontWeight.w700,
                                           color: _TC.brand,
                                         ),
@@ -2714,7 +2602,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                                         'Contact number not available',
                                         style: TextStyle(
                                           fontFamily: 'Poppins',
-                                          fontSize: FontSize.s9,
+                                          fontSize: 9.sp,
                                           color: _TC.inkMid,
                                         ),
                                       ),
@@ -2725,9 +2613,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                           ),
                         ),
                       ),
-
                       SizedBox(height: 2.5.h),
-
                       // Action buttons
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: 4.w),
@@ -2777,19 +2663,13 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                               child: _buildActionButton(
                                 Icons.share_outlined,
                                 'Share',
-                                onTap: () => CustomSnackBar.show(
-                                  context,
-                                  message: 'Share feature coming soon',
-                                ),
+                                onTap: () => _handleShare(booking),
                               ),
                             ),
                           ],
                         ),
                       ),
-
                       SizedBox(height: 2.5.h),
-
-                      // FAQ Card
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: 4.w),
                         child: GestureDetector(
@@ -2835,7 +2715,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                                     'Frequently Asked Questions',
                                     style: TextStyle(
                                       fontFamily: 'Poppins',
-                                      fontSize: FontSize.s11,
+                                      fontSize: 11.sp,
                                       fontWeight: FontWeight.w600,
                                       color: _TC.ink,
                                     ),
@@ -2851,7 +2731,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                           ),
                         ),
                       ),
-
                       if (_dashboardC.disputeDetailDataList.isNotEmpty)
                         Padding(
                           padding: EdgeInsets.fromLTRB(4.w, 2.5.h, 4.w, 0),
@@ -2861,9 +2740,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                             ),
                           ),
                         ),
-
                       SizedBox(height: 2.h),
-
                       Padding(
                         padding: EdgeInsets.fromLTRB(6.w, 2.h, 6.w, 5.h),
                         child: Column(
@@ -2872,7 +2749,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                             Text(
                               'Go Beyond,\nExplore More!',
                               style: GoogleFonts.sourceSerif4(
-                                fontSize: FontSize.s28,
+                                fontSize: 28.sp,
                                 fontWeight: FontWeight.bold,
                                 color: const Color(0xFFE2E8F0),
                                 height: 1.2,
@@ -2883,7 +2760,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                               text: TextSpan(
                                 style: TextStyle(
                                   fontFamily: 'Poppins',
-                                  fontSize: FontSize.s10,
+                                  fontSize: 10.sp,
                                   color: _TC.inkLight,
                                 ),
                                 children: [
@@ -2893,7 +2770,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                                     child: Icon(
                                       Icons.favorite,
                                       color: CommonColors.red_B52424,
-                                      size: FontSize.s10,
+                                      size: 10.sp,
                                     ),
                                   ),
                                   const TextSpan(
@@ -2908,7 +2785,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                     ],
                   ),
                 ),
-
                 if (status == 'confirmed' &&
                     booking != null &&
                     !_ratingDismissed)
@@ -2918,7 +2794,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                     bottom: 3.h,
                     child: _buildFloatingRatingButton(bookingData: booking),
                   ),
-
                 Obx(
                   () => _trekC.cancellationDetailsResponseObserver.value
                       .maybeWhen(
