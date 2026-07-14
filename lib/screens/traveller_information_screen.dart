@@ -612,32 +612,52 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
     ),
   );
 
-  Widget _sheetHeader(String title, {VoidCallback? onClose}) => Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    children: [
-      Text(
-        title,
-        style: GoogleFonts.alexandria(
-          fontSize: 16.sp,
-          fontWeight: FontWeight.w600,
-          color: _TI.sheetInk,
+  Widget _sheetHeader(String title, IconData icon, {VoidCallback? onClose}) =>
+      Padding(
+        padding: EdgeInsets.only(bottom: 2.h),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 9.w,
+                  height: 9.w,
+                  decoration: BoxDecoration(
+                    color: _TI.iconBadge,
+                    borderRadius: BorderRadius.circular(2.5.w),
+                  ),
+                  child: Center(
+                    child: Icon(icon, color: Colors.white, size: 4.5.w),
+                  ),
+                ),
+                SizedBox(width: 3.w),
+                Text(
+                  title,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w700,
+                    color: _TI.sheetInk,
+                  ),
+                ),
+              ],
+            ),
+            GestureDetector(
+              onTap: onClose ?? () => Navigator.pop(context),
+              child: Container(
+                width: 8.w,
+                height: 8.w,
+                decoration: BoxDecoration(
+                  color: _TI.bg, // Use background to make it blend
+                  shape: BoxShape.circle,
+                  border: Border.all(color: _TI.sheetBorder),
+                ),
+                child: Icon(Icons.close, size: 4.w, color: _TI.sheetInkMid),
+              ),
+            ),
+          ],
         ),
-      ),
-      GestureDetector(
-        onTap: onClose ?? () => Navigator.pop(context),
-        child: Container(
-          width: 8.w,
-          height: 8.w,
-          decoration: BoxDecoration(
-            color: _TI.sheetSurface,
-            shape: BoxShape.circle,
-            border: Border.all(color: _TI.sheetBorder),
-          ),
-          child: Icon(Icons.close, size: 4.5.w, color: _TI.sheetInkMid),
-        ),
-      ),
-    ],
-  );
+      );
 
   Widget _sheetInputContainer({required String label, required Widget child}) =>
       Container(
@@ -646,24 +666,19 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
           border: Border.all(color: _TI.sheetBorder),
           borderRadius: BorderRadius.circular(2.w),
         ),
-        padding: EdgeInsets.only(
-          left: 4.w,
-          right: 2.w,
-          top: 0.8.h,
-          bottom: 0.8.h,
-        ),
+        padding: EdgeInsets.only(left: 4.w, right: 3.w, top: 1.h, bottom: 1.h),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               label,
               style: GoogleFonts.poppins(
-                fontSize: 7.sp,
+                fontSize: 8.sp,
                 color: _TI.sheetInkMid,
-                fontWeight: FontWeight.w400,
+                fontWeight: FontWeight.w500,
               ),
             ),
-            SizedBox(height: 0.3.h),
+            SizedBox(height: 0.5.h),
             child,
           ],
         ),
@@ -675,6 +690,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
     int? maxLength,
     FocusNode? focusNode,
     VoidCallback? onChanged,
+    bool readOnly = false,
   }) => MediaQuery(
     data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(1.0)),
     child: TextField(
@@ -683,7 +699,11 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
       focusNode: focusNode,
       maxLength: maxLength,
       onChanged: (_) => onChanged?.call(),
-      style: GoogleFonts.poppins(fontSize: 12.sp, color: _TI.sheetInk),
+      readOnly: readOnly,
+      style: GoogleFonts.poppins(
+        fontSize: 12.sp,
+        color: readOnly ? _TI.sheetInkMid : _TI.sheetInk,
+      ),
       cursorColor: _TI.sheetAccent,
       decoration: const InputDecoration(
         border: InputBorder.none,
@@ -734,8 +754,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.55,
-        margin: EdgeInsets.only(
+        padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
         decoration: BoxDecoration(
@@ -743,163 +762,142 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
           borderRadius: BorderRadius.vertical(top: Radius.circular(5.w)),
         ),
         child: StatefulBuilder(
-          builder: (context, setModalState) => Padding(
-            padding: EdgeInsets.only(
-              left: 6.w,
-              right: 6.w,
-              top: 2.h,
-              bottom: 2.h,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _sheetHandle(),
-                _sheetHeader(
-                  isEdit ? 'Edit Contact Details' : 'Add Contact Details',
-                ),
-                SizedBox(height: 2.h),
-                Container(
-                  decoration: BoxDecoration(
-                    color: _TI.sheetSurface,
-                    border: Border.all(color: _TI.sheetBorder),
-                    borderRadius: BorderRadius.circular(2.w),
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.fromLTRB(5.w, 2.h, 5.w, 3.h),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _sheetHandle(),
+                  _sheetHeader(
+                    isEdit ? 'Edit Contact Details' : 'Add Contact Details',
+                    Icons.contact_phone_outlined,
                   ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 27.w,
-                        padding: EdgeInsets.symmetric(vertical: 1.2.h),
-                        decoration: BoxDecoration(
-                          border: Border(
-                            right: BorderSide(color: _TI.sheetBorder, width: 1),
+                  _sheetInputContainer(
+                    label: 'Phone Number',
+                    child: Row(
+                      children: [
+                        Text(
+                          '+91',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w700,
+                            color: _TI.sheetInk,
                           ),
                         ),
-                        child: Column(
-                          children: [
-                            Text(
-                              'Country Code',
-                              style: GoogleFonts.poppins(
-                                fontSize: 7.sp,
-                                color: _TI.sheetInkMid,
-                              ),
-                            ),
-                            SizedBox(height: 0.4.h),
-                            Text(
-                              '+91 (IND)',
-                              style: GoogleFonts.poppins(
-                                fontSize: 10.sp,
-                                fontWeight: FontWeight.w600,
-                                color: _TI.sheetInk,
-                              ),
-                            ),
-                          ],
+                        SizedBox(width: 3.w),
+                        Container(
+                          height: 2.h,
+                          width: 1,
+                          color: _TI.sheetBorder,
                         ),
-                      ),
-                      Expanded(
-                        child: _sheetInputContainer(
-                          label: 'Phone Number',
+                        SizedBox(width: 3.w),
+                        Expanded(
                           child: _sheetTextField(
                             _userC.phoneNumberController.value,
                             keyboardType: TextInputType.phone,
                             maxLength: 10,
-                            onChanged: () => setModalState(() {}),
+                            readOnly: true, // Blocked for editing
+                            onChanged: () {},
                           ),
                         ),
-                      ),
-                    ],
+                        Icon(
+                          Icons.lock_outline_rounded,
+                          size: 4.w,
+                          color: _TI.sheetInkMid,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                SizedBox(height: 1.8.h),
-                _sheetInputContainer(
-                  label: 'Email ID',
-                  child: _sheetTextField(
-                    _userC.emailController.value,
-                    keyboardType: TextInputType.emailAddress,
-                    onChanged: () => setModalState(() {}),
+                  SizedBox(height: 1.5.h),
+                  _sheetInputContainer(
+                    label: 'Email ID',
+                    child: _sheetTextField(
+                      _userC.emailController.value,
+                      keyboardType: TextInputType.emailAddress,
+                      onChanged: () {},
+                    ),
                   ),
-                ),
-                SizedBox(height: 1.8.h),
-                Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: _TI.sheetSurface,
-                    border: Border.all(color: _TI.sheetBorder),
-                    borderRadius: BorderRadius.circular(2.w),
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
+                  SizedBox(height: 1.5.h),
+                  Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: _TI.sheetSurface,
+                      border: Border.all(color: _TI.sheetBorder),
+                      borderRadius: BorderRadius.circular(2.w),
+                    ),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 4.w,
+                      vertical: 1.h,
+                    ),
                     child: InkWell(
                       onTap: () =>
                           _showStateSelectionBottomSheet(setModalState),
                       borderRadius: BorderRadius.circular(2.w),
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 4.w,
-                          vertical: 1.h,
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'State of Residence',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 7.sp,
-                                    color: _TI.sheetInkMid,
-                                  ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'State of Residence',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 8.sp,
+                                  color: _TI.sheetInkMid,
+                                  fontWeight: FontWeight.w500,
                                 ),
-                                SizedBox(height: 0.25.h),
-                                Text(
-                                  _selectedState,
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 11.sp,
-                                    fontWeight: FontWeight.w500,
-                                    color: _TI.sheetInk,
-                                  ),
+                              ),
+                              SizedBox(height: 0.25.h),
+                              Text(
+                                _selectedState,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.w500,
+                                  color: _TI.sheetInk,
                                 ),
-                              ],
-                            ),
-                            Icon(
-                              Icons.keyboard_arrow_down,
-                              color: _TI.sheetInkMid,
-                              size: 6.w,
-                            ),
-                          ],
-                        ),
+                              ),
+                            ],
+                          ),
+                          Icon(
+                            Icons.keyboard_arrow_down,
+                            color: _TI.sheetInkMid,
+                            size: 6.w,
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                ),
-                Spacer(),
-                CommonButton(
-                  height: 48,
-                  gradient: CommonColors.filterGradient,
-                  text: isEdit ? 'Update' : 'Save',
-                  textColor: CommonColors.whiteColor,
-                  onPressed: () async {
-                    if (_validateContactDetails()) {
-                      await _userC.updateUserProfile();
-                      if (!context.mounted) return;
-                      setState(() {});
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            isEdit
-                                ? 'Contact details updated'
-                                : 'Contact details saved',
+                  SizedBox(height: 3.h),
+                  CommonButton(
+                    height: 48,
+                    gradient: CommonColors.filterGradient,
+                    text: isEdit ? 'Update' : 'Save',
+                    textColor: CommonColors.whiteColor,
+                    onPressed: () async {
+                      if (_validateContactDetails()) {
+                        await _userC.updateUserProfile();
+                        if (!context.mounted) return;
+                        setState(() {});
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              isEdit
+                                  ? 'Contact details updated'
+                                  : 'Contact details saved',
+                            ),
+                            backgroundColor: CommonColors.completedColor,
                           ),
-                          backgroundColor: CommonColors.completedColor,
-                        ),
-                      );
-                    }
-                  },
-                ),
-              ],
-            ),
-          ),
+                        );
+                      }
+                    },
+                  ),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );
@@ -923,8 +921,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.58,
-        margin: EdgeInsets.only(
+        padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
         decoration: BoxDecoration(
@@ -932,115 +929,142 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
           borderRadius: BorderRadius.vertical(top: Radius.circular(5.w)),
         ),
         child: StatefulBuilder(
-          builder: (context, setModalState) => Padding(
-            padding: EdgeInsets.only(
-              left: 6.w,
-              right: 6.w,
-              top: 2.h,
-              bottom: 2.h,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _sheetHandle(),
-                _sheetHeader(isEdit ? 'Edit Traveller' : 'Add New Traveller'),
-                SizedBox(height: 2.h),
-                _sheetInputContainer(
-                  label: 'Full Name',
-                  child: _sheetTextField(
-                    _userC.nameControllerTraveller.value,
-                    focusNode: nameNode,
-                    onChanged: () => setModalState(() {}),
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.fromLTRB(5.w, 2.h, 5.w, 3.h),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _sheetHandle(),
+                  _sheetHeader(
+                    isEdit ? 'Edit Traveller' : 'Add New Traveller',
+                    Icons.badge_outlined,
                   ),
-                ),
-                SizedBox(height: 1.8.h),
-                _sheetInputContainer(
-                  label: 'Age',
-                  child: _sheetTextField(
-                    _userC.ageControllerTraveller.value,
-                    keyboardType: TextInputType.number,
-                    onChanged: () => setModalState(() {}),
+                  _sheetInputContainer(
+                    label: 'Full Name',
+                    child: _sheetTextField(
+                      _userC.nameControllerTraveller.value,
+                      focusNode: nameNode,
+                      onChanged: () {},
+                    ),
                   ),
-                ),
-                SizedBox(height: 2.h),
-                Text(
-                  'Gender',
-                  style: GoogleFonts.poppins(
-                    fontSize: 11.sp,
-                    color: _TI.sheetInkMid,
-                  ),
-                ),
-                SizedBox(height: 1.h),
-                Row(
-                  children: [
-                    _buildGenderButtonInSheet('Male', setModalState),
-                    SizedBox(width: 3.w),
-                    _buildGenderButtonInSheet('Female', setModalState),
-                  ],
-                ),
-                Spacer(),
-                CommonButton(
-                  height: 48,
-                  gradient: CommonColors.filterGradient,
-                  text: isEdit ? 'Update Traveller' : 'Add Traveller',
-                  textColor: CommonColors.whiteColor,
-                  onPressed: () async {
-                    if (_validateTravellerDetails()) {
-                      if (isEdit) {
-                        await _userC.updateTraveler();
-                      } else {
-                        await _userC.addTraveler();
-                      }
-
-                      if (!isEdit) {
-                        final adultCount = _trekC
-                            .calculateFareRequestModel
-                            .value
-                            .travelerCount;
-                        final travelers =
-                            _userC.userProfileData.value.customer?.travelers ??
-                            [];
-                        if (travelers.isNotEmpty) {
-                          final newTraveler = travelers.last;
-                          final alreadySelected = selectedTravellers.any(
-                            (t) => t.id == newTraveler.id,
-                          );
-                          if (!alreadySelected &&
-                              selectedTravellers.length < adultCount) {
-                            setState(() {
-                              selectedTravellers.add(newTraveler);
-                              _trekC.travellerDetailList.value = List.from(
-                                selectedTravellers,
-                              );
-                              _trekC.calculateFareRequestModel.value = _trekC
-                                  .calculateFareRequestModel
-                                  .value
-                                  .copyWith(
-                                    travelerCount: selectedTravellers.length,
-                                  );
-                            });
-                          }
-                        }
-                      } else {
-                        setState(() {});
-                      }
-
-                      if (!context.mounted) return;
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            isEdit ? 'Traveller updated' : 'Traveller added',
+                  SizedBox(height: 1.5.h),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(
+                        flex: 4,
+                        child: _sheetInputContainer(
+                          label: 'Age',
+                          child: _sheetTextField(
+                            _userC.ageControllerTraveller.value,
+                            keyboardType: TextInputType.number,
+                            onChanged: () {},
                           ),
-                          backgroundColor: CommonColors.completedColor,
                         ),
-                      );
-                    }
-                  },
-                ),
-              ],
-            ),
-          ),
+                      ),
+                      SizedBox(width: 3.w),
+                      Expanded(
+                        flex: 6,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Gender',
+                              style: GoogleFonts.poppins(
+                                fontSize: 8.sp,
+                                color: _TI.sheetInkMid,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            SizedBox(height: 0.5.h),
+                            Row(
+                              children: [
+                                _buildGenderButtonInSheet(
+                                  'Male',
+                                  setModalState,
+                                ),
+                                SizedBox(width: 2.w),
+                                _buildGenderButtonInSheet(
+                                  'Female',
+                                  setModalState,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 3.h),
+                  CommonButton(
+                    height: 48,
+                    gradient: CommonColors.filterGradient,
+                    text: isEdit ? 'Update Traveller' : 'Add Traveller',
+                    textColor: CommonColors.whiteColor,
+                    onPressed: () async {
+                      if (_validateTravellerDetails()) {
+                        if (isEdit) {
+                          await _userC.updateTraveler();
+                        } else {
+                          await _userC.addTraveler();
+                        }
+
+                        if (!isEdit) {
+                          final adultCount = _trekC
+                              .calculateFareRequestModel
+                              .value
+                              .travelerCount;
+                          final travelers =
+                              _userC
+                                  .userProfileData
+                                  .value
+                                  .customer
+                                  ?.travelers ??
+                              [];
+                          if (travelers.isNotEmpty) {
+                            final newTraveler = travelers.last;
+                            final alreadySelected = selectedTravellers.any(
+                              (t) => t.id == newTraveler.id,
+                            );
+                            if (!alreadySelected &&
+                                selectedTravellers.length < adultCount) {
+                              setState(() {
+                                selectedTravellers.add(newTraveler);
+                                _trekC.travellerDetailList.value = List.from(
+                                  selectedTravellers,
+                                );
+                                _trekC.calculateFareRequestModel.value = _trekC
+                                    .calculateFareRequestModel
+                                    .value
+                                    .copyWith(
+                                      travelerCount: selectedTravellers.length,
+                                    );
+                              });
+                            }
+                          }
+                        } else {
+                          setState(() {});
+                        }
+
+                        if (!context.mounted) return;
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              isEdit ? 'Traveller updated' : 'Traveller added',
+                            ),
+                            backgroundColor: CommonColors.completedColor,
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );
@@ -1300,9 +1324,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
               ),
             ],
           ),
-
           Divider(color: _TI.divider, height: 3.h),
-
           Row(
             children: [
               Expanded(
@@ -1379,7 +1401,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
               ),
             ],
           ),
-
           if (hasBadge || hasSlots) ...[
             SizedBox(height: 1.5.h),
             Row(
@@ -1411,7 +1432,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                   )
                 else
                   const SizedBox.shrink(),
-
                 if (hasSlots)
                   Row(
                     children: [
@@ -1688,7 +1708,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
           children: [
             _sectionHeader('Payment Options', Icons.payment_outlined),
             SizedBox(height: 1.5.h),
-
             GestureDetector(
               onTap: () {
                 setState(() => _selectedPaymentOption = 'advance');
@@ -1751,9 +1770,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                 ),
               ),
             ),
-
             SizedBox(height: 1.5.h),
-
             GestureDetector(
               onTap: () {
                 setState(() => _selectedPaymentOption = 'full');

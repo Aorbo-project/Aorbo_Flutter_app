@@ -1578,6 +1578,15 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
     }
   }
 
+  DateTime? _parseStageDateTime(String? dt) {
+    if (dt == null || dt.isEmpty) return null;
+    try {
+      return DateFormat('yyyy-MM-dd hh:mm a').parse(dt);
+    } catch (_) {
+      return null;
+    }
+  }
+
   List<List<TrekStages>> _splitRouteList(List<TrekStages> list) {
     if (list.isEmpty) return [[], []];
     if (!showFullRoute) {
@@ -1610,12 +1619,23 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
     final visible = split[0];
     final hidden = split[1];
 
-    final boarding = routeList.isNotEmpty
-        ? routeList.firstWhere(
-            (s) => s.isBoardingPoint == true,
-            orElse: () => routeList.first,
-          )
-        : null;
+    // Server sends every boarding stage unfiltered when city_id couldn't be
+    // resolved (e.g. before the customer has picked a source city) — picking
+    // firstWhere's array order (or falling back to routeList.first, which can
+    // be a meeting/waypoint stage entirely) mislabels the wrong city/time as
+    // "boarding". Pick the true earliest boarding stage by parsed time instead.
+    final boardingCandidates = routeList
+        .where((s) => s.isBoardingPoint == true)
+        .toList();
+    final boarding = boardingCandidates.isNotEmpty
+        ? boardingCandidates.reduce((earliest, current) {
+            final earliestDt = _parseStageDateTime(earliest.dateTime);
+            final currentDt = _parseStageDateTime(current.dateTime);
+            if (earliestDt == null) return current;
+            if (currentDt == null) return earliest;
+            return currentDt.isBefore(earliestDt) ? current : earliest;
+          })
+        : (routeList.isNotEmpty ? routeList.first : null);
     final firstName = routeList.isNotEmpty
         ? (routeList.first.isBoardingPoint == true
               ? (routeList.first.city?.cityName ?? '')

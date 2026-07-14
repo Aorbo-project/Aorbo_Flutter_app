@@ -210,10 +210,7 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          content: Text(
-            message,
-            style: const TextStyle(fontFamily: 'Poppins'),
-          ),
+          content: Text(message, style: const TextStyle(fontFamily: 'Poppins')),
           behavior: SnackBarBehavior.floating,
           margin: EdgeInsets.all(4.w),
           shape: RoundedRectangleBorder(
@@ -249,10 +246,6 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
     try {
       await _userC.addTraveler();
       if (!mounted) return;
-      log(
-        'added traveller: ${_userC.nameControllerTraveller.value.text}, '
-        '${_userC.ageControllerTraveller.value.text}',
-      );
       _resetTravellerForm();
       setState(() => _isAddTravellerExpanded = false);
     } catch (e) {
@@ -263,233 +256,218 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
     }
   }
 
-Future<void> _confirmDeleteTraveller(int index, Traveler traveller) async {
-  if (_deletingIndex != null) return;
+  Future<void> _confirmDeleteTraveller(int index, Traveler traveller) async {
+    if (_deletingIndex != null) return;
 
-  final bool? confirmed = await showDialog<bool>(
-    context: context,
-    barrierDismissible: true,
-    barrierColor: Colors.black.withValues(alpha: 0.4),
-    builder: (context) {
-      return Dialog(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        child: Container(
-          padding: EdgeInsets.all(6.w),
-          decoration: BoxDecoration(
-            color: _C.cardBg,
-            borderRadius: BorderRadius.circular(5.w),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
-                blurRadius: 24,
-                spreadRadius: 2,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Icon badge + title row
-              Row(
-                children: [
-                  Container(
-                    width: 11.w,
-                    height: 11.w,
-                    decoration: BoxDecoration(
-                      color: _C.danger.withValues(alpha: 0.10),
-                      borderRadius: BorderRadius.circular(3.w),
-                    ),
-                    child: Center(
-                      child: Icon(
-                        Icons.delete_outline_rounded,
-                        color: _C.danger,
-                        size: 5.5.w,
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 3.w),
-                  Text(
-                    'Delete Traveller',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: FontSize.s13,
-                      fontWeight: FontWeight.w700,
-                      color: _C.ink,
-                    ),
-                  ),
-                ],
-              ),
-
-              SizedBox(height: 2.h),
-
-              // Traveller info chip
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.symmetric(
-                  horizontal: 4.w,
-                  vertical: 1.4.h,
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black.withValues(alpha: 0.4),
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          child: Container(
+            padding: EdgeInsets.all(6.w),
+            decoration: BoxDecoration(
+              color: _C.cardBg,
+              borderRadius: BorderRadius.circular(5.w),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 24,
+                  spreadRadius: 2,
+                  offset: const Offset(0, 8),
                 ),
-                decoration: BoxDecoration(
-                  color: _C.fieldBg,
-                  borderRadius: BorderRadius.circular(2.5.w),
-                  border: Border.all(color: _C.fieldBorder),
-                ),
-                child: Row(
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
                     Container(
-                      width: 9.w,
-                      height: 9.w,
-                      decoration: const BoxDecoration(
-                        color: _C.tealSoft,
-                        shape: BoxShape.circle,
+                      width: 11.w,
+                      height: 11.w,
+                      decoration: BoxDecoration(
+                        color: _C.danger.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(3.w),
                       ),
                       child: Center(
-                        child: Text(
-                          (traveller.name?.isNotEmpty == true
-                                  ? traveller.name!
-                                  : '?')[0]
-                              .toUpperCase(),
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: FontSize.s12,
-                            fontWeight: FontWeight.w700,
-                            color: _C.teal,
+                        child: Icon(
+                          Icons.delete_outline_rounded,
+                          color: _C.danger,
+                          size: 5.5.w,
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 3.w),
+                    Text(
+                      'Delete Traveller',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: FontSize.s13,
+                        fontWeight: FontWeight.w700,
+                        color: _C.ink,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 2.h),
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 4.w,
+                    vertical: 1.4.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _C.fieldBg,
+                    borderRadius: BorderRadius.circular(2.5.w),
+                    border: Border.all(color: _C.fieldBorder),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 9.w,
+                        height: 9.w,
+                        decoration: const BoxDecoration(
+                          color: _C.tealSoft,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Text(
+                            (traveller.name?.isNotEmpty == true
+                                    ? traveller.name!
+                                    : '?')[0]
+                                .toUpperCase(),
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: FontSize.s12,
+                              fontWeight: FontWeight.w700,
+                              color: _C.teal,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 3.w),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            traveller.name ?? 'Unknown',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: FontSize.s10,
+                              fontWeight: FontWeight.w600,
+                              color: _C.ink,
+                            ),
+                          ),
+                          Text(
+                            '${traveller.gender ?? '-'}, Age ${traveller.age ?? '-'}',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: FontSize.s9,
+                              color: _C.inkMid,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 1.5.h),
+                Text(
+                  'This traveller will be permanently removed from your profile and cannot be recovered.',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: FontSize.s9,
+                    color: _C.inkMid,
+                    height: 1.5,
+                  ),
+                ),
+                SizedBox(height: 2.5.h),
+                Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => Navigator.pop(context, false),
+                        child: Container(
+                          height: 5.5.h,
+                          decoration: BoxDecoration(
+                            color: _C.fieldBg,
+                            borderRadius: BorderRadius.circular(2.w),
+                            border: Border.all(color: _C.fieldBorder),
+                          ),
+                          child: Center(
+                            child: Text(
+                              'Cancel',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: FontSize.s10,
+                                fontWeight: FontWeight.w600,
+                                color: _C.inkMid,
+                              ),
+                            ),
                           ),
                         ),
                       ),
                     ),
                     SizedBox(width: 3.w),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          traveller.name ?? 'Unknown',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: FontSize.s10,
-                            fontWeight: FontWeight.w600,
-                            color: _C.ink,
-                          ),
-                        ),
-                        Text(
-                          '${traveller.gender ?? '-'}, Age ${traveller.age ?? '-'}',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: FontSize.s9,
-                            color: _C.inkMid,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              SizedBox(height: 1.5.h),
-
-              // Body message
-              Text(
-                'This traveller will be permanently removed from your profile and cannot be recovered.',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: FontSize.s9,
-                  color: _C.inkMid,
-                  height: 1.5,
-                ),
-              ),
-
-              SizedBox(height: 2.5.h),
-
-              // Action buttons
-              Row(
-                children: [
-                  // Cancel
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => Navigator.pop(context, false),
-                      child: Container(
-                        height: 5.5.h,
-                        decoration: BoxDecoration(
-                          color: _C.fieldBg,
-                          borderRadius: BorderRadius.circular(2.w),
-                          border: Border.all(color: _C.fieldBorder),
-                        ),
-                        child: Center(
-                          child: Text(
-                            'Cancel',
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: FontSize.s10,
-                              fontWeight: FontWeight.w600,
-                              color: _C.inkMid,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  SizedBox(width: 3.w),
-
-                  // Delete
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => Navigator.pop(context, true),
-                      child: Container(
-                        height: 5.5.h,
-                        decoration: BoxDecoration(
-                          color: _C.danger,
-                          borderRadius: BorderRadius.circular(2.w),
-                          boxShadow: [
-                            BoxShadow(
-                              color: _C.danger.withValues(alpha: 0.30),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Center(
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.delete_outline_rounded,
-                                color: Colors.white,
-                                size: 4.5.w,
-                              ),
-                              SizedBox(width: 1.5.w),
-                              Text(
-                                'Delete',
-                                style: TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontSize: FontSize.s10,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                ),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => Navigator.pop(context, true),
+                        child: Container(
+                          height: 5.5.h,
+                          decoration: BoxDecoration(
+                            color: _C.danger,
+                            borderRadius: BorderRadius.circular(2.w),
+                            boxShadow: [
+                              BoxShadow(
+                                color: _C.danger.withValues(alpha: 0.30),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
                               ),
                             ],
                           ),
+                          child: Center(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.delete_outline_rounded,
+                                  color: Colors.white,
+                                  size: 4.5.w,
+                                ),
+                                SizedBox(width: 1.5.w),
+                                Text(
+                                  'Delete',
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: FontSize.s10,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
-      );
-    },
-  );
+        );
+      },
+    );
 
-  if (confirmed == true && mounted) {
-    await _deleteTravellerAtIndex(index, traveller);
+    if (confirmed == true && mounted) {
+      await _deleteTravellerAtIndex(index, traveller);
+    }
   }
-}
-
 
   Future<void> _deleteTravellerAtIndex(int index, Traveler traveller) async {
     setState(() => _deletingIndex = index);
@@ -638,12 +616,7 @@ Future<void> _confirmDeleteTraveller(int index, Traveler traveller) async {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(height: 2.h),
-
-              _animatedSlideIn(
-                index: 0,
-                child: _buildContactCard(),
-              ),
-
+              _animatedSlideIn(index: 0, child: _buildContactCard()),
               AnimatedSize(
                 duration: _kAnimDuration,
                 curve: _kAnimCurve,
@@ -677,15 +650,18 @@ Future<void> _confirmDeleteTraveller(int index, Traveler traveller) async {
                                       await _userC.updateUserProfile();
                                       if (!mounted) return;
                                       setState(
-                                          () => isShowContactUpdate = false);
+                                        () => isShowContactUpdate = false,
+                                      );
                                     } catch (e) {
                                       log('updateUserProfile failed: $e');
                                       _showSnack(
-                                          'Could not save changes. Please try again.');
+                                        'Could not save changes. Please try again.',
+                                      );
                                     } finally {
                                       if (mounted) {
                                         setState(
-                                            () => _isSavingContact = false);
+                                          () => _isSavingContact = false,
+                                        );
                                       }
                                     }
                                   },
@@ -694,9 +670,7 @@ Future<void> _confirmDeleteTraveller(int index, Traveler traveller) async {
                       : const SizedBox.shrink(key: ValueKey('contact-empty')),
                 ),
               ),
-
               SizedBox(height: 2.h),
-
               _animatedSlideIn(
                 index: 1,
                 child: _buildCard(
@@ -725,14 +699,8 @@ Future<void> _confirmDeleteTraveller(int index, Traveler traveller) async {
                   ],
                 ),
               ),
-
               SizedBox(height: 1.8.h),
-
-              _animatedSlideIn(
-                index: 2,
-                child: _buildAddTravellerContainer(),
-              ),
-
+              _animatedSlideIn(index: 2, child: _buildAddTravellerContainer()),
               SizedBox(height: 4.h),
             ],
           ),
@@ -786,13 +754,8 @@ Future<void> _confirmDeleteTraveller(int index, Traveler traveller) async {
               )
             : IconButton(
                 key: const ValueKey('close-btn'),
-                onPressed: () =>
-                    setState(() => isShowContactUpdate = false),
-                icon: Icon(
-                  Icons.close_rounded,
-                  size: 5.w,
-                  color: _C.inkMid,
-                ),
+                onPressed: () => setState(() => isShowContactUpdate = false),
+                icon: Icon(Icons.close_rounded, size: 5.w, color: _C.inkMid),
               ),
       ),
       children: [
@@ -819,12 +782,9 @@ Future<void> _confirmDeleteTraveller(int index, Traveler traveller) async {
           icon: CommonImages.location4,
           value: () {
             final idx = _dashboardC.stateList.indexWhere(
-              (e) =>
-                  e.id == _userC.userProfileData.value.customer?.state?.id,
+              (e) => e.id == _userC.userProfileData.value.customer?.state?.id,
             );
-            return idx >= 0
-                ? _dashboardC.stateList[idx].name ?? '-'
-                : '-';
+            return idx >= 0 ? _dashboardC.stateList[idx].name ?? '-' : '-';
           }(),
         ),
         AnimatedSize(
@@ -847,7 +807,10 @@ Future<void> _confirmDeleteTraveller(int index, Traveler traveller) async {
                     children: [
                       SizedBox(height: 2.h),
                       const Divider(
-                          color: _C.fieldBorder, thickness: 1, height: 1),
+                        color: _C.fieldBorder,
+                        thickness: 1,
+                        height: 1,
+                      ),
                       SizedBox(height: 2.h),
                       _buildFieldLabel('Phone Number'),
                       SizedBox(height: 0.6.h),
@@ -880,8 +843,8 @@ Future<void> _confirmDeleteTraveller(int index, Traveler traveller) async {
 
   void _enterContactEditMode() {
     final customer = _userC.userProfileData.value.customer;
-    _userC.phoneNumberController.value.text =
-        (customer?.phone ?? '').replaceFirst('+91', '');
+    _userC.phoneNumberController.value.text = (customer?.phone ?? '')
+        .replaceFirst('+91', '');
     _userC.emailController.value.text = customer?.email ?? '';
 
     if (customer?.state?.id != null) {
@@ -1003,18 +966,22 @@ Future<void> _confirmDeleteTraveller(int index, Traveler traveller) async {
     required String hint,
     FocusNode? focusNode,
     bool enabled = true,
+    bool readOnly = false,
     Widget? suffixIcon,
+    Widget? prefix,
     int? maxLength,
     TextInputType? keyboardType,
     List<TextInputFormatter>? inputFormatters,
     TextCapitalization textCapitalization = TextCapitalization.none,
   }) {
     return MediaQuery(
-      data: MediaQuery.of(context)
-          .copyWith(textScaler: const TextScaler.linear(1.0)),
+      data: MediaQuery.of(
+        context,
+      ).copyWith(textScaler: const TextScaler.linear(1.0)),
       child: TextField(
         controller: controller,
         enabled: enabled,
+        readOnly: readOnly,
         focusNode: focusNode,
         keyboardType: keyboardType,
         maxLength: maxLength,
@@ -1023,7 +990,7 @@ Future<void> _confirmDeleteTraveller(int index, Traveler traveller) async {
         style: TextStyle(
           fontFamily: 'Poppins',
           fontSize: FontSize.s10,
-          color: _C.ink,
+          color: readOnly ? _C.inkMid : _C.ink,
         ),
         decoration: InputDecoration(
           hintText: hint,
@@ -1037,6 +1004,7 @@ Future<void> _confirmDeleteTraveller(int index, Traveler traveller) async {
           filled: true,
           fillColor: _C.fieldBg,
           suffixIcon: suffixIcon,
+          prefix: prefix,
           contentPadding: EdgeInsets.symmetric(
             horizontal: 4.w,
             vertical: 1.4.h,
@@ -1063,96 +1031,32 @@ Future<void> _confirmDeleteTraveller(int index, Traveler traveller) async {
   }
 
   Widget _buildPhoneField() {
-    return Container(
-      decoration: BoxDecoration(
-        color: _C.fieldBg,
-        borderRadius: BorderRadius.circular(2.w),
-        border: Border.all(color: _C.fieldBorder),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 27.w,
-            padding: EdgeInsets.symmetric(vertical: 1.2.h),
-            decoration: const BoxDecoration(
-              border: Border(right: BorderSide(color: _C.fieldBorder)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  'Country Code',
-                  textScaler: const TextScaler.linear(1.0),
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: FontSize.s7,
-                    color: _C.inkLight,
-                    fontWeight: FontWeight.w300,
-                  ),
-                ),
-                SizedBox(height: 0.4.h),
-                Text(
-                  '+91(IND)',
-                  textScaler: const TextScaler.linear(1.0),
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: FontSize.s10,
-                    fontWeight: FontWeight.w500,
-                    color: _C.ink,
-                  ),
-                ),
-              ],
-            ),
+    return _buildTextField(
+      controller: _userC.phoneNumberController.value,
+      hint: 'Phone Number',
+      readOnly: true, // Blocked for editing
+      prefix: Padding(
+        padding: EdgeInsets.only(right: 3.w),
+        child: Text(
+          '+91',
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: FontSize.s10,
+            fontWeight: FontWeight.w700,
+            color: _C.ink,
           ),
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(
-                left: 3.w,
-                right: 3.w,
-                top: 0.8.h,
-                bottom: 0.8.h,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Phone Number',
-                    textScaler: const TextScaler.linear(1.0),
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: FontSize.s7,
-                      color: _C.inkLight,
-                      fontWeight: FontWeight.w300,
-                    ),
-                  ),
-                  MediaQuery(
-                    data: MediaQuery.of(context)
-                        .copyWith(textScaler: const TextScaler.linear(1.0)),
-                    child: TextField(
-                      controller: _userC.phoneNumberController.value,
-                      keyboardType: TextInputType.phone,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(10),
-                      ],
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: FontSize.s10,
-                        color: _C.ink,
-                      ),
-                      decoration: const InputDecoration(
-                        border: InputBorder.none,
-                        counterText: '',
-                        isDense: true,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
+      suffixIcon: Icon(
+        Icons.lock_outline_rounded,
+        size: 4.w,
+        color: _C.inkLight,
+      ),
+      keyboardType: TextInputType.phone,
+      inputFormatters: [
+        FilteringTextInputFormatter.digitsOnly,
+        LengthLimitingTextInputFormatter(10),
+      ],
     );
   }
 
@@ -1210,8 +1114,7 @@ Future<void> _confirmDeleteTraveller(int index, Traveler traveller) async {
                     ],
                   ),
                 ),
-                Icon(Icons.keyboard_arrow_down,
-                    color: _C.inkMid, size: 6.w),
+                Icon(Icons.keyboard_arrow_down, color: _C.inkMid, size: 6.w),
               ],
             ),
           ),
@@ -1254,10 +1157,7 @@ Future<void> _confirmDeleteTraveller(int index, Traveler traveller) async {
                 fontWeight: FontWeight.w600,
                 color: isSelected ? Colors.white : _C.inkMid,
               ),
-              child: Text(
-                gender,
-                textScaler: const TextScaler.linear(1.0),
-              ),
+              child: Text(gender, textScaler: const TextScaler.linear(1.0)),
             ),
           ),
         ),
@@ -1446,7 +1346,10 @@ Future<void> _confirmDeleteTraveller(int index, Traveler traveller) async {
                         children: [
                           SizedBox(height: 1.5.h),
                           const Divider(
-                              color: _C.fieldBorder, thickness: 1, height: 1),
+                            color: _C.fieldBorder,
+                            thickness: 1,
+                            height: 1,
+                          ),
                           SizedBox(height: 1.8.h),
                           ..._buildTravellerFormFields(),
                           SizedBox(height: 2.h),
@@ -1464,7 +1367,8 @@ Future<void> _confirmDeleteTraveller(int index, Traveler traveller) async {
                         ],
                       )
                     : const SizedBox.shrink(
-                        key: ValueKey('traveller-collapsed')),
+                        key: ValueKey('traveller-collapsed'),
+                      ),
               ),
             ),
           ],
@@ -1578,7 +1482,10 @@ Future<void> _confirmDeleteTraveller(int index, Traveler traveller) async {
                         children: [
                           SizedBox(height: 2.h),
                           const Divider(
-                              color: _C.fieldBorder, thickness: 1, height: 1),
+                            color: _C.fieldBorder,
+                            thickness: 1,
+                            height: 1,
+                          ),
                           SizedBox(height: 2.h),
                           ..._buildTravellerFormFields(),
                           SizedBox(height: 2.h),

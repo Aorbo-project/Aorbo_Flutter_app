@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
 import 'package:shimmer_ai/shimmer_ai.dart';
 import '../controller/dashboard_controller.dart';
@@ -10,12 +9,41 @@ import '../models/refund/refund_status_model.dart';
 import '../models/treaks/booking_cancelled_modal.dart';
 import '../utils/common_colors.dart';
 import '../utils/common_booked_details_card.dart';
-import '../utils/screen_constants.dart';
+
+// ─────────────────────────────────────────────
+//  DESIGN TOKENS — matches TravellerInformationScreen
+// ─────────────────────────────────────────────
+class _TI {
+  static const bg = CommonColors.offWhiteColor;
+  static const cardBg = CommonColors.whiteColor;
+  static const ink = CommonColors.blackColor;
+  static const inkMid = CommonColors.cFF6B7280;
+  static const inkLight = CommonColors.grey_AEAEAE;
+  static const brand = CommonColors.trek_route_color;
+  static const teal = CommonColors.cFF0F7B6C;
+  static const tealSoft = CommonColors.cFFE6F5F3;
+  static const red = CommonColors.cFFDC2626;
+  static const redSoft = CommonColors.cFFFFE4E4;
+  static const iconBadge = CommonColors.cFF111827;
+  static const divider = CommonColors.trekroutecolorlight;
+  static const orange = Color(0xFFFF9800);
+  static const orangeSoft = Color(0xFFFFF3E0);
+
+  // Sheet tokens
+  static const sheetBg = Colors.white;
+  static const sheetSurface = Colors.white;
+  static const sheetBorder = Color(0xFFE2E8F0);
+  static const sheetInk = Color(0xFF0F172A);
+  static const sheetInkMid = Color(0xFF64748B);
+  static const sheetHandle = Color(0xFFD1D5DB);
+  static const sheetAccent = Color(0xFF111827);
+}
 
 class BookingCancellationSuccessScreen extends StatefulWidget {
   final BookingHistoryData? booking;
   final String refund;
   final BookingCancelledData? cancelledData;
+
   const BookingCancellationSuccessScreen({
     super.key,
     required this.booking,
@@ -28,19 +56,39 @@ class BookingCancellationSuccessScreen extends StatefulWidget {
       _BookingCancellationSuccessScreenState();
 }
 
-class _BookingCancellationSuccessScreenState extends State<BookingCancellationSuccessScreen> {
+class _BookingCancellationSuccessScreenState
+    extends State<BookingCancellationSuccessScreen>
+    with TickerProviderStateMixin {
   final DashboardController dashboardC = Get.find<DashboardController>();
   final TrekController _trekC = Get.find<TrekController>();
+
   bool _isLoading = true;
 
   bool get _hasRefund => (widget.cancelledData?.totalRefundableAmount ?? 0) > 0;
   bool get _isAdvanceOnly => widget.cancelledData?.isAdvanceOnly == true;
-  bool get _creditNoteEligible => widget.cancelledData?.creditNoteEligible == true;
+  bool get _creditNoteEligible =>
+      widget.cancelledData?.creditNoteEligible == true;
+
+  // Animations
+  late final AnimationController _checkController;
+  late final AnimationController _entranceController;
 
   @override
   void initState() {
     super.initState();
+
+    _checkController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+
+    _entranceController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+
     _simulateLoading();
+
     // Start polling if a cash refund was issued
     if (_hasRefund && widget.cancelledData?.bookingId != null) {
       _trekC.startRefundPolling(widget.cancelledData!.bookingId!.toString());
@@ -49,415 +97,548 @@ class _BookingCancellationSuccessScreenState extends State<BookingCancellationSu
 
   void _simulateLoading() {
     Future.delayed(const Duration(milliseconds: 1200), () {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+        _checkController.forward();
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (mounted) _entranceController.forward();
+        });
+      }
     });
   }
 
   @override
   void dispose() {
     _trekC.stopRefundPolling();
+    _checkController.dispose();
+    _entranceController.dispose();
     super.dispose();
+  }
+
+  Widget _staggered(int index, Widget child, {double slideDistance = 28}) {
+    final start = (index * 0.08).clamp(0.0, 0.65);
+    final end = (start + 0.40).clamp(0.0, 1.0);
+    final curve = CurvedAnimation(
+      parent: _entranceController,
+      curve: Interval(start, end, curve: Curves.easeOutCubic),
+    );
+    return AnimatedBuilder(
+      animation: curve,
+      builder: (_, __) => Opacity(
+        opacity: curve.value,
+        child: Transform.translate(
+          offset: Offset(0, (1 - curve.value) * slideDistance),
+          child: child,
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    // if (booking == null) {
-    //   return Scaffold(
-    //     appBar: AppBar(title: Text('Error')),
-    //     body: Center(child: Text('No booking data found')),
-    //   );
-    // }
-
     return Sizer(
       builder: (context, orientation, deviceType) {
         return Scaffold(
-          backgroundColor: Colors.white,
-          appBar: AppBar(
-            backgroundColor: CommonColors.lightBlueColor3.withValues(alpha: 0.2),
-            scrolledUnderElevation: 0,
-            elevation: 0,
-            automaticallyImplyLeading: true,
-            centerTitle: false,
-            leading: BackButton(
-              onPressed: () {
-                Get.offAllNamed('/dashboard');
-                dashboardC.selectedScreen.value = 1;
-                setState(() {});
-              },
-            ),
-            title: Text(
-              'Your ticket details',
-              style: GoogleFonts.poppins(
-                fontSize: FontSize.s13,
-                fontWeight: FontWeight.w500,
-                color: CommonColors.blackColor,
-              ),
-            ),
-          ),
-          body: Stack(
-            children: [
-              // Light blue background extension
-              Container(
-                height: 8.h,
-                color: CommonColors.lightBlueColor3.withValues(alpha: 0.2),
-              ),
-              // White container with content
-              Container(
-                width: double.infinity,
-                margin: EdgeInsets.only(top: 4.h),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(6.w),
-                    topRight: Radius.circular(6.w),
+          backgroundColor: _TI.bg,
+          appBar: _buildAppBar(),
+          body: _isLoading
+              ? _buildShimmerLoading()
+              : SingleChildScrollView(
+                  physics: const ClampingScrollPhysics(),
+                  padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildSuccessHero(),
+                      SizedBox(height: 2.h),
+
+                      _staggered(0, _buildCancellationStatusCard()),
+                      SizedBox(height: 2.h),
+
+                      _staggered(1, _buildBookingDetailsCard()),
+                      SizedBox(height: 2.h),
+
+                      _staggered(2, _buildNextStepsCard()),
+                      SizedBox(height: 3.h),
+                    ],
                   ),
                 ),
-                child: _isLoading
-                    ? _buildShimmerLoading()
-                    : SingleChildScrollView(
-                        physics: const ClampingScrollPhysics(),
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Trek Details Card
-                              UpcomingBookingCard(booking: widget.booking!),
-                              SizedBox(height: 2.h),
-
-                              // Traveler Details Table
-                              _buildTravelerDetailsTable(widget.booking!),
-                              SizedBox(height: 2.h),
-
-                              // Cancellation Status Card
-                              _buildCancellationStatusCard(widget.booking!, dashboardC),
-                              SizedBox(height: 2.h),
-                            ],
-                          ),
-                        ),
-                      ),
-              ),
-            ],
-          ),
+          bottomNavigationBar: _buildBottomBar(),
         );
       },
     );
   }
 
-  Widget _buildTravelerDetailsTable(BookingHistoryData booking) {
-    return Container(
-      padding: EdgeInsets.all(4.w),
-      decoration: BoxDecoration(
-        color: CommonColors.whiteColor,
-        borderRadius: BorderRadius.circular(4.w),
-        boxShadow: [
-          BoxShadow(
-            color: CommonColors.blackColor.withValues(alpha: 0.1),
-            offset: Offset(0, 2),
-            blurRadius: 8,
-            spreadRadius: 0,
-          ),
-        ],
+  // ─────────────────────────────────────────────
+  //  APP BAR
+  // ─────────────────────────────────────────────
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      backgroundColor: _TI.cardBg,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      surfaceTintColor: Colors.transparent,
+      automaticallyImplyLeading: false,
+      iconTheme: const IconThemeData(color: _TI.ink),
+      titleSpacing: 0,
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(1),
+        child: Container(height: 1, color: _TI.divider),
       ),
-      child: Column(
-        children: [
-          _buildTableRow(
-            '${booking.travelers?.length ?? 0} Slots',
-            booking.travelers
-                    ?.map((t) => t.traveler?.name ?? 'Unknown')
-                    .join(', ') ??
-                'Unknown',
-            isHeader: false,
-          ),
-          Divider(height: 2.h),
-          _buildTableRow(
-            'Ticket No',
-            booking.travelers
-                    ?.map((t) => booking.batch?.tbrId ?? 'N/A')
-                    .join(', ') ??
-                'N/A',
-            isHeader: false,
-          ),
-          Divider(height: 2.h),
-          _buildTableRow(
-            'Fare',
-            '₹ ${booking.finalAmount ?? booking.totalAmount ?? '0'}',
-            isHeader: false,
-            valueColor: CommonColors.blackColor,
-            isBold: true,
-          ),
-        ],
+      title: Text(
+        'Cancellation Status',
+        style: TextStyle(
+          fontFamily: 'Poppins',
+          fontSize: 13.sp,
+          fontWeight: FontWeight.w700,
+          color: _TI.ink,
+        ),
       ),
     );
   }
 
-  Widget _buildTableRow(
-    String label,
-    String value, {
-    bool isHeader = false,
-    Color? valueColor,
-    bool isBold = false,
-  }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  // ─────────────────────────────────────────────
+  //  HERO SUCCESS ANIMATION
+  // ─────────────────────────────────────────────
+  Widget _buildSuccessHero() {
+    return Column(
       children: [
-        Expanded(
-          flex: 2,
-          child: Text(
-            label,
-            style: GoogleFonts.poppins(
-              fontSize: FontSize.s10,
-              fontWeight: isHeader ? FontWeight.w600 : FontWeight.w400,
-              color: CommonColors.greyTextColor,
+        ScaleTransition(
+          scale: CurvedAnimation(
+            parent: _checkController,
+            curve: Curves.elasticOut,
+          ),
+          child: Container(
+            width: 18.w,
+            height: 18.w,
+            decoration: BoxDecoration(
+              color: _TI.teal,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: _TI.teal.withValues(alpha: 0.3),
+                  blurRadius: 20,
+                  spreadRadius: 2,
+                ),
+              ],
             ),
+            child: Icon(Icons.check_rounded, color: Colors.white, size: 10.w),
           ),
         ),
-        Expanded(
-          flex: 3,
-          child: Text(
-            value,
-            style: GoogleFonts.poppins(
-              fontSize: FontSize.s10,
-              fontWeight: isBold ? FontWeight.w600 : FontWeight.w400,
-              color: valueColor ?? CommonColors.blackColor,
-            ),
+        SizedBox(height: 2.h),
+        Text(
+          'Booking Cancelled',
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: 16.sp,
+            fontWeight: FontWeight.w800,
+            color: _TI.ink,
+          ),
+        ),
+        SizedBox(height: 0.5.h),
+        Text(
+          'Your cancellation request has been processed successfully.',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: 10.sp,
+            color: _TI.inkMid,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildCancellationStatusCard(
-    BookingHistoryData booking,
-    DashboardController dashboardC,
-  ) {
+  // ─────────────────────────────────────────────
+  //  CANCELLATION STATUS & REFUND CARD
+  // ─────────────────────────────────────────────
+  Widget _buildCancellationStatusCard() {
     return Container(
+      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
       decoration: BoxDecoration(
-        color: CommonColors.whiteColor,
+        color: _TI.cardBg,
         borderRadius: BorderRadius.circular(4.w),
-        boxShadow: [
-          BoxShadow(
-            color: CommonColors.blackColor.withValues(alpha: 0.1),
-            offset: Offset(0, 2),
-            blurRadius: 8,
-            spreadRadius: 0,
-          ),
-        ],
+        border: Border.all(color: _TI.divider, width: 1),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Top Section
+          _sectionHeader(
+            'Refund Details',
+            Icons.account_balance_wallet_outlined,
+          ),
+          SizedBox(height: 2.h),
+
+          if (widget.cancelledData?.cancellationNumber != null) ...[
+            _detailRow(
+              'Cancellation ID',
+              widget.cancelledData!.cancellationNumber!,
+            ),
+            SizedBox(height: 1.5.h),
+          ],
+          _detailRow('Cancelled On', _formatDate(DateTime.now())),
+          SizedBox(height: 2.h),
+
+          // Context-aware message
           Container(
-            width: double.infinity,
-            padding: EdgeInsets.all(4.w),
+            padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.5.h),
             decoration: BoxDecoration(
-              color: const Color(0xFFE8F4F8),
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(4.w),
-                topRight: Radius.circular(4.w),
-              ),
+              color: _TI.bg,
+              borderRadius: BorderRadius.circular(2.w),
+              border: Border.all(color: _TI.divider, width: 1),
             ),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Icon(Icons.info_outline_rounded, size: 4.w, color: _TI.brand),
+                SizedBox(width: 2.w),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Ticket Cancelled',
-                        style: GoogleFonts.poppins(
-                          fontSize: FontSize.s14,
-                          fontWeight: FontWeight.w600,
-                          color: CommonColors.blackColor,
-                        ),
-                      ),
-                      SizedBox(height: 0.5.h),
-                      Text(
-                        'on ${_formatDate(DateTime.now())}',
-                        style: GoogleFonts.poppins(
-                          fontSize: FontSize.s10,
-                          color: CommonColors.greyTextColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  width: 12.w,
-                  height: 12.w,
-                  decoration: BoxDecoration(
-                    color: Colors.orange.shade100,
-                    borderRadius: BorderRadius.circular(2.w),
-                  ),
-                  child: Center(
-                    child: Icon(Icons.cancel_outlined,
-                        color: Colors.orange.shade700, size: 6.w),
+                  child: Text(
+                    _creditNoteEligible
+                        ? 'Your advance amount is non-refundable. A credit note will be issued for GST reversal.'
+                        : _isAdvanceOnly
+                        ? 'Your advance amount, including GST, is non-refundable.'
+                        : _hasRefund
+                        ? 'Your refund will be processed to your original payment method.'
+                        : 'No refund is applicable for this cancellation.',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 9.sp,
+                      color: _TI.inkMid,
+                      height: 1.5,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
 
-          // Bottom Section
-          Container(
-            width: double.infinity,
-            padding: EdgeInsets.all(4.w),
-            decoration: BoxDecoration(
-              color: CommonColors.whiteColor,
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(4.w),
-                bottomRight: Radius.circular(4.w),
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          if (_hasRefund) ...[
+            SizedBox(height: 2.h),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Cancellation reference number
-                if (widget.cancelledData?.cancellationNumber != null) ...[
-                  Row(
-                    children: [
-                      Text(
-                        'CAN # ',
-                        style: GoogleFonts.poppins(
-                          fontSize: FontSize.s10,
-                          color: CommonColors.greyTextColor,
-                        ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Total Refund Amount',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 9.sp,
+                        color: _TI.inkMid,
+                        fontWeight: FontWeight.w500,
                       ),
-                      Text(
-                        widget.cancelledData!.cancellationNumber!,
-                        style: GoogleFonts.poppins(
-                          fontSize: FontSize.s10,
-                          fontWeight: FontWeight.w600,
-                          color: CommonColors.blackColor,
-                        ),
+                    ),
+                    SizedBox(height: 0.5.h),
+                    Text(
+                      '₹ ${widget.refund}',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w800,
+                        color: _TI.teal,
                       ),
-                    ],
-                  ),
-                  SizedBox(height: 1.5.h),
-                ],
-
-                // Context-aware message
-                Text(
-                  _creditNoteEligible
-                      ? 'Your advance amount is non-refundable. A credit note will be issued for GST reversal.'
-                      : _isAdvanceOnly
-                          ? 'Your advance amount, including GST, is non-refundable.'
-                          : _hasRefund
-                              ? 'Your refund will be processed to your original payment method.'
-                              : 'No refund is applicable for this cancellation.',
-                  style: GoogleFonts.poppins(
-                    fontSize: FontSize.s10,
-                    color: CommonColors.blackColor,
-                  ),
+                    ),
+                  ],
                 ),
-                SizedBox(height: 2.h),
-
-                // Refund amount row — only when a cash refund exists
-                if (_hasRefund) ...[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            'Total refund ',
-                            style: GoogleFonts.poppins(
-                              fontSize: FontSize.s10,
-                              color: CommonColors.greyTextColor,
-                            ),
-                          ),
-                          Text(
-                            '₹ ${widget.refund}',
-                            style: GoogleFonts.poppins(
-                              fontSize: FontSize.s12,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.green,
-                            ),
-                          ),
-                        ],
-                      ),
-                      GestureDetector(
-                        onTap: () => _showRefundStatusSheet(context),
-                        child: Text(
-                          'Track Refund →',
-                          style: GoogleFonts.poppins(
-                            fontSize: FontSize.s10,
-                            color: Colors.blue,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-
-                // Credit note notice — only when a credit note is actually being issued
-                if (_creditNoteEligible) ...[
-                  SizedBox(height: 1.5.h),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.h),
+                GestureDetector(
+                  onTap: () => _showRefundStatusSheet(context),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 3.w,
+                      vertical: 1.h,
+                    ),
                     decoration: BoxDecoration(
-                      color: Colors.amber.shade50,
-                      borderRadius: BorderRadius.circular(2.w),
-                      border: Border.all(color: Colors.amber.shade200),
+                      color: _TI.tealSoft,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: _TI.teal.withValues(alpha: 0.3),
+                      ),
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.receipt_long_outlined,
-                            size: 4.w, color: Colors.amber.shade800),
-                        SizedBox(width: 2.w),
-                        Expanded(
-                          child: Text(
-                            'A credit note for GST reversal will be shared to your registered email.',
-                            style: GoogleFonts.poppins(
-                              fontSize: FontSize.s9,
-                              color: Colors.amber.shade900,
-                            ),
+                        Icon(Icons.track_changes, size: 3.5.w, color: _TI.teal),
+                        SizedBox(width: 1.5.w),
+                        Text(
+                          'Track Refund',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 9.sp,
+                            fontWeight: FontWeight.w700,
+                            color: _TI.teal,
                           ),
                         ),
                       ],
                     ),
                   ),
-                ],
+                ),
               ],
             ),
-          ),
+          ],
+
+          // Credit note notice
+          if (_creditNoteEligible) ...[
+            SizedBox(height: 2.h),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.2.h),
+              decoration: BoxDecoration(
+                color: _TI.orangeSoft,
+                borderRadius: BorderRadius.circular(2.w),
+                border: Border.all(color: _TI.orange.withValues(alpha: 0.2)),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.receipt_long_outlined,
+                    size: 4.w,
+                    color: _TI.orange,
+                  ),
+                  SizedBox(width: 2.w),
+                  Expanded(
+                    child: Text(
+                      'A credit note for GST reversal will be shared to your registered email.',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 8.sp,
+                        color: _TI.orange,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 
-  /// Bottom sheet showing live refund status — updates via socket or polling.
-  void _showRefundStatusSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(5.w)),
-      ),
-      builder: (_) => Obx(() {
-        final result = _trekC.refundStatusObserver.value;
-        RefundStatusData? statusData;
-        result.maybeWhen(success: (m) => statusData = m?.data, orElse: () {});
-        final isPolling = result.maybeWhen(loading: (_) => true, orElse: () => false);
+  // ─────────────────────────────────────────────
+  //  BOOKING DETAILS RECAP
+  // ─────────────────────────────────────────────
+  Widget _buildBookingDetailsCard() {
+    if (widget.booking == null) return const SizedBox.shrink();
 
-        return Padding(
-          padding: EdgeInsets.all(5.w),
+    return Container(
+      decoration: BoxDecoration(
+        color: _TI.cardBg,
+        borderRadius: BorderRadius.circular(4.w),
+        border: Border.all(color: _TI.divider, width: 1),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(4.w),
+        child: UpcomingBookingCard(booking: widget.booking!),
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  //  WHAT HAPPENS NEXT TIMELINE
+  // ─────────────────────────────────────────────
+  Widget _buildNextStepsCard() {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+      decoration: BoxDecoration(
+        color: _TI.cardBg,
+        borderRadius: BorderRadius.circular(4.w),
+        border: Border.all(color: _TI.divider, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _sectionHeader('What Happens Next?', Icons.timeline_outlined),
+          SizedBox(height: 2.h),
+          _buildTimelineItem(
+            'Cancellation Confirmed',
+            'Your booking is officially cancelled and slots are released.',
+            true,
+            Icons.check_circle,
+          ),
+          _buildTimelineLine(),
+          _buildTimelineItem(
+            'Refund Initiated',
+            _hasRefund
+                ? 'We have initiated the refund process from our end.'
+                : 'No refund applicable for this booking.',
+            _hasRefund,
+            _hasRefund ? Icons.currency_rupee : Icons.cancel,
+          ),
+          if (_hasRefund) _buildTimelineLine(),
+          if (_hasRefund)
+            _buildTimelineItem(
+              'Credited to Bank',
+              'Amount will reflect in your original payment method in 5-7 business days.',
+              false,
+              Icons.account_balance,
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTimelineItem(
+    String title,
+    String subtitle,
+    bool done,
+    IconData icon,
+  ) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 8.w,
+          height: 8.w,
+          decoration: BoxDecoration(
+            color: done ? _TI.teal : _TI.bg,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: done ? _TI.teal : _TI.divider,
+              width: 1.5,
+            ),
+          ),
+          child: Icon(
+            icon,
+            color: done ? Colors.white : _TI.inkLight,
+            size: 4.w,
+          ),
+        ),
+        SizedBox(width: 3.w),
+        Expanded(
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Refund Status',
-                style: GoogleFonts.poppins(
-                  fontSize: FontSize.s14,
-                  fontWeight: FontWeight.w600,
+                title,
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 11.sp,
+                  fontWeight: FontWeight.w700,
+                  color: _TI.ink,
                 ),
               ),
+              SizedBox(height: 0.3.h),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 9.sp,
+                  color: _TI.inkMid,
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTimelineLine() {
+    return Padding(
+      padding: EdgeInsets.only(left: 3.5.w),
+      child: Container(height: 2.5.h, width: 1.5, color: _TI.divider),
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  //  BOTTOM BAR
+  // ─────────────────────────────────────────────
+  Widget _buildBottomBar() {
+    return SafeArea(
+      top: false,
+      child: Container(
+        padding: EdgeInsets.fromLTRB(4.w, 1.5.h, 4.w, 1.5.h),
+        decoration: BoxDecoration(
+          color: _TI.cardBg,
+          border: Border(top: BorderSide(color: _TI.divider, width: 1)),
+        ),
+        child: GestureDetector(
+          onTap: () {
+            Get.offAllNamed('/dashboard');
+            dashboardC.selectedScreen.value = 1;
+          },
+          child: Container(
+            height: 5.5.h,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              gradient: CommonColors.filterGradient,
+              borderRadius: BorderRadius.circular(3.w),
+              boxShadow: [
+                BoxShadow(
+                  color: _TI.brand.withValues(alpha: 0.35),
+                  blurRadius: 14,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: Center(
+              child: Text(
+                'Back to My Bookings',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  //  REFUND STATUS BOTTOM SHEET
+  // ─────────────────────────────────────────────
+  void _showRefundStatusSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => Container(
+        decoration: BoxDecoration(
+          color: _TI.sheetBg,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(5.w)),
+        ),
+        padding: EdgeInsets.fromLTRB(5.w, 2.h, 5.w, 4.h),
+        child: Obx(() {
+          final result = _trekC.refundStatusObserver.value;
+          RefundStatusData? statusData;
+          result.maybeWhen(success: (m) => statusData = m?.data, orElse: () {});
+          final isPolling = result.maybeWhen(
+            loading: (_) => true,
+            orElse: () => false,
+          );
+
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 10.w,
+                  height: 0.5.h,
+                  margin: EdgeInsets.only(bottom: 2.h),
+                  decoration: BoxDecoration(
+                    color: _TI.sheetHandle,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+              _sheetHeader('Refund Status', Icons.track_changes),
               SizedBox(height: 2.h),
               if (isPolling || statusData == null)
-                const Center(child: CircularProgressIndicator())
+                const Center(child: CircularProgressIndicator(color: _TI.brand))
               else ...[
-                _buildStatusStep('Cancellation Confirmed', true, Icons.check_circle),
+                _buildStatusStep(
+                  'Cancellation Confirmed',
+                  true,
+                  Icons.check_circle,
+                ),
                 _buildStatusStep(
                   'Refund Initiated',
                   statusData?.refundStatus != null,
@@ -473,57 +654,124 @@ class _BookingCancellationSuccessScreenState extends State<BookingCancellationSu
                   (statusData?.isProcessed ?? false)
                       ? 'Credited — ${_formatSettledAt(statusData?.refundProcessedAt)}'
                       : (statusData?.isFailed ?? false)
-                          ? 'Failed — Contact Support'
-                          : 'Awaiting Credit',
+                      ? 'Failed — Contact Support'
+                      : 'Awaiting Credit',
                   statusData?.isProcessed ?? false,
-                  (statusData?.isFailed ?? false) ? Icons.error_outline : Icons.done_all,
+                  (statusData?.isFailed ?? false)
+                      ? Icons.error_outline
+                      : Icons.done_all,
                   isFailed: statusData?.isFailed ?? false,
                 ),
                 SizedBox(height: 2.h),
-                Text(
-                  statusData?.statusMessage ?? 'Checking refund status...',
-                  style: GoogleFonts.poppins(
-                    fontSize: FontSize.s10,
-                    color: CommonColors.greyTextColor,
+                Container(
+                  padding: EdgeInsets.all(3.w),
+                  decoration: BoxDecoration(
+                    color: _TI.bg,
+                    borderRadius: BorderRadius.circular(2.w),
+                    border: Border.all(color: _TI.sheetBorder),
+                  ),
+                  child: Text(
+                    statusData?.statusMessage ?? 'Checking refund status...',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 9.sp,
+                      color: _TI.inkMid,
+                    ),
                   ),
                 ),
                 if (statusData?.refundSpeed != null) ...[
-                  SizedBox(height: 0.5.h),
+                  SizedBox(height: 1.h),
                   Text(
                     'Speed: ${statusData?.refundSpeed == 'instant' ? 'Instant (within minutes)' : 'Normal (3–5 business days)'}',
-                    style: GoogleFonts.poppins(
-                      fontSize: FontSize.s9,
-                      color: CommonColors.greyTextColor,
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 8.sp,
+                      color: _TI.inkLight,
                     ),
                   ),
                 ],
               ],
               SizedBox(height: 3.h),
             ],
-          ),
-        );
-      }),
+          );
+        }),
+      ),
     );
   }
 
-  Widget _buildStatusStep(String label, bool done, IconData icon, {bool isFailed = false}) {
+  Widget _sheetHeader(String title, IconData icon) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 9.w,
+              height: 9.w,
+              decoration: BoxDecoration(
+                color: _TI.iconBadge,
+                borderRadius: BorderRadius.circular(2.5.w),
+              ),
+              child: Center(
+                child: Icon(icon, color: Colors.white, size: 4.5.w),
+              ),
+            ),
+            SizedBox(width: 3.w),
+            Text(
+              title,
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w700,
+                color: _TI.ink,
+              ),
+            ),
+          ],
+        ),
+        GestureDetector(
+          onTap: () => Get.back(),
+          child: Container(
+            width: 8.w,
+            height: 8.w,
+            decoration: BoxDecoration(
+              color: _TI.bg,
+              shape: BoxShape.circle,
+              border: Border.all(color: _TI.sheetBorder),
+            ),
+            child: Icon(Icons.close, size: 4.w, color: _TI.inkMid),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatusStep(
+    String label,
+    bool done,
+    IconData icon, {
+    bool isFailed = false,
+  }) {
     final color = isFailed
-        ? Colors.red
+        ? _TI.red
         : done
-            ? Colors.green
-            : CommonColors.greyTextColor;
+        ? _TI.teal
+        : _TI.inkLight;
+
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 0.8.h),
       child: Row(
         children: [
           Icon(icon, size: 5.w, color: color),
           SizedBox(width: 3.w),
-          Text(
-            label,
-            style: GoogleFonts.poppins(
-              fontSize: FontSize.s11,
-              color: color,
-              fontWeight: done ? FontWeight.w500 : FontWeight.w400,
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 10.sp,
+                color: color,
+                fontWeight: done ? FontWeight.w600 : FontWeight.w400,
+              ),
             ),
           ),
         ],
@@ -531,11 +779,86 @@ class _BookingCancellationSuccessScreenState extends State<BookingCancellationSu
     );
   }
 
+  // ─────────────────────────────────────────────
+  //  SHARED WIDGETS
+  // ─────────────────────────────────────────────
+  Widget _sectionHeader(String title, IconData icon) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 9.w,
+          height: 9.w,
+          decoration: BoxDecoration(
+            color: _TI.iconBadge,
+            borderRadius: BorderRadius.circular(2.5.w),
+          ),
+          child: Center(
+            child: Icon(icon, color: Colors.white, size: 4.5.w),
+          ),
+        ),
+        SizedBox(width: 3.w),
+        Flexible(
+          child: Text(
+            title,
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 13.sp,
+              fontWeight: FontWeight.w700,
+              color: _TI.ink,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _detailRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: 10.sp,
+            color: _TI.inkMid,
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: 10.sp,
+            fontWeight: FontWeight.w600,
+            color: _TI.ink,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  //  UTILS
+  // ─────────────────────────────────────────────
   String _formatSettledAt(String? iso) {
     if (iso == null) return '';
     try {
       final dt = DateTime.parse(iso).toLocal();
-      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
       return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
     } catch (_) {
       return '';
@@ -557,251 +880,103 @@ class _BookingCancellationSuccessScreenState extends State<BookingCancellationSu
       'NOV',
       'DEC',
     ];
-
     return '${months[date.month - 1]} ${date.day.toString().padLeft(2, '0')}, ${date.year}, ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')} ${date.hour >= 12 ? 'PM' : 'AM'}';
   }
 
+  // ─────────────────────────────────────────────
+  //  SHIMMER LOADING
+  // ─────────────────────────────────────────────
   Widget _buildShimmerLoading() {
     return SingleChildScrollView(
       padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
       child: Column(
+        children: [
+          SizedBox(height: 3.h),
+          // Hero shimmer
+          Center(
+            child: Column(
+              children: [
+                Container(
+                  width: 18.w,
+                  height: 18.w,
+                  decoration: const BoxDecoration(
+                    color: CommonColors.greyColorEBEBEB,
+                    shape: BoxShape.circle,
+                  ),
+                ).withShimmerAi(loading: true),
+                SizedBox(height: 2.h),
+                Container(
+                  height: 2.h,
+                  width: 40.w,
+                  decoration: BoxDecoration(
+                    color: CommonColors.greyColorEBEBEB,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ).withShimmerAi(loading: true),
+                SizedBox(height: 1.h),
+                Container(
+                  height: 1.5.h,
+                  width: 60.w,
+                  decoration: BoxDecoration(
+                    color: CommonColors.greyColorEBEBEB,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ).withShimmerAi(loading: true),
+              ],
+            ),
+          ),
+          SizedBox(height: 3.h),
+          // Card 1
+          _shimmerCard(),
+          SizedBox(height: 2.h),
+          // Card 2
+          _shimmerCard(),
+          SizedBox(height: 2.h),
+          // Card 3
+          _shimmerCard(),
+        ],
+      ),
+    );
+  }
+
+  Widget _shimmerCard() {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(4.w),
+      decoration: BoxDecoration(
+        color: _TI.cardBg,
+        borderRadius: BorderRadius.circular(4.w),
+        border: Border.all(color: _TI.divider, width: 1),
+      ),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Main booking card shimmer
           Container(
-            width: double.infinity,
-            height: 25.h,
+            width: 30.w,
+            height: 2.h,
             decoration: BoxDecoration(
               color: CommonColors.greyColorEBEBEB,
-              borderRadius: BorderRadius.circular(3.w),
+              borderRadius: BorderRadius.circular(4),
             ),
           ).withShimmerAi(loading: true),
           SizedBox(height: 2.h),
-
-          // Traveler details table shimmer
           Container(
-            padding: EdgeInsets.all(4.w),
+            width: double.infinity,
+            height: 1.5.h,
             decoration: BoxDecoration(
-              color: CommonColors.whiteColor,
-              borderRadius: BorderRadius.circular(4.w),
-              boxShadow: [
-                BoxShadow(
-                  color: CommonColors.blackColor.withValues(alpha: 0.1),
-                  offset: Offset(0, 2),
-                  blurRadius: 8,
-                  spreadRadius: 0,
-                ),
-              ],
+              color: CommonColors.greyColorEBEBEB,
+              borderRadius: BorderRadius.circular(4),
             ),
-            child: Column(
-              children: [
-                // Slots row shimmer
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: Container(
-                        height: 1.5.h,
-                        decoration: BoxDecoration(
-                          color: CommonColors.greyColorEBEBEB,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ).withShimmerAi(loading: true),
-                    ),
-                    SizedBox(width: 4.w),
-                    Expanded(
-                      flex: 3,
-                      child: Container(
-                        height: 1.5.h,
-                        decoration: BoxDecoration(
-                          color: CommonColors.greyColorEBEBEB,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ).withShimmerAi(loading: true),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 2.h),
-                // Ticket No row shimmer
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: Container(
-                        height: 1.5.h,
-                        decoration: BoxDecoration(
-                          color: CommonColors.greyColorEBEBEB,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ).withShimmerAi(loading: true),
-                    ),
-                    SizedBox(width: 4.w),
-                    Expanded(
-                      flex: 3,
-                      child: Container(
-                        height: 1.5.h,
-                        decoration: BoxDecoration(
-                          color: CommonColors.greyColorEBEBEB,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ).withShimmerAi(loading: true),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 2.h),
-                // Fare row shimmer
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: Container(
-                        height: 1.5.h,
-                        decoration: BoxDecoration(
-                          color: CommonColors.greyColorEBEBEB,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ).withShimmerAi(loading: true),
-                    ),
-                    SizedBox(width: 4.w),
-                    Expanded(
-                      flex: 3,
-                      child: Container(
-                        height: 1.5.h,
-                        decoration: BoxDecoration(
-                          color: CommonColors.greyColorEBEBEB,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ).withShimmerAi(loading: true),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: 2.h),
-
-          // Cancellation status card shimmer
+          ).withShimmerAi(loading: true),
+          SizedBox(height: 1.h),
           Container(
+            width: 80.w,
+            height: 1.5.h,
             decoration: BoxDecoration(
-              color: CommonColors.whiteColor,
-              borderRadius: BorderRadius.circular(4.w),
-              boxShadow: [
-                BoxShadow(
-                  color: CommonColors.blackColor.withValues(alpha: 0.1),
-                  offset: Offset(0, 2),
-                  blurRadius: 8,
-                  spreadRadius: 0,
-                ),
-              ],
+              color: CommonColors.greyColorEBEBEB,
+              borderRadius: BorderRadius.circular(4),
             ),
-            child: Column(
-              children: [
-                // Top section shimmer (light blue background)
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.all(4.w),
-                  decoration: BoxDecoration(
-                    color: Color(0xFFE8F4F8),
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(4.w),
-                      topRight: Radius.circular(4.w),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              width: 30.w,
-                              height: 2.h,
-                              decoration: BoxDecoration(
-                                color: CommonColors.greyColorEBEBEB,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                            ).withShimmerAi(loading: true),
-                            SizedBox(height: 0.5.h),
-                            Container(
-                              width: 20.w,
-                              height: 1.5.h,
-                              decoration: BoxDecoration(
-                                color: CommonColors.greyColorEBEBEB,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                            ).withShimmerAi(loading: true),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        width: 12.w,
-                        height: 12.w,
-                        decoration: BoxDecoration(
-                          color: CommonColors.greyColorEBEBEB,
-                          borderRadius: BorderRadius.circular(2.w),
-                        ),
-                      ).withShimmerAi(loading: true),
-                    ],
-                  ),
-                ),
-
-                // Bottom section shimmer (white background)
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.all(4.w),
-                  decoration: BoxDecoration(
-                    color: CommonColors.whiteColor,
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(4.w),
-                      bottomRight: Radius.circular(4.w),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Refund message shimmer
-                      Container(
-                        width: double.infinity,
-                        height: 1.5.h,
-                        decoration: BoxDecoration(
-                          color: CommonColors.greyColorEBEBEB,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ).withShimmerAi(loading: true),
-                      SizedBox(height: 2.h),
-
-                      // Refund amount and status row shimmer
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Container(
-                            width: 35.w,
-                            height: 1.5.h,
-                            decoration: BoxDecoration(
-                              color: CommonColors.greyColorEBEBEB,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          ).withShimmerAi(loading: true),
-                          Container(
-                            width: 25.w,
-                            height: 1.5.h,
-                            decoration: BoxDecoration(
-                              color: CommonColors.greyColorEBEBEB,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          ).withShimmerAi(loading: true),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: 2.h),
+          ).withShimmerAi(loading: true),
         ],
       ),
     );
