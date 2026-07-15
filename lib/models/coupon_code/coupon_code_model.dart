@@ -11,6 +11,9 @@ class ValidateCouponCodeRequestModel with _$ValidateCouponCodeRequestModel {
     @JsonKey(name: 'amount') required dynamic bookingAmount,
     /// Number of travelers — required for group-discount minimum participant validation.
     @JsonKey(name: 'travelerCount') int? travelerCount,
+    /// TBR batch id — the same coupon can be assigned to multiple TBRs, and
+    /// "already used" is scoped per TBR, not globally per customer.
+    @JsonKey(name: 'batchId') int? batchId,
   }) = _ValidateCouponCodeRequestModel;
 
   factory ValidateCouponCodeRequestModel.fromJson(Map<String, dynamic> json) =>
