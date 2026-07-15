@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:arobo_app/freezed_models/booking/booking_history_model.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -27,17 +28,99 @@ class InvoicePdfService {
   static DateTime _parseDate(String? s) =>
       s != null ? (ISTDateUtils.toIST(s) ?? DateTime.now()) : DateTime.now();
 
-  // MySQL TIME "HH:MM:SS" → "06:00 AM"
   static String _formatTime(String? t) {
     if (t == null || t.isEmpty) return '';
     try {
       final p = t.split(':');
       if (p.length >= 2) {
-        return DateFormat('hh:mm a')
-            .format(DateTime(2000, 1, 1, int.parse(p[0]), int.parse(p[1])));
+        return DateFormat(
+          'hh:mm a',
+        ).format(DateTime(2000, 1, 1, int.parse(p[0]), int.parse(p[1])));
       }
     } catch (_) {}
     return t;
+  }
+
+  static DateTime _combineDateTime(DateTime date, String? timeStr) {
+    if (timeStr == null || timeStr.isEmpty) return date;
+    try {
+      final parts = timeStr.split(':');
+      if (parts.length >= 2) {
+        return DateTime(
+          date.year,
+          date.month,
+          date.day,
+          int.parse(parts[0]),
+          int.parse(parts[1]),
+          parts.length >= 3 ? int.parse(parts[2]) : 0,
+        );
+      }
+    } catch (_) {}
+    return date;
+  }
+
+  // ─────────────────────────────────────────────
+  //  FINANCE HELPERS
+  // ─────────────────────────────────────────────
+  static Map<String, dynamic>? _parseFinanceSnapshot(String? jsonStr) {
+    if (jsonStr == null || jsonStr.isEmpty) return null;
+    try {
+      return jsonDecode(jsonStr) as Map<String, dynamic>;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static bool _isNonZero(dynamic value) {
+    if (value == null) return false;
+    if (value is num) return value != 0;
+    final d = double.tryParse(value.toString());
+    return d != null && d != 0;
+  }
+
+  static String _fmtCurrency(dynamic value) {
+    if (value == null) return '₹0';
+    if (value is num) {
+      final hasDecimal = value != value.roundToDouble();
+      return '₹${hasDecimal ? value.toStringAsFixed(2) : value.toInt().toString()}';
+    }
+    final d = double.tryParse(value.toString());
+    if (d != null) {
+      final hasDecimal = d != d.roundToDouble();
+      return '₹${hasDecimal ? d.toStringAsFixed(2) : d.toInt().toString()}';
+    }
+    return '₹$value';
+  }
+
+  static String _capitalize(String? value) {
+    if (value == null || value.isEmpty) return 'N/A';
+    return value[0].toUpperCase() + value.substring(1);
+  }
+
+  static String _getPaymentStatusText(String? status) {
+    switch (status) {
+      case 'full_paid':
+        return 'Fully Paid';
+      case 'partial':
+        return 'Partially Paid';
+      case 'pending':
+        return 'Pending';
+      default:
+        return status ?? 'N/A';
+    }
+  }
+
+  static String _computeFinalBaseFare(
+    String orig,
+    String vendorDisc,
+    String couponDisc,
+  ) {
+    final o = double.tryParse(orig) ?? 0;
+    final v = double.tryParse(vendorDisc) ?? 0;
+    final c = double.tryParse(couponDisc) ?? 0;
+    final result = o - v - c;
+    if (result == result.roundToDouble()) return result.toInt().toString();
+    return result.toStringAsFixed(2);
   }
 
   // ─────────────────────────────────────────────
@@ -47,19 +130,34 @@ class InvoicePdfService {
     required BookingHistoryData booking,
     String? policyType,
   }) async {
-    // ── Extract data with graceful fallbacks ──────────────────────────────────
+    final snap = _parseFinanceSnapshot(booking.financeSnapshot);
+
+    final resolvedPolicy =
+        policyType ??
+        snap?['cancellation_policy_type']?.toString() ??
+        booking.cancellationPolicyType?.toString() ??
+        'standard';
+
     final bookingNumber = booking.bookingNumber ?? '—';
-    final tbrId        = booking.batch?.tbrId ?? '—';
+    final tbrId = booking.batch?.tbrId ?? '—';
     final bookingStatus = (booking.status ?? 'confirmed').toUpperCase();
     final paymentStatus = booking.paymentStatus ?? 'full_paid';
 
     final bookingDate = _parseDate(booking.bookingDate ?? booking.createdAt);
-    final startDate   = _parseDate(booking.batch?.startDate);
-    final endDate     = _parseDate(booking.batch?.endDate);
+    final startDate = _parseDate(booking.batch?.startDate);
+    final endDate = _parseDate(booking.batch?.endDate);
     final startTimeStr = _formatTime(booking.batch?.startTime);
 
-    final vendorName  = booking.trek?.vendor?.businessName ?? 'Trek Operator';
-    final vendorCity  = booking.trek?.vendor?.city ?? '';
+    final departureDateTime = _combineDateTime(
+      startDate,
+      booking.batch?.startTime,
+    );
+    final hasStartTime =
+        booking.batch?.startTime != null &&
+        booking.batch!.startTime!.isNotEmpty;
+
+    final vendorName = booking.trek?.vendor?.businessName ?? 'Trek Operator';
+    final vendorCity = booking.trek?.vendor?.city ?? '';
     final vendorState = booking.trek?.vendor?.state ?? '';
     final vendorAddress = [
       if ((booking.trek?.vendor?.address ?? '').isNotEmpty)
@@ -71,57 +169,51 @@ class InvoicePdfService {
     final vendorEmail = booking.trek?.vendor?.email ?? '';
     final vendorLogoUrl = booking.trek?.vendor?.businessLogo ?? '';
 
-    final trekTitle  = booking.trek?.title ?? 'Trek';
-    final trekDesc   = booking.trek?.description ?? '';
-    final durationDays   = booking.trek?.durationDays ?? 0;
+    final trekTitle = booking.trek?.title ?? 'Trek';
+    final trekDesc = booking.trek?.description ?? '';
+    final durationDays = booking.trek?.durationDays ?? 0;
     final durationNights = booking.trek?.durationNights ?? 0;
     final trekDuration = durationDays > 0
         ? '$durationDays Days $durationNights Nights'
         : (booking.trek?.duration ?? '—');
 
-    final captainName  = booking.trek?.captainName ?? '—';
+    final captainName = booking.trek?.captainName ?? '—';
     final captainPhone = booking.trek?.captainPhone ?? '—';
     final boardingPoint = booking.trek?.boardingPoint ?? vendorAddress;
 
     final travelers = (booking.travelers ?? [])
         .where((t) => t.traveler != null)
-        .map((t) => <String, String>{
-              'name':   t.traveler!.name ?? 'Traveler',
-              'age':    t.traveler!.age?.toString() ?? '—',
-              'gender': t.traveler!.gender ?? '—',
-            })
+        .map(
+          (t) => <String, String>{
+            'name': t.traveler!.name ?? 'Traveler',
+            'age': t.traveler!.age?.toString() ?? '—',
+            'gender': t.traveler!.gender ?? '—',
+          },
+        )
         .toList();
     final displayTravelers = travelers.isEmpty
-        ? [<String, String>{'name': '—', 'age': '—', 'gender': '—'}]
+        ? [
+            <String, String>{'name': '—', 'age': '—', 'gender': '—'},
+          ]
         : travelers;
 
-    final baseFare     = booking.totalAmount ?? '0';
-    final platformFees = booking.platformFees ?? '0';
-    final gst          = booking.gstAmount ?? '0';
-    final discount     = booking.discountAmount ?? '0';
-    final finalAmount  = booking.finalAmount ?? '0';
-    final paidAmount   = booking.advanceAmount ?? finalAmount;
-    final pendingAmount = booking.remainingAmount ?? '0';
-
-    final resolvedPolicy =
-        policyType ?? booking.cancellationPolicyType?.toString() ?? 'standard';
-
-    // ── PDF setup ─────────────────────────────────────────────────────────────
     final doc = pw.Document(
       title: 'Aorbo Treks Invoice - $bookingNumber',
       author: 'Aorbo Treks',
     );
 
-    final font      = await PdfGoogleFonts.poppinsRegular();
-    final fontBold  = await PdfGoogleFonts.poppinsBold();
-    final fontSemi  = await PdfGoogleFonts.poppinsSemiBold();
+    final font = await PdfGoogleFonts.poppinsRegular();
+    final fontBold = await PdfGoogleFonts.poppinsBold();
+    final fontSemi = await PdfGoogleFonts.poppinsSemiBold();
     final fontItalic = await PdfGoogleFonts.poppinsItalic();
 
     pw.MemoryImage? vendorLogo;
     pw.MemoryImage? aorboLogo;
 
     try {
-      final aorboBytes = await rootBundle.load('assets/images/img/aorbologo.png');
+      final aorboBytes = await rootBundle.load(
+        'assets/images/img/aorbologo.png',
+      );
       aorboLogo = pw.MemoryImage(aorboBytes.buffer.asUint8List());
     } catch (_) {}
 
@@ -149,6 +241,8 @@ class InvoicePdfService {
         margin: const pw.EdgeInsets.all(24),
         build: (context) => [
           _buildInvoiceBody(
+            booking: booking,
+            financeSnapshot: snap,
             policyType: resolvedPolicy,
             font: font,
             fontBold: fontBold,
@@ -164,6 +258,8 @@ class InvoicePdfService {
             startDate: startDate,
             endDate: endDate,
             startTimeStr: startTimeStr,
+            departureDateTime: departureDateTime,
+            hasStartTime: hasStartTime,
             vendorName: vendorName,
             vendorAddress: vendorAddress,
             vendorCity: vendorCity,
@@ -176,13 +272,6 @@ class InvoicePdfService {
             captainPhone: captainPhone,
             boardingPoint: boardingPoint,
             travelers: displayTravelers,
-            baseFare: baseFare,
-            platformFees: platformFees,
-            gst: gst,
-            discount: discount,
-            finalAmount: finalAmount,
-            paidAmount: paidAmount,
-            pendingAmount: pendingAmount,
           ),
           pw.SizedBox(height: 20),
           _buildDisclaimer(fontBold: fontBold, fontSemi: fontSemi),
@@ -193,14 +282,14 @@ class InvoicePdfService {
     return doc.save();
   }
 
-  // ─────────────────────────────────────────────
-  //  PUBLIC: SHARE / PREVIEW
-  // ─────────────────────────────────────────────
   static Future<void> shareInvoice({
     required BookingHistoryData booking,
     String? policyType,
   }) async {
-    final bytes = await generateInvoice(booking: booking, policyType: policyType);
+    final bytes = await generateInvoice(
+      booking: booking,
+      policyType: policyType,
+    );
     final bookingNumber = booking.bookingNumber ?? 'invoice';
     await Printing.sharePdf(
       bytes: bytes,
@@ -215,7 +304,8 @@ class InvoicePdfService {
     final bookingNumber = booking.bookingNumber ?? 'invoice';
     await Printing.layoutPdf(
       name: 'Aorbo_Invoice_$bookingNumber.pdf',
-      onLayout: (format) => generateInvoice(booking: booking, policyType: policyType),
+      onLayout: (format) =>
+          generateInvoice(booking: booking, policyType: policyType),
     );
   }
 
@@ -223,6 +313,8 @@ class InvoicePdfService {
   //  INVOICE BODY
   // ─────────────────────────────────────────────
   static pw.Widget _buildInvoiceBody({
+    required BookingHistoryData booking,
+    required Map<String, dynamic>? financeSnapshot,
     required String policyType,
     required pw.Font font,
     required pw.Font fontBold,
@@ -230,7 +322,6 @@ class InvoicePdfService {
     required pw.Font fontItalic,
     pw.MemoryImage? vendorLogo,
     pw.MemoryImage? aorboLogo,
-    // Booking data
     required String bookingNumber,
     required String tbrId,
     required String bookingStatus,
@@ -239,6 +330,8 @@ class InvoicePdfService {
     required DateTime startDate,
     required DateTime endDate,
     required String startTimeStr,
+    required DateTime departureDateTime,
+    required bool hasStartTime,
     required String vendorName,
     required String vendorAddress,
     required String vendorCity,
@@ -251,15 +344,17 @@ class InvoicePdfService {
     required String captainPhone,
     required String boardingPoint,
     required List<Map<String, String>> travelers,
-    required String baseFare,
-    required String platformFees,
-    required String gst,
-    required String discount,
-    required String finalAmount,
-    required String paidAmount,
-    required String pendingAmount,
   }) {
+    final snap = financeSnapshot;
     final isFlexible = policyType.toLowerCase() == 'flexible';
+    final isFullPaid = paymentStatus == 'full_paid';
+    final isFlexibleFull = isFlexible && isFullPaid;
+    final isFlexiblePartial = isFlexible && !isFullPaid;
+
+    final finalAmount =
+        snap?['final_amount']?.toString() ?? booking.finalAmount ?? '0';
+    final advanceAmount =
+        snap?['advance_amount']?.toString() ?? booking.advanceAmount ?? '999';
 
     return pw.Container(
       decoration: pw.BoxDecoration(
@@ -285,7 +380,9 @@ class InvoicePdfService {
                       ),
                     ),
                     pw.TextSpan(
-                      text: DateFormat('dd/MM/yyyy hh:mm a').format(bookingDate),
+                      text: DateFormat(
+                        'dd/MM/yyyy hh:mm a',
+                      ).format(bookingDate),
                       style: pw.TextStyle(
                         font: fontSemi,
                         fontSize: 9,
@@ -321,7 +418,6 @@ class InvoicePdfService {
           ),
           pw.SizedBox(height: 14),
 
-          // VENDOR HEADER
           pw.Row(
             crossAxisAlignment: pw.CrossAxisAlignment.center,
             children: [
@@ -441,7 +537,6 @@ class InvoicePdfService {
           ),
           pw.SizedBox(height: 16),
 
-          // TREK TITLE BANNER
           pw.Container(
             width: double.infinity,
             padding: const pw.EdgeInsets.all(10),
@@ -491,11 +586,9 @@ class InvoicePdfService {
           ),
           pw.SizedBox(height: 4),
 
-          // DEPARTURE / DAYS / ARRIVAL
           pw.Container(
             width: double.infinity,
-            padding:
-                const pw.EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+            padding: const pw.EdgeInsets.symmetric(vertical: 10, horizontal: 8),
             decoration: const pw.BoxDecoration(color: _yellowBg),
             child: pw.Row(
               children: [
@@ -581,7 +674,6 @@ class InvoicePdfService {
           ),
           pw.SizedBox(height: 16),
 
-          // TREK + TRAVELLER DETAILS
           pw.Row(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
@@ -593,7 +685,12 @@ class InvoicePdfService {
                     pw.SizedBox(height: 6),
                     _kvRow('Trek Name', trekTitle, font, fontSemi),
                     _kvRow('Trek Operator', vendorName, font, fontSemi),
-                    _kvRow('Boarding Point', boardingPoint.isNotEmpty ? boardingPoint : '—', font, fontSemi),
+                    _kvRow(
+                      'Boarding Point',
+                      boardingPoint.isNotEmpty ? boardingPoint : '—',
+                      font,
+                      fontSemi,
+                    ),
                     _kvRow('Trek Captain', captainName, font, fontSemi),
                     _kvRow('Captain Contact', captainPhone, font, fontSemi),
                   ],
@@ -625,19 +722,14 @@ class InvoicePdfService {
 
           _sectionTitle('PAYMENT DETAILS', fontBold),
           pw.SizedBox(height: 6),
-          _paymentTable(
-            isFlexible: isFlexible,
+          _detailedPaymentTable(
+            booking: booking,
+            snap: snap,
             font: font,
             fontSemi: fontSemi,
             fontBold: fontBold,
             paymentStatus: paymentStatus,
-            baseFare: baseFare,
-            platformFees: platformFees,
-            gst: gst,
-            discount: discount,
-            finalAmount: finalAmount,
-            paidAmount: paidAmount,
-            pendingAmount: pendingAmount,
+            policyType: policyType,
           ),
           pw.SizedBox(height: 14),
           pw.Container(height: 0.6, color: _ink),
@@ -649,15 +741,19 @@ class InvoicePdfService {
           ),
           pw.SizedBox(height: 8),
           _cancellationPolicyTable(
-            isFlexible: isFlexible,
+            policyType: policyType,
+            paymentStatus: paymentStatus,
+            departureDateTime: departureDateTime,
+            hasStartTime: hasStartTime,
+            finalAmount: finalAmount,
+            advanceAmount: advanceAmount,
             font: font,
             fontSemi: fontSemi,
             fontBold: fontBold,
-            startDate: startDate,
-            finalAmount: finalAmount,
           ),
           pw.SizedBox(height: 12),
-          if (isFlexible) ...[
+
+          if (isFlexibleFull) ...[
             _policyNote(
               'GST and taxes are non-refundable. The advance secures your slot and is non-refundable upon cancellation.',
               font,
@@ -674,9 +770,40 @@ class InvoicePdfService {
               'For group bookings, individual slots may be cancelled.',
               font,
             ),
+          ] else if (isFlexiblePartial) ...[
+            _policyNote('The advance payment is non-refundable.', font),
+            _policyNote(
+              'Since only the advance was paid, no additional cancellation charges apply.',
+              font,
+            ),
+            _policyNote(
+              'The remaining balance is not applicable as the booking is cancelled.',
+              font,
+            ),
+            _policyNote(
+              'The cancellation policy will be solely determined and approved by the respective vendor.',
+              font,
+            ),
+            _policyNote(
+              'For group bookings, individual slots may be cancelled.',
+              font,
+            ),
           ] else ...[
             _policyNote(
-              'Cancellation fees are applied on a per-slot basis. The cancellation charge mentioned above is calculated based on a seat fare of ₹$finalAmount.',
+              'Cancellation fees are applied on a per-slot basis. The cancellation charge mentioned above is calculated based on a total fare of ₹$finalAmount.',
+              font,
+            ),
+            _policyNote('GST and taxes are non-refundable.', font),
+            _policyNote(
+              'Refund will be processed within 5 to 7 working days.',
+              font,
+            ),
+            _policyNote(
+              'The cancellation policy will be solely determined and approved by the respective vendor.',
+              font,
+            ),
+            _policyNote(
+              'For group bookings, individual slots may be cancelled.',
               font,
             ),
           ],
@@ -690,6 +817,279 @@ class InvoicePdfService {
             ),
         ],
       ),
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  //  DETAILED PAYMENT TABLE (mirrors ticket screen, flat list theme)
+  // ─────────────────────────────────────────────
+  static pw.Widget _detailedPaymentTable({
+    required BookingHistoryData booking,
+    required Map<String, dynamic>? snap,
+    required pw.Font font,
+    required pw.Font fontSemi,
+    required pw.Font fontBold,
+    required String paymentStatus,
+    required String policyType,
+  }) {
+    final travelerCount =
+        snap?['traveler_count'] ?? booking.totalTravelers ?? 1;
+    final origBaseFare =
+        snap?['original_base_fare'] ?? booking.totalBasicCost ?? '0';
+    final farePerPerson = snap?['original_base_fare_per_person'];
+    final vendorDiscount =
+        snap?['vendor_discount'] ?? booking.vendorDiscount ?? '0';
+    final couponId = snap?['coupon_id'];
+    final couponDiscount =
+        snap?['coupon_discount'] ?? booking.couponDiscount ?? '0';
+    final finalBaseFare =
+        snap?['final_base_fare'] ??
+        _computeFinalBaseFare(
+          origBaseFare.toString(),
+          vendorDiscount.toString(),
+          couponDiscount.toString(),
+        );
+    final gst5 = snap?['gst_5_percent'] ?? booking.gstAmount ?? '0';
+    final platformFee = snap?['platform_fee'] ?? booking.platformFees ?? '0';
+    final insuranceFee =
+        snap?['insurance_fee'] ?? booking.insuranceAmount ?? '0';
+    final cancelProtectFee =
+        snap?['cancellation_protection_fee'] ??
+        booking.freeCancellationAmount ??
+        '0';
+    final finalAmount = snap?['final_amount'] ?? booking.finalAmount ?? '0';
+    final advanceAmt = snap?['advance_amount'] ?? booking.advanceAmount ?? '0';
+    final remainingAmt =
+        snap?['remaining_amount'] ?? booking.remainingAmount ?? '0';
+    final amountPaidNow = snap?['amount_paid_now'];
+    final paymentMethod =
+        snap?['payment_method'] ?? booking.paymentMethod ?? 'N/A';
+
+    final bool isFlexible = policyType.toLowerCase() == 'flexible';
+    final bool isFullPaid = paymentStatus == 'full_paid';
+    final bool showAdvanceAndRemaining = isFlexible && !isFullPaid;
+
+    return pw.Column(
+      children: [
+        _payRow('Traveler Count', '$travelerCount', font, fontSemi),
+        _payRow(
+          'Original Base Fare',
+          _fmtCurrency(origBaseFare),
+          font,
+          fontSemi,
+        ),
+        if (farePerPerson != null)
+          _payRow(
+            'Base Fare / Person',
+            _fmtCurrency(farePerPerson),
+            font,
+            fontSemi,
+          ),
+        if (_isNonZero(vendorDiscount))
+          _payRow(
+            'Vendor Discount',
+            '-${_fmtCurrency(vendorDiscount)}',
+            font,
+            fontSemi,
+          ),
+        if (couponId != null) _payRow('Coupon ID', '$couponId', font, fontSemi),
+        if (_isNonZero(couponDiscount))
+          _payRow(
+            'Coupon Discount',
+            '-${_fmtCurrency(couponDiscount)}',
+            font,
+            fontSemi,
+          ),
+        _payRow('Final Base Fare', _fmtCurrency(finalBaseFare), font, fontBold),
+        _payRow('GST (5%)', _fmtCurrency(gst5), font, fontSemi),
+        _payRow('Platform Fee', _fmtCurrency(platformFee), font, fontSemi),
+        if (_isNonZero(insuranceFee))
+          _payRow('Insurance Fee', _fmtCurrency(insuranceFee), font, fontSemi),
+        if (_isNonZero(cancelProtectFee))
+          _payRow(
+            'Cancellation Protection Fee',
+            _fmtCurrency(cancelProtectFee),
+            font,
+            fontSemi,
+          ),
+        _payRow('Total Amount', _fmtCurrency(finalAmount), font, fontBold),
+        _payRow('Cancellation Policy', _capitalize(policyType), font, fontSemi),
+        if (showAdvanceAndRemaining) ...[
+          _payRow('Amount Paid', _fmtCurrency(advanceAmt), font, fontSemi),
+          if (amountPaidNow != null)
+            _payRow(
+              'Amount Paid Now',
+              _fmtCurrency(amountPaidNow),
+              font,
+              fontBold,
+            ),
+          _payRow(
+            'Remaining Amount',
+            _fmtCurrency(remainingAmt),
+            font,
+            fontSemi,
+          ),
+        ],
+        _payRow('Payment Method', _capitalize(paymentMethod), font, fontSemi),
+        _payRow(
+          'Payment Status',
+          _getPaymentStatusText(paymentStatus),
+          font,
+          fontBold,
+          valueColor: isFullPaid ? _green : _red,
+        ),
+      ],
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  //  CANCELLATION POLICY TABLE (three variants)
+  // ─────────────────────────────────────────────
+  static pw.Widget _cancellationPolicyTable({
+    required String policyType,
+    required String paymentStatus,
+    required DateTime departureDateTime,
+    required bool hasStartTime,
+    required String finalAmount,
+    required String advanceAmount,
+    required pw.Font font,
+    required pw.Font fontSemi,
+    required pw.Font fontBold,
+  }) {
+    final isFlexible = policyType.toLowerCase() == 'flexible';
+    final isFullPaid = paymentStatus == 'full_paid';
+
+    final fmt = hasStartTime
+        ? DateFormat('EEE, dd MMM yyyy, hh:mm a')
+        : DateFormat('EEE, dd MMM yyyy');
+
+    // ── STANDARD POLICY ──
+    if (!isFlexible) {
+      final fare = double.tryParse(finalAmount) ?? 0;
+      final r1 = (fare * 0.20).round();
+      final r2 = (fare * 0.50).round();
+      final r3 = (fare * 0.70).round();
+      final r4 = fare.round();
+
+      final cutoff72h = departureDateTime.subtract(const Duration(hours: 72));
+      final cutoff48h = departureDateTime.subtract(const Duration(hours: 48));
+      final cutoff24h = departureDateTime.subtract(const Duration(hours: 24));
+
+      return pw.Table(
+        columnWidths: const {
+          0: pw.FlexColumnWidth(5),
+          1: pw.FlexColumnWidth(3),
+        },
+        children: [
+          pw.TableRow(
+            decoration: const pw.BoxDecoration(
+              border: pw.Border(bottom: pw.BorderSide(color: _ink, width: 0.5)),
+            ),
+            children: [
+              _policyHead('Before departure', fontBold),
+              _policyHead('Deduction', fontBold),
+            ],
+          ),
+          _policyRow(
+            'Cancelled before ${fmt.format(cutoff72h)}',
+            '20% (₹$r1)',
+            font,
+            fontSemi,
+          ),
+          _policyRow(
+            'From ${fmt.format(cutoff72h)} to ${fmt.format(cutoff48h)}',
+            '50% (₹$r2)',
+            font,
+            fontSemi,
+          ),
+          _policyRow(
+            'From ${fmt.format(cutoff48h)} to ${fmt.format(cutoff24h)}',
+            '70% (₹$r3)',
+            font,
+            fontSemi,
+          ),
+          _policyRow(
+            'No refund after ${fmt.format(cutoff24h)}',
+            '100% (₹$r4)',
+            font,
+            fontSemi,
+          ),
+        ],
+      );
+    }
+
+    // ── FLEXIBLE + FULL PAYMENT ──
+    if (isFlexible && isFullPaid) {
+      final advance = double.tryParse(advanceAmount) ?? 999;
+      final fare = double.tryParse(finalAmount) ?? 0;
+      final refund = (fare - advance).round();
+      final cutoff24h = departureDateTime.subtract(const Duration(hours: 24));
+
+      return pw.Table(
+        columnWidths: const {
+          0: pw.FlexColumnWidth(5),
+          1: pw.FlexColumnWidth(4),
+        },
+        children: [
+          pw.TableRow(
+            decoration: const pw.BoxDecoration(
+              border: pw.Border(bottom: pw.BorderSide(color: _ink, width: 0.5)),
+            ),
+            children: [
+              _policyHead('Before departure', fontBold),
+              _policyHead('Deduction', fontBold),
+            ],
+          ),
+          _policyRow(
+            'Advance Payment (₹${advance.toInt()})',
+            'Non-refundable',
+            font,
+            fontSemi,
+          ),
+          _policyRow(
+            'Cancelled before ${fmt.format(cutoff24h)}',
+            '₹${advance.toInt()} forfeited, ₹$refund refunded',
+            font,
+            fontSemi,
+          ),
+          _policyRow(
+            'Cancelled after ${fmt.format(cutoff24h)}',
+            '100% (₹${fare.round()})',
+            font,
+            fontSemi,
+          ),
+        ],
+      );
+    }
+
+    // ── FLEXIBLE + PARTIAL PAYMENT ──
+    final advance = double.tryParse(advanceAmount) ?? 999;
+
+    return pw.Table(
+      columnWidths: const {0: pw.FlexColumnWidth(5), 1: pw.FlexColumnWidth(4)},
+      children: [
+        pw.TableRow(
+          decoration: const pw.BoxDecoration(
+            border: pw.Border(bottom: pw.BorderSide(color: _ink, width: 0.5)),
+          ),
+          children: [
+            _policyHead('Before departure', fontBold),
+            _policyHead('Deduction', fontBold),
+          ],
+        ),
+        _policyRow(
+          'Advance Payment (₹${advance.toInt()})',
+          'Non-refundable',
+          font,
+          fontSemi,
+        ),
+        _policyRow(
+          'Cancelled at any time',
+          '₹${advance.toInt()} forfeited, no balance due',
+          font,
+          fontSemi,
+        ),
+      ],
     );
   }
 
@@ -814,44 +1214,6 @@ class InvoicePdfService {
     );
   }
 
-  static pw.Widget _paymentTable({
-    required bool isFlexible,
-    required pw.Font font,
-    required pw.Font fontSemi,
-    required pw.Font fontBold,
-    required String paymentStatus,
-    required String baseFare,
-    required String platformFees,
-    required String gst,
-    required String discount,
-    required String finalAmount,
-    required String paidAmount,
-    required String pendingAmount,
-  }) {
-    final isFullyPaid = paymentStatus == 'full_paid';
-    final statusText = isFullyPaid
-        ? 'Paid'
-        : paymentStatus == 'partial'
-            ? 'Partially Paid'
-            : 'Pending';
-    final statusColor = isFullyPaid ? _green : _red;
-
-    return pw.Column(
-      children: [
-        _payRow('Base Fare', '₹$baseFare', font, fontSemi),
-        _payRow('Platform Fee', '₹$platformFees', font, fontSemi),
-        _payRow('Operator GST', '₹$gst', font, fontSemi),
-        _payRow('Coupon Discount', '- ₹$discount', font, fontSemi),
-        _payRow('Total Amount', '₹$finalAmount', font, fontBold),
-        _payRow('Status', statusText, font, fontBold, valueColor: statusColor),
-        if (isFlexible) ...[
-          _payRow('Amount Paid', '₹$paidAmount', font, fontSemi),
-          _payRow('Amount to be Paid', '₹$pendingAmount', font, fontSemi),
-        ],
-      ],
-    );
-  }
-
   static pw.Widget _payRow(
     String label,
     String value,
@@ -879,106 +1241,6 @@ class InvoicePdfService {
           ),
         ],
       ),
-    );
-  }
-
-  static pw.Widget _cancellationPolicyTable({
-    required bool isFlexible,
-    required pw.Font font,
-    required pw.Font fontSemi,
-    required pw.Font fontBold,
-    required DateTime startDate,
-    required String finalAmount,
-  }) {
-    final fare = double.tryParse(finalAmount) ?? 5999;
-
-    if (isFlexible) {
-      return pw.Table(
-        columnWidths: const {
-          0: pw.FlexColumnWidth(5),
-          1: pw.FlexColumnWidth(4),
-        },
-        children: [
-          pw.TableRow(
-            decoration: const pw.BoxDecoration(
-              border:
-                  pw.Border(bottom: pw.BorderSide(color: _ink, width: 0.5)),
-            ),
-            children: [
-              _policyHead('Before departure', fontBold),
-              _policyHead('Deduction', fontBold),
-            ],
-          ),
-          _policyRow(
-            'Advance Payment (₹999)',
-            'Non-refundable',
-            font,
-            fontSemi,
-          ),
-          _policyRow(
-            'Full Payment Mode',
-            '₹999 held, refund processed',
-            font,
-            fontSemi,
-          ),
-          _policyRow(
-            'Cancellation Notice',
-            '1 day before trek',
-            font,
-            fontSemi,
-          ),
-        ],
-      );
-    }
-
-    final d3Before    = startDate.subtract(const Duration(days: 3));
-    final d1Before12pm = startDate.subtract(const Duration(days: 1));
-    final dayOf       = startDate;
-
-    final r1 = (fare * 0.20).round();
-    final r2 = (fare * 0.50).round();
-    final r3 = (fare * 0.70).round();
-    final r4 = fare.round();
-
-    final fmt = DateFormat('EEE, dd MMM');
-
-    return pw.Table(
-      columnWidths: const {0: pw.FlexColumnWidth(5), 1: pw.FlexColumnWidth(3)},
-      children: [
-        pw.TableRow(
-          decoration: const pw.BoxDecoration(
-            border: pw.Border(bottom: pw.BorderSide(color: _ink, width: 0.5)),
-          ),
-          children: [
-            _policyHead('Before departure', fontBold),
-            _policyHead('Deduction', fontBold),
-          ],
-        ),
-        _policyRow(
-          'Cancelled before ${fmt.format(d3Before)} 12:00PM',
-          '20% (₹$r1)',
-          font,
-          fontSemi,
-        ),
-        _policyRow(
-          'From ${fmt.format(d3Before)} 12:00 PM to ${fmt.format(d1Before12pm)} 11:59 AM',
-          '50% (₹$r2)',
-          font,
-          fontSemi,
-        ),
-        _policyRow(
-          'From ${fmt.format(d1Before12pm)} 12:00 PM to ${fmt.format(dayOf)} 11:00 AM',
-          '70% (₹$r3)',
-          font,
-          fontSemi,
-        ),
-        _policyRow(
-          'No refund after ${fmt.format(dayOf)} 11:00 AM',
-          '100% (₹$r4)',
-          font,
-          fontSemi,
-        ),
-      ],
     );
   }
 

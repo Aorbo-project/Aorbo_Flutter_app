@@ -132,7 +132,10 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
       return;
     }
 
-    const policyType = 'standard';
+    // Use the actual policy type from the booking — falls back to
+    // financeSnapshot → cancellationPolicyType → 'standard' inside
+    // generateInvoice, so passing null here is also fine.
+    final policyType = booking.cancellationPolicyType?.toString();
 
     Get.dialog(
       Center(
