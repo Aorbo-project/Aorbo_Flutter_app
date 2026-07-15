@@ -79,6 +79,13 @@ class DashboardController extends GetxController {
   Rx<BookingCancelledModal> bookingCancelledModal = BookingCancelledModal().obs;
   Rx<BookingCancelledData> bookingCancelledData = BookingCancelledData().obs;
 
+  // Failed/expired payment attempts — never became a real booking, so they
+  // live outside bookingHistoryObserver's pagination pipeline entirely and
+  // are fetched from a dedicated endpoint (see getFailedBookingAttempts).
+  RxList<Map<String, dynamic>> failedBookingAttempts =
+      <Map<String, dynamic>>[].obs;
+  RxBool isLoadingFailedAttempts = false.obs;
+
   //endregion
 
 
@@ -650,6 +657,28 @@ debugPrint("==============================================");
       observer.value.data.value = ApiResult.error(e.toString());
       observer.value.isLoading = false;
       observer.refresh();
+    }
+  }
+
+  Future<void> getFailedBookingAttempts() async {
+    try {
+      isLoadingFailedAttempts.value = true;
+      final response = await _repository.getApiCall(
+        url: NetworkUrl.failedBookingAttempts,
+      );
+      if (response != null && response['success'] == true) {
+        final list = (response['data'] as List?) ?? [];
+        failedBookingAttempts.value = list
+            .whereType<Map<String, dynamic>>()
+            .toList();
+      } else {
+        failedBookingAttempts.value = [];
+      }
+    } catch (e) {
+      logger.w('getFailedBookingAttempts failed: ${e.toString()}');
+      failedBookingAttempts.value = [];
+    } finally {
+      isLoadingFailedAttempts.value = false;
     }
   }
 
