@@ -13,6 +13,7 @@ _$ValidateCouponCodeRequestModelImpl
           trekId: json['trekId'],
           bookingAmount: json['amount'],
           travelerCount: json['travelerCount'] as int?,
+          batchId: json['batchId'] as int?,
         );
 
 Map<String, dynamic> _$$ValidateCouponCodeRequestModelImplToJson(
@@ -22,6 +23,7 @@ Map<String, dynamic> _$$ValidateCouponCodeRequestModelImplToJson(
       'trekId': instance.trekId,
       'amount': instance.bookingAmount,
       'travelerCount': instance.travelerCount,
+      'batchId': instance.batchId,
     };
 
 _$ValidateCouponCodeResponseModelImpl

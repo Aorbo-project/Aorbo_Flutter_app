@@ -30,6 +30,11 @@ mixin _$ValidateCouponCodeRequestModel {
   @JsonKey(name: 'travelerCount')
   int? get travelerCount => throw _privateConstructorUsedError;
 
+  /// TBR batch id — the same coupon can be assigned to multiple TBRs, and
+  /// "already used" is scoped per TBR, not globally per customer.
+  @JsonKey(name: 'batchId')
+  int? get batchId => throw _privateConstructorUsedError;
+
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
   $ValidateCouponCodeRequestModelCopyWith<ValidateCouponCodeRequestModel>
@@ -48,7 +53,8 @@ abstract class $ValidateCouponCodeRequestModelCopyWith<$Res> {
       {String code,
       dynamic trekId,
       @JsonKey(name: 'amount') dynamic bookingAmount,
-      @JsonKey(name: 'travelerCount') int? travelerCount});
+      @JsonKey(name: 'travelerCount') int? travelerCount,
+      @JsonKey(name: 'batchId') int? batchId});
 }
 
 /// @nodoc
@@ -69,6 +75,7 @@ class _$ValidateCouponCodeRequestModelCopyWithImpl<$Res,
     Object? trekId = freezed,
     Object? bookingAmount = freezed,
     Object? travelerCount = freezed,
+    Object? batchId = freezed,
   }) {
     return _then(_value.copyWith(
       code: null == code
@@ -87,6 +94,10 @@ class _$ValidateCouponCodeRequestModelCopyWithImpl<$Res,
           ? _value.travelerCount
           : travelerCount // ignore: cast_nullable_to_non_nullable
               as int?,
+      batchId: freezed == batchId
+          ? _value.batchId
+          : batchId // ignore: cast_nullable_to_non_nullable
+              as int?,
     ) as $Val);
   }
 }
@@ -104,7 +115,8 @@ abstract class _$$ValidateCouponCodeRequestModelImplCopyWith<$Res>
       {String code,
       dynamic trekId,
       @JsonKey(name: 'amount') dynamic bookingAmount,
-      @JsonKey(name: 'travelerCount') int? travelerCount});
+      @JsonKey(name: 'travelerCount') int? travelerCount,
+      @JsonKey(name: 'batchId') int? batchId});
 }
 
 /// @nodoc
@@ -124,6 +136,7 @@ class __$$ValidateCouponCodeRequestModelImplCopyWithImpl<$Res>
     Object? trekId = freezed,
     Object? bookingAmount = freezed,
     Object? travelerCount = freezed,
+    Object? batchId = freezed,
   }) {
     return _then(_$ValidateCouponCodeRequestModelImpl(
       code: null == code
@@ -142,6 +155,10 @@ class __$$ValidateCouponCodeRequestModelImplCopyWithImpl<$Res>
           ? _value.travelerCount
           : travelerCount // ignore: cast_nullable_to_non_nullable
               as int?,
+      batchId: freezed == batchId
+          ? _value.batchId
+          : batchId // ignore: cast_nullable_to_non_nullable
+              as int?,
     ));
   }
 }
@@ -154,7 +171,8 @@ class _$ValidateCouponCodeRequestModelImpl
       {required this.code,
       required this.trekId,
       @JsonKey(name: 'amount') required this.bookingAmount,
-      @JsonKey(name: 'travelerCount') this.travelerCount});
+      @JsonKey(name: 'travelerCount') this.travelerCount,
+      @JsonKey(name: 'batchId') this.batchId});
 
   factory _$ValidateCouponCodeRequestModelImpl.fromJson(
           Map<String, dynamic> json) =>
@@ -173,9 +191,15 @@ class _$ValidateCouponCodeRequestModelImpl
   @JsonKey(name: 'travelerCount')
   final int? travelerCount;
 
+  /// TBR batch id — the same coupon can be assigned to multiple TBRs, and
+  /// "already used" is scoped per TBR, not globally per customer.
+  @override
+  @JsonKey(name: 'batchId')
+  final int? batchId;
+
   @override
   String toString() {
-    return 'ValidateCouponCodeRequestModel(code: $code, trekId: $trekId, bookingAmount: $bookingAmount, travelerCount: $travelerCount)';
+    return 'ValidateCouponCodeRequestModel(code: $code, trekId: $trekId, bookingAmount: $bookingAmount, travelerCount: $travelerCount, batchId: $batchId)';
   }
 
   @override
@@ -188,7 +212,8 @@ class _$ValidateCouponCodeRequestModelImpl
             const DeepCollectionEquality()
                 .equals(other.bookingAmount, bookingAmount) &&
             (identical(other.travelerCount, travelerCount) ||
-                other.travelerCount == travelerCount));
+                other.travelerCount == travelerCount) &&
+            (identical(other.batchId, batchId) || other.batchId == batchId));
   }
 
   @JsonKey(ignore: true)
@@ -198,7 +223,8 @@ class _$ValidateCouponCodeRequestModelImpl
       code,
       const DeepCollectionEquality().hash(trekId),
       const DeepCollectionEquality().hash(bookingAmount),
-      travelerCount);
+      travelerCount,
+      batchId);
 
   @JsonKey(ignore: true)
   @override
@@ -222,7 +248,8 @@ abstract class _ValidateCouponCodeRequestModel
           {required final String code,
           required final dynamic trekId,
           @JsonKey(name: 'amount') required final dynamic bookingAmount,
-          @JsonKey(name: 'travelerCount') final int? travelerCount}) =
+          @JsonKey(name: 'travelerCount') final int? travelerCount,
+          @JsonKey(name: 'batchId') final int? batchId}) =
       _$ValidateCouponCodeRequestModelImpl;
 
   factory _ValidateCouponCodeRequestModel.fromJson(Map<String, dynamic> json) =
@@ -240,6 +267,12 @@ abstract class _ValidateCouponCodeRequestModel
   /// Number of travelers — required for group-discount minimum participant validation.
   @JsonKey(name: 'travelerCount')
   int? get travelerCount;
+  @override
+
+  /// TBR batch id — the same coupon can be assigned to multiple TBRs, and
+  /// "already used" is scoped per TBR, not globally per customer.
+  @JsonKey(name: 'batchId')
+  int? get batchId;
   @override
   @JsonKey(ignore: true)
   _$$ValidateCouponCodeRequestModelImplCopyWith<

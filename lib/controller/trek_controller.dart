@@ -327,6 +327,7 @@ class TrekController extends GetxController {
           orElse: () => "0",
         ),
         travelerCount: calculateFareRequestModel.value.travelerCount,
+        batchId: trekBatchId.value > 0 ? trekBatchId.value : null,
       );
 
       final validateResponse = AuthUtils.validateRequestFields([
