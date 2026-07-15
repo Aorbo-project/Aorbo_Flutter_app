@@ -29,6 +29,15 @@ class TrekController extends GetxController {
   final Repository repository = Repository();
   final DashboardController _dashboardC = Get.find<DashboardController>();
 
+  // Bumped on every refresh() call to searchTreks. Lets an in-flight request
+  // detect that a newer refresh has since superseded it, so its response gets
+  // discarded instead of merged into the new list — without this, two
+  // near-simultaneous calls (e.g. a double-tap on the Search button, which has
+  // no debounce guard) both reset to page 1 and fire independent requests;
+  // whichever response lands second sees the first one's result already
+  // sitting in `success` state and appends onto it, duplicating every card.
+  int _searchGeneration = 0;
+
   final treksResponseObserver = PaginationModel(
     data: const ApiResult<FetchTreksResponseModel>.init().obs,
     isLoading: false,
@@ -390,17 +399,19 @@ class TrekController extends GetxController {
   }) async {
     final observer = treksResponseObserver;
 
-    try {
-      if (refresh == true) {
-        observer.value = PaginationModel(
-          data: const ApiResult<FetchTreksResponseModel>.init().obs,
-          isLoading: false,
-          isPaginationCompleted: false,
-          page: 1,
-          error: "",
-        );
-      }
+    if (refresh == true) {
+      _searchGeneration++;
+      observer.value = PaginationModel(
+        data: const ApiResult<FetchTreksResponseModel>.init().obs,
+        isLoading: false,
+        isPaginationCompleted: false,
+        page: 1,
+        error: "",
+      );
+    }
+    final myGeneration = _searchGeneration;
 
+    try {
       if (observer.value.isPaginationCompleted ||
           observer.value.isLoading == true) {
         return;
@@ -426,6 +437,11 @@ class TrekController extends GetxController {
           20,
         ),
       );
+
+      // A newer refresh() call started while this request was in flight —
+      // that call already reset observer.value to its own fresh state, so
+      // merging this stale response into it would duplicate every card.
+      if (myGeneration != _searchGeneration) return;
 
       final body = response;
       if (body != null) {
