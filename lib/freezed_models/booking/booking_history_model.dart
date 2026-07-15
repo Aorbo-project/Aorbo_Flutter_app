@@ -92,6 +92,8 @@ class BookingHistoryData with _$BookingHistoryData {
 
     @JsonKey(name: 'city_id') int? cityId,
 
+    @JsonKey(name: 'source_city_name') String? sourceCityName,
+
     @JsonKey(name: 'cancellation_policy_type') dynamic cancellationPolicyType,
 
     @JsonKey(name: 'advance_amount', fromJson: _toString) String? advanceAmount,
@@ -147,32 +149,29 @@ class BookingHistoryData with _$BookingHistoryData {
 class Trek with _$Trek {
   const factory Trek({
     int? id,
-
     String? title,
-
     String? duration,
-
     String? description,
-
     @JsonKey(name: 'base_price') String? basePrice,
-
     String? status,
-
     Vendor? vendor,
-
     Destination? destination,
 
+    @JsonKey(name: 'destination_id') int? destinationId,
+    @JsonKey(name: 'city_ids') List<int>? cityIds,
+
+    // 👇 ADD THESE TWO LINES 👇
+    @JsonKey(name: 'destination_name') String? destinationName,
+    @JsonKey(name: 'city_names') List<String>? cityNames,
+
+    // 👆 --------------------- 👆
     @JsonKey(name: 'captain_name') String? captainName,
-
     @JsonKey(name: 'captain_phone') String? captainPhone,
-
     String? difficulty,
-
     @JsonKey(name: 'duration_days') int? durationDays,
-
     @JsonKey(name: 'duration_nights') int? durationNights,
-
     @JsonKey(name: 'boarding_point') String? boardingPoint,
+    @JsonKey(name: 'boarding_time') String? boardingTime,
   }) = _Trek;
 
   factory Trek.fromJson(Map<String, dynamic> json) => _$TrekFromJson(json);

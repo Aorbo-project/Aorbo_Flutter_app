@@ -132,9 +132,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
       return;
     }
 
-    // Use the actual policy type from the booking — falls back to
-    // financeSnapshot → cancellationPolicyType → 'standard' inside
-    // generateInvoice, so passing null here is also fine.
     final policyType = booking.cancellationPolicyType?.toString();
 
     Get.dialog(
@@ -192,26 +189,40 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
     final startDate = ISTDateUtils.toIST(batch?.startDate);
     final endDate = ISTDateUtils.toIST(batch?.endDate);
 
+    // Using source_city_name from backend
+    final String sourceCity =
+        booking.sourceCityName ?? (trek?.vendor?.city ?? 'N/A');
+    final String destinationName =
+        trek?.destinationName ?? trek?.title ?? 'N/A';
+
     final StringBuffer sb = StringBuffer();
     sb.writeln('🏔️  ${trek?.title ?? 'Trek Booking'}');
     sb.writeln('━━━━━━━━━━━━━━━━━━━');
-    sb.writeln('Booking ID  : ${booking.bookingNumber ?? 'N/A'}');
-    sb.writeln('TBR ID      : ${batch?.tbrId ?? 'N/A'}');
+    sb.writeln('Booking ID       : ${booking.bookingNumber ?? 'N/A'}');
+    sb.writeln('TBR ID           : ${batch?.tbrId ?? 'N/A'}');
     if (startDate != null) {
       sb.writeln(
-        'Departure   : ${DateFormat('E, dd MMM yyyy').format(startDate)}',
+        'Departure        : ${DateFormat('E, dd MMM yyyy').format(startDate)}',
       );
+      sb.writeln('Departure City   : $sourceCity');
     }
     if (endDate != null) {
       sb.writeln(
-        'Arrival     : ${DateFormat('E, dd MMM yyyy').format(endDate)}',
+        'Arrival          : ${DateFormat('E, dd MMM yyyy').format(endDate)}',
       );
+      sb.writeln('Arrival City     : $sourceCity');
     }
-    sb.writeln('Duration    : ${trek?.duration ?? '-'}');
-    sb.writeln('Travellers  : ${booking.totalTravelers ?? 1}');
-    sb.writeln('Operator    : ${trek?.vendor?.businessName ?? 'N/A'}');
-    sb.writeln('Source City : ${trek?.vendor?.city ?? '-'}');
-    sb.writeln('Boarding    : ${trek?.vendor?.address ?? 'To be announced'}');
+    sb.writeln('Duration         : ${trek?.duration ?? '-'}');
+    sb.writeln('Travellers       : ${booking.totalTravelers ?? 1}');
+    sb.writeln('Operator         : ${trek?.vendor?.businessName ?? 'N/A'}');
+    sb.writeln('Source City      : $sourceCity');
+    sb.writeln(
+      'Boarding Point   : ${trek?.boardingPoint ?? 'To be announced'}',
+    );
+    if (trek?.boardingTime != null) {
+      sb.writeln('Boarding Time    : ${trek!.boardingTime}');
+    }
+    sb.writeln('Destination      : $destinationName');
     sb.writeln('━━━━━━━━━━━━━━━━━━━');
     sb.writeln('Booking confirmed with Aorbo! 🎉');
     sb.writeln('Download the app to explore more treks.');
@@ -551,6 +562,12 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
     final endDate = ISTDateUtils.toIST(batch?.endDate);
     final bookingDate = ISTDateUtils.toIST(booking.bookingDate);
 
+    // Extracting names from the new API response
+    final String sourceCity =
+        booking.sourceCityName ?? (trek?.vendor?.city ?? 'N/A');
+    final String destinationName =
+        trek?.destinationName ?? trek?.title ?? 'N/A';
+
     final cardContent = Container(
       key: _cardKey,
       decoration: BoxDecoration(
@@ -673,7 +690,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                       ),
                       SizedBox(height: 0.2.h),
                       Text(
-                        trek?.vendor?.city ?? '-',
+                        sourceCity,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -746,7 +763,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                       ),
                       SizedBox(height: 0.2.h),
                       Text(
-                        trek?.vendor?.city ?? '-',
+                        sourceCity,
                         textAlign: TextAlign.right,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -967,14 +984,19 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                           trek?.vendor?.businessName ?? 'N/A',
                         ),
                         _dividerLine(),
-                        _ticketRow('Source City', trek?.vendor?.city ?? '-'),
+                        _ticketRow('Source City', sourceCity),
                         _dividerLine(),
                         _ticketRow(
                           'Boarding Point',
-                          trek?.vendor?.address ?? 'To be announced',
+                          trek?.boardingPoint ?? 'To be announced',
                         ),
                         _dividerLine(),
-                        _ticketRow('Destination', trek?.title ?? '-'),
+                        _ticketRow(
+                          'Boarding Time',
+                          trek?.boardingTime ?? 'N/A',
+                        ),
+                        _dividerLine(),
+                        _ticketRow('Destination', destinationName),
                         _dividerLine(),
                         _ticketRow(
                           'Trek Captain',

@@ -74,6 +74,7 @@ _$BookingHistoryDataImpl _$$BookingHistoryDataImplFromJson(
       updatedAt: json['updatedAt'] as String?,
       userId: json['user_id'] as int?,
       cityId: json['city_id'] as int?,
+      sourceCityName: json['source_city_name'] as String?,
       cancellationPolicyType: json['cancellation_policy_type'],
       advanceAmount: _toString(json['advance_amount']),
       remainingAmount: _toString(json['remaining_amount']),
@@ -127,6 +128,7 @@ Map<String, dynamic> _$$BookingHistoryDataImplToJson(
       'updatedAt': instance.updatedAt,
       'user_id': instance.userId,
       'city_id': instance.cityId,
+      'source_city_name': instance.sourceCityName,
       'cancellation_policy_type': instance.cancellationPolicyType,
       'advance_amount': instance.advanceAmount,
       'remaining_amount': instance.remainingAmount,
@@ -161,12 +163,20 @@ _$TrekImpl _$$TrekImplFromJson(Map<String, dynamic> json) => _$TrekImpl(
       destination: json['destination'] == null
           ? null
           : Destination.fromJson(json['destination'] as Map<String, dynamic>),
+      destinationId: json['destination_id'] as int?,
+      cityIds:
+          (json['city_ids'] as List<dynamic>?)?.map((e) => e as int).toList(),
+      destinationName: json['destination_name'] as String?,
+      cityNames: (json['city_names'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
       captainName: json['captain_name'] as String?,
       captainPhone: json['captain_phone'] as String?,
       difficulty: json['difficulty'] as String?,
       durationDays: json['duration_days'] as int?,
       durationNights: json['duration_nights'] as int?,
       boardingPoint: json['boarding_point'] as String?,
+      boardingTime: json['boarding_time'] as String?,
     );
 
 Map<String, dynamic> _$$TrekImplToJson(_$TrekImpl instance) =>
@@ -179,12 +189,17 @@ Map<String, dynamic> _$$TrekImplToJson(_$TrekImpl instance) =>
       'status': instance.status,
       'vendor': instance.vendor,
       'destination': instance.destination,
+      'destination_id': instance.destinationId,
+      'city_ids': instance.cityIds,
+      'destination_name': instance.destinationName,
+      'city_names': instance.cityNames,
       'captain_name': instance.captainName,
       'captain_phone': instance.captainPhone,
       'difficulty': instance.difficulty,
       'duration_days': instance.durationDays,
       'duration_nights': instance.durationNights,
       'boarding_point': instance.boardingPoint,
+      'boarding_time': instance.boardingTime,
     };
 
 _$VendorImpl _$$VendorImplFromJson(Map<String, dynamic> json) => _$VendorImpl(

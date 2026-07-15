@@ -511,6 +511,8 @@ mixin _$BookingHistoryData {
   int? get userId => throw _privateConstructorUsedError;
   @JsonKey(name: 'city_id')
   int? get cityId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'source_city_name')
+  String? get sourceCityName => throw _privateConstructorUsedError;
   @JsonKey(name: 'cancellation_policy_type')
   dynamic get cancellationPolicyType => throw _privateConstructorUsedError;
   @JsonKey(name: 'advance_amount', fromJson: _toString)
@@ -587,6 +589,7 @@ abstract class $BookingHistoryDataCopyWith<$Res> {
       String? updatedAt,
       @JsonKey(name: 'user_id') int? userId,
       @JsonKey(name: 'city_id') int? cityId,
+      @JsonKey(name: 'source_city_name') String? sourceCityName,
       @JsonKey(name: 'cancellation_policy_type') dynamic cancellationPolicyType,
       @JsonKey(name: 'advance_amount', fromJson: _toString)
       String? advanceAmount,
@@ -654,6 +657,7 @@ class _$BookingHistoryDataCopyWithImpl<$Res, $Val extends BookingHistoryData>
     Object? updatedAt = freezed,
     Object? userId = freezed,
     Object? cityId = freezed,
+    Object? sourceCityName = freezed,
     Object? cancellationPolicyType = freezed,
     Object? advanceAmount = freezed,
     Object? remainingAmount = freezed,
@@ -767,6 +771,10 @@ class _$BookingHistoryDataCopyWithImpl<$Res, $Val extends BookingHistoryData>
           ? _value.cityId
           : cityId // ignore: cast_nullable_to_non_nullable
               as int?,
+      sourceCityName: freezed == sourceCityName
+          ? _value.sourceCityName
+          : sourceCityName // ignore: cast_nullable_to_non_nullable
+              as String?,
       cancellationPolicyType: freezed == cancellationPolicyType
           ? _value.cancellationPolicyType
           : cancellationPolicyType // ignore: cast_nullable_to_non_nullable
@@ -905,6 +913,7 @@ abstract class _$$BookingHistoryDataImplCopyWith<$Res>
       String? updatedAt,
       @JsonKey(name: 'user_id') int? userId,
       @JsonKey(name: 'city_id') int? cityId,
+      @JsonKey(name: 'source_city_name') String? sourceCityName,
       @JsonKey(name: 'cancellation_policy_type') dynamic cancellationPolicyType,
       @JsonKey(name: 'advance_amount', fromJson: _toString)
       String? advanceAmount,
@@ -972,6 +981,7 @@ class __$$BookingHistoryDataImplCopyWithImpl<$Res>
     Object? updatedAt = freezed,
     Object? userId = freezed,
     Object? cityId = freezed,
+    Object? sourceCityName = freezed,
     Object? cancellationPolicyType = freezed,
     Object? advanceAmount = freezed,
     Object? remainingAmount = freezed,
@@ -1085,6 +1095,10 @@ class __$$BookingHistoryDataImplCopyWithImpl<$Res>
           ? _value.cityId
           : cityId // ignore: cast_nullable_to_non_nullable
               as int?,
+      sourceCityName: freezed == sourceCityName
+          ? _value.sourceCityName
+          : sourceCityName // ignore: cast_nullable_to_non_nullable
+              as String?,
       cancellationPolicyType: freezed == cancellationPolicyType
           ? _value.cancellationPolicyType
           : cancellationPolicyType // ignore: cast_nullable_to_non_nullable
@@ -1194,6 +1208,7 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
       this.updatedAt,
       @JsonKey(name: 'user_id') this.userId,
       @JsonKey(name: 'city_id') this.cityId,
+      @JsonKey(name: 'source_city_name') this.sourceCityName,
       @JsonKey(name: 'cancellation_policy_type') this.cancellationPolicyType,
       @JsonKey(name: 'advance_amount', fromJson: _toString) this.advanceAmount,
       @JsonKey(name: 'remaining_amount', fromJson: _toString)
@@ -1290,6 +1305,9 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
   @JsonKey(name: 'city_id')
   final int? cityId;
   @override
+  @JsonKey(name: 'source_city_name')
+  final String? sourceCityName;
+  @override
   @JsonKey(name: 'cancellation_policy_type')
   final dynamic cancellationPolicyType;
   @override
@@ -1356,7 +1374,7 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
 
   @override
   String toString() {
-    return 'BookingHistoryData(id: $id, customerId: $customerId, trekId: $trekId, vendorId: $vendorId, vendorIdAlt: $vendorIdAlt, batchId: $batchId, couponId: $couponId, totalTravelers: $totalTravelers, totalAmount: $totalAmount, platformFees: $platformFees, gstAmount: $gstAmount, discountAmount: $discountAmount, finalAmount: $finalAmount, paymentStatus: $paymentStatus, status: $status, bookingDate: $bookingDate, specialRequests: $specialRequests, bookingSource: $bookingSource, primaryContactTravelerId: $primaryContactTravelerId, createdAt: $createdAt, updatedAt: $updatedAt, userId: $userId, cityId: $cityId, cancellationPolicyType: $cancellationPolicyType, advanceAmount: $advanceAmount, remainingAmount: $remainingAmount, financeSnapshot: $financeSnapshot, totalBasicCost: $totalBasicCost, vendorDiscount: $vendorDiscount, couponDiscount: $couponDiscount, insuranceAmount: $insuranceAmount, freeCancellationAmount: $freeCancellationAmount, paymentMethod: $paymentMethod, razorpayPaymentId: $razorpayPaymentId, razorpayOrderId: $razorpayOrderId, trek: $trek, batch: $batch, travelers: $travelers, bookingNumber: $bookingNumber, trekStatus: $trekStatus, ratingGiven: $ratingGiven, ratingValue: $ratingValue)';
+    return 'BookingHistoryData(id: $id, customerId: $customerId, trekId: $trekId, vendorId: $vendorId, vendorIdAlt: $vendorIdAlt, batchId: $batchId, couponId: $couponId, totalTravelers: $totalTravelers, totalAmount: $totalAmount, platformFees: $platformFees, gstAmount: $gstAmount, discountAmount: $discountAmount, finalAmount: $finalAmount, paymentStatus: $paymentStatus, status: $status, bookingDate: $bookingDate, specialRequests: $specialRequests, bookingSource: $bookingSource, primaryContactTravelerId: $primaryContactTravelerId, createdAt: $createdAt, updatedAt: $updatedAt, userId: $userId, cityId: $cityId, sourceCityName: $sourceCityName, cancellationPolicyType: $cancellationPolicyType, advanceAmount: $advanceAmount, remainingAmount: $remainingAmount, financeSnapshot: $financeSnapshot, totalBasicCost: $totalBasicCost, vendorDiscount: $vendorDiscount, couponDiscount: $couponDiscount, insuranceAmount: $insuranceAmount, freeCancellationAmount: $freeCancellationAmount, paymentMethod: $paymentMethod, razorpayPaymentId: $razorpayPaymentId, razorpayOrderId: $razorpayOrderId, trek: $trek, batch: $batch, travelers: $travelers, bookingNumber: $bookingNumber, trekStatus: $trekStatus, ratingGiven: $ratingGiven, ratingValue: $ratingValue)';
   }
 
   @override
@@ -1405,6 +1423,8 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
                 other.updatedAt == updatedAt) &&
             (identical(other.userId, userId) || other.userId == userId) &&
             (identical(other.cityId, cityId) || other.cityId == cityId) &&
+            (identical(other.sourceCityName, sourceCityName) ||
+                other.sourceCityName == sourceCityName) &&
             const DeepCollectionEquality()
                 .equals(other.cancellationPolicyType, cancellationPolicyType) &&
             (identical(other.advanceAmount, advanceAmount) ||
@@ -1470,6 +1490,7 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
         updatedAt,
         userId,
         cityId,
+        sourceCityName,
         const DeepCollectionEquality().hash(cancellationPolicyType),
         advanceAmount,
         remainingAmount,
@@ -1536,6 +1557,7 @@ abstract class _BookingHistoryData implements BookingHistoryData {
       final String? updatedAt,
       @JsonKey(name: 'user_id') final int? userId,
       @JsonKey(name: 'city_id') final int? cityId,
+      @JsonKey(name: 'source_city_name') final String? sourceCityName,
       @JsonKey(name: 'cancellation_policy_type')
       final dynamic cancellationPolicyType,
       @JsonKey(name: 'advance_amount', fromJson: _toString)
@@ -1634,6 +1656,9 @@ abstract class _BookingHistoryData implements BookingHistoryData {
   @JsonKey(name: 'city_id')
   int? get cityId;
   @override
+  @JsonKey(name: 'source_city_name')
+  String? get sourceCityName;
+  @override
   @JsonKey(name: 'cancellation_policy_type')
   dynamic get cancellationPolicyType;
   @override
@@ -1708,6 +1733,16 @@ mixin _$Trek {
   String? get status => throw _privateConstructorUsedError;
   Vendor? get vendor => throw _privateConstructorUsedError;
   Destination? get destination => throw _privateConstructorUsedError;
+  @JsonKey(name: 'destination_id')
+  int? get destinationId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'city_ids')
+  List<int>? get cityIds =>
+      throw _privateConstructorUsedError; // 👇 ADD THESE TWO LINES 👇
+  @JsonKey(name: 'destination_name')
+  String? get destinationName => throw _privateConstructorUsedError;
+  @JsonKey(name: 'city_names')
+  List<String>? get cityNames =>
+      throw _privateConstructorUsedError; // 👆 --------------------- 👆
   @JsonKey(name: 'captain_name')
   String? get captainName => throw _privateConstructorUsedError;
   @JsonKey(name: 'captain_phone')
@@ -1719,6 +1754,8 @@ mixin _$Trek {
   int? get durationNights => throw _privateConstructorUsedError;
   @JsonKey(name: 'boarding_point')
   String? get boardingPoint => throw _privateConstructorUsedError;
+  @JsonKey(name: 'boarding_time')
+  String? get boardingTime => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -1739,12 +1776,17 @@ abstract class $TrekCopyWith<$Res> {
       String? status,
       Vendor? vendor,
       Destination? destination,
+      @JsonKey(name: 'destination_id') int? destinationId,
+      @JsonKey(name: 'city_ids') List<int>? cityIds,
+      @JsonKey(name: 'destination_name') String? destinationName,
+      @JsonKey(name: 'city_names') List<String>? cityNames,
       @JsonKey(name: 'captain_name') String? captainName,
       @JsonKey(name: 'captain_phone') String? captainPhone,
       String? difficulty,
       @JsonKey(name: 'duration_days') int? durationDays,
       @JsonKey(name: 'duration_nights') int? durationNights,
-      @JsonKey(name: 'boarding_point') String? boardingPoint});
+      @JsonKey(name: 'boarding_point') String? boardingPoint,
+      @JsonKey(name: 'boarding_time') String? boardingTime});
 
   $VendorCopyWith<$Res>? get vendor;
   $DestinationCopyWith<$Res>? get destination;
@@ -1771,12 +1813,17 @@ class _$TrekCopyWithImpl<$Res, $Val extends Trek>
     Object? status = freezed,
     Object? vendor = freezed,
     Object? destination = freezed,
+    Object? destinationId = freezed,
+    Object? cityIds = freezed,
+    Object? destinationName = freezed,
+    Object? cityNames = freezed,
     Object? captainName = freezed,
     Object? captainPhone = freezed,
     Object? difficulty = freezed,
     Object? durationDays = freezed,
     Object? durationNights = freezed,
     Object? boardingPoint = freezed,
+    Object? boardingTime = freezed,
   }) {
     return _then(_value.copyWith(
       id: freezed == id
@@ -1811,6 +1858,22 @@ class _$TrekCopyWithImpl<$Res, $Val extends Trek>
           ? _value.destination
           : destination // ignore: cast_nullable_to_non_nullable
               as Destination?,
+      destinationId: freezed == destinationId
+          ? _value.destinationId
+          : destinationId // ignore: cast_nullable_to_non_nullable
+              as int?,
+      cityIds: freezed == cityIds
+          ? _value.cityIds
+          : cityIds // ignore: cast_nullable_to_non_nullable
+              as List<int>?,
+      destinationName: freezed == destinationName
+          ? _value.destinationName
+          : destinationName // ignore: cast_nullable_to_non_nullable
+              as String?,
+      cityNames: freezed == cityNames
+          ? _value.cityNames
+          : cityNames // ignore: cast_nullable_to_non_nullable
+              as List<String>?,
       captainName: freezed == captainName
           ? _value.captainName
           : captainName // ignore: cast_nullable_to_non_nullable
@@ -1834,6 +1897,10 @@ class _$TrekCopyWithImpl<$Res, $Val extends Trek>
       boardingPoint: freezed == boardingPoint
           ? _value.boardingPoint
           : boardingPoint // ignore: cast_nullable_to_non_nullable
+              as String?,
+      boardingTime: freezed == boardingTime
+          ? _value.boardingTime
+          : boardingTime // ignore: cast_nullable_to_non_nullable
               as String?,
     ) as $Val);
   }
@@ -1879,12 +1946,17 @@ abstract class _$$TrekImplCopyWith<$Res> implements $TrekCopyWith<$Res> {
       String? status,
       Vendor? vendor,
       Destination? destination,
+      @JsonKey(name: 'destination_id') int? destinationId,
+      @JsonKey(name: 'city_ids') List<int>? cityIds,
+      @JsonKey(name: 'destination_name') String? destinationName,
+      @JsonKey(name: 'city_names') List<String>? cityNames,
       @JsonKey(name: 'captain_name') String? captainName,
       @JsonKey(name: 'captain_phone') String? captainPhone,
       String? difficulty,
       @JsonKey(name: 'duration_days') int? durationDays,
       @JsonKey(name: 'duration_nights') int? durationNights,
-      @JsonKey(name: 'boarding_point') String? boardingPoint});
+      @JsonKey(name: 'boarding_point') String? boardingPoint,
+      @JsonKey(name: 'boarding_time') String? boardingTime});
 
   @override
   $VendorCopyWith<$Res>? get vendor;
@@ -1910,12 +1982,17 @@ class __$$TrekImplCopyWithImpl<$Res>
     Object? status = freezed,
     Object? vendor = freezed,
     Object? destination = freezed,
+    Object? destinationId = freezed,
+    Object? cityIds = freezed,
+    Object? destinationName = freezed,
+    Object? cityNames = freezed,
     Object? captainName = freezed,
     Object? captainPhone = freezed,
     Object? difficulty = freezed,
     Object? durationDays = freezed,
     Object? durationNights = freezed,
     Object? boardingPoint = freezed,
+    Object? boardingTime = freezed,
   }) {
     return _then(_$TrekImpl(
       id: freezed == id
@@ -1950,6 +2027,22 @@ class __$$TrekImplCopyWithImpl<$Res>
           ? _value.destination
           : destination // ignore: cast_nullable_to_non_nullable
               as Destination?,
+      destinationId: freezed == destinationId
+          ? _value.destinationId
+          : destinationId // ignore: cast_nullable_to_non_nullable
+              as int?,
+      cityIds: freezed == cityIds
+          ? _value._cityIds
+          : cityIds // ignore: cast_nullable_to_non_nullable
+              as List<int>?,
+      destinationName: freezed == destinationName
+          ? _value.destinationName
+          : destinationName // ignore: cast_nullable_to_non_nullable
+              as String?,
+      cityNames: freezed == cityNames
+          ? _value._cityNames
+          : cityNames // ignore: cast_nullable_to_non_nullable
+              as List<String>?,
       captainName: freezed == captainName
           ? _value.captainName
           : captainName // ignore: cast_nullable_to_non_nullable
@@ -1974,6 +2067,10 @@ class __$$TrekImplCopyWithImpl<$Res>
           ? _value.boardingPoint
           : boardingPoint // ignore: cast_nullable_to_non_nullable
               as String?,
+      boardingTime: freezed == boardingTime
+          ? _value.boardingTime
+          : boardingTime // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -1990,12 +2087,19 @@ class _$TrekImpl implements _Trek {
       this.status,
       this.vendor,
       this.destination,
+      @JsonKey(name: 'destination_id') this.destinationId,
+      @JsonKey(name: 'city_ids') final List<int>? cityIds,
+      @JsonKey(name: 'destination_name') this.destinationName,
+      @JsonKey(name: 'city_names') final List<String>? cityNames,
       @JsonKey(name: 'captain_name') this.captainName,
       @JsonKey(name: 'captain_phone') this.captainPhone,
       this.difficulty,
       @JsonKey(name: 'duration_days') this.durationDays,
       @JsonKey(name: 'duration_nights') this.durationNights,
-      @JsonKey(name: 'boarding_point') this.boardingPoint});
+      @JsonKey(name: 'boarding_point') this.boardingPoint,
+      @JsonKey(name: 'boarding_time') this.boardingTime})
+      : _cityIds = cityIds,
+        _cityNames = cityNames;
 
   factory _$TrekImpl.fromJson(Map<String, dynamic> json) =>
       _$$TrekImplFromJson(json);
@@ -2018,6 +2122,36 @@ class _$TrekImpl implements _Trek {
   @override
   final Destination? destination;
   @override
+  @JsonKey(name: 'destination_id')
+  final int? destinationId;
+  final List<int>? _cityIds;
+  @override
+  @JsonKey(name: 'city_ids')
+  List<int>? get cityIds {
+    final value = _cityIds;
+    if (value == null) return null;
+    if (_cityIds is EqualUnmodifiableListView) return _cityIds;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(value);
+  }
+
+// 👇 ADD THESE TWO LINES 👇
+  @override
+  @JsonKey(name: 'destination_name')
+  final String? destinationName;
+  final List<String>? _cityNames;
+  @override
+  @JsonKey(name: 'city_names')
+  List<String>? get cityNames {
+    final value = _cityNames;
+    if (value == null) return null;
+    if (_cityNames is EqualUnmodifiableListView) return _cityNames;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(value);
+  }
+
+// 👆 --------------------- 👆
+  @override
   @JsonKey(name: 'captain_name')
   final String? captainName;
   @override
@@ -2034,10 +2168,13 @@ class _$TrekImpl implements _Trek {
   @override
   @JsonKey(name: 'boarding_point')
   final String? boardingPoint;
+  @override
+  @JsonKey(name: 'boarding_time')
+  final String? boardingTime;
 
   @override
   String toString() {
-    return 'Trek(id: $id, title: $title, duration: $duration, description: $description, basePrice: $basePrice, status: $status, vendor: $vendor, destination: $destination, captainName: $captainName, captainPhone: $captainPhone, difficulty: $difficulty, durationDays: $durationDays, durationNights: $durationNights, boardingPoint: $boardingPoint)';
+    return 'Trek(id: $id, title: $title, duration: $duration, description: $description, basePrice: $basePrice, status: $status, vendor: $vendor, destination: $destination, destinationId: $destinationId, cityIds: $cityIds, destinationName: $destinationName, cityNames: $cityNames, captainName: $captainName, captainPhone: $captainPhone, difficulty: $difficulty, durationDays: $durationDays, durationNights: $durationNights, boardingPoint: $boardingPoint, boardingTime: $boardingTime)';
   }
 
   @override
@@ -2057,6 +2194,13 @@ class _$TrekImpl implements _Trek {
             (identical(other.vendor, vendor) || other.vendor == vendor) &&
             (identical(other.destination, destination) ||
                 other.destination == destination) &&
+            (identical(other.destinationId, destinationId) ||
+                other.destinationId == destinationId) &&
+            const DeepCollectionEquality().equals(other._cityIds, _cityIds) &&
+            (identical(other.destinationName, destinationName) ||
+                other.destinationName == destinationName) &&
+            const DeepCollectionEquality()
+                .equals(other._cityNames, _cityNames) &&
             (identical(other.captainName, captainName) ||
                 other.captainName == captainName) &&
             (identical(other.captainPhone, captainPhone) ||
@@ -2068,27 +2212,35 @@ class _$TrekImpl implements _Trek {
             (identical(other.durationNights, durationNights) ||
                 other.durationNights == durationNights) &&
             (identical(other.boardingPoint, boardingPoint) ||
-                other.boardingPoint == boardingPoint));
+                other.boardingPoint == boardingPoint) &&
+            (identical(other.boardingTime, boardingTime) ||
+                other.boardingTime == boardingTime));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(
-      runtimeType,
-      id,
-      title,
-      duration,
-      description,
-      basePrice,
-      status,
-      vendor,
-      destination,
-      captainName,
-      captainPhone,
-      difficulty,
-      durationDays,
-      durationNights,
-      boardingPoint);
+  int get hashCode => Object.hashAll([
+        runtimeType,
+        id,
+        title,
+        duration,
+        description,
+        basePrice,
+        status,
+        vendor,
+        destination,
+        destinationId,
+        const DeepCollectionEquality().hash(_cityIds),
+        destinationName,
+        const DeepCollectionEquality().hash(_cityNames),
+        captainName,
+        captainPhone,
+        difficulty,
+        durationDays,
+        durationNights,
+        boardingPoint,
+        boardingTime
+      ]);
 
   @JsonKey(ignore: true)
   @override
@@ -2106,21 +2258,25 @@ class _$TrekImpl implements _Trek {
 
 abstract class _Trek implements Trek {
   const factory _Trek(
-          {final int? id,
-          final String? title,
-          final String? duration,
-          final String? description,
-          @JsonKey(name: 'base_price') final String? basePrice,
-          final String? status,
-          final Vendor? vendor,
-          final Destination? destination,
-          @JsonKey(name: 'captain_name') final String? captainName,
-          @JsonKey(name: 'captain_phone') final String? captainPhone,
-          final String? difficulty,
-          @JsonKey(name: 'duration_days') final int? durationDays,
-          @JsonKey(name: 'duration_nights') final int? durationNights,
-          @JsonKey(name: 'boarding_point') final String? boardingPoint}) =
-      _$TrekImpl;
+      {final int? id,
+      final String? title,
+      final String? duration,
+      final String? description,
+      @JsonKey(name: 'base_price') final String? basePrice,
+      final String? status,
+      final Vendor? vendor,
+      final Destination? destination,
+      @JsonKey(name: 'destination_id') final int? destinationId,
+      @JsonKey(name: 'city_ids') final List<int>? cityIds,
+      @JsonKey(name: 'destination_name') final String? destinationName,
+      @JsonKey(name: 'city_names') final List<String>? cityNames,
+      @JsonKey(name: 'captain_name') final String? captainName,
+      @JsonKey(name: 'captain_phone') final String? captainPhone,
+      final String? difficulty,
+      @JsonKey(name: 'duration_days') final int? durationDays,
+      @JsonKey(name: 'duration_nights') final int? durationNights,
+      @JsonKey(name: 'boarding_point') final String? boardingPoint,
+      @JsonKey(name: 'boarding_time') final String? boardingTime}) = _$TrekImpl;
 
   factory _Trek.fromJson(Map<String, dynamic> json) = _$TrekImpl.fromJson;
 
@@ -2142,6 +2298,18 @@ abstract class _Trek implements Trek {
   @override
   Destination? get destination;
   @override
+  @JsonKey(name: 'destination_id')
+  int? get destinationId;
+  @override
+  @JsonKey(name: 'city_ids')
+  List<int>? get cityIds;
+  @override // 👇 ADD THESE TWO LINES 👇
+  @JsonKey(name: 'destination_name')
+  String? get destinationName;
+  @override
+  @JsonKey(name: 'city_names')
+  List<String>? get cityNames;
+  @override // 👆 --------------------- 👆
   @JsonKey(name: 'captain_name')
   String? get captainName;
   @override
@@ -2158,6 +2326,9 @@ abstract class _Trek implements Trek {
   @override
   @JsonKey(name: 'boarding_point')
   String? get boardingPoint;
+  @override
+  @JsonKey(name: 'boarding_time')
+  String? get boardingTime;
   @override
   @JsonKey(ignore: true)
   _$$TrekImplCopyWith<_$TrekImpl> get copyWith =>
