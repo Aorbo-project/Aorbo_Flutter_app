@@ -935,7 +935,14 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
     CancellationDataModel? data,
     BookingHistoryData booking,
   ) {
+    // "Total Amount Paid" must be what the customer actually paid so far —
+    // data.finalAmount / booking.finalAmount is the full contracted booking
+    // value (e.g. ₹8096.05 for a flexible advance-only booking that's only
+    // ₹1394.05 paid so far), which showed a number the customer never
+    // actually handed over and didn't reconcile with the deduction/refund
+    // lines below it. breakdown.totalPaid is the real amount collected.
     final double paid =
+        data?.refundCalculation?.breakdown?.totalPaid ??
         data?.finalAmount ??
         double.tryParse(booking.finalAmount?.toString() ?? '0') ??
         0;
