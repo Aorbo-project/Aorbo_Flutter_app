@@ -16,7 +16,7 @@ class CommonImages {
   static const String knowmore3 = "$basePath/img/knowmore3.png";
   static const String knowmore4 = "$basePath/img/knowmore4.png";
   static const String knowmore5 = "$basePath/img/knowmore5.png";
-  static const String coorg = "$basePath/img/coorg.png";
+  static const String coorg = "";
   static const String manali = "$basePath/img/manali.png";
 
   static const String referandearn =
@@ -35,18 +35,18 @@ class CommonImages {
   static const String munnar = "$basePath/img/munnar.png";
   static const String ooty = "$basePath/img/ooty.png";
   static const String udupi = "$basePath/img/udupi.jpg";
-  static const String shorts1 = "$basePath/img/shorts1.png";
-  static const String shorts2 = "$basePath/img/shorts2.png";
-  static const String shorts3 = "$basePath/img/shorts3.png";
-  static const String shorts4 = "$basePath/img/shorts4.png";
-  static const String shorts5 = "$basePath/img/shorts5.jpg";
-  static const String shorts6 = "$basePath/img/shorts6.png";
-  static const String shorts7 = "$basePath/img/shorts7.png";
+  static const String shorts1 = "";
+  static const String shorts2 = "";
+  static const String shorts3 = "";
+  static const String shorts4 = "";
+  static const String shorts5 = "";
+  static const String shorts6 = "";
+  static const String shorts7 = "";
   static const String aboutUs = "$basePath/img/aboutUs.jpg";
 
-  static const String safety1 = "$basePath/img/safety1.jpg";
-  static const String safety2 = "$basePath/img/safety2.jpg";
-  static const String safety3 = "$basePath/img/safety3.jpg";
+  static const String safety1 = "";
+  static const String safety2 = "";
+  static const String safety3 = "";
 
   // Icons
   static const String location = "$basePath/icons/location1.svg";
@@ -101,17 +101,17 @@ class CommonImages {
 
   static const String thankYou = "$basePath/img/approval.png";
 
-  static const String kedarkantha1 = "$basePath/img/kedarkantha1.jpg";
-  static const String kedarkantha2 = "$basePath/img/kedarkantha2.jpg";
-  static const String kedarkantha3 = "$basePath/img/kedarkantha3.jpg";
-  static const String kedarkantha4 = "$basePath/img/kedarkantha4.jpg";
-  static const String kedarkantha5 = "$basePath/img/kedarkantha5.jpg";
+  static const String kedarkantha1 = "";
+  static const String kedarkantha2 = "";
+  static const String kedarkantha3 = "";
+  static const String kedarkantha4 = "";
+  static const String kedarkantha5 = "";
 
-  static const String valleyOfFlowers1 = "$basePath/img/valleyOfFlowers1.jpg";
-  static const String valleyOfFlowers2 = "$basePath/img/valleyOfFlowers2.jpg";
-  static const String valleyOfFlowers3 = "$basePath/img/valleyOfFlowers3.jpg";
-  static const String valleyOfFlowers4 = "$basePath/img/valleyOfFlowers4.jpg";
-  static const String valleyOfFlowers5 = "$basePath/img/valleyOfFlowers5.jpg";
+  static const String valleyOfFlowers1 = "";
+  static const String valleyOfFlowers2 = "";
+  static const String valleyOfFlowers3 = "";
+  static const String valleyOfFlowers4 = "";
+  static const String valleyOfFlowers5 = "";
 
   static const String coupon = 'assets/icons/coupon.svg';
   static const String protect = 'assets/images/icons/Protect.svg';
@@ -119,5 +119,5 @@ class CommonImages {
   static const String toDo = 'assets/images/icons/todo.svg';
   static const String userAccount = 'assets/images/icons/userAccount.svg';
 
-//animationa
+  //animationa
 }
