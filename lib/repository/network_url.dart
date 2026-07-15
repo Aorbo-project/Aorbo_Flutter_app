@@ -130,6 +130,11 @@ static String fetchCouponsForBatch({
       'bookings?page=$page&limit=20'
           '${trekStatus == null ? '' : "&trek_status=$trekStatus"}';
 
+  // Failed/expired payment attempts — these never became a real booking, so
+  // they're read from a separate endpoint (backed by PendingBooking, not
+  // Booking) rather than a trek_status value on bookingHistoryWithStatus.
+  static const String failedBookingAttempts = 'bookings/failed-attempts';
+
   static const String review = 'ratings';
 
   static String couponCode(String vendorId) => 'coupons/vendor/$vendorId';
