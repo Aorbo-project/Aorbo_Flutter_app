@@ -4,6 +4,7 @@ import 'package:sizer/sizer.dart';
 
 import '../freezed_models/booking/booking_history_model.dart';
 import 'common_colors.dart';
+import 'ist_date_utils.dart';
 import 'screen_constants.dart';
 import 'package:arobo_app/repository/repository.dart';
 
@@ -68,26 +69,23 @@ class CommonBookedCard extends StatelessWidget {
 
   String _formatDate(String? rawDate) {
     if (rawDate == null || rawDate.isEmpty) return '-';
-    try {
-      DateTime dt = DateTime.parse(rawDate).toLocal();
-      const months = [
-        'Jan',
-        'Feb',
-        'Mar',
-        'Apr',
-        'May',
-        'Jun',
-        'Jul',
-        'Aug',
-        'Sep',
-        'Oct',
-        'Nov',
-        'Dec',
-      ];
-      return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
-    } catch (e) {
-      return rawDate;
-    }
+    final dt = ISTDateUtils.toIST(rawDate);
+    if (dt == null) return rawDate;
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
   }
 
   Widget _buildBadge(String text, Color color) {

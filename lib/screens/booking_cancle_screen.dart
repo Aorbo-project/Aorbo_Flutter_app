@@ -5,7 +5,6 @@ import 'package:dotted_line/dotted_line.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 import 'package:sizer/sizer.dart';
 import 'package:shimmer_ai/shimmer_ai.dart';
 import '../controller/dashboard_controller.dart';
@@ -13,6 +12,7 @@ import '../controller/trek_controller.dart';
 import '../freezed_models/booking/booking_history_model.dart';
 import '../utils/common_colors.dart';
 import '../utils/custom_snackbar.dart';
+import '../utils/ist_date_utils.dart';
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS — matches TravellerInformationScreen
@@ -428,13 +428,15 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
     String formattedDeparture = 'N/A';
     if (departureDate != null) {
       if (isTimeAvailable) {
-        formattedDeparture = DateFormat(
+        formattedDeparture = ISTDateUtils.formatCustom(
+          departureDate,
           'EEE, dd MMM yyyy • hh:mm a',
-        ).format(departureDate);
+        );
       } else {
-        formattedDeparture = DateFormat(
+        formattedDeparture = ISTDateUtils.formatCustom(
+          departureDate,
           'EEE, dd MMM yyyy',
-        ).format(departureDate);
+        );
       }
     }
 
@@ -783,9 +785,10 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
     final departureDate = data.boardingDateTime;
     String formattedDeparture = 'N/A';
     if (departureDate != null) {
-      formattedDeparture = DateFormat(
+      formattedDeparture = ISTDateUtils.formatCustom(
+        departureDate,
         'EEE, dd MMM yyyy • hh:mm a',
-      ).format(departureDate);
+      );
     }
 
     // Determine urgency color
