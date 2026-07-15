@@ -52,6 +52,7 @@ class _BookingsScreenState extends State<BookingsScreen>
     'completed',
     'ongoing',
     'cancelled',
+    'Failed Payments',
   ];
 
   late final AnimationController _fadeCtrl;
@@ -111,6 +112,7 @@ class _BookingsScreenState extends State<BookingsScreen>
       case 'completed':
         return _BkColors.completedBg;
       case 'cancelled':
+      case 'failed payments':
         return _BkColors.cancelledBg;
       default:
         return _BkColors.accentLight;
@@ -126,6 +128,7 @@ class _BookingsScreenState extends State<BookingsScreen>
       case 'completed':
         return _BkColors.completedFg;
       case 'cancelled':
+      case 'failed payments':
         return _BkColors.cancelledFg;
       default:
         return _BkColors.inkMid;
@@ -145,6 +148,10 @@ class _BookingsScreenState extends State<BookingsScreen>
       body: FadeTransition(
         opacity: _fade,
         child: Obx(() {
+          if (_dashboardC.selectedFilter.value == 'Failed Payments') {
+            return _buildFailedAttemptsList();
+          }
+
           final loading = _dashboardC.bookingHistoryObserver.value.data.value
               .maybeWhen(loading: (data) => true, orElse: () => false);
 
@@ -285,6 +292,135 @@ class _BookingsScreenState extends State<BookingsScreen>
           onViewDetailsTap: () {
             Get.to(() => BookingsUpcomingScreen(bookingId: booking.id));
           },
+        ),
+      ),
+    );
+  }
+
+  // ── FAILED PAYMENT ATTEMPTS ──────────────────────────────────────────────
+  Widget _buildFailedAttemptsList() {
+    if (_dashboardC.isLoadingFailedAttempts.value) {
+      return _buildShimmerLoading();
+    }
+
+    final attempts = _dashboardC.failedBookingAttempts;
+    if (attempts.isEmpty) {
+      return _buildEmptyState();
+    }
+
+    return ListView.builder(
+      padding: EdgeInsets.fromLTRB(4.w, 2.h, 4.w, 4.h),
+      itemCount: attempts.length,
+      itemBuilder: (context, index) =>
+          _buildFailedAttemptCard(attempts[index], index),
+    );
+  }
+
+  Widget _buildFailedAttemptCard(Map<String, dynamic> attempt, int index) {
+    final trek = attempt['trek'] as Map<String, dynamic>?;
+    final batch = attempt['batch'] as Map<String, dynamic>?;
+    final trekTitle = trek?['title'] as String? ?? 'Trek booking';
+    final amount = attempt['amount'];
+    final createdAt = attempt['created_at'] as String?;
+    final startDate = batch?['start_date'] as String?;
+    final failureDescription =
+        attempt['failure_description'] as String? ?? 'Payment did not go through';
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: Duration(milliseconds: 280 + index * 50),
+      curve: Curves.easeOutCubic,
+      builder: (ctx, value, child) => Opacity(
+        opacity: value,
+        child: Transform.translate(
+          offset: Offset(0, 14 * (1 - value)),
+          child: child,
+        ),
+      ),
+      child: Container(
+        margin: EdgeInsets.only(bottom: 2.h),
+        padding: EdgeInsets.all(4.w),
+        decoration: BoxDecoration(
+          color: _BkColors.cardBg,
+          borderRadius: BorderRadius.circular(4.w),
+          border: Border.all(color: _BkColors.cancelledBg, width: 1.2),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 2.5.w, vertical: 0.5.h),
+                  decoration: BoxDecoration(
+                    color: _BkColors.cancelledBg,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'Payment Failed',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: FontSize.s9,
+                      fontWeight: FontWeight.w700,
+                      color: _BkColors.cancelledFg,
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                if (createdAt != null)
+                  Text(
+                    _formatDate(createdAt),
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: FontSize.s9,
+                      color: _BkColors.inkLight,
+                    ),
+                  ),
+              ],
+            ),
+            SizedBox(height: 1.2.h),
+            Text(
+              trekTitle,
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: FontSize.s13,
+                fontWeight: FontWeight.w700,
+                color: _BkColors.ink,
+              ),
+            ),
+            if (startDate != null) ...[
+              SizedBox(height: 0.5.h),
+              Text(
+                'Departure: ${_formatDate(startDate)}',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: FontSize.s10,
+                  color: _BkColors.inkMid,
+                ),
+              ),
+            ],
+            SizedBox(height: 1.h),
+            Text(
+              failureDescription,
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: FontSize.s10,
+                color: _BkColors.cancelledFg,
+              ),
+            ),
+            if (amount != null) ...[
+              SizedBox(height: 1.h),
+              Text(
+                '₹$amount — not charged',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: FontSize.s10,
+                  fontWeight: FontWeight.w600,
+                  color: _BkColors.inkMid,
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );
@@ -607,7 +743,11 @@ class _BookingsScreenState extends State<BookingsScreen>
                       _dashboardC.selectedFilter.value = filter;
                     });
                     Navigator.pop(context);
-                    _dashboardC.getBookingHistory(refresh: true);
+                    if (filter == 'Failed Payments') {
+                      _dashboardC.getFailedBookingAttempts();
+                    } else {
+                      _dashboardC.getBookingHistory(refresh: true);
+                    }
                   },
                   child: Container(
                     padding: EdgeInsets.symmetric(

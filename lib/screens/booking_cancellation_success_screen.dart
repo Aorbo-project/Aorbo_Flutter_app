@@ -9,6 +9,7 @@ import '../models/refund/refund_status_model.dart';
 import '../models/treaks/booking_cancelled_modal.dart';
 import '../utils/common_colors.dart';
 import '../utils/common_booked_details_card.dart';
+import '../utils/ist_date_utils.dart';
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS — matches TravellerInformationScreen
@@ -843,26 +844,23 @@ class _BookingCancellationSuccessScreenState
   // ─────────────────────────────────────────────
   String _formatSettledAt(String? iso) {
     if (iso == null) return '';
-    try {
-      final dt = DateTime.parse(iso).toLocal();
-      const months = [
-        'Jan',
-        'Feb',
-        'Mar',
-        'Apr',
-        'May',
-        'Jun',
-        'Jul',
-        'Aug',
-        'Sep',
-        'Oct',
-        'Nov',
-        'Dec',
-      ];
-      return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
-    } catch (_) {
-      return '';
-    }
+    final ist = ISTDateUtils.toIST(iso);
+    if (ist == null) return '';
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${months[ist.month - 1]} ${ist.day}, ${ist.year}';
   }
 
   String _formatDate(DateTime date) {
