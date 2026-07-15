@@ -383,6 +383,11 @@ class _DashboardState extends State<Dashboard>
   }
 
   void _handleSearchPress() async {
+    // _isPressed already drove the button's shadow styling but never actually
+    // blocked re-entry — a fast double-tap could fire _handleSearch() (and
+    // searchTreks(refresh: true)) twice before the first tap's 150ms
+    // animation delay even finished, duplicating every search result card.
+    if (_isPressed) return;
     setState(() => _isPressed = true);
     _animationController.forward();
     await Future.delayed(const Duration(milliseconds: 150));
