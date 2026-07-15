@@ -1979,26 +1979,23 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
 
   String _formatSettledAt(String? iso) {
     if (iso == null || iso.isEmpty) return '';
-    try {
-      final dt = DateTime.parse(iso).toLocal();
-      const months = [
-        'Jan',
-        'Feb',
-        'Mar',
-        'Apr',
-        'May',
-        'Jun',
-        'Jul',
-        'Aug',
-        'Sep',
-        'Oct',
-        'Nov',
-        'Dec',
-      ];
-      return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
-    } catch (_) {
-      return '';
-    }
+    final ist = ISTDateUtils.toIST(iso);
+    if (ist == null) return '';
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${months[ist.month - 1]} ${ist.day}, ${ist.year}';
   }
 
   Widget _buildFloatingRatingButton({required BookingHistoryData bookingData}) {
