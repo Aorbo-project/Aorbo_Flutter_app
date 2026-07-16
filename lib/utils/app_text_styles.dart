@@ -150,7 +150,7 @@ class AppTextStyles {
   static TextStyle trekCardPrice = TextStyle(
     fontSize: FontSize.s14,
     fontWeight: FontWeight.w800,
-    fontFamily: 'Roboto',
+    fontFamily: 'Poppins',
     color: CommonColors.blackColor,
   );
 
@@ -158,7 +158,7 @@ class AppTextStyles {
   static TextStyle trekCardPriceDiscounted = TextStyle(
     fontSize: FontSize.s14,
     fontWeight: FontWeight.w800,
-    fontFamily: 'Roboto',
+    fontFamily: 'Poppins',
     color: CommonColors.softGreen3,
   );
 
@@ -166,7 +166,7 @@ class AppTextStyles {
   static TextStyle trekCardOriginalPrice = TextStyle(
     fontSize: FontSize.s8,
     fontWeight: FontWeight.w400,
-    fontFamily: 'Roboto',
+    fontFamily: 'Poppins',
     decoration: TextDecoration.lineThrough,
   );
 

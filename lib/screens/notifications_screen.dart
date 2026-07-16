@@ -1,8 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:sizer/sizer.dart';
+import '../controller/notification_controller.dart';
 import '../utils/common_colors.dart';
 import '../utils/common_bottom_nav.dart';
 import '../utils/screen_constants.dart';
+
+String _relativeTime(DateTime? dt) {
+  if (dt == null) return '';
+  final diff = DateTime.now().difference(dt);
+  if (diff.inMinutes < 1) return 'Just now';
+  if (diff.inMinutes < 60) return '${diff.inMinutes} min ago';
+  if (diff.inHours < 24) return '${diff.inHours} hr ago';
+  if (diff.inDays == 1) return 'Yesterday';
+  if (diff.inDays < 7) return '${diff.inDays} days ago';
+  return '${(diff.inDays / 7).floor()} week(s) ago';
+}
+
+bool _isToday(DateTime? dt) {
+  if (dt == null) return false;
+  final now = DateTime.now();
+  return dt.year == now.year && dt.month == now.month && dt.day == now.day;
+}
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS
@@ -18,27 +37,6 @@ class _NC {
   static const iconBadgeBg = Color(0xFF111827);
   static const divider = Color(0xFFE2E8F0);
   static const shadow = Color(0x0A000000);
-}
-
-// ─────────────────────────────────────────────
-//  NOTIFICATION MODEL
-// ─────────────────────────────────────────────
-class _NotificationItem {
-  final String emoji;
-  final String title;
-  final String body;
-  final String time;
-  final bool isRead;
-  final bool isToday;
-
-  const _NotificationItem({
-    required this.emoji,
-    required this.title,
-    required this.body,
-    required this.time,
-    required this.isToday,
-    this.isRead = false,
-  });
 }
 
 // ─────────────────────────────────────────────
@@ -58,101 +56,18 @@ class _NotificationScreenState extends State<NotificationScreen>
 
   late final AnimationController _fadeCtrl;
   late final Animation<double> _fade;
+  final NotificationController _controller = Get.put(NotificationController());
 
   final List<String> _filters = ['All', 'Unread'];
 
-  final List<_NotificationItem> _notifications = const [
-    _NotificationItem(
-      emoji: '🌄',
-      title: 'Adventure Awaits!',
-      body:
-          'New treks have just been added. Ready to discover your next great adventure? Start exploring today!',
-      time: '2 min ago',
-      isToday: true,
-      isRead: false,
-    ),
-    _NotificationItem(
-      emoji: '🧗‍♂️',
-      title: 'Ready to Trek?',
-      body:
-          'The trails are calling! Book your next unforgettable trek and create memories that last forever.',
-      time: '1 hr ago',
-      isToday: true,
-      isRead: false,
-    ),
-    _NotificationItem(
-      emoji: '🧗‍♂️',
-      title: 'Ready to Trek?',
-      body:
-          'The trails are calling! Book your next unforgettable trek and create memories that last forever.',
-      time: 'Yesterday',
-      isToday: false,
-      isRead: true,
-    ),
-    _NotificationItem(
-      emoji: '🧗‍♂️',
-      title: 'Ready to Trek?',
-      body:
-          'The trails are calling! Book your next unforgettable trek and create memories that last forever.',
-      time: 'Yesterday',
-      isToday: false,
-      isRead: true,
-    ),
-    _NotificationItem(
-      emoji: '🧗‍♂️',
-      title: 'Ready to Trek?',
-      body:
-          'The trails are calling! Book your next unforgettable trek and create memories that last forever.',
-      time: '2 days ago',
-      isToday: false,
-      isRead: true,
-    ),
-    _NotificationItem(
-      emoji: '🧗‍♂️',
-      title: 'Ready to Trek?',
-      body:
-          'The trails are calling! Book your next unforgettable trek and create memories that last forever.',
-      time: '2 days ago',
-      isToday: false,
-      isRead: true,
-    ),
-    _NotificationItem(
-      emoji: '🧗‍♂️',
-      title: 'Ready to Trek?',
-      body:
-          'The trails are calling! Book your next unforgettable trek and create memories that last forever.',
-      time: '3 days ago',
-      isToday: false,
-      isRead: true,
-    ),
-    _NotificationItem(
-      emoji: '🧗‍♂️',
-      title: 'Ready to Trek?',
-      body:
-          'The trails are calling! Book your next unforgettable trek and create memories that last forever.',
-      time: '5 days ago',
-      isToday: false,
-      isRead: true,
-    ),
-    _NotificationItem(
-      emoji: '🧗‍♂️',
-      title: 'Ready to Trek?',
-      body:
-          'The trails are calling! Book your next unforgettable trek and create memories that last forever.',
-      time: '1 week ago',
-      isToday: false,
-      isRead: true,
-    ),
-  ];
-
-  List<_NotificationItem> get _filtered {
+  List<NotificationItem> get _filtered {
     if (_selectedFilter == 'Unread') {
-      return _notifications.where((n) => !n.isRead).toList();
+      return _controller.notifications.where((n) => !n.isRead).toList();
     }
-    return _notifications;
+    return _controller.notifications;
   }
 
-  int get _unreadCount => _notifications.where((n) => !n.isRead).length;
+  int get _unreadCount => _controller.unreadCount.value;
 
   @override
   void initState() {
@@ -162,6 +77,7 @@ class _NotificationScreenState extends State<NotificationScreen>
       duration: const Duration(milliseconds: 500),
     )..forward();
     _fade = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
+    _controller.fetchNotifications();
   }
 
   @override
@@ -171,7 +87,7 @@ class _NotificationScreenState extends State<NotificationScreen>
   }
 
   // ── Notification card ─────────────────────────────────────────────────────
-  Widget _buildNotificationCard(_NotificationItem item, int index) {
+  Widget _buildNotificationCard(NotificationItem item, int index) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
       duration: Duration(milliseconds: 280 + index * 55),
@@ -183,7 +99,9 @@ class _NotificationScreenState extends State<NotificationScreen>
           child: child,
         ),
       ),
-      child: Container(
+      child: GestureDetector(
+        onTap: () => _controller.markAsRead(item),
+        child: Container(
         margin: const EdgeInsets.only(bottom: 10),
         decoration: BoxDecoration(
           color: item.isRead ? _NC.cardBg : _NC.accent.withValues(alpha: 0.04),
@@ -207,7 +125,6 @@ class _NotificationScreenState extends State<NotificationScreen>
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Emoji avatar — the existing emoji from original notification data
               Container(
                 width: 11.w,
                 height: 11.w,
@@ -219,7 +136,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                 ),
                 child: Center(
                   child: Text(
-                    item.emoji,
+                    '🔔',
                     style: TextStyle(fontSize: FontSize.s20),
                   ),
                 ),
@@ -263,7 +180,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      item.body,
+                      item.message,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -283,7 +200,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                         ),
                         const SizedBox(width: 3),
                         Text(
-                          item.time,
+                          _relativeTime(item.createdAt),
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontSize: FontSize.s8,
@@ -297,6 +214,7 @@ class _NotificationScreenState extends State<NotificationScreen>
               ),
             ],
           ),
+        ),
         ),
       ),
     );
@@ -395,10 +313,6 @@ class _NotificationScreenState extends State<NotificationScreen>
 
   @override
   Widget build(BuildContext context) {
-    final filtered = _filtered;
-    final todayItems = filtered.where((n) => n.isToday).toList();
-    final earlierItems = filtered.where((n) => !n.isToday).toList();
-
     return Scaffold(
       backgroundColor: _NC.bg,
       appBar: AppBar(
@@ -478,35 +392,47 @@ class _NotificationScreenState extends State<NotificationScreen>
             Container(
               color: Colors.white,
               padding: EdgeInsets.fromLTRB(4.w, 1.5.h, 4.w, 1.5.h),
-              child: Row(children: _filters.map(_buildFilterChip).toList()),
+              child: Obx(() => Row(children: _filters.map(_buildFilterChip).toList())),
             ),
             Container(height: 1, color: _NC.divider),
 
             // List
             Expanded(
-              child: filtered.isEmpty
-                  ? _buildEmptyState()
-                  : ListView(
-                      physics: const BouncingScrollPhysics(),
-                      padding: EdgeInsets.fromLTRB(4.w, 1.5.h, 4.w, 4.h),
-                      children: [
-                        if (todayItems.isNotEmpty) ...[
-                          _buildSectionLabel('TODAY'),
-                          ...todayItems.asMap().entries.map(
-                            (e) => _buildNotificationCard(e.value, e.key),
-                          ),
-                        ],
-                        if (earlierItems.isNotEmpty) ...[
-                          _buildSectionLabel('EARLIER'),
-                          ...earlierItems.asMap().entries.map(
-                            (e) => _buildNotificationCard(
-                              e.value,
-                              todayItems.length + e.key,
-                            ),
-                          ),
-                        ],
+              child: Obx(() {
+                if (_controller.isLoading.value && _controller.notifications.isEmpty) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                final filtered = _filtered;
+                final todayItems = filtered.where((n) => _isToday(n.createdAt)).toList();
+                final earlierItems = filtered.where((n) => !_isToday(n.createdAt)).toList();
+
+                if (filtered.isEmpty) return _buildEmptyState();
+
+                return RefreshIndicator(
+                  onRefresh: _controller.fetchNotifications,
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                    padding: EdgeInsets.fromLTRB(4.w, 1.5.h, 4.w, 4.h),
+                    children: [
+                      if (todayItems.isNotEmpty) ...[
+                        _buildSectionLabel('TODAY'),
+                        ...todayItems.asMap().entries.map(
+                          (e) => _buildNotificationCard(e.value, e.key),
+                        ),
                       ],
-                    ),
+                      if (earlierItems.isNotEmpty) ...[
+                        _buildSectionLabel('EARLIER'),
+                        ...earlierItems.asMap().entries.map(
+                          (e) => _buildNotificationCard(
+                            e.value,
+                            todayItems.length + e.key,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                );
+              }),
             ),
           ],
         ),

@@ -270,7 +270,7 @@ class _AboutUsScreenState extends State<AboutUsScreen>
                     SizedBox(height: 1.h),
                     Text(
                       aboutUsData.title,
-                      style: GoogleFonts.playfairDisplay(
+                      style: GoogleFonts.poppins(
                         fontSize: FontSize.s22,
                         fontWeight: FontWeight.w700,
                         color: _C.white,

@@ -114,7 +114,7 @@ class TotalFareModal extends StatelessWidget {
                     children: [
                       Text(
                         'Fare Breakup',
-                        style: GoogleFonts.alexandria(
+                        style: GoogleFonts.poppins(
                           fontSize: 16.sp,
                           fontWeight: FontWeight.w600,
                           color: const Color(0xFF0F172A),

@@ -193,7 +193,7 @@ class SlotBookingDetailsModal extends StatelessWidget {
                             Text(
                               departureDate,
                               textScaler: const TextScaler.linear(1.0),
-                              style: GoogleFonts.roboto(
+                              style: GoogleFonts.poppins(
                                 fontSize: FontSize.s9,
                                 fontWeight: FontWeight.w500,
                                 color: CommonColors.blackColor,
@@ -205,7 +205,7 @@ class SlotBookingDetailsModal extends StatelessWidget {
                       Text(
                         fromLocation,
                         textScaler: const TextScaler.linear(1.0),
-                        style: GoogleFonts.roboto(
+                        style: GoogleFonts.poppins(
                           fontSize: FontSize.s9,
                           fontWeight: FontWeight.w300,
                           color: CommonColors.blackColor,
@@ -232,7 +232,7 @@ class SlotBookingDetailsModal extends StatelessWidget {
                       textAlign: TextAlign.center,
                       textScaler: const TextScaler.linear(1.0),
                       formatDuration(duration),
-                      style: GoogleFonts.roboto(
+                      style: GoogleFonts.poppins(
                         fontSize: FontSize.s10,
                         fontWeight: FontWeight.w300,
                         color: CommonColors.blackColor,
@@ -252,7 +252,7 @@ class SlotBookingDetailsModal extends StatelessWidget {
                             Text(
                               calculateEndDate(departureDate, duration),
                               textScaler: const TextScaler.linear(1.0),
-                              style: GoogleFonts.roboto(
+                              style: GoogleFonts.poppins(
                                 fontSize: FontSize.s9,
                                 fontWeight: FontWeight.w500,
                                 color: CommonColors.blackColor,
@@ -264,7 +264,7 @@ class SlotBookingDetailsModal extends StatelessWidget {
                       Text(
                         toLocation,
                         textScaler: const TextScaler.linear(1.0),
-                        style: GoogleFonts.roboto(
+                        style: GoogleFonts.poppins(
                           fontSize: FontSize.s9,
                           fontWeight: FontWeight.w300,
                           color: CommonColors.blackColor,

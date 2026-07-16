@@ -618,7 +618,7 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
                     ),
                     child: Text(
                       _referralCode,
-                      style: GoogleFonts.sourceCodePro(
+                      style: GoogleFonts.poppins(
                         fontSize: FontSize.s14,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 3,

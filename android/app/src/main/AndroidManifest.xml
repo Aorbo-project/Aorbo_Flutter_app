@@ -44,6 +44,19 @@
             <action android:name="android.intent.action.PROCESS_TEXT" />
             <data android:mimeType="text/plain" />
         </intent>
+        <!-- Required since Android 11 (API 30) package-visibility rules —
+             without this, the app cannot resolve/launch installed UPI apps
+             via intent for Razorpay's UPI checkout. Missing this exactly
+             explains "works for GPay/Paytm/cards, hangs only on PhonePe":
+             Razorpay's SDK bundles its own <queries> for some well-known UPI
+             apps, but this app's own manifest declared none, so any UPI app
+             not already covered by Razorpay's bundled list becomes
+             unresolvable and the payment intent hand-off silently fails. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="upi" />
+        </intent>
+        <package android:name="com.phonepe.app" />
     </queries>
     <meta-data
         android:name="io.flutter.embedding.android.EnableImpeller"

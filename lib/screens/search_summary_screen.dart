@@ -6,6 +6,7 @@ import 'package:arobo_app/models/city_model.dart';
 import 'package:arobo_app/screens/source_location_screen.dart';
 import 'package:arobo_app/screens/trek_details_screen.dart';
 import 'package:arobo_app/utils/app_theme.dart';
+import 'package:arobo_app/utils/arobo_theme.dart';
 import 'package:arobo_app/utils/common_discount_card.dart';
 import 'package:arobo_app/utils/common_filter_bar.dart';
 import 'package:arobo_app/utils/common_trek_card.dart';

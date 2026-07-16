@@ -186,7 +186,7 @@ class _CouponCardState extends State<CouponCard> {
                                 : null,
                             child: Text(
                               isApplied ? "Applied" : "Apply",
-                              style: GoogleFonts.roboto(
+                              style: GoogleFonts.poppins(
                                 fontSize: FontSize.s12,
                                 letterSpacing: 1,
                                 fontWeight: FontWeight.w500,

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:arobo_app/main.dart';
@@ -129,12 +130,20 @@ class Repository {
     try {
       if (internetAvailable) {
         final opts = await _authOptions();
-        Response response = await dio.get(url, options: opts);
+        // dio's connectTimeout/receiveTimeout reset on every received byte,
+        // so a very slow "trickle" connection can keep resetting them and
+        // hang far longer than the nominal timeout. This explicit wall-clock
+        // timeout is a hard upper bound regardless of that.
+        Response response = await dio
+            .get(url, options: opts)
+            .timeout(const Duration(seconds: 45));
         return response.data;
       } else {
         showToastMessage(msg: "Please check your internet connection and try.");
         return null;
       }
+    } on TimeoutException {
+      throw Exception("Request timed out. Please check your connection and try again.");
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionTimeout) {
         throw Exception("Connection Timeout Exception");
@@ -153,7 +162,9 @@ class Repository {
     try {
       if (internetAvailable) {
         final opts = await _authOptions();
-        Response response = await dio.post(url, data: body, options: opts);
+        Response response = await dio
+            .post(url, data: body, options: opts)
+            .timeout(const Duration(seconds: 45));
         return response.data;
       } else {
         noInternetDialog(onRetry: () async {
@@ -161,6 +172,8 @@ class Repository {
         });
         return null;
       }
+    } on TimeoutException {
+      throw Exception("Request timed out. Please check your connection and try again.");
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionTimeout) {
         throw Exception("Connection Timeout Exception");
@@ -198,7 +211,9 @@ class Repository {
     try {
       if (internetAvailable) {
         final opts = await _authOptions();
-        Response response = await dio.put(url, data: body, options: opts);
+        Response response = await dio
+            .put(url, data: body, options: opts)
+            .timeout(const Duration(seconds: 45));
         return response.data;
       } else {
         noInternetDialog(onRetry: () async {
@@ -206,6 +221,8 @@ class Repository {
         });
         return null;
       }
+    } on TimeoutException {
+      throw Exception("Request timed out. Please check your connection and try again.");
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionTimeout) {
         throw Exception("Connection Timeout Exception");
@@ -224,7 +241,9 @@ class Repository {
     try {
       if (internetAvailable) {
         final opts = await _authOptions();
-        Response response = await dio.patch(url, data: body, options: opts);
+        Response response = await dio
+            .patch(url, data: body, options: opts)
+            .timeout(const Duration(seconds: 45));
         return response.data;
       } else {
         noInternetDialog(onRetry: () async {
@@ -232,6 +251,8 @@ class Repository {
         });
         return null;
       }
+    } on TimeoutException {
+      throw Exception("Request timed out. Please check your connection and try again.");
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionTimeout) {
         throw Exception("Connection Timeout Exception");
@@ -250,7 +271,9 @@ class Repository {
     try {
       if (internetAvailable) {
         final opts = await _authOptions();
-        Response response = await dio.delete(url, options: opts);
+        Response response = await dio
+            .delete(url, options: opts)
+            .timeout(const Duration(seconds: 45));
         return response.data;
       } else {
         noInternetDialog(onRetry: () async {
@@ -258,6 +281,8 @@ class Repository {
         });
         return null;
       }
+    } on TimeoutException {
+      throw Exception("Request timed out. Please check your connection and try again.");
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionTimeout) {
         throw Exception("Connection Timeout Exception");

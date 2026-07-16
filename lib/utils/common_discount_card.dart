@@ -338,7 +338,7 @@ class CommonDiscountCard extends StatelessWidget {
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       textScaler: const TextScaler.linear(1.0),
-                                      style: GoogleFonts.archivoBlack(
+                                      style: GoogleFonts.poppins(
                                         fontWeight: FontWeight.w400,
                                         color: Colors.black,
                                         fontSize: 8.sp,
