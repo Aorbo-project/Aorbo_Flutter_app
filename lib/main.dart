@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui';
 
+import 'package:arobo_app/controller/auth_controller.dart';
 import 'package:arobo_app/firebase_options.dart';
 import 'package:arobo_app/repository/repository.dart';
 import 'package:arobo_app/routes/routes.dart';
@@ -114,13 +115,57 @@ void _deferredInit() {
     // setForegroundNotificationPresentationOptions.
     FirebaseMessaging.onMessage.listen((_) {});
 
-    // Tapped from background: navigate to the relevant screen based on payload type.
+    // Firebase can rotate the device token at any time (reinstall, app data
+    // clear, token expiry) — previously nothing re-registered it with the
+    // backend, so a rotated token silently went stale for the rest of the
+    // session.
+    FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
+      try {
+        Get.find<AuthController>().registerFcmToken(newToken);
+      } catch (e) {
+        debugPrint('onTokenRefresh: AuthController not available yet: $e');
+      }
+    });
+
+    // Tapped from background: navigate based on the backend's event name
+    // (see services/notify/pushChannel.js — every push includes `event` in
+    // its data payload). Falls back to the legacy `type == 'booking'` check
+    // for any already-queued notification still using the old shape.
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      final event = message.data['event'];
+      final bookingId = message.data['bookingId'] ?? message.data['id'];
+
+      switch (event) {
+        case 'BOOKING_CONFIRMED':
+        case 'TREK_REMINDER':
+        case 'TREK_DEPARTURE_SOON':
+        case 'TREK_CANCELLED_BY_VENDOR':
+        case 'BOOKING_PAYMENT_FAILED':
+          Get.toNamed(
+            '/my-bookings',
+            arguments: {'booking_id': int.tryParse(bookingId?.toString() ?? '')},
+          );
+          return;
+        case 'REFUND_INITIATED':
+        case 'REFUND_COMPLETED':
+        case 'REFUND_ISSUED':
+        case 'SLOT_SOLD_OUT_REFUND':
+          Get.toNamed(
+            '/my-bookings',
+            arguments: {'booking_id': int.tryParse(bookingId?.toString() ?? '')},
+          );
+          return;
+        case 'COUPON_EXPIRING':
+          Get.toNamed('/coupon-code');
+          return;
+      }
+
+      // Legacy fallback — pre-catalog notifications only sent `type`/`id`.
       final type = message.data['type'];
       final id = message.data['id'];
       if (type == 'booking' && id != null) {
         Get.toNamed(
-          '/booking-upcoming',
+          '/my-bookings',
           arguments: {'booking_id': int.tryParse(id.toString())},
         );
       }

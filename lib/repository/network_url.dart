@@ -29,6 +29,9 @@ class NetworkUrl {
   static const String verifyOtpPath = 'customer/auth/verify-otp';
   static const String logoutPath    = 'customer/auth/logout';
   static const String deviceToken   = 'customer/device-token';
+  static const String notifications = 'customer/notifications';
+  static String notificationRead(int id) => 'customer/notifications/$id/read';
+  static const String notificationReadAll = 'customer/read-all';
   static const String getFaqs       = 'customer/faqs';
   static String chatbotReply(String msg) => 'customer/chatbot/reply?message=${Uri.encodeComponent(msg)}';
 

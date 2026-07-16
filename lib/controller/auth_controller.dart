@@ -184,11 +184,14 @@ class AuthController extends GetxController {
     }
   }
 
-  // Fire-and-forget: register FCM token with backend after successful auth.
+  // Fire-and-forget: register FCM token with backend after successful auth,
+  // or whenever Firebase rotates the token (see main.dart's onTokenRefresh
+  // listener) — a rotated token was never re-sent before, silently going
+  // stale for any session that outlived the original token.
   // Errors are non-fatal — user is already logged in.
-  Future<void> registerFcmToken() async {
+  Future<void> registerFcmToken([String? tokenOverride]) async {
     try {
-      final fcmToken = await FirebaseMessaging.instance.getToken();
+      final fcmToken = tokenOverride ?? await FirebaseMessaging.instance.getToken();
       if (fcmToken == null) return;
       final platform = Platform.isIOS ? 'ios' : 'android';
       await repository.postApiCall(
