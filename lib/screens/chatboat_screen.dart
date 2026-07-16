@@ -1021,7 +1021,7 @@ class MarkdownText extends StatelessWidget {
         spans.add(TextSpan(
           text: matchedStr.substring(1, matchedStr.length - 1),
           style: style.copyWith(
-            fontFamily: 'monospace',
+            fontFamily: 'Poppins',
             backgroundColor: Colors.grey.withValues(alpha: 0.1),
           ),
         ));

@@ -2,14 +2,13 @@ import 'dart:math';
 import 'dart:async';
 
 import 'package:arobo_app/freezed_models/booking/booking_data_model.dart';
-import 'package:arobo_app/screens/booking_upcoming_screen.dart';
 import 'package:arobo_app/screens/coupon_code_screen.dart';
+import 'package:arobo_app/screens/payment_processing_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:sizer/sizer.dart';
 
 import 'package:arobo_app/controller/dashboard_controller.dart';
@@ -79,15 +78,20 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
   // Payment & Coupon State
   bool _isTripExpanded = false;
   bool _isCouponExpanded = true;
-  bool _isProcessingPayment = false;
-  bool _showPaymentError = false;
-  String _paymentErrorMessage = '';
+
+  // The actual payment UI/Razorpay/verification/retry logic now lives
+  // entirely in PaymentProcessingScreen (its own dedicated page, not an
+  // overlay on top of this one — Checkout's own AppBar/timer/Pay Now button
+  // used to bleed through the old overlay since it only covered the Stack's
+  // body, not the Scaffold's AppBar/bottomNavigationBar). This flag only
+  // exists so the fare-hold countdown below doesn't auto-pop this screen
+  // while the user is on that pushed screen actively paying.
+  bool _isPaymentInFlight = false;
 
   static const int _totalTimerSecs = 5 * 60;
   final RxInt _remainingSecs = _totalTimerSecs.obs;
   bool _isTimerExpired = false;
   Timer? _timer;
-  late Razorpay _razorpay;
 
   // Validation & Hints
   final GlobalKey _contactCardKey = GlobalKey();
@@ -136,11 +140,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
       _trekC.calculateFare();
     }, time: const Duration(milliseconds: 500));
 
-    _razorpay = Razorpay();
-    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
-    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
-    _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _syncTimerToExpiry(_currentFareResponse()?.expiresAt);
     });
@@ -160,7 +159,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
     _timer?.cancel();
     _hintTimer?.cancel();
     _shakeController.dispose();
-    _razorpay.clear();
     nameNode.dispose();
     _userC.nameControllerTraveller.value.clear();
     _userC.ageControllerTraveller.value.clear();
@@ -202,7 +200,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
   }
 
   void _handleTimerExpired() {
-    if (!mounted || _isProcessingPayment) return;
+    if (!mounted || _isPaymentInFlight) return;
     _isTimerExpired = true;
     CustomSnackBar.show(
       context,
@@ -265,231 +263,42 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
   }
 
   // ── PAYMENT LOGIC ────────────────────────────────────────────────────────
-  void _openRazorpay(BreakDownDataModel? breakdown) async {
-    try {
-      final params = _trekC.orderNextActionParams;
-      final options = {
-        'key': params['key'] ?? BookingConstants.razorpayKey,
-        'order_id': params['order_id'] ?? '${_trekC.orderData.value.id}',
-        'amount':
-            params['amount'] ??
-            (((_selectedPaymentOption == 'full'
-                            ? breakdown?.finalAmount
-                            : breakdown?.amountToPayNow) ??
-                        0) *
-                    100)
-                .toInt(),
-        'currency': params['currency'] ?? 'INR',
-        'name': params['name'] ?? '${_trekC.trekDetailData.value.title}',
-        'description':
-            params['description'] ??
-            '${_trekC.trekDetailData.value.description}',
-        'prefill': {
-          'contact': '${_userC.userProfileData.value.customer?.phone}',
-          'email': '${_userC.userProfileData.value.customer?.email}',
-        },
-      };
-      _razorpay.open(options);
-    } catch (e) {
-      CustomSnackBar.show(
-        context,
-        message: 'Failed to open payment: ${e.toString()}',
-      );
-    }
-  }
-
-  Future<void> _handlePaymentSuccess(PaymentSuccessResponse r) async {
-    _trekC.orderId.value = r.orderId ?? '';
-    _trekC.paymentId.value = r.paymentId ?? '';
-    _trekC.signature.value = r.signature ?? '';
-
-    final verified = await _trekC.verifyTrekOrder(
-      razorpayOrderId: r.orderId ?? '',
-      razorpayPaymentId: r.paymentId ?? '',
-      razorpaySignature: r.signature ?? '',
-    );
-
-    if (!verified && mounted) {
-      setState(() {
-        _isProcessingPayment = false;
-        _showPaymentError = true;
-        _paymentErrorMessage = _trekC.errorMessage.value.isNotEmpty
-            ? _trekC.errorMessage.value
-            : 'Your payment went through, but we could not confirm it yet. Please retry.';
-      });
-      return;
-    }
-
-    if (verified && mounted) {
-      final String bookingId =
-          (_trekC.verifyOrderModal.value.data?.id ??
-                  _trekC.orderData.value.id ??
-                  '')
-              .toString();
-
-      setState(() => _isProcessingPayment = false);
-
-      _trekC.clearBookingData();
-      _dashboardC.clearSearchAndBookingData();
-
-      Get.off(
-        () => BookingsUpcomingScreen(bookingId: bookingId),
-        transition: Transition.rightToLeftWithFade,
-        duration: const Duration(milliseconds: 350),
-      );
-    }
-  }
-
-  Future<void> _handlePaymentError(PaymentFailureResponse r) async {
-    if (!mounted) return;
-
-    final orderId =
-        _trekC.orderData.value.id ??
-        _trekC.orderNextActionParams['order_id']?.toString() ??
-        '';
-    if (orderId.isNotEmpty) {
-      final status = await _trekC.checkOrderStatus(orderId);
-      if (status?['status'] == 'paid' && mounted) {
-        setState(() => _isProcessingPayment = false);
-        _trekC.clearBookingData();
-        Get.offNamedUntil('/my-bookings', ModalRoute.withName('/dashboard'));
-        CustomSnackBar.show(
-          Get.context!,
-          message: 'Good news — your payment actually went through.',
-        );
-        return;
-      }
-    }
-
-    if (!mounted) return;
-    setState(() {
-      _isProcessingPayment = false;
-      _showPaymentError = true;
-      _paymentErrorMessage = (r.message?.isNotEmpty ?? false)
-          ? r.message!
-          : 'Payment was not completed.';
-    });
-  }
-
+  // Only responsible for creating the order and handing off to the
+  // dedicated PaymentProcessingScreen — everything past that point
+  // (Razorpay, verification, retries, real-status polling) lives there,
+  // on its own page, driven by real backend state.
   Future<void> _handlePayNow() async {
-    if (!_validateBeforePayment()) return;
+    if (!_validateBeforePayment() || _isPaymentInFlight) return;
 
-    setState(() {
-      _isProcessingPayment = true;
-      _showPaymentError = false;
-    });
+    setState(() => _isPaymentInFlight = true);
 
     _trekC.createOrderRequestModel.value = _trekC.createOrderRequestModel.value
         .copyWith(travelers: selectedTravellers.toList());
 
     await _trekC.createTrekOrder();
+
+    if (!mounted) return;
+
     if (_trekC.orderModal.value.success ?? false) {
-      _openRazorpay(
-        _trekC.calculateFareResponseModel.value.maybeWhen(
-          success: (r) => (r as CalculateFareResponseModel).breakdown,
-          orElse: () => null,
+      final breakdown = _trekC.calculateFareResponseModel.value.maybeWhen(
+        success: (r) => (r as CalculateFareResponseModel).breakdown,
+        orElse: () => null,
+      );
+      await Get.to(
+        () => PaymentProcessingScreen(
+          breakdown: breakdown,
+          selectedPaymentOption: _selectedPaymentOption,
         ),
       );
-    } else if (mounted) {
-      setState(() {
-        _isProcessingPayment = false;
-        _showPaymentError = true;
-        _paymentErrorMessage = _trekC.errorMessage.value.isNotEmpty
-            ? _trekC.errorMessage.value
-            : 'Could not start payment. Please try again.';
-      });
-    }
-  }
-
-  Future<void> _retryPayment() async {
-    setState(() {
-      _showPaymentError = false;
-      _isProcessingPayment = true;
-    });
-
-    final hasCapturedPayment = _trekC.paymentId.value.isNotEmpty;
-    final existingOrderId =
-        _trekC.orderData.value.id ??
-        _trekC.orderNextActionParams['order_id']?.toString();
-    final hasExistingOrder = (existingOrderId ?? '').isNotEmpty;
-
-    if (hasCapturedPayment) {
-      final verified = await _trekC.verifyTrekOrder(
-        razorpayOrderId: _trekC.orderId.value,
-        razorpayPaymentId: _trekC.paymentId.value,
-        razorpaySignature: _trekC.signature.value,
-      );
-      if (!verified && mounted) {
-        setState(() {
-          _isProcessingPayment = false;
-          _showPaymentError = true;
-          _paymentErrorMessage =
-              'Still could not confirm your payment. Please try again.';
-        });
-      }
-    } else if (hasExistingOrder) {
-      _openRazorpay(
-        _trekC.calculateFareResponseModel.value.maybeWhen(
-          success: (r) => (r as CalculateFareResponseModel).breakdown,
-          orElse: () => null,
-        ),
-      );
+      if (mounted) setState(() => _isPaymentInFlight = false);
     } else {
-      await _trekC.calculateFare();
-      final refreshed = _trekC.calculateFareResponseModel.value.maybeWhen(
-        success: (_) => true,
-        orElse: () => false,
+      setState(() => _isPaymentInFlight = false);
+      CustomSnackBar.show(
+        context,
+        message: _trekC.errorMessage.value.isNotEmpty
+            ? _trekC.errorMessage.value
+            : 'Could not start payment. Please try again.',
       );
-      if (!refreshed) {
-        if (mounted) {
-          setState(() {
-            _isProcessingPayment = false;
-            _showPaymentError = true;
-            _paymentErrorMessage = 'Could not refresh fare. Please try again.';
-          });
-        }
-        return;
-      }
-      await _handlePayNow();
-    }
-  }
-
-  void _handleExternalWallet(ExternalWalletResponse r) {
-    CustomSnackBar.show(
-      context,
-      message:
-          'You have chosen to pay via ${r.walletName}. It may take some time to reflect.',
-    );
-  }
-
-  Future<void> _showCancelPaymentDialog() async {
-    final leave = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Cancel Payment?'),
-        content: const Text(
-          'Your payment is still being processed. If any amount was already '
-          'deducted, it will never be charged twice — your booking will still '
-          'go through safely once confirmed. Are you sure you want to leave?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Stay'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(
-              'Leave Anyway',
-              style: TextStyle(color: CommonColors.appRedColor),
-            ),
-          ),
-        ],
-      ),
-    );
-    if (leave == true && mounted) {
-      setState(() => _isProcessingPayment = false);
-      Get.back();
     }
   }
 
@@ -731,8 +540,12 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
   }
 
   void _showContactDetailsBottomSheet({bool isEdit = false}) {
+    // Phone is always locked (login identity, never editable here) — so it
+    // should always show the customer's actual login number, not just on
+    // the "Edit" path. Gating this on isEdit left it blank on first-time
+    // "Add Contact Details" even though the number was already known.
     _userC.phoneNumberController.value.text =
-        (isEdit && _userC.userProfileData.value.customer?.phone != null)
+        _userC.userProfileData.value.customer?.phone != null
         ? _userC.userProfileData.value.customer!.phone!.replaceFirst('+91', '')
         : '';
     _userC.emailController.value.text =
@@ -1168,11 +981,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: !_isProcessingPayment,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        _showCancelPaymentDialog();
-      },
+      canPop: !_isPaymentInFlight,
       child: Scaffold(
         backgroundColor: _TI.bg,
         appBar: _buildAppBar(),
@@ -1217,52 +1026,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
               ),
             ),
 
-            // Processing Payment Overlay
-            if (_isProcessingPayment && !_showPaymentError)
-              Positioned.fill(
-                child: Container(
-                  // Use a completely opaque color (white or _TI.bg)
-                  // so the underlying TravellerInformationScreen is 100% hidden.
-                  color: _TI.bg,
-                  child: Center(
-                    child: Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: _TI.cardBg,
-                        borderRadius: BorderRadius.circular(4.w),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
-                            blurRadius: 20,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const CircularProgressIndicator(
-                            color: _TI.brand,
-                            strokeWidth: 2.5,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Confirming your payment...',
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 12.sp,
-                              color: _TI.inkMid,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
-            if (_showPaymentError) _buildPaymentErrorOverlay(),
             if (_hintMessage != null) _buildHintPopup(),
           ],
         ),
@@ -2151,7 +1914,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                             children: [
                               TextSpan(
                                 text: '₹ ',
-                                style: GoogleFonts.roboto(
+                                style: GoogleFonts.poppins(
                                   fontSize: 14.sp,
                                   fontWeight: FontWeight.w600,
                                   color: CommonColors.softGreen2,
@@ -2190,7 +1953,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                   fontSize: 12.sp,
                   fontWeight: FontWeight.w600,
                   fontFamily: 'Poppins',
-                  isDisabled: _isProcessingPayment,
+                  isDisabled: _isPaymentInFlight,
                   onPressed: _handlePayNow,
                   gradient: CommonColors.filterGradient,
                   textColor: CommonColors.whiteColor,
@@ -2243,82 +2006,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                 ),
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPaymentErrorOverlay() {
-    return Positioned.fill(
-      child: Container(
-        color: Colors.black.withValues(alpha: 0.45),
-        child: Center(
-          child: Container(
-            margin: EdgeInsets.symmetric(horizontal: 8.w),
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: _TI.cardBg,
-              borderRadius: BorderRadius.circular(4.w),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.error_outline_rounded,
-                  size: 40,
-                  color: CommonColors.appRedColor,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Something went wrong',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w700,
-                    color: _TI.ink,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  _paymentErrorMessage,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 10.sp,
-                    color: _TI.inkMid,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Get.back(),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: _TI.inkMid,
-                          side: BorderSide(color: _TI.divider),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        child: const Text('GO BACK'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: _isProcessingPayment ? null : _retryPayment,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _TI.brand,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        child: const Text('RETRY'),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
           ),
         ),
       ),

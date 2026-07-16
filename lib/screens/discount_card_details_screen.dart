@@ -135,7 +135,7 @@ class DiscountCardDetailsScreen extends StatelessWidget {
                           children: [
                             Text(
                               discountCard.code,
-                              style: GoogleFonts.archivoBlack(
+                              style: GoogleFonts.poppins(
                                 fontSize: FontSize.s11,
                                 letterSpacing: 0.5,
                                   color: AppTheme.hexToColor(discountCard.textColour),

@@ -4,7 +4,6 @@ import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 import 'package:sizer/sizer.dart';
 import '../utils/common_images.dart';
 
@@ -45,7 +44,6 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
 
   List<String> _filteredList = [];
   bool _isFromFocused = true;
-  bool _isFetchingCalendar = false;
 
   // Animations
   late final AnimationController _listFadeCtrl;
@@ -142,24 +140,7 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
     });
   }
 
-  Future<void> _fetchCalendarDates() async {
-    if (_dashboardC.selectedCityId.value == 0 ||
-        _dashboardC.selectedTrekId.value == 0) {
-      return;
-    }
-    final now   = DateTime.now();
-    final later = now.add(const Duration(days: 90));
-    await _dashboardC.fetchCalenderTrekDates(
-      cityId:   _dashboardC.selectedCityId.value,
-      trekId:   _dashboardC.selectedTrekId.value,
-      statDate: DateFormat('yyyy-MM-dd').format(now),
-      endDate:  DateFormat('yyyy-MM-dd').format(later),
-    );
-  }
-
   Future<void> _onItemTap(String value) async {
-    if (_isFetchingCalendar) return;
-
     if (_isFromFocused) {
       final city = _dashboardC.citiesData.value.data
           ?.firstWhereOrNull((c) => c.cityName == value);
@@ -175,15 +156,18 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
     } else {
       final trek = _dashboardC.trekData.value.data
           ?.firstWhereOrNull((t) => t.name == value);
+      // Setting selectedTrekId here is the only trigger needed — DashboardController's
+      // own ever(selectedTrekId, ...) listener (dashboard_controller.dart) picks this up
+      // and runs the single, debounced, canonical calendar fetch. A second direct fetch
+      // used to run right here too, racing that listener's fetch for the same city/trek
+      // and letting whichever response landed last silently overwrite the other —
+      // most visible as a flickering/inconsistent calendar when a route had no treks.
       _dashboardC.selectedTrekId.value = trek?.id ?? 0;
       _dashboardC.toController.value.text = value;
       _toCtrl.text = value;
       _toFocus.unfocus();
 
       if (_fromCtrl.text.isNotEmpty && _toCtrl.text.isNotEmpty) {
-        setState(() => _isFetchingCalendar = true);
-        await _fetchCalendarDates();
-        if (mounted) setState(() => _isFetchingCalendar = false);
         Get.back();
       }
     }
@@ -551,7 +535,7 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
               ),
               child: _ListItem(
                 label: item,
-                disabled: _isFetchingCalendar,
+                disabled: false,
                 onTap: () => _onItemTap(item),
               ),
             );

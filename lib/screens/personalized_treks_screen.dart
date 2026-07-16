@@ -189,7 +189,7 @@ class _PersonalizedTreksScreenState extends State<PersonalizedTreksScreen> {
                             Text(
                               'Traveller Details',
                               textScaler: const TextScaler.linear(1.0),
-                              style: GoogleFonts.alexandria(
+                              style: GoogleFonts.poppins(
                                 fontSize: FontSize.s14,
                                 fontWeight: FontWeight.w500,
                                 color: CommonColors.blackColor,
@@ -262,7 +262,7 @@ class _PersonalizedTreksScreenState extends State<PersonalizedTreksScreen> {
                             Text(
                               'Contact Details',
                               textScaler: const TextScaler.linear(1.0),
-                              style: GoogleFonts.alexandria(
+                              style: GoogleFonts.poppins(
                                 fontSize: FontSize.s14,
                                 fontWeight: FontWeight.w500,
                                 color: CommonColors.blackColor,
