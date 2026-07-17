@@ -185,22 +185,55 @@ class AuthController extends GetxController {
   }
 
   // Fire-and-forget: register FCM token with backend after successful auth,
-  // or whenever Firebase rotates the token (see main.dart's onTokenRefresh
-  // listener) — a rotated token was never re-sent before, silently going
-  // stale for any session that outlived the original token.
-  // Errors are non-fatal — user is already logged in.
+  // whenever Firebase rotates the token (see main.dart's onTokenRefresh
+  // listener), and on every app open for an already-logged-in session (see
+  // splash_screen.dart's checkUserLogin branch) — a session that never
+  // logs in again (the common case once profileCompleted) would otherwise
+  // never get a second chance to register a token that failed once.
+  //
+  // Retries a few times with backoff for transient failures (no internet,
+  // timeout, 5xx) since those resolve on their own; does NOT retry on 4xx
+  // (bad request/unauthenticated) since retrying the same call won't fix that.
+  // If every attempt fails, `fcmTokenSynced` is left stale/absent on purpose
+  // so the very next app open or token refresh tries again — nothing is
+  // silently given up on forever.
+  //
+  // Errors are non-fatal — user is already logged in regardless of outcome.
   Future<void> registerFcmToken([String? tokenOverride]) async {
     try {
       final fcmToken = tokenOverride ?? await FirebaseMessaging.instance.getToken();
       if (fcmToken == null) return;
+
+      // Already confirmed synced for this exact token — skip the network call.
+      if (sp?.getString(SpUtil.fcmTokenSynced) == fcmToken) return;
+
       final platform = Platform.isIOS ? 'ios' : 'android';
-      await repository.postApiCall(
-        url: NetworkUrl.deviceToken,
-        body: json.encode({'device_token': fcmToken, 'platform': platform}),
-      );
-      logger.d('FCM token registered');
+      const backoff = [Duration.zero, Duration(seconds: 3), Duration(seconds: 8)];
+
+      for (var attempt = 0; attempt < backoff.length; attempt++) {
+        if (attempt > 0) await Future.delayed(backoff[attempt]);
+        try {
+          final res = await repository.postApiCall(
+            url: NetworkUrl.deviceToken,
+            body: json.encode({'device_token': fcmToken, 'platform': platform}),
+          );
+          if (res != null && res['success'] == true) {
+            await sp?.putString(SpUtil.fcmTokenSynced, fcmToken);
+            logger.d('FCM token registered (attempt ${attempt + 1})');
+            return;
+          }
+          logger.w('FCM token registration returned non-success response: $res');
+        } catch (e) {
+          final msg = e.toString();
+          // Auth/validation errors won't be fixed by retrying the same request.
+          final isRetryable = !msg.contains('401') && !msg.contains('Unauthorized');
+          logger.e('FCM token registration attempt ${attempt + 1} failed: $e');
+          if (!isRetryable) return;
+        }
+      }
+      logger.e('FCM token registration failed after ${backoff.length} attempts — will retry on next app open or token refresh');
     } catch (e) {
-      logger.e('FCM token registration failed: $e');
+      logger.e('FCM token registration setup failed: $e');
     }
   }
 }

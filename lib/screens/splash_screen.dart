@@ -282,6 +282,11 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
           // }
 
           if (CommonLogics.checkUserLogin()) {
+            // Self-healing sync: catches a token that failed to register on
+            // a previous run (flaky network, brief backend outage) without
+            // waiting for this session's next login, which for a completed
+            // profile may never happen again.
+            _authC.registerFcmToken();
             Get.offAllNamed('/dashboard');
           } else {
             _startFormAnimation(); // Defined below, handles form slide up

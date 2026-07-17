@@ -15,6 +15,11 @@ class SpUtil {
   // whether this order already succeeded, instead of blindly reopening
   // checkout (or a duplicate charge attempt) on next launch.
   static const String pendingOrderId   = 'pending_razorpay_order_id';
+  // Last FCM token the backend confirmed it saved — compared against the
+  // current device token on every app open so a failed/skipped registration
+  // (flaky network, brief backend outage) gets retried on the next launch
+  // instead of leaving that customer without push forever.
+  static const String fcmTokenSynced   = 'fcm_token_synced';
 
   static SpUtil? _instance;
 
