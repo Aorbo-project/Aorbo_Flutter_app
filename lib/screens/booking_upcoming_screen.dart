@@ -1413,6 +1413,21 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
         statusColor = _TC.brand;
         statusBg = _TC.brandLight;
         statusIcon = Icons.sync_rounded;
+      } else if (statusData != null && statusData!.refundApplicable == false) {
+        // Cancellation was a full deduction (e.g. advance-only, non-
+        // refundable per policy) — there is no refund being processed at
+        // all, so "Pending"/"Checking..." is actively misleading here. The
+        // backend already knows this for certain (refund_applicable: false,
+        // refund_status stays null forever for this booking) — this branch
+        // was missing, so it fell through to the generic "still checking"
+        // state indefinitely for every zero-refund cancellation.
+        statusText = 'No Refund Applicable';
+        statusSubText =
+            statusData?.statusMessage ??
+            'This cancellation is not eligible for a refund per the policy terms.';
+        statusColor = _TC.inkMid;
+        statusBg = const Color(0xFFF1F5F9);
+        statusIcon = Icons.info_outline_rounded;
       } else {
         statusText = isPolling ? 'Checking Refund Status...' : 'Refund Pending';
         statusSubText = 'We are checking your refund status.';
@@ -1811,6 +1826,37 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                 Padding(
                   padding: EdgeInsets.symmetric(vertical: 4.h),
                   child: const Center(child: CircularProgressIndicator()),
+                )
+              else if (statusData != null && statusData!.refundApplicable == false)
+                // Full-deduction cancellation — a 3-step "Initiated / Processing
+                // / Credited" tracker would imply a refund is still coming when
+                // none ever will. Same gap as the summary card: nothing here
+                // checked refund_applicable before defaulting to the in-
+                // progress visual.
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 3.h),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline_rounded, color: _TC.inkMid, size: 5.w),
+                      SizedBox(width: 3.w),
+                      Expanded(
+                        child: Text(
+                          statusData?.statusMessage ??
+                              'This cancellation is not eligible for a refund per the policy terms.',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 11.sp,
+                            color: _TC.inkMid,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 )
               else ...[
                 _buildStatusStep(

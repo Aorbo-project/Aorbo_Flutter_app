@@ -250,9 +250,15 @@ class TrekController extends GetxController {
         url: NetworkUrl.refundStatus(bookingId),
       );
       if (response != null) {
-        refundStatusObserver.value = ApiResult.success(
-          RefundStatusModel.fromJson(response),
-        );
+        final model = RefundStatusModel.fromJson(response);
+        refundStatusObserver.value = ApiResult.success(model);
+        // A full-deduction cancellation's refund_status stays null forever —
+        // nothing was ever going to move it to processing/processed, so
+        // without this the 5-minute timer below ran indefinitely (until the
+        // screen closed) polling for a status that could never change.
+        if (model.nextAction == 'NO_REFUND_APPLICABLE') {
+          stopRefundPolling();
+        }
       }
     } catch (e) {
       // Non-fatal — polling failure should not surface an error to the user
