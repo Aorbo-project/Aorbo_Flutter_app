@@ -190,8 +190,13 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
     final endDate = ISTDateUtils.toIST(batch?.endDate);
 
     // Using source_city_name from backend
-    final String sourceCity =
-        booking.sourceCityName ?? (trek?.vendor?.city ?? 'N/A');
+    // sourceCityName is null only for bookings made before boarding-city
+    // selection was recorded (see Booking.city_id) — falling back to the
+    // vendor's registered city here previously showed a specific but
+    // essentially random city as if it were fact. Showing it as genuinely
+    // unrecorded is honest; a confident wrong answer is worse than "unknown"
+    // for a trip-critical detail like this.
+    final String sourceCity = booking.sourceCityName ?? 'Not available';
     final String destinationName =
         trek?.destinationName ?? trek?.title ?? 'N/A';
 
@@ -563,8 +568,13 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
     final bookingDate = ISTDateUtils.toIST(booking.bookingDate);
 
     // Extracting names from the new API response
-    final String sourceCity =
-        booking.sourceCityName ?? (trek?.vendor?.city ?? 'N/A');
+    // sourceCityName is null only for bookings made before boarding-city
+    // selection was recorded (see Booking.city_id) — falling back to the
+    // vendor's registered city here previously showed a specific but
+    // essentially random city as if it were fact. Showing it as genuinely
+    // unrecorded is honest; a confident wrong answer is worse than "unknown"
+    // for a trip-critical detail like this.
+    final String sourceCity = booking.sourceCityName ?? 'Not available';
     final String destinationName =
         trek?.destinationName ?? trek?.title ?? 'N/A';
 
