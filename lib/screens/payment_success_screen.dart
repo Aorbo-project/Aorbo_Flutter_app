@@ -423,6 +423,15 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
   void initState() {
     super.initState();
 
+    // Fire-and-forget: generate the invoice PDF (same one the customer can
+    // preview/share later from the upcoming-bookings screen) and upload it
+    // so the backend can email it now, right when the booking is fresh.
+    // Never awaited/blocking — failure here must not affect this screen.
+    final bookingId = _trekC.verifyOrderModal.value.data?.id;
+    if (bookingId != null) {
+      _dashboardC.generateAndUploadInvoice(bookingId);
+    }
+
     _cardAnimCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),

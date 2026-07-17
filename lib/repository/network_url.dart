@@ -162,6 +162,9 @@ static String fetchCouponsForBatch({
   static String bookingDetails(dynamic bookingId) =>
       'booking-details/$bookingId';
 
+  static String invoiceUpload(String bookingNumber) =>
+      'customer/bookings/$bookingNumber/invoice';
+
   // Emergency contacts
   static const String emergencyContacts = 'customer/emergency-contacts';
   static String deleteEmergencyContact(int id) =>

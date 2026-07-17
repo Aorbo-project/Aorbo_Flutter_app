@@ -11,16 +11,18 @@ import 'package:flutter/material.dart';
 import 'package:arobo_app/models/dashboard/trek_modal.dart';
 import 'package:arobo_app/models/user_profile/state_list_model.dart';
 import 'package:arobo_app/models/dispute/dispute_detail_modal.dart';
-import 'package:get/get.dart';
+import 'package:get/get.dart' hide FormData, Response, MultipartFile;
 import 'package:intl/intl.dart';
 import '../freezed_models/booking/booking_history_model.dart';
 import '../freezed_models/profile/user_profile_model.dart';
 import '../freezed_models/treks/treks_model_data.dart';
 import '../models/dashboard/cities_model.dart';
 import '../models/treaks/booking_cancelled_modal.dart';
+import 'package:dio/dio.dart';
 import '../repository/api_result.dart';
 import '../repository/network_url.dart';
 import '../repository/repository.dart';
+import '../services/invoice_pdf_service.dart';
 import '../utils/custom_snackbar.dart';
 
 class DashboardController extends GetxController {
@@ -710,6 +712,42 @@ debugPrint("==============================================");
       }
     }
     return null;
+  }
+
+  /// Generates the same invoice PDF InvoicePdfService already produces for
+  /// in-app preview/share, and uploads those exact bytes so the backend can
+  /// email it — the backend never regenerates the invoice itself, it only
+  /// attaches what the app already built. Fire-and-forget: called right
+  /// after a booking succeeds, failure here must never block or surface an
+  /// error on the success screen since the booking itself already went through.
+  ///
+  /// [bookingId] is only needed to fetch the booking detail (that lookup is
+  /// keyed by the raw internal id, matching getBookingDetail's existing
+  /// convention) — the actual upload is keyed by the booking's customer-
+  /// facing booking_number (e.g. "BI20260141"), not the internal id.
+  Future<void> generateAndUploadInvoice(int bookingId) async {
+    try {
+      await getBookingDetail(bookingId: bookingId);
+      final booking = bookingHistoryModal.value;
+      final bookingNumber = booking?.bookingNumber;
+      if (booking == null || bookingNumber == null || bookingNumber.isEmpty) return;
+
+      final bytes = await InvoicePdfService.generateInvoice(booking: booking);
+
+      final formData = FormData.fromMap({
+        'invoice': MultipartFile.fromBytes(
+          bytes,
+          filename: 'invoice_$bookingNumber.pdf',
+        ),
+      });
+      await _repository.postApiCall(
+        url: NetworkUrl.invoiceUpload(bookingNumber),
+        body: formData,
+      );
+      logger.d('Invoice uploaded for booking $bookingNumber');
+    } catch (e) {
+      logger.e('generateAndUploadInvoice failed for booking $bookingId: $e');
+    }
   }
 
   /// Clears search and temporary booking related data
