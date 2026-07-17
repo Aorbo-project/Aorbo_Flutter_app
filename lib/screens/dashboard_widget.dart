@@ -293,7 +293,7 @@ class _DashboardState extends State<Dashboard>
   void _startAutoScroll() {
     _autoScrollTimer?.cancel();
     if (!mounted) return;
-    _autoScrollTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+    _autoScrollTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
       if (!mounted || _isUserInteracting) {
         timer.cancel();
         return;
@@ -1969,7 +1969,7 @@ class _DashboardState extends State<Dashboard>
                 children: [
                   // ── What's New ──
                   Obx(() {
-                    final knowMoreLoading = _dashboardC.whatsNewObserver.value
+                    final whatsNewLoading = _dashboardC.whatsNewObserver.value
                         .maybeWhen(loading: (_) => true, orElse: () => false);
 
                     final whatsNewResponse = _dashboardC.whatsNewObserver.value
@@ -1978,8 +1978,8 @@ class _DashboardState extends State<Dashboard>
                           orElse: () => [],
                         );
 
-                    final List<KnowMoreData> knowMoreCardsData =
-                        whatsNewResponse.map<KnowMoreData>((e) {
+                    final List<KnowMoreData> whatsNewCardsData = whatsNewResponse
+                        .map<KnowMoreData>((e) {
                           return KnowMoreData(
                             title: e.title ?? '',
                             subtitle: e.subtitle ?? '',
@@ -1995,11 +1995,10 @@ class _DashboardState extends State<Dashboard>
                             bulletPoints: e.bulletPoints,
                             callToAction: e.callToAction,
                           );
-                        }).toList();
+                        })
+                        .toList();
 
-                    log('WHATS NEW COUNT => ${knowMoreCardsData.length}');
-
-                    if (!knowMoreLoading && knowMoreCardsData.isEmpty) {
+                    if (!whatsNewLoading && whatsNewCardsData.isEmpty) {
                       return const SizedBox();
                     }
 
@@ -2027,7 +2026,7 @@ class _DashboardState extends State<Dashboard>
                                       color: _C.ink,
                                       letterSpacing: -0.2,
                                     ),
-                                  ).withShimmerAi(loading: knowMoreLoading),
+                                  ).withShimmerAi(loading: whatsNewLoading),
                                   SizedBox(height: 0.3.h),
                                   Text(
                                     'Adventure simplified combo delivers!',
@@ -2037,7 +2036,7 @@ class _DashboardState extends State<Dashboard>
                                       fontSize: FontSize.s10,
                                       color: _C.inkMid,
                                     ),
-                                  ).withShimmerAi(loading: knowMoreLoading),
+                                  ).withShimmerAi(loading: whatsNewLoading),
                                 ],
                               ),
                               InkWell(
@@ -2051,7 +2050,7 @@ class _DashboardState extends State<Dashboard>
                                     letterSpacing: 0.4,
                                     fontWeight: FontWeight.w600,
                                   ),
-                                ).withShimmerAi(loading: knowMoreLoading),
+                                ).withShimmerAi(loading: whatsNewLoading),
                               ),
                             ],
                           ),
@@ -2059,69 +2058,97 @@ class _DashboardState extends State<Dashboard>
                         Container(
                           margin: EdgeInsets.only(top: 1.h),
                           height: 22.h,
-                          child: Listener(
-                            onPointerDown: (_) {
-                              _isUserInteracting = true;
-                              _stopAutoScroll();
-                            },
-                            onPointerUp: (_) {
-                              _isUserInteracting = false;
-                              _startAutoScroll();
-                            },
-                            onPointerCancel: (_) {
-                              _isUserInteracting = false;
-                              _startAutoScroll();
-                            },
-                            child: knowMoreLoading
-                                ? _buildShimmerPagePlaceholder()
-                                : PageView.builder(
-                                    controller: _pageController,
-                                    // null = infinite scroll
-                                    itemCount: null,
-                                    onPageChanged: (page) {
-                                      if (knowMoreCardsData.isNotEmpty) {
-                                        _currentPage =
-                                            page % knowMoreCardsData.length;
-                                      }
-                                    },
-                                    physics: const BouncingScrollPhysics(),
-                                    itemBuilder: (context, index) {
-                                      if (knowMoreCardsData.isEmpty) {
-                                        return const SizedBox();
-                                      }
-                                      final cardData =
-                                          knowMoreCardsData[index %
-                                              knowMoreCardsData.length];
-                                      return Container(
-                                        margin: EdgeInsets.only(
-                                          right: ScreenConstant.size6,
-                                        ),
-                                        child: KnowMoreCard(
-                                          customGradient:
-                                              AppTheme.customGradient(
-                                                cardData.gradient ?? [],
-                                              ),
-                                          imagePath: cardData.imagePath ?? '',
-                                          title: cardData.title ?? '',
-                                          subtitle: cardData.subtitle ?? '',
-                                          onKnowMoreTap:
-                                              cardData.hasKnowMore == false
-                                              ? null
-                                              : () {
-                                                  Get.toNamed(
-                                                    '/know-more-details',
-                                                    arguments: {
-                                                      'knowMoreData': cardData,
-                                                    },
-                                                  );
-                                                },
-                                          textColor: AppTheme.hexToColor(
-                                            cardData.textColour,
-                                          ),
-                                        ),
-                                      );
-                                    },
+                          child: Builder(
+                            builder: (context) {
+                              if (whatsNewLoading) {
+                                return _buildShimmerPagePlaceholder();
+                              }
+
+                              // The infinite-loop PageView trick (index %
+                              // length, repeated forever) only makes sense
+                              // with 2+ distinct cards — with exactly one,
+                              // it just shows the same card over and over,
+                              // which reads as duplicate/broken content.
+                              if (whatsNewCardsData.length <= 1) {
+                                if (whatsNewCardsData.isEmpty) {
+                                  return const SizedBox();
+                                }
+                                final cardData = whatsNewCardsData.first;
+                                return Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: KnowMoreCard(
+                                    widthFraction: 92,
+                                    trailingMargin: 0,
+                                    gradientColors: cardData.gradient ?? [],
+                                    imagePath: cardData.imagePath ?? '',
+                                    title: cardData.title ?? '',
+                                    subtitle: cardData.subtitle ?? '',
+                                    textColor: AppTheme.hexToColor(
+                                      cardData.textColour,
+                                    ),
+                                    onKnowMoreTap:
+                                        cardData.hasKnowMore == false
+                                        ? null
+                                        : () {
+                                            Get.toNamed(
+                                              '/know-more-details',
+                                              arguments: {
+                                                'knowMoreData': cardData,
+                                              },
+                                            );
+                                          },
                                   ),
+                                );
+                              }
+
+                              return Listener(
+                                onPointerDown: (_) {
+                                  _isUserInteracting = true;
+                                  _stopAutoScroll();
+                                },
+                                onPointerUp: (_) {
+                                  _isUserInteracting = false;
+                                  _startAutoScroll();
+                                },
+                                onPointerCancel: (_) {
+                                  _isUserInteracting = false;
+                                  _startAutoScroll();
+                                },
+                                child: PageView.builder(
+                                  controller: _pageController,
+                                  itemCount: null, // infinite scroll
+                                  onPageChanged: (page) {
+                                    _currentPage =
+                                        page % whatsNewCardsData.length;
+                                  },
+                                  physics: const BouncingScrollPhysics(),
+                                  itemBuilder: (context, index) {
+                                    final cardData = whatsNewCardsData[
+                                        index % whatsNewCardsData.length];
+                                    return KnowMoreCard(
+                                      gradientColors: cardData.gradient ?? [],
+                                      imagePath: cardData.imagePath ?? '',
+                                      title: cardData.title ?? '',
+                                      subtitle: cardData.subtitle ?? '',
+                                      textColor: AppTheme.hexToColor(
+                                        cardData.textColour,
+                                      ),
+                                      onKnowMoreTap:
+                                          cardData.hasKnowMore == false
+                                          ? null
+                                          : () {
+                                              Get.toNamed(
+                                                '/know-more-details',
+                                                arguments: {
+                                                  'knowMoreData': cardData,
+                                                },
+                                              );
+                                            },
+                                    );
+                                  },
+                                ),
+                              );
+                            },
                           ),
                         ),
                       ],

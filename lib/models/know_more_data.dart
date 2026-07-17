@@ -28,10 +28,8 @@ class KnowMoreData with _$KnowMoreData {
     @JsonKey(name: 'hasKnowMore')
     bool? hasKnowMore,
 
-    @JsonKey(name: 'customGradient')
     List<String>? gradient,
 
-    @JsonKey(name: 'textColor')
     String? textColour,
 
     @JsonKey(name: 'detailedTitle')
@@ -62,45 +60,3 @@ class BulletPointModel with _$BulletPointModel {
       _$BulletPointModelFromJson(json);
 }
 
-
-
-final List<Map<String, dynamic>> knowMoreCardsData = [
-  {
-    'title': 'Variety of Treks',
-    'subtitle':
-        'From Serene trails to thrilling climbs, find treks that match your vibes !',
-    'imagePath': 'assets/images/img/knowmore1.png',
-    'detailedTitle': 'Discover Trekking with Aorbo Treks',
-    'detailedDescription':
-        'Adventure is closer than you think—Trekking for everyone, at prices you won\'t believe! Trekking isn\'t just for mountain experts—it\'s for YOU! Whether you\'re completely new or have heard of trekking but didn\'t know where to start, Aorbo Treks is here to show you just how easy and affordable it is.',
-    'bulletPoints': [
-      {
-        'title': 'Not Just for Pros',
-        'description':
-            'Whether it\'s a peaceful forest walk or a riverside adventure, trekking is for everyone, no experience required!'
-      },
-      {
-        'title': 'Affordable Adventure',
-        'description':
-            'Trekking doesn\'t have to be expensive. Find amazing treks at prices you can actually afford.'
-      },
-      {
-        'title': 'Forget the Crowds',
-        'description':
-            'Skip the tourist traps and explore hidden gems by foot—nature is waiting.'
-      },
-      {
-        'title': 'Meet New People',
-        'description':
-            'Join fellow adventurers and share unforgettable moments along the way.'
-      },
-      {
-        'title': 'Freedom to Explore',
-        'description':
-            'Trekking lets you experience nature on your terms, without breaking the bank.'
-      }
-    ],
-    'callToAction':
-        'Ready to start your adventure? With Aorbo Treks, it\'s simple:\n• Easy booking\n• Treks for every budget\n• Free cancellations for your peace of mind'
-  }
-];

@@ -233,9 +233,7 @@ mixin _$KnowMoreData {
   String? get imagePath => throw _privateConstructorUsedError;
   @JsonKey(name: 'hasKnowMore')
   bool? get hasKnowMore => throw _privateConstructorUsedError;
-  @JsonKey(name: 'customGradient')
   List<String>? get gradient => throw _privateConstructorUsedError;
-  @JsonKey(name: 'textColor')
   String? get textColour => throw _privateConstructorUsedError;
   @JsonKey(name: 'detailedTitle')
   String? get detailedTitle => throw _privateConstructorUsedError;
@@ -263,8 +261,8 @@ abstract class $KnowMoreDataCopyWith<$Res> {
       String? subtitle,
       @JsonKey(name: 'imagePath') String? imagePath,
       @JsonKey(name: 'hasKnowMore') bool? hasKnowMore,
-      @JsonKey(name: 'customGradient') List<String>? gradient,
-      @JsonKey(name: 'textColor') String? textColour,
+      List<String>? gradient,
+      String? textColour,
       @JsonKey(name: 'detailedTitle') String? detailedTitle,
       @JsonKey(name: 'detailedDescription') String? detailedDescription,
       List<BulletPointModel>? bulletPoints,
@@ -353,8 +351,8 @@ abstract class _$$KnowMoreDataImplCopyWith<$Res>
       String? subtitle,
       @JsonKey(name: 'imagePath') String? imagePath,
       @JsonKey(name: 'hasKnowMore') bool? hasKnowMore,
-      @JsonKey(name: 'customGradient') List<String>? gradient,
-      @JsonKey(name: 'textColor') String? textColour,
+      List<String>? gradient,
+      String? textColour,
       @JsonKey(name: 'detailedTitle') String? detailedTitle,
       @JsonKey(name: 'detailedDescription') String? detailedDescription,
       List<BulletPointModel>? bulletPoints,
@@ -436,8 +434,8 @@ class _$KnowMoreDataImpl implements _KnowMoreData {
       this.subtitle,
       @JsonKey(name: 'imagePath') this.imagePath,
       @JsonKey(name: 'hasKnowMore') this.hasKnowMore,
-      @JsonKey(name: 'customGradient') final List<String>? gradient,
-      @JsonKey(name: 'textColor') this.textColour,
+      final List<String>? gradient,
+      this.textColour,
       @JsonKey(name: 'detailedTitle') this.detailedTitle,
       @JsonKey(name: 'detailedDescription') this.detailedDescription,
       final List<BulletPointModel>? bulletPoints,
@@ -460,7 +458,6 @@ class _$KnowMoreDataImpl implements _KnowMoreData {
   final bool? hasKnowMore;
   final List<String>? _gradient;
   @override
-  @JsonKey(name: 'customGradient')
   List<String>? get gradient {
     final value = _gradient;
     if (value == null) return null;
@@ -470,7 +467,6 @@ class _$KnowMoreDataImpl implements _KnowMoreData {
   }
 
   @override
-  @JsonKey(name: 'textColor')
   final String? textColour;
   @override
   @JsonKey(name: 'detailedTitle')
@@ -557,8 +553,8 @@ abstract class _KnowMoreData implements KnowMoreData {
       final String? subtitle,
       @JsonKey(name: 'imagePath') final String? imagePath,
       @JsonKey(name: 'hasKnowMore') final bool? hasKnowMore,
-      @JsonKey(name: 'customGradient') final List<String>? gradient,
-      @JsonKey(name: 'textColor') final String? textColour,
+      final List<String>? gradient,
+      final String? textColour,
       @JsonKey(name: 'detailedTitle') final String? detailedTitle,
       @JsonKey(name: 'detailedDescription') final String? detailedDescription,
       final List<BulletPointModel>? bulletPoints,
@@ -579,10 +575,8 @@ abstract class _KnowMoreData implements KnowMoreData {
   @JsonKey(name: 'hasKnowMore')
   bool? get hasKnowMore;
   @override
-  @JsonKey(name: 'customGradient')
   List<String>? get gradient;
   @override
-  @JsonKey(name: 'textColor')
   String? get textColour;
   @override
   @JsonKey(name: 'detailedTitle')

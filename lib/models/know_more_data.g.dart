@@ -32,10 +32,10 @@ _$KnowMoreDataImpl _$$KnowMoreDataImplFromJson(Map<String, dynamic> json) =>
       subtitle: json['subtitle'] as String?,
       imagePath: json['imagePath'] as String?,
       hasKnowMore: json['hasKnowMore'] as bool?,
-      gradient: (json['customGradient'] as List<dynamic>?)
+      gradient: (json['gradient'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
-      textColour: json['textColor'] as String?,
+      textColour: json['textColour'] as String?,
       detailedTitle: json['detailedTitle'] as String?,
       detailedDescription: json['detailedDescription'] as String?,
       bulletPoints: (json['bulletPoints'] as List<dynamic>?)
@@ -50,8 +50,8 @@ Map<String, dynamic> _$$KnowMoreDataImplToJson(_$KnowMoreDataImpl instance) =>
       'subtitle': instance.subtitle,
       'imagePath': instance.imagePath,
       'hasKnowMore': instance.hasKnowMore,
-      'customGradient': instance.gradient,
-      'textColor': instance.textColour,
+      'gradient': instance.gradient,
+      'textColour': instance.textColour,
       'detailedTitle': instance.detailedTitle,
       'detailedDescription': instance.detailedDescription,
       'bulletPoints': instance.bulletPoints,
