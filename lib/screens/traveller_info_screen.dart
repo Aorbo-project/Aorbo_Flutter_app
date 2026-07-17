@@ -473,14 +473,18 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
     setState(() => _deletingIndex = index);
 
     try {
-      final dynamic uc = _userC;
-      try {
-        await uc.deleteTraveler(traveller.id);
-      } on NoSuchMethodError {
-        _removeTravellerLocally(index);
+      if (traveller.id == null) {
+        _showSnack('Could not delete traveller. Please try again.');
+        return;
       }
 
-      if (!mounted) return;
+      // deleteTraveler() calls getUserProfile() internally on success, which
+      // updates _userC.userProfileData — the _profileWorker listener above
+      // picks that up and this screen re-renders from the confirmed backend
+      // state. Nothing is removed from the UI unless the server actually
+      // deleted it; a failed delete must never look like a successful one.
+      final deleted = await _userC.deleteTraveler(traveller.id!);
+      if (!deleted || !mounted) return;
 
       if (_expandedTravellerIndex == index) {
         _expandedTravellerIndex = null;
@@ -495,25 +499,6 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
       _showSnack('Could not delete traveller. Please try again.');
     } finally {
       if (mounted) setState(() => _deletingIndex = null);
-    }
-  }
-
-  void _removeTravellerLocally(int index) {
-    final customer = _userC.userProfileData.value.customer;
-    if (customer == null) return;
-
-    final updatedTravelers = List<Traveler>.from(customer.travelers ?? []);
-    if (index < 0 || index >= updatedTravelers.length) return;
-    updatedTravelers.removeAt(index);
-
-    try {
-      final updatedCustomer = (customer as dynamic).copyWith(
-        travelers: updatedTravelers,
-      );
-      _userC.userProfileData.value = (_userC.userProfileData.value as dynamic)
-          .copyWith(customer: updatedCustomer);
-    } catch (e) {
-      log('Local traveller removal could not use copyWith: $e');
     }
   }
 

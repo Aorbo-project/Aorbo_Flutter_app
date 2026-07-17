@@ -145,4 +145,27 @@ class UserController extends GetxController {
       isLoading.value = false;
     }
   }
+
+  // Returns true only once the backend has confirmed the soft-delete —
+  // callers must not remove the traveler from local/UI state on any other
+  // outcome, or a failed delete looks identical to a successful one.
+  Future<bool> deleteTraveler(int travelerId) async {
+    isLoading.value = true;
+    try {
+      final response = await repository
+          .deleteApiCall(url: "${NetworkUrl.addTraveller}/$travelerId");
+      if (response != null && response['success'] == true) {
+        await getUserProfile();
+        return true;
+      }
+      CustomSnackBar.show(Get.context!,
+          message: response?['message'] ?? 'Could not delete traveller.');
+      return false;
+    } catch (e) {
+      CustomSnackBar.show(Get.context!, message: e.toString());
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
 }
