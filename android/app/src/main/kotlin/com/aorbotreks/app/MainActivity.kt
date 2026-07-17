@@ -1,4 +1,4 @@
-package com.eclipso.arobo_app
+package com.aorbotreks.app
 
 import io.flutter.embedding.android.FlutterActivity
 

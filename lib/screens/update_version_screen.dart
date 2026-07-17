@@ -117,7 +117,7 @@ class _UpdateVersionScreenState extends State<UpdateVersionScreen> {
     );
   }
 
-  final String playStoreUrl = "https://play.google.com/store/apps/details?id=com.eclipso.arobo_app";
+  final String playStoreUrl = "https://play.google.com/store/apps/details?id=com.aorbotreks.app";
   final String appStoreUrl = "https://apps.apple.com/us/app/aorbo/id6747623495";
 
   Future<void> _launchURL() async {

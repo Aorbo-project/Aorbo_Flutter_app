@@ -8,6 +8,25 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:979616910593:android:6b1666ad2b1659719d9f00",
+        "android_client_info": {
+          "package_name": "com.aorbotreks.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDoZtlOEGEjLUgn4CJG8PZHW1oVMWEXBRo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:979616910593:android:fad40c7486469a7e9d9f00",
         "android_client_info": {
           "package_name": "com.eclipso.arobo_app"
