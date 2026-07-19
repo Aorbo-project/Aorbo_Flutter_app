@@ -237,13 +237,17 @@ class SeasonalGradientCard extends StatelessWidget {
                   ),
                 ),
 
-              // Illustration mode: icon + text side by side (mirrors
-              // KnowMoreCard's What's New layout exactly, not just the
-              // icon's position) — uses the space a bottom-anchored block
-              // would otherwise leave empty on the right. More top
-              // clearance than before, now that text no longer needs
-              // reserved space below the icon.
-              if (imageType == SeasonalPickImageType.illustration)
+              // Illustration mode with an actual image: icon + text side
+              // by side (mirrors KnowMoreCard's What's New layout exactly,
+              // not just the icon's position) — uses the space a
+              // bottom-anchored block would otherwise leave empty on the
+              // right. More top clearance than before, now that text no
+              // longer needs reserved space below the icon. With no image
+              // yet, there's nothing to sit beside — falls through to the
+              // same full-width bottom text as photo mode below, instead
+              // of reserving an empty slot on one side.
+              if (imageType == SeasonalPickImageType.illustration &&
+                  imagePath.isNotEmpty)
                 Positioned(
                   top: height * 0.30,
                   bottom: height * 0.10,
@@ -297,8 +301,9 @@ class SeasonalGradientCard extends StatelessWidget {
                   ),
                 )
               else
-                // Photo mode: trek name + reason overlaid on the scrim at
-                // the bottom, unchanged from the original design.
+                // Photo mode, or illustration mode with no image yet:
+                // trek name + reason overlaid on the scrim at the bottom,
+                // full width — unchanged from the original design.
                 Positioned(
                   left: 14,
                   right: 14,
