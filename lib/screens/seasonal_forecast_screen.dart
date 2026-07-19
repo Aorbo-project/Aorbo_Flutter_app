@@ -66,8 +66,12 @@ class _SeasonalForecastScreenState extends State<SeasonalForecastScreen> {
           (s) => s.name == (data?.season ?? _selected?.name),
           orElse: () => _selected ?? TrekSeason.spring,
         );
-        final topPicks = data?.topPicks ?? [];
-        final avoidPicks = data?.avoidPicks ?? [];
+        // Explicit generic on the empty-list fallback — an inferred `[]`
+        // here type-checks fine in debug/JIT but has crashed as
+        // List<dynamic> in release/AOT builds when data or its picks are
+        // null (e.g. a season with no picks yet).
+        final topPicks = data?.topPicks ?? <SeasonalPickItem>[];
+        final avoidPicks = data?.avoidPicks ?? <SeasonalPickItem>[];
 
         return ListView(
           padding: EdgeInsets.only(bottom: 3.h),

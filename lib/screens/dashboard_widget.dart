@@ -12,6 +12,7 @@ import 'package:arobo_app/utils/seasonal_forecast_mock_data.dart';
 import 'package:arobo_app/utils/seasonal_gradient_card.dart';
 import 'package:arobo_app/utils/top_treks_card.dart';
 import 'package:arobo_app/models/know_more_data.dart';
+import 'package:arobo_app/models/seasonal_picks_data.dart';
 import 'package:arobo_app/models/shorts_treks_data.dart';
 import 'package:arobo_app/utils/trek_shorts.dart';
 import 'package:arobo_app/models/city_model.dart';
@@ -2442,8 +2443,11 @@ class _DashboardState extends State<Dashboard>
                     final seasonalData = _dashboardC.seasonalPicksObserver.value
                         .maybeWhen(success: (data) => data.data, orElse: () => null);
 
-                    final topPicks = seasonalData?.topPicks ?? [];
-                    final avoidPicks = seasonalData?.avoidPicks ?? [];
+                    // Explicit generic — see seasonal_forecast_screen.dart
+                    // for why an inferred `[]` here has crashed in release
+                    // builds as List<dynamic> instead of List<SeasonalPickItem>.
+                    final topPicks = seasonalData?.topPicks ?? <SeasonalPickItem>[];
+                    final avoidPicks = seasonalData?.avoidPicks ?? <SeasonalPickItem>[];
 
                     if (!seasonalLoading && topPicks.isEmpty && avoidPicks.isEmpty) {
                       return const SizedBox();
