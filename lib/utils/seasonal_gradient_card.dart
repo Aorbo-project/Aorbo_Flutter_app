@@ -68,13 +68,15 @@ class SeasonalGradientCard extends StatelessWidget {
             decoration: BoxDecoration(gradient: seasonBackdropGradient(season)),
           ),
           // No illustration uploaded yet — the gradient alone is a
-          // complete, valid look, not a broken/empty state.
+          // complete, valid look, not a broken/empty state. Anchored to
+          // the left (not centered) — same side as the illustration slot
+          // in KnowMoreCard's What's New card.
           if (imagePath.isNotEmpty)
             Positioned(
               top: height * 0.18,
               bottom: height * 0.42,
-              left: width * 0.24,
-              right: width * 0.24,
+              left: width * 0.08,
+              right: width * 0.5,
               child: imagePath.startsWith('http')
                   ? CustomNetworkImage(
                       imageUrl: imagePath,
