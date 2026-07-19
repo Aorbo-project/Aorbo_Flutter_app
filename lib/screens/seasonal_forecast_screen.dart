@@ -198,11 +198,21 @@ class _SeasonalForecastScreenState extends State<SeasonalForecastScreen> {
         separatorBuilder: (_, __) => SizedBox(width: 3.w),
         itemBuilder: (context, index) {
           final pick = picks[index];
-          final imagePath = _fullImageUrl(pick.imagePath);
+          final pickImageType = parseSeasonalPickImageType(pick.imageType);
+          final resolvedImagePath = _fullImageUrl(pick.imagePath);
+          // Only "photo" mode falls back to a stock photo when empty — an
+          // empty illustration is a valid, handled state inside the card.
+          final displayImagePath =
+              pickImageType == SeasonalPickImageType.illustration
+                  ? resolvedImagePath
+                  : (resolvedImagePath.isEmpty
+                      ? CommonImages.himalayas
+                      : resolvedImagePath);
           return SeasonalGradientCard(
             trekName: pick.trekName ?? '',
             reason: pick.reason ?? '',
-            imagePath: imagePath.isEmpty ? CommonImages.himalayas : imagePath,
+            imagePath: displayImagePath,
+            imageType: pickImageType,
             isAvoid: pick.isAvoid ?? false,
             season: season,
             width: 78.w,

@@ -1,4 +1,5 @@
 import 'package:arobo_app/utils/common_images.dart';
+import 'package:flutter/material.dart';
 
 /// Shared mock data for the Seasonal Forecast redesign (Top 5 / Avoid per
 /// season, editorial-curated — no live weather data, no promo framing).
@@ -173,5 +174,45 @@ String seasonGlyphSvg(TrekSeason season) {
   <path d="M12 3v18M4.5 7.5l15 9M19.5 7.5l-15 9" $stroke stroke-linecap="round"/>
   <path d="M12 3l-1.6 1.6M12 3l1.6 1.6M12 21l-1.6-1.6M12 21l1.6-1.6M4.5 7.5l2.2.3M4.5 7.5l.3-2.2M19.5 7.5l-2.2.3M19.5 7.5l-.3-2.2M4.5 16.5l2.2-.3M4.5 16.5l.3 2.2M19.5 16.5l-2.2-.3M19.5 16.5l-.3 2.2" $stroke stroke-linecap="round"/>
 </svg>''';
+  }
+}
+
+/// Season-themed backdrop for "illustration" mode picks (a transparent-PNG
+/// cutout with no photo of its own) — same diagonal-gradient technique as
+/// KnowMoreCard's promo background (utils/know_more_card.dart), just one
+/// fixed colour pair per season instead of an admin-set gradient. Palette
+/// matches the design mockup's season atlas exactly.
+LinearGradient seasonBackdropGradient(TrekSeason season) {
+  switch (season) {
+    case TrekSeason.spring:
+      return const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0xFF1C5C50), Color(0xFF0E3B36)],
+      );
+    case TrekSeason.summer:
+      return const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0xFFC98A1D), Color(0xFF5C3A0D)],
+      );
+    case TrekSeason.monsoon:
+      return const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0xFF3E5A6C), Color(0xFF202E38)],
+      );
+    case TrekSeason.autumn:
+      return const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0xFFC1531F), Color(0xFF5C220B)],
+      );
+    case TrekSeason.winter:
+      return const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0xFF4C6E73), Color(0xFF1A2B30)],
+      );
   }
 }

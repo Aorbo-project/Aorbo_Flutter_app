@@ -53,6 +53,9 @@ class SeasonalPickItem with _$SeasonalPickItem {
     @JsonKey(name: 'imagePath')
     String? imagePath,
 
+    @JsonKey(name: 'imageType')
+    String? imageType,
+
     @JsonKey(name: 'isAvoid')
     bool? isAvoid,
 

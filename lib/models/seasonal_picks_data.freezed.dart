@@ -505,6 +505,8 @@ mixin _$SeasonalPickItem {
   String? get reason => throw _privateConstructorUsedError;
   @JsonKey(name: 'imagePath')
   String? get imagePath => throw _privateConstructorUsedError;
+  @JsonKey(name: 'imageType')
+  String? get imageType => throw _privateConstructorUsedError;
   @JsonKey(name: 'isAvoid')
   bool? get isAvoid => throw _privateConstructorUsedError;
   @JsonKey(name: 'trekId')
@@ -529,6 +531,7 @@ abstract class $SeasonalPickItemCopyWith<$Res> {
       @JsonKey(name: 'trekName') String? trekName,
       String? reason,
       @JsonKey(name: 'imagePath') String? imagePath,
+      @JsonKey(name: 'imageType') String? imageType,
       @JsonKey(name: 'isAvoid') bool? isAvoid,
       @JsonKey(name: 'trekId') int? trekId,
       @JsonKey(name: 'detailUrl') String? detailUrl});
@@ -551,6 +554,7 @@ class _$SeasonalPickItemCopyWithImpl<$Res, $Val extends SeasonalPickItem>
     Object? trekName = freezed,
     Object? reason = freezed,
     Object? imagePath = freezed,
+    Object? imageType = freezed,
     Object? isAvoid = freezed,
     Object? trekId = freezed,
     Object? detailUrl = freezed,
@@ -571,6 +575,10 @@ class _$SeasonalPickItemCopyWithImpl<$Res, $Val extends SeasonalPickItem>
       imagePath: freezed == imagePath
           ? _value.imagePath
           : imagePath // ignore: cast_nullable_to_non_nullable
+              as String?,
+      imageType: freezed == imageType
+          ? _value.imageType
+          : imageType // ignore: cast_nullable_to_non_nullable
               as String?,
       isAvoid: freezed == isAvoid
           ? _value.isAvoid
@@ -601,6 +609,7 @@ abstract class _$$SeasonalPickItemImplCopyWith<$Res>
       @JsonKey(name: 'trekName') String? trekName,
       String? reason,
       @JsonKey(name: 'imagePath') String? imagePath,
+      @JsonKey(name: 'imageType') String? imageType,
       @JsonKey(name: 'isAvoid') bool? isAvoid,
       @JsonKey(name: 'trekId') int? trekId,
       @JsonKey(name: 'detailUrl') String? detailUrl});
@@ -621,6 +630,7 @@ class __$$SeasonalPickItemImplCopyWithImpl<$Res>
     Object? trekName = freezed,
     Object? reason = freezed,
     Object? imagePath = freezed,
+    Object? imageType = freezed,
     Object? isAvoid = freezed,
     Object? trekId = freezed,
     Object? detailUrl = freezed,
@@ -641,6 +651,10 @@ class __$$SeasonalPickItemImplCopyWithImpl<$Res>
       imagePath: freezed == imagePath
           ? _value.imagePath
           : imagePath // ignore: cast_nullable_to_non_nullable
+              as String?,
+      imageType: freezed == imageType
+          ? _value.imageType
+          : imageType // ignore: cast_nullable_to_non_nullable
               as String?,
       isAvoid: freezed == isAvoid
           ? _value.isAvoid
@@ -666,6 +680,7 @@ class _$SeasonalPickItemImpl implements _SeasonalPickItem {
       @JsonKey(name: 'trekName') this.trekName,
       this.reason,
       @JsonKey(name: 'imagePath') this.imagePath,
+      @JsonKey(name: 'imageType') this.imageType,
       @JsonKey(name: 'isAvoid') this.isAvoid,
       @JsonKey(name: 'trekId') this.trekId,
       @JsonKey(name: 'detailUrl') this.detailUrl});
@@ -684,6 +699,9 @@ class _$SeasonalPickItemImpl implements _SeasonalPickItem {
   @JsonKey(name: 'imagePath')
   final String? imagePath;
   @override
+  @JsonKey(name: 'imageType')
+  final String? imageType;
+  @override
   @JsonKey(name: 'isAvoid')
   final bool? isAvoid;
   @override
@@ -695,7 +713,7 @@ class _$SeasonalPickItemImpl implements _SeasonalPickItem {
 
   @override
   String toString() {
-    return 'SeasonalPickItem(id: $id, trekName: $trekName, reason: $reason, imagePath: $imagePath, isAvoid: $isAvoid, trekId: $trekId, detailUrl: $detailUrl)';
+    return 'SeasonalPickItem(id: $id, trekName: $trekName, reason: $reason, imagePath: $imagePath, imageType: $imageType, isAvoid: $isAvoid, trekId: $trekId, detailUrl: $detailUrl)';
   }
 
   @override
@@ -709,6 +727,8 @@ class _$SeasonalPickItemImpl implements _SeasonalPickItem {
             (identical(other.reason, reason) || other.reason == reason) &&
             (identical(other.imagePath, imagePath) ||
                 other.imagePath == imagePath) &&
+            (identical(other.imageType, imageType) ||
+                other.imageType == imageType) &&
             (identical(other.isAvoid, isAvoid) || other.isAvoid == isAvoid) &&
             (identical(other.trekId, trekId) || other.trekId == trekId) &&
             (identical(other.detailUrl, detailUrl) ||
@@ -717,8 +737,8 @@ class _$SeasonalPickItemImpl implements _SeasonalPickItem {
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(
-      runtimeType, id, trekName, reason, imagePath, isAvoid, trekId, detailUrl);
+  int get hashCode => Object.hash(runtimeType, id, trekName, reason, imagePath,
+      imageType, isAvoid, trekId, detailUrl);
 
   @JsonKey(ignore: true)
   @override
@@ -741,6 +761,7 @@ abstract class _SeasonalPickItem implements SeasonalPickItem {
           @JsonKey(name: 'trekName') final String? trekName,
           final String? reason,
           @JsonKey(name: 'imagePath') final String? imagePath,
+          @JsonKey(name: 'imageType') final String? imageType,
           @JsonKey(name: 'isAvoid') final bool? isAvoid,
           @JsonKey(name: 'trekId') final int? trekId,
           @JsonKey(name: 'detailUrl') final String? detailUrl}) =
@@ -759,6 +780,9 @@ abstract class _SeasonalPickItem implements SeasonalPickItem {
   @override
   @JsonKey(name: 'imagePath')
   String? get imagePath;
+  @override
+  @JsonKey(name: 'imageType')
+  String? get imageType;
   @override
   @JsonKey(name: 'isAvoid')
   bool? get isAvoid;

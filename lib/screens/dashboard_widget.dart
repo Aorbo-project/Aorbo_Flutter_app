@@ -2539,25 +2539,48 @@ class _DashboardState extends State<Dashboard>
                                 : Row(
                                     children: previewPicks
                                         .map(
-                                          (pick) => Padding(
-                                            padding:
-                                                EdgeInsets.only(right: 3.w),
-                                            child: SeasonalGradientCard(
-                                              trekName: pick.trekName ?? '',
-                                              reason: pick.reason ?? '',
-                                              imagePath: getFullImageUrl(
-                                                        pick.imagePath,
-                                                      ).isEmpty
-                                                  ? CommonImages.himalayas
-                                                  : getFullImageUrl(
-                                                      pick.imagePath,
-                                                    ),
-                                              isAvoid: pick.isAvoid ?? false,
-                                              season: season,
-                                              width: 70.w,
-                                              height: 24.h,
-                                            ),
-                                          ),
+                                          (pick) {
+                                            final pickImageType =
+                                                parseSeasonalPickImageType(
+                                              pick.imageType,
+                                            );
+                                            final resolvedImagePath =
+                                                getFullImageUrl(
+                                              pick.imagePath,
+                                            );
+                                            // Only "photo" mode falls back to
+                                            // a stock photo when empty — an
+                                            // empty illustration is a valid,
+                                            // handled state inside the card
+                                            // (gradient alone, no overlay).
+                                            final displayImagePath =
+                                                pickImageType ==
+                                                        SeasonalPickImageType
+                                                            .illustration
+                                                    ? resolvedImagePath
+                                                    : (resolvedImagePath
+                                                            .isEmpty
+                                                        ? CommonImages
+                                                            .himalayas
+                                                        : resolvedImagePath);
+                                            return Padding(
+                                              padding: EdgeInsets.only(
+                                                right: 3.w,
+                                              ),
+                                              child: SeasonalGradientCard(
+                                                trekName:
+                                                    pick.trekName ?? '',
+                                                reason: pick.reason ?? '',
+                                                imagePath: displayImagePath,
+                                                imageType: pickImageType,
+                                                isAvoid:
+                                                    pick.isAvoid ?? false,
+                                                season: season,
+                                                width: 70.w,
+                                                height: 24.h,
+                                              ),
+                                            );
+                                          },
                                         )
                                         .toList(),
                                   ),

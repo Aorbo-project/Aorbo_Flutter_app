@@ -6,6 +6,24 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../widgets/custom_network_image.dart';
 
+/// Whether a pick's [SeasonalGradientCard.imagePath] is a full photo (the
+/// default — rendered edge-to-edge, `BoxFit.cover`) or a transparent-
+/// background illustration/icon with no photo of its own (rendered
+/// `BoxFit.contain` inside a fixed slot over an automatic season-themed
+/// gradient, mirroring KnowMoreCard's illustration technique — see
+/// [seasonBackdropGradient]).
+enum SeasonalPickImageType { photo, illustration }
+
+/// Parses the API's `imageType` string ("photo" / "illustration").
+/// Defaults to [SeasonalPickImageType.photo] for null/unrecognised values —
+/// same default as the backend column — so old cached responses or a typo'd
+/// value never crash the card, just render as a normal photo card.
+SeasonalPickImageType parseSeasonalPickImageType(String? value) {
+  return value == 'illustration'
+      ? SeasonalPickImageType.illustration
+      : SeasonalPickImageType.photo;
+}
+
 /// Seasonal Forecast's card — rebuilt on the same full-bleed-photo +
 /// bottom scrim + top-left pill + top-right chip grammar as
 /// [TopTreksCard] (see top_treks_card.dart), so the whole dashboard reads
@@ -17,6 +35,7 @@ class SeasonalGradientCard extends StatelessWidget {
   final String trekName;
   final String reason;
   final String imagePath;
+  final SeasonalPickImageType imageType;
   final bool isAvoid;
   final TrekSeason season;
   final double width;
@@ -28,12 +47,70 @@ class SeasonalGradientCard extends StatelessWidget {
     required this.trekName,
     required this.reason,
     required this.imagePath,
+    this.imageType = SeasonalPickImageType.photo,
     required this.isAvoid,
     required this.season,
     required this.width,
     required this.height,
     this.onTap,
   });
+
+  /// The background layer — a full-bleed cover photo, or (illustration
+  /// mode) an automatic season gradient with the cutout contained in a
+  /// fixed, inset slot so it can never be stretched, cropped, or collide
+  /// with the badge/text above and below it regardless of card size.
+  Widget _buildBackground() {
+    if (imageType == SeasonalPickImageType.illustration) {
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          DecoratedBox(
+            decoration: BoxDecoration(gradient: seasonBackdropGradient(season)),
+          ),
+          // No illustration uploaded yet — the gradient alone is a
+          // complete, valid look, not a broken/empty state.
+          if (imagePath.isNotEmpty)
+            Positioned(
+              top: height * 0.18,
+              bottom: height * 0.42,
+              left: width * 0.24,
+              right: width * 0.24,
+              child: imagePath.startsWith('http')
+                  ? CustomNetworkImage(
+                      imageUrl: imagePath,
+                      fit: BoxFit.contain,
+                      hasTransparentBackground: true,
+                      borderRadius: 0,
+                    )
+                  : Image.asset(imagePath, fit: BoxFit.contain),
+            ),
+        ],
+      );
+    }
+
+    if (imagePath.isEmpty) {
+      // Photo mode with nothing set — fall back to the season gradient
+      // too, rather than crashing on Image.asset('').
+      return DecoratedBox(
+        decoration: BoxDecoration(gradient: seasonBackdropGradient(season)),
+      );
+    }
+
+    return imagePath.startsWith('http')
+        ? CustomNetworkImage(
+            imageUrl: imagePath,
+            width: width,
+            height: height,
+            fit: BoxFit.cover,
+            borderRadius: 22,
+          )
+        : Image.asset(
+            imagePath,
+            width: width,
+            height: height,
+            fit: BoxFit.cover,
+          );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,22 +145,10 @@ class SeasonalGradientCard extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // Full-bleed trek photo — the illustration IS the card,
-              // not a corner thumbnail.
-              imagePath.startsWith('http')
-                  ? CustomNetworkImage(
-                      imageUrl: imagePath,
-                      width: width,
-                      height: height,
-                      fit: BoxFit.cover,
-                      borderRadius: 22,
-                    )
-                  : Image.asset(
-                      imagePath,
-                      width: width,
-                      height: height,
-                      fit: BoxFit.cover,
-                    ),
+              // Background — full-bleed trek photo, or (illustration
+              // mode) an automatic season gradient with the cutout
+              // contained in a fixed slot. See _buildBackground().
+              _buildBackground(),
 
               // Bottom scrim — teal-tinted for Recommended, ember-tinted
               // for Avoid, so the verdict reads as colour before text.
