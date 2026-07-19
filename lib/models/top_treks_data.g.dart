@@ -28,22 +28,28 @@ Map<String, dynamic> _$$TopTreksDataResponseModelImplToJson(
 
 _$TopTreksDataImpl _$$TopTreksDataImplFromJson(Map<String, dynamic> json) =>
     _$TopTreksDataImpl(
+      id: json['id'] as int?,
       title: json['title'] as String?,
+      kicker: json['kicker'] as String?,
       description: json['description'] as String?,
       imagePath: json['imagePath'] as String?,
-      gradient: (json['gradient'] as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList(),
-      textColour: json['textColour'] as String?,
+      badgeType: json['badgeType'] as String?,
+      meta: json['meta'] as String?,
       isFavorite: json['isFavorite'] as bool?,
+      trekId: json['trekId'] as int?,
+      detailUrl: json['detailUrl'] as String?,
     );
 
 Map<String, dynamic> _$$TopTreksDataImplToJson(_$TopTreksDataImpl instance) =>
     <String, dynamic>{
+      'id': instance.id,
       'title': instance.title,
+      'kicker': instance.kicker,
       'description': instance.description,
       'imagePath': instance.imagePath,
-      'gradient': instance.gradient,
-      'textColour': instance.textColour,
+      'badgeType': instance.badgeType,
+      'meta': instance.meta,
       'isFavorite': instance.isFavorite,
+      'trekId': instance.trekId,
+      'detailUrl': instance.detailUrl,
     };

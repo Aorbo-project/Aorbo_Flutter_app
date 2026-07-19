@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:arobo_app/models/know_more_data.dart';
 import 'package:arobo_app/models/seasonal_forecast_data.dart';
+import 'package:arobo_app/models/seasonal_picks_data.dart';
 import 'package:arobo_app/models/shorts_treks_data.dart';
 import 'package:arobo_app/models/top_treks_data.dart';
 import 'package:arobo_app/widgets/logger.dart';
@@ -34,6 +35,7 @@ class DashboardController extends GetxController {
   final topTreksObserver = const ApiResult<TopTreksDataResponseModel>.init().obs;
   final shortsTreksObserver = const ApiResult<ShortsTreksDataResponseModel>.init().obs;
   final seasonalForcastObserver = const ApiResult<SeasonalForecastDataResponseModel>.init().obs;
+  final seasonalPicksObserver = const ApiResult<SeasonalPicksDataResponseModel>.init().obs;
 
   final bookingHistoryObserver = PaginationModel(
       data: const ApiResult<BookingHistoryModel>.init().obs,
@@ -472,6 +474,48 @@ class DashboardController extends GetxController {
     } catch (e) {
       logger.e('Error fetching top treks: $e');
       topTreksObserver.value = ApiResult.error(e.toString());
+    }
+  }
+
+  /// Dedicated seasonal_forecast_picks backend — Top-5 / Avoid cards for
+  /// today's IST season (or ?season= override). Distinct from the legacy
+  /// fetchSeasonalForcasts / seasonalForcastObserver above.
+  Future<void> fetchSeasonalPicks({String? season}) async {
+    try {
+      seasonalPicksObserver.value = const ApiResult.loading("");
+      final url = season == null
+          ? NetworkUrl.fetchSeasonalPicks
+          : '${NetworkUrl.fetchSeasonalPicks}?season=$season';
+      final response = await _repository.getApiCall(url: url);
+      if (response != null) {
+        final responseData = SeasonalPicksDataResponseModel.fromJson(response);
+        if (responseData.success == true) {
+          seasonalPicksObserver.value = ApiResult.success(responseData);
+          return;
+        }
+        throw responseData.message ?? "Failed to fetch seasonal picks";
+      }
+      throw "Response Body Null";
+    } catch (e) {
+      logger.e('Error fetching seasonal picks: $e');
+      seasonalPicksObserver.value = ApiResult.error(e.toString());
+    }
+  }
+
+  /// Toggles a Top Treks card's favorite state on the backend. Returns
+  /// true on success so the caller can update local UI state; false means
+  /// the caller should roll back its optimistic update.
+  Future<bool> toggleTopTrekFavorite(int id, bool currentlyFavorite) async {
+    try {
+      if (currentlyFavorite) {
+        await _repository.deleteApiCall(url: NetworkUrl.topTrekFavorite(id));
+      } else {
+        await _repository.postApiCall(url: NetworkUrl.topTrekFavorite(id), body: {});
+      }
+      return true;
+    } catch (e) {
+      logger.e('Error toggling top trek favorite: $e');
+      return false;
     }
   }
 

@@ -227,15 +227,21 @@ TopTreksData _$TopTreksDataFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$TopTreksData {
+  int? get id => throw _privateConstructorUsedError;
   String? get title => throw _privateConstructorUsedError;
+  String? get kicker => throw _privateConstructorUsedError;
   String? get description => throw _privateConstructorUsedError;
   @JsonKey(name: 'imagePath')
   String? get imagePath => throw _privateConstructorUsedError;
-  List<String>? get gradient => throw _privateConstructorUsedError;
-  @JsonKey(name: 'textColour')
-  String? get textColour => throw _privateConstructorUsedError;
+  @JsonKey(name: 'badgeType')
+  String? get badgeType => throw _privateConstructorUsedError;
+  String? get meta => throw _privateConstructorUsedError;
   @JsonKey(name: 'isFavorite')
   bool? get isFavorite => throw _privateConstructorUsedError;
+  @JsonKey(name: 'trekId')
+  int? get trekId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'detailUrl')
+  String? get detailUrl => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -250,12 +256,16 @@ abstract class $TopTreksDataCopyWith<$Res> {
       _$TopTreksDataCopyWithImpl<$Res, TopTreksData>;
   @useResult
   $Res call(
-      {String? title,
+      {int? id,
+      String? title,
+      String? kicker,
       String? description,
       @JsonKey(name: 'imagePath') String? imagePath,
-      List<String>? gradient,
-      @JsonKey(name: 'textColour') String? textColour,
-      @JsonKey(name: 'isFavorite') bool? isFavorite});
+      @JsonKey(name: 'badgeType') String? badgeType,
+      String? meta,
+      @JsonKey(name: 'isFavorite') bool? isFavorite,
+      @JsonKey(name: 'trekId') int? trekId,
+      @JsonKey(name: 'detailUrl') String? detailUrl});
 }
 
 /// @nodoc
@@ -271,17 +281,29 @@ class _$TopTreksDataCopyWithImpl<$Res, $Val extends TopTreksData>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
+    Object? id = freezed,
     Object? title = freezed,
+    Object? kicker = freezed,
     Object? description = freezed,
     Object? imagePath = freezed,
-    Object? gradient = freezed,
-    Object? textColour = freezed,
+    Object? badgeType = freezed,
+    Object? meta = freezed,
     Object? isFavorite = freezed,
+    Object? trekId = freezed,
+    Object? detailUrl = freezed,
   }) {
     return _then(_value.copyWith(
+      id: freezed == id
+          ? _value.id
+          : id // ignore: cast_nullable_to_non_nullable
+              as int?,
       title: freezed == title
           ? _value.title
           : title // ignore: cast_nullable_to_non_nullable
+              as String?,
+      kicker: freezed == kicker
+          ? _value.kicker
+          : kicker // ignore: cast_nullable_to_non_nullable
               as String?,
       description: freezed == description
           ? _value.description
@@ -291,18 +313,26 @@ class _$TopTreksDataCopyWithImpl<$Res, $Val extends TopTreksData>
           ? _value.imagePath
           : imagePath // ignore: cast_nullable_to_non_nullable
               as String?,
-      gradient: freezed == gradient
-          ? _value.gradient
-          : gradient // ignore: cast_nullable_to_non_nullable
-              as List<String>?,
-      textColour: freezed == textColour
-          ? _value.textColour
-          : textColour // ignore: cast_nullable_to_non_nullable
+      badgeType: freezed == badgeType
+          ? _value.badgeType
+          : badgeType // ignore: cast_nullable_to_non_nullable
+              as String?,
+      meta: freezed == meta
+          ? _value.meta
+          : meta // ignore: cast_nullable_to_non_nullable
               as String?,
       isFavorite: freezed == isFavorite
           ? _value.isFavorite
           : isFavorite // ignore: cast_nullable_to_non_nullable
               as bool?,
+      trekId: freezed == trekId
+          ? _value.trekId
+          : trekId // ignore: cast_nullable_to_non_nullable
+              as int?,
+      detailUrl: freezed == detailUrl
+          ? _value.detailUrl
+          : detailUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
     ) as $Val);
   }
 }
@@ -316,12 +346,16 @@ abstract class _$$TopTreksDataImplCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {String? title,
+      {int? id,
+      String? title,
+      String? kicker,
       String? description,
       @JsonKey(name: 'imagePath') String? imagePath,
-      List<String>? gradient,
-      @JsonKey(name: 'textColour') String? textColour,
-      @JsonKey(name: 'isFavorite') bool? isFavorite});
+      @JsonKey(name: 'badgeType') String? badgeType,
+      String? meta,
+      @JsonKey(name: 'isFavorite') bool? isFavorite,
+      @JsonKey(name: 'trekId') int? trekId,
+      @JsonKey(name: 'detailUrl') String? detailUrl});
 }
 
 /// @nodoc
@@ -335,17 +369,29 @@ class __$$TopTreksDataImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
+    Object? id = freezed,
     Object? title = freezed,
+    Object? kicker = freezed,
     Object? description = freezed,
     Object? imagePath = freezed,
-    Object? gradient = freezed,
-    Object? textColour = freezed,
+    Object? badgeType = freezed,
+    Object? meta = freezed,
     Object? isFavorite = freezed,
+    Object? trekId = freezed,
+    Object? detailUrl = freezed,
   }) {
     return _then(_$TopTreksDataImpl(
+      id: freezed == id
+          ? _value.id
+          : id // ignore: cast_nullable_to_non_nullable
+              as int?,
       title: freezed == title
           ? _value.title
           : title // ignore: cast_nullable_to_non_nullable
+              as String?,
+      kicker: freezed == kicker
+          ? _value.kicker
+          : kicker // ignore: cast_nullable_to_non_nullable
               as String?,
       description: freezed == description
           ? _value.description
@@ -355,18 +401,26 @@ class __$$TopTreksDataImplCopyWithImpl<$Res>
           ? _value.imagePath
           : imagePath // ignore: cast_nullable_to_non_nullable
               as String?,
-      gradient: freezed == gradient
-          ? _value._gradient
-          : gradient // ignore: cast_nullable_to_non_nullable
-              as List<String>?,
-      textColour: freezed == textColour
-          ? _value.textColour
-          : textColour // ignore: cast_nullable_to_non_nullable
+      badgeType: freezed == badgeType
+          ? _value.badgeType
+          : badgeType // ignore: cast_nullable_to_non_nullable
+              as String?,
+      meta: freezed == meta
+          ? _value.meta
+          : meta // ignore: cast_nullable_to_non_nullable
               as String?,
       isFavorite: freezed == isFavorite
           ? _value.isFavorite
           : isFavorite // ignore: cast_nullable_to_non_nullable
               as bool?,
+      trekId: freezed == trekId
+          ? _value.trekId
+          : trekId // ignore: cast_nullable_to_non_nullable
+              as int?,
+      detailUrl: freezed == detailUrl
+          ? _value.detailUrl
+          : detailUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -375,44 +429,49 @@ class __$$TopTreksDataImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$TopTreksDataImpl implements _TopTreksData {
   const _$TopTreksDataImpl(
-      {this.title,
+      {this.id,
+      this.title,
+      this.kicker,
       this.description,
       @JsonKey(name: 'imagePath') this.imagePath,
-      final List<String>? gradient,
-      @JsonKey(name: 'textColour') this.textColour,
-      @JsonKey(name: 'isFavorite') this.isFavorite})
-      : _gradient = gradient;
+      @JsonKey(name: 'badgeType') this.badgeType,
+      this.meta,
+      @JsonKey(name: 'isFavorite') this.isFavorite,
+      @JsonKey(name: 'trekId') this.trekId,
+      @JsonKey(name: 'detailUrl') this.detailUrl});
 
   factory _$TopTreksDataImpl.fromJson(Map<String, dynamic> json) =>
       _$$TopTreksDataImplFromJson(json);
 
   @override
+  final int? id;
+  @override
   final String? title;
+  @override
+  final String? kicker;
   @override
   final String? description;
   @override
   @JsonKey(name: 'imagePath')
   final String? imagePath;
-  final List<String>? _gradient;
   @override
-  List<String>? get gradient {
-    final value = _gradient;
-    if (value == null) return null;
-    if (_gradient is EqualUnmodifiableListView) return _gradient;
-    // ignore: implicit_dynamic_type
-    return EqualUnmodifiableListView(value);
-  }
-
+  @JsonKey(name: 'badgeType')
+  final String? badgeType;
   @override
-  @JsonKey(name: 'textColour')
-  final String? textColour;
+  final String? meta;
   @override
   @JsonKey(name: 'isFavorite')
   final bool? isFavorite;
+  @override
+  @JsonKey(name: 'trekId')
+  final int? trekId;
+  @override
+  @JsonKey(name: 'detailUrl')
+  final String? detailUrl;
 
   @override
   String toString() {
-    return 'TopTreksData(title: $title, description: $description, imagePath: $imagePath, gradient: $gradient, textColour: $textColour, isFavorite: $isFavorite)';
+    return 'TopTreksData(id: $id, title: $title, kicker: $kicker, description: $description, imagePath: $imagePath, badgeType: $badgeType, meta: $meta, isFavorite: $isFavorite, trekId: $trekId, detailUrl: $detailUrl)';
   }
 
   @override
@@ -420,22 +479,27 @@ class _$TopTreksDataImpl implements _TopTreksData {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$TopTreksDataImpl &&
+            (identical(other.id, id) || other.id == id) &&
             (identical(other.title, title) || other.title == title) &&
+            (identical(other.kicker, kicker) || other.kicker == kicker) &&
             (identical(other.description, description) ||
                 other.description == description) &&
             (identical(other.imagePath, imagePath) ||
                 other.imagePath == imagePath) &&
-            const DeepCollectionEquality().equals(other._gradient, _gradient) &&
-            (identical(other.textColour, textColour) ||
-                other.textColour == textColour) &&
+            (identical(other.badgeType, badgeType) ||
+                other.badgeType == badgeType) &&
+            (identical(other.meta, meta) || other.meta == meta) &&
             (identical(other.isFavorite, isFavorite) ||
-                other.isFavorite == isFavorite));
+                other.isFavorite == isFavorite) &&
+            (identical(other.trekId, trekId) || other.trekId == trekId) &&
+            (identical(other.detailUrl, detailUrl) ||
+                other.detailUrl == detailUrl));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(runtimeType, title, description, imagePath,
-      const DeepCollectionEquality().hash(_gradient), textColour, isFavorite);
+  int get hashCode => Object.hash(runtimeType, id, title, kicker, description,
+      imagePath, badgeType, meta, isFavorite, trekId, detailUrl);
 
   @JsonKey(ignore: true)
   @override
@@ -453,32 +517,46 @@ class _$TopTreksDataImpl implements _TopTreksData {
 
 abstract class _TopTreksData implements TopTreksData {
   const factory _TopTreksData(
-          {final String? title,
+          {final int? id,
+          final String? title,
+          final String? kicker,
           final String? description,
           @JsonKey(name: 'imagePath') final String? imagePath,
-          final List<String>? gradient,
-          @JsonKey(name: 'textColour') final String? textColour,
-          @JsonKey(name: 'isFavorite') final bool? isFavorite}) =
+          @JsonKey(name: 'badgeType') final String? badgeType,
+          final String? meta,
+          @JsonKey(name: 'isFavorite') final bool? isFavorite,
+          @JsonKey(name: 'trekId') final int? trekId,
+          @JsonKey(name: 'detailUrl') final String? detailUrl}) =
       _$TopTreksDataImpl;
 
   factory _TopTreksData.fromJson(Map<String, dynamic> json) =
       _$TopTreksDataImpl.fromJson;
 
   @override
+  int? get id;
+  @override
   String? get title;
+  @override
+  String? get kicker;
   @override
   String? get description;
   @override
   @JsonKey(name: 'imagePath')
   String? get imagePath;
   @override
-  List<String>? get gradient;
+  @JsonKey(name: 'badgeType')
+  String? get badgeType;
   @override
-  @JsonKey(name: 'textColour')
-  String? get textColour;
+  String? get meta;
   @override
   @JsonKey(name: 'isFavorite')
   bool? get isFavorite;
+  @override
+  @JsonKey(name: 'trekId')
+  int? get trekId;
+  @override
+  @JsonKey(name: 'detailUrl')
+  String? get detailUrl;
   @override
   @JsonKey(ignore: true)
   _$$TopTreksDataImplCopyWith<_$TopTreksDataImpl> get copyWith =>

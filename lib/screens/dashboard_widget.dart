@@ -2,17 +2,16 @@ import 'dart:developer';
 
 import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/controller/trek_controller.dart';
-import 'package:arobo_app/models/seasonal_forecast_data.dart';
 import 'package:arobo_app/utils/app_theme.dart';
 import 'package:arobo_app/utils/common_btn.dart';
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/common_images.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:arobo_app/utils/know_more_card.dart';
-import 'package:arobo_app/utils/seasonal_forecast.dart';
+import 'package:arobo_app/utils/seasonal_forecast_mock_data.dart';
+import 'package:arobo_app/utils/seasonal_gradient_card.dart';
 import 'package:arobo_app/utils/top_treks_card.dart';
 import 'package:arobo_app/models/know_more_data.dart';
-import 'package:arobo_app/models/top_treks_data.dart';
 import 'package:arobo_app/models/shorts_treks_data.dart';
 import 'package:arobo_app/utils/trek_shorts.dart';
 import 'package:arobo_app/models/city_model.dart';
@@ -63,7 +62,9 @@ class _DashboardState extends State<Dashboard>
 
   final ScrollController _scrollController = ScrollController();
   final ScrollController _knowMoreController = ScrollController();
-  final ScrollController _topTreksController = ScrollController();
+  final PageController _topTreksPageController = PageController(
+    viewportFraction: 0.74,
+  );
   final ScrollController _trekShortsController = ScrollController();
   final ScrollController _seasonalForecastController = ScrollController();
 
@@ -94,7 +95,7 @@ class _DashboardState extends State<Dashboard>
   DateTime? _selectedDay;
 
   final List<DateTime> _nearestWeekendDates = [];
-  final Map<String, bool> _favoriteTreks = {};
+  final Map<int, bool> _favoriteTreks = {};
 
   // ---------------------------------------------------------------------------
   // Helpers
@@ -141,7 +142,7 @@ class _DashboardState extends State<Dashboard>
     _dashboardC.fetchWhatsNew();
     _dashboardC.fetchTopTreks();
     _dashboardC.fetchShortsTreks();
-    _dashboardC.fetchSeasonalForeCasts();
+    _dashboardC.fetchSeasonalPicks();
   }
 
   @override
@@ -168,7 +169,7 @@ class _DashboardState extends State<Dashboard>
     _animationController.dispose();
     _scrollController.dispose();
     _knowMoreController.dispose();
-    _topTreksController.dispose();
+    _topTreksPageController.dispose();
     _trekShortsController.dispose();
     _seasonalForecastController.dispose();
     _trekShortsPageController.dispose();
@@ -182,7 +183,9 @@ class _DashboardState extends State<Dashboard>
   void _resetAllScrolls() {
     if (_scrollController.hasClients) _scrollController.jumpTo(0);
     if (_knowMoreController.hasClients) _knowMoreController.jumpTo(0);
-    if (_topTreksController.hasClients) _topTreksController.jumpTo(0);
+    if (_topTreksPageController.hasClients) {
+      _topTreksPageController.jumpToPage(0);
+    }
     if (_trekShortsController.hasClients) _trekShortsController.jumpTo(0);
     if (_seasonalForecastController.hasClients) {
       _seasonalForecastController.jumpTo(0);
@@ -398,10 +401,15 @@ class _DashboardState extends State<Dashboard>
     _handleSearch();
   }
 
-  void _toggleFavorite(String trekTitle) {
-    setState(() {
-      _favoriteTreks[trekTitle] = !(_favoriteTreks[trekTitle] ?? false);
-    });
+  Future<void> _toggleFavorite(int id, bool currentlyFavorite) async {
+    setState(() => _favoriteTreks[id] = !currentlyFavorite);
+    final success = await _dashboardC.toggleTopTrekFavorite(
+      id,
+      currentlyFavorite,
+    );
+    if (!success && mounted) {
+      setState(() => _favoriteTreks[id] = currentlyFavorite);
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -2166,26 +2174,16 @@ class _DashboardState extends State<Dashboard>
                           orElse: () => [],
                         );
 
-                    final List<TopTreksData> topTreksCardsData =
-                        topTreksResponse.map<TopTreksData>((e) {
-                          return TopTreksData(
-                            title: e.title ?? '',
-                            description: e.description ?? '',
-                            imagePath: getFullImageUrl(e.imagePath),
-                            textColour: e.textColour ?? '#FFFFFF',
-                            gradient: _safeGradient(e.gradient, [
-                              '#134E5E',
-                              '#71B280',
-                            ]),
-                            isFavorite: e.isFavorite ?? false,
-                          );
-                        }).toList();
-
-                    log('TOP TREKS COUNT => ${topTreksCardsData.length}');
-
-                    if (!topTreksLoading && topTreksCardsData.isEmpty) {
+                    if (!topTreksLoading && topTreksResponse.isEmpty) {
                       return const SizedBox();
                     }
+
+                    // 4:5 portrait, matching the recommended upload spec
+                    // (1080x1350 / min 720x900) and the grid card ratio on
+                    // the "View more" screen — same ratio everywhere a
+                    // Top Treks photo is displayed.
+                    final topTreksCardWidth = 68.w;
+                    final topTreksCardHeight = topTreksCardWidth * 1.25;
 
                     return Column(
                       children: [
@@ -2240,51 +2238,60 @@ class _DashboardState extends State<Dashboard>
                             ],
                           ),
                         ),
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          controller: _topTreksController,
-                          child: Container(
-                            margin: EdgeInsets.only(
-                              left: ScreenConstant.size10,
-                              top: 1.h,
-                            ),
+                        SizedBox(
+                          height: topTreksCardHeight,
+                          child: Padding(
+                            padding: EdgeInsets.only(top: 1.h),
                             child: topTreksLoading
-                                ? _buildShimmerRowPlaceholder()
-                                : Row(
-                                    children: topTreksCardsData
-                                        .map(
-                                          (trekData) => Container(
-                                            margin: EdgeInsets.only(
-                                              right: ScreenConstant.size15,
-                                            ),
-                                            child: TopTreksCard(
-                                              gradientEndColor:
-                                                  Colors.transparent,
-                                              imagePath:
-                                                  trekData.imagePath ?? '',
-                                              title: trekData.title ?? '',
-                                              description:
-                                                  trekData.description ?? '',
-                                              customGradient:
-                                                  AppTheme.customGradient(
-                                                    trekData.gradient,
-                                                  ),
-                                              textColor: AppTheme.hexToColor(
-                                                trekData.textColour,
-                                              ),
-                                              isFavorite:
-                                                  _favoriteTreks[trekData
-                                                      .title] ??
-                                                  (trekData.isFavorite ??
-                                                      false),
-                                              onFavoriteTap: () =>
-                                                  _toggleFavorite(
-                                                    trekData.title ?? '',
-                                                  ),
-                                            ),
+                                ? _buildTopTreksShimmerPlaceholder(
+                                    topTreksCardWidth,
+                                    topTreksCardHeight,
+                                  )
+                                : PageView.builder(
+                                    controller: _topTreksPageController,
+                                    padEnds: false,
+                                    itemCount: topTreksResponse.length,
+                                    itemBuilder: (context, index) {
+                                      final trekData = topTreksResponse[index];
+                                      final isTrending =
+                                          trekData.badgeType == 'trending';
+                                      final trekId = trekData.id;
+                                      final isFavorite =
+                                          _favoriteTreks[trekId] ??
+                                          (trekData.isFavorite ?? false);
+                                      return Padding(
+                                        padding: EdgeInsets.only(
+                                          left: ScreenConstant.size12,
+                                          right: ScreenConstant.size6,
+                                        ),
+                                        child: TopTreksCard(
+                                          imagePath: getFullImageUrl(
+                                            trekData.imagePath,
                                           ),
-                                        )
-                                        .toList(),
+                                          title: trekData.title ?? '',
+                                          description:
+                                              trekData.description ?? '',
+                                          kicker: trekData.kicker,
+                                          meta: trekData.meta,
+                                          badgeText: isTrending
+                                              ? 'Trending'
+                                              : 'Top Pick',
+                                          badgeIcon: isTrending
+                                              ? Icons
+                                                  .local_fire_department_rounded
+                                              : Icons.star_rounded,
+                                          width: topTreksCardWidth,
+                                          height: topTreksCardHeight,
+                                          isFavorite: isFavorite,
+                                          onFavoriteTap: trekId == null
+                                              ? null
+                                              : () => _toggleFavorite(
+                                                  trekId,
+                                                  isFavorite,
+                                                ),
+                                        ),
+                                      );
+                                    },
                                   ),
                           ),
                         ),
@@ -2426,64 +2433,35 @@ class _DashboardState extends State<Dashboard>
                     );
                   }),
 
-                  // ── Seasonal Forecast ──
+                  // ── Seasonal Forecast (seasonal_forecast_picks backend) ──
                   Obx(() {
-                    final seasonalLoading = _dashboardC
-                        .seasonalForcastObserver
+                    final seasonalLoading = _dashboardC.seasonalPicksObserver
                         .value
                         .maybeWhen(loading: (_) => true, orElse: () => false);
 
-                    final seasonalResponse = _dashboardC
-                        .seasonalForcastObserver
-                        .value
-                        .maybeWhen(
-                          success: (data) => data.data ?? [],
-                          orElse: () => [],
-                        );
+                    final seasonalData = _dashboardC.seasonalPicksObserver.value
+                        .maybeWhen(success: (data) => data.data, orElse: () => null);
 
-                    final List<SeasonalForecastData> seasonalForecastData =
-                        seasonalResponse.map<SeasonalForecastData>((e) {
-                          // Use body gradient from styling if available,
-                          // otherwise fall back to color field or default blue.
-                          final bodyGradientColors =
-                              e.styling?.body?.gradient?.colors;
-                          final List<String> gradient =
-                              (bodyGradientColors != null &&
-                                  bodyGradientColors.isNotEmpty)
-                              ? List<String>.from(bodyGradientColors)
-                              : (e.color != null && e.color!.isNotEmpty)
-                              ? [e.color!, e.color!]
-                              : ['#2196F3', '#2196F3'];
+                    final topPicks = seasonalData?.topPicks ?? [];
+                    final avoidPicks = seasonalData?.avoidPicks ?? [];
 
-                          return SeasonalForecastData(
-                            title: e.title ?? '',
-                            description:
-                                e.description ??
-                                'Best season for trekking adventures.',
-                            imagePath: getFullImageUrl(e.imagePath),
-                            textColour: e.textColour ?? '#000000',
-                            gradient: gradient,
-                            styling: StylingModel(
-                              title: TitleStylingModel(
-                                textColour:
-                                    e.styling?.title?.textColour ?? '#000000',
-                                gradient: _safeGradient(
-                                  e.styling?.title?.gradient
-                                      ?.map((x) => x.toString())
-                                      .toList(),
-                                  gradient,
-                                ),
-                                icon: e.styling?.title?.icon,
-                              ),
-                            ),
-                          );
-                        }).toList();
-
-                    log('SEASONAL COUNT => ${seasonalForecastData.length}');
-
-                    if (!seasonalLoading && seasonalForecastData.isEmpty) {
+                    if (!seasonalLoading && topPicks.isEmpty && avoidPicks.isEmpty) {
                       return const SizedBox();
                     }
+
+                    final season = TrekSeason.values.firstWhere(
+                      (s) => s.name == seasonalData?.season,
+                      orElse: () => TrekSeason.spring,
+                    );
+                    final label = seasonalData?.label ?? '';
+
+                    // Preview: top picks + one avoid pick, so the home
+                    // screen shows both sides, not just the "good news"
+                    // half — capped so the row still fits comfortably.
+                    final previewPicks = [
+                      ...topPicks.take(4),
+                      ...avoidPicks.take(1),
+                    ];
 
                     return Column(
                       children: [
@@ -2494,37 +2472,45 @@ class _DashboardState extends State<Dashboard>
                             top: ScreenConstant.size10,
                           ),
                           child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            mainAxisAlignment:
+                                MainAxisAlignment.spaceBetween,
                             children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Seasonal Forecast',
-                                    textScaler: const TextScaler.linear(1.0),
-                                    style: TextStyle(
-                                      fontFamily: 'Poppins',
-                                      fontSize: FontSize.s13,
-                                      fontWeight: FontWeight.w700,
-                                      color: _C.ink,
-                                      letterSpacing: -0.2,
-                                    ),
-                                  ).withShimmerAi(loading: seasonalLoading),
-                                  SizedBox(height: 0.3.h),
-                                  Text(
-                                    'Weather Alerts for Safer Treks!',
-                                    textScaler: const TextScaler.linear(1.0),
-                                    style: TextStyle(
-                                      fontFamily: 'Poppins',
-                                      fontSize: FontSize.s10,
-                                      fontWeight: FontWeight.w400,
-                                      color: _C.inkMid,
-                                    ),
-                                  ).withShimmerAi(loading: seasonalLoading),
-                                ],
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Seasonal Forecast',
+                                      textScaler: const TextScaler.linear(1.0),
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontSize: FontSize.s13,
+                                        fontWeight: FontWeight.w700,
+                                        color: _C.ink,
+                                        letterSpacing: -0.2,
+                                      ),
+                                    ).withShimmerAi(loading: seasonalLoading),
+                                    SizedBox(height: 0.3.h),
+                                    Text(
+                                      "Best for $label — and what to skip",
+                                      textScaler: const TextScaler.linear(1.0),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontSize: FontSize.s10,
+                                        fontWeight: FontWeight.w400,
+                                        color: _C.inkMid,
+                                      ),
+                                    ).withShimmerAi(loading: seasonalLoading),
+                                  ],
+                                ),
                               ),
+                              SizedBox(width: 2.w),
                               InkWell(
-                                onTap: () => Get.toNamed('/seasonal-forecast'),
+                                onTap: () =>
+                                    Get.toNamed('/seasonal-forecast'),
                                 child: Text(
                                   'View more',
                                   style: TextStyle(
@@ -2534,8 +2520,8 @@ class _DashboardState extends State<Dashboard>
                                     fontSize: FontSize.s11,
                                     fontWeight: FontWeight.w600,
                                   ),
-                                ).withShimmerAi(loading: seasonalLoading),
-                              ),
+                                ),
+                              ).withShimmerAi(loading: seasonalLoading),
                             ],
                           ),
                         ),
@@ -2545,34 +2531,31 @@ class _DashboardState extends State<Dashboard>
                           child: Container(
                             margin: EdgeInsets.only(
                               left: ScreenConstant.size15,
-                              top: 1.h,
+                              top: 1.5.h,
                               bottom: ScreenConstant.size15,
                             ),
                             child: seasonalLoading
-                                ? _buildShimmerRowPlaceholder()
+                                ? _buildSeasonalPicksShimmerPlaceholder(70.w, 24.h)
                                 : Row(
-                                    children: seasonalForecastData
+                                    children: previewPicks
                                         .map(
-                                          (cardData) => Padding(
-                                            padding: EdgeInsets.only(
-                                              right: 2.h,
-                                            ),
-                                            child: SeasonalForecast(
-                                              title: cardData.title ?? '',
-                                              description:
-                                                  cardData.description ?? '',
-                                              imagePath:
-                                                  cardData.imagePath ?? '',
-                                              gradient: AppTheme.customGradient(
-                                                (cardData.gradient ?? [])
-                                                    .map((e) => e.toString())
-                                                    .toList(),
-                                              ),
-                                              textColour: AppTheme.hexToColor(
-                                                cardData.textColour,
-                                              ),
-                                              titleStylingModel:
-                                                  cardData.styling?.title,
+                                          (pick) => Padding(
+                                            padding:
+                                                EdgeInsets.only(right: 3.w),
+                                            child: SeasonalGradientCard(
+                                              trekName: pick.trekName ?? '',
+                                              reason: pick.reason ?? '',
+                                              imagePath: getFullImageUrl(
+                                                        pick.imagePath,
+                                                      ).isEmpty
+                                                  ? CommonImages.himalayas
+                                                  : getFullImageUrl(
+                                                      pick.imagePath,
+                                                    ),
+                                              isAvoid: pick.isAvoid ?? false,
+                                              season: season,
+                                              width: 70.w,
+                                              height: 24.h,
                                             ),
                                           ),
                                         )
@@ -2666,19 +2649,43 @@ class _DashboardState extends State<Dashboard>
     );
   }
 
-  Widget _buildShimmerRowPlaceholder() {
+  Widget _buildTopTreksShimmerPlaceholder(double width, double height) {
+    return Row(
+      children: List.generate(
+        2,
+        (i) => Padding(
+          padding: EdgeInsets.only(
+            left: ScreenConstant.size12,
+            right: ScreenConstant.size6,
+          ),
+          child: Container(
+            width: width,
+            height: height,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(22),
+            ),
+          ).withShimmerAi(loading: true),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSeasonalPicksShimmerPlaceholder(double width, double height) {
     return Row(
       children: List.generate(
         3,
-        (i) => Container(
-          width: 40.w,
-          height: 20.h,
-          margin: EdgeInsets.only(right: ScreenConstant.size15),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ).withShimmerAi(loading: true),
+        (i) => Padding(
+          padding: EdgeInsets.only(right: 3.w),
+          child: Container(
+            width: width,
+            height: height,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+            ),
+          ).withShimmerAi(loading: true),
+        ),
       ),
     );
   }

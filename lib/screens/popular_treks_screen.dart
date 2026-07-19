@@ -2,12 +2,10 @@ import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:arobo_app/utils/top_treks_card.dart';
-import 'package:arobo_app/models/top_treks_data.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
 import 'package:sizer/sizer.dart';
-import '../utils/app_theme.dart';
 
 class PopularTreksScreen extends StatefulWidget {
   const PopularTreksScreen({super.key});
@@ -18,19 +16,14 @@ class PopularTreksScreen extends StatefulWidget {
 
 class _PopularTreksScreenState extends State<PopularTreksScreen> {
   final ScrollController _scrollController = ScrollController();
-  final Map<String, bool> _favoriteTreks = {};
+  final Map<int, bool> _favoriteTreks = {};
 
   final _dashboardC = Get.find<DashboardController>();
 
-
-
-  @override
-  void initState() {
-    super.initState();
-    // Initialize favorite state from topTreksCardsData
-    for (var trek in topTreksCardsData) {
-      _favoriteTreks[trek['title']] = trek['isFavorite'] ?? false;
-    }
+  String _getFullImageUrl(String? path) {
+    if (path == null || path.isEmpty) return '';
+    if (path.startsWith('http')) return path;
+    return 'https://api.aorbotreks.co.in$path';
   }
 
   @override
@@ -39,23 +32,19 @@ class _PopularTreksScreenState extends State<PopularTreksScreen> {
     super.dispose();
   }
 
-  void _toggleFavorite(String trekTitle) {
-    setState(() {
-      _favoriteTreks[trekTitle] = !(_favoriteTreks[trekTitle] ?? false);
-
-      // Update the topTreksCardsData list
-      final trekIndex =
-          topTreksCardsData.indexWhere((trek) => trek['title'] == trekTitle);
-      if (trekIndex != -1) {
-        topTreksCardsData[trekIndex]['isFavorite'] = _favoriteTreks[trekTitle];
-      }
-    });
+  Future<void> _toggleFavorite(int id, bool currentlyFavorite) async {
+    setState(() => _favoriteTreks[id] = !currentlyFavorite);
+    final success = await _dashboardC.toggleTopTrekFavorite(
+      id,
+      currentlyFavorite,
+    );
+    if (!success && mounted) {
+      setState(() => _favoriteTreks[id] = currentlyFavorite);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-
-
     return Scaffold(
       backgroundColor: CommonColors.offWhiteColor2,
       appBar: AppBar(
@@ -74,39 +63,52 @@ class _PopularTreksScreenState extends State<PopularTreksScreen> {
           ),
         ),
       ),
-      body: Obx((){
-        List<TopTreksData>? topTreksCardsData = _dashboardC.topTreksObserver.value.maybeWhen(
-          success: (topTreksResponse) => (topTreksResponse as TopTreksDataResponseModel).data,
-          error: (sc) => [],
-          orElse: () => [TopTreksData(),TopTreksData(),TopTreksData(),TopTreksData()]);
+      body: Obx(() {
+        final topTreksData = _dashboardC.topTreksObserver.value.maybeWhen(
+          success: (response) => response.data ?? [],
+          orElse: () => [],
+        );
 
-        return ListView.builder(
+        return GridView.builder(
           controller: _scrollController,
-          padding: EdgeInsets.symmetric(vertical: 2.h),
-          itemCount: topTreksCardsData?.length,
+          padding: EdgeInsets.fromLTRB(4.w, 2.h, 4.w, 2.h),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 3.w,
+            mainAxisSpacing: 2.h,
+            childAspectRatio: 0.8, // 4:5 portrait — matches the dashboard carousel card and the recommended upload spec
+          ),
+          itemCount: topTreksData.length,
           itemBuilder: (context, index) {
-            final trekData = topTreksCardsData?[index];
-            return Padding(
-              padding: EdgeInsets.only(bottom: 2.h, left: 4.w, right: 4.w),
-              child:
-              TopTreksCard(
-                gradientEndColor: Colors.transparent,
-                imagePath: trekData?.imagePath ?? "",
-                title: trekData?.title ?? "",
-                description: trekData?.description ?? "",
-                customGradient: AppTheme.customGradient(trekData?.gradient),
-                textColor: AppTheme.hexToColor(trekData?.textColour),
-                isFavorite: trekData?.isFavorite ?? false,
-                onFavoriteTap: () => _toggleFavorite(trekData?.title ?? ""),
-                width: 100.w,
-                height: 25.h,
-              ),
-
+            final trekData = topTreksData[index];
+            final isTrending = trekData.badgeType == 'trending';
+            final trekId = trekData.id;
+            final isFavorite =
+                _favoriteTreks[trekId] ?? (trekData.isFavorite ?? false);
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                return TopTreksCard(
+                  imagePath: _getFullImageUrl(trekData.imagePath),
+                  title: trekData.title ?? "",
+                  description: trekData.description ?? "",
+                  kicker: trekData.kicker,
+                  meta: trekData.meta,
+                  badgeText: isTrending ? 'Trending' : 'Top Pick',
+                  badgeIcon: isTrending
+                      ? Icons.local_fire_department_rounded
+                      : Icons.star_rounded,
+                  isFavorite: isFavorite,
+                  onFavoriteTap: trekId == null
+                      ? null
+                      : () => _toggleFavorite(trekId, isFavorite),
+                  width: constraints.maxWidth,
+                  height: constraints.maxHeight,
+                );
+              },
             );
           },
         );
-      },
-      ),
+      }),
     );
   }
 }
