@@ -56,43 +56,14 @@ class SeasonalGradientCard extends StatelessWidget {
   });
 
   /// The background layer — a full-bleed cover photo, or (illustration
-  /// mode) an automatic season gradient with the cutout contained in a
-  /// fixed, inset slot so it can never be stretched, cropped, or collide
-  /// with the badge/text above and below it regardless of card size.
+  /// mode) just the automatic season gradient. The illustration graphic
+  /// itself lives in [_buildIllustrationImage], laid out as part of the
+  /// row in [build] — not here — since illustration mode needs it beside
+  /// the text, not stacked behind it.
   Widget _buildBackground() {
-    if (imageType == SeasonalPickImageType.illustration) {
-      return Stack(
-        fit: StackFit.expand,
-        children: [
-          DecoratedBox(
-            decoration: BoxDecoration(gradient: seasonBackdropGradient(season)),
-          ),
-          // No illustration uploaded yet — the gradient alone is a
-          // complete, valid look, not a broken/empty state. Anchored to
-          // the left (not centered) — same side as the illustration slot
-          // in KnowMoreCard's What's New card.
-          if (imagePath.isNotEmpty)
-            Positioned(
-              top: height * 0.18,
-              bottom: height * 0.42,
-              left: width * 0.08,
-              right: width * 0.5,
-              child: imagePath.startsWith('http')
-                  ? CustomNetworkImage(
-                      imageUrl: imagePath,
-                      fit: BoxFit.contain,
-                      hasTransparentBackground: true,
-                      borderRadius: 0,
-                    )
-                  : Image.asset(imagePath, fit: BoxFit.contain),
-            ),
-        ],
-      );
-    }
-
-    if (imagePath.isEmpty) {
-      // Photo mode with nothing set — fall back to the season gradient
-      // too, rather than crashing on Image.asset('').
+    if (imageType == SeasonalPickImageType.illustration || imagePath.isEmpty) {
+      // Photo mode with nothing set also falls back to the season
+      // gradient, rather than crashing on Image.asset('').
       return DecoratedBox(
         decoration: BoxDecoration(gradient: seasonBackdropGradient(season)),
       );
@@ -112,6 +83,21 @@ class SeasonalGradientCard extends StatelessWidget {
             height: height,
             fit: BoxFit.cover,
           );
+  }
+
+  /// The illustration graphic, contained (never stretched/cropped) — no
+  /// image uploaded yet just renders nothing, leaving the gradient alone
+  /// as a complete, valid look rather than a broken/empty box.
+  Widget _buildIllustrationImage() {
+    if (imagePath.isEmpty) return const SizedBox.shrink();
+    return imagePath.startsWith('http')
+        ? CustomNetworkImage(
+            imageUrl: imagePath,
+            fit: BoxFit.contain,
+            hasTransparentBackground: true,
+            borderRadius: 0,
+          )
+        : Image.asset(imagePath, fit: BoxFit.contain);
   }
 
   @override
@@ -251,44 +237,105 @@ class SeasonalGradientCard extends StatelessWidget {
                   ),
                 ),
 
-              // Trek name + reason, overlaid on the scrim.
-              Positioned(
-                left: 14,
-                right: 14,
-                bottom: 14,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      trekName,
-                      textScaler: const TextScaler.linear(1.0),
-                      style: GoogleFonts.poppins(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: CommonColors.whiteColor,
-                        letterSpacing: -0.2,
-                        height: 1.1,
+              // Illustration mode: icon + text side by side (mirrors
+              // KnowMoreCard's What's New layout exactly, not just the
+              // icon's position) — uses the space a bottom-anchored block
+              // would otherwise leave empty on the right. More top
+              // clearance than before, now that text no longer needs
+              // reserved space below the icon.
+              if (imageType == SeasonalPickImageType.illustration)
+                Positioned(
+                  top: height * 0.30,
+                  bottom: height * 0.10,
+                  left: 14,
+                  right: 14,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: width * 0.34,
+                        height: double.infinity,
+                        child: _buildIllustrationImage(),
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      reason,
-                      textScaler: const TextScaler.linear(1.0),
-                      style: GoogleFonts.poppins(
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w400,
-                        color: CommonColors.whiteColor.withValues(alpha: 0.82),
-                        height: 1.3,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              trekName,
+                              textScaler: const TextScaler.linear(1.0),
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: CommonColors.whiteColor,
+                                letterSpacing: -0.2,
+                                height: 1.15,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              reason,
+                              textScaler: const TextScaler.linear(1.0),
+                              style: GoogleFonts.poppins(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w400,
+                                color: CommonColors.whiteColor.withValues(alpha: 0.82),
+                                height: 1.3,
+                              ),
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+                    ],
+                  ),
+                )
+              else
+                // Photo mode: trek name + reason overlaid on the scrim at
+                // the bottom, unchanged from the original design.
+                Positioned(
+                  left: 14,
+                  right: 14,
+                  bottom: 14,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        trekName,
+                        textScaler: const TextScaler.linear(1.0),
+                        style: GoogleFonts.poppins(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: CommonColors.whiteColor,
+                          letterSpacing: -0.2,
+                          height: 1.1,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        reason,
+                        textScaler: const TextScaler.linear(1.0),
+                        style: GoogleFonts.poppins(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w400,
+                          color: CommonColors.whiteColor.withValues(alpha: 0.82),
+                          height: 1.3,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
             ],
           ),
         ),
