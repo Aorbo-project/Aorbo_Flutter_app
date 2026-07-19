@@ -77,9 +77,9 @@ dependencies:
   cached_network_image_ce: ^4.6.4
   animate_do: ^3.0.2
   http: ^1.6.0
-  chewie: ^1.13.1
-  video_player: ^2.10.1
   share_plus: ^7.2.1
+  youtube_player_iframe: ^6.0.2
+  visibility_detector: ^0.2.2 # pinned by focus_detector's transitive constraint
 
 dev_dependencies:
   flutter_test:

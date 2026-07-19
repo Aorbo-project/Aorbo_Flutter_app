@@ -13,7 +13,6 @@ import 'package:arobo_app/utils/seasonal_gradient_card.dart';
 import 'package:arobo_app/utils/top_treks_card.dart';
 import 'package:arobo_app/models/know_more_data.dart';
 import 'package:arobo_app/models/seasonal_picks_data.dart';
-import 'package:arobo_app/models/shorts_treks_data.dart';
 import 'package:arobo_app/utils/trek_shorts.dart';
 import 'package:arobo_app/models/city_model.dart';
 import 'package:arobo_app/screens/source_location_screen.dart';
@@ -66,7 +65,6 @@ class _DashboardState extends State<Dashboard>
   final PageController _topTreksPageController = PageController(
     viewportFraction: 0.74,
   );
-  final ScrollController _trekShortsController = ScrollController();
   final ScrollController _seasonalForecastController = ScrollController();
 
   late AnimationController _animationController;
@@ -84,9 +82,41 @@ class _DashboardState extends State<Dashboard>
 
   bool _isTrekShortsUserInteracting = false;
   Timer? _trekShortsTimer;
+  // Near-full-width, one-card-at-a-time shelf. Cards are static thumbnails
+  // only — see trek_shorts.dart for why no live video plays inline here.
   final PageController _trekShortsPageController = PageController(
-    viewportFraction: 0.38,
+    viewportFraction: 0.92,
   );
+
+  // STATIC DESIGN PHASE — hardcoded sample data, no backend wiring yet.
+  // Mixes a vertical (Shorts) and a landscape sample so the orientation-
+  // aware sizing in TrekShorts/YoutubeShortsPlayer is visibly exercised.
+  static const List<TrekShortItem> _trekShortsSampleData = [
+    TrekShortItem(
+      title: 'Design Preview 1',
+      description: 'Sample short — not real data',
+      videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      isVertical: true,
+    ),
+    TrekShortItem(
+      title: 'Design Preview 2',
+      description: 'Sample short — not real data',
+      videoUrl: 'https://www.youtube.com/watch?v=9bZkp7q19f0',
+      isVertical: true,
+    ),
+    // Diagnostic swap: same video as Design Preview 1 (already confirmed
+    // working), just flagged landscape instead of vertical — isolates
+    // whether the broken card follows the isVertical flag or was specific
+    // to the previous video (YouTube's own "Me at the zoo" page, which
+    // gets special commemorative treatment as the platform's first-ever
+    // upload, and may render extra page chrome ordinary videos don't).
+    TrekShortItem(
+      title: 'Design Preview 3 (landscape)',
+      description: 'Sample short — not real data',
+      videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      isVertical: false,
+    ),
+  ];
 
   final DashboardController _dashboardC = Get.find<DashboardController>();
   final TrekController _trekC = Get.find<TrekController>();
@@ -142,7 +172,6 @@ class _DashboardState extends State<Dashboard>
 
     _dashboardC.fetchWhatsNew();
     _dashboardC.fetchTopTreks();
-    _dashboardC.fetchShortsTreks();
     _dashboardC.fetchSeasonalPicks();
   }
 
@@ -171,7 +200,6 @@ class _DashboardState extends State<Dashboard>
     _scrollController.dispose();
     _knowMoreController.dispose();
     _topTreksPageController.dispose();
-    _trekShortsController.dispose();
     _seasonalForecastController.dispose();
     _trekShortsPageController.dispose();
     super.dispose();
@@ -187,7 +215,6 @@ class _DashboardState extends State<Dashboard>
     if (_topTreksPageController.hasClients) {
       _topTreksPageController.jumpToPage(0);
     }
-    if (_trekShortsController.hasClients) _trekShortsController.jumpTo(0);
     if (_seasonalForecastController.hasClients) {
       _seasonalForecastController.jumpTo(0);
     }
@@ -1987,8 +2014,8 @@ class _DashboardState extends State<Dashboard>
                           orElse: () => [],
                         );
 
-                    final List<KnowMoreData> whatsNewCardsData = whatsNewResponse
-                        .map<KnowMoreData>((e) {
+                    final List<KnowMoreData> whatsNewCardsData =
+                        whatsNewResponse.map<KnowMoreData>((e) {
                           return KnowMoreData(
                             title: e.title ?? '',
                             subtitle: e.subtitle ?? '',
@@ -2004,8 +2031,7 @@ class _DashboardState extends State<Dashboard>
                             bulletPoints: e.bulletPoints,
                             callToAction: e.callToAction,
                           );
-                        })
-                        .toList();
+                        }).toList();
 
                     if (!whatsNewLoading && whatsNewCardsData.isEmpty) {
                       return const SizedBox();
@@ -2095,8 +2121,7 @@ class _DashboardState extends State<Dashboard>
                                     textColor: AppTheme.hexToColor(
                                       cardData.textColour,
                                     ),
-                                    onKnowMoreTap:
-                                        cardData.hasKnowMore == false
+                                    onKnowMoreTap: cardData.hasKnowMore == false
                                         ? null
                                         : () {
                                             Get.toNamed(
@@ -2132,8 +2157,9 @@ class _DashboardState extends State<Dashboard>
                                   },
                                   physics: const BouncingScrollPhysics(),
                                   itemBuilder: (context, index) {
-                                    final cardData = whatsNewCardsData[
-                                        index % whatsNewCardsData.length];
+                                    final cardData =
+                                        whatsNewCardsData[index %
+                                            whatsNewCardsData.length];
                                     return KnowMoreCard(
                                       gradientColors: cardData.gradient ?? [],
                                       imagePath: cardData.imagePath ?? '',
@@ -2279,7 +2305,7 @@ class _DashboardState extends State<Dashboard>
                                               : 'Top Pick',
                                           badgeIcon: isTrending
                                               ? Icons
-                                                  .local_fire_department_rounded
+                                                    .local_fire_department_rounded
                                               : Icons.star_rounded,
                                           width: topTreksCardWidth,
                                           height: topTreksCardHeight,
@@ -2300,156 +2326,107 @@ class _DashboardState extends State<Dashboard>
                     );
                   }),
 
-                  // ── Trek Shorts ──
-                  Obx(() {
-                    final shortsLoading = _dashboardC.shortsTreksObserver.value
-                        .maybeWhen(loading: (_) => true, orElse: () => false);
-
-                    final shortsResponse = _dashboardC.shortsTreksObserver.value
-                        .maybeWhen(
-                          success: (data) => data.data ?? [],
-                          orElse: () => [],
-                        );
-
-                    final List<ShortsTreksData> shortsTreksCardsData =
-                        shortsResponse.map<ShortsTreksData>((e) {
-                          return ShortsTreksData(
-                            title: e.title ?? '',
-                            description: e.description ?? '',
-                            textColour: e.textColour ?? '#FFFFFF',
-                            imagePath: getFullImageUrl(e.imagePath),
-                            videoPath: e.videoPath ?? '',
-                            shortVideoPath:
-                                e.shortVideoPath ?? e.videoPath ?? '',
-                          );
-                        }).toList();
-
-                    log('SHORTS COUNT => ${shortsTreksCardsData.length}');
-
-                    if (!shortsLoading && shortsTreksCardsData.isEmpty) {
-                      return const SizedBox();
-                    }
-
-                    return Column(
+                  // ── Trek Shorts (STATIC DESIGN — sample data, no backend) ──
+                  Padding(
+                    padding: EdgeInsets.only(
+                      left: ScreenConstant.size17,
+                      right: ScreenConstant.size17,
+                      top: ScreenConstant.size10,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Padding(
-                          padding: EdgeInsets.only(
-                            left: ScreenConstant.size17,
-                            right: ScreenConstant.size17,
-                            top: ScreenConstant.size10,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Trek Shorts',
-                                    textScaler: const TextScaler.linear(1.0),
-                                    style: TextStyle(
-                                      fontFamily: 'Poppins',
-                                      fontSize: FontSize.s13,
-                                      fontWeight: FontWeight.w700,
-                                      color: _C.ink,
-                                      letterSpacing: -0.2,
-                                    ),
-                                  ).withShimmerAi(loading: shortsLoading),
-                                  SizedBox(height: 0.3.h),
-                                  Text(
-                                    'Watch the Action Unfold!',
-                                    textScaler: const TextScaler.linear(1.0),
-                                    style: TextStyle(
-                                      fontFamily: 'Poppins',
-                                      fontSize: FontSize.s10,
-                                      fontWeight: FontWeight.w400,
-                                      color: _C.inkMid,
-                                    ),
-                                  ).withShimmerAi(loading: shortsLoading),
-                                ],
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Trek Shorts',
+                              textScaler: const TextScaler.linear(1.0),
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: FontSize.s13,
+                                fontWeight: FontWeight.w700,
+                                color: _C.ink,
+                                letterSpacing: -0.2,
                               ),
-                              InkWell(
-                                onTap: () => Get.toNamed('/trek-shorts'),
-                                child: Text(
-                                  'View more',
-                                  style: TextStyle(
-                                    fontFamily: 'Poppins',
-                                    color: _C.teal,
-                                    fontSize: FontSize.s11,
-                                    letterSpacing: 0.4,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ).withShimmerAi(loading: shortsLoading),
+                            ),
+                            SizedBox(height: 0.3.h),
+                            Text(
+                              'Watch the Action Unfold!',
+                              textScaler: const TextScaler.linear(1.0),
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: FontSize.s10,
+                                fontWeight: FontWeight.w400,
+                                color: _C.inkMid,
                               ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          margin: EdgeInsets.only(left: 1.5.h, top: 1.h),
-                          height: 23.h,
-                          child: Listener(
-                            onPointerDown: (_) {
-                              _isTrekShortsUserInteracting = true;
-                              _trekShortsTimer?.cancel();
-                            },
-                            onPointerUp: (_) {
-                              _isTrekShortsUserInteracting = false;
-                              _startTrekShortsAutoScroll();
-                            },
-                            onPointerCancel: (_) {
-                              _isTrekShortsUserInteracting = false;
-                              _startTrekShortsAutoScroll();
-                            },
-                            child: shortsLoading
-                                ? _buildShimmerPagePlaceholder()
-                                : PageView.builder(
-                                    controller: _trekShortsPageController,
-                                    // null = infinite scroll
-                                    itemCount: null,
-                                    pageSnapping: true,
-                                    physics: const BouncingScrollPhysics(),
-                                    itemBuilder: (context, index) {
-                                      if (shortsTreksCardsData.isEmpty) {
-                                        return const SizedBox();
-                                      }
-                                      final cardData =
-                                          shortsTreksCardsData[index %
-                                              shortsTreksCardsData.length];
-                                      return Align(
-                                        alignment: Alignment.center,
-                                        child: Padding(
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: 1.w,
-                                          ),
-                                          child: TrekShorts(
-                                            shortsData: cardData,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                          ),
+                            ),
+                          ],
                         ),
                       ],
-                    );
-                  }),
+                    ),
+                  ),
+                  Container(
+                    margin: EdgeInsets.only(left: 1.5.h, top: 1.h),
+                    height: 23.h,
+                    child: Listener(
+                      onPointerDown: (_) {
+                        _isTrekShortsUserInteracting = true;
+                        _trekShortsTimer?.cancel();
+                      },
+                      onPointerUp: (_) {
+                        _isTrekShortsUserInteracting = false;
+                        _startTrekShortsAutoScroll();
+                      },
+                      onPointerCancel: (_) {
+                        _isTrekShortsUserInteracting = false;
+                        _startTrekShortsAutoScroll();
+                      },
+                      child: PageView.builder(
+                        controller: _trekShortsPageController,
+                        // null = infinite scroll
+                        itemCount: null,
+                        pageSnapping: true,
+                        physics: const BouncingScrollPhysics(),
+                        itemBuilder: (context, index) {
+                          final cardData = _trekShortsSampleData[index %
+                              _trekShortsSampleData.length];
+                          return Align(
+                            alignment: Alignment.center,
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 1.w),
+                              child: TrekShorts(shortsData: cardData),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
 
                   // ── Seasonal Forecast (seasonal_forecast_picks backend) ──
                   Obx(() {
-                    final seasonalLoading = _dashboardC.seasonalPicksObserver
+                    final seasonalLoading = _dashboardC
+                        .seasonalPicksObserver
                         .value
                         .maybeWhen(loading: (_) => true, orElse: () => false);
 
                     final seasonalData = _dashboardC.seasonalPicksObserver.value
-                        .maybeWhen(success: (data) => data.data, orElse: () => null);
+                        .maybeWhen(
+                          success: (data) => data.data,
+                          orElse: () => null,
+                        );
 
                     // Explicit generic — see seasonal_forecast_screen.dart
                     // for why an inferred `[]` here has crashed in release
                     // builds as List<dynamic> instead of List<SeasonalPickItem>.
-                    final topPicks = seasonalData?.topPicks ?? <SeasonalPickItem>[];
-                    final avoidPicks = seasonalData?.avoidPicks ?? <SeasonalPickItem>[];
+                    final topPicks =
+                        seasonalData?.topPicks ?? <SeasonalPickItem>[];
+                    final avoidPicks =
+                        seasonalData?.avoidPicks ?? <SeasonalPickItem>[];
 
-                    if (!seasonalLoading && topPicks.isEmpty && avoidPicks.isEmpty) {
+                    if (!seasonalLoading &&
+                        topPicks.isEmpty &&
+                        avoidPicks.isEmpty) {
                       return const SizedBox();
                     }
 
@@ -2476,13 +2453,11 @@ class _DashboardState extends State<Dashboard>
                             top: ScreenConstant.size10,
                           ),
                           child: Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment.spaceBetween,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Expanded(
                                 child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       'Seasonal Forecast',
@@ -2513,8 +2488,7 @@ class _DashboardState extends State<Dashboard>
                               ),
                               SizedBox(width: 2.w),
                               InkWell(
-                                onTap: () =>
-                                    Get.toNamed('/seasonal-forecast'),
+                                onTap: () => Get.toNamed('/seasonal-forecast'),
                                 child: Text(
                                   'View more',
                                   style: TextStyle(
@@ -2539,54 +2513,45 @@ class _DashboardState extends State<Dashboard>
                               bottom: ScreenConstant.size15,
                             ),
                             child: seasonalLoading
-                                ? _buildSeasonalPicksShimmerPlaceholder(70.w, 24.h)
+                                ? _buildSeasonalPicksShimmerPlaceholder(
+                                    70.w,
+                                    24.h,
+                                  )
                                 : Row(
-                                    children: previewPicks
-                                        .map(
-                                          (pick) {
-                                            final pickImageType =
-                                                parseSeasonalPickImageType(
-                                              pick.imageType,
-                                            );
-                                            final resolvedImagePath =
-                                                getFullImageUrl(
-                                              pick.imagePath,
-                                            );
-                                            // Only "photo" mode falls back to
-                                            // a stock photo when empty — an
-                                            // empty illustration is a valid,
-                                            // handled state inside the card
-                                            // (gradient alone, no overlay).
-                                            final displayImagePath =
-                                                pickImageType ==
-                                                        SeasonalPickImageType
-                                                            .illustration
-                                                    ? resolvedImagePath
-                                                    : (resolvedImagePath
-                                                            .isEmpty
-                                                        ? CommonImages
-                                                            .himalayas
-                                                        : resolvedImagePath);
-                                            return Padding(
-                                              padding: EdgeInsets.only(
-                                                right: 3.w,
-                                              ),
-                                              child: SeasonalGradientCard(
-                                                trekName:
-                                                    pick.trekName ?? '',
-                                                reason: pick.reason ?? '',
-                                                imagePath: displayImagePath,
-                                                imageType: pickImageType,
-                                                isAvoid:
-                                                    pick.isAvoid ?? false,
-                                                season: season,
-                                                width: 70.w,
-                                                height: 24.h,
-                                              ),
-                                            );
-                                          },
-                                        )
-                                        .toList(),
+                                    children: previewPicks.map((pick) {
+                                      final pickImageType =
+                                          parseSeasonalPickImageType(
+                                            pick.imageType,
+                                          );
+                                      final resolvedImagePath = getFullImageUrl(
+                                        pick.imagePath,
+                                      );
+                                      // Only "photo" mode falls back to
+                                      // a stock photo when empty — an
+                                      // empty illustration is a valid,
+                                      // handled state inside the card
+                                      // (gradient alone, no overlay).
+                                      final displayImagePath =
+                                          pickImageType ==
+                                              SeasonalPickImageType.illustration
+                                          ? resolvedImagePath
+                                          : (resolvedImagePath.isEmpty
+                                                ? CommonImages.himalayas
+                                                : resolvedImagePath);
+                                      return Padding(
+                                        padding: EdgeInsets.only(right: 3.w),
+                                        child: SeasonalGradientCard(
+                                          trekName: pick.trekName ?? '',
+                                          reason: pick.reason ?? '',
+                                          imagePath: displayImagePath,
+                                          imageType: pickImageType,
+                                          isAvoid: pick.isAvoid ?? false,
+                                          season: season,
+                                          width: 70.w,
+                                          height: 24.h,
+                                        ),
+                                      );
+                                    }).toList(),
                                   ),
                           ),
                         ),

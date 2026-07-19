@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:arobo_app/models/know_more_data.dart';
 import 'package:arobo_app/models/seasonal_forecast_data.dart';
 import 'package:arobo_app/models/seasonal_picks_data.dart';
-import 'package:arobo_app/models/shorts_treks_data.dart';
 import 'package:arobo_app/models/top_treks_data.dart';
 import 'package:arobo_app/widgets/logger.dart';
 import 'package:flutter/material.dart';
@@ -33,7 +32,6 @@ class DashboardController extends GetxController {
 
   final whatsNewObserver = const ApiResult<WhatsNewDataResponseModel>.init().obs;
   final topTreksObserver = const ApiResult<TopTreksDataResponseModel>.init().obs;
-  final shortsTreksObserver = const ApiResult<ShortsTreksDataResponseModel>.init().obs;
   final seasonalForcastObserver = const ApiResult<SeasonalForecastDataResponseModel>.init().obs;
   final seasonalPicksObserver = const ApiResult<SeasonalPicksDataResponseModel>.init().obs;
 
@@ -516,25 +514,6 @@ class DashboardController extends GetxController {
     } catch (e) {
       logger.e('Error toggling top trek favorite: $e');
       return false;
-    }
-  }
-
-  Future<void> fetchShortsTreks() async {
-    try {
-      shortsTreksObserver.value = const ApiResult.loading("");
-      final response = await _repository.getApiCall(url: NetworkUrl.fetchShotsTreks);
-      if (response != null) {
-        final responseData = ShortsTreksDataResponseModel.fromJson(response);
-        if (responseData.success == true) {
-          shortsTreksObserver.value = ApiResult.success(responseData);
-          return;
-        }
-        throw responseData.message ?? "Failed to fetch shorts treks";
-      }
-      throw "Response Body Null";
-    } catch (e) {
-      logger.e('Error fetching shorts treks: $e');
-      shortsTreksObserver.value = ApiResult.error(e.toString());
     }
   }
 

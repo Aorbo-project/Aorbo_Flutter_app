@@ -46,7 +46,6 @@ class NetworkUrl {
 
   static String fetchWhatsNew = 'discovery/whats-new';
   static String fetchTopTreks = 'discovery/top-treks';
-  static String fetchShotsTreks = 'discovery/shorts-treks';
   static String fetchSeasonalForcasts = 'discovery/seasonal-forecast';
   static String fetchSeasonalPicks = 'discovery/seasonal-picks';
   static String topTrekFavorite(int id) => 'discovery/top-treks/$id/favorite';

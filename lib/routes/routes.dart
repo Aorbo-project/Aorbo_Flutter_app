@@ -26,7 +26,6 @@ import 'package:arobo_app/screens/discount_card_details_screen.dart';
 import 'package:arobo_app/screens/know_more_details_screen.dart';
 import 'package:arobo_app/screens/about_us_screen.dart';
 import 'package:arobo_app/screens/know_more_screen.dart';
-import 'package:arobo_app/screens/trek_shorts_screen.dart';
 import 'package:arobo_app/screens/seasonal_forecast_screen.dart';
 
 // import 'package:flutter/material.dart';
@@ -121,7 +120,6 @@ final routes = [
     page: () => const KnowMoreScreen(),
     transition: Transition.rightToLeft,
   ),
-  GetPage(name: '/trek-shorts', page: () => const TrekShortsScreen()),
   GetPage(
     name: '/seasonal-forecast',
     page: () => const SeasonalForecastScreen(),
