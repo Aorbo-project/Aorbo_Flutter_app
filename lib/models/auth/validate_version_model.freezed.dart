@@ -226,8 +226,15 @@ mixin _$ValidateDataModel {
   String? get currentVersion => throw _privateConstructorUsedError;
   @JsonKey(name: "latest_version")
   String? get latestVersion => throw _privateConstructorUsedError;
+  @JsonKey(name: "min_supported_version")
+  String? get minSupportedVersion => throw _privateConstructorUsedError;
   @JsonKey(name: "update_available")
   bool? get updateAvailable => throw _privateConstructorUsedError;
+
+  /// Hard-block gate — true only when the running app is below
+  /// min_supported_version. update_available alone must never block.
+  @JsonKey(name: "update_required")
+  bool? get updateRequired => throw _privateConstructorUsedError;
   @JsonKey(name: "release_notes")
   dynamic get releaseNotes => throw _privateConstructorUsedError;
   @JsonKey(name: "release_date")
@@ -249,7 +256,9 @@ abstract class $ValidateDataModelCopyWith<$Res> {
   $Res call(
       {@JsonKey(name: "current_version") String? currentVersion,
       @JsonKey(name: "latest_version") String? latestVersion,
+      @JsonKey(name: "min_supported_version") String? minSupportedVersion,
       @JsonKey(name: "update_available") bool? updateAvailable,
+      @JsonKey(name: "update_required") bool? updateRequired,
       @JsonKey(name: "release_notes") dynamic releaseNotes,
       @JsonKey(name: "release_date") dynamic releaseDate,
       String? platform});
@@ -270,7 +279,9 @@ class _$ValidateDataModelCopyWithImpl<$Res, $Val extends ValidateDataModel>
   $Res call({
     Object? currentVersion = freezed,
     Object? latestVersion = freezed,
+    Object? minSupportedVersion = freezed,
     Object? updateAvailable = freezed,
+    Object? updateRequired = freezed,
     Object? releaseNotes = freezed,
     Object? releaseDate = freezed,
     Object? platform = freezed,
@@ -284,9 +295,17 @@ class _$ValidateDataModelCopyWithImpl<$Res, $Val extends ValidateDataModel>
           ? _value.latestVersion
           : latestVersion // ignore: cast_nullable_to_non_nullable
               as String?,
+      minSupportedVersion: freezed == minSupportedVersion
+          ? _value.minSupportedVersion
+          : minSupportedVersion // ignore: cast_nullable_to_non_nullable
+              as String?,
       updateAvailable: freezed == updateAvailable
           ? _value.updateAvailable
           : updateAvailable // ignore: cast_nullable_to_non_nullable
+              as bool?,
+      updateRequired: freezed == updateRequired
+          ? _value.updateRequired
+          : updateRequired // ignore: cast_nullable_to_non_nullable
               as bool?,
       releaseNotes: freezed == releaseNotes
           ? _value.releaseNotes
@@ -315,7 +334,9 @@ abstract class _$$ValidateDataModelImplCopyWith<$Res>
   $Res call(
       {@JsonKey(name: "current_version") String? currentVersion,
       @JsonKey(name: "latest_version") String? latestVersion,
+      @JsonKey(name: "min_supported_version") String? minSupportedVersion,
       @JsonKey(name: "update_available") bool? updateAvailable,
+      @JsonKey(name: "update_required") bool? updateRequired,
       @JsonKey(name: "release_notes") dynamic releaseNotes,
       @JsonKey(name: "release_date") dynamic releaseDate,
       String? platform});
@@ -334,7 +355,9 @@ class __$$ValidateDataModelImplCopyWithImpl<$Res>
   $Res call({
     Object? currentVersion = freezed,
     Object? latestVersion = freezed,
+    Object? minSupportedVersion = freezed,
     Object? updateAvailable = freezed,
+    Object? updateRequired = freezed,
     Object? releaseNotes = freezed,
     Object? releaseDate = freezed,
     Object? platform = freezed,
@@ -348,9 +371,17 @@ class __$$ValidateDataModelImplCopyWithImpl<$Res>
           ? _value.latestVersion
           : latestVersion // ignore: cast_nullable_to_non_nullable
               as String?,
+      minSupportedVersion: freezed == minSupportedVersion
+          ? _value.minSupportedVersion
+          : minSupportedVersion // ignore: cast_nullable_to_non_nullable
+              as String?,
       updateAvailable: freezed == updateAvailable
           ? _value.updateAvailable
           : updateAvailable // ignore: cast_nullable_to_non_nullable
+              as bool?,
+      updateRequired: freezed == updateRequired
+          ? _value.updateRequired
+          : updateRequired // ignore: cast_nullable_to_non_nullable
               as bool?,
       releaseNotes: freezed == releaseNotes
           ? _value.releaseNotes
@@ -374,7 +405,9 @@ class _$ValidateDataModelImpl implements _ValidateDataModel {
   const _$ValidateDataModelImpl(
       {@JsonKey(name: "current_version") this.currentVersion,
       @JsonKey(name: "latest_version") this.latestVersion,
+      @JsonKey(name: "min_supported_version") this.minSupportedVersion,
       @JsonKey(name: "update_available") this.updateAvailable,
+      @JsonKey(name: "update_required") this.updateRequired,
       @JsonKey(name: "release_notes") this.releaseNotes,
       @JsonKey(name: "release_date") this.releaseDate,
       this.platform});
@@ -389,8 +422,17 @@ class _$ValidateDataModelImpl implements _ValidateDataModel {
   @JsonKey(name: "latest_version")
   final String? latestVersion;
   @override
+  @JsonKey(name: "min_supported_version")
+  final String? minSupportedVersion;
+  @override
   @JsonKey(name: "update_available")
   final bool? updateAvailable;
+
+  /// Hard-block gate — true only when the running app is below
+  /// min_supported_version. update_available alone must never block.
+  @override
+  @JsonKey(name: "update_required")
+  final bool? updateRequired;
   @override
   @JsonKey(name: "release_notes")
   final dynamic releaseNotes;
@@ -402,7 +444,7 @@ class _$ValidateDataModelImpl implements _ValidateDataModel {
 
   @override
   String toString() {
-    return 'ValidateDataModel(currentVersion: $currentVersion, latestVersion: $latestVersion, updateAvailable: $updateAvailable, releaseNotes: $releaseNotes, releaseDate: $releaseDate, platform: $platform)';
+    return 'ValidateDataModel(currentVersion: $currentVersion, latestVersion: $latestVersion, minSupportedVersion: $minSupportedVersion, updateAvailable: $updateAvailable, updateRequired: $updateRequired, releaseNotes: $releaseNotes, releaseDate: $releaseDate, platform: $platform)';
   }
 
   @override
@@ -414,8 +456,12 @@ class _$ValidateDataModelImpl implements _ValidateDataModel {
                 other.currentVersion == currentVersion) &&
             (identical(other.latestVersion, latestVersion) ||
                 other.latestVersion == latestVersion) &&
+            (identical(other.minSupportedVersion, minSupportedVersion) ||
+                other.minSupportedVersion == minSupportedVersion) &&
             (identical(other.updateAvailable, updateAvailable) ||
                 other.updateAvailable == updateAvailable) &&
+            (identical(other.updateRequired, updateRequired) ||
+                other.updateRequired == updateRequired) &&
             const DeepCollectionEquality()
                 .equals(other.releaseNotes, releaseNotes) &&
             const DeepCollectionEquality()
@@ -430,7 +476,9 @@ class _$ValidateDataModelImpl implements _ValidateDataModel {
       runtimeType,
       currentVersion,
       latestVersion,
+      minSupportedVersion,
       updateAvailable,
+      updateRequired,
       const DeepCollectionEquality().hash(releaseNotes),
       const DeepCollectionEquality().hash(releaseDate),
       platform);
@@ -454,7 +502,9 @@ abstract class _ValidateDataModel implements ValidateDataModel {
   const factory _ValidateDataModel(
       {@JsonKey(name: "current_version") final String? currentVersion,
       @JsonKey(name: "latest_version") final String? latestVersion,
+      @JsonKey(name: "min_supported_version") final String? minSupportedVersion,
       @JsonKey(name: "update_available") final bool? updateAvailable,
+      @JsonKey(name: "update_required") final bool? updateRequired,
       @JsonKey(name: "release_notes") final dynamic releaseNotes,
       @JsonKey(name: "release_date") final dynamic releaseDate,
       final String? platform}) = _$ValidateDataModelImpl;
@@ -469,8 +519,17 @@ abstract class _ValidateDataModel implements ValidateDataModel {
   @JsonKey(name: "latest_version")
   String? get latestVersion;
   @override
+  @JsonKey(name: "min_supported_version")
+  String? get minSupportedVersion;
+  @override
   @JsonKey(name: "update_available")
   bool? get updateAvailable;
+  @override
+
+  /// Hard-block gate — true only when the running app is below
+  /// min_supported_version. update_available alone must never block.
+  @JsonKey(name: "update_required")
+  bool? get updateRequired;
   @override
   @JsonKey(name: "release_notes")
   dynamic get releaseNotes;

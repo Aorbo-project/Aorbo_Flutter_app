@@ -6,6 +6,7 @@ import 'package:arobo_app/utils/common_images.dart';
 import 'package:arobo_app/utils/common_logics.dart';
 import 'package:arobo_app/utils/custom_snackbar.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
+import 'package:arobo_app/screens/update_version_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -272,14 +273,15 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
 
           final validateResponse = await _authC.validateVersion();
 
-          // if(validateResponse?.updateAvailable == true){
-          //   Get.offAll(() => UpdateVersionScreen(dataModel:validateResponse));
-          // }
-          // else if (CommonLogics.checkUserLogin() && validateResponse?.updateAvailable == false) {
-          //   Get.offAllNamed('/dashboard');
-          // } else {
-          //   _startFormAnimation(); // Defined below, handles form slide up
-          // }
+          // Hard block ONLY on update_required (below min_supported_version
+          // — an explicit admin-set minimum). update_available alone means
+          // "a newer version exists" and must never block anyone; that flag
+          // used to be wired to this same block, which would have force-
+          // blocked every user on every single release.
+          if (validateResponse?.updateRequired == true) {
+            Get.offAll(() => UpdateVersionScreen(dataModel: validateResponse));
+            return;
+          }
 
           if (CommonLogics.checkUserLogin()) {
             // Self-healing sync: catches a token that failed to register on

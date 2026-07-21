@@ -70,8 +70,21 @@ class Repository {
           logger.e("❌ onError: Error ->> ${error.error}");
           logger.e("Response ->> ${error.response}");
 
-          // Session expired — clear local state and redirect to login
-          if (error.response?.statusCode == 401) {
+          // Session expired — clear local state and redirect to login.
+          // 401 always means an invalid/expired/revoked session. 403 is
+          // shared with unrelated ownership checks elsewhere (e.g. "this
+          // issue report isn't yours"), so only log out for the specific
+          // session-related codes the backend attaches to those 403s —
+          // never on a bare 403 with no code.
+          final statusCode = error.response?.statusCode;
+          final errorCode = (error.response?.data is Map)
+              ? (error.response?.data as Map)['code']
+              : null;
+          final isSessionInvalid = statusCode == 401 ||
+              (statusCode == 403 &&
+                  (errorCode == 'ACCOUNT_INACTIVE' ||
+                      errorCode == 'INVALID_TOKEN_TYPE'));
+          if (isSessionInvalid) {
             await sp!.clear();
             Get.offAllNamed('/');
           }

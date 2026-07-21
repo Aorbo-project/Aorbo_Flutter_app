@@ -29,7 +29,9 @@ _$ValidateDataModelImpl _$$ValidateDataModelImplFromJson(
     _$ValidateDataModelImpl(
       currentVersion: json['current_version'] as String?,
       latestVersion: json['latest_version'] as String?,
+      minSupportedVersion: json['min_supported_version'] as String?,
       updateAvailable: json['update_available'] as bool?,
+      updateRequired: json['update_required'] as bool?,
       releaseNotes: json['release_notes'],
       releaseDate: json['release_date'],
       platform: json['platform'] as String?,
@@ -40,7 +42,9 @@ Map<String, dynamic> _$$ValidateDataModelImplToJson(
     <String, dynamic>{
       'current_version': instance.currentVersion,
       'latest_version': instance.latestVersion,
+      'min_supported_version': instance.minSupportedVersion,
       'update_available': instance.updateAvailable,
+      'update_required': instance.updateRequired,
       'release_notes': instance.releaseNotes,
       'release_date': instance.releaseDate,
       'platform': instance.platform,
