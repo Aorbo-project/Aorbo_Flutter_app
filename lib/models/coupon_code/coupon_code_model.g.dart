@@ -107,7 +107,15 @@ _$CouponCardDataImpl _$$CouponCardDataImplFromJson(Map<String, dynamic> json) =>
       footerNote: json['footer_note'] as String?,
       isExpired: json['is_expired'] as bool?,
       isActive: json['is_active'] as bool?,
+      isUsed: json['is_used'] as bool?,
+      validFrom: json['valid_from'] as String?,
       validUntil: json['valid_until'] as String?,
+      scope: json['scope'] as String?,
+      minAmount: json['min_amount'] as String?,
+      maxDiscountAmount: json['max_discount_amount'] as String?,
+      styling: json['styling'] == null
+          ? null
+          : CouponStyling.fromJson(json['styling'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$$CouponCardDataImplToJson(
@@ -128,7 +136,25 @@ Map<String, dynamic> _$$CouponCardDataImplToJson(
       'footer_note': instance.footerNote,
       'is_expired': instance.isExpired,
       'is_active': instance.isActive,
+      'is_used': instance.isUsed,
+      'valid_from': instance.validFrom,
       'valid_until': instance.validUntil,
+      'scope': instance.scope,
+      'min_amount': instance.minAmount,
+      'max_discount_amount': instance.maxDiscountAmount,
+      'styling': instance.styling,
+    };
+
+_$CouponStylingImpl _$$CouponStylingImplFromJson(Map<String, dynamic> json) =>
+    _$CouponStylingImpl(
+      badge: json['badge'] as String?,
+      icon: json['icon'] as String?,
+    );
+
+Map<String, dynamic> _$$CouponStylingImplToJson(_$CouponStylingImpl instance) =>
+    <String, dynamic>{
+      'badge': instance.badge,
+      'icon': instance.icon,
     };
 
 _$VendorImpl _$$VendorImplFromJson(Map<String, dynamic> json) => _$VendorImpl(

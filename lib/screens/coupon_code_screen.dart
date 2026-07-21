@@ -6,7 +6,7 @@ import 'package:get/get.dart';
 import '../utils/common_colors.dart';
 import '../utils/common_images.dart';
 import '../utils/screen_constants.dart';
-import '../utils/coupon_card.dart';
+import '../utils/vendor_coupon_card.dart';
 import '../models/coupon_code/coupon_code_model.dart';
 import '../controller/trek_controller.dart';
 
@@ -147,9 +147,11 @@ class _CouponCodeScreenState extends State<CouponCodeScreen> {
                 child: Obx(() {
                   final isCouponLoading = _trekController.vendorCouponsObserver.value.maybeWhen(loading: (data) => true,orElse: () => false);
                   List<CouponCardData>? couponsList = _trekController.vendorCouponsObserver.value.maybeWhen(success: (couponsResponse) => (couponsResponse as CouponCodeModel).data,error: (sc) => [],orElse: () => [CouponCardData(),CouponCardData(),CouponCardData(),CouponCardData()]);
+                  // This screen is scoped to vendor-assigned coupons only —
+                  // PLATFORM (global) coupons are surfaced elsewhere in the
+                  // app, not in the per-trek checkout coupon list.
+                  couponsList = couponsList?.where((c) => c.scope != 'PLATFORM').toList();
                   final couponErrorMessage = _trekController.vendorCouponsObserver.value.maybeWhen(error: (errorMsg) => errorMsg,orElse: () => "");
-                  if(couponsList?.isEmpty == true) return SizedBox();
-
 
                   // final filteredCoupons =  _couponController.text.isEmpty ? couponsList : couponsList?.where((coupon) =>
                   //           coupon.code?.toLowerCase().contains(_couponController.text.toLowerCase()) ?? false)
@@ -194,11 +196,45 @@ class _CouponCodeScreenState extends State<CouponCodeScreen> {
 
                   if (couponsList?.isEmpty == true) {
                     return Center(
-                      child: Text(
-                        'No matching coupons found',
-                        style: GoogleFonts.poppins(
-                          fontSize: FontSize.s10,
-                          color: CommonColors.blackColor.withValues(alpha: 0.6),
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 12.w),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 16.w,
+                              height: 16.w,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF7F8FA),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.local_offer_outlined,
+                                size: 7.w,
+                                color: const Color(0xFF9A9AAE),
+                              ),
+                            ),
+                            SizedBox(height: 2.h),
+                            Text(
+                              'No coupons for this trek yet',
+                              style: GoogleFonts.poppins(
+                                fontSize: FontSize.s12,
+                                fontWeight: FontWeight.w600,
+                                color: CommonColors.blackColor,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            SizedBox(height: 0.6.h),
+                            Text(
+                              'Check back closer to your travel date — offers are added regularly.',
+                              style: GoogleFonts.poppins(
+                                fontSize: FontSize.s10,
+                                color: CommonColors.blackColor.withValues(alpha: 0.6),
+                                height: 1.5,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
                         ),
                       ),
                     );
@@ -209,11 +245,13 @@ class _CouponCodeScreenState extends State<CouponCodeScreen> {
                     itemCount: couponsList?.length,
                     itemBuilder: (context, index) {
                       final coupon = couponsList?[index];
-                      return CouponCard(
+                      void onApply() {
+                        _trekController.validateCoupon(coupon?.code ?? "");
+                      }
+
+                      return VendorCouponCard(
                         coupon: coupon,
-                        onApply: () {
-                          _trekController.validateCoupon(coupon?.code ?? "");
-                        },
+                        onApply: onApply,
                         isApplied: false,
                       );
                     },

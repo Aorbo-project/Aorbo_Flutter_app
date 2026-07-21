@@ -90,12 +90,40 @@ class CouponCardData with _$CouponCardData {
 
     @JsonKey(name: 'is_expired') bool? isExpired,
     @JsonKey(name: 'is_active') bool? isActive,
+
+    /// True once this customer has hit the coupon's per-user usage limit —
+    /// drives the "Already used" blocked state, separate from expiry/active.
+    @JsonKey(name: 'is_used') bool? isUsed,
+    @JsonKey(name: 'valid_from') String? validFrom,
     @JsonKey(name: 'valid_until') String? validUntil,
+
+    /// Coupon scope, e.g. "PLATFORM" — determines global vs vendor/trek-scoped visibility.
+    String? scope,
+
+    /// Minimum order value required to apply this coupon.
+    @JsonKey(name: 'min_amount') String? minAmount,
+
+    /// Cap on the discount amount for percentage-based coupon types.
+    @JsonKey(name: 'max_discount_amount') String? maxDiscountAmount,
+
+    /// Category tag (e.g. "Seasonal", "New trekker") shown above the headline.
+    CouponStyling? styling,
 
   }) = _CouponCardData;
 
   factory CouponCardData.fromJson(Map<String, dynamic> json) =>
       _$CouponCardDataFromJson(json);
+}
+
+@freezed
+class CouponStyling with _$CouponStyling {
+  const factory CouponStyling({
+    String? badge,
+    String? icon,
+  }) = _CouponStyling;
+
+  factory CouponStyling.fromJson(Map<String, dynamic> json) =>
+      _$CouponStylingFromJson(json);
 }
 
 

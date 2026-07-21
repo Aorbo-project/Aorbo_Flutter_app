@@ -8,7 +8,6 @@ import '../repository/api_result.dart';
 import 'package:get/get.dart';
 
 import '../repository/repository.dart';
-import '../utils/custom_snackbar.dart';
 
 class CouponController extends GetxController {
   Repository repository = Repository();
@@ -46,28 +45,5 @@ class CouponController extends GetxController {
       adminCouponsObserver.value = ApiResult.error(e.toString());
     }
   }
-
-  /// Legacy method kept for any future trek-specific coupon lookups.
-  /// Not used by the Trek Listing screen — see [fetchPlatformCoupons].
-  Future<void> fetchAdminCoupons(int trekId) async {
-    try {
-      adminCouponsObserver.value = const ApiResult.loading("");
-      final response = await repository.getApiCall(url:NetworkUrl.fetchAdminCoupons(trekId));
-      if (response != null) {
-        final responseData = CouponCodeModel.fromJson(response);
-        if (responseData.success == true) {
-          adminCouponsObserver.value = ApiResult.success(responseData);
-          return;
-        }
-        throw "${responseData.message}";
-      }
-      throw "Response Body Null";
-    } catch (e) {
-      print("Error On Coupon ${e.toString()}");
-      CustomSnackBar.show(Get.context!, message: e.toString());
-      adminCouponsObserver.value = ApiResult.error(e.toString());
-    }
-  }
-
 
 }

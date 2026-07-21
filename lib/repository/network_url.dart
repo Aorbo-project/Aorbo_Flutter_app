@@ -53,8 +53,6 @@ class NetworkUrl {
 
   //coupons
 
-  static String fetchAdminCoupons(int trekId) => 'coupons/trek/$trekId';
-
   static const String fetchPlatformCoupons = 'coupons/platform';
 
   static String validateVersion(String? version,String platform) => 'version/check?current_version=$version&platform=$platform';

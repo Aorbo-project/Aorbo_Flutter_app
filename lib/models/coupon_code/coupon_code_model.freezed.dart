@@ -967,8 +967,29 @@ mixin _$CouponCardData {
   bool? get isExpired => throw _privateConstructorUsedError;
   @JsonKey(name: 'is_active')
   bool? get isActive => throw _privateConstructorUsedError;
+
+  /// True once this customer has hit the coupon's per-user usage limit —
+  /// drives the "Already used" blocked state, separate from expiry/active.
+  @JsonKey(name: 'is_used')
+  bool? get isUsed => throw _privateConstructorUsedError;
+  @JsonKey(name: 'valid_from')
+  String? get validFrom => throw _privateConstructorUsedError;
   @JsonKey(name: 'valid_until')
   String? get validUntil => throw _privateConstructorUsedError;
+
+  /// Coupon scope, e.g. "PLATFORM" — determines global vs vendor/trek-scoped visibility.
+  String? get scope => throw _privateConstructorUsedError;
+
+  /// Minimum order value required to apply this coupon.
+  @JsonKey(name: 'min_amount')
+  String? get minAmount => throw _privateConstructorUsedError;
+
+  /// Cap on the discount amount for percentage-based coupon types.
+  @JsonKey(name: 'max_discount_amount')
+  String? get maxDiscountAmount => throw _privateConstructorUsedError;
+
+  /// Category tag (e.g. "Seasonal", "New trekker") shown above the headline.
+  CouponStyling? get styling => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -998,7 +1019,15 @@ abstract class $CouponCardDataCopyWith<$Res> {
       @JsonKey(name: 'footer_note') String? footerNote,
       @JsonKey(name: 'is_expired') bool? isExpired,
       @JsonKey(name: 'is_active') bool? isActive,
-      @JsonKey(name: 'valid_until') String? validUntil});
+      @JsonKey(name: 'is_used') bool? isUsed,
+      @JsonKey(name: 'valid_from') String? validFrom,
+      @JsonKey(name: 'valid_until') String? validUntil,
+      String? scope,
+      @JsonKey(name: 'min_amount') String? minAmount,
+      @JsonKey(name: 'max_discount_amount') String? maxDiscountAmount,
+      CouponStyling? styling});
+
+  $CouponStylingCopyWith<$Res>? get styling;
 }
 
 /// @nodoc
@@ -1029,7 +1058,13 @@ class _$CouponCardDataCopyWithImpl<$Res, $Val extends CouponCardData>
     Object? footerNote = freezed,
     Object? isExpired = freezed,
     Object? isActive = freezed,
+    Object? isUsed = freezed,
+    Object? validFrom = freezed,
     Object? validUntil = freezed,
+    Object? scope = freezed,
+    Object? minAmount = freezed,
+    Object? maxDiscountAmount = freezed,
+    Object? styling = freezed,
   }) {
     return _then(_value.copyWith(
       id: freezed == id
@@ -1092,11 +1127,47 @@ class _$CouponCardDataCopyWithImpl<$Res, $Val extends CouponCardData>
           ? _value.isActive
           : isActive // ignore: cast_nullable_to_non_nullable
               as bool?,
+      isUsed: freezed == isUsed
+          ? _value.isUsed
+          : isUsed // ignore: cast_nullable_to_non_nullable
+              as bool?,
+      validFrom: freezed == validFrom
+          ? _value.validFrom
+          : validFrom // ignore: cast_nullable_to_non_nullable
+              as String?,
       validUntil: freezed == validUntil
           ? _value.validUntil
           : validUntil // ignore: cast_nullable_to_non_nullable
               as String?,
+      scope: freezed == scope
+          ? _value.scope
+          : scope // ignore: cast_nullable_to_non_nullable
+              as String?,
+      minAmount: freezed == minAmount
+          ? _value.minAmount
+          : minAmount // ignore: cast_nullable_to_non_nullable
+              as String?,
+      maxDiscountAmount: freezed == maxDiscountAmount
+          ? _value.maxDiscountAmount
+          : maxDiscountAmount // ignore: cast_nullable_to_non_nullable
+              as String?,
+      styling: freezed == styling
+          ? _value.styling
+          : styling // ignore: cast_nullable_to_non_nullable
+              as CouponStyling?,
     ) as $Val);
+  }
+
+  @override
+  @pragma('vm:prefer-inline')
+  $CouponStylingCopyWith<$Res>? get styling {
+    if (_value.styling == null) {
+      return null;
+    }
+
+    return $CouponStylingCopyWith<$Res>(_value.styling!, (value) {
+      return _then(_value.copyWith(styling: value) as $Val);
+    });
   }
 }
 
@@ -1124,7 +1195,16 @@ abstract class _$$CouponCardDataImplCopyWith<$Res>
       @JsonKey(name: 'footer_note') String? footerNote,
       @JsonKey(name: 'is_expired') bool? isExpired,
       @JsonKey(name: 'is_active') bool? isActive,
-      @JsonKey(name: 'valid_until') String? validUntil});
+      @JsonKey(name: 'is_used') bool? isUsed,
+      @JsonKey(name: 'valid_from') String? validFrom,
+      @JsonKey(name: 'valid_until') String? validUntil,
+      String? scope,
+      @JsonKey(name: 'min_amount') String? minAmount,
+      @JsonKey(name: 'max_discount_amount') String? maxDiscountAmount,
+      CouponStyling? styling});
+
+  @override
+  $CouponStylingCopyWith<$Res>? get styling;
 }
 
 /// @nodoc
@@ -1153,7 +1233,13 @@ class __$$CouponCardDataImplCopyWithImpl<$Res>
     Object? footerNote = freezed,
     Object? isExpired = freezed,
     Object? isActive = freezed,
+    Object? isUsed = freezed,
+    Object? validFrom = freezed,
     Object? validUntil = freezed,
+    Object? scope = freezed,
+    Object? minAmount = freezed,
+    Object? maxDiscountAmount = freezed,
+    Object? styling = freezed,
   }) {
     return _then(_$CouponCardDataImpl(
       id: freezed == id
@@ -1216,10 +1302,34 @@ class __$$CouponCardDataImplCopyWithImpl<$Res>
           ? _value.isActive
           : isActive // ignore: cast_nullable_to_non_nullable
               as bool?,
+      isUsed: freezed == isUsed
+          ? _value.isUsed
+          : isUsed // ignore: cast_nullable_to_non_nullable
+              as bool?,
+      validFrom: freezed == validFrom
+          ? _value.validFrom
+          : validFrom // ignore: cast_nullable_to_non_nullable
+              as String?,
       validUntil: freezed == validUntil
           ? _value.validUntil
           : validUntil // ignore: cast_nullable_to_non_nullable
               as String?,
+      scope: freezed == scope
+          ? _value.scope
+          : scope // ignore: cast_nullable_to_non_nullable
+              as String?,
+      minAmount: freezed == minAmount
+          ? _value.minAmount
+          : minAmount // ignore: cast_nullable_to_non_nullable
+              as String?,
+      maxDiscountAmount: freezed == maxDiscountAmount
+          ? _value.maxDiscountAmount
+          : maxDiscountAmount // ignore: cast_nullable_to_non_nullable
+              as String?,
+      styling: freezed == styling
+          ? _value.styling
+          : styling // ignore: cast_nullable_to_non_nullable
+              as CouponStyling?,
     ));
   }
 }
@@ -1244,7 +1354,13 @@ class _$CouponCardDataImpl implements _CouponCardData {
       @JsonKey(name: 'footer_note') this.footerNote,
       @JsonKey(name: 'is_expired') this.isExpired,
       @JsonKey(name: 'is_active') this.isActive,
-      @JsonKey(name: 'valid_until') this.validUntil})
+      @JsonKey(name: 'is_used') this.isUsed,
+      @JsonKey(name: 'valid_from') this.validFrom,
+      @JsonKey(name: 'valid_until') this.validUntil,
+      this.scope,
+      @JsonKey(name: 'min_amount') this.minAmount,
+      @JsonKey(name: 'max_discount_amount') this.maxDiscountAmount,
+      this.styling})
       : _gradient = gradient,
         _termsAndConditions = termsAndConditions;
 
@@ -1313,13 +1429,40 @@ class _$CouponCardDataImpl implements _CouponCardData {
   @override
   @JsonKey(name: 'is_active')
   final bool? isActive;
+
+  /// True once this customer has hit the coupon's per-user usage limit —
+  /// drives the "Already used" blocked state, separate from expiry/active.
+  @override
+  @JsonKey(name: 'is_used')
+  final bool? isUsed;
+  @override
+  @JsonKey(name: 'valid_from')
+  final String? validFrom;
   @override
   @JsonKey(name: 'valid_until')
   final String? validUntil;
 
+  /// Coupon scope, e.g. "PLATFORM" — determines global vs vendor/trek-scoped visibility.
+  @override
+  final String? scope;
+
+  /// Minimum order value required to apply this coupon.
+  @override
+  @JsonKey(name: 'min_amount')
+  final String? minAmount;
+
+  /// Cap on the discount amount for percentage-based coupon types.
+  @override
+  @JsonKey(name: 'max_discount_amount')
+  final String? maxDiscountAmount;
+
+  /// Category tag (e.g. "Seasonal", "New trekker") shown above the headline.
+  @override
+  final CouponStyling? styling;
+
   @override
   String toString() {
-    return 'CouponCardData(id: $id, title: $title, description: $description, imagePath: $imagePath, gradient: $gradient, textColour: $textColour, code: $code, discountType: $discountType, discountValue: $discountValue, termsAndConditions: $termsAndConditions, detailedDescription: $detailedDescription, howToApply: $howToApply, footerNote: $footerNote, isExpired: $isExpired, isActive: $isActive, validUntil: $validUntil)';
+    return 'CouponCardData(id: $id, title: $title, description: $description, imagePath: $imagePath, gradient: $gradient, textColour: $textColour, code: $code, discountType: $discountType, discountValue: $discountValue, termsAndConditions: $termsAndConditions, detailedDescription: $detailedDescription, howToApply: $howToApply, footerNote: $footerNote, isExpired: $isExpired, isActive: $isActive, isUsed: $isUsed, validFrom: $validFrom, validUntil: $validUntil, scope: $scope, minAmount: $minAmount, maxDiscountAmount: $maxDiscountAmount, styling: $styling)';
   }
 
   @override
@@ -1353,30 +1496,46 @@ class _$CouponCardDataImpl implements _CouponCardData {
                 other.isExpired == isExpired) &&
             (identical(other.isActive, isActive) ||
                 other.isActive == isActive) &&
+            (identical(other.isUsed, isUsed) || other.isUsed == isUsed) &&
+            (identical(other.validFrom, validFrom) ||
+                other.validFrom == validFrom) &&
             (identical(other.validUntil, validUntil) ||
-                other.validUntil == validUntil));
+                other.validUntil == validUntil) &&
+            (identical(other.scope, scope) || other.scope == scope) &&
+            (identical(other.minAmount, minAmount) ||
+                other.minAmount == minAmount) &&
+            (identical(other.maxDiscountAmount, maxDiscountAmount) ||
+                other.maxDiscountAmount == maxDiscountAmount) &&
+            (identical(other.styling, styling) || other.styling == styling));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(
-      runtimeType,
-      id,
-      title,
-      description,
-      imagePath,
-      const DeepCollectionEquality().hash(_gradient),
-      textColour,
-      code,
-      discountType,
-      discountValue,
-      const DeepCollectionEquality().hash(_termsAndConditions),
-      detailedDescription,
-      howToApply,
-      footerNote,
-      isExpired,
-      isActive,
-      validUntil);
+  int get hashCode => Object.hashAll([
+        runtimeType,
+        id,
+        title,
+        description,
+        imagePath,
+        const DeepCollectionEquality().hash(_gradient),
+        textColour,
+        code,
+        discountType,
+        discountValue,
+        const DeepCollectionEquality().hash(_termsAndConditions),
+        detailedDescription,
+        howToApply,
+        footerNote,
+        isExpired,
+        isActive,
+        isUsed,
+        validFrom,
+        validUntil,
+        scope,
+        minAmount,
+        maxDiscountAmount,
+        styling
+      ]);
 
   @JsonKey(ignore: true)
   @override
@@ -1411,8 +1570,13 @@ abstract class _CouponCardData implements CouponCardData {
       @JsonKey(name: 'footer_note') final String? footerNote,
       @JsonKey(name: 'is_expired') final bool? isExpired,
       @JsonKey(name: 'is_active') final bool? isActive,
-      @JsonKey(name: 'valid_until')
-      final String? validUntil}) = _$CouponCardDataImpl;
+      @JsonKey(name: 'is_used') final bool? isUsed,
+      @JsonKey(name: 'valid_from') final String? validFrom,
+      @JsonKey(name: 'valid_until') final String? validUntil,
+      final String? scope,
+      @JsonKey(name: 'min_amount') final String? minAmount,
+      @JsonKey(name: 'max_discount_amount') final String? maxDiscountAmount,
+      final CouponStyling? styling}) = _$CouponCardDataImpl;
 
   factory _CouponCardData.fromJson(Map<String, dynamic> json) =
       _$CouponCardDataImpl.fromJson;
@@ -1464,11 +1628,191 @@ abstract class _CouponCardData implements CouponCardData {
   @JsonKey(name: 'is_active')
   bool? get isActive;
   @override
+
+  /// True once this customer has hit the coupon's per-user usage limit —
+  /// drives the "Already used" blocked state, separate from expiry/active.
+  @JsonKey(name: 'is_used')
+  bool? get isUsed;
+  @override
+  @JsonKey(name: 'valid_from')
+  String? get validFrom;
+  @override
   @JsonKey(name: 'valid_until')
   String? get validUntil;
   @override
+
+  /// Coupon scope, e.g. "PLATFORM" — determines global vs vendor/trek-scoped visibility.
+  String? get scope;
+  @override
+
+  /// Minimum order value required to apply this coupon.
+  @JsonKey(name: 'min_amount')
+  String? get minAmount;
+  @override
+
+  /// Cap on the discount amount for percentage-based coupon types.
+  @JsonKey(name: 'max_discount_amount')
+  String? get maxDiscountAmount;
+  @override
+
+  /// Category tag (e.g. "Seasonal", "New trekker") shown above the headline.
+  CouponStyling? get styling;
+  @override
   @JsonKey(ignore: true)
   _$$CouponCardDataImplCopyWith<_$CouponCardDataImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+CouponStyling _$CouponStylingFromJson(Map<String, dynamic> json) {
+  return _CouponStyling.fromJson(json);
+}
+
+/// @nodoc
+mixin _$CouponStyling {
+  String? get badge => throw _privateConstructorUsedError;
+  String? get icon => throw _privateConstructorUsedError;
+
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+  @JsonKey(ignore: true)
+  $CouponStylingCopyWith<CouponStyling> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $CouponStylingCopyWith<$Res> {
+  factory $CouponStylingCopyWith(
+          CouponStyling value, $Res Function(CouponStyling) then) =
+      _$CouponStylingCopyWithImpl<$Res, CouponStyling>;
+  @useResult
+  $Res call({String? badge, String? icon});
+}
+
+/// @nodoc
+class _$CouponStylingCopyWithImpl<$Res, $Val extends CouponStyling>
+    implements $CouponStylingCopyWith<$Res> {
+  _$CouponStylingCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? badge = freezed,
+    Object? icon = freezed,
+  }) {
+    return _then(_value.copyWith(
+      badge: freezed == badge
+          ? _value.badge
+          : badge // ignore: cast_nullable_to_non_nullable
+              as String?,
+      icon: freezed == icon
+          ? _value.icon
+          : icon // ignore: cast_nullable_to_non_nullable
+              as String?,
+    ) as $Val);
+  }
+}
+
+/// @nodoc
+abstract class _$$CouponStylingImplCopyWith<$Res>
+    implements $CouponStylingCopyWith<$Res> {
+  factory _$$CouponStylingImplCopyWith(
+          _$CouponStylingImpl value, $Res Function(_$CouponStylingImpl) then) =
+      __$$CouponStylingImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({String? badge, String? icon});
+}
+
+/// @nodoc
+class __$$CouponStylingImplCopyWithImpl<$Res>
+    extends _$CouponStylingCopyWithImpl<$Res, _$CouponStylingImpl>
+    implements _$$CouponStylingImplCopyWith<$Res> {
+  __$$CouponStylingImplCopyWithImpl(
+      _$CouponStylingImpl _value, $Res Function(_$CouponStylingImpl) _then)
+      : super(_value, _then);
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? badge = freezed,
+    Object? icon = freezed,
+  }) {
+    return _then(_$CouponStylingImpl(
+      badge: freezed == badge
+          ? _value.badge
+          : badge // ignore: cast_nullable_to_non_nullable
+              as String?,
+      icon: freezed == icon
+          ? _value.icon
+          : icon // ignore: cast_nullable_to_non_nullable
+              as String?,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$CouponStylingImpl implements _CouponStyling {
+  const _$CouponStylingImpl({this.badge, this.icon});
+
+  factory _$CouponStylingImpl.fromJson(Map<String, dynamic> json) =>
+      _$$CouponStylingImplFromJson(json);
+
+  @override
+  final String? badge;
+  @override
+  final String? icon;
+
+  @override
+  String toString() {
+    return 'CouponStyling(badge: $badge, icon: $icon)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$CouponStylingImpl &&
+            (identical(other.badge, badge) || other.badge == badge) &&
+            (identical(other.icon, icon) || other.icon == icon));
+  }
+
+  @JsonKey(ignore: true)
+  @override
+  int get hashCode => Object.hash(runtimeType, badge, icon);
+
+  @JsonKey(ignore: true)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$CouponStylingImplCopyWith<_$CouponStylingImpl> get copyWith =>
+      __$$CouponStylingImplCopyWithImpl<_$CouponStylingImpl>(this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$CouponStylingImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _CouponStyling implements CouponStyling {
+  const factory _CouponStyling({final String? badge, final String? icon}) =
+      _$CouponStylingImpl;
+
+  factory _CouponStyling.fromJson(Map<String, dynamic> json) =
+      _$CouponStylingImpl.fromJson;
+
+  @override
+  String? get badge;
+  @override
+  String? get icon;
+  @override
+  @JsonKey(ignore: true)
+  _$$CouponStylingImplCopyWith<_$CouponStylingImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
 

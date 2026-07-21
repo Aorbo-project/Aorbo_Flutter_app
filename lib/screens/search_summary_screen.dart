@@ -3,11 +3,14 @@ import 'package:arobo_app/controller/coupon_controller.dart';
 import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/controller/trek_controller.dart';
 import 'package:arobo_app/models/city_model.dart';
+import 'package:arobo_app/models/coupon_code/coupon_code_model.dart';
+import 'package:arobo_app/models/discount_card_model.dart';
 import 'package:arobo_app/screens/source_location_screen.dart';
 import 'package:arobo_app/screens/trek_details_screen.dart';
 import 'package:arobo_app/utils/app_theme.dart';
 import 'package:arobo_app/utils/arobo_theme.dart';
-import 'package:arobo_app/utils/common_discount_card.dart';
+import 'package:arobo_app/utils/coupon_display_helper.dart';
+import 'package:arobo_app/utils/coupon_gradient_card.dart';
 import 'package:arobo_app/utils/common_filter_bar.dart';
 import 'package:arobo_app/utils/common_trek_card.dart';
 import 'package:arobo_app/utils/statefullwrapper.dart';
@@ -21,7 +24,6 @@ import 'package:sizer/sizer.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import '../freezed_models/treks/treks_model_data.dart';
-import '../models/coupon_code/coupon_code_model.dart';
 
 class SearchSummaryScreen extends StatefulWidget {
   const SearchSummaryScreen({super.key});
@@ -1050,32 +1052,40 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
     );
   }
 
+  // Fallback gradient per discount_type — only used when the admin hasn't
+  // set a custom `styling.gradient` on the coupon, so real PLATFORM coupons
+  // still read as visually distinct types instead of all sharing one color.
+  static const Map<String, List<String>> _fallbackGradients = {
+    'fixed': ['#D97B4F', '#B24A25'],
+    'seasonal': ['#0F7B6C', '#1AA090'],
+    'percentage': ['#2F5D9E', '#3B7BC4'],
+    'group': ['#6B4A9E', '#8B5FBF'],
+    'early_bird': ['#B5652D', '#D98C4A'],
+    'conditional': ['#B0405B', '#D46A82'],
+  };
+
+  List<String> _gradientFor(CouponCardData coupon) {
+    if (coupon.gradient != null && coupon.gradient!.length >= 2) {
+      return coupon.gradient!;
+    }
+    return _fallbackGradients[coupon.discountType] ?? _fallbackGradients['percentage']!;
+  }
+
   Widget _buildCouponCarousel() {
     return Obx(() {
-      final isLoading = _couponC.adminCouponsObserver.value.maybeWhen(
-        loading: (_) => true,
-        orElse: () => false,
-      );
-
       final coupons = _couponC.adminCouponsObserver.value.maybeWhen(
-        success: (data) {
-          if (data is CouponCodeModel) return data.data ?? <CouponCardData>[];
-          return <CouponCardData>[];
-        },
-        error: (_) => <CouponCardData>[],
-        orElse: () => List.generate(3, (_) => CouponCardData()),
+        success: (data) => data?.data ?? const <CouponCardData>[],
+        orElse: () => const <CouponCardData>[],
       );
 
-      if (!isLoading && coupons.isEmpty) return const SizedBox.shrink();
+      if (coupons.isEmpty) return const SizedBox.shrink();
 
-      if (!isLoading && coupons.isNotEmpty) {
-        WidgetsBinding.instance.addPostFrameCallback(
-          (_) => _startCouponAutoScroll(coupons.length),
-        );
-      }
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _startCouponAutoScroll(coupons.length),
+      );
 
       return SizedBox(
-        height: 16.h,
+        height: 20.h,
         child: Listener(
           onPointerDown: (_) {
             _isUserInteractingCoupons = true;
@@ -1091,35 +1101,54 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
           },
           child: PageView.builder(
             controller: _couponPageController,
-            itemCount: isLoading ? 3 : null,
+            itemCount: null,
             physics: const BouncingScrollPhysics(),
             itemBuilder: (context, index) {
-              final coupon = isLoading
-                  ? CouponCardData()
-                  : coupons[index % coupons.length];
+              final coupon = coupons[index % coupons.length];
+              final colors = _gradientFor(coupon);
               return Container(
                 margin: EdgeInsets.symmetric(horizontal: 2.w),
-                child: CommonDiscountCard(
-                  title: coupon.title ?? '',
-                  subtitle: coupon.description ?? '',
-                  gradient: coupon.gradient,
-                  textColour: coupon.textColour ?? '#0F7B6C',
+                child: CouponGradientCard(
+                  gradientColors: colors,
+                  badgeLabel: CouponDisplayHelper.badgeLabel(coupon),
+                  headline: CouponDisplayHelper.headline(coupon),
+                  conditionText: CouponDisplayHelper.conditionText(coupon),
                   code: coupon.code ?? '',
-                  offerAmount: coupon.discountValue ?? '',
-                  imagePath: coupon.imagePath ?? '',
-                  imageHeight: 30,
-                  detailedDescription: coupon.detailedDescription,
-                  howToApply: coupon.howToApply,
-                  termsAndConditions: coupon.termsAndConditions,
-                  footerNote: coupon.footerNote,
-                  validUntil: coupon.validUntil,
-                ).withShimmerAi(loading: isLoading),
+                  onCopyCode: () {},
+                  onTapTnC: () => _openCouponDetails(coupon, colors),
+                  onTap: () => _openCouponDetails(coupon, colors),
+                ),
               );
             },
           ),
         ),
       );
     });
+  }
+
+  void _openCouponDetails(CouponCardData coupon, List<String> colors) {
+    Get.toNamed(
+      '/discount-details',
+      arguments: {
+        'discountCard': DiscountCardModel(
+          title: coupon.title ?? '',
+          subtitle: coupon.description ?? '',
+          gradient: colors,
+          textColour: coupon.textColour ?? '#FFFFFF',
+          code: coupon.code ?? '',
+          // Same convention as CouponGradientCard.headline — a complete
+          // pre-composed string, not a template the details screen fills in.
+          offerAmount: CouponDisplayHelper.headline(coupon),
+          imagePath: coupon.imagePath ?? '',
+          detailedDescription: coupon.detailedDescription ?? '',
+          howToApply: coupon.howToApply ?? '',
+          termsAndConditions: coupon.termsAndConditions ?? const [],
+          validFrom: coupon.validFrom,
+          validUntil: coupon.validUntil,
+        ),
+      },
+      preventDuplicates: true,
+    );
   }
 
   Widget _buildTrekList(String dateText) {
