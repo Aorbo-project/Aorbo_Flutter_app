@@ -154,11 +154,7 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
   String _formattedWeekday(String raw) {
     final d = _parseDate(raw);
     if (d == null) return '';
-    return DateFormat('EEE').format(d).toLowerCase();
-  }
-
-  void _applyFilters(List<String> filters) {
-    if (mounted) setState(() => activeFilters = List.from(filters));
+    return DateFormat('EEE').format(d);
   }
 
   Future<void> _onRefresh() async {
@@ -177,6 +173,9 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
       context,
       MaterialPageRoute(builder: (_) => const SourceLocationScreen()),
     );
+
+    if (!mounted) return;
+    setState(() {});
 
     if (_dashboardC.fromController.value.text.isNotEmpty &&
         _dashboardC.toController.value.text.isNotEmpty &&
@@ -756,8 +755,6 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
   @override
   Widget build(BuildContext context) {
     final dateText = _dashboardC.dateController.value.text;
-    final fromText = _dashboardC.fromController.value.text;
-    final toText = _dashboardC.toController.value.text;
 
     return StatefulWrapper(
       onInit: () async {
@@ -768,64 +765,50 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
       },
       child: Scaffold(
         backgroundColor: AroboTheme.bg,
-        appBar: _buildAppBar(fromText, toText, dateText, context),
-        // Using a Column to statically attach the filter bar directly below AppBar
+        appBar: _buildAppBar(),
+        floatingActionButton: AroboFilterFab(
+          activeFilters: activeFilters,
+          groupBookingEnabled: _isGroupBooking,
+          onResult: (result) {
+            setState(() {
+              activeFilters = List.from(result.selectedTitles);
+              _isGroupBooking = result.groupBookingEnabled;
+            });
+          },
+        ),
         body: FadeTransition(
           opacity: _fadeAnim,
-          child: Column(
-            children: [
-              CommonFilterBar(
-                onFiltersChanged: (filters) {
-                  _applyFilters(filters);
-                },
-                onGroupBookingChanged: (value) =>
-                    setState(() => _isGroupBooking = value),
-              ),
-              Expanded(
-                child: RefreshIndicator(
-                  color: AroboTheme.primary,
-                  backgroundColor: Colors.white,
-                  onRefresh: _onRefresh,
-                  child: NotificationListener<ScrollNotification>(
-                    onNotification: (n) {
-                      if (n.metrics.pixels >=
-                          n.metrics.maxScrollExtent - 300) {}
-                      return false;
-                    },
-                    child: CustomScrollView(
-                      controller: _scrollController,
-                      physics: const BouncingScrollPhysics(),
-                      slivers: [
-                        SliverToBoxAdapter(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: 12),
-                              _buildCouponCarousel(),
-                              const SizedBox(height: 8),
-                            ],
-                          ),
-                        ),
-                        _buildTrekList(dateText),
-                        const SliverToBoxAdapter(child: SizedBox(height: 40)),
-                      ],
-                    ),
+          child: RefreshIndicator(
+            color: AroboTheme.primary,
+            backgroundColor: Colors.white,
+            onRefresh: _onRefresh,
+            child: CustomScrollView(
+              controller: _scrollController,
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildJourneyCard(),
+                      const SizedBox(height: 8),
+                      _buildCouponCarousel(),
+                      const SizedBox(height: 8),
+                    ],
                   ),
                 ),
-              ),
-            ],
+                _buildTrekList(dateText),
+                // extra bottom padding so the FAB never covers the last card
+                const SliverToBoxAdapter(child: SizedBox(height: 110)),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  PreferredSizeWidget _buildAppBar(
-    String from,
-    String to,
-    String dateText,
-    BuildContext context,
-  ) {
+  PreferredSizeWidget _buildAppBar() {
     return AppBar(
       backgroundColor: AroboTheme.cardBg,
       elevation: 0,
@@ -840,111 +823,229 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
       ),
       title: SlideTransition(
         position: _headerSlideAnim,
-        child: Padding(
-          padding: const EdgeInsets.only(right: 8.0),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Available Treks',
+              textScaler: const TextScaler.linear(1.0),
+              style: AroboTheme.label(
+                size: 15,
+                weight: FontWeight.w800,
+                color: AroboTheme.ink,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              'Pick a departure that suits you',
+              textScaler: const TextScaler.linear(1.0),
+              style: AroboTheme.label(size: 10, color: AroboTheme.ink400),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  // JOURNEY CARD — compact single-line route
+  // + slim date strip (half the old height)
+  // ─────────────────────────────────────────────
+  Widget _buildJourneyCard() {
+    final from = _dashboardC.fromController.value.text.trim();
+    final to = _dashboardC.toController.value.text.trim();
+    final dateText = _dashboardC.dateController.value.text;
+    final hasDate = dateText.isNotEmpty;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(14, 12, 14, 0),
+      decoration: BoxDecoration(
+        color: AroboTheme.cardBg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AroboTheme.border, width: 0.9),
+        boxShadow: AroboTheme.softShadow(0.06),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: [
+          // ── route row: From —🥾— To · search ──
+          GestureDetector(
+            onTap: _openLocationSearch,
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 11, 10, 11),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Row(
                       children: [
-                        if (from.isNotEmpty)
-                          Flexible(
-                            child: Text(
-                              from,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textScaler: const TextScaler.linear(1.0),
-                              style: AroboTheme.label(
-                                size: 14,
-                                weight: FontWeight.w800,
-                                color: AroboTheme.ink400,
-                              ),
-                            ),
-                          ),
-                        if (from.isNotEmpty && to.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 6),
-                            child: Icon(
-                              Icons.arrow_forward_rounded,
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
                               color: AroboTheme.primary,
-                              size: 16,
+                              width: 1.8,
                             ),
                           ),
-                        if (to.isNotEmpty)
-                          Flexible(
-                            child: Text(
-                              to,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textScaler: const TextScaler.linear(1.0),
-                              style: AroboTheme.label(
-                                size: 14,
-                                weight: FontWeight.w800,
+                        ),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            from.isEmpty ? '—' : from,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textScaler: const TextScaler.linear(1.0),
+                            style: AroboTheme.label(
+                              size: 12.5,
+                              weight: FontWeight.w800,
+                              color: AroboTheme.ink,
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 7),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 8,
+                                height: 1.2,
+                                color: AroboTheme.ink400.withValues(alpha: 0.4),
+                              ),
+                              const SizedBox(width: 3),
+                              const Icon(
+                                Icons.hiking_rounded,
+                                size: 13,
                                 color: AroboTheme.primary,
                               ),
+                              const SizedBox(width: 3),
+                              Container(
+                                width: 8,
+                                height: 1.2,
+                                color: AroboTheme.ink400.withValues(alpha: 0.4),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(
+                          Icons.location_on_rounded,
+                          size: 13,
+                          color: AroboTheme.primary,
+                        ),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            to.isEmpty ? '—' : to,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textScaler: const TextScaler.linear(1.0),
+                            style: AroboTheme.label(
+                              size: 12.5,
+                              weight: FontWeight.w800,
+                              color: AroboTheme.primary,
                             ),
                           ),
+                        ),
                       ],
                     ),
-                    if (dateText.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.calendar_today_rounded,
-                            size: 12,
-                            color: AroboTheme.ink400,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            _formattedDate(dateText),
-                            textScaler: const TextScaler.linear(1.0),
-                            style: AroboTheme.label(
-                              size: 11,
-                              weight: FontWeight.w600,
-                              color: AroboTheme.ink400,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '(${_formattedWeekday(dateText)})',
-                            textScaler: const TextScaler.linear(1.0),
-                            style: AroboTheme.label(
-                              size: 11,
-                              color: AroboTheme.ink400,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.search_rounded),
-                    color: AroboTheme.primary,
-                    onPressed: _openLocationSearch,
-                    tooltip: 'Change Route',
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.calendar_month_rounded),
-                    color: AroboTheme.primary,
-                    onPressed: () => _selectDate(context),
-                    tooltip: 'Change Date',
+                  const SizedBox(width: 8),
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: AroboTheme.elevated,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AroboTheme.border),
+                    ),
+                    child: const Icon(
+                      Icons.search_rounded,
+                      size: 16,
+                      color: AroboTheme.primary,
+                    ),
                   ),
                 ],
               ),
-            ],
+            ),
           ),
-        ),
+          Container(height: 1, color: AroboTheme.border),
+          // ── slim date strip ──
+          Material(
+            color: AroboTheme.elevated,
+            child: InkWell(
+              onTap: () => _selectDate(context),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 7,
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.calendar_month_rounded,
+                      size: 14,
+                      color: AroboTheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: hasDate
+                          ? Text.rich(
+                              TextSpan(
+                                children: [
+                                  TextSpan(
+                                    text: _formattedDate(dateText),
+                                    style: AroboTheme.label(
+                                      size: 11.5,
+                                      weight: FontWeight.w800,
+                                      color: AroboTheme.ink,
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: '  ·  ${_formattedWeekday(dateText)}',
+                                    style: AroboTheme.label(
+                                      size: 10.5,
+                                      weight: FontWeight.w600,
+                                      color: AroboTheme.ink400,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              maxLines: 1,
+                              textScaler: const TextScaler.linear(1.0),
+                            )
+                          : Text(
+                              'Select a departure date',
+                              textScaler: const TextScaler.linear(1.0),
+                              style: AroboTheme.label(
+                                size: 11,
+                                weight: FontWeight.w600,
+                                color: AroboTheme.ink400,
+                              ),
+                            ),
+                    ),
+                    Text(
+                      hasDate ? 'Change' : 'Select',
+                      textScaler: const TextScaler.linear(1.0),
+                      style: AroboTheme.label(
+                        size: 10,
+                        weight: FontWeight.w700,
+                        color: AroboTheme.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 2),
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      size: 15,
+                      color: AroboTheme.primary,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1120,19 +1221,27 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
       final hasExplicitSort = activeFilters.any(
         (f) => f.contains('Price') || f.contains('Top Rated'),
       );
-      final ranked = hasExplicitSort ? treks : List<TrekData>.from(treks)
-        ..sort(
-          (a, b) => AroboPersonalization.instance
-              .scoreFor(b.id, b.rating, b.price, b.hasDiscount)
-              .compareTo(
-                AroboPersonalization.instance.scoreFor(
-                  a.id,
-                  a.rating,
-                  a.price,
-                  a.hasDiscount,
+
+      // FIX: cascade previously applied to the whole conditional, so the
+      // personalization sort was overriding explicit sorts.
+      final List<TrekData> ranked;
+      if (hasExplicitSort) {
+        ranked = treks;
+      } else {
+        ranked = List<TrekData>.from(treks)
+          ..sort(
+            (a, b) => AroboPersonalization.instance
+                .scoreFor(b.id, b.rating, b.price, b.hasDiscount)
+                .compareTo(
+                  AroboPersonalization.instance.scoreFor(
+                    a.id,
+                    a.rating,
+                    a.price,
+                    a.hasDiscount,
+                  ),
                 ),
-              ),
-        );
+          );
+      }
 
       return SliverList(
         delegate: SliverChildBuilderDelegate((context, index) {

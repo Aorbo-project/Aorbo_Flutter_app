@@ -3,21 +3,39 @@ import 'package:arobo_app/utils/common_images.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-
 import '../models/filter_category_model.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FIX 1: Only "Offers" is truly multi-select.
-//   - Rating: selecting 4+ and 4.5+ is contradictory → must be single-select
-//   - Solo: "Solo Traveller" and "Female Solo" are mutually exclusive → single-select
-//   - Offers: user may want to see multiple offer types → keep multi-select
+// TRAIL THEME TOKENS — matches CommonTrekCard's alpine palette
+// ─────────────────────────────────────────────────────────────────────────────
+class _FT {
+  static const bg = Color(0xFFF6FAF7);
+  static const card = Colors.white;
+  static const elevated = Color(0xFFF1F7F2);
+  static const border = Color(0xFFD8E2DA);
+  static const ink = Color(0xFF16281E);
+  static const inkMid = Color(0xFF5B6E60);
+  static const inkLight = Color(0xFF8FA396);
+  static const forest = Color(0xFF2D6A4F);
+  static const forestDeep = Color(0xFF1B4332);
+  static const forestSoft = Color(0xFFE8F3ED);
+  static const amber = Color(0xFFD97706);
+  static const amberBg = Color(0xFFFFF8EB);
+  static const amberBorder = Color(0xFFF5DFAE);
+  static const danger = Color(0xFFDC2626);
+  static const gradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [forestDeep, forest],
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Only "Offers" is truly multi-select.
 // ─────────────────────────────────────────────────────────────────────────────
 const _multiSelectCategories = {'Offers'};
-const _sortCategoryTitle = 'Sort';
-
 bool _isMultiSelect(String categoryTitle) =>
     _multiSelectCategories.contains(categoryTitle);
-
 final List<FilterCategory> _appFilterCategories = [
   FilterCategory(
     title: 'Sort',
@@ -51,7 +69,6 @@ final List<FilterCategory> _appFilterCategories = [
       FilterOptionModel(title: '4D / 3N', query: 'duration_days=4'),
       FilterOptionModel(title: '5D / 4N', query: 'duration_days=5'),
       FilterOptionModel(title: '6D / 5N', query: 'duration_days=6'),
-      // FIX 2: "7D+" should match 7 OR MORE days, not exactly 7
       FilterOptionModel(title: '7D+', query: 'min_duration_days=7'),
     ],
   ),
@@ -95,30 +112,20 @@ final List<FilterCategory> _appFilterCategories = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FIX 3: Completely rewritten to properly parse and merge query params.
-//   - Single-select categories: last selected option wins, params set in a map
-//   - Multi-select categories (Offers): values for same key are comma-separated
-//   - Eliminates duplicate/conflicting query params
+// QUERY BUILDER
 // ─────────────────────────────────────────────────────────────────────────────
 String buildFilterQueryString(
   List<String> selectedTitles, {
   bool groupBooking = false,
 }) {
-  // Map for single-value params (sort_by, duration_days, policy, solo, gender, min_rating)
   final singleParams = <String, String>{};
-  // Map for multi-value params (offer) — values collected into a list
   final multiParams = <String, List<String>>{};
-
   for (final cat in _appFilterCategories) {
     final selectedOpts = cat.options
         .where((o) => selectedTitles.contains(o.title) && o.query.isNotEmpty)
         .toList();
     if (selectedOpts.isEmpty) continue;
-
     final isMulti = _isMultiSelect(cat.title);
-
-    // For single-select: pick the last-selected option
-    // For multi-select: use all selected options
     final optsToUse = isMulti
         ? selectedOpts
         : [
@@ -130,275 +137,402 @@ String buildFilterQueryString(
                   : b,
             ),
           ];
-
     for (final opt in optsToUse) {
-      // Parse each key=value pair from the option's query string
-      // e.g. "sort_by=base_price&sort_order=ASC" → {sort_by: base_price, sort_order: ASC}
-      // e.g. "solo=true&gender=female" → {solo: true, gender: female}
       for (final pair in opt.query.split('&')) {
         final kv = pair.split('=');
         if (kv.length != 2) continue;
-
         final key = kv[0];
         final value = kv[1];
-
         if (isMulti) {
-          // Multi-select: collect all values for the same key
-          // e.g. offer=special + offer=early_bird → offer: [special, early_bird]
           multiParams.putIfAbsent(key, () => []).add(value);
         } else {
-          // Single-select: set/overwrite the value
           singleParams[key] = value;
         }
       }
     }
   }
-
-  // Build the final query string
   final parts = <String>[];
-
-  // Single-value params: key=value
   for (final entry in singleParams.entries) {
     parts.add('${entry.key}=${entry.value}');
   }
-
-  // Multi-value params: key=value1,value2 (comma-separated)
   for (final entry in multiParams.entries) {
     parts.add('${entry.key}=${entry.value.join(',')}');
   }
-
   if (groupBooking) parts.add('group_booking=true');
-
   return parts.join('&');
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Example outputs of the FIXED buildFilterQueryString:
-//
-//   Sort "Price: Low → High" only:
-//     → sort_by=base_price&sort_order=ASC
-//
-//   Duration "7D+" only:
-//     → min_duration_days=7
-//
-//   Offers "Special Offers" + "Early Bird":
-//     → offer=special,early_bird           (was: offer=special&offer=early_bird ❌)
-//
-//   Solo "Female Solo" only:
-//     → solo=true&gender=female
-//
-//   Rating "4.5+ Stars" only:
-//     → min_rating=4.5
-//
-//   Everything combined (Sort=Top Rated, Duration=3D/2N, Policy=Flexible,
-//   Offers=Special+Early Bird, Solo=Female Solo, Rating=4.5+, Group=true):
-//     → sort_by=rating&sort_order=DESC&duration_days=3&policy=flexible
-//       &offer=special,early_bird&solo=true&gender=female&min_rating=4.5
-//       &group_booking=true
-// ─────────────────────────────────────────────────────────────────────────────
 
 class FilterSheetResult {
   final List<String> selectedTitles;
   final bool groupBookingEnabled;
-
   const FilterSheetResult({
     required this.selectedTitles,
     required this.groupBookingEnabled,
   });
 }
 
-class CommonFilterBar extends StatefulWidget {
-  final Function(List<String> selectedTitles) onFiltersChanged;
-  final ValueChanged<bool>? onGroupBookingChanged;
-
-  const CommonFilterBar({
-    super.key,
-    required this.onFiltersChanged,
-    this.onGroupBookingChanged,
-  });
-
-  @override
-  State<CommonFilterBar> createState() => CommonFilterBarState();
+/// Opens the full filter bottom sheet. Returns null if dismissed.
+Future<FilterSheetResult?> showAroboFilterSheet(
+  BuildContext context, {
+  List<String> initialSelections = const [],
+  String? initialCategory,
+  bool initialGroupBooking = false,
+}) {
+  HapticFeedback.selectionClick();
+  return showModalBottomSheet<FilterSheetResult>(
+    context: context,
+    backgroundColor: Colors.transparent,
+    isScrollControlled: true,
+    useSafeArea: true,
+    enableDrag: true,
+    builder: (_) => _FilterSheetContent(
+      initialSelections: List.from(initialSelections),
+      initialCategory: initialCategory ?? _appFilterCategories.first.title,
+      initialGroupBooking: initialGroupBooking,
+    ),
+  );
 }
 
-class CommonFilterBarState extends State<CommonFilterBar>
-    with SingleTickerProviderStateMixin {
-  static const double _barHeight = 48.0;
-
-  List<String> _selected = [];
-  bool _groupBookingEnabled = false;
-
-  late AnimationController _pulseCtrl;
-  late Animation<double> _pulse;
-
-  bool get _hasFilters => _selected.isNotEmpty || _groupBookingEnabled;
-  int get _count => _selected.length + (_groupBookingEnabled ? 1 : 0);
-
-  late final List<FilterOptionModel> _quickSortOptions;
-
+// ─────────────────────────────────────────────────────────────────────────────
+// FLOATING FILTER FAB
+// ─────────────────────────────────────────────────────────────────────────────
+class AroboFilterFab extends StatefulWidget {
+  final List<String> activeFilters;
+  final bool groupBookingEnabled;
+  final ValueChanged<FilterSheetResult> onResult;
+  const AroboFilterFab({
+    super.key,
+    required this.activeFilters,
+    required this.groupBookingEnabled,
+    required this.onResult,
+  });
   @override
-  void initState() {
-    super.initState();
-    _pulseCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1600),
-    );
-    _pulse = Tween<double>(
-      begin: 0.88,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut));
+  State<AroboFilterFab> createState() => _AroboFilterFabState();
+}
 
-    final sortCat = _appFilterCategories.firstWhere(
-      (c) => c.title == _sortCategoryTitle,
-    );
-    _quickSortOptions = sortCat.options;
-  }
-
+class _AroboFilterFabState extends State<AroboFilterFab> {
+  bool _panelOpen = false;
+  int get _count =>
+      widget.activeFilters.length + (widget.groupBookingEnabled ? 1 : 0);
   @override
-  void dispose() {
-    _pulseCtrl.dispose();
-    super.dispose();
+  void didUpdateWidget(covariant AroboFilterFab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_count == 0 && _panelOpen) _panelOpen = false;
   }
 
-  void _syncPulse() {
-    if (_hasFilters) {
-      if (!_pulseCtrl.isAnimating) _pulseCtrl.repeat(reverse: true);
-    } else {
-      _pulseCtrl.stop();
-      _pulseCtrl.reset();
-    }
-  }
-
-  void _toggleQuickSort(FilterOptionModel opt) {
-    HapticFeedback.lightImpact();
-    List<String> next = List.from(_selected);
-
-    final sortTitles = _quickSortOptions.map((o) => o.title).toSet();
-    next.removeWhere((t) => sortTitles.contains(t));
-
-    if (!_selected.contains(opt.title) && opt.title != 'Recommended') {
-      next.add(opt.title);
-    }
-
-    setState(() => _selected = List.unmodifiable(next));
-    _syncPulse();
-    widget.onFiltersChanged(List.unmodifiable(next));
-  }
-
-  void updateFilters(List<String> newTitles) {
-    if (!mounted) return;
-    setState(() => _selected = List.unmodifiable(newTitles));
-    _syncPulse();
-    widget.onFiltersChanged(List.unmodifiable(newTitles));
-  }
-
-  void _clearAll() {
-    HapticFeedback.mediumImpact();
-    setState(() {
-      _selected = [];
-      _groupBookingEnabled = false;
-    });
-    _syncPulse();
-    widget.onFiltersChanged([]);
-    widget.onGroupBookingChanged?.call(false);
-  }
-
-  Future<void> _openSheet([String? openCategoryTitle]) async {
-    HapticFeedback.selectionClick();
-
-    final result = await showModalBottomSheet<FilterSheetResult>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      useSafeArea: true,
-      enableDrag: true,
-      builder: (_) => _FilterSheetContent(
-        initialSelections: List.from(_selected),
-        initialCategory: openCategoryTitle ?? _appFilterCategories.first.title,
-        initialGroupBooking: _groupBookingEnabled,
-      ),
+  Future<void> _openSheet() async {
+    setState(() => _panelOpen = false);
+    final result = await showAroboFilterSheet(
+      context,
+      initialSelections: List.from(widget.activeFilters),
+      initialGroupBooking: widget.groupBookingEnabled,
     );
-
     if (!mounted || result == null) return;
+    widget.onResult(result);
+  }
 
-    setState(() {
-      _selected = List.unmodifiable(result.selectedTitles);
-      _groupBookingEnabled = result.groupBookingEnabled;
-    });
-    _syncPulse();
-    widget.onFiltersChanged(List.unmodifiable(result.selectedTitles));
-    widget.onGroupBookingChanged?.call(result.groupBookingEnabled);
+  void _togglePanel() {
+    if (_count == 0) return;
+    HapticFeedback.selectionClick();
+    setState(() => _panelOpen = !_panelOpen);
   }
 
   void _removeFilter(String title) {
     HapticFeedback.lightImpact();
-    final next = List<String>.from(_selected)..remove(title);
-    setState(() => _selected = List.unmodifiable(next));
-    _syncPulse();
-    widget.onFiltersChanged(List.unmodifiable(next));
+    final next = List<String>.from(widget.activeFilters)..remove(title);
+    widget.onResult(
+      FilterSheetResult(
+        selectedTitles: next,
+        groupBookingEnabled: widget.groupBookingEnabled,
+      ),
+    );
+  }
+
+  void _removeGroupBooking() {
+    HapticFeedback.lightImpact();
+    widget.onResult(
+      FilterSheetResult(
+        selectedTitles: List.from(widget.activeFilters),
+        groupBookingEnabled: false,
+      ),
+    );
+  }
+
+  void _clearAll() {
+    HapticFeedback.mediumImpact();
+    setState(() => _panelOpen = false);
+    widget.onResult(
+      const FilterSheetResult(selectedTitles: [], groupBookingEnabled: false),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: _barHeight,
-      decoration: BoxDecoration(
-        color: AroboTheme.cardBg,
-        boxShadow: AroboTheme.softShadow(0.05),
-        border: Border(
-          bottom: BorderSide(color: AroboTheme.border, width: 0.5),
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              physics: const BouncingScrollPhysics(),
-              itemCount:
-                  _quickSortOptions.length +
-                  _selected
-                      .where((t) => !_quickSortOptions.any((o) => o.title == t))
-                      .length,
-              separatorBuilder: (_, __) => const SizedBox(width: 6),
-              itemBuilder: (_, index) {
-                if (index < _quickSortOptions.length) {
-                  final opt = _quickSortOptions[index];
-                  final isSelected =
-                      _selected.contains(opt.title) ||
-                      (opt.title == 'Recommended' &&
-                          !_selected.any(
-                            (t) => _quickSortOptions.any((o) => o.title == t),
-                          ));
-
-                  return _QuickChip(
-                    label: opt.title,
-                    isSelected: isSelected,
-                    onTap: () => _toggleQuickSort(opt),
-                  );
-                }
-
-                final advancedFilters = _selected
-                    .where((t) => !_quickSortOptions.any((o) => o.title == t))
-                    .toList();
-                final filterTitle =
-                    advancedFilters[index - _quickSortOptions.length];
-
-                return _ActiveChip(
-                  label: filterTitle,
-                  onRemove: () => _removeFilter(filterTitle),
-                );
-              },
+    final count = _count;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          switchInCurve: Curves.easeOutBack,
+          switchOutCurve: Curves.easeIn,
+          transitionBuilder: (child, anim) => FadeTransition(
+            opacity: anim,
+            child: ScaleTransition(
+              scale: anim,
+              alignment: Alignment.bottomRight,
+              child: child,
             ),
           ),
+          child: (_panelOpen && count > 0)
+              ? Padding(
+                  key: const ValueKey('filters-panel'),
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _ActiveFiltersPanel(
+                    selected: widget.activeFilters,
+                    groupBooking: widget.groupBookingEnabled,
+                    onRemove: _removeFilter,
+                    onRemoveGroupBooking: _removeGroupBooking,
+                    onClearAll: _clearAll,
+                  ),
+                )
+              : const SizedBox.shrink(key: ValueKey('filters-panel-empty')),
+        ),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 180),
+          transitionBuilder: (child, anim) =>
+              ScaleTransition(scale: anim, child: child),
+          child: count > 0
+              ? Padding(
+                  key: const ValueKey('peek-btn'),
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: GestureDetector(
+                    onTap: _togglePanel,
+                    child: Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: _FT.card,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: _FT.border),
+                        boxShadow: [
+                          BoxShadow(
+                            color: _FT.forestDeep.withValues(alpha: 0.12),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        _panelOpen
+                            ? Icons.close_rounded
+                            : Icons.visibility_rounded,
+                        size: 18,
+                        color: _FT.forest,
+                      ),
+                    ),
+                  ),
+                )
+              : const SizedBox.shrink(key: ValueKey('peek-btn-empty')),
+        ),
+        GestureDetector(
+          onTap: _openSheet,
+          onLongPress: _togglePanel,
+          child: Container(
+            width: 58,
+            height: 58,
+            decoration: BoxDecoration(
+              gradient: _FT.gradient,
+              borderRadius: BorderRadius.circular(19),
+              boxShadow: [
+                BoxShadow(
+                  color: _FT.forestDeep.withValues(alpha: 0.35),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Center(
+                  child: Icon(
+                    Icons.tune_rounded,
+                    size: 24,
+                    color: Colors.white,
+                  ),
+                ),
+                if (count > 0)
+                  Positioned(
+                    top: -4,
+                    right: -4,
+                    child: Container(
+                      width: 20,
+                      height: 20,
+                      decoration: BoxDecoration(
+                        color: _FT.amber,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 1.8),
+                      ),
+                      child: Center(
+                        child: Text(
+                          '$count',
+                          style: const TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            height: 1.0,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ActiveFiltersPanel extends StatelessWidget {
+  final List<String> selected;
+  final bool groupBooking;
+  final ValueChanged<String> onRemove;
+  final VoidCallback onRemoveGroupBooking;
+  final VoidCallback onClearAll;
+  const _ActiveFiltersPanel({
+    required this.selected,
+    required this.groupBooking,
+    required this.onRemove,
+    required this.onRemoveGroupBooking,
+    required this.onClearAll,
+  });
+  @override
+  Widget build(BuildContext context) {
+    final sections = <Widget>[];
+    for (final cat in _appFilterCategories) {
+      final opts = cat.options
+          .where((o) => selected.contains(o.title))
+          .toList();
+      if (opts.isEmpty) continue;
+      sections.add(
+        _PanelSection(
+          svgPath: cat.svgPath,
+          title: cat.title,
+          chips: opts
+              .map(
+                (o) => _PanelChip(
+                  label: o.title,
+                  color: _FT.forest,
+                  onRemove: () => onRemove(o.title),
+                ),
+              )
+              .toList(),
+        ),
+      );
+    }
+    if (groupBooking) {
+      sections.add(
+        _PanelSection(
+          svgPath: CommonImages.group,
+          title: 'Extras',
+          chips: [
+            _PanelChip(
+              label: 'Group Booking',
+              color: _FT.amber,
+              onRemove: onRemoveGroupBooking,
+            ),
+          ],
+        ),
+      );
+    }
+    return Container(
+      width: 272,
+      constraints: const BoxConstraints(maxHeight: 340),
+      decoration: BoxDecoration(
+        color: _FT.card,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _FT.border, width: 0.9),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x24000000),
+            blurRadius: 24,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           Padding(
-            padding: const EdgeInsets.only(right: 10, left: 4),
-            child: _FilterButton(
-              count: _count,
-              pulse: _hasFilters ? _pulse : null,
-              onTap: () => _openSheet(),
-              onClear: _hasFilters ? _clearAll : null,
+            padding: const EdgeInsets.fromLTRB(14, 12, 12, 10),
+            child: Row(
+              children: [
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: _FT.forestSoft,
+                    borderRadius: BorderRadius.circular(9),
+                  ),
+                  child: const Icon(
+                    Icons.tune_rounded,
+                    size: 14,
+                    color: _FT.forest,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Active Filters',
+                    style: AroboTheme.label(
+                      size: 12,
+                      weight: FontWeight.w800,
+                      color: _FT.ink,
+                    ),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: onClearAll,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _FT.danger.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(
+                        AroboTheme.radiusPill,
+                      ),
+                    ),
+                    child: Text(
+                      'Clear all',
+                      style: AroboTheme.label(
+                        size: 10,
+                        weight: FontWeight.w700,
+                        color: _FT.danger,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(height: 1, color: _FT.border),
+          Flexible(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
+              physics: const BouncingScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: sections,
+              ),
             ),
           ),
         ],
@@ -407,230 +541,89 @@ class CommonFilterBarState extends State<CommonFilterBar>
   }
 }
 
-class _QuickChip extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _QuickChip({
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
+class _PanelSection extends StatelessWidget {
+  final String svgPath;
+  final String title;
+  final List<Widget> chips;
+  const _PanelSection({
+    required this.svgPath,
+    required this.title,
+    required this.chips,
   });
-
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOut,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected ? AroboTheme.primary : AroboTheme.elevated,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected ? AroboTheme.primary : AroboTheme.border,
-            width: 0.8,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              _SvgIcon(path: svgPath, color: _FT.inkMid, size: 12),
+              const SizedBox(width: 6),
+              Text(
+                title.toUpperCase(),
+                style: AroboTheme.label(
+                  size: 8.5,
+                  weight: FontWeight.w800,
+                  color: _FT.inkMid,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ],
           ),
-        ),
-        child: Center(
-          child: Text(
-            label,
-            style: AroboTheme.label(
-              size: 10.5,
-              weight: FontWeight.w700,
-              color: isSelected ? Colors.white : AroboTheme.ink400,
-            ),
-          ),
-        ),
+          const SizedBox(height: 7),
+          Wrap(spacing: 6, runSpacing: 6, children: chips),
+        ],
       ),
     );
   }
 }
 
-class _ActiveChip extends StatelessWidget {
+class _PanelChip extends StatelessWidget {
   final String label;
+  final Color color;
   final VoidCallback onRemove;
-
-  const _ActiveChip({required this.label, required this.onRemove});
-
+  const _PanelChip({
+    required this.label,
+    required this.color,
+    required this.onRemove,
+  });
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.only(left: 12, right: 4, top: 4, bottom: 4),
+      padding: const EdgeInsets.only(left: 10, right: 4, top: 4, bottom: 4),
       decoration: BoxDecoration(
-        color: AroboTheme.teal.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AroboTheme.teal.withOpacity(0.3), width: 0.8),
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AroboTheme.radiusPill),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 0.8),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             label,
             style: AroboTheme.label(
-              size: 10.5,
+              size: 10,
               weight: FontWeight.w700,
-              color: AroboTheme.teal,
+              color: color,
             ),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 5),
           GestureDetector(
             onTap: onRemove,
             child: Container(
               width: 16,
               height: 16,
               decoration: BoxDecoration(
-                color: AroboTheme.teal.withOpacity(0.1),
+                color: color.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                Icons.close_rounded,
-                size: 10,
-                color: AroboTheme.teal,
-              ),
+              child: Icon(Icons.close_rounded, size: 10, color: color),
             ),
           ),
         ],
       ),
-    );
-  }
-}
-
-class _FilterButton extends StatefulWidget {
-  final int count;
-  final Animation<double>? pulse;
-  final VoidCallback onTap;
-  final VoidCallback? onClear;
-
-  const _FilterButton({
-    required this.count,
-    required this.onTap,
-    this.pulse,
-    this.onClear,
-  });
-
-  @override
-  State<_FilterButton> createState() => _FilterButtonState();
-}
-
-class _FilterButtonState extends State<_FilterButton> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final hasFilters = widget.count > 0;
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        AnimatedSize(
-          duration: AroboTheme.durFast,
-          curve: AroboTheme.easeOut,
-          child: widget.onClear != null
-              ? Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    GestureDetector(
-                      onTap: widget.onClear,
-                      child: Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: AroboTheme.elevated,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: AroboTheme.border),
-                        ),
-                        child: Icon(
-                          Icons.close_rounded,
-                          size: 16,
-                          color: AroboTheme.ink400,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                  ],
-                )
-              : const SizedBox.shrink(),
-        ),
-        GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: widget.onTap,
-          onTapDown: (_) => setState(() => _pressed = true),
-          onTapUp: (_) => setState(() => _pressed = false),
-          onTapCancel: () => setState(() => _pressed = false),
-          child: AnimatedBuilder(
-            animation: widget.pulse ?? kAlwaysCompleteAnimation,
-            builder: (_, child) {
-              final s = widget.pulse != null
-                  ? 0.97 + 0.03 * widget.pulse!.value
-                  : (_pressed ? 0.94 : 1.0);
-              return Transform.scale(scale: s, child: child);
-            },
-            child: AnimatedContainer(
-              duration: AroboTheme.durFast,
-              curve: AroboTheme.easeOut,
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: hasFilters ? AroboTheme.primary : AroboTheme.cardBg,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: hasFilters ? AroboTheme.primary : AroboTheme.border,
-                  width: 0.9,
-                ),
-                boxShadow: hasFilters
-                    ? [
-                        BoxShadow(
-                          color: AroboTheme.primary.withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        ),
-                      ]
-                    : [],
-              ),
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Center(
-                    child: Icon(
-                      Icons.tune_rounded,
-                      size: 18,
-                      color: hasFilters ? Colors.white : AroboTheme.ink400,
-                    ),
-                  ),
-                  if (hasFilters)
-                    Positioned(
-                      top: -2,
-                      right: -2,
-                      child: Container(
-                        width: 14,
-                        height: 14,
-                        decoration: BoxDecoration(
-                          color: AroboTheme.danger,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 1.5),
-                        ),
-                        child: Center(
-                          child: Text(
-                            '${widget.count}',
-                            style: const TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 8,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                              height: 1.0,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 }
@@ -642,13 +635,11 @@ class _FilterSheetContent extends StatefulWidget {
   final List<String> initialSelections;
   final String initialCategory;
   final bool initialGroupBooking;
-
   const _FilterSheetContent({
     required this.initialSelections,
     required this.initialCategory,
     required this.initialGroupBooking,
   });
-
   @override
   State<_FilterSheetContent> createState() => _FilterSheetContentState();
 }
@@ -660,25 +651,21 @@ class _FilterSheetContentState extends State<_FilterSheetContent>
   late bool _groupBooking;
   late AnimationController _fadeCtrl;
   late Animation<double> _fade;
-
   FilterCategory get _currentCategory => _appFilterCategories.firstWhere(
     (c) => c.title == _activeCategory,
     orElse: () => _appFilterCategories.first,
   );
-
   @override
   void initState() {
     super.initState();
     _draft = List.from(widget.initialSelections);
     _groupBooking = widget.initialGroupBooking;
-
     final exists = _appFilterCategories.any(
       (c) => c.title == widget.initialCategory,
     );
     _activeCategory = exists
         ? widget.initialCategory
         : _appFilterCategories.first.title;
-
     _fadeCtrl = AnimationController(vsync: this, duration: AroboTheme.durFast)
       ..forward();
     _fade = CurvedAnimation(parent: _fadeCtrl, curve: AroboTheme.easeOut);
@@ -703,11 +690,9 @@ class _FilterSheetContentState extends State<_FilterSheetContent>
     setState(() {
       final cat = _currentCategory;
       final already = _draft.contains(opt.title);
-
       if (_isMultiSelect(cat.title)) {
         already ? _draft.remove(opt.title) : _draft.add(opt.title);
       } else {
-        // FIX: Single-select — remove all other options in this category first
         final catOptionTitles = cat.options.map((o) => o.title).toSet();
         _draft.removeWhere((t) => catOptionTitles.contains(t));
         if (!already) _draft.add(opt.title);
@@ -735,22 +720,20 @@ class _FilterSheetContentState extends State<_FilterSheetContent>
 
   int _categoryCount(FilterCategory cat) =>
       cat.options.where((o) => _draft.contains(o.title)).length;
-
   @override
   Widget build(BuildContext context) {
     final sheetH = MediaQuery.of(context).size.height * 0.82;
     final total = _draft.length + (_groupBooking ? 1 : 0);
-
     return Align(
       alignment: Alignment.bottomCenter,
       child: Container(
         height: sheetH,
         decoration: BoxDecoration(
-          color: AroboTheme.bg,
+          color: _FT.bg,
           borderRadius: const BorderRadius.vertical(
             top: Radius.circular(AroboTheme.radiusXl),
           ),
-          border: Border.all(color: AroboTheme.border, width: 0.8),
+          border: Border.all(color: _FT.border, width: 0.8),
           boxShadow: const [
             BoxShadow(
               color: Color(0x21000000),
@@ -769,7 +752,7 @@ class _FilterSheetContentState extends State<_FilterSheetContent>
               onClose: () => Navigator.of(context).pop(),
               onClear: total > 0 ? _clearDraft : null,
             ),
-            Container(height: 1, color: AroboTheme.border),
+            Container(height: 1, color: _FT.border),
             _GroupBookingCard(
               value: _groupBooking,
               onChanged: (v) => setState(() => _groupBooking = v),
@@ -780,11 +763,9 @@ class _FilterSheetContentState extends State<_FilterSheetContent>
                 children: [
                   Container(
                     width: 92,
-                    decoration: BoxDecoration(
-                      color: AroboTheme.cardBg,
-                      border: Border(
-                        right: BorderSide(color: AroboTheme.border),
-                      ),
+                    decoration: const BoxDecoration(
+                      color: _FT.elevated,
+                      border: Border(right: BorderSide(color: _FT.border)),
                     ),
                     child: ListView.separated(
                       padding: const EdgeInsets.symmetric(vertical: 10),
@@ -849,7 +830,7 @@ class _SheetTopAccent extends StatelessWidget {
           width: 38,
           height: 4,
           decoration: BoxDecoration(
-            color: AroboTheme.ink600,
+            color: _FT.inkLight.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(AroboTheme.radiusPill),
           ),
         ),
@@ -860,7 +841,8 @@ class _SheetTopAccent extends StatelessWidget {
             gradient: LinearGradient(
               colors: [
                 Colors.transparent,
-                AroboTheme.primary,
+                _FT.forest,
+                _FT.amber,
                 Colors.transparent,
               ],
             ),
@@ -876,81 +858,89 @@ class _SheetHeader extends StatelessWidget {
   final bool groupBooking;
   final VoidCallback onClose;
   final VoidCallback? onClear;
-
   const _SheetHeader({
     required this.count,
     required this.groupBooking,
     required this.onClose,
     this.onClear,
   });
-
   @override
   Widget build(BuildContext context) {
     final total = count + (groupBooking ? 1 : 0);
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 10, 14, 12),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: AroboTheme.primary,
-              borderRadius: BorderRadius.circular(13),
-              boxShadow: [
-                BoxShadow(
-                  color: AroboTheme.primary.withOpacity(0.2),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: const Icon(
-              Icons.tune_rounded,
-              size: 22,
-              color: Colors.white,
-            ),
+    return Stack(
+      children: [
+        const Positioned.fill(
+          child: IgnorePointer(
+            child: CustomPaint(painter: _HeaderRidgePainter()),
           ),
-          const SizedBox(width: 13),
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AnimatedSwitcher(
-                  duration: AroboTheme.durFast,
-                  child: Text(
-                    total > 0 ? 'Filters  ·  $total active' : 'Filter Treks',
-                    key: ValueKey(total),
-                    style: AroboTheme.label(
-                      size: 16,
-                      weight: FontWeight.w800,
-                      color: AroboTheme.ink,
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(18, 10, 14, 12),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  gradient: _FT.gradient,
+                  borderRadius: BorderRadius.circular(13),
+                  boxShadow: [
+                    BoxShadow(
+                      color: _FT.forestDeep.withValues(alpha: 0.25),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
-                  ),
+                  ],
                 ),
-                const SizedBox(height: 3),
-                Text(
-                  total > 0
-                      ? 'Tap a chip in the bar to remove'
-                      : 'Narrow down your perfect trek',
-                  style: AroboTheme.label(size: 10.5, color: AroboTheme.ink400),
+                child: const Icon(
+                  Icons.tune_rounded,
+                  size: 22,
+                  color: Colors.white,
                 ),
+              ),
+              const SizedBox(width: 13),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AnimatedSwitcher(
+                      duration: AroboTheme.durFast,
+                      child: Text(
+                        total > 0
+                            ? 'Filters  ·  $total active'
+                            : 'Filter Treks',
+                        key: ValueKey(total),
+                        style: AroboTheme.label(
+                          size: 16,
+                          weight: FontWeight.w800,
+                          color: _FT.ink,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      total > 0
+                          ? 'Manage them anytime from the floating button'
+                          : 'Narrow down your perfect trek',
+                      style: AroboTheme.label(size: 10.5, color: _FT.inkMid),
+                    ),
+                  ],
+                ),
+              ),
+              if (onClear != null) ...[
+                _GhostPill(
+                  label: 'Clear all',
+                  icon: Icons.delete_sweep_rounded,
+                  onTap: onClear!,
+                ),
+                const SizedBox(width: 8),
               ],
-            ),
+              _RoundIconButton(icon: Icons.close_rounded, onTap: onClose),
+            ],
           ),
-          if (onClear != null) ...[
-            _GhostPill(
-              label: 'Clear all',
-              icon: Icons.delete_sweep_rounded,
-              onTap: onClear!,
-            ),
-            const SizedBox(width: 8),
-          ],
-          _RoundIconButton(icon: Icons.close_rounded, onTap: onClose),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -959,20 +949,17 @@ class _GhostPill extends StatefulWidget {
   final String label;
   final IconData icon;
   final VoidCallback onTap;
-
   const _GhostPill({
     required this.label,
     required this.icon,
     required this.onTap,
   });
-
   @override
   State<_GhostPill> createState() => _GhostPillState();
 }
 
 class _GhostPillState extends State<_GhostPill> {
   bool _pressed = false;
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -985,28 +972,24 @@ class _GhostPillState extends State<_GhostPill> {
         duration: AroboTheme.durFast,
         padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
         decoration: BoxDecoration(
-          color: _pressed
-              ? AroboTheme.primary.withOpacity(0.1)
-              : AroboTheme.elevated,
+          color: _pressed ? _FT.forestSoft : _FT.card,
           borderRadius: BorderRadius.circular(AroboTheme.radiusPill),
           border: Border.all(
-            color: _pressed
-                ? AroboTheme.primary.withOpacity(0.4)
-                : AroboTheme.border,
+            color: _pressed ? _FT.forest.withValues(alpha: 0.4) : _FT.border,
           ),
           boxShadow: AroboTheme.softShadow(),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(widget.icon, size: 13, color: AroboTheme.primary),
+            Icon(widget.icon, size: 13, color: _FT.forest),
             const SizedBox(width: 5),
             Text(
               widget.label,
               style: AroboTheme.label(
                 size: 11,
                 weight: FontWeight.w700,
-                color: AroboTheme.primary,
+                color: _FT.forest,
               ),
             ),
           ],
@@ -1019,16 +1002,13 @@ class _GhostPillState extends State<_GhostPill> {
 class _RoundIconButton extends StatefulWidget {
   final IconData icon;
   final VoidCallback onTap;
-
   const _RoundIconButton({required this.icon, required this.onTap});
-
   @override
   State<_RoundIconButton> createState() => _RoundIconButtonState();
 }
 
 class _RoundIconButtonState extends State<_RoundIconButton> {
   bool _pressed = false;
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -1042,12 +1022,12 @@ class _RoundIconButtonState extends State<_RoundIconButton> {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: _pressed ? AroboTheme.surfaceCard : AroboTheme.elevated,
+          color: _pressed ? _FT.forestSoft : _FT.card,
           shape: BoxShape.circle,
-          border: Border.all(color: AroboTheme.border),
+          border: Border.all(color: _FT.border),
           boxShadow: AroboTheme.softShadow(),
         ),
-        child: Icon(widget.icon, color: AroboTheme.ink400, size: 20),
+        child: Icon(widget.icon, color: _FT.inkMid, size: 20),
       ),
     );
   }
@@ -1058,14 +1038,12 @@ class _VerticalCategoryTab extends StatelessWidget {
   final bool active;
   final int? count;
   final VoidCallback onTap;
-
   const _VerticalCategoryTab({
     required this.cat,
     required this.active,
     required this.onTap,
     this.count,
   });
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -1076,16 +1054,23 @@ class _VerticalCategoryTab extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 7),
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
         decoration: BoxDecoration(
-          color: active
-              ? AroboTheme.primary.withOpacity(0.08)
-              : Colors.transparent,
+          color: active ? _FT.card : Colors.transparent,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: active
-                ? AroboTheme.primary.withOpacity(0.2)
+                ? _FT.forest.withValues(alpha: 0.35)
                 : Colors.transparent,
             width: 1.0,
           ),
+          boxShadow: active
+              ? [
+                  BoxShadow(
+                    color: _FT.forestDeep.withValues(alpha: 0.08),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ]
+              : null,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1095,7 +1080,7 @@ class _VerticalCategoryTab extends StatelessWidget {
               children: [
                 _SvgIcon(
                   path: cat.svgPath,
-                  color: active ? AroboTheme.primary : AroboTheme.ink400,
+                  color: active ? _FT.forest : _FT.inkMid,
                   size: 20,
                 ),
                 if (count != null)
@@ -1106,11 +1091,9 @@ class _VerticalCategoryTab extends StatelessWidget {
                       width: 14,
                       height: 14,
                       decoration: BoxDecoration(
-                        color: active
-                            ? AroboTheme.primary
-                            : AroboTheme.iconBadge,
+                        color: active ? _FT.forest : _FT.amber,
                         shape: BoxShape.circle,
-                        border: Border.all(color: AroboTheme.cardBg, width: 1),
+                        border: Border.all(color: Colors.white, width: 1),
                       ),
                       child: Center(
                         child: Text(
@@ -1134,7 +1117,7 @@ class _VerticalCategoryTab extends StatelessWidget {
               style: AroboTheme.label(
                 size: 9.5,
                 weight: active ? FontWeight.w800 : FontWeight.w500,
-                color: active ? AroboTheme.primary : AroboTheme.ink400,
+                color: active ? _FT.forest : _FT.inkMid,
                 height: 1.2,
               ),
             ),
@@ -1148,9 +1131,7 @@ class _VerticalCategoryTab extends StatelessWidget {
 class _GroupBookingCard extends StatelessWidget {
   final bool value;
   final ValueChanged<bool> onChanged;
-
   const _GroupBookingCard({required this.value, required this.onChanged});
-
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
@@ -1158,12 +1139,9 @@ class _GroupBookingCard extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(14, 12, 14, 10),
       padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
       decoration: BoxDecoration(
-        color: value ? AroboTheme.primary.withOpacity(0.05) : AroboTheme.cardBg,
+        color: value ? _FT.amberBg : _FT.card,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: value ? AroboTheme.primary : AroboTheme.border,
-          width: 0.9,
-        ),
+        border: Border.all(color: value ? _FT.amber : _FT.border, width: 0.9),
         boxShadow: AroboTheme.softShadow(),
       ),
       child: Row(
@@ -1173,7 +1151,7 @@ class _GroupBookingCard extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: value ? AroboTheme.primary : AroboTheme.elevated,
+              color: value ? _FT.amber : _FT.elevated,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Center(
@@ -1182,7 +1160,7 @@ class _GroupBookingCard extends StatelessWidget {
                 width: 18,
                 height: 18,
                 colorFilter: ColorFilter.mode(
-                  value ? Colors.white : AroboTheme.ink400,
+                  value ? Colors.white : _FT.inkMid,
                   BlendMode.srcIn,
                 ),
               ),
@@ -1198,13 +1176,13 @@ class _GroupBookingCard extends StatelessWidget {
                   style: AroboTheme.label(
                     size: 12,
                     weight: FontWeight.w700,
-                    color: value ? AroboTheme.primary : AroboTheme.ink,
+                    color: value ? _FT.amber : _FT.ink,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   'Exclusive deals for 4+ members',
-                  style: AroboTheme.label(size: 9.5, color: AroboTheme.ink400),
+                  style: AroboTheme.label(size: 9.5, color: _FT.inkMid),
                 ),
               ],
             ),
@@ -1216,9 +1194,9 @@ class _GroupBookingCard extends StatelessWidget {
               onChanged(v);
             },
             activeThumbColor: Colors.white,
-            activeTrackColor: AroboTheme.primary,
-            inactiveTrackColor: AroboTheme.elevated,
-            inactiveThumbColor: AroboTheme.ink400,
+            activeTrackColor: _FT.amber,
+            inactiveTrackColor: _FT.elevated,
+            inactiveThumbColor: _FT.inkMid,
           ),
         ],
       ),
@@ -1230,18 +1208,15 @@ class _OptionGrid extends StatelessWidget {
   final FilterCategory category;
   final List<String> selected;
   final ValueChanged<FilterOptionModel> onTap;
-
   const _OptionGrid({
     super.key,
     required this.category,
     required this.selected,
     required this.onTap,
   });
-
   @override
   Widget build(BuildContext context) {
     final multi = _isMultiSelect(category.title);
-
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
       child: Column(
@@ -1254,12 +1229,12 @@ class _OptionGrid extends StatelessWidget {
                 style: AroboTheme.label(
                   size: 9.5,
                   weight: FontWeight.w800,
-                  color: AroboTheme.ink400,
+                  color: _FT.inkMid,
                   letterSpacing: 1.5,
                 ),
               ),
               const SizedBox(width: 8),
-              Expanded(child: Container(height: 1, color: AroboTheme.border)),
+              Expanded(child: Container(height: 1, color: _FT.border)),
               if (multi) ...[
                 const SizedBox(width: 8),
                 Container(
@@ -1268,18 +1243,15 @@ class _OptionGrid extends StatelessWidget {
                     vertical: 3,
                   ),
                   decoration: BoxDecoration(
-                    color: AroboTheme.primary.withOpacity(0.08),
+                    color: _FT.amberBg,
                     borderRadius: BorderRadius.circular(AroboTheme.radiusPill),
-                    border: Border.all(
-                      color: AroboTheme.primary.withOpacity(0.3),
-                      width: 0.7,
-                    ),
+                    border: Border.all(color: _FT.amberBorder, width: 0.7),
                   ),
                   child: Text(
                     'multi‑select',
                     style: AroboTheme.label(
                       size: 9,
-                      color: AroboTheme.primary,
+                      color: _FT.amber,
                       weight: FontWeight.w700,
                     ),
                   ),
@@ -1319,13 +1291,11 @@ class _OptionCard extends StatefulWidget {
   final FilterOptionModel option;
   final bool isSelected;
   final VoidCallback onTap;
-
   const _OptionCard({
     required this.option,
     required this.isSelected,
     required this.onTap,
   });
-
   @override
   State<_OptionCard> createState() => _OptionCardState();
 }
@@ -1334,7 +1304,6 @@ class _OptionCardState extends State<_OptionCard>
     with SingleTickerProviderStateMixin {
   bool _pressed = false;
   late AnimationController _scaleCtrl;
-
   @override
   void initState() {
     super.initState();
@@ -1380,13 +1349,13 @@ class _OptionCardState extends State<_OptionCard>
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
           decoration: BoxDecoration(
             color: widget.isSelected
-                ? AroboTheme.primary.withOpacity(0.06)
+                ? _FT.forestSoft
                 : _pressed
-                ? AroboTheme.surfaceCard
-                : AroboTheme.cardBg,
+                ? _FT.elevated
+                : _FT.card,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: widget.isSelected ? AroboTheme.primary : AroboTheme.border,
+              color: widget.isSelected ? _FT.forest : _FT.border,
               width: widget.isSelected ? 1.2 : 0.8,
             ),
             boxShadow: AroboTheme.softShadow(),
@@ -1400,13 +1369,9 @@ class _OptionCardState extends State<_OptionCard>
                 height: 20,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: widget.isSelected
-                      ? AroboTheme.primary
-                      : Colors.transparent,
+                  color: widget.isSelected ? _FT.forest : Colors.transparent,
                   border: Border.all(
-                    color: widget.isSelected
-                        ? AroboTheme.primary
-                        : AroboTheme.ink600,
+                    color: widget.isSelected ? _FT.forest : _FT.inkLight,
                     width: widget.isSelected ? 0 : 1.5,
                   ),
                 ),
@@ -1429,9 +1394,7 @@ class _OptionCardState extends State<_OptionCard>
                     weight: widget.isSelected
                         ? FontWeight.w700
                         : FontWeight.w500,
-                    color: widget.isSelected
-                        ? AroboTheme.primary
-                        : AroboTheme.ink200,
+                    color: widget.isSelected ? _FT.forestDeep : _FT.ink,
                     height: 1.2,
                   ),
                 ),
@@ -1447,18 +1410,15 @@ class _OptionCardState extends State<_OptionCard>
 class _SheetFooter extends StatelessWidget {
   final int count;
   final VoidCallback onApply;
-
   const _SheetFooter({required this.count, required this.onApply});
-
   @override
   Widget build(BuildContext context) {
     final hasFilters = count > 0;
-
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
       decoration: BoxDecoration(
-        color: AroboTheme.cardBg,
-        border: Border(top: BorderSide(color: AroboTheme.border)),
+        color: _FT.card,
+        border: const Border(top: BorderSide(color: _FT.border)),
         boxShadow: AroboTheme.softShadow(0.05),
       ),
       child: SafeArea(
@@ -1470,17 +1430,17 @@ class _SheetFooter extends StatelessWidget {
           child: AnimatedContainer(
             duration: AroboTheme.durFast,
             decoration: BoxDecoration(
-              gradient: hasFilters ? AroboTheme.primaryGradient : null,
-              color: hasFilters ? null : AroboTheme.elevated,
+              gradient: hasFilters ? _FT.gradient : null,
+              color: hasFilters ? null : _FT.elevated,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: hasFilters ? AroboTheme.primary : AroboTheme.border,
+                color: hasFilters ? _FT.forestDeep : _FT.border,
                 width: hasFilters ? 0 : 1,
               ),
               boxShadow: hasFilters
                   ? [
                       BoxShadow(
-                        color: AroboTheme.primary.withOpacity(0.3),
+                        color: _FT.forestDeep.withValues(alpha: 0.3),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -1490,7 +1450,8 @@ class _SheetFooter extends StatelessWidget {
             child: Material(
               color: Colors.transparent,
               child: InkWell(
-                onTap: hasFilters ? onApply : null,
+                // Always tappable — applying with zero selections clears filters
+                onTap: onApply,
                 borderRadius: BorderRadius.circular(16),
                 splashColor: Colors.white.withValues(alpha: 0.15),
                 highlightColor: Colors.transparent,
@@ -1506,19 +1467,17 @@ class _SheetFooter extends StatelessWidget {
                               ? Icons.check_circle_outline_rounded
                               : Icons.filter_list_rounded,
                           size: 16,
-                          color: hasFilters ? Colors.white : AroboTheme.ink400,
+                          color: hasFilters ? Colors.white : _FT.inkMid,
                         ),
                         const SizedBox(width: 8),
                         Text(
                           hasFilters
                               ? 'Apply  ·  $count selected'
-                              : 'Select filters to apply',
+                              : 'Apply (no filters)',
                           style: AroboTheme.label(
                             size: 12,
                             weight: FontWeight.w800,
-                            color: hasFilters
-                                ? Colors.white
-                                : AroboTheme.ink400,
+                            color: hasFilters ? Colors.white : _FT.inkMid,
                           ),
                         ),
                       ],
@@ -1538,9 +1497,7 @@ class _SvgIcon extends StatelessWidget {
   final String path;
   final Color color;
   final double size;
-
   const _SvgIcon({required this.path, required this.color, required this.size});
-
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -1558,4 +1515,29 @@ class _SvgIcon extends StatelessWidget {
       ),
     );
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Faint ridge line behind the sheet header — same alpine DNA as the trek card
+// ─────────────────────────────────────────────────────────────────────────────
+class _HeaderRidgePainter extends CustomPainter {
+  const _HeaderRidgePainter();
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+    final ridge = Path()
+      ..moveTo(w * 0.45, h)
+      ..lineTo(w * 0.56, h * 0.35)
+      ..lineTo(w * 0.66, h * 0.75)
+      ..lineTo(w * 0.76, h * 0.20)
+      ..lineTo(w * 0.88, h * 0.70)
+      ..lineTo(w, h * 0.45)
+      ..lineTo(w, h)
+      ..close();
+    canvas.drawPath(ridge, Paint()..color = _FT.forest.withValues(alpha: 0.05));
+  }
+
+  @override
+  bool shouldRepaint(_HeaderRidgePainter old) => false;
 }
