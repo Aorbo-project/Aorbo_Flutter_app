@@ -14,6 +14,8 @@ class DiscountCardModel {
   final String? howToApply;
   final List<String>? termsAndConditions;
   final String? footerNote;
+  final String? validFrom;
+  final String? validUntil;
 
   DiscountCardModel({
     required this.title,
@@ -28,5 +30,7 @@ class DiscountCardModel {
     this.howToApply,
     this.termsAndConditions,
     this.footerNote,
+    this.validFrom,
+    this.validUntil,
   });
 }

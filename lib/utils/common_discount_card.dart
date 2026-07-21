@@ -22,7 +22,9 @@ class CommonDiscountCard extends StatelessWidget {
   final String? howToApply;
   final List<String>? termsAndConditions;
   final String? footerNote;
-  // validUntil used for "Offer expires on …" fallback T&C line
+  // validFrom/validUntil: validUntil also drives the "Offer expires on …"
+  // fallback T&C line below; both are passed through to the details screen.
+  final String? validFrom;
   final String? validUntil;
 
   const CommonDiscountCard({
@@ -39,6 +41,7 @@ class CommonDiscountCard extends StatelessWidget {
     this.howToApply,
     this.termsAndConditions,
     this.footerNote,
+    this.validFrom,
     this.validUntil,
   });
 
@@ -205,6 +208,8 @@ class CommonDiscountCard extends StatelessWidget {
               howToApply: howToApply,
               termsAndConditions: termsAndConditions,
               footerNote: footerNote,
+              validFrom: validFrom,
+              validUntil: validUntil,
             ),
           },
           preventDuplicates: true,
