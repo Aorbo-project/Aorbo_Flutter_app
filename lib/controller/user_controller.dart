@@ -12,19 +12,21 @@ class UserController extends GetxController {
   Rx<UserProfileModal> userModal = UserProfileModal().obs;
   Rx<UserProfileData> userProfileData = UserProfileData().obs;
   RxBool isLoading = false.obs;
+
+  // ── LEGACY SHARED CONTROLLERS ──────────────────────────────────────────
+  // Kept ONLY for backwards compatibility with older screens that still
+  // read/write them. Do NOT attach these to TextFields in new code —
+  // sharing these across routes/bottom sheets is what caused the
+  // "TextEditingController was used after being disposed" red screen.
   Rx<TextEditingController> emailController = TextEditingController().obs;
   Rx<TextEditingController> phoneNumberController = TextEditingController().obs;
   RxInt stateUpdateId = 0.obs;
-
-//region traveller
   RxString selectedGender = ''.obs;
   Rx<TextEditingController> nameControllerTraveller =
       TextEditingController().obs;
   Rx<TextEditingController> ageControllerTraveller =
       TextEditingController().obs;
   RxInt travellerId = 0.obs;
-
-  //endregion
 
   @override
   void onClose() {
@@ -35,9 +37,13 @@ class UserController extends GetxController {
     super.onClose();
   }
 
-  getUserProfile() async {
-    isLoading.value = true;
+  void _showError(String message) {
+    final ctx = Get.context;
+    if (ctx != null) CustomSnackBar.show(ctx, message: message);
+  }
 
+  Future<void> getUserProfile() async {
+    isLoading.value = true;
     try {
       final response = await repository.getApiCall(
         url: NetworkUrl.getUserProfile,
@@ -48,99 +54,109 @@ class UserController extends GetxController {
         userProfileData.value = userModal.value.data ?? UserProfileData();
         phoneNumberController.value.text =
             userProfileData.value.customer?.phone?.replaceFirst('+91', '') ??
-                '-';
+            '';
       }
     } catch (e) {
-      CustomSnackBar.show(
-        Get.context!,
-        message: e.toString(),
-      );
+      _showError(e.toString());
     } finally {
       isLoading.value = false;
     }
   }
 
-  updateUserProfile() async {
+  // ── PARAMETERIZED API METHODS ──────────────────────────────────────────
+  // All return true only on confirmed backend success, so callers can
+  // decide what to do with their own UI state.
+
+  Future<bool> updateProfileDetails({
+    required String email,
+    required int stateId,
+  }) async {
     isLoading.value = true;
-    String body = json.encode({
-      "email": emailController.value.text,
-      "state_id": stateUpdateId.value,
-    });
     try {
+      final String body = json.encode({"email": email, "state_id": stateId});
       final response = await repository.putApiCall(
-          url: NetworkUrl.getUserProfile, body: body);
-      if (response != null) {
-        if (response['success']) {
-          await getUserProfile();
-        } else {
-          CustomSnackBar.show(Get.context!, message: response['message']);
-        }
-      }
-    } catch (e) {
-      CustomSnackBar.show(
-        Get.context!,
-        message: e.toString(),
+        url: NetworkUrl.getUserProfile,
+        body: body,
       );
+      if (response != null && response['success'] == true) {
+        await getUserProfile();
+        return true;
+      }
+      _showError(
+        response?['message']?.toString() ??
+            'Could not update profile. Please try again.',
+      );
+      return false;
+    } catch (e) {
+      _showError(e.toString());
+      return false;
     } finally {
       isLoading.value = false;
     }
   }
 
-  addTraveler() async {
+  Future<bool> addTravelerDetails({
+    required String name,
+    required String age,
+    required String gender,
+  }) async {
     isLoading.value = true;
-    String body = json.encode({
-      "name": nameControllerTraveller.value.text,
-      "age": ageControllerTraveller.value.text,
-      "gender": selectedGender.value,
-    });
     try {
+      final String body = json.encode({
+        "name": name,
+        "age": age,
+        "gender": gender,
+      });
       final response = await repository.postApiCall(
-          url: NetworkUrl.addTraveller, body: body);
-      if (response != null) {
-        if (response['success']) {
-          await getUserProfile();
-          nameControllerTraveller.value.clear();
-          ageControllerTraveller.value.clear();
-          selectedGender.value = '';
-        } else {
-          CustomSnackBar.show(Get.context!, message: response['message']);
-        }
-      }
-    } catch (e) {
-      CustomSnackBar.show(
-        Get.context!,
-        message: e.toString(),
+        url: NetworkUrl.addTraveller,
+        body: body,
       );
+      if (response != null && response['success'] == true) {
+        await getUserProfile();
+        return true;
+      }
+      _showError(
+        response?['message']?.toString() ??
+            'Could not add traveller. Please try again.',
+      );
+      return false;
+    } catch (e) {
+      _showError(e.toString());
+      return false;
     } finally {
       isLoading.value = false;
     }
   }
 
-  updateTraveler() async {
+  Future<bool> updateTravelerDetails({
+    required int id,
+    required String name,
+    required String age,
+    required String gender,
+  }) async {
     isLoading.value = true;
-    String body = json.encode({
-      "name": nameControllerTraveller.value.text,
-      "age": ageControllerTraveller.value.text,
-      "gender": selectedGender.value,
-    });
     try {
+      final String body = json.encode({
+        "name": name,
+        "age": age,
+        "gender": gender,
+      });
       final response = await repository.putApiCall(
-          url: "${NetworkUrl.addTraveller}/${travellerId.value}", body: body);
-      if (response != null) {
-        if (response['success']) {
-          await getUserProfile();
-          nameControllerTraveller.value.clear();
-          ageControllerTraveller.value.clear();
-          selectedGender.value = '';
-        } else {
-          CustomSnackBar.show(Get.context!, message: response['message']);
-        }
-      }
-    } catch (e) {
-      CustomSnackBar.show(
-        Get.context!,
-        message: e.toString(),
+        url: "${NetworkUrl.addTraveller}/$id",
+        body: body,
       );
+      if (response != null && response['success'] == true) {
+        await getUserProfile();
+        return true;
+      }
+      _showError(
+        response?['message']?.toString() ??
+            'Could not update traveller. Please try again.',
+      );
+      return false;
+    } catch (e) {
+      _showError(e.toString());
+      return false;
     } finally {
       isLoading.value = false;
     }
@@ -152,20 +168,57 @@ class UserController extends GetxController {
   Future<bool> deleteTraveler(int travelerId) async {
     isLoading.value = true;
     try {
-      final response = await repository
-          .deleteApiCall(url: "${NetworkUrl.addTraveller}/$travelerId");
+      final response = await repository.deleteApiCall(
+        url: "${NetworkUrl.addTraveller}/$travelerId",
+      );
       if (response != null && response['success'] == true) {
         await getUserProfile();
         return true;
       }
-      CustomSnackBar.show(Get.context!,
-          message: response?['message'] ?? 'Could not delete traveller.');
+      _showError(
+        response?['message']?.toString() ?? 'Could not delete traveller.',
+      );
       return false;
     } catch (e) {
-      CustomSnackBar.show(Get.context!, message: e.toString());
+      _showError(e.toString());
       return false;
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  // ── LEGACY WRAPPERS (older call sites) ─────────────────────────────────
+  Future<void> updateUserProfile() async {
+    await updateProfileDetails(
+      email: emailController.value.text,
+      stateId: stateUpdateId.value,
+    );
+  }
+
+  Future<void> addTraveler() async {
+    final ok = await addTravelerDetails(
+      name: nameControllerTraveller.value.text,
+      age: ageControllerTraveller.value.text,
+      gender: selectedGender.value,
+    );
+    if (ok) {
+      nameControllerTraveller.value.clear();
+      ageControllerTraveller.value.clear();
+      selectedGender.value = '';
+    }
+  }
+
+  Future<void> updateTraveler() async {
+    final ok = await updateTravelerDetails(
+      id: travellerId.value,
+      name: nameControllerTraveller.value.text,
+      age: ageControllerTraveller.value.text,
+      gender: selectedGender.value,
+    );
+    if (ok) {
+      nameControllerTraveller.value.clear();
+      ageControllerTraveller.value.clear();
+      selectedGender.value = '';
     }
   }
 }
