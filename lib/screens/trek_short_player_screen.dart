@@ -33,7 +33,11 @@ class TrekShortPlayerScreen extends StatelessWidget {
                   borderRadius: BorderRadius.zero,
                   isVertical: shortsData.isVertical,
                   interactive: true,
-                  showYoutubeControls: true,
+                  // Hides YouTube's own title/channel/CC/settings/progress
+                  // chrome entirely — only our own close, mute, and
+                  // play/pause controls should ever show on this screen.
+                  showYoutubeControls: false,
+                  showPlayPauseToggle: true,
                   autoPlayWhenVisible: false,
                   externalActive: true,
                 ),
