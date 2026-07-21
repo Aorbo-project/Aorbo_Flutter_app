@@ -41,7 +41,6 @@ class YoutubeShortsPlayer extends StatefulWidget {
   final bool? externalActive;
   final bool initiallyMuted;
   final bool showMuteToggle;
-  final bool showPlayPauseToggle;
   final bool showYoutubeControls;
 
   /// WebView-based players intercept touches for their own web content
@@ -73,7 +72,6 @@ class YoutubeShortsPlayer extends StatefulWidget {
     this.externalActive,
     this.initiallyMuted = true,
     this.showMuteToggle = true,
-    this.showPlayPauseToggle = false,
     this.showYoutubeControls = false,
     this.interactive = false,
     this.backgroundColor = Colors.black,
@@ -91,7 +89,6 @@ class _YoutubeShortsPlayerState extends State<YoutubeShortsPlayer>
   late bool _isMuted = widget.initiallyMuted;
   bool _isVisible = false;
   bool _hasError = false;
-  bool _isPlaying = false;
 
   @override
   void initState() {
@@ -133,9 +130,6 @@ class _YoutubeShortsPlayerState extends State<YoutubeShortsPlayer>
         controller.seekTo(seconds: 0);
         controller.playVideo();
       }
-      if (!mounted) return;
-      final playing = value.playerState == PlayerState.playing;
-      if (playing != _isPlaying) setState(() => _isPlaying = playing);
     });
   }
 
@@ -186,12 +180,6 @@ class _YoutubeShortsPlayerState extends State<YoutubeShortsPlayer>
     if (controller == null) return;
     setState(() => _isMuted = !_isMuted);
     _isMuted ? controller.mute() : controller.unMute();
-  }
-
-  void _togglePlayPause() {
-    final controller = _controller;
-    if (controller == null) return;
-    _isPlaying ? controller.pauseVideo() : controller.playVideo();
   }
 
   @override
@@ -267,31 +255,6 @@ class _YoutubeShortsPlayerState extends State<YoutubeShortsPlayer>
               if (!widget.interactive)
                 Positioned.fill(
                   child: GestureDetector(behavior: HitTestBehavior.opaque),
-                ),
-              if (widget.showPlayPauseToggle)
-                Positioned.fill(
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: _togglePlayPause,
-                    child: Center(
-                      child: AnimatedOpacity(
-                        opacity: _isPlaying ? 0 : 1,
-                        duration: const Duration(milliseconds: 200),
-                        child: Container(
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.45),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.play_arrow_rounded,
-                            color: Colors.white,
-                            size: 36,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
                 ),
               if (widget.showMuteToggle)
                 Positioned(

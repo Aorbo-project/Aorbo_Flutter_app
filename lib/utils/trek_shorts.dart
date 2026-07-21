@@ -3,7 +3,6 @@ import 'package:arobo_app/utils/app_theme.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:arobo_app/utils/youtube_utils.dart';
 import 'package:arobo_app/widgets/custom_network_image.dart';
-import 'package:arobo_app/widgets/youtube_shorts_player.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sizer/sizer.dart';
@@ -31,26 +30,18 @@ class TrekShortItem {
   });
 }
 
-/// A shelf card. Only the active (current) card ever mounts a live
-/// player — everything else is a static thumbnail. No auto-scroll timer
-/// drives this shelf, so a card only ever becomes active on a manual
-/// swipe: that removes one whole source of unexpected page churn, and
-/// combined with the player's own fixes (single load+play call instead of
-/// a racy two-step, only one live WebView ever mounted at a time) manual
-/// swiping is what's actually being tested here, not a guarantee — if the
-/// same sharp-corner/dead-swipe symptoms resurface, that's the signal this
-/// still isn't a stable place for a live embed. Tapping a card (active or
-/// not) opens the same video in [TrekShortPlayerScreen] for the full
-/// experience.
+/// A shelf card: static thumbnail only, never a live video. A YouTube
+/// embed is a native WebView platform view, and one swiping side by side
+/// with its neighbors in a PageView fights that PageView's own drag
+/// recognizer for touch priority — the exact source of the sharp corners,
+/// dead swipes, and stuck-on-thumbnail bugs seen while this shelf tried to
+/// autoplay inline. Tapping a card opens the real video in
+/// [TrekShortPlayerScreen] instead, where there's no competing swipe
+/// gesture for it to fight.
 class TrekShorts extends StatelessWidget {
   final TrekShortItem shortsData;
-  final bool isActive;
 
-  const TrekShorts({
-    super.key,
-    required this.shortsData,
-    this.isActive = false,
-  });
+  const TrekShorts({super.key, required this.shortsData});
 
   static const _radius = BorderRadius.all(Radius.circular(16));
 
@@ -71,55 +62,28 @@ class TrekShorts extends StatelessWidget {
         child: LayoutBuilder(
           builder: (context, constraints) => Stack(
             children: [
-              if (isActive)
-                YoutubeShortsPlayer(
-                  videoUrl: shortsData.videoUrl,
-                  thumbnailUrl: shortsData.thumbnailUrl,
-                  width: constraints.maxWidth,
-                  height: constraints.maxHeight,
-                  borderRadius: _radius,
-                  isVertical: shortsData.isVertical,
-                  externalActive: true,
-                )
-              else ...[
-                SizedBox(
-                  width: constraints.maxWidth,
-                  height: constraints.maxHeight,
-                  child: thumbnail != null
-                      ? ClipRect(
-                          child: Transform.scale(
-                            // YouTube's hqdefault fallback thumbnail is always
-                            // a landscape 480x360 frame — for a vertical short
-                            // it has real black pillarbox bars baked into the
-                            // image itself. BoxFit.cover alone doesn't crop
-                            // enough width to remove them at this card's tall
-                            // aspect ratio, leaving a visible black strip next
-                            // to the card's own rounded edge. Only relevant
-                            // when there's no admin-supplied cover image AND
-                            // the source is a vertical short — a real 16:9
-                            // upload's default thumbnail has no bars to hide.
-                            scale: shortsData.isVertical ? 1.9 : 1.0,
-                            child: CustomNetworkImage(
-                              imageUrl: thumbnail,
-                              width: constraints.maxWidth,
-                              height: constraints.maxHeight,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        )
-                      : Container(color: Colors.black),
-                ),
+              SizedBox(
+                width: constraints.maxWidth,
+                height: constraints.maxHeight,
+                child: thumbnail != null
+                    ? CustomNetworkImage(
+                        imageUrl: thumbnail,
+                        width: constraints.maxWidth,
+                        height: constraints.maxHeight,
+                        fit: BoxFit.cover,
+                      )
+                    : Container(color: Colors.black),
+              ),
 
-                // Play affordance — makes it obvious this is tappable, not
-                // just a static picture.
-                const Center(
-                  child: Icon(
-                    Icons.play_circle_fill_rounded,
-                    color: Colors.white70,
-                    size: 44,
-                  ),
+              // Play affordance — makes it obvious this is tappable, not
+              // just a static picture.
+              const Center(
+                child: Icon(
+                  Icons.play_circle_fill_rounded,
+                  color: Colors.white70,
+                  size: 44,
                 ),
-              ],
+              ),
 
               // Gradient overlay + title/description at the bottom.
               Positioned(

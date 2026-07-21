@@ -80,31 +80,41 @@ class _DashboardState extends State<Dashboard>
   bool _isUserInteracting = false;
   int _currentPage = 0;
 
-  // Two cards visible at once, matching YouTube's own Shorts shelf layout.
-  // No auto-scroll timer here (unlike _pageController above) — Trek Shorts
-  // only ever advances on a manual swipe, and only the resulting current
-  // card ever mounts a live player (see trek_shorts.dart).
+  bool _isTrekShortsUserInteracting = false;
+  Timer? _trekShortsTimer;
+  // Near-full-width, one-card-at-a-time shelf. Cards are static thumbnails
+  // only — see trek_shorts.dart for why no live video plays inline here.
   final PageController _trekShortsPageController = PageController(
-    viewportFraction: 0.5,
+    viewportFraction: 0.92,
   );
-  int _currentTrekShortsPage = 0;
 
   // STATIC DESIGN PHASE — hardcoded sample data, no backend wiring yet.
-  // Real /shorts/ URLs (genuinely vertical, short-form) instead of long-
-  // form /watch videos forced into a portrait frame — a Trek Short should
-  // always be actual Shorts content, not a landscape upload pretending.
+  // Mixes a vertical (Shorts) and a landscape sample so the orientation-
+  // aware sizing in TrekShorts/YoutubeShortsPlayer is visibly exercised.
   static const List<TrekShortItem> _trekShortsSampleData = [
     TrekShortItem(
       title: 'Design Preview 1',
       description: 'Sample short — not real data',
-      videoUrl: 'https://www.youtube.com/shorts/HcPbixj7w2M',
+      videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
       isVertical: true,
     ),
     TrekShortItem(
       title: 'Design Preview 2',
       description: 'Sample short — not real data',
-      videoUrl: 'https://www.youtube.com/shorts/BIsveCpjbzA',
+      videoUrl: 'https://www.youtube.com/watch?v=9bZkp7q19f0',
       isVertical: true,
+    ),
+    // Diagnostic swap: same video as Design Preview 1 (already confirmed
+    // working), just flagged landscape instead of vertical — isolates
+    // whether the broken card follows the isVertical flag or was specific
+    // to the previous video (YouTube's own "Me at the zoo" page, which
+    // gets special commemorative treatment as the platform's first-ever
+    // upload, and may render extra page chrome ordinary videos don't).
+    TrekShortItem(
+      title: 'Design Preview 3 (landscape)',
+      description: 'Sample short — not real data',
+      videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      isVertical: false,
     ),
   ];
 
@@ -170,18 +180,21 @@ class _DashboardState extends State<Dashboard>
     super.didChangeDependencies();
     if (ModalRoute.of(context)?.settings.name == '/dashboard') {
       _startAutoScroll();
+      _startTrekShortsAutoScroll();
     }
   }
 
   @override
   void deactivate() {
     _stopAutoScroll();
+    _trekShortsTimer?.cancel();
     super.deactivate();
   }
 
   @override
   void dispose() {
     _stopAutoScroll();
+    _trekShortsTimer?.cancel();
     _pageController.dispose();
     _animationController.dispose();
     _scrollController.dispose();
@@ -330,6 +343,22 @@ class _DashboardState extends State<Dashboard>
   void _stopAutoScroll() {
     _autoScrollTimer?.cancel();
     _autoScrollTimer = null;
+  }
+
+  void _startTrekShortsAutoScroll() {
+    _trekShortsTimer?.cancel();
+    _trekShortsTimer = Timer.periodic(const Duration(seconds: 12), (timer) {
+      final route = ModalRoute.of(context);
+      if (!_isTrekShortsUserInteracting &&
+          mounted &&
+          (route != null && route.isCurrent) &&
+          _trekShortsPageController.hasClients) {
+        _trekShortsPageController.nextPage(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -2340,44 +2369,37 @@ class _DashboardState extends State<Dashboard>
                   Container(
                     margin: EdgeInsets.only(left: 1.5.h, top: 1.h),
                     height: 23.h,
-                    child: PageView.builder(
-                      controller: _trekShortsPageController,
-                      // null = infinite scroll
-                      itemCount: null,
-                      pageSnapping: true,
-                      padEnds: false,
-                      physics: const BouncingScrollPhysics(),
-                      onPageChanged: (page) {
-                        setState(() => _currentTrekShortsPage = page);
+                    child: Listener(
+                      onPointerDown: (_) {
+                        _isTrekShortsUserInteracting = true;
+                        _trekShortsTimer?.cancel();
                       },
-                      itemBuilder: (context, index) {
-                        final cardData = _trekShortsSampleData[index %
-                            _trekShortsSampleData.length];
-                        return Align(
-                          alignment: Alignment.center,
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 1.w),
-                            // The card's own box (driven by the PageView's
-                            // viewportFraction against a fixed height) comes
-                            // out roughly square — nowhere near a real
-                            // video's 9:16/16:9 shape. YoutubeShortsPlayer's
-                            // live embed can only letterbox to fit a box, it
-                            // can never crop-to-fill (a real IFrame API
-                            // limit, not a bug in that widget), so a
-                            // mismatched box always shows as black bars.
-                            // Constraining the card to the video's real
-                            // aspect ratio here removes the mismatch instead
-                            // of papering over its symptom.
-                            child: AspectRatio(
-                              aspectRatio: cardData.isVertical ? 9 / 16 : 16 / 9,
-                              child: TrekShorts(
-                                shortsData: cardData,
-                                isActive: index == _currentTrekShortsPage,
-                              ),
+                      onPointerUp: (_) {
+                        _isTrekShortsUserInteracting = false;
+                        _startTrekShortsAutoScroll();
+                      },
+                      onPointerCancel: (_) {
+                        _isTrekShortsUserInteracting = false;
+                        _startTrekShortsAutoScroll();
+                      },
+                      child: PageView.builder(
+                        controller: _trekShortsPageController,
+                        // null = infinite scroll
+                        itemCount: null,
+                        pageSnapping: true,
+                        physics: const BouncingScrollPhysics(),
+                        itemBuilder: (context, index) {
+                          final cardData = _trekShortsSampleData[index %
+                              _trekShortsSampleData.length];
+                          return Align(
+                            alignment: Alignment.center,
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 1.w),
+                              child: TrekShorts(shortsData: cardData),
                             ),
-                          ),
-                        );
-                      },
+                          );
+                        },
+                      ),
                     ),
                   ),
 
