@@ -6,6 +6,15 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:sizer/sizer.dart';
 
+// Local to this bar only — AroboTheme.primary (0xFF0F172A, near-black
+// slate) is also used by search_summary_screen's own chrome, so it's kept
+// untouched there; this bar gets the forest-green identity established by
+// the trek card / filter bar redesign instead, via its own tokens.
+class _TabBarColors {
+  static const forestDeep = Color(0xFF1B4332);
+  static const forest = Color(0xFF2D6A4F);
+}
+
 class CommonTrekDetailsBar extends StatefulWidget {
   final Function(int) onTabSelected;
   final int initialIndex;
@@ -165,16 +174,30 @@ class _CommonTrekDetailsBarState extends State<CommonTrekDetailsBar> {
                 ),
                 padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 0.9.h),
                 decoration: BoxDecoration(
-                  color: isSelected ? AroboTheme.primary : AroboTheme.elevated,
+                  gradient: isSelected
+                      ? const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            _TabBarColors.forestDeep,
+                            _TabBarColors.forest,
+                          ],
+                        )
+                      : null,
+                  color: isSelected ? null : AroboTheme.elevated,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: isSelected ? AroboTheme.primary : AroboTheme.border,
+                    color: isSelected
+                        ? _TabBarColors.forestDeep
+                        : AroboTheme.border,
                     width: 1,
                   ),
                   boxShadow: isSelected
                       ? [
                           BoxShadow(
-                            color: AroboTheme.primary.withOpacity(0.2),
+                            color: _TabBarColors.forestDeep.withValues(
+                              alpha: 0.25,
+                            ),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),

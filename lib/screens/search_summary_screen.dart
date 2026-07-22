@@ -766,7 +766,10 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
         });
       },
       child: Scaffold(
-        backgroundColor: AroboTheme.bg,
+        // Was AroboTheme.bg (0xFFF8FAFC, cool slate) — matched to the
+        // app-wide standard background (0xFFFAFAFA) used on Trek Details,
+        // Checkout, My Account, Plan Your Trek, etc.
+        backgroundColor: const Color(0xFFFAFAFA),
         appBar: _buildAppBar(),
         floatingActionButton: AroboFilterFab(
           activeFilters: activeFilters,
@@ -865,7 +868,20 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
         color: AroboTheme.cardBg,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AroboTheme.border, width: 0.9),
-        boxShadow: AroboTheme.softShadow(0.06),
+        // Forest-tinted, scoped to this card only — AroboTheme.softShadow()
+        // is shared with the Filter Bar, so not touched globally.
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x211B4332),
+            blurRadius: 20,
+            offset: Offset(0, 8),
+          ),
+          BoxShadow(
+            color: Color(0x121B4332),
+            blurRadius: 5,
+            offset: Offset(0, 2),
+          ),
+        ],
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(

@@ -30,6 +30,13 @@ class _C {
   static const shadow = Color(0x0D000000);
   static const iconBadgeBg = Color(0xFF111827);
   static const danger = Color(0xFFEF4444);
+  // Was CommonColors.filterGradient (bright blue) on the Save/Update/Add
+  // buttons — overridden locally to match the app's forest-green theme.
+  static const ctaGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFF1B4332), Color(0xFF2D6A4F)],
+  );
 }
 
 class _NC {
@@ -623,7 +630,7 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
                           padding: EdgeInsets.only(top: 2.h),
                           child: CommonButton(
                             height: 48,
-                            gradient: CommonColors.filterGradient,
+                            gradient: _C.ctaGradient,
                             text: _isSavingContact ? 'Saving...' : 'Save',
                             textColor: CommonColors.whiteColor,
                             onPressed: _isSavingContact
@@ -1340,7 +1347,7 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
                           SizedBox(height: 2.h),
                           CommonButton(
                             height: 48,
-                            gradient: CommonColors.filterGradient,
+                            gradient: _C.ctaGradient,
                             text: _isSavingTraveller
                                 ? 'Updating...'
                                 : 'Update Traveller',
@@ -1476,7 +1483,7 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
                           SizedBox(height: 2.h),
                           CommonButton(
                             height: 48,
-                            gradient: CommonColors.filterGradient,
+                            gradient: _C.ctaGradient,
                             text: _isAddingTraveller
                                 ? 'Adding...'
                                 : 'Add Traveller',

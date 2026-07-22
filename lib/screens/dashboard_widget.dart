@@ -13,7 +13,6 @@ import 'package:arobo_app/utils/seasonal_gradient_card.dart';
 import 'package:arobo_app/utils/top_treks_card.dart';
 import 'package:arobo_app/models/know_more_data.dart';
 import 'package:arobo_app/models/seasonal_picks_data.dart';
-import 'package:arobo_app/utils/trek_shorts.dart';
 import 'package:arobo_app/models/city_model.dart';
 import 'package:arobo_app/screens/source_location_screen.dart';
 import 'package:flutter/material.dart';
@@ -80,44 +79,6 @@ class _DashboardState extends State<Dashboard>
   bool _isUserInteracting = false;
   int _currentPage = 0;
 
-  bool _isTrekShortsUserInteracting = false;
-  Timer? _trekShortsTimer;
-  // Near-full-width, one-card-at-a-time shelf. Cards are static thumbnails
-  // only — see trek_shorts.dart for why no live video plays inline here.
-  final PageController _trekShortsPageController = PageController(
-    viewportFraction: 0.92,
-  );
-
-  // STATIC DESIGN PHASE — hardcoded sample data, no backend wiring yet.
-  // Mixes a vertical (Shorts) and a landscape sample so the orientation-
-  // aware sizing in TrekShorts/YoutubeShortsPlayer is visibly exercised.
-  static const List<TrekShortItem> _trekShortsSampleData = [
-    TrekShortItem(
-      title: 'Design Preview 1',
-      description: 'Sample short — not real data',
-      videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-      isVertical: true,
-    ),
-    TrekShortItem(
-      title: 'Design Preview 2',
-      description: 'Sample short — not real data',
-      videoUrl: 'https://www.youtube.com/watch?v=9bZkp7q19f0',
-      isVertical: true,
-    ),
-    // Diagnostic swap: same video as Design Preview 1 (already confirmed
-    // working), just flagged landscape instead of vertical — isolates
-    // whether the broken card follows the isVertical flag or was specific
-    // to the previous video (YouTube's own "Me at the zoo" page, which
-    // gets special commemorative treatment as the platform's first-ever
-    // upload, and may render extra page chrome ordinary videos don't).
-    TrekShortItem(
-      title: 'Design Preview 3 (landscape)',
-      description: 'Sample short — not real data',
-      videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-      isVertical: false,
-    ),
-  ];
-
   final DashboardController _dashboardC = Get.find<DashboardController>();
   final TrekController _trekC = Get.find<TrekController>();
 
@@ -180,28 +141,24 @@ class _DashboardState extends State<Dashboard>
     super.didChangeDependencies();
     if (ModalRoute.of(context)?.settings.name == '/dashboard') {
       _startAutoScroll();
-      _startTrekShortsAutoScroll();
     }
   }
 
   @override
   void deactivate() {
     _stopAutoScroll();
-    _trekShortsTimer?.cancel();
     super.deactivate();
   }
 
   @override
   void dispose() {
     _stopAutoScroll();
-    _trekShortsTimer?.cancel();
     _pageController.dispose();
     _animationController.dispose();
     _scrollController.dispose();
     _knowMoreController.dispose();
     _topTreksPageController.dispose();
     _seasonalForecastController.dispose();
-    _trekShortsPageController.dispose();
     super.dispose();
   }
 
@@ -343,22 +300,6 @@ class _DashboardState extends State<Dashboard>
   void _stopAutoScroll() {
     _autoScrollTimer?.cancel();
     _autoScrollTimer = null;
-  }
-
-  void _startTrekShortsAutoScroll() {
-    _trekShortsTimer?.cancel();
-    _trekShortsTimer = Timer.periodic(const Duration(seconds: 12), (timer) {
-      final route = ModalRoute.of(context);
-      if (!_isTrekShortsUserInteracting &&
-          mounted &&
-          (route != null && route.isCurrent) &&
-          _trekShortsPageController.hasClients) {
-        _trekShortsPageController.nextPage(
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        );
-      }
-    });
   }
 
   // ---------------------------------------------------------------------------
@@ -2325,83 +2266,6 @@ class _DashboardState extends State<Dashboard>
                       ],
                     );
                   }),
-
-                  // ── Trek Shorts (STATIC DESIGN — sample data, no backend) ──
-                  Padding(
-                    padding: EdgeInsets.only(
-                      left: ScreenConstant.size17,
-                      right: ScreenConstant.size17,
-                      top: ScreenConstant.size10,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Trek Shorts',
-                              textScaler: const TextScaler.linear(1.0),
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: FontSize.s13,
-                                fontWeight: FontWeight.w700,
-                                color: _C.ink,
-                                letterSpacing: -0.2,
-                              ),
-                            ),
-                            SizedBox(height: 0.3.h),
-                            Text(
-                              'Watch the Action Unfold!',
-                              textScaler: const TextScaler.linear(1.0),
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: FontSize.s10,
-                                fontWeight: FontWeight.w400,
-                                color: _C.inkMid,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    margin: EdgeInsets.only(left: 1.5.h, top: 1.h),
-                    height: 23.h,
-                    child: Listener(
-                      onPointerDown: (_) {
-                        _isTrekShortsUserInteracting = true;
-                        _trekShortsTimer?.cancel();
-                      },
-                      onPointerUp: (_) {
-                        _isTrekShortsUserInteracting = false;
-                        _startTrekShortsAutoScroll();
-                      },
-                      onPointerCancel: (_) {
-                        _isTrekShortsUserInteracting = false;
-                        _startTrekShortsAutoScroll();
-                      },
-                      child: PageView.builder(
-                        controller: _trekShortsPageController,
-                        // null = infinite scroll
-                        itemCount: null,
-                        pageSnapping: true,
-                        physics: const BouncingScrollPhysics(),
-                        itemBuilder: (context, index) {
-                          final cardData = _trekShortsSampleData[index %
-                              _trekShortsSampleData.length];
-                          return Align(
-                            alignment: Alignment.center,
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 1.w),
-                              child: TrekShorts(shortsData: cardData),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
 
                   // ── Seasonal Forecast (seasonal_forecast_picks backend) ──
                   Obx(() {

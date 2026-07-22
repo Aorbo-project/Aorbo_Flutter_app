@@ -144,7 +144,14 @@ class _FilterModalState extends State<FilterModal> {
                             child: Container(
                               decoration: BoxDecoration(
                                 gradient: isSelected
-                                    ? CommonColors.filterGradient
+                                    ? const LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [
+                                          Color(0xFF1B4332),
+                                          Color(0xFF2D6A4F),
+                                        ],
+                                      )
                                     : null,
                               ),
                               padding: EdgeInsets.symmetric(

@@ -4,6 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
 
+class _FM {
+  // Was CommonColors.trek_route_color (0xff212199, navy) — shared across 9
+  // files, so overridden locally here rather than recolored globally.
+  static const total = Color(0xFF1B4332);
+}
+
 class TotalFareModal extends StatelessWidget {
   final BreakDownDataModel? breakDown;
   final int adultCount;
@@ -232,7 +238,7 @@ class TotalFareModal extends StatelessWidget {
                             'Amount Payable Now',
                             '₹${_format(amountToPayNow)}',
                             isTotal: true,
-                            valueColor: CommonColors.trek_route_color,
+                            valueColor: _FM.total,
                           ),
                           SizedBox(height: 1.2.h),
                           _buildFareRow(
@@ -249,7 +255,7 @@ class TotalFareModal extends StatelessWidget {
                       'Amount Payable Now',
                       '₹${_format(amountToPayNow)}',
                       isTotal: true,
-                      valueColor: CommonColors.trek_route_color,
+                      valueColor: _FM.total,
                     ),
                   ],
 
@@ -295,7 +301,7 @@ class TotalFareModal extends StatelessWidget {
             color:
                 valueColor ??
                 (isTotal
-                    ? CommonColors.trek_route_color
+                    ? _FM.total
                     : (isSub
                           ? const Color(0xFF64748B)
                           : CommonColors.blackColor)),

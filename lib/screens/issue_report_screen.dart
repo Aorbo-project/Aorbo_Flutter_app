@@ -859,7 +859,11 @@ class _IssueReportScreenState extends State<IssueReportScreen> {
       },
       isDisabled: !isFormValid,
       gradient: isFormValid
-          ? CommonColors.filterGradient
+          ? const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF1B4332), Color(0xFF2D6A4F)],
+            )
           : CommonColors.disableBtnGradient,
       textColor: CommonColors.whiteColor,
       fontSize: FontSize.s11,

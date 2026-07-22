@@ -27,6 +27,11 @@ class _C {
   static const iconBadgeBg = Color(0xFF111827);
   static const danger      = Color(0xFFEF4444);
   static const divider     = Color(0xFFE5E7EB);
+  static const ctaGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFF1B4332), Color(0xFF2D6A4F)],
+  );
 }
 
 class _NInk {
@@ -819,7 +824,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
                           });
                         }
                       },
-                      gradient: CommonColors.filterGradient,
+                      gradient: _C.ctaGradient,
                       textColor: CommonColors.whiteColor,
                       fontWeight: FontWeight.w700,
                       fontSize: FontSize.s12,

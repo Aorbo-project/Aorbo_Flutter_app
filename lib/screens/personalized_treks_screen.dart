@@ -686,8 +686,9 @@ class _PersonalizedTreksScreenState extends State<PersonalizedTreksScreen> {
                                               child: Text(
                                                 'OK',
                                                 style: GoogleFonts.poppins(
-                                                  color: CommonColors
-                                                      .trek_route_color,
+                                                  color: const Color(
+                                                    0xFF2D6A4F,
+                                                  ),
                                                 ),
                                               ),
                                             ),

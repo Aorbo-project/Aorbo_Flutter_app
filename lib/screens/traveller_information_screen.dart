@@ -32,11 +32,22 @@ class _TI {
   static const ink = CommonColors.blackColor;
   static const inkMid = CommonColors.cFF6B7280;
   static const inkLight = CommonColors.grey_AEAEAE;
-  static const brand = CommonColors.trek_route_color;
+  // Was CommonColors.trek_route_color (0xff212199, navy indigo) — same
+  // fix as Trek Details: that shared token is also used by 7 other
+  // screens, so it's overridden locally here rather than recolored
+  // globally. Cascades to the duration badge, payment-option selection,
+  // coupon CTA, and a few small tags — all forest-green now.
+  static const brand = Color(0xFF2D6A4F);
+  static const brandDeep = Color(0xFF1B4332);
   static const teal = CommonColors.cFF0F7B6C;
   static const tealSoft = CommonColors.cFFE6F5F3;
   static const iconBadge = CommonColors.cFF111827;
   static const divider = CommonColors.trekroutecolorlight;
+  static const ctaGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [brandDeep, brand],
+  );
   // Completed-section treatment
   static const completedBg = Color(0xFFF3FAF8);
   static const sheetBg = Colors.white;
@@ -185,7 +196,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
   final UserController _userC = Get.find<UserController>();
   late TrekDetailData travelData;
   String _selectedPaymentOption = 'full';
-  String? _selectedUPI = PaymentMethods.razorpay;
   List<Traveler> selectedTravellers = [];
   bool _isCouponExpanded = true;
   // The actual payment UI/Razorpay/verification/retry logic lives entirely
@@ -619,8 +629,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                   _buildPaymentOptionsSection(),
                   SizedBox(height: 2.h),
                   _buildCouponSection(),
-                  SizedBox(height: 2.h),
-                  _buildPaymentMethodSection(),
                   SizedBox(height: 3.h),
                 ],
               ),
@@ -1320,28 +1328,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
     );
   }
 
-  Widget _buildPaymentMethodSection() {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
-      decoration: _cardDecoration(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _sectionHeader('Payment Method', Icons.payment_rounded),
-          SizedBox(height: 1.5.h),
-          _paymentMethodOption(
-            icon: _razorpayLogo(),
-            label: 'Razorpay',
-            subtitle: 'Credit card, Debit card, UPI, Wallets & more',
-            isSelected: _selectedUPI == PaymentMethods.razorpay,
-            onTap: () => setState(() => _selectedUPI = PaymentMethods.razorpay),
-          ),
-          Divider(color: _TI.divider, height: 2.h),
-        ],
-      ),
-    );
-  }
-
   // ── BOTTOM BAR & OVERLAYS ─────────────────────────────────────────────────
   Widget _buildBottomBar() {
     return Container(
@@ -1428,7 +1414,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                                 style: GoogleFonts.poppins(
                                   fontSize: 14.sp,
                                   fontWeight: FontWeight.w600,
-                                  color: CommonColors.softGreen2,
+                                  color: _TI.brandDeep,
                                 ),
                               ),
                               TextSpan(
@@ -1436,7 +1422,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                                 style: GoogleFonts.poppins(
                                   fontSize: 16.sp,
                                   fontWeight: FontWeight.w800,
-                                  color: CommonColors.softGreen2,
+                                  color: _TI.brandDeep,
                                 ),
                               ),
                             ],
@@ -1466,7 +1452,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                   fontFamily: 'Poppins',
                   isDisabled: _isPaymentInFlight,
                   onPressed: _handlePayNow,
-                  gradient: CommonColors.filterGradient,
+                  gradient: _TI.ctaGradient,
                   textColor: CommonColors.whiteColor,
                   height: 52,
                 ),
@@ -1725,92 +1711,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
     );
   }
 
-  Widget _paymentMethodOption({
-    required Widget icon,
-    required String label,
-    required String subtitle,
-    required bool isSelected,
-    bool isLocked = false,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.h),
-        decoration: BoxDecoration(
-          color: isSelected ? _TI.tealSoft : Colors.transparent,
-          borderRadius: BorderRadius.circular(3.w),
-        ),
-        child: Row(
-          children: [
-            icon,
-            SizedBox(width: 3.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 11.sp,
-                      fontWeight: FontWeight.w600,
-                      color: _TI.ink,
-                    ),
-                  ),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 8.sp,
-                      color: _TI.inkMid,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (isLocked)
-              const Icon(
-                Icons.lock_outline_rounded,
-                size: 16,
-                color: _TI.inkLight,
-              )
-            else
-              Icon(
-                isSelected
-                    ? Icons.radio_button_checked
-                    : Icons.radio_button_unchecked,
-                size: 18,
-                color: isSelected ? _TI.brand : _TI.inkLight,
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _razorpayLogo() {
-    return Container(
-      width: 36,
-      height: 36,
-      decoration: BoxDecoration(
-        color: const Color(0xFF3395FF),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Center(
-        child: Text(
-          'R',
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w800,
-            color: Colors.white,
-          ),
-        ),
-      ),
-    );
-  }
-
   String _formatDate(String? dateString) {
     if (dateString == null || dateString.isEmpty) return '-';
     try {
@@ -2054,7 +1954,7 @@ class _ContactDetailsSheetState extends State<_ContactDetailsSheet> {
             SizedBox(height: 3.h),
             CommonButton(
               height: 48,
-              gradient: CommonColors.filterGradient,
+              gradient: _TI.ctaGradient,
               text: _isSaving
                   ? 'Saving...'
                   : (widget.isEdit ? 'Update' : 'Save'),
@@ -2274,7 +2174,7 @@ class _TravellerFormSheetState extends State<_TravellerFormSheet> {
             SizedBox(height: 3.h),
             CommonButton(
               height: 48,
-              gradient: CommonColors.filterGradient,
+              gradient: _TI.ctaGradient,
               text: _isSubmitting
                   ? (_isEdit ? 'Updating...' : 'Adding...')
                   : (_isEdit ? 'Update Traveller' : 'Add Traveller'),

@@ -4,6 +4,7 @@ import 'package:arobo_app/controller/user_controller.dart';
 import 'package:arobo_app/repository/repository.dart';
 import 'package:arobo_app/widgets/custom_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
@@ -42,7 +43,14 @@ class _C {
   static const ink = CommonColors.blackColor;
   static const inkMid = CommonColors.cFF6B7280;
   static const inkLight = CommonColors.grey_AEAEAE;
-  static const brand = CommonColors.trek_route_color;
+  // Was CommonColors.trek_route_color (0xff212199, navy indigo) — that
+  // shared token is also used by 7 other unrelated screens, so it's
+  // overridden locally here rather than recolored globally. This one
+  // constant cascades to every icon badge, the route timeline, boarding
+  // chip selection, and the policy/notes callouts on this screen, aligning
+  // them with the forest-green identity the trek card redesign set.
+  static const brand = Color(0xFF2D6A4F);
+  static const brandDeep = Color(0xFF1B4332);
   static const teal = CommonColors.cFF0F7B6C;
   static const tealSoft = CommonColors.cFFE6F5F3;
   static const iconBadge = CommonColors.cFF111827;
@@ -51,6 +59,11 @@ class _C {
   static const routeLine = CommonColors.trekroutecolorlight;
   static const softTint = Color(0xFFF8F9FF);
   static const danger = CommonColors.cFFDC2626;
+  static const ctaGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [brandDeep, brand],
+  );
 }
 
 // ─────────────────────────────────────────────
@@ -91,7 +104,14 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
   final List<GlobalKey> _sectionKeys = List.generate(8, (index) => GlobalKey());
   final GlobalKey _tabBarKey = GlobalKey();
 
-  int _selectedTabIndex = 0;
+  // ValueNotifier instead of a plain field + setState: the scroll listener
+  // below used to setState() the whole screen on every section-boundary
+  // crossing, forcing a rebuild of all 8 eagerly-built sections (heavy —
+  // see the SliverToBoxAdapter comment further down) on every scroll
+  // frame. Only the tab bar actually needs to react to this value, so it
+  // alone listens via ValueListenableBuilder — the rest of the screen
+  // never rebuilds because of scroll position anymore.
+  final ValueNotifier<int> _selectedTabIndex = ValueNotifier<int>(0);
   bool _showFullItinerary = false;
   bool _showFullFeatures = false;
   bool _showFullActivities = false;
@@ -123,7 +143,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
     // actually rendered first, instead of always assuming "Trek Route".
     final visibility = _sectionVisibilityFlags();
     final firstVisible = visibility.indexWhere((v) => v);
-    _selectedTabIndex = firstVisible == -1 ? 0 : firstVisible;
+    _selectedTabIndex.value = firstVisible == -1 ? 0 : firstVisible;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollController.addListener(_onScroll);
@@ -138,6 +158,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _selectedTabIndex.dispose();
     super.dispose();
   }
 
@@ -149,7 +170,25 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
   }
 
   // ── Bulletproof Scroll Sync Logic ──────────
+  //
+  // ScrollController listeners fire on every position update — on a
+  // high-refresh-rate touchscreen that's more often than once per
+  // rendered frame during a drag. _framePending collapses however many
+  // times this fires in between into a single check right before the
+  // next frame paints, instead of doing the RenderBox walk below on every
+  // single one.
+  bool _framePending = false;
+
   void _onScroll() {
+    if (_framePending) return;
+    _framePending = true;
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      _framePending = false;
+      _syncSelectedTabToScroll();
+    });
+  }
+
+  void _syncSelectedTabToScroll() {
     if (!_scrollController.hasClients || _isUserScrolling) return;
 
     final RenderBox? tabBarBox =
@@ -172,13 +211,13 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
           break;
         }
       }
-      if (lastVisible != -1 && _selectedTabIndex != lastVisible) {
-        setState(() => _selectedTabIndex = lastVisible);
+      if (lastVisible != -1 && _selectedTabIndex.value != lastVisible) {
+        _selectedTabIndex.value = lastVisible;
       }
       return;
     }
 
-    int activeIndex = _selectedTabIndex;
+    int activeIndex = _selectedTabIndex.value;
 
     for (int i = 0; i < _sectionKeys.length; i++) {
       final key = _sectionKeys[i];
@@ -197,8 +236,8 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
       }
     }
 
-    if (activeIndex != _selectedTabIndex) {
-      setState(() => _selectedTabIndex = activeIndex);
+    if (activeIndex != _selectedTabIndex.value) {
+      _selectedTabIndex.value = activeIndex;
     }
   }
 
@@ -228,7 +267,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
     if (_sectionKeys[targetIndex].currentContext == null) return;
 
     _isUserScrolling = true;
-    setState(() => _selectedTabIndex = targetIndex);
+    _selectedTabIndex.value = targetIndex;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final keyContext = _sectionKeys[targetIndex].currentContext;
@@ -268,7 +307,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
             )
             .then((_) {
               _isUserScrolling = false;
-              _onScroll(); // Force sync once the animation finishes
+              _syncSelectedTabToScroll(); // Force sync once the animation finishes
             });
       } else {
         _isUserScrolling = false;
@@ -371,9 +410,16 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                   child: Container(
                     margin: EdgeInsets.symmetric(horizontal: 2.w),
                     child: Center(
-                      child: CommonTrekDetailsBar(
-                        onTabSelected: _scrollToSection,
-                        initialIndex: _selectedTabIndex,
+                      // Only this widget rebuilds when the scroll position
+                      // crosses a section boundary — not the rest of the
+                      // (heavy, eagerly-built) screen below it.
+                      child: ValueListenableBuilder<int>(
+                        valueListenable: _selectedTabIndex,
+                        builder: (context, selectedIndex, _) =>
+                            CommonTrekDetailsBar(
+                              onTabSelected: _scrollToSection,
+                              initialIndex: selectedIndex,
+                            ),
                       ),
                     ),
                   ),
@@ -562,11 +608,11 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
           _trekC.trekBatchId.value = _trekC.trekDetailData.value.batchId ?? 0;
           Get.toNamed('/traveller-info');
         },
-        gradient: CommonColors.filterGradient,
+        gradient: _C.ctaGradient,
         textColor: CommonColors.whiteColor,
         height: 6.h,
-        isFullWidth: false,
-        width: 50.w,
+        isFullWidth: true,
+        borderRadius: 14,
         fontSize: 14.0.sp,
       ),
     );
