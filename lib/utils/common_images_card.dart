@@ -43,7 +43,12 @@ class CommonImageCard extends StatelessWidget {
     return CustomNetworkImage(
       imageUrl: image,
       width: width,
-      height: height
+      height: height,
+      // This field was declared above (defaulting to BoxFit.cover) but
+      // never actually passed down — CustomNetworkImage's own separate
+      // default (BoxFit.contain) was silently winning instead, shrinking
+      // portrait photos to fit instead of cropping them to fill.
+      fit: fit ?? BoxFit.cover,
     );
   }
 

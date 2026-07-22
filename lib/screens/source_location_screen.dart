@@ -23,11 +23,15 @@ class _T {
   static const clay = Color(0xFFCB6D42);
   static const claySoft = Color(0xFFFBEEE6);
 
-  // Surfaces
-  static const bg = Color(0xFFF4F6F1);
+  // Surfaces — bg/heroBg matched to the app-wide standard background
+  // (CommonColors.offWhiteColor, 0xFFFAFAFA) used on Trek Details, Checkout,
+  // My Account, etc. This screen previously had its own tinted F4F6F1/EEF7F1
+  // pair, which stood out against every other screen's near-white body.
+  static const bg = Color(0xFFFAFAFA);
   static const card = Colors.white;
   static const focusBg = Color(0xFFEFF5EF);
   static const divider = Color(0xFFE4E9E2);
+  static const heroBg = Color(0xFFFAFAFA);
 
   // Ink
   static const ink = Color(0xFF16261E);
@@ -970,7 +974,7 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
     ScreenConstant.setScreenAwareConstant(context);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light,
+      value: SystemUiOverlayStyle.dark,
       child: Scaffold(
         backgroundColor: _T.bg,
         resizeToAvoidBottomInset: true,
@@ -1020,69 +1024,58 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
     );
   }
 
-  // ── Gradient hero header with mountain silhouettes
+  // ── Light hero header — pale mint band, dark ink text
   Widget _buildHeader() {
     return Container(
       width: double.infinity,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [_T.pineDark, _T.pine, _T.forest],
-        ),
-      ),
-      child: Stack(
-        children: [
-          Positioned.fill(child: CustomPaint(painter: _MountainPainter())),
-          SafeArea(
-            bottom: false,
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(1.w, 0.4.h, 4.w, 2.4.h),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  IconButton(
-                    onPressed: () => Get.back(),
-                    splashRadius: 22,
-                    icon: Icon(
-                      Icons.arrow_back_rounded,
-                      color: Colors.white,
-                      size: 6.w,
-                    ),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.only(left: 3.w),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Plan Your Trek',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: FontSize.s16,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                            letterSpacing: 0.2,
-                          ),
-                        ),
-                        SizedBox(height: 0.4.h),
-                        Text(
-                          'Pick your starting city, then choose the trail',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: FontSize.s10,
-                            fontWeight: FontWeight.w400,
-                            color: Colors.white70,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+      color: _T.heroBg,
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(1.w, 0.4.h, 4.w, 1.2.h),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              IconButton(
+                onPressed: () => Get.back(),
+                splashRadius: 22,
+                icon: Icon(
+                  Icons.arrow_back_rounded,
+                  color: _T.ink,
+                  size: 6.w,
+                ),
               ),
-            ),
+              Padding(
+                padding: EdgeInsets.only(left: 3.w),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Plan Your Trek',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: FontSize.s16,
+                        fontWeight: FontWeight.w700,
+                        color: _T.ink,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                    SizedBox(height: 0.4.h),
+                    Text(
+                      'Pick your starting city, then choose the trail',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: FontSize.s10,
+                        fontWeight: FontWeight.w400,
+                        color: _T.inkMid,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -1615,11 +1608,14 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
   }
 
   Widget _buildEmptyState(String title, String? subtitle) {
+    // SingleChildScrollView instead of a rigid Column so this never
+    // overflows when the keyboard is open and squeezes the available
+    // height (e.g. typing a query with no matches).
     return Center(
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 8.w),
+      child: SingleChildScrollView(
+        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Container(
               width: 18.w,
@@ -1722,34 +1718,6 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
 // ─────────────────────────────────────────────
 //  PAINTERS
 // ─────────────────────────────────────────────
-class _MountainPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final back = Paint()..color = Colors.white.withValues(alpha: 0.05);
-    final front = Paint()..color = Colors.white.withValues(alpha: 0.08);
-
-    final backPath = Path()
-      ..moveTo(0, size.height)
-      ..lineTo(size.width * 0.10, size.height * 0.55)
-      ..lineTo(size.width * 0.28, size.height)
-      ..moveTo(size.width * 0.35, size.height)
-      ..lineTo(size.width * 0.55, size.height * 0.35)
-      ..lineTo(size.width * 0.80, size.height)
-      ..close();
-    canvas.drawPath(backPath, back);
-
-    final frontPath = Path()
-      ..moveTo(size.width * 0.55, size.height)
-      ..lineTo(size.width * 0.78, size.height * 0.45)
-      ..lineTo(size.width * 1.05, size.height)
-      ..close();
-    canvas.drawPath(frontPath, front);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
 class _RailDashPainter extends CustomPainter {
   final Color color;
   const _RailDashPainter(this.color);

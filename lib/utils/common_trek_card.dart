@@ -12,7 +12,6 @@ import '../widgets/custom_network_image.dart';
 // ─────────────────────────────────────────────
 class _TC {
   static const bg = Colors.white;
-  static const bgTint = Color(0xFFF6FAF7);
   static const cardBorder = Color(0xFFD8E2DA);
   static const ink = Color(0xFF16281E);
   static const inkMid = Color(0xFF5B6E60);
@@ -162,23 +161,21 @@ class _CommonTrekCardState extends State<CommonTrekCard>
               ),
               child: Container(
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [_TC.bg, _TC.bgTint],
-                  ),
+                  color: _TC.bg,
                   borderRadius: BorderRadius.circular(_rw(4, 18)),
                   border: Border.all(color: _TC.cardBorder),
+                  // Forest-tinted, not neutral black — flat black read as
+                  // near-invisible against the app's lightened 0xFFFAFAFA bg.
                   boxShadow: [
                     BoxShadow(
-                      color: _TC.forestDeep.withValues(alpha: 0.10),
-                      blurRadius: 18,
-                      offset: const Offset(0, 6),
+                      color: _TC.forestDeep.withValues(alpha: 0.14),
+                      blurRadius: 24,
+                      offset: const Offset(0, 10),
                     ),
                     BoxShadow(
-                      color: _TC.forest.withValues(alpha: 0.04),
-                      blurRadius: 4,
-                      offset: const Offset(0, 1),
+                      color: _TC.forestDeep.withValues(alpha: 0.08),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
                     ),
                   ],
                 ),
@@ -223,20 +220,20 @@ class _CommonTrekCardState extends State<CommonTrekCard>
                         ),
                         Padding(
                           padding: EdgeInsets.fromLTRB(
-                            _rw(3.6, 16),
-                            _rh(1.1, 12),
-                            _rw(3.6, 16),
-                            _rh(1.2, 14),
+                            _rw(4.2, 19),
+                            _rh(1.9, 20),
+                            _rw(4.2, 19),
+                            _rh(2.1, 23),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               _buildHeader(trek, isFlexible),
-                              SizedBox(height: _rh(0.8, 9)),
+                              SizedBox(height: _rh(1.6, 18)),
                               Text(
                                 trek?.name ?? '-',
-                                maxLines: 2,
+                                maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 textScaler: const TextScaler.linear(1),
                                 style: TextStyle(
@@ -248,7 +245,7 @@ class _CommonTrekCardState extends State<CommonTrekCard>
                                   letterSpacing: -0.2,
                                 ),
                               ),
-                              SizedBox(height: _rh(0.6, 7)),
+                              SizedBox(height: _rh(1.2, 14)),
                               Wrap(
                                 spacing: _rw(1.4, 7),
                                 runSpacing: _rh(0.4, 5),
@@ -269,7 +266,7 @@ class _CommonTrekCardState extends State<CommonTrekCard>
                                   if (!_isNewVendor()) _ratingPill(trek),
                                 ],
                               ),
-                              SizedBox(height: _rh(0.9, 10)),
+                              SizedBox(height: _rh(1.3, 15)),
                               Container(
                                 height: 1,
                                 decoration: BoxDecoration(
@@ -282,7 +279,7 @@ class _CommonTrekCardState extends State<CommonTrekCard>
                                   ),
                                 ),
                               ),
-                              SizedBox(height: _rh(0.9, 10)),
+                              SizedBox(height: _rh(1.3, 15)),
                               // departure/slots · price · action — one row
                               Row(
                                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -318,7 +315,7 @@ class _CommonTrekCardState extends State<CommonTrekCard>
   Widget _buildHeader(TrekData? trek, bool isFlexible) {
     final vendorName = _vendorName().isEmpty ? '-' : _vendorName();
     final vendorLogo = trek?.vendorLogo ?? '';
-    final logoSize = _rw(7.6, 34);
+    final logoSize = _rw(10.3, 46);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -327,7 +324,7 @@ class _CommonTrekCardState extends State<CommonTrekCard>
           height: logoSize,
           decoration: BoxDecoration(
             color: _TC.forestDeep,
-            borderRadius: BorderRadius.circular(_rw(2.2, 10)),
+            borderRadius: BorderRadius.circular(_rw(2.7, 12)),
           ),
           clipBehavior: Clip.antiAlias,
           child: vendorLogo.isNotEmpty
@@ -344,7 +341,7 @@ class _CommonTrekCardState extends State<CommonTrekCard>
                     textScaler: const TextScaler.linear(1),
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: FontSize.s9,
+                      fontSize: FontSize.s11,
                       fontWeight: FontWeight.w700,
                       color: Colors.white,
                     ),
@@ -497,15 +494,27 @@ class _CommonTrekCardState extends State<CommonTrekCard>
             ),
             SizedBox(width: _rw(0.8, 4)),
           ],
-          Text(
-            text,
-            textScaler: const TextScaler.linear(1),
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: FontSize.s7,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.5,
-              color: filled ? Colors.white : color,
+          ConstrainedBox(
+            // Badge text is admin-set (trek.badge.name) and, unlike the
+            // vendor name/trek title above, had no width cap at all — an
+            // unusually long value would wrap and break the pill shape
+            // instead of truncating. maxLines+ellipsis alone can't fix
+            // that without a bounded width to truncate against, since an
+            // unconstrained Row/Wrap child never triggers ellipsis on its
+            // own.
+            constraints: BoxConstraints(maxWidth: _rw(26, 110)),
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textScaler: const TextScaler.linear(1),
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: FontSize.s7,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.5,
+                color: filled ? Colors.white : color,
+              ),
             ),
           ),
         ],
@@ -732,7 +741,7 @@ class _ContourPainter extends CustomPainter {
     final paint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1
-      ..color = _TC.forest.withValues(alpha: 0.06);
+      ..color = _TC.forest.withValues(alpha: 0.05);
     final center = Offset(size.width + 8, -8);
     for (double r = 26; r <= 150; r += 24) {
       canvas.drawCircle(center, r, paint);
@@ -757,7 +766,7 @@ class _RidgeWatermarkPainter extends CustomPainter {
     canvas.drawCircle(
       Offset(w * 0.12, h * 0.55),
       h * 0.5,
-      Paint()..color = _TC.trailAmber.withValues(alpha: 0.05),
+      Paint()..color = _TC.trailAmber.withValues(alpha: 0.03),
     );
     final back = Path()
       ..moveTo(0, h)
@@ -771,7 +780,7 @@ class _RidgeWatermarkPainter extends CustomPainter {
       ..lineTo(w, h * 0.48)
       ..lineTo(w, h)
       ..close();
-    canvas.drawPath(back, Paint()..color = _TC.forest.withValues(alpha: 0.045));
+    canvas.drawPath(back, Paint()..color = _TC.forest.withValues(alpha: 0.025));
     final front = Path()
       ..moveTo(0, h)
       ..lineTo(0, h * 0.84)
@@ -783,7 +792,7 @@ class _RidgeWatermarkPainter extends CustomPainter {
       ..lineTo(w, h * 0.80)
       ..lineTo(w, h)
       ..close();
-    canvas.drawPath(front, Paint()..color = _TC.forest.withValues(alpha: 0.07));
+    canvas.drawPath(front, Paint()..color = _TC.forest.withValues(alpha: 0.04));
   }
 
   @override

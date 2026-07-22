@@ -23,7 +23,7 @@ class _TI {
   static const ink = CommonColors.blackColor;
   static const inkMid = CommonColors.cFF6B7280;
   static const inkLight = CommonColors.grey_AEAEAE;
-  static const brand = CommonColors.trek_route_color;
+  static const brand = Color(0xFF2D6A4F);
   static const teal = CommonColors.cFF0F7B6C;
   static const tealSoft = CommonColors.cFFE6F5F3;
   static const red = CommonColors.cFFDC2626;
@@ -32,6 +32,11 @@ class _TI {
   static const divider = CommonColors.trekroutecolorlight;
   static const orange = Color(0xFFFF9800);
   static const orangeSoft = Color(0xFFFFF3E0);
+  static const ctaGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFF1B4332), Color(0xFF2D6A4F)],
+  );
 }
 
 class BookingsCancelScreen extends StatefulWidget {
@@ -308,7 +313,7 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
           decoration: BoxDecoration(
             gradient: busy
                 ? LinearGradient(colors: [_TI.inkLight, _TI.inkLight])
-                : CommonColors.filterGradient,
+                : _TI.ctaGradient,
             borderRadius: BorderRadius.circular(3.w),
           ),
           child: AnimatedSwitcher(

@@ -36,6 +36,12 @@ class _R {
   static const softOrange = Color(0xFFFFF7ED);
   static const softPink = Color(0xFFFDF2F8);
 
+  static const ctaGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFF1B4332), Color(0xFF2D6A4F)],
+  );
+
   static const Map<int, Color> ratingColor = {
     1: Color(0xFFEF4444),
     2: Color(0xFFF59E0B),
@@ -796,7 +802,7 @@ class _RateReviewScreenState extends State<RateReviewScreen>
                 womenSafety: selectedCategories.contains('Women Safety'),
               );
             },
-            gradient: CommonColors.filterGradient,
+            gradient: _R.ctaGradient,
             textColor: CommonColors.whiteColor,
             fontSize: FontSize.s12,
             fontWeight: FontWeight.w600,

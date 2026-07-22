@@ -23,7 +23,7 @@ class _PP {
   static const cardBg = CommonColors.whiteColor;
   static const ink = CommonColors.blackColor;
   static const inkMid = CommonColors.cFF6B7280;
-  static const brand = CommonColors.trek_route_color;
+  static const brand = Color(0xFF2D6A4F);
   static const green = CommonColors.softGreen3;
   static const amber = CommonColors.orangeColor;
   static const red = CommonColors.appRedColor;

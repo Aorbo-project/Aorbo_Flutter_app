@@ -27,8 +27,15 @@ class _Pay {
   static const ink = Color(0xFF0F172A);
   static const inkMid = Color(0xFF64748B);
   static const inkLight = Color(0xFFADB5BD);
-  static const accent = Color(0xFF3B5BDB);
-  static const accentLight = Color(0xFFEEF2FF);
+  // Was Color(0xFF3B5BDB) (blue) / Color(0xFFEEF2FF) (blue tint) — realigned
+  // to the app's forest-green theme; drives ~20 selection/icon/progress spots.
+  static const accent = Color(0xFF2D6A4F);
+  static const accentLight = Color(0xFFDCEFE2);
+  static const ctaGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFF1B4332), Color(0xFF2D6A4F)],
+  );
   static const border = Color(0xFFE9ECEF);
   static const divider = Color(0xFFF1F5F9);
   static const green = Color(0xFF0F7B6C);
@@ -1724,7 +1731,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                   onPressed: _handlePayNow,
                   isDisabled: _isProcessingPayment,
                   gradient: _isPaymentValid
-                      ? CommonColors.filterGradient
+                      ? _Pay.ctaGradient
                       : CommonColors.disableBtnGradient,
                   textColor: CommonColors.whiteColor,
                   height: 52,

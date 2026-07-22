@@ -21,6 +21,11 @@ class _C {
   static const tealSoft = CommonColors.cFFE6F5F3;
   static const iconBadgeBg = CommonColors.cFF111827;
   static const divider = CommonColors.cFFF3F4F6;
+  static const ctaGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFF1B4332), Color(0xFF2D6A4F)],
+  );
 }
 
 class _NC {
@@ -675,7 +680,7 @@ class _ContactSupportScreenState extends State<ContactSupportScreen>
       fontFamily: 'Poppins',
       text: 'Send Email',
       onPressed: _sendEmail,
-      gradient: CommonColors.filterGradient,
+      gradient: _C.ctaGradient,
     );
   }
 
