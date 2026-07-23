@@ -550,6 +550,10 @@ mixin _$BookingHistoryData {
   bool? get ratingGiven => throw _privateConstructorUsedError;
   @JsonKey(name: 'rating_value')
   dynamic get ratingValue => throw _privateConstructorUsedError;
+  @JsonKey(name: 'can_cancel')
+  bool? get canCancel => throw _privateConstructorUsedError;
+  @JsonKey(name: 'cancellation_message')
+  String? get cancellationMessage => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -615,7 +619,9 @@ abstract class $BookingHistoryDataCopyWith<$Res> {
       @JsonKey(name: 'booking_number') String? bookingNumber,
       @JsonKey(name: 'trek_status') String? trekStatus,
       @JsonKey(name: 'rating_given') bool? ratingGiven,
-      @JsonKey(name: 'rating_value') dynamic ratingValue});
+      @JsonKey(name: 'rating_value') dynamic ratingValue,
+      @JsonKey(name: 'can_cancel') bool? canCancel,
+      @JsonKey(name: 'cancellation_message') String? cancellationMessage});
 
   $TrekCopyWith<$Res>? get trek;
   $BatchCopyWith<$Res>? get batch;
@@ -677,6 +683,8 @@ class _$BookingHistoryDataCopyWithImpl<$Res, $Val extends BookingHistoryData>
     Object? trekStatus = freezed,
     Object? ratingGiven = freezed,
     Object? ratingValue = freezed,
+    Object? canCancel = freezed,
+    Object? cancellationMessage = freezed,
   }) {
     return _then(_value.copyWith(
       id: freezed == id
@@ -851,6 +859,14 @@ class _$BookingHistoryDataCopyWithImpl<$Res, $Val extends BookingHistoryData>
           ? _value.ratingValue
           : ratingValue // ignore: cast_nullable_to_non_nullable
               as dynamic,
+      canCancel: freezed == canCancel
+          ? _value.canCancel
+          : canCancel // ignore: cast_nullable_to_non_nullable
+              as bool?,
+      cancellationMessage: freezed == cancellationMessage
+          ? _value.cancellationMessage
+          : cancellationMessage // ignore: cast_nullable_to_non_nullable
+              as String?,
     ) as $Val);
   }
 
@@ -939,7 +955,9 @@ abstract class _$$BookingHistoryDataImplCopyWith<$Res>
       @JsonKey(name: 'booking_number') String? bookingNumber,
       @JsonKey(name: 'trek_status') String? trekStatus,
       @JsonKey(name: 'rating_given') bool? ratingGiven,
-      @JsonKey(name: 'rating_value') dynamic ratingValue});
+      @JsonKey(name: 'rating_value') dynamic ratingValue,
+      @JsonKey(name: 'can_cancel') bool? canCancel,
+      @JsonKey(name: 'cancellation_message') String? cancellationMessage});
 
   @override
   $TrekCopyWith<$Res>? get trek;
@@ -1001,6 +1019,8 @@ class __$$BookingHistoryDataImplCopyWithImpl<$Res>
     Object? trekStatus = freezed,
     Object? ratingGiven = freezed,
     Object? ratingValue = freezed,
+    Object? canCancel = freezed,
+    Object? cancellationMessage = freezed,
   }) {
     return _then(_$BookingHistoryDataImpl(
       id: freezed == id
@@ -1175,6 +1195,14 @@ class __$$BookingHistoryDataImplCopyWithImpl<$Res>
           ? _value.ratingValue
           : ratingValue // ignore: cast_nullable_to_non_nullable
               as dynamic,
+      canCancel: freezed == canCancel
+          ? _value.canCancel
+          : canCancel // ignore: cast_nullable_to_non_nullable
+              as bool?,
+      cancellationMessage: freezed == cancellationMessage
+          ? _value.cancellationMessage
+          : cancellationMessage // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -1233,7 +1261,9 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
       @JsonKey(name: 'booking_number') this.bookingNumber,
       @JsonKey(name: 'trek_status') this.trekStatus,
       @JsonKey(name: 'rating_given') this.ratingGiven,
-      @JsonKey(name: 'rating_value') this.ratingValue})
+      @JsonKey(name: 'rating_value') this.ratingValue,
+      @JsonKey(name: 'can_cancel') this.canCancel,
+      @JsonKey(name: 'cancellation_message') this.cancellationMessage})
       : _travelers = travelers;
 
   factory _$BookingHistoryDataImpl.fromJson(Map<String, dynamic> json) =>
@@ -1371,10 +1401,16 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
   @override
   @JsonKey(name: 'rating_value')
   final dynamic ratingValue;
+  @override
+  @JsonKey(name: 'can_cancel')
+  final bool? canCancel;
+  @override
+  @JsonKey(name: 'cancellation_message')
+  final String? cancellationMessage;
 
   @override
   String toString() {
-    return 'BookingHistoryData(id: $id, customerId: $customerId, trekId: $trekId, vendorId: $vendorId, vendorIdAlt: $vendorIdAlt, batchId: $batchId, couponId: $couponId, totalTravelers: $totalTravelers, totalAmount: $totalAmount, platformFees: $platformFees, gstAmount: $gstAmount, discountAmount: $discountAmount, finalAmount: $finalAmount, paymentStatus: $paymentStatus, status: $status, bookingDate: $bookingDate, specialRequests: $specialRequests, bookingSource: $bookingSource, primaryContactTravelerId: $primaryContactTravelerId, createdAt: $createdAt, updatedAt: $updatedAt, userId: $userId, cityId: $cityId, sourceCityName: $sourceCityName, cancellationPolicyType: $cancellationPolicyType, advanceAmount: $advanceAmount, remainingAmount: $remainingAmount, financeSnapshot: $financeSnapshot, totalBasicCost: $totalBasicCost, vendorDiscount: $vendorDiscount, couponDiscount: $couponDiscount, insuranceAmount: $insuranceAmount, freeCancellationAmount: $freeCancellationAmount, paymentMethod: $paymentMethod, razorpayPaymentId: $razorpayPaymentId, razorpayOrderId: $razorpayOrderId, trek: $trek, batch: $batch, travelers: $travelers, bookingNumber: $bookingNumber, trekStatus: $trekStatus, ratingGiven: $ratingGiven, ratingValue: $ratingValue)';
+    return 'BookingHistoryData(id: $id, customerId: $customerId, trekId: $trekId, vendorId: $vendorId, vendorIdAlt: $vendorIdAlt, batchId: $batchId, couponId: $couponId, totalTravelers: $totalTravelers, totalAmount: $totalAmount, platformFees: $platformFees, gstAmount: $gstAmount, discountAmount: $discountAmount, finalAmount: $finalAmount, paymentStatus: $paymentStatus, status: $status, bookingDate: $bookingDate, specialRequests: $specialRequests, bookingSource: $bookingSource, primaryContactTravelerId: $primaryContactTravelerId, createdAt: $createdAt, updatedAt: $updatedAt, userId: $userId, cityId: $cityId, sourceCityName: $sourceCityName, cancellationPolicyType: $cancellationPolicyType, advanceAmount: $advanceAmount, remainingAmount: $remainingAmount, financeSnapshot: $financeSnapshot, totalBasicCost: $totalBasicCost, vendorDiscount: $vendorDiscount, couponDiscount: $couponDiscount, insuranceAmount: $insuranceAmount, freeCancellationAmount: $freeCancellationAmount, paymentMethod: $paymentMethod, razorpayPaymentId: $razorpayPaymentId, razorpayOrderId: $razorpayOrderId, trek: $trek, batch: $batch, travelers: $travelers, bookingNumber: $bookingNumber, trekStatus: $trekStatus, ratingGiven: $ratingGiven, ratingValue: $ratingValue, canCancel: $canCancel, cancellationMessage: $cancellationMessage)';
   }
 
   @override
@@ -1414,8 +1450,7 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
                 other.specialRequests == specialRequests) &&
             (identical(other.bookingSource, bookingSource) ||
                 other.bookingSource == bookingSource) &&
-            (identical(
-                    other.primaryContactTravelerId, primaryContactTravelerId) ||
+            (identical(other.primaryContactTravelerId, primaryContactTravelerId) ||
                 other.primaryContactTravelerId == primaryContactTravelerId) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
@@ -1460,7 +1495,11 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
             (identical(other.ratingGiven, ratingGiven) ||
                 other.ratingGiven == ratingGiven) &&
             const DeepCollectionEquality()
-                .equals(other.ratingValue, ratingValue));
+                .equals(other.ratingValue, ratingValue) &&
+            (identical(other.canCancel, canCancel) ||
+                other.canCancel == canCancel) &&
+            (identical(other.cancellationMessage, cancellationMessage) ||
+                other.cancellationMessage == cancellationMessage));
   }
 
   @JsonKey(ignore: true)
@@ -1509,7 +1548,9 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
         bookingNumber,
         trekStatus,
         ratingGiven,
-        const DeepCollectionEquality().hash(ratingValue)
+        const DeepCollectionEquality().hash(ratingValue),
+        canCancel,
+        cancellationMessage
       ]);
 
   @JsonKey(ignore: true)
@@ -1584,8 +1625,10 @@ abstract class _BookingHistoryData implements BookingHistoryData {
       @JsonKey(name: 'booking_number') final String? bookingNumber,
       @JsonKey(name: 'trek_status') final String? trekStatus,
       @JsonKey(name: 'rating_given') final bool? ratingGiven,
-      @JsonKey(name: 'rating_value')
-      final dynamic ratingValue}) = _$BookingHistoryDataImpl;
+      @JsonKey(name: 'rating_value') final dynamic ratingValue,
+      @JsonKey(name: 'can_cancel') final bool? canCancel,
+      @JsonKey(name: 'cancellation_message')
+      final String? cancellationMessage}) = _$BookingHistoryDataImpl;
 
   factory _BookingHistoryData.fromJson(Map<String, dynamic> json) =
       _$BookingHistoryDataImpl.fromJson;
@@ -1712,6 +1755,12 @@ abstract class _BookingHistoryData implements BookingHistoryData {
   @override
   @JsonKey(name: 'rating_value')
   dynamic get ratingValue;
+  @override
+  @JsonKey(name: 'can_cancel')
+  bool? get canCancel;
+  @override
+  @JsonKey(name: 'cancellation_message')
+  String? get cancellationMessage;
   @override
   @JsonKey(ignore: true)
   _$$BookingHistoryDataImplCopyWith<_$BookingHistoryDataImpl> get copyWith =>

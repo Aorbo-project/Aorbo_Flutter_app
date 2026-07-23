@@ -139,6 +139,10 @@ class BookingHistoryData with _$BookingHistoryData {
     @JsonKey(name: 'rating_given') bool? ratingGiven,
 
     @JsonKey(name: 'rating_value') dynamic ratingValue,
+
+    @JsonKey(name: 'can_cancel') bool? canCancel,
+
+    @JsonKey(name: 'cancellation_message') String? cancellationMessage,
   }) = _BookingHistoryData;
 
   factory BookingHistoryData.fromJson(Map<String, dynamic> json) =>

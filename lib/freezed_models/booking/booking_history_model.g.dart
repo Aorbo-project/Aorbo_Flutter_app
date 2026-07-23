@@ -100,6 +100,8 @@ _$BookingHistoryDataImpl _$$BookingHistoryDataImplFromJson(
       trekStatus: json['trek_status'] as String?,
       ratingGiven: json['rating_given'] as bool?,
       ratingValue: json['rating_value'],
+      canCancel: json['can_cancel'] as bool?,
+      cancellationMessage: json['cancellation_message'] as String?,
     );
 
 Map<String, dynamic> _$$BookingHistoryDataImplToJson(
@@ -148,6 +150,8 @@ Map<String, dynamic> _$$BookingHistoryDataImplToJson(
       'trek_status': instance.trekStatus,
       'rating_given': instance.ratingGiven,
       'rating_value': instance.ratingValue,
+      'can_cancel': instance.canCancel,
+      'cancellation_message': instance.cancellationMessage,
     };
 
 _$TrekImpl _$$TrekImplFromJson(Map<String, dynamic> json) => _$TrekImpl(

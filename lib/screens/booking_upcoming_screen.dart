@@ -2704,9 +2704,10 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                                 onTap: () => _handleTicketDownload(booking),
                               ),
                             ),
-                            if (status == 'upcoming' ||
-                                status == 'confirmed' ||
-                                status == 'booked') ...[
+                            if ((status == 'upcoming' ||
+                                    status == 'confirmed' ||
+                                    status == 'booked') &&
+                                (booking?.canCancel ?? true)) ...[
                               SizedBox(width: 3.w),
                               Expanded(
                                 child: _buildActionButton(
