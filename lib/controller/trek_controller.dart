@@ -46,14 +46,6 @@ class TrekController extends GetxController {
     error: "",
   ).obs;
 
-  final weekendTreksResponseObserver = PaginationModel(
-    data: const ApiResult<FetchTreksResponseModel>.init().obs,
-    isLoading: false,
-    isPaginationCompleted: false,
-    page: 1,
-    error: "",
-  ).obs;
-
   final calculateFareRequestModel = CalculateFareRequestModel(
     batchId: 1,
     travelerCount: 1,
@@ -448,88 +440,6 @@ class TrekController extends GetxController {
       // that call already reset observer.value to its own fresh state, so
       // merging this stale response into it would duplicate every card.
       if (myGeneration != _searchGeneration) return;
-
-      final body = response;
-      if (body != null) {
-        final responseData = FetchTreksResponseModel.fromJson(body);
-        if (responseData.success == true) {
-          observer.value.data.value.maybeWhen(
-            success: (data) {
-              final oldList = (data as FetchTreksResponseModel?)?.data
-                  ?.toList();
-              oldList?.addAll(responseData.data ?? List.empty());
-              observer.value.data.value = ApiResult.success(
-                responseData.copyWith(data: oldList),
-              );
-            },
-            orElse: () {
-              observer.value.data.value = ApiResult.success(responseData);
-            },
-          );
-
-          observer.value.page = observer.value.page + 1;
-          if ((responseData.data?.length ?? 0) < maxListApiReturns) {
-            observer.value.isPaginationCompleted = true;
-          }
-          observer.value.isLoading = false;
-          observer.refresh();
-          return;
-        }
-        throw "${responseData.message}";
-      }
-      throw "Response Body Null";
-    } catch (e) {
-      errorMessage.value = 'Failed to search treks: ${e.toString()}';
-      CustomSnackBar.show(Get.context!, message: errorMessage.value);
-      observer.value.data.value = ApiResult.error(e.toString());
-      observer.value.isLoading = false;
-      observer.refresh();
-    }
-  }
-
-  Future<void> fetchWeekendTreks({
-    required String cityId,
-    required String trekId,
-    required String date,
-    required bool refresh,
-  }) async {
-    final observer = weekendTreksResponseObserver;
-
-    try {
-      if (refresh == true) {
-        observer.value = PaginationModel(
-          data: const ApiResult<FetchTreksResponseModel>.init().obs,
-          isLoading: false,
-          isPaginationCompleted: false,
-          page: 1,
-          error: "",
-        );
-      }
-
-      if (observer.value.isPaginationCompleted ||
-          observer.value.isLoading == true) {
-        return;
-      }
-
-      if (observer.value.page == 1) {
-        observer.value.data.value = const ApiResult.loading("");
-      } else {
-        observer.value.isLoading = true;
-        observer.refresh();
-      }
-
-      const maxListApiReturns = 20;
-      observer.refresh();
-
-      final response = await repository.getApiCall(
-        url: NetworkUrl.fetchWeekEndTreks(
-          cityId.toString(),
-          trekId.toString(),
-          convertDateYYYYMMDD(date),
-          observer.value.page,
-          20,
-        ),
-      );
 
       final body = response;
       if (body != null) {

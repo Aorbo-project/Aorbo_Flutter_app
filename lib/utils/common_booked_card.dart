@@ -3,7 +3,6 @@ import 'package:arobo_app/widgets/custom_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 import '../freezed_models/booking/booking_history_model.dart';
-import 'common_colors.dart';
 import 'ist_date_utils.dart';
 import 'screen_constants.dart';
 import 'package:arobo_app/repository/repository.dart';

@@ -27,8 +27,8 @@ final Map<String, dynamic> chatbotData =
       "Are there any age restrictions for the trek?"
     ],
     "answers": {
-      "Can I book treks for large groups?": "Yes, We offer group bookings for personalized treks and weekend treks.",
-      "Can I customize my trek itinerary?": "Yes, many organizers offer customization options. Visit the Aorbo Treks app homepage and select \"Personalized Treks\" to customize your trek.",
+      "Can I book treks for large groups?": "Yes, We offer group bookings for treks.",
+      "Can I customize my trek itinerary?": "Yes, many organizers offer customization options. Check the trek details and contact the vendor for itinerary customization.",
       "Are there women-only trek groups available?": "Yes, Aorbo offers women-only treks for safety and comfort.",
       "What is the best season for trekking?": "Winter for snow treks, summer for greenery, and monsoon for waterfalls.",
       "Are meals provided during the trek?": "Some trek packages include meals, while others don't. Check the trek details, inclusions, and vendor itinerary in the app.",

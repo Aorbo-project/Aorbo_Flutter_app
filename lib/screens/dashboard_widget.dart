@@ -86,7 +86,6 @@ class _DashboardState extends State<Dashboard>
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
 
-  final List<DateTime> _nearestWeekendDates = [];
   final Map<int, bool> _favoriteTreks = {};
 
   // ---------------------------------------------------------------------------
@@ -220,52 +219,10 @@ class _DashboardState extends State<Dashboard>
           ).format(first);
           _selectedDay = first;
           _focusedDay = first;
-          _updateNearestWeekendDates();
         });
       }
     } else {
       setState(() => _selectedDay = currentDate);
-    }
-  }
-
-  void _updateNearestWeekendDates() {
-    if (_dashboardC.selectedDate.value == null) return;
-
-    _nearestWeekendDates.clear();
-    final DateTime selectedDate = _dashboardC.selectedDate.value!;
-
-    DateTime currentDate = selectedDate;
-    if (_ntpTime != null) {
-      final DateTime normalizedNTP = DateTime(
-        _ntpTime!.year,
-        _ntpTime!.month,
-        _ntpTime!.day,
-      );
-      final DateTime normalizedCurrent = DateTime(
-        currentDate.year,
-        currentDate.month,
-        currentDate.day,
-      );
-      if (normalizedCurrent.isBefore(normalizedNTP)) {
-        currentDate = _ntpTime!;
-      }
-    }
-
-    const weekendDays = [DateTime.thursday, DateTime.friday, DateTime.saturday];
-
-    final bool isSelectedAWeekend = weekendDays.contains(selectedDate.weekday);
-    if (!isSelectedAWeekend && _dashboardC.isDateAvailable(selectedDate)) {
-      _nearestWeekendDates.add(selectedDate);
-    }
-
-    for (int i = 0; i < 14; i++) {
-      final DateTime check = currentDate.add(Duration(days: i));
-      if (weekendDays.contains(check.weekday)) {
-        if (_dashboardC.isDateAvailable(check)) {
-          _nearestWeekendDates.add(check);
-        }
-        if (check.weekday == DateTime.saturday) break;
-      }
     }
   }
 
@@ -679,7 +636,6 @@ class _DashboardState extends State<Dashboard>
                                     _selectedDay = sel;
                                     _focusedDay = foc;
                                     _calendarFormat = tempCalendarFormat;
-                                    _updateNearestWeekendDates();
                                   });
 
                                   Get.back();
@@ -1540,7 +1496,6 @@ class _DashboardState extends State<Dashboard>
                                                                     date;
                                                                 _focusedDay =
                                                                     date;
-                                                                _updateNearestWeekendDates();
                                                               });
                                                               CustomSnackBar.show(
                                                                 context,
@@ -1671,218 +1626,6 @@ class _DashboardState extends State<Dashboard>
                                               ],
                                             ),
                                           ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: ScreenConstant.size20),
-
-                        // ---- Trek Types Card ----
-                        Container(
-                          margin: const EdgeInsets.only(left: 20, right: 20),
-                          child: Card(
-                            color: CommonColors.whiteColor,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                ScreenConstant.size12,
-                              ),
-                            ),
-                            child: Padding(
-                              padding: EdgeInsets.all(ScreenConstant.size15),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: InkWell(
-                                      onTap: () async {
-                                        if (!_isFormValid) {
-                                          CustomSnackBar.show(
-                                            context,
-                                            message:
-                                                'Please provide valid inputs',
-                                          );
-                                          return;
-                                        }
-                                        if (_nearestWeekendDates.isEmpty) {
-                                          _updateNearestWeekendDates();
-                                        }
-                                        await _trekC.fetchWeekendTreks(
-                                          cityId: _dashboardC
-                                              .fromController
-                                              .value
-                                              .text,
-                                          trekId: _dashboardC
-                                              .toController
-                                              .value
-                                              .text,
-                                          date: _dashboardC
-                                              .dateController
-                                              .value
-                                              .text,
-                                          refresh: true,
-                                        );
-                                        Get.toNamed(
-                                          '/weekend-treks',
-                                          arguments: {
-                                            'city': _dashboardC
-                                                .fromController
-                                                .value
-                                                .text,
-                                            'trek': _dashboardC
-                                                .toController
-                                                .value
-                                                .text,
-                                            'date': _dashboardC
-                                                .dateController
-                                                .value
-                                                .text,
-                                            'weekendDates':
-                                                _nearestWeekendDates,
-                                          },
-                                        );
-                                      },
-                                      child: Column(
-                                        children: [
-                                          Text(
-                                            'Weekend Treks',
-                                            textScaler: const TextScaler.linear(
-                                              1.0,
-                                            ),
-                                            style: TextStyle(
-                                              fontFamily: 'Poppins',
-                                              fontSize: FontSize.s10,
-                                              fontWeight: FontWeight.w600,
-                                              color: _isFormValid
-                                                  ? _C.ink
-                                                  : _C.inkLight,
-                                            ),
-                                          ),
-                                          SizedBox(
-                                            height: ScreenConstant.size4,
-                                          ),
-                                          SvgPicture.asset(
-                                            CommonImages.weekend,
-                                            height: ScreenConstant.size25,
-                                            width: ScreenConstant.size25,
-                                            colorFilter: ColorFilter.mode(
-                                              _isFormValid
-                                                  ? _C.teal
-                                                  : _C.inkLight,
-                                              BlendMode.srcIn,
-                                            ),
-                                          ),
-                                          if (_isFormValid &&
-                                              _nearestWeekendDates.isNotEmpty)
-                                            Padding(
-                                              padding: const EdgeInsets.only(
-                                                top: 4,
-                                              ),
-                                              child: Text(
-                                                'Next: ${DateFormat('EEE, MMM d').format(_nearestWeekendDates.first)}',
-                                                textScaler:
-                                                    const TextScaler.linear(
-                                                      1.0,
-                                                    ),
-                                                style: TextStyle(
-                                                  fontFamily: 'Poppins',
-                                                  fontSize: FontSize.s8,
-                                                  color: _C.inkMid,
-                                                  fontWeight: FontWeight.w500,
-                                                ),
-                                              ),
-                                            ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                  Container(
-                                    width: 1,
-                                    height: ScreenConstant.size50,
-                                    color: _C.fieldBorder,
-                                  ),
-                                  Expanded(
-                                    child: InkWell(
-                                      onTap: () {
-                                        if (!_isFormValid) {
-                                          CustomSnackBar.show(
-                                            context,
-                                            message:
-                                                'Please provide valid inputs',
-                                          );
-                                          return;
-                                        }
-                                        Get.toNamed(
-                                          '/personalized-treks',
-                                          arguments: {
-                                            'city': _dashboardC
-                                                .fromController
-                                                .value
-                                                .text,
-                                            'trek': _dashboardC
-                                                .toController
-                                                .value
-                                                .text,
-                                            'date': _dashboardC
-                                                .dateController
-                                                .value
-                                                .text,
-                                          },
-                                        );
-                                      },
-                                      child: Column(
-                                        children: [
-                                          Text(
-                                            'Personalized Treks',
-                                            textScaler: const TextScaler.linear(
-                                              1.0,
-                                            ),
-                                            style: TextStyle(
-                                              fontFamily: 'Poppins',
-                                              fontSize: FontSize.s10,
-                                              fontWeight: FontWeight.w600,
-                                              color: _isFormValid
-                                                  ? _C.ink
-                                                  : _C.inkLight,
-                                            ),
-                                          ),
-                                          SizedBox(
-                                            height: ScreenConstant.size4,
-                                          ),
-                                          SvgPicture.asset(
-                                            CommonImages.weekend2,
-                                            height: ScreenConstant.size25,
-                                            width: ScreenConstant.size25,
-                                            colorFilter: ColorFilter.mode(
-                                              _isFormValid
-                                                  ? _C.teal
-                                                  : _C.inkLight,
-                                              BlendMode.srcIn,
-                                            ),
-                                          ),
-                                          if (_isFormValid &&
-                                              _nearestWeekendDates.isNotEmpty)
-                                            Padding(
-                                              padding: const EdgeInsets.only(
-                                                top: 4,
-                                              ),
-                                              child: Text(
-                                                'Unique Trekking Routes',
-                                                textScaler:
-                                                    const TextScaler.linear(
-                                                      1.0,
-                                                    ),
-                                                style: TextStyle(
-                                                  fontFamily: 'Poppins',
-                                                  fontSize: FontSize.s8,
-                                                  color: _C.inkMid,
-                                                  fontWeight: FontWeight.w500,
-                                                ),
-                                              ),
-                                            ),
                                         ],
                                       ),
                                     ),

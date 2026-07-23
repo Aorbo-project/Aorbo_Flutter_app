@@ -95,11 +95,7 @@ class CommonImages {
   static const String claims = "$basePath/icons/claims.svg";
   static const String traveller = "$basePath/icons/calender3.svg";
 
-  static const String weekend = "$basePath/icons/calender2.svg";
-  static const String weekend2 = "$basePath/icons/calender.svg";
   static const String snow = "$basePath/icons/snow.svg";
-
-  static const String thankYou = "$basePath/img/approval.png";
 
   static const String kedarkantha1 = "";
   static const String kedarkantha2 = "";

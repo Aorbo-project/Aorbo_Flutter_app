@@ -5,18 +5,15 @@ import 'package:arobo_app/screens/notifications_screen.dart';
 import 'package:arobo_app/screens/otp_screen.dart';
 import 'package:arobo_app/screens/payment_screen.dart';
 import 'package:arobo_app/screens/payment_success_screen.dart';
-import 'package:arobo_app/screens/personalized_treks_screen.dart';
 import 'package:arobo_app/screens/popular_treks_screen.dart';
 import 'package:arobo_app/screens/search_summary_screen.dart';
 import 'package:arobo_app/screens/splash_screen.dart';
-import 'package:arobo_app/screens/thank_you_screen.dart';
 import 'package:arobo_app/screens/coupon_code_screen.dart';
 import 'package:arobo_app/screens/traveller_info_screen.dart';
 
 // import 'package:arobo_app/screens/test.dart';
 import 'package:arobo_app/screens/trek_details_screen.dart';
 import 'package:arobo_app/screens/traveller_information_screen.dart';
-import 'package:arobo_app/screens/weekend_treks_screen.dart';
 import 'package:arobo_app/screens/my_account_screen.dart';
 import 'package:arobo_app/screens/bookings_history_screen.dart';
 import 'package:arobo_app/screens/safety_screen.dart';
@@ -49,26 +46,6 @@ final routes = [
   GetPage(name: '/search', page: () => SearchSummaryScreen()),
   GetPage(name: '/trek-details', page: () => TrekDetailsScreen(trek: null,)),
   GetPage(name: '/traveller-info', page: () => TravellerInformationScreen()),
-  GetPage(
-    name: '/personalized-treks',
-    page: () {
-      final args = Get.arguments as Map<String, dynamic>;
-      return PersonalizedTreksScreen(arguments: args);
-    },
-  ),
-  GetPage(name: '/thank-you', page: () => const ThankYouScreen()),
-  GetPage(
-    name: '/weekend-treks',
-    page: () {
-      final args = Get.arguments as Map<String, dynamic>;
-      return WeekendTreksScreen(
-        city: args['city'] ?? "",
-        trek: args['trek'] ?? "",
-        date: args['date'] ?? '',
-        weekendDates: (args['weekendDates'] as List<DateTime>?) ?? [],
-      );
-    },
-  ),
   GetPage(name: '/popular-treks', page: () => const PopularTreksScreen()),
   GetPage(name: '/my-account', page: () => const MyAccountScreen()),
   GetPage(name: '/coupon-code', page: () => const CouponCodeScreen()),
