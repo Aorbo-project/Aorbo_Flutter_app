@@ -334,7 +334,18 @@ class TrekController extends GetxController {
           orElse: () => "0",
         ),
         travelerCount: calculateFareRequestModel.value.travelerCount,
-        batchId: trekBatchId.value > 0 ? trekBatchId.value : null,
+        // trekBatchId.value gets reset to 0 by clearBookingData() after every
+        // successful booking and is only repopulated when the Trek Details
+        // screen re-initializes — if the coupon dialog opens before that
+        // happens for a new trek, it stays 0 and the request silently drops
+        // batch context, making the backend check "already used" across ALL
+        // of this customer's bookings instead of just this TBR. trekDetailData
+        // is populated directly from the trek-detail API response that must
+        // already be loaded for this screen to exist, so it's never stale.
+        batchId: (trekDetailData.value.batchId != null &&
+                trekDetailData.value.batchId! > 0)
+            ? trekDetailData.value.batchId
+            : (trekBatchId.value > 0 ? trekBatchId.value : null),
       );
 
       final validateResponse = AuthUtils.validateRequestFields([
