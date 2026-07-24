@@ -91,6 +91,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
 
+  final List<DateTime> _nearestWeekendDates = [];
   final Map<int, bool> _favoriteTreks = {};
 
   // ---------------------------------------------------------------------------
@@ -235,10 +236,52 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
           ).format(first);
           _selectedDay = first;
           _focusedDay = first;
+          _updateNearestWeekendDates();
         });
       }
     } else {
       setState(() => _selectedDay = currentDate);
+    }
+  }
+
+  void _updateNearestWeekendDates() {
+    if (_dashboardC.selectedDate.value == null) return;
+
+    _nearestWeekendDates.clear();
+    final DateTime selectedDate = _dashboardC.selectedDate.value!;
+
+    DateTime currentDate = selectedDate;
+    if (_ntpTime != null) {
+      final DateTime normalizedNTP = DateTime(
+        _ntpTime!.year,
+        _ntpTime!.month,
+        _ntpTime!.day,
+      );
+      final DateTime normalizedCurrent = DateTime(
+        currentDate.year,
+        currentDate.month,
+        currentDate.day,
+      );
+      if (normalizedCurrent.isBefore(normalizedNTP)) {
+        currentDate = _ntpTime!;
+      }
+    }
+
+    const weekendDays = [DateTime.thursday, DateTime.friday, DateTime.saturday];
+
+    final bool isSelectedAWeekend = weekendDays.contains(selectedDate.weekday);
+    if (!isSelectedAWeekend && _dashboardC.isDateAvailable(selectedDate)) {
+      _nearestWeekendDates.add(selectedDate);
+    }
+
+    for (int i = 0; i < 14; i++) {
+      final DateTime check = currentDate.add(Duration(days: i));
+      if (weekendDays.contains(check.weekday)) {
+        if (_dashboardC.isDateAvailable(check)) {
+          _nearestWeekendDates.add(check);
+        }
+        if (check.weekday == DateTime.saturday) break;
+      }
     }
   }
 
@@ -652,6 +695,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                     _selectedDay = sel;
                                     _focusedDay = foc;
                                     _calendarFormat = tempCalendarFormat;
+                                    _updateNearestWeekendDates();
                                   });
 
                                   Get.back();
