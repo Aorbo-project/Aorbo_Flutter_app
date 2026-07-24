@@ -1,32 +1,39 @@
 import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
+import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sizer/sizer.dart';
+
+import '../models/emergency_contact_model.dart';
+import '../repository/network_url.dart';
+import '../repository/repository.dart';
+import '../utils/common_btn.dart';
 import '../utils/common_colors.dart';
 import '../utils/screen_constants.dart';
-import '../utils/common_btn.dart';
-import 'package:get/get.dart';
-import '../models/emergency_contact_model.dart';
-import '../repository/repository.dart';
-import '../repository/network_url.dart';
+
+String _normalizePhone(String raw) {
+  final digits = raw.replaceAll(RegExp(r'\D'), '');
+  return digits.length > 10 ? digits.substring(digits.length - 10) : digits;
+}
 
 // ─────────────────────────────────────────────
-//  DESIGN TOKENS — aligned with TravellerInfoScreen
+//  DESIGN TOKENS
 // ─────────────────────────────────────────────
 class _C {
-  static const bg          = Color(0xFFF5F8FF);
-  static const cardBg      = Color(0xFFFFFFFF);
-  static const ink         = Color(0xFF111827);
-  static const inkMid      = Color(0xFF6B7280);
-  static const inkLight    = Color(0xFF9CA3AF);
-  static const teal        = Color(0xFF0F7B6C);
-  static const tealSoft    = Color(0xFFE6F5F3);
-  static const fieldBg     = Color(0xFFF9FAFB);
+  static const bg = Color(0xFFF5F8FF);
+  static const cardBg = Colors.white;
+  static const ink = Color(0xFF111827);
+  static const inkMid = Color(0xFF6B7280);
+  static const inkLight = Color(0xFF9CA3AF);
+  static const teal = Color(0xFF0F7B6C);
+  static const tealSoft = Color(0xFFE6F5F3);
   static const fieldBorder = Color(0xFFE5E7EB);
   static const iconBadgeBg = Color(0xFF111827);
-  static const danger      = Color(0xFFEF4444);
-  static const divider     = Color(0xFFE5E7EB);
+  static const danger = Color(0xFFEF4444);
+  static const divider = Color(0xFFE5E7EB);
+  static const warn = Color(0xFFE67700);
   static const ctaGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
@@ -34,9 +41,8 @@ class _C {
   );
 }
 
-class _NInk {
-  static const ink = Color(0xFF0F172A);
-}
+/// Explicit permission state — no more guessing from an empty list (FIX).
+enum _PermState { checking, granted, denied, permanentlyDenied }
 
 class EmergencyContactsScreen extends StatefulWidget {
   const EmergencyContactsScreen({super.key});
@@ -47,46 +53,64 @@ class EmergencyContactsScreen extends StatefulWidget {
 }
 
 class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
-    with SingleTickerProviderStateMixin {
-  List<Contact> allContacts      = [];
-  List<Contact> filteredContacts = [];
-  // Use a Set keyed on contact.id for O(1) lookup and to avoid
-  // reference-equality issues when contacts come from arguments.
-  final Set<String> _selectedIds = {};
-  List<Contact> selectedContacts = [];
-
-  List<EmergencyContact> apiEmergencyContacts = [];
-  final TextEditingController searchController = TextEditingController();
-  bool isLoading = true;
+    with WidgetsBindingObserver {
   final Repository _repository = Repository();
+  final TextEditingController _searchController = TextEditingController();
+
+  List<Contact> _allContacts = [];
+  List<Contact> _filtered = [];
+  final List<Contact> _selected = [];
+  final Set<String> _selectedIds = {};
+
+  int _maxSelectable = 3;
+  Set<String> _existingPhones = {};
+
+  _PermState _permState = _PermState.checking;
+  bool _isLoading = true;
+  bool _wentToSettings = false;
 
   @override
   void initState() {
     super.initState();
-
-    // Restore previously selected contacts passed from caller
-    final arguments = Get.arguments;
-    if (arguments != null && arguments is List<Contact>) {
-      selectedContacts = List.from(arguments);
-      _selectedIds.addAll(selectedContacts.map((c) => c.id));
-    }
-
-    _loadApiEmergencyContacts();
+    WidgetsBinding.instance.addObserver(this);
+    _searchController.addListener(_filterContacts);
+    _parseArguments();
     _fetchContacts();
-    // Store the listener so we can remove it in dispose
-    searchController.addListener(_filterContacts);
   }
 
   @override
   void dispose() {
-    searchController.removeListener(_filterContacts); // FIX: remove listener
-    searchController.dispose();
+    WidgetsBinding.instance.removeObserver(this);
+    _searchController.removeListener(_filterContacts);
+    _searchController.dispose();
     super.dispose();
   }
 
-  // ── Data ────────────────────────────────────────────────────────────────────
+  /// Re-check permission when returning from app settings.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _wentToSettings) {
+      _wentToSettings = false;
+      _fetchContacts();
+    }
+  }
 
-  Future<void> _loadApiEmergencyContacts() async {
+  // ── Arguments ─────────────────────────────────────────────────────────
+
+  void _parseArguments() {
+    final args = Get.arguments;
+    if (args is Map) {
+      _maxSelectable = (args['maxSelectable'] as int?) ?? 3;
+      _existingPhones = Set<String>.from(
+        args['existingPhones'] as List? ?? const [],
+      );
+    } else {
+      // Legacy fallback: opened without arguments — derive limits from API.
+      _loadLimitsFromApi();
+    }
+  }
+
+  Future<void> _loadLimitsFromApi() async {
     try {
       final response = await _repository.getApiCall(
         url: NetworkUrl.emergencyContacts,
@@ -94,85 +118,160 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
       if (response != null && mounted) {
         final r = EmergencyContactResponse.fromJson(response);
         if (r.success == true) {
-          setState(() => apiEmergencyContacts = r.data ?? []);
+          final saved = r.data ?? [];
+          setState(() {
+            _maxSelectable = (3 - saved.length).clamp(0, 3);
+            _existingPhones = saved
+                .map((c) => _normalizePhone(c.phone ?? ''))
+                .where((p) => p.isNotEmpty)
+                .toSet();
+            // If loading finished first, prune selections that are now invalid.
+            _selected.removeWhere(
+              (c) => _existingPhones.contains(
+                _normalizePhone(
+                  c.phones.isNotEmpty ? c.phones.first.number : '',
+                ),
+              ),
+            );
+            while (_selected.length > _maxSelectable) {
+              final removed = _selected.removeLast();
+              _selectedIds.remove(removed.id);
+            }
+          });
         }
       }
     } catch (e) {
-      log('_loadApiEmergencyContacts failed: $e');
+      log('_loadLimitsFromApi failed: $e');
     }
   }
+
+  // ── Contacts + permission ─────────────────────────────────────────────
 
   Future<void> _fetchContacts() async {
     if (!mounted) return;
-    setState(() => isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _permState = _PermState.checking;
+    });
 
-    final status = await Permission.contacts.status;
+    final status = await Permission.contacts.request();
+
+    if (!mounted) return;
+    if (status.isPermanentlyDenied) {
+      setState(() {
+        _permState = _PermState.permanentlyDenied;
+        _isLoading = false;
+      });
+      return;
+    }
     if (!status.isGranted) {
-      final result = await Permission.contacts.request();
-      if (!result.isGranted) {
-        if (mounted) {
-          setState(() => isLoading = false);
-          _showSnack('Contact permission denied.', isError: true);
-        }
-        return;
-      }
+      setState(() {
+        _permState = _PermState.denied;
+        _isLoading = false;
+      });
+      return;
     }
 
     try {
-      final contacts =
-          await FlutterContacts.getContacts(withProperties: true);
+      final contacts = await FlutterContacts.getContacts(withProperties: true);
       if (!mounted) return;
       setState(() {
-        allContacts = contacts
-            .where((c) => c.phones.isNotEmpty)
-            .toList()
-          ..sort((a, b) =>
-              a.displayName.compareTo(b.displayName));
-        filteredContacts = List.from(allContacts);
-        isLoading = false;
+        _permState = _PermState.granted;
+        _allContacts = contacts.where((c) => c.phones.isNotEmpty).toList()
+          ..sort(
+            (a, b) => a.displayName.toLowerCase().compareTo(
+              b.displayName.toLowerCase(),
+            ),
+          );
+        _isLoading = false;
       });
+      _filterContacts();
     } catch (e) {
       log('_fetchContacts failed: $e');
-      if (mounted) setState(() => isLoading = false);
+      if (mounted) {
+        setState(() {
+          _permState = _PermState.granted;
+          _isLoading = false;
+        });
+      }
     }
   }
 
+  void _openSettings() {
+    _wentToSettings = true;
+    openAppSettings();
+  }
+
+  // ── Search ────────────────────────────────────────────────────────────
+
   void _filterContacts() {
-    final query = searchController.text.toLowerCase();
+    if (!mounted) return;
+    final query = _searchController.text.trim().toLowerCase();
     setState(() {
-      filteredContacts = allContacts.where((contact) {
-        final name   = contact.displayName.toLowerCase();
-        final phones = contact.phones.map((p) => p.number).join().toLowerCase();
-        return name.contains(query) || phones.contains(query);
-      }).toList();
+      _filtered = query.isEmpty
+          ? List.from(_allContacts)
+          : _allContacts.where((contact) {
+              final name = contact.displayName.toLowerCase();
+              final phones = contact.phones
+                  .map((p) => _normalizePhone(p.number))
+                  .join(' ');
+              return name.contains(query) ||
+                  phones.contains(query.replaceAll(RegExp(r'\D'), ''));
+            }).toList();
     });
   }
 
-  /// Toggle using id-based set to avoid reference-equality issues.
+  // ── Selection ─────────────────────────────────────────────────────────
+
+  bool _isAlreadySaved(Contact contact) {
+    final phone = contact.phones.isNotEmpty
+        ? _normalizePhone(contact.phones.first.number)
+        : '';
+    return phone.isNotEmpty && _existingPhones.contains(phone);
+  }
+
   void _toggleSelection(Contact contact) {
+    if (_isAlreadySaved(contact)) {
+      _showSnack('This number is already an emergency contact.', isError: true);
+      return;
+    }
     setState(() {
       if (_selectedIds.contains(contact.id)) {
         _selectedIds.remove(contact.id);
-        selectedContacts.removeWhere((c) => c.id == contact.id);
-      } else {
-        final total =
-            apiEmergencyContacts.length + selectedContacts.length;
-        if (total < 3) {
-          _selectedIds.add(contact.id);
-          selectedContacts.add(contact);
-        } else {
-          _showSnack(
-            'You can only have up to 3 emergency contacts total.',
-            isError: true,
-          );
-        }
+        _selected.removeWhere((c) => c.id == contact.id);
+        return;
       }
+      if (_selected.length >= _maxSelectable) {
+        _showSnack(
+          'You can add $_maxSelectable more contact${_maxSelectable == 1 ? '' : 's'} only.',
+          isError: true,
+        );
+        return;
+      }
+      // Also block duplicate numbers within the current selection.
+      final phone = _normalizePhone(contact.phones.first.number);
+      final alreadyPicked = _selected.any(
+        (c) =>
+            _normalizePhone(c.phones.isNotEmpty ? c.phones.first.number : '') ==
+            phone,
+      );
+      if (alreadyPicked) {
+        _showSnack(
+          'A contact with this number is already selected.',
+          isError: true,
+        );
+        return;
+      }
+      _selectedIds.add(contact.id);
+      _selected.add(contact);
     });
   }
 
-  bool _isSelected(Contact contact) => _selectedIds.contains(contact.id);
+  void _confirmSelection() {
+    Get.back(result: List<Contact>.from(_selected));
+  }
 
-  // ── Snack ───────────────────────────────────────────────────────────────────
+  // ── Snack ─────────────────────────────────────────────────────────────
 
   void _showSnack(String message, {bool isError = false}) {
     if (!mounted) return;
@@ -194,6 +293,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontSize: FontSize.s10,
+                    color: Colors.white,
                   ),
                 ),
               ),
@@ -209,10 +309,9 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
       );
   }
 
-  // ── UI helpers ──────────────────────────────────────────────────────────────
+  // ── UI helpers ────────────────────────────────────────────────────────
 
-  Widget _buildAvatar(String name, {bool isSelected = false}) {
-    final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
+  Widget _avatar(String name, {required bool isSelected}) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       width: 11.w,
@@ -223,7 +322,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
       ),
       child: Center(
         child: Text(
-          initial,
+          name.isNotEmpty ? name[0].toUpperCase() : '?',
           style: TextStyle(
             fontFamily: 'Poppins',
             fontSize: FontSize.s14,
@@ -235,7 +334,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
     );
   }
 
-  Widget _buildSelectionIndicator(bool isSelected) {
+  Widget _selectionIndicator(bool isSelected) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       width: 6.w,
@@ -243,10 +342,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: isSelected ? _C.teal : Colors.transparent,
-        border: Border.all(
-          color: isSelected ? _C.teal : _C.inkLight,
-          width: 2,
-        ),
+        border: Border.all(color: isSelected ? _C.teal : _C.inkLight, width: 2),
       ),
       child: isSelected
           ? Icon(Icons.check_rounded, color: Colors.white, size: 3.5.w)
@@ -254,64 +350,38 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
     );
   }
 
-  Widget _buildContactTile(Contact contact, int index) {
-    final phone = contact.phones.isNotEmpty
-        ? contact.phones.first.number
-        : 'No number';
-    final isSelected = _isSelected(contact);
+  Widget _contactTile(Contact contact) {
+    final phone = contact.phones.first.number;
+    final isSelected = _selectedIds.contains(contact.id);
+    final alreadySaved = _isAlreadySaved(contact);
 
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0, end: 1),
-      duration: Duration(milliseconds: 200 + (index % 15) * 30),
-      curve: Curves.easeOutCubic,
-      builder: (context, value, child) => Opacity(
-        opacity: value,
-        child: Transform.translate(
-          offset: Offset(0, 12 * (1 - value)),
-          child: child,
+    return AnimatedContainer(
+      key: ValueKey(contact.id),
+      duration: const Duration(milliseconds: 200),
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: alreadySaved
+            ? _C.cardBg.withValues(alpha: 0.6)
+            : isSelected
+            ? _C.tealSoft
+            : _C.cardBg,
+        borderRadius: BorderRadius.circular(3.w),
+        border: Border.all(
+          color: isSelected ? _C.teal.withValues(alpha: 0.4) : _C.fieldBorder,
+          width: isSelected ? 1.5 : 1,
         ),
       ),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        margin: const EdgeInsets.only(bottom: 10),
-        decoration: BoxDecoration(
-          color: isSelected ? _C.tealSoft : _C.cardBg,
-          borderRadius: BorderRadius.circular(3.w),
-          border: Border.all(
-            color: isSelected
-                ? _C.teal.withValues(alpha: 0.4)
-                : _C.fieldBorder,
-            width: isSelected ? 1.5 : 1,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: _C.teal.withValues(alpha: 0.12),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-        ),
-        child: InkWell(
-          onTap: () => _toggleSelection(contact),
-          borderRadius: BorderRadius.circular(3.w),
-          splashColor: _C.teal.withValues(alpha: 0.08),
-          highlightColor: _C.teal.withValues(alpha: 0.04),
+      child: InkWell(
+        onTap: alreadySaved ? null : () => _toggleSelection(contact),
+        borderRadius: BorderRadius.circular(3.w),
+        splashColor: _C.teal.withValues(alpha: 0.08),
+        child: Opacity(
+          opacity: alreadySaved ? 0.55 : 1,
           child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: 4.w,
-              vertical: 1.4.h,
-            ),
+            padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.4.h),
             child: Row(
               children: [
-                _buildAvatar(contact.displayName, isSelected: isSelected),
+                _avatar(contact.displayName, isSelected: isSelected),
                 SizedBox(width: 3.w),
                 Expanded(
                   child: Column(
@@ -319,6 +389,8 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
                     children: [
                       Text(
                         contact.displayName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontFamily: 'Poppins',
                           fontSize: FontSize.s11,
@@ -337,14 +409,18 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
                                 : _C.inkLight,
                           ),
                           SizedBox(width: 1.w),
-                          Text(
-                            phone,
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: FontSize.s9,
-                              color: isSelected
-                                  ? _C.teal.withValues(alpha: 0.7)
-                                  : _C.inkMid,
+                          Expanded(
+                            child: Text(
+                              phone,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: FontSize.s9,
+                                color: isSelected
+                                    ? _C.teal.withValues(alpha: 0.7)
+                                    : _C.inkMid,
+                              ),
                             ),
                           ),
                         ],
@@ -352,7 +428,28 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
                     ],
                   ),
                 ),
-                _buildSelectionIndicator(isSelected),
+                if (alreadySaved)
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 2.w,
+                      vertical: 0.4.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _C.tealSoft,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      'Added',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: FontSize.s8,
+                        fontWeight: FontWeight.w700,
+                        color: _C.teal,
+                      ),
+                    ),
+                  )
+                else
+                  _selectionIndicator(isSelected),
               ],
             ),
           ),
@@ -361,55 +458,51 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _emptyState() {
     return Center(
-      child: Padding(
-        padding: EdgeInsets.symmetric(vertical: 6.h),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 18.w,
-              height: 18.w,
-              decoration: const BoxDecoration(
-                color: _C.tealSoft,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.search_off_rounded,
-                size: 9.w,
-                color: _C.teal,
-              ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 18.w,
+            height: 18.w,
+            decoration: const BoxDecoration(
+              color: _C.tealSoft,
+              shape: BoxShape.circle,
             ),
-            SizedBox(height: 2.h),
-            Text(
-              'No contacts found',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: FontSize.s13,
-                fontWeight: FontWeight.w600,
-                color: _C.ink,
-              ),
+            child: Icon(Icons.search_off_rounded, size: 9.w, color: _C.teal),
+          ),
+          SizedBox(height: 2.h),
+          Text(
+            'No contacts found',
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: FontSize.s13,
+              fontWeight: FontWeight.w600,
+              color: _C.ink,
             ),
-            SizedBox(height: 0.8.h),
-            Text(
-              'Try a different name or number',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: FontSize.s9,
-                color: _C.inkMid,
-              ),
+          ),
+          SizedBox(height: 0.8.h),
+          Text(
+            _allContacts.isEmpty
+                ? 'No contacts with phone numbers on this device'
+                : 'Try a different name or number',
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: FontSize.s9,
+              color: _C.inkMid,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildPermissionState() {
+  Widget _permissionState() {
+    final isPermanent = _permState == _PermState.permanentlyDenied;
     return Center(
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+        padding: EdgeInsets.symmetric(horizontal: 8.w),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -420,11 +513,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
                 color: _C.danger.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                Icons.contacts_outlined,
-                size: 9.w,
-                color: _C.danger,
-              ),
+              child: Icon(Icons.contacts_outlined, size: 9.w, color: _C.danger),
             ),
             SizedBox(height: 2.h),
             Text(
@@ -438,7 +527,9 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
             ),
             SizedBox(height: 0.8.h),
             Text(
-              'Please allow access to your contacts\nto add emergency contacts.',
+              isPermanent
+                  ? 'Permission was denied permanently.\nEnable Contacts access in app settings.'
+                  : 'Please allow access to your contacts\nto add emergency contacts.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: 'Poppins',
@@ -449,25 +540,15 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
             ),
             SizedBox(height: 2.h),
             GestureDetector(
-              onTap: _fetchContacts,
+              onTap: isPermanent ? _openSettings : _fetchContacts,
               child: Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: 6.w,
-                  vertical: 1.4.h,
-                ),
+                padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 1.4.h),
                 decoration: BoxDecoration(
                   color: _C.teal,
                   borderRadius: BorderRadius.circular(2.w),
-                  boxShadow: [
-                    BoxShadow(
-                      color: _C.teal.withValues(alpha: 0.30),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
                 ),
                 child: Text(
-                  'Grant Permission',
+                  isPermanent ? 'Open Settings' : 'Grant Permission',
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontWeight: FontWeight.w600,
@@ -483,13 +564,11 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
     );
   }
 
-  // ── Build ───────────────────────────────────────────────────────────────────
+  // ── Build ─────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
-    final totalSelected =
-        apiEmergencyContacts.length + selectedContacts.length;
-    final slotsLeft = 3 - totalSelected;
+    final slotsLeft = _maxSelectable - _selected.length;
 
     return Scaffold(
       backgroundColor: _C.bg,
@@ -502,8 +581,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
         iconTheme: const IconThemeData(color: _C.ink),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
-          // FIX: always return selectedContacts to caller
-          onPressed: () => Get.back(result: selectedContacts),
+          onPressed: Get.back, // back = cancel; Done returns the selection
         ),
         title: Text(
           'Select Contacts',
@@ -511,36 +589,9 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
             fontFamily: 'Poppins',
             fontSize: FontSize.s14,
             fontWeight: FontWeight.w700,
-            color: _NInk.ink,
+            color: _C.ink,
           ),
         ),
-        actions: [
-          Container(
-            margin: EdgeInsets.only(right: 4.w),
-            child: TextButton(
-              style: TextButton.styleFrom(
-                backgroundColor: _C.iconBadgeBg,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 6,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-              ),
-              onPressed: () => Get.toNamed('/help'),
-              child: Text(
-                'FAQ',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: FontSize.s10,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ),
-        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(height: 1, color: _C.divider),
@@ -548,31 +599,19 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
       ),
       body: Column(
         children: [
-          // ── Search + slot info ─────────────────────────────────────
-          Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: 4.w,
-              vertical: 2.h,
-            ),
-            color: _C.bg,
+          // ── Search + slot info ─────────────────────────────────
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
             child: Column(
               children: [
-                // Search bar
                 Container(
                   decoration: BoxDecoration(
                     color: _C.cardBg,
                     borderRadius: BorderRadius.circular(3.w),
                     border: Border.all(color: _C.fieldBorder),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
                   ),
                   child: TextField(
-                    controller: searchController,
+                    controller: _searchController,
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontSize: FontSize.s11,
@@ -590,39 +629,33 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
                         color: _C.inkLight,
                         size: 5.5.w,
                       ),
-                      suffixIcon: searchController.text.isNotEmpty
+                      suffixIcon: _searchController.text.isNotEmpty
                           ? IconButton(
                               icon: Icon(
                                 Icons.close_rounded,
                                 color: _C.inkLight,
                                 size: 4.5.w,
                               ),
-                              onPressed: () {
-                                searchController.clear();
-                                _filterContacts();
-                              },
+                              onPressed: _searchController.clear,
                             )
                           : null,
                       border: InputBorder.none,
-                      contentPadding:
-                          EdgeInsets.symmetric(vertical: 1.5.h),
                       focusedBorder: InputBorder.none,
                       enabledBorder: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(vertical: 1.5.h),
                     ),
                   ),
                 ),
                 SizedBox(height: 1.5.h),
-
-                // Slot info row
                 Row(
                   children: [
-                    ...List.generate(3, (i) {
-                      final filled = i < totalSelected;
+                    ...List.generate(_maxSelectable.clamp(0, 3), (i) {
+                      final filled = i < _selected.length;
                       return AnimatedContainer(
                         duration: const Duration(milliseconds: 300),
                         margin: const EdgeInsets.only(right: 6),
                         width: filled ? 20 : 10,
-                        height: 10,
+                        height: 8,
                         decoration: BoxDecoration(
                           color: filled ? _C.teal : _C.fieldBorder,
                           borderRadius: BorderRadius.circular(10),
@@ -639,15 +672,12 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
                           fontFamily: 'Poppins',
                           fontSize: FontSize.s9,
                           fontWeight: FontWeight.w500,
-                          color: slotsLeft == 0
-                              ? const Color(0xFFE67700)
-                              : _C.inkMid,
+                          color: slotsLeft == 0 ? _C.warn : _C.inkMid,
                         ),
                       ),
                     ),
-                    if (selectedContacts.isNotEmpty)
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
+                    if (_selected.isNotEmpty)
+                      Container(
                         padding: EdgeInsets.symmetric(
                           horizontal: 2.w,
                           vertical: 0.4.h,
@@ -657,7 +687,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          '${selectedContacts.length} selected',
+                          '${_selected.length} selected',
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontSize: FontSize.s8,
@@ -672,46 +702,38 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
             ),
           ),
 
-          // ── Contacts list ──────────────────────────────────────────
+          // ── List / states ──────────────────────────────────────
           Expanded(
-            child: isLoading
+            child: _isLoading
                 ? const Center(
                     child: CircularProgressIndicator(
                       color: _C.teal,
                       strokeWidth: 2.5,
                     ),
                   )
-                : allContacts.isEmpty
-                    ? _buildPermissionState()
-                    : filteredContacts.isEmpty
-                        ? _buildEmptyState()
-                        : ListView.builder(
-                            padding: EdgeInsets.only(
-                              left: 4.w,
-                              right: 4.w,
-                              top: 1.h,
-                              bottom: selectedContacts.isNotEmpty
-                                  ? 14.h
-                                  : 3.h,
-                            ),
-                            itemCount: filteredContacts.length,
-                            itemBuilder: (context, index) =>
-                                _buildContactTile(
-                              filteredContacts[index],
-                              index,
-                            ),
-                          ),
+                : _permState != _PermState.granted
+                ? _permissionState()
+                : _filtered.isEmpty
+                ? _emptyState()
+                : ListView.builder(
+                    padding: EdgeInsets.only(
+                      left: 4.w,
+                      right: 4.w,
+                      top: 1.h,
+                      bottom: _selected.isNotEmpty ? 16.h : 3.h,
+                    ),
+                    itemCount: _filtered.length,
+                    itemBuilder: (context, index) =>
+                        _contactTile(_filtered[index]),
+                  ),
           ),
         ],
       ),
 
-      // ── Continue button ────────────────────────────────────────────
-      bottomNavigationBar: selectedContacts.isNotEmpty
+      // ── Done button — returns the selection, never navigates forward ──
+      bottomNavigationBar: _selected.isNotEmpty
           ? Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: 5.w,
-                vertical: 2.h,
-              ),
+              padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
               decoration: BoxDecoration(
                 color: _C.cardBg,
                 boxShadow: [
@@ -729,30 +751,14 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(
-                      width: 10.w,
-                      height: 4,
-                      margin: const EdgeInsets.only(bottom: 14),
-                      decoration: BoxDecoration(
-                        color: _C.fieldBorder,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    // Stacked avatars + count
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         SizedBox(
-                          width: selectedContacts.length > 1
-                              ? (selectedContacts.length * 22.0)
-                                      .clamp(0, 66) +
-                                  10
-                              : 36,
+                          width: (_selected.length * 18.0) + 14,
                           height: 30,
                           child: Stack(
-                            children: selectedContacts
-                                .take(3)
-                                .toList()
+                            children: _selected
                                 .asMap()
                                 .entries
                                 .map(
@@ -771,10 +777,9 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
                                       ),
                                       child: Center(
                                         child: Text(
-                                          e.value.displayName
-                                                  .isNotEmpty
+                                          e.value.displayName.isNotEmpty
                                               ? e.value.displayName[0]
-                                                  .toUpperCase()
+                                                    .toUpperCase()
                                               : '?',
                                           style: const TextStyle(
                                             fontFamily: 'Poppins',
@@ -792,7 +797,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
                         ),
                         SizedBox(width: 2.w),
                         Text(
-                          '${selectedContacts.length} contact${selectedContacts.length == 1 ? '' : 's'} selected',
+                          '${_selected.length} contact${_selected.length == 1 ? '' : 's'} selected',
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontSize: FontSize.s9,
@@ -802,28 +807,9 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
                       ],
                     ),
                     SizedBox(height: 1.h),
-                    // FIX: Get.toNamed (not offNamed) — preserves back-stack.
-                    // Result flows back here so selectedContacts stays in sync.
                     CommonButton(
-                      text: 'Continue  →',
-                      onPressed: () async {
-                        final result = await Get.toNamed(
-                          '/selected-emergency-contacts',
-                          arguments: selectedContacts,
-                        );
-                        if (result != null &&
-                            result is List<Contact> &&
-                            mounted) {
-                          setState(() {
-                            selectedContacts = List.from(result);
-                            _selectedIds
-                              ..clear()
-                              ..addAll(
-                                selectedContacts.map((c) => c.id),
-                              );
-                          });
-                        }
-                      },
+                      text: 'Done',
+                      onPressed: _confirmSelection,
                       gradient: _C.ctaGradient,
                       textColor: CommonColors.whiteColor,
                       fontWeight: FontWeight.w700,

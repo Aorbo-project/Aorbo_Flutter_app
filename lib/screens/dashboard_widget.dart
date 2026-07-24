@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'dart:math' as math;
 
 import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/controller/trek_controller.dart';
@@ -6,6 +7,8 @@ import 'package:arobo_app/utils/app_theme.dart';
 import 'package:arobo_app/utils/common_btn.dart';
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/common_images.dart';
+import 'package:arobo_app/utils/dashboard_header_theme.dart';
+import 'package:arobo_app/utils/header_scene.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:arobo_app/utils/know_more_card.dart';
 import 'package:arobo_app/utils/seasonal_forecast_mock_data.dart';
@@ -30,7 +33,8 @@ import 'package:table_calendar/table_calendar.dart';
 
 import '../freezed_models/treks/treks_model_data.dart';
 
-/// Theme palette
+/// Neutral palette for the body/calendar. The HEADER no longer reads from
+/// this — it is fully driven by DashboardHeaderTheme.
 class _C {
   static const bg = Color(0xFFF5F8FF);
   static const cardBg = Color(0xFFFFFFFF);
@@ -54,8 +58,7 @@ class Dashboard extends StatefulWidget {
   State<Dashboard> createState() => _DashboardState();
 }
 
-class _DashboardState extends State<Dashboard>
-    with SingleTickerProviderStateMixin {
+class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
   int selectedIndex = 0;
   DateTime? _ntpTime;
 
@@ -68,6 +71,7 @@ class _DashboardState extends State<Dashboard>
 
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
+  late AnimationController _glowController; // pulsing glow on Search button
   bool _isPressed = false;
 
   final PageController _pageController = PageController(
@@ -81,6 +85,7 @@ class _DashboardState extends State<Dashboard>
 
   final DashboardController _dashboardC = Get.find<DashboardController>();
   final TrekController _trekC = Get.find<TrekController>();
+  late final HeaderThemeController _themeC;
 
   CalendarFormat _calendarFormat = CalendarFormat.month;
   DateTime _focusedDay = DateTime.now();
@@ -95,7 +100,7 @@ class _DashboardState extends State<Dashboard>
   String getFullImageUrl(String? path) {
     if (path == null || path.isEmpty) return '';
     if (path.startsWith('http')) return path;
-    return 'https://api.aorbotreks.co.in$path';
+    return '[api.aorbotreks.co.in$path](https://api.aorbotreks.co.in$path)';
   }
 
   List<String> _safeGradient(List<dynamic>? gradient, List<String> fallback) {
@@ -112,6 +117,11 @@ class _DashboardState extends State<Dashboard>
   @override
   void initState() {
     super.initState();
+
+    _themeC = Get.isRegistered<HeaderThemeController>()
+        ? Get.find<HeaderThemeController>()
+        : Get.put(HeaderThemeController());
+
     _initializeNTPTime();
 
     _animationController = AnimationController(
@@ -121,6 +131,11 @@ class _DashboardState extends State<Dashboard>
     _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
+
+    _glowController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
+    )..repeat(reverse: true);
 
     ever(_dashboardC.calenderTrekDatesObserver, (value) {
       if (mounted) setState(() {});
@@ -154,6 +169,7 @@ class _DashboardState extends State<Dashboard>
     _stopAutoScroll();
     _pageController.dispose();
     _animationController.dispose();
+    _glowController.dispose();
     _scrollController.dispose();
     _knowMoreController.dispose();
     _topTreksPageController.dispose();
@@ -736,7 +752,7 @@ class _DashboardState extends State<Dashboard>
   }
 
   // ---------------------------------------------------------------------------
-  // Calendar cell helpers
+  // Calendar cell helpers (unchanged)
   // ---------------------------------------------------------------------------
 
   Widget _legendItem({
@@ -903,6 +919,808 @@ class _DashboardState extends State<Dashboard>
   }
 
   // ---------------------------------------------------------------------------
+  // DYNAMIC HEADER
+  // ---------------------------------------------------------------------------
+
+  Widget _buildHeader(DashboardHeaderTheme ht) {
+    return Card(
+      elevation: 2,
+      clipBehavior: Clip.antiAlias,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(18),
+          bottomRight: Radius.circular(18),
+        ),
+      ),
+      margin: const EdgeInsets.only(bottom: 5),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 800),
+        curve: Curves.easeOutCubic,
+        // Fallback color only — the scene paints the animated sky.
+        color: ht.gradientColors.first,
+        child: Stack(
+          children: [
+            // Layered animated scene (sky, weather, mountains, fireworks…)
+            Positioned.fill(
+              child: HeaderSceneBackground(
+                key: ValueKey(
+                  'scene_${ht.id}',
+                ), // clean restart on theme switch
+                scene: ht.scene,
+              ),
+            ),
+            SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: ScreenConstant.size16,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(height: ScreenConstant.size20),
+
+                    // Logo + Help (structure static; logo swappable for collabs)
+                    _FadeSlideIn(
+                      delayMs: 0,
+                      child: Container(
+                        margin: const EdgeInsets.only(left: 18, right: 18),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            ht.logoOverrideUrl != null
+                                ? Image.network(
+                                    ht.logoOverrideUrl!,
+                                    height: 7.h,
+                                    width: 30.w,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (_, __, ___) => Image.asset(
+                                      CommonImages.logo1,
+                                      height: 7.h,
+                                      width: 30.w,
+                                    ),
+                                  )
+                                : Image.asset(
+                                    CommonImages.logo1,
+                                    height: 7.h,
+                                    width: 30.w,
+                                  ),
+                            GestureDetector(
+                              onTap: () => Get.toNamed('/help'),
+                              child: SvgPicture.asset(
+                                CommonImages.help,
+                                colorFilter: ColorFilter.mode(
+                                  ht.ink,
+                                  BlendMode.srcIn,
+                                ),
+                                height: 2.8.h,
+                                width: 3.w,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 2.h),
+
+                    // Tagline + seasonal/festival badge
+                    _FadeSlideIn(
+                      delayMs: 120,
+                      child: Center(
+                        child: Column(
+                          children: [
+                            Text(
+                              ht.tagline,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: FontSize.s14,
+                                color: ht.ink,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: -0.2,
+                              ),
+                            ),
+                            if (ht.badgeText != null)
+                              Container(
+                                margin: EdgeInsets.only(top: 0.8.h),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: ht.accent.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: ht.accent.withValues(alpha: 0.35),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.auto_awesome,
+                                      size: 12,
+                                      color: ht.accent,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      ht.badgeText!,
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontSize: 9.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: ht.accent,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: ScreenConstant.size27),
+
+                    // Search card
+                    _FadeSlideIn(delayMs: 220, child: _buildSearchCard(ht)),
+                    SizedBox(height: ScreenConstant.size20),
+
+                    /*
+                    // ---- Trek Types Card (Weekend / Personalized) ----
+                    // Temporarily disabled. Restore by uncommenting.
+                    Container(
+                      margin: const EdgeInsets.only(left: 20, right: 20),
+                      child: Card(
+                        color: CommonColors.whiteColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(ScreenConstant.size12),
+                        ),
+                        child: Padding(
+                          padding: EdgeInsets.all(ScreenConstant.size15),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: InkWell(
+                                  onTap: () async {
+                                    if (!_isFormValid) {
+                                      CustomSnackBar.show(
+                                        context,
+                                        message: 'Please provide valid inputs',
+                                      );
+                                      return;
+                                    }
+                                    if (_nearestWeekendDates.isEmpty) {
+                                      _updateNearestWeekendDates();
+                                    }
+                                    await _trekC.fetchWeekendTreks(
+                                      cityId:
+                                          _dashboardC.fromController.value.text,
+                                      trekId:
+                                          _dashboardC.toController.value.text,
+                                      date:
+                                          _dashboardC.dateController.value.text,
+                                      refresh: true,
+                                    );
+                                    Get.toNamed(
+                                      '/weekend-treks',
+                                      arguments: {
+                                        'city': _dashboardC
+                                            .fromController.value.text,
+                                        'trek':
+                                            _dashboardC.toController.value.text,
+                                        'date': _dashboardC
+                                            .dateController.value.text,
+                                        'weekendDates': _nearestWeekendDates,
+                                      },
+                                    );
+                                  },
+                                  child: Column(
+                                    children: [
+                                      Text(
+                                        'Weekend Treks',
+                                        textScaler:
+                                            const TextScaler.linear(1.0),
+                                        style: TextStyle(
+                                          fontFamily: 'Poppins',
+                                          fontSize: FontSize.s10,
+                                          fontWeight: FontWeight.w600,
+                                          color: _isFormValid
+                                              ? _C.ink
+                                              : _C.inkLight,
+                                        ),
+                                      ),
+                                      SizedBox(height: ScreenConstant.size4),
+                                      SvgPicture.asset(
+                                        CommonImages.weekend,
+                                        height: ScreenConstant.size25,
+                                        width: ScreenConstant.size25,
+                                        colorFilter: ColorFilter.mode(
+                                          _isFormValid ? _C.teal : _C.inkLight,
+                                          BlendMode.srcIn,
+                                        ),
+                                      ),
+                                      if (_isFormValid &&
+                                          _nearestWeekendDates.isNotEmpty)
+                                        Padding(
+                                          padding:
+                                              const EdgeInsets.only(top: 4),
+                                          child: Text(
+                                            'Next: ${DateFormat('EEE, MMM d').format(_nearestWeekendDates.first)}',
+                                            textScaler:
+                                                const TextScaler.linear(1.0),
+                                            style: TextStyle(
+                                              fontFamily: 'Poppins',
+                                              fontSize: FontSize.s8,
+                                              color: _C.inkMid,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                width: 1,
+                                height: ScreenConstant.size50,
+                                color: _C.fieldBorder,
+                              ),
+                              Expanded(
+                                child: InkWell(
+                                  onTap: () {
+                                    if (!_isFormValid) {
+                                      CustomSnackBar.show(
+                                        context,
+                                        message: 'Please provide valid inputs',
+                                      );
+                                      return;
+                                    }
+                                    Get.toNamed(
+                                      '/personalized-treks',
+                                      arguments: {
+                                        'city': _dashboardC
+                                            .fromController.value.text,
+                                        'trek':
+                                            _dashboardC.toController.value.text,
+                                        'date': _dashboardC
+                                            .dateController.value.text,
+                                      },
+                                    );
+                                  },
+                                  child: Column(
+                                    children: [
+                                      Text(
+                                        'Personalized Treks',
+                                        textScaler:
+                                            const TextScaler.linear(1.0),
+                                        style: TextStyle(
+                                          fontFamily: 'Poppins',
+                                          fontSize: FontSize.s10,
+                                          fontWeight: FontWeight.w600,
+                                          color: _isFormValid
+                                              ? _C.ink
+                                              : _C.inkLight,
+                                        ),
+                                      ),
+                                      SizedBox(height: ScreenConstant.size4),
+                                      SvgPicture.asset(
+                                        CommonImages.weekend2,
+                                        height: ScreenConstant.size25,
+                                        width: ScreenConstant.size25,
+                                        colorFilter: ColorFilter.mode(
+                                          _isFormValid ? _C.teal : _C.inkLight,
+                                          BlendMode.srcIn,
+                                        ),
+                                      ),
+                                      if (_isFormValid &&
+                                          _nearestWeekendDates.isNotEmpty)
+                                        Padding(
+                                          padding:
+                                              const EdgeInsets.only(top: 4),
+                                          child: Text(
+                                            'Unique Trekking Routes',
+                                            textScaler:
+                                                const TextScaler.linear(1.0),
+                                            style: TextStyle(
+                                              fontFamily: 'Poppins',
+                                              fontSize: FontSize.s8,
+                                              color: _C.inkMid,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: ScreenConstant.size20),
+                    */
+
+                    // Search button — themed accent + breathing glow
+                    _FadeSlideIn(
+                      delayMs: 340,
+                      child: Center(
+                        child: AnimatedBuilder(
+                          animation: Listenable.merge([
+                            _scaleAnimation,
+                            _glowController,
+                          ]),
+                          builder: (context, child) {
+                            final glowAlpha = _isPressed
+                                ? 0.0
+                                : 0.20 + 0.16 * _glowController.value;
+                            return Transform.scale(
+                              scale: _scaleAnimation.value,
+                              child: Container(
+                                width: MediaQuery.of(context).size.width * 0.75,
+                                height: ScreenConstant.size44,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(30),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: ht.accent.withValues(
+                                        alpha: glowAlpha,
+                                      ),
+                                      blurRadius:
+                                          12 + 6 * _glowController.value,
+                                      offset: const Offset(0, 5),
+                                    ),
+                                  ],
+                                ),
+                                child: CommonButton(
+                                  textColor: Colors.white,
+                                  text: 'Search',
+                                  onPressed: _handleSearchPress,
+                                  backgroundColor: ht.accent,
+                                  fontSize: FontSize.s15,
+                                  fontWeight: FontWeight.w600,
+                                  isFullWidth: true,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: ScreenConstant.size30),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchCard(DashboardHeaderTheme ht) {
+    return Container(
+      margin: const EdgeInsets.only(left: 30, right: 30),
+      child: Card(
+        color: CommonColors.whiteColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(ScreenConstant.size20),
+        ),
+        elevation: 3,
+        child: Padding(
+          padding: EdgeInsets.only(
+            left: ScreenConstant.size25,
+            right: ScreenConstant.size25,
+            top: ScreenConstant.size20,
+            bottom: ScreenConstant.size16,
+          ),
+          child: Column(
+            children: [
+              _buildLocationField(
+                ht: ht,
+                controller: _dashboardC.fromController.value,
+                hint: 'From',
+                iconAsset: CommonImages.location3,
+                onTap: _selectSourceLocation,
+              ),
+              const Divider(color: _C.fieldBorder),
+              _buildLocationField(
+                ht: ht,
+                controller: _dashboardC.toController.value,
+                hint: 'To',
+                iconAsset: CommonImages.location2,
+                onTap: _selectDestinationTrek,
+              ),
+              const Divider(color: _C.fieldBorder),
+              _buildDateSection(ht),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLocationField({
+    required DashboardHeaderTheme ht,
+    required TextEditingController controller,
+    required String hint,
+    required String iconAsset,
+    required VoidCallback onTap,
+  }) {
+    return Stack(
+      children: [
+        Row(
+          children: [
+            GestureDetector(
+              onTap: onTap,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: SvgPicture.asset(
+                  iconAsset,
+                  height: ScreenConstant.size24,
+                  width: ScreenConstant.size24,
+                  colorFilter: ColorFilter.mode(ht.accent, BlendMode.srcIn),
+                ),
+              ),
+            ),
+            SizedBox(width: ScreenConstant.size12),
+            Expanded(
+              child: MediaQuery(
+                data: MediaQuery.of(
+                  context,
+                ).copyWith(textScaler: const TextScaler.linear(1.0)),
+                child: TextFormField(
+                  controller: controller,
+                  readOnly: true,
+                  onTap: onTap,
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: FontSize.s14,
+                    fontWeight: FontWeight.w600,
+                    color: ht.ink,
+                  ),
+                  decoration: InputDecoration(
+                    border: InputBorder.none,
+                    hintText: hint,
+                    hintStyle: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: FontSize.s14,
+                      fontWeight: FontWeight.w500,
+                      color: ht.inkLight,
+                    ),
+                    contentPadding: const EdgeInsets.only(right: 36),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        Positioned.fill(
+          child: TouchRipple(
+            rippleColor: ht.accent.withValues(alpha: 0.08),
+            onTap: onTap,
+            child: const SizedBox.expand(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Departure-date section. If the selected route has NO bookable dates,
+  /// the whole section (calendar icon + label + chips) is replaced by a
+  /// compact animated empty state.
+  Widget _buildDateSection(DashboardHeaderTheme ht) {
+    return Obx(() {
+      final cityId = _dashboardC.selectedCityId.value;
+      final trekId = _dashboardC.selectedTrekId.value;
+      final selectedDateValue = _dashboardC.selectedDate.value;
+      final dateText = _dashboardC.dateController.value.text;
+      final observerState = _dashboardC.calenderTrekDatesObserver.value;
+
+      final bool isCityTrekSelected = cityId != 0 && trekId != 0;
+      final bool datesLoading = observerState.maybeWhen(
+        loading: (_) => true,
+        orElse: () => false,
+      );
+
+      final List<TrekDatesModel> calenderTrekDates = observerState.maybeWhen(
+        success: (r) =>
+            (r as CalenderDatesResponseModel).data?.dates ?? <TrekDatesModel>[],
+        orElse: () => <TrekDatesModel>[],
+      );
+
+      final DateTime now = _ntpTime ?? DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+
+      final List<TrekDatesModel> upcomingDates = calenderTrekDates.where((d) {
+        if (d.date == null) return false;
+        final dt = DateTime.tryParse(d.date!);
+        if (dt == null) return false;
+        return dt.isAfter(today.subtract(const Duration(days: 1)));
+      }).toList();
+
+      // Route chosen, dates finished loading, nothing bookable →
+      // full-section empty state instead of untappable chips.
+      final bool noTreksOnRoute =
+          isCityTrekSelected &&
+          !datesLoading &&
+          upcomingDates.isEmpty &&
+          dateText.isEmpty;
+
+      if (noTreksOnRoute) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: _NoTreksOnRoute(
+            accent: ht.accent,
+            accentSoft: ht.accentSoft,
+            ink: ht.ink,
+            inkMid: ht.inkMid,
+          ),
+        );
+      }
+
+      final first10Dates = upcomingDates.take(10).toList();
+
+      return InkWell(
+        onTap: () => _selectDate(context),
+        borderRadius: BorderRadius.circular(8),
+        splashColor: ht.accent.withValues(alpha: 0.08),
+        highlightColor: ht.accent.withValues(alpha: 0.04),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 18, right: 8),
+                child: SvgPicture.asset(
+                  CommonImages.calendar,
+                  height: ScreenConstant.size24,
+                  width: ScreenConstant.size24,
+                  colorFilter: ColorFilter.mode(ht.accent, BlendMode.srcIn),
+                ),
+              ),
+              SizedBox(width: ScreenConstant.size12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(height: 1.h),
+                    Text(
+                      'Departure Date',
+                      textScaler: const TextScaler.linear(1.0),
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        color: ht.inkLight,
+                        fontSize: FontSize.s10,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    SizedBox(height: 0.2.h),
+                    if (!isCityTrekSelected)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4.0),
+                        child: Text(
+                          'Select source & destination first',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: FontSize.s10,
+                            color: ht.inkLight,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      )
+                    else if (dateText.isNotEmpty)
+                      _buildSelectedDateDisplay(ht, dateText, selectedDateValue)
+                    else if (datesLoading)
+                      Container(
+                        margin: EdgeInsets.only(top: 1.h),
+                        height: 6.h,
+                        child: Row(
+                          children: List.generate(
+                            4,
+                            (i) => Container(
+                              width: 17.w,
+                              margin: EdgeInsets.only(right: 2.w),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ).withShimmerAi(loading: true),
+                          ),
+                        ),
+                      )
+                    else
+                      _buildDateChips(ht, first10Dates),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    });
+  }
+
+  Widget _buildSelectedDateDisplay(
+    DashboardHeaderTheme ht,
+    String dateText,
+    DateTime? selectedDateValue,
+  ) {
+    final bool isAvailable =
+        selectedDateValue != null &&
+        _dashboardC.isDateAvailable(selectedDateValue);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              dateText,
+              textScaler: const TextScaler.linear(1.0),
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: FontSize.s12,
+                fontWeight: FontWeight.w600,
+                color: ht.ink,
+              ),
+            ),
+            if (selectedDateValue != null)
+              Padding(
+                padding: const EdgeInsets.only(left: 8.0),
+                child: Icon(
+                  isAvailable ? Icons.check_circle : Icons.warning,
+                  size: 14,
+                  color: isAvailable ? ht.accent : _C.danger,
+                ),
+              ),
+          ],
+        ),
+        if (selectedDateValue != null && isAvailable)
+          Padding(
+            padding: const EdgeInsets.only(top: 4.0),
+            child: Text(
+              '${_dashboardC.getTrekCountForDate(selectedDateValue)} trek${_dashboardC.getTrekCountForDate(selectedDateValue) > 1 ? 's' : ''} available',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: FontSize.s8,
+                fontWeight: FontWeight.w500,
+                color: ht.accent,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildDateChips(
+    DashboardHeaderTheme ht,
+    List<TrekDatesModel> first10Dates,
+  ) {
+    if (first10Dates.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 8.0),
+        child: Text(
+          'No available dates found',
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: FontSize.s10,
+            color: ht.inkLight,
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      margin: EdgeInsets.only(top: 1.h),
+      height: 6.h,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        itemCount: first10Dates.length,
+        itemBuilder: (ctx, index) {
+          final cardData = first10Dates[index];
+          final DateTime? date = DateTime.tryParse(cardData.date ?? '');
+          if (date == null) return const SizedBox();
+
+          final String formattedDate = DateFormat('d MMM').format(date);
+          final bool isSelected = isSameDay(
+            _dashboardC.selectedDate.value,
+            date,
+          );
+          final bool isDateAvailable = _dashboardC.isDateAvailable(date);
+          final int trekCount = _dashboardC.getTrekCountForDate(date);
+
+          return GestureDetector(
+            onTap: () {
+              if (isDateAvailable) {
+                setState(() {
+                  _dashboardC.selectedDate.value = date;
+                  _dashboardC.dateController.value.text = DateFormat(
+                    'dd/MM/yyyy',
+                  ).format(date);
+                  _selectedDay = date;
+                  _focusedDay = date;
+                  _updateNearestWeekendDates();
+                });
+                CustomSnackBar.show(
+                  context,
+                  message: 'Date selected: $formattedDate',
+                );
+              } else {
+                CustomSnackBar.show(
+                  context,
+                  message: 'No treks available on this date',
+                );
+              }
+            },
+            child: Container(
+              margin: EdgeInsets.only(
+                left: index == 0 ? 0 : ScreenConstant.size6,
+                right: index == first10Dates.length - 1
+                    ? 0
+                    : ScreenConstant.size6,
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: isSelected
+                      ? ht.accent
+                      : isDateAvailable
+                      ? ht.accent.withValues(alpha: 0.35)
+                      : _C.fieldBorder,
+                  width: isSelected ? 1.5 : 0.8,
+                ),
+                borderRadius: BorderRadius.circular(12),
+                color: isSelected
+                    ? ht.accentSoft
+                    : isDateAvailable
+                    ? ht.accentSoft.withValues(alpha: 0.4)
+                    : _C.fieldBg,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    formattedDate,
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: FontSize.s10,
+                      fontWeight: isSelected
+                          ? FontWeight.w700
+                          : FontWeight.w500,
+                      color: isSelected
+                          ? ht.accent
+                          : isDateAvailable
+                          ? ht.accent
+                          : ht.inkMid,
+                    ),
+                  ),
+                  if (isDateAvailable && trekCount > 0)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2.0),
+                      child: Text(
+                        '$trekCount',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: FontSize.s8,
+                          fontWeight: FontWeight.w700,
+                          color: ht.accent,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
   // Build
   // ---------------------------------------------------------------------------
 
@@ -916,768 +1734,17 @@ class _DashboardState extends State<Dashboard>
         controller: _scrollController,
         child: Column(
           children: [
-            // ----------------------------------------------------------------
-            // Gradient header card
-            // ----------------------------------------------------------------
-            Card(
-              elevation: 2,
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(18),
-                  bottomRight: Radius.circular(18),
+            // Dynamic themed header — cross-fades between themes
+            Obx(() {
+              final ht = _themeC.theme.value;
+              return AnimatedSwitcher(
+                duration: const Duration(milliseconds: 600),
+                child: KeyedSubtree(
+                  key: ValueKey('header_${ht.id}'),
+                  child: _buildHeader(ht),
                 ),
-              ),
-              margin: const EdgeInsets.only(
-                left: 0,
-                right: 0,
-                top: 0,
-                bottom: 5,
-              ),
-              child: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Color(0xFFFEF200), Color(0xFFFFFFFF)],
-                  ),
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(18),
-                    bottomRight: Radius.circular(18),
-                  ),
-                ),
-                child: SafeArea(
-                  bottom: false,
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: ScreenConstant.size16,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(height: ScreenConstant.size20),
-                        // Logo + Help
-                        Container(
-                          margin: const EdgeInsets.only(left: 18, right: 18),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Image.asset(
-                                CommonImages.logo1,
-                                height: 7.h,
-                                width: 30.w,
-                              ),
-                              GestureDetector(
-                                onTap: () => Get.toNamed('/help'),
-                                child: SvgPicture.asset(
-                                  CommonImages.help,
-                                  colorFilter: const ColorFilter.mode(
-                                    _C.ink,
-                                    BlendMode.srcIn,
-                                  ),
-                                  height: 2.8.h,
-                                  width: 3.w,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(height: 2.h),
-                        Center(
-                          child: Text(
-                            'Hike Beyond Limits with',
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: FontSize.s14,
-                              color: _C.ink,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: -0.2,
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: ScreenConstant.size27),
-
-                        // ---- Search Card ----
-                        Container(
-                          margin: const EdgeInsets.only(left: 30, right: 30),
-                          child: Card(
-                            color: CommonColors.whiteColor,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                ScreenConstant.size20,
-                              ),
-                            ),
-                            elevation: 3,
-                            child: Padding(
-                              padding: EdgeInsets.only(
-                                left: ScreenConstant.size25,
-                                right: ScreenConstant.size25,
-                                top: ScreenConstant.size20,
-                                bottom: ScreenConstant.size16,
-                              ),
-                              child: Column(
-                                children: [
-                                  // From
-                                  Stack(
-                                    children: [
-                                      Row(
-                                        children: [
-                                          GestureDetector(
-                                            onTap: _selectSourceLocation,
-                                            child: Padding(
-                                              padding: const EdgeInsets.only(
-                                                right: 8,
-                                              ),
-                                              child: SvgPicture.asset(
-                                                CommonImages.location3,
-                                                height: ScreenConstant.size24,
-                                                width: ScreenConstant.size24,
-                                                colorFilter:
-                                                    const ColorFilter.mode(
-                                                      _C.teal,
-                                                      BlendMode.srcIn,
-                                                    ),
-                                              ),
-                                            ),
-                                          ),
-                                          SizedBox(
-                                            width: ScreenConstant.size12,
-                                          ),
-                                          Expanded(
-                                            child: MediaQuery(
-                                              data: MediaQuery.of(context)
-                                                  .copyWith(
-                                                    textScaler:
-                                                        const TextScaler.linear(
-                                                          1.0,
-                                                        ),
-                                                  ),
-                                              child: TextFormField(
-                                                controller: _dashboardC
-                                                    .fromController
-                                                    .value,
-                                                readOnly: true,
-                                                onTap: _selectSourceLocation,
-                                                style: TextStyle(
-                                                  fontFamily: 'Poppins',
-                                                  fontSize: FontSize.s14,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: _C.ink,
-                                                ),
-                                                decoration: InputDecoration(
-                                                  border: InputBorder.none,
-                                                  hintText: 'From',
-                                                  hintStyle: TextStyle(
-                                                    fontFamily: 'Poppins',
-                                                    fontSize: FontSize.s14,
-                                                    fontWeight: FontWeight.w500,
-                                                    color: _C.inkLight,
-                                                  ),
-                                                  contentPadding:
-                                                      const EdgeInsets.only(
-                                                        right: 36,
-                                                      ),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      Positioned.fill(
-                                        child: TouchRipple(
-                                          rippleColor: _C.teal.withValues(
-                                            alpha: 0.08,
-                                          ),
-                                          onTap: _selectSourceLocation,
-                                          child: const SizedBox.expand(),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const Divider(color: _C.fieldBorder),
-
-                                  // To
-                                  Stack(
-                                    children: [
-                                      Row(
-                                        children: [
-                                          GestureDetector(
-                                            onTap: _selectDestinationTrek,
-                                            child: Padding(
-                                              padding: const EdgeInsets.only(
-                                                right: 8,
-                                              ),
-                                              child: SvgPicture.asset(
-                                                CommonImages.location2,
-                                                height: ScreenConstant.size24,
-                                                width: ScreenConstant.size24,
-                                                colorFilter:
-                                                    const ColorFilter.mode(
-                                                      _C.teal,
-                                                      BlendMode.srcIn,
-                                                    ),
-                                              ),
-                                            ),
-                                          ),
-                                          SizedBox(
-                                            width: ScreenConstant.size12,
-                                          ),
-                                          Expanded(
-                                            child: MediaQuery(
-                                              data: MediaQuery.of(context)
-                                                  .copyWith(
-                                                    textScaler:
-                                                        const TextScaler.linear(
-                                                          1.0,
-                                                        ),
-                                                  ),
-                                              child: TextFormField(
-                                                controller: _dashboardC
-                                                    .toController
-                                                    .value,
-                                                readOnly: true,
-                                                onTap: _selectDestinationTrek,
-                                                style: TextStyle(
-                                                  fontFamily: 'Poppins',
-                                                  fontSize: FontSize.s14,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: _C.ink,
-                                                ),
-                                                decoration: InputDecoration(
-                                                  border: InputBorder.none,
-                                                  hintText: 'To',
-                                                  hintStyle: TextStyle(
-                                                    fontFamily: 'Poppins',
-                                                    fontSize: FontSize.s14,
-                                                    fontWeight: FontWeight.w500,
-                                                    color: _C.inkLight,
-                                                  ),
-                                                  contentPadding:
-                                                      const EdgeInsets.only(
-                                                        right: 36,
-                                                      ),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      Positioned.fill(
-                                        child: TouchRipple(
-                                          rippleColor: _C.teal.withValues(
-                                            alpha: 0.08,
-                                          ),
-                                          onTap: _selectDestinationTrek,
-                                          child: const SizedBox.expand(),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const Divider(color: _C.fieldBorder),
-
-                                  // Date field
-                                  InkWell(
-                                    onTap: () => _selectDate(context),
-                                    borderRadius: BorderRadius.circular(8),
-                                    splashColor: _C.teal.withValues(
-                                      alpha: 0.08,
-                                    ),
-                                    highlightColor: _C.teal.withValues(
-                                      alpha: 0.04,
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 4,
-                                      ),
-                                      child: Row(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Padding(
-                                            padding: EdgeInsets.only(
-                                              top: 18,
-                                              right: 8,
-                                            ),
-                                            child: SvgPicture.asset(
-                                              CommonImages.calendar,
-                                              height: ScreenConstant.size24,
-                                              width: ScreenConstant.size24,
-                                              colorFilter:
-                                                  const ColorFilter.mode(
-                                                    _C.teal,
-                                                    BlendMode.srcIn,
-                                                  ),
-                                            ),
-                                          ),
-                                          SizedBox(
-                                            width: ScreenConstant.size12,
-                                          ),
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                SizedBox(height: 1.h),
-                                                Text(
-                                                  'Departure Date',
-                                                  textScaler:
-                                                      const TextScaler.linear(
-                                                        1.0,
-                                                      ),
-                                                  style: TextStyle(
-                                                    fontFamily: 'Poppins',
-                                                    color: _C.inkLight,
-                                                    fontSize: FontSize.s10,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                                ),
-                                                SizedBox(height: 0.2.h),
-                                                Obx(() {
-                                                  final cityId = _dashboardC
-                                                      .selectedCityId
-                                                      .value;
-                                                  final trekId = _dashboardC
-                                                      .selectedTrekId
-                                                      .value;
-                                                  final selectedDateValue =
-                                                      _dashboardC
-                                                          .selectedDate
-                                                          .value;
-                                                  final dateText = _dashboardC
-                                                      .dateController
-                                                      .value
-                                                      .text;
-                                                  final observerState = _dashboardC
-                                                      .calenderTrekDatesObserver
-                                                      .value;
-
-                                                  final bool
-                                                  isCityTrekSelected =
-                                                      cityId != 0 &&
-                                                      trekId != 0;
-
-                                                  if (!isCityTrekSelected) {
-                                                    return Padding(
-                                                      padding:
-                                                          const EdgeInsets.only(
-                                                            top: 4.0,
-                                                          ),
-                                                      child: Text(
-                                                        'Select source & destination first',
-                                                        style: TextStyle(
-                                                          fontFamily: 'Poppins',
-                                                          fontSize:
-                                                              FontSize.s10,
-                                                          color: _C.inkLight,
-                                                          fontStyle:
-                                                              FontStyle.italic,
-                                                        ),
-                                                      ),
-                                                    );
-                                                  }
-
-                                                  if (dateText.isNotEmpty) {
-                                                    final bool isAvailable =
-                                                        selectedDateValue !=
-                                                            null &&
-                                                        _dashboardC
-                                                            .isDateAvailable(
-                                                              selectedDateValue,
-                                                            );
-                                                    return Column(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                        Row(
-                                                          children: [
-                                                            Text(
-                                                              dateText,
-                                                              textScaler:
-                                                                  const TextScaler.linear(
-                                                                    1.0,
-                                                                  ),
-                                                              style: TextStyle(
-                                                                fontFamily:
-                                                                    'Poppins',
-                                                                fontSize:
-                                                                    FontSize
-                                                                        .s12,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w600,
-                                                                color: _C.ink,
-                                                              ),
-                                                            ),
-                                                            if (selectedDateValue !=
-                                                                null)
-                                                              Padding(
-                                                                padding:
-                                                                    const EdgeInsets.only(
-                                                                      left: 8.0,
-                                                                    ),
-                                                                child: Icon(
-                                                                  isAvailable
-                                                                      ? Icons
-                                                                            .check_circle
-                                                                      : Icons
-                                                                            .warning,
-                                                                  size: 14,
-                                                                  color:
-                                                                      isAvailable
-                                                                      ? _C.teal
-                                                                      : _C.danger,
-                                                                ),
-                                                              ),
-                                                          ],
-                                                        ),
-                                                        if (selectedDateValue !=
-                                                                null &&
-                                                            isAvailable)
-                                                          Padding(
-                                                            padding:
-                                                                const EdgeInsets.only(
-                                                                  top: 4.0,
-                                                                ),
-                                                            child: Text(
-                                                              '${_dashboardC.getTrekCountForDate(selectedDateValue)} trek${_dashboardC.getTrekCountForDate(selectedDateValue) > 1 ? 's' : ''} available',
-                                                              style: TextStyle(
-                                                                fontFamily:
-                                                                    'Poppins',
-                                                                fontSize:
-                                                                    FontSize.s8,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w500,
-                                                                color: _C.teal,
-                                                              ),
-                                                            ),
-                                                          ),
-                                                      ],
-                                                    );
-                                                  }
-
-                                                  final datesLoading =
-                                                      observerState.maybeWhen(
-                                                        loading: (_) => true,
-                                                        orElse: () => false,
-                                                      );
-
-                                                  final List<TrekDatesModel>?
-                                                  calenderTrekDates =
-                                                      observerState.maybeWhen(
-                                                        success: (r) =>
-                                                            (r
-                                                                    as CalenderDatesResponseModel)
-                                                                .data
-                                                                ?.dates,
-                                                        error: (_) => [],
-                                                        orElse: () => [],
-                                                      );
-
-                                                  final DateTime now =
-                                                      _ntpTime ??
-                                                      DateTime.now();
-                                                  final today = DateTime(
-                                                    now.year,
-                                                    now.month,
-                                                    now.day,
-                                                  );
-
-                                                  final List<TrekDatesModel>
-                                                  first10Dates =
-                                                      (calenderTrekDates ?? [])
-                                                          .where((d) {
-                                                            if (d.date ==
-                                                                null) {
-                                                              return false;
-                                                            }
-                                                            final dt =
-                                                                DateTime.tryParse(
-                                                                  d.date!,
-                                                                );
-                                                            if (dt == null) {
-                                                              return false;
-                                                            }
-                                                            return dt.isAfter(
-                                                              today.subtract(
-                                                                const Duration(
-                                                                  days: 1,
-                                                                ),
-                                                              ),
-                                                            );
-                                                          })
-                                                          .take(10)
-                                                          .toList();
-
-                                                  if (first10Dates.isEmpty) {
-                                                    return Padding(
-                                                      padding:
-                                                          const EdgeInsets.only(
-                                                            top: 8.0,
-                                                          ),
-                                                      child: Text(
-                                                        'No available dates found',
-                                                        style: TextStyle(
-                                                          fontFamily: 'Poppins',
-                                                          fontSize:
-                                                              FontSize.s10,
-                                                          color: _C.inkLight,
-                                                        ),
-                                                      ),
-                                                    );
-                                                  }
-
-                                                  return Container(
-                                                    margin: EdgeInsets.only(
-                                                      top: 1.h,
-                                                    ),
-                                                    height: 6.h,
-                                                    child: ListView.builder(
-                                                      key: ValueKey(
-                                                        'date_list_${observerState.hashCode}_${first10Dates.length}',
-                                                      ),
-                                                      scrollDirection:
-                                                          Axis.horizontal,
-                                                      physics:
-                                                          const BouncingScrollPhysics(),
-                                                      itemCount:
-                                                          first10Dates.length,
-                                                      itemBuilder: (ctx, index) {
-                                                        final cardData =
-                                                            first10Dates[index];
-                                                        final DateTime? date =
-                                                            DateTime.tryParse(
-                                                              cardData.date ??
-                                                                  '',
-                                                            );
-                                                        if (date == null) {
-                                                          return const SizedBox();
-                                                        }
-
-                                                        final String
-                                                        formattedDate =
-                                                            DateFormat(
-                                                              'd MMM',
-                                                            ).format(date);
-                                                        final bool isSelected =
-                                                            isSameDay(
-                                                              _dashboardC
-                                                                  .selectedDate
-                                                                  .value,
-                                                              date,
-                                                            );
-                                                        final bool
-                                                        isDateAvailable =
-                                                            _dashboardC
-                                                                .isDateAvailable(
-                                                                  date,
-                                                                );
-                                                        final int
-                                                        trekCount = _dashboardC
-                                                            .getTrekCountForDate(
-                                                              date,
-                                                            );
-
-                                                        return GestureDetector(
-                                                          onTap: () {
-                                                            if (isDateAvailable) {
-                                                              setState(() {
-                                                                _dashboardC
-                                                                        .selectedDate
-                                                                        .value =
-                                                                    date;
-                                                                _dashboardC
-                                                                    .dateController
-                                                                    .value
-                                                                    .text = DateFormat(
-                                                                  'dd/MM/yyyy',
-                                                                ).format(date);
-                                                                _selectedDay =
-                                                                    date;
-                                                                _focusedDay =
-                                                                    date;
-                                                              });
-                                                              CustomSnackBar.show(
-                                                                context,
-                                                                message:
-                                                                    'Date selected: $formattedDate',
-                                                              );
-                                                            } else {
-                                                              CustomSnackBar.show(
-                                                                context,
-                                                                message:
-                                                                    'No treks available on this date',
-                                                              );
-                                                            }
-                                                          },
-                                                          child:
-                                                              Container(
-                                                                margin: EdgeInsets.only(
-                                                                  left:
-                                                                      index == 0
-                                                                      ? 0
-                                                                      : ScreenConstant
-                                                                            .size6,
-                                                                  right:
-                                                                      index ==
-                                                                          first10Dates.length -
-                                                                              1
-                                                                      ? 0
-                                                                      : ScreenConstant
-                                                                            .size6,
-                                                                ),
-                                                                padding:
-                                                                    const EdgeInsets.symmetric(
-                                                                      horizontal:
-                                                                          12,
-                                                                      vertical:
-                                                                          8,
-                                                                    ),
-                                                                decoration: BoxDecoration(
-                                                                  border: Border.all(
-                                                                    color:
-                                                                        isSelected
-                                                                        ? _C.teal
-                                                                        : isDateAvailable
-                                                                        ? _C.teal.withValues(
-                                                                            alpha:
-                                                                                0.35,
-                                                                          )
-                                                                        : _C.fieldBorder,
-                                                                    width:
-                                                                        isSelected
-                                                                        ? 1.5
-                                                                        : 0.8,
-                                                                  ),
-                                                                  borderRadius:
-                                                                      BorderRadius.circular(
-                                                                        12,
-                                                                      ),
-                                                                  color:
-                                                                      isSelected
-                                                                      ? _C.tealSoft
-                                                                      : isDateAvailable
-                                                                      ? _C.tealSoft.withValues(
-                                                                          alpha:
-                                                                              0.4,
-                                                                        )
-                                                                      : _C.fieldBg,
-                                                                ),
-                                                                child: Column(
-                                                                  mainAxisSize:
-                                                                      MainAxisSize
-                                                                          .min,
-                                                                  mainAxisAlignment:
-                                                                      MainAxisAlignment
-                                                                          .center,
-                                                                  children: [
-                                                                    Text(
-                                                                      formattedDate,
-                                                                      style: TextStyle(
-                                                                        fontFamily:
-                                                                            'Poppins',
-                                                                        fontSize:
-                                                                            FontSize.s10,
-                                                                        fontWeight:
-                                                                            isSelected
-                                                                            ? FontWeight.w700
-                                                                            : FontWeight.w500,
-                                                                        color:
-                                                                            isSelected
-                                                                            ? _C.teal
-                                                                            : isDateAvailable
-                                                                            ? _C.teal
-                                                                            : _C.inkMid,
-                                                                      ),
-                                                                    ),
-                                                                    if (isDateAvailable &&
-                                                                        trekCount >
-                                                                            0)
-                                                                      Padding(
-                                                                        padding: const EdgeInsets.only(
-                                                                          top:
-                                                                              2.0,
-                                                                        ),
-                                                                        child: Text(
-                                                                          '$trekCount',
-                                                                          style: TextStyle(
-                                                                            fontFamily:
-                                                                                'Poppins',
-                                                                            fontSize:
-                                                                                FontSize.s8,
-                                                                            fontWeight:
-                                                                                FontWeight.w700,
-                                                                            color:
-                                                                                _C.teal,
-                                                                          ),
-                                                                        ),
-                                                                      ),
-                                                                  ],
-                                                                ),
-                                                              ).withShimmerAi(
-                                                                loading:
-                                                                    datesLoading,
-                                                              ),
-                                                        );
-                                                      },
-                                                    ),
-                                                  );
-                                                }),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: ScreenConstant.size20),
-
-                        // ---- Search Button ----
-                        Center(
-                          child: AnimatedBuilder(
-                            animation: _scaleAnimation,
-                            builder: (context, child) => Transform.scale(
-                              scale: _scaleAnimation.value,
-                              child: Container(
-                                width: MediaQuery.of(context).size.width * 0.75,
-                                height: ScreenConstant.size44,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(30),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: _isPressed
-                                          ? Colors.transparent
-                                          : _C.teal.withValues(alpha: 0.30),
-                                      blurRadius: 12,
-                                      offset: const Offset(0, 5),
-                                    ),
-                                  ],
-                                ),
-                                child: CommonButton(
-                                  textColor: Colors.white,
-                                  text: 'Search',
-                                  onPressed: _handleSearchPress,
-                                  backgroundColor: _C.teal,
-                                  fontSize: FontSize.s15,
-                                  fontWeight: FontWeight.w600,
-                                  isFullWidth: true,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: ScreenConstant.size30),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
+              );
+            }),
 
             // ----------------------------------------------------------------
             // Content sections — each Obx parses its own data reactively
@@ -2284,6 +2351,181 @@ class _DashboardState extends State<Dashboard>
               borderRadius: BorderRadius.circular(24),
             ),
           ).withShimmerAi(loading: true),
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Header animation helpers
+// ---------------------------------------------------------------------------
+
+/// Staggered fade + slide-up entrance for header sections.
+class _FadeSlideIn extends StatefulWidget {
+  final Widget child;
+  final int delayMs;
+
+  const _FadeSlideIn({required this.child, this.delayMs = 0});
+
+  @override
+  State<_FadeSlideIn> createState() => _FadeSlideInState();
+}
+
+class _FadeSlideInState extends State<_FadeSlideIn>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 480),
+  );
+  late final Animation<double> _a = CurvedAnimation(
+    parent: _c,
+    curve: Curves.easeOutCubic,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(Duration(milliseconds: widget.delayMs), () {
+      if (mounted) _c.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _a,
+      builder: (_, child) => Opacity(
+        opacity: _a.value,
+        child: Transform.translate(
+          offset: Offset(0, (1 - _a.value) * 18),
+          child: child,
+        ),
+      ),
+      child: widget.child,
+    );
+  }
+}
+
+/// Compact animated empty state shown when the selected From→To route has
+/// no bookable trek dates: a hiker gently pacing across a faded peak.
+class _NoTreksOnRoute extends StatefulWidget {
+  final Color accent;
+  final Color accentSoft;
+  final Color ink;
+  final Color inkMid;
+
+  const _NoTreksOnRoute({
+    required this.accent,
+    required this.accentSoft,
+    required this.ink,
+    required this.inkMid,
+  });
+
+  @override
+  State<_NoTreksOnRoute> createState() => _NoTreksOnRouteState();
+}
+
+class _NoTreksOnRouteState extends State<_NoTreksOnRoute>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1600),
+  )..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeOut,
+      builder: (_, v, child) => Opacity(
+        opacity: v,
+        child: Transform.scale(scale: 0.96 + 0.04 * v, child: child),
+      ),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        decoration: BoxDecoration(
+          color: widget.accentSoft.withValues(alpha: 0.55),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: widget.accent.withValues(alpha: 0.25)),
+        ),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 46,
+              height: 40,
+              child: AnimatedBuilder(
+                animation: _c,
+                builder: (_, __) {
+                  final t = _c.value;
+                  return Stack(
+                    children: [
+                      Positioned(
+                        bottom: 0,
+                        left: 4,
+                        child: Icon(
+                          Icons.terrain_rounded,
+                          size: 34,
+                          color: widget.accent.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 8 + 4 * math.sin(t * math.pi),
+                        left: 8 + 14 * t,
+                        child: Icon(
+                          Icons.hiking_rounded,
+                          size: 19,
+                          color: widget.accent,
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'No treks on this route yet',
+                    textScaler: TextScaler.linear(1.0),
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                      color: widget.ink,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Try a different source or destination',
+                    textScaler: TextScaler.linear(1.0),
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 9.5,
+                      color: widget.inkMid,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
