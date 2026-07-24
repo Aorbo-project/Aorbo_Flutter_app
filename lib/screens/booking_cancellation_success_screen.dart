@@ -142,36 +142,35 @@ class _BookingCancellationSuccessScreenState
 
   @override
   Widget build(BuildContext context) {
-    return Sizer(
-      builder: (context, orientation, deviceType) {
-        return Scaffold(
-          backgroundColor: _TI.bg,
-          appBar: _buildAppBar(),
-          body: _isLoading
-              ? _buildShimmerLoading()
-              : SingleChildScrollView(
-                  physics: const ClampingScrollPhysics(),
-                  padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildSuccessHero(),
-                      SizedBox(height: 2.h),
+    // No nested Sizer here — main.dart already wraps the whole app in one at
+    // the root, so a second instance here was redundant and this screen is
+    // the only one of its siblings that carried it this way.
+    return Scaffold(
+      backgroundColor: _TI.bg,
+      appBar: _buildAppBar(),
+      body: _isLoading
+          ? _buildShimmerLoading()
+          : SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildSuccessHero(),
+                  SizedBox(height: 1.5.h),
 
-                      _staggered(0, _buildCancellationStatusCard()),
-                      SizedBox(height: 2.h),
+                  _staggered(0, _buildCancellationStatusCard()),
+                  SizedBox(height: 1.5.h),
 
-                      _staggered(1, _buildBookingDetailsCard()),
-                      SizedBox(height: 2.h),
+                  _staggered(1, _buildBookingDetailsCard()),
+                  SizedBox(height: 1.5.h),
 
-                      _staggered(2, _buildNextStepsCard()),
-                      SizedBox(height: 3.h),
-                    ],
-                  ),
-                ),
-          bottomNavigationBar: _buildBottomBar(),
-        );
-      },
+                  _staggered(2, _buildNextStepsCard()),
+                  SizedBox(height: 2.h),
+                ],
+              ),
+            ),
+      bottomNavigationBar: _buildBottomBar(),
     );
   }
 
@@ -216,34 +215,34 @@ class _BookingCancellationSuccessScreenState
             curve: Curves.elasticOut,
           ),
           child: Container(
-            width: 18.w,
-            height: 18.w,
+            width: 13.w,
+            height: 13.w,
             decoration: BoxDecoration(
               color: _TI.teal,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: _TI.teal.withValues(alpha: 0.3),
-                  blurRadius: 20,
-                  spreadRadius: 2,
+                  color: _TI.teal.withValues(alpha: 0.25),
+                  blurRadius: 14,
+                  spreadRadius: 1,
                 ),
               ],
             ),
-            child: Icon(Icons.check_rounded, color: Colors.white, size: 10.w),
+            child: Icon(Icons.check_rounded, color: Colors.white, size: 7.w),
           ),
         ),
-        SizedBox(height: 2.h),
+        SizedBox(height: 1.5.h),
         Text(
           'Booking Cancelled',
           textScaler: const TextScaler.linear(1.0),
           style: TextStyle(
             fontFamily: 'Poppins',
-            fontSize: 16.sp,
+            fontSize: 14.sp,
             fontWeight: FontWeight.w800,
             color: _TI.ink,
           ),
         ),
-        SizedBox(height: 0.5.h),
+        SizedBox(height: 0.4.h),
         Text(
           'Your cancellation request has been processed successfully.',
           textAlign: TextAlign.center,
@@ -263,7 +262,7 @@ class _BookingCancellationSuccessScreenState
   // ─────────────────────────────────────────────
   Widget _buildCancellationStatusCard() {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
       decoration: BoxDecoration(
         color: _TI.cardBg,
         borderRadius: BorderRadius.circular(4.w),
@@ -276,17 +275,17 @@ class _BookingCancellationSuccessScreenState
             'Refund Details',
             Icons.account_balance_wallet_outlined,
           ),
-          SizedBox(height: 2.h),
+          SizedBox(height: 1.5.h),
 
           if (widget.cancelledData?.cancellationNumber != null) ...[
             _detailRow(
               'Cancellation ID',
               widget.cancelledData!.cancellationNumber!,
             ),
-            SizedBox(height: 1.5.h),
+            SizedBox(height: 1.2.h),
           ],
           _detailRow('Cancelled On', _formatDate(DateTime.now())),
-          SizedBox(height: 2.h),
+          SizedBox(height: 1.5.h),
 
           // Context-aware message
           Container(
@@ -324,7 +323,7 @@ class _BookingCancellationSuccessScreenState
           ),
 
           if (_hasRefund) ...[
-            SizedBox(height: 2.h),
+            SizedBox(height: 1.5.h),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -392,7 +391,7 @@ class _BookingCancellationSuccessScreenState
 
           // Credit note notice
           if (_creditNoteEligible) ...[
-            SizedBox(height: 2.h),
+            SizedBox(height: 1.5.h),
             Container(
               padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.2.h),
               decoration: BoxDecoration(
@@ -453,7 +452,7 @@ class _BookingCancellationSuccessScreenState
   // ─────────────────────────────────────────────
   Widget _buildNextStepsCard() {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
       decoration: BoxDecoration(
         color: _TI.cardBg,
         borderRadius: BorderRadius.circular(4.w),
@@ -463,7 +462,7 @@ class _BookingCancellationSuccessScreenState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _sectionHeader('What Happens Next?', Icons.timeline_outlined),
-          SizedBox(height: 2.h),
+          SizedBox(height: 1.5.h),
           _buildTimelineItem(
             'Cancellation Confirmed',
             'Your booking is officially cancelled and slots are released.',
@@ -502,8 +501,8 @@ class _BookingCancellationSuccessScreenState
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          width: 8.w,
-          height: 8.w,
+          width: 6.5.w,
+          height: 6.5.w,
           decoration: BoxDecoration(
             color: done ? _TI.teal : _TI.bg,
             shape: BoxShape.circle,
@@ -515,7 +514,7 @@ class _BookingCancellationSuccessScreenState
           child: Icon(
             icon,
             color: done ? Colors.white : _TI.inkLight,
-            size: 4.w,
+            size: 3.3.w,
           ),
         ),
         SizedBox(width: 3.w),
@@ -553,8 +552,8 @@ class _BookingCancellationSuccessScreenState
 
   Widget _buildTimelineLine() {
     return Padding(
-      padding: EdgeInsets.only(left: 3.5.w),
-      child: Container(height: 2.5.h, width: 1.5, color: _TI.divider),
+      padding: EdgeInsets.only(left: 3.15.w),
+      child: Container(height: 2.h, width: 1.5, color: _TI.divider),
     );
   }
 
@@ -725,14 +724,14 @@ class _BookingCancellationSuccessScreenState
         Row(
           children: [
             Container(
-              width: 9.w,
-              height: 9.w,
+              width: 7.w,
+              height: 7.w,
               decoration: BoxDecoration(
                 color: _TI.iconBadge,
                 borderRadius: BorderRadius.circular(2.5.w),
               ),
               child: Center(
-                child: Icon(icon, color: Colors.white, size: 4.5.w),
+                child: Icon(icon, color: Colors.white, size: 3.5.w),
               ),
             ),
             SizedBox(width: 3.w),
@@ -808,14 +807,14 @@ class _BookingCancellationSuccessScreenState
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 9.w,
-          height: 9.w,
+          width: 7.w,
+          height: 7.w,
           decoration: BoxDecoration(
             color: _TI.iconBadge,
             borderRadius: BorderRadius.circular(2.5.w),
           ),
           child: Center(
-            child: Icon(icon, color: Colors.white, size: 4.5.w),
+            child: Icon(icon, color: Colors.white, size: 3.5.w),
           ),
         ),
         SizedBox(width: 3.w),
