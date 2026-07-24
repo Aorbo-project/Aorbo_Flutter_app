@@ -144,11 +144,18 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _resetAllScrolls();
+      // These set Rx values synchronously before their first `await`, which
+      // notifies an Obx that's an ancestor of this widget in the tree. When
+      // Dashboard is freshly mounted mid-build (e.g. Get.offAll rebuilding
+      // Home after a booking completes) rather than at cold app-start, that
+      // notification lands while Flutter is still building this very
+      // subtree — "setState() or markNeedsBuild() called during build."
+      // Deferring to after the first frame avoids the collision regardless
+      // of when/how this widget gets mounted.
+      _dashboardC.fetchWhatsNew();
+      _dashboardC.fetchTopTreks();
+      _dashboardC.fetchSeasonalPicks();
     });
-
-    _dashboardC.fetchWhatsNew();
-    _dashboardC.fetchTopTreks();
-    _dashboardC.fetchSeasonalPicks();
   }
 
   @override

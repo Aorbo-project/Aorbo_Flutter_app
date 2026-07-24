@@ -5,6 +5,7 @@ import 'package:arobo_app/controller/trek_controller.dart';
 import 'package:arobo_app/controller/user_controller.dart';
 import 'package:arobo_app/freezed_models/booking/booking_data_model.dart';
 import 'package:arobo_app/screens/booking_upcoming_screen.dart';
+import 'package:arobo_app/screens/dashboard_main.dart';
 import 'package:arobo_app/utils/booking_constants.dart';
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/custom_snackbar.dart';
@@ -288,7 +289,16 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
     // Brief success flourish before navigating — matches industry pattern
     // of showing an explicit success indicator, not an instant cut-away.
     Future.delayed(const Duration(milliseconds: 900), () {
-      Get.off(
+      // Rebuild the stack as Home -> Booking Details, not just Booking
+      // Details alone. A completed booking must clear Checkout/Trek
+      // Details/Search Results behind it (Get.off alone would leave
+      // Checkout in place, landing back on the payment page on back-press)
+      // — but wiping the ENTIRE stack down to nothing also removes Home,
+      // so a single back-press exits the app outright instead of landing
+      // on Home. DashboardMain already owns proper double-back-to-exit
+      // handling, so put that back as the root first.
+      Get.offAll(() => const DashboardMain());
+      Get.to(
         () => BookingsUpcomingScreen(bookingId: finalBookingId),
         transition: Transition.rightToLeftWithFade,
         duration: const Duration(milliseconds: 350),
