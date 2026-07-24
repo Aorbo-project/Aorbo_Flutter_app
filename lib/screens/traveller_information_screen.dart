@@ -1774,6 +1774,19 @@ class _ContactDetailsSheetState extends State<_ContactDetailsSheet> {
     if (customer?.state?.id != null) {
       _stateId = customer!.state!.id!;
       _stateName = customer.state!.name ?? BookingConstants.defaultState;
+    } else {
+      // No saved state yet — the field displays BookingConstants.defaultState
+      // as a convenience default, but that's just text unless backed by a
+      // real id from the loaded state list. Without this, _stateId stays 0
+      // and _validate() silently blocks Save even though the field already
+      // shows "Telangana" as selected.
+      final matches = _dashboardC.stateList.where(
+        (s) => s.name == BookingConstants.defaultState,
+      );
+      if (matches.isNotEmpty && matches.first.id != null) {
+        _stateId = matches.first.id!;
+        _stateName = matches.first.name!;
+      }
     }
   }
 

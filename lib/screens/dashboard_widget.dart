@@ -2362,7 +2362,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
   Widget _buildTopTreksShimmerPlaceholder(double width, double height) {
     return Row(
       children: List.generate(
-        2,
+        1,
         (i) => Padding(
           padding: EdgeInsets.only(
             left: ScreenConstant.size12,

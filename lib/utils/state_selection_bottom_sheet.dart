@@ -147,5 +147,7 @@ Future<void> showStateSelectionBottomSheet({
     },
   );
 
-  searchController.dispose();
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    searchController.dispose();
+  });
 }
