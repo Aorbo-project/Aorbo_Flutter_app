@@ -1561,18 +1561,18 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                       Container(
                         margin: EdgeInsets.only(top: 1.h),
                         height: 6.h,
-                        child: Row(
-                          children: List.generate(
-                            4,
-                            (i) => Container(
-                              width: 17.w,
-                              margin: EdgeInsets.only(right: 2.w),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ).withShimmerAi(loading: true),
-                          ),
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: 4,
+                          itemBuilder: (_, i) => Container(
+                            width: 17.w,
+                            margin: EdgeInsets.only(right: 2.w),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ).withShimmerAi(loading: true),
                         ),
                       )
                     else

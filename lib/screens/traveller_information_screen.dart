@@ -314,11 +314,17 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
     });
   }
 
-  void _handleTimerExpired() {
+  void _handleTimerExpired({bool userInitiated = false}) {
     // Always record expiry, even while a payment is in flight — we
     // re-check this the moment the user returns from the payment screen.
     _isTimerExpired = true;
-    if (!mounted || _isPaymentInFlight || _didExitOnExpiry) return;
+    if (!mounted || _isPaymentInFlight) return;
+    // _didExitOnExpiry only guards the automatic pop-once behaviour (so the
+    // periodic countdown timer / resync don't stack multiple pops). A direct
+    // user tap on Pay Now after that must still give feedback — otherwise,
+    // once auto-expiry has fired once, every subsequent tap on an already-
+    // expired screen silently does nothing at all.
+    if (_didExitOnExpiry && !userInitiated) return;
     _didExitOnExpiry = true;
     // Close any bottom sheet / dialog sitting above this screen first,
     // otherwise the pop below would only dismiss the sheet and the user
@@ -384,7 +390,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
   Future<void> _handlePayNow() async {
     if (_isPaymentInFlight) return;
     if (_isTimerExpired || _remainingSecs.value <= 0) {
-      _handleTimerExpired();
+      _handleTimerExpired(userInitiated: true);
       return;
     }
     if (!_validateBeforePayment()) return;
