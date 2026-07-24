@@ -47,13 +47,12 @@ class UpcomingBookingCard extends StatelessWidget {
 
   // ── Helpers ─────────────────────────────────
 
-    String _getOriginCity() {
-    if (booking?.cityId != null) {
-      // cityId is available but city name mapping requires separate lookup
-      // Using a safe fallback since model doesn't expose city object
-      return 'Origin City';
-    }
-    return 'Origin City';
+  String _getOriginCity() {
+    // The backend already resolves and sends this (secureBookingController.js
+    // getMyBookings: data.source_city_name) — sourceCityName was parsed into
+    // the model correctly, just never read here. This was hardcoded to the
+    // literal string 'Origin City' regardless of the real value.
+    return booking?.sourceCityName ?? 'Origin City';
   }
 
   String _getDestinationCity() {

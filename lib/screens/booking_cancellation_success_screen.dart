@@ -193,6 +193,7 @@ class _BookingCancellationSuccessScreenState
       ),
       title: Text(
         'Cancellation Status',
+        textScaler: const TextScaler.linear(1.0),
         style: TextStyle(
           fontFamily: 'Poppins',
           fontSize: 13.sp,
@@ -234,6 +235,7 @@ class _BookingCancellationSuccessScreenState
         SizedBox(height: 2.h),
         Text(
           'Booking Cancelled',
+          textScaler: const TextScaler.linear(1.0),
           style: TextStyle(
             fontFamily: 'Poppins',
             fontSize: 16.sp,
@@ -245,6 +247,7 @@ class _BookingCancellationSuccessScreenState
         Text(
           'Your cancellation request has been processed successfully.',
           textAlign: TextAlign.center,
+          textScaler: const TextScaler.linear(1.0),
           style: TextStyle(
             fontFamily: 'Poppins',
             fontSize: 10.sp,
@@ -307,6 +310,7 @@ class _BookingCancellationSuccessScreenState
                         : _hasRefund
                         ? 'Your refund will be processed to your original payment method.'
                         : 'No refund is applicable for this cancellation.',
+                    textScaler: const TextScaler.linear(1.0),
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontSize: 9.sp,
@@ -329,6 +333,7 @@ class _BookingCancellationSuccessScreenState
                   children: [
                     Text(
                       'Total Refund Amount',
+                      textScaler: const TextScaler.linear(1.0),
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontSize: 9.sp,
@@ -339,6 +344,7 @@ class _BookingCancellationSuccessScreenState
                     SizedBox(height: 0.5.h),
                     Text(
                       '₹ ${widget.refund}',
+                      textScaler: const TextScaler.linear(1.0),
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontSize: 16.sp,
@@ -368,6 +374,7 @@ class _BookingCancellationSuccessScreenState
                         SizedBox(width: 1.5.w),
                         Text(
                           'Track Refund',
+                          textScaler: const TextScaler.linear(1.0),
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontSize: 9.sp,
@@ -404,6 +411,7 @@ class _BookingCancellationSuccessScreenState
                   Expanded(
                     child: Text(
                       'A credit note for GST reversal will be shared to your registered email.',
+                      textScaler: const TextScaler.linear(1.0),
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontSize: 8.sp,
@@ -517,6 +525,7 @@ class _BookingCancellationSuccessScreenState
             children: [
               Text(
                 title,
+                textScaler: const TextScaler.linear(1.0),
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   fontSize: 11.sp,
@@ -527,6 +536,7 @@ class _BookingCancellationSuccessScreenState
               SizedBox(height: 0.3.h),
               Text(
                 subtitle,
+                textScaler: const TextScaler.linear(1.0),
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   fontSize: 9.sp,
@@ -582,6 +592,7 @@ class _BookingCancellationSuccessScreenState
             child: Center(
               child: Text(
                 'Back to My Bookings',
+                textScaler: const TextScaler.linear(1.0),
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   fontSize: 12.sp,
@@ -678,6 +689,7 @@ class _BookingCancellationSuccessScreenState
                   ),
                   child: Text(
                     statusData?.statusMessage ?? 'Checking refund status...',
+                    textScaler: const TextScaler.linear(1.0),
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontSize: 9.sp,
@@ -689,6 +701,7 @@ class _BookingCancellationSuccessScreenState
                   SizedBox(height: 1.h),
                   Text(
                     'Speed: ${statusData?.refundSpeed == 'instant' ? 'Instant (within minutes)' : 'Normal (3–5 business days)'}',
+                    textScaler: const TextScaler.linear(1.0),
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontSize: 8.sp,
@@ -725,6 +738,7 @@ class _BookingCancellationSuccessScreenState
             SizedBox(width: 3.w),
             Text(
               title,
+              textScaler: const TextScaler.linear(1.0),
               style: TextStyle(
                 fontFamily: 'Poppins',
                 fontSize: 13.sp,
@@ -772,6 +786,7 @@ class _BookingCancellationSuccessScreenState
           Expanded(
             child: Text(
               label,
+              textScaler: const TextScaler.linear(1.0),
               style: TextStyle(
                 fontFamily: 'Poppins',
                 fontSize: 10.sp,
@@ -807,6 +822,7 @@ class _BookingCancellationSuccessScreenState
         Flexible(
           child: Text(
             title,
+            textScaler: const TextScaler.linear(1.0),
             style: TextStyle(
               fontFamily: 'Poppins',
               fontSize: 13.sp,
@@ -825,6 +841,7 @@ class _BookingCancellationSuccessScreenState
       children: [
         Text(
           label,
+          textScaler: const TextScaler.linear(1.0),
           style: TextStyle(
             fontFamily: 'Poppins',
             fontSize: 10.sp,
@@ -833,6 +850,7 @@ class _BookingCancellationSuccessScreenState
         ),
         Text(
           value,
+          textScaler: const TextScaler.linear(1.0),
           style: TextStyle(
             fontFamily: 'Poppins',
             fontSize: 10.sp,
