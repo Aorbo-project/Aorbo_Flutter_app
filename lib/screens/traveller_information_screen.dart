@@ -236,7 +236,14 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
         .copyWith(
           payFull: !_isFlexiblePolicy || _selectedPaymentOption == 'full',
         );
+    // BUGFIX 2026-07-25: only carry the coupon forward if we're re-entering
+    // checkout for the SAME batch (e.g. app backgrounded mid-flow). A coupon
+    // validated for a previous, unrelated batch must never leak into a new
+    // one — it isn't guaranteed to even be assigned to this trek.
+    final previousBatchId = _trekC.calculateFareRequestModel.value.batchId;
+    final newBatchId = travelData.batchId ?? 1;
     final existingCoupon = _trekC.calculateFareRequestModel.value.couponCode;
+    final carryOverCoupon = previousBatchId == newBatchId;
     selectedTravellers = List.from(_trekC.travellerDetailList);
     final restoredCount = selectedTravellers.isNotEmpty
         ? selectedTravellers.length
@@ -245,11 +252,11 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
         .calculateFareRequestModel
         .value
         .copyWith(
-          batchId: travelData.batchId ?? 1,
+          batchId: newBatchId,
           travelerCount: restoredCount,
           addInsurance: false,
           addFreeCancellationProtection: false,
-          couponCode: (existingCoupon != null && existingCoupon.isNotEmpty)
+          couponCode: (carryOverCoupon && existingCoupon != null && existingCoupon.isNotEmpty)
               ? existingCoupon
               : '',
         );

@@ -967,6 +967,17 @@ class TrekController extends GetxController {
     rating.value = 0.0;
     reviewController.value.clear();
 
+    // NOTE: deliberately NOT resetting calculateFareRequestModel here.
+    // traveller_information_screen keeps a debounce() worker on that Rx
+    // value for as long as its widget is alive on the nav stack (even when
+    // not the visible screen) — writing to it from here can retrigger a
+    // real calculate-fare API call with meaningless placeholder data
+    // (batchId: 1), which the backend correctly rejects and which then
+    // surfaces as a spurious error snackbar right after payment succeeds.
+    // The actual coupon-leak bug (see traveller_information_screen.dart
+    // initState) is fixed at the point a new checkout session starts,
+    // which is the correct place to decide whether a coupon is still valid.
+
     logger.d('TrekController: Booking data cleared');
   }
 }
