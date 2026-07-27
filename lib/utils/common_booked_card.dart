@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 import 'package:arobo_app/widgets/custom_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
@@ -11,24 +12,20 @@ import 'package:arobo_app/repository/repository.dart';
 // DESIGN TOKENS — refined for white scaffold
 // ─────────────────────────────────────────────
 class _BC {
-  // Pure white card + visible border/shadow so it pops on a white scaffold
   static const bg = Colors.white;
   static const cardBorder = Color(0xFFDDE3EC);
   static const ink = Color(0xFF0F172A);
   static const inkMid = Color(0xFF64748B);
   static const inkLight = Color(0xFF94A3B8);
   static const iconBadge = Color(0xFF1E293B);
-  // Brand accents
   static const brand = Color(0xFF3B82F6);
   static const brandSoft = Color(0xFFDBEAFE);
   static const divider = Color(0xFFE2E8F0);
-  // Status palette — more saturated for contrast on white
   static const upcoming = Color(0xFF2563EB);
   static const completed = Color(0xFF059669);
   static const ongoing = Color(0xFF0891B2);
   static const cancelled = Color(0xFFDC2626);
   static const warning = Color(0xFFF59E0B);
-  // Rating
   static const ratingBg = Color(0xFFFFFBEB);
   static const ratingBorder = Color(0xFFFDE68A);
 }
@@ -165,7 +162,12 @@ class CommonBookedCard extends StatelessWidget {
     final String bookingDate = _formatDate(booking.bookingDate);
     final bool isCompleted = trekStatusRaw.toLowerCase() == 'completed';
     final bool ratingGiven = booking.ratingGiven ?? false;
+
+    // ✅ FIXED: Safe parsing now handled by the Freezed model
+    final double ratingValue = booking.ratingValue ?? 0.0;
+
     final bool showRateHint = isCompleted && !ratingGiven;
+    final bool showRatedStrip = isCompleted && ratingGiven;
     final String title = booking.trek?.title ?? '-';
     final String? durationDays = booking.trek?.durationDays?.toString();
     final String? durationNights = booking.trek?.durationNights?.toString();
@@ -212,8 +214,6 @@ class CommonBookedCard extends StatelessWidget {
           elevation: 5,
           shadowColor: const Color(0xFF0F172A).withValues(alpha: 0.22),
           child: CustomPaint(
-            // Strokes a 1px border along the exact ticket outline
-            // (including the side notches) so the shape reads on white.
             foregroundPainter: _TicketBorderPainter(
               cornerRadius: cornerRadius,
               notchRadius: 9,
@@ -222,7 +222,6 @@ class CommonBookedCard extends StatelessWidget {
             ),
             child: Stack(
               children: [
-                // ── watermark ──
                 Positioned(
                   top: 0,
                   right: 0,
@@ -255,7 +254,6 @@ class CommonBookedCard extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // ── header ──
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
@@ -350,7 +348,6 @@ class CommonBookedCard extends StatelessWidget {
                             ],
                           ),
                           SizedBox(height: _rh(1.1, 12)),
-                          // ── title + destination ──
                           Text(
                             title,
                             maxLines: 1,
@@ -396,7 +393,6 @@ class CommonBookedCard extends StatelessWidget {
                               ),
                             ),
                           SizedBox(height: _rh(1.2, 13)),
-                          // ── journey row ──
                           Container(
                             padding: EdgeInsets.symmetric(
                               vertical: _rh(0.85, 9),
@@ -455,7 +451,7 @@ class CommonBookedCard extends StatelessWidget {
                               ],
                             ),
                           ),
-                          // ── rate hint ──
+                          // ── rate hint (completed, not yet rated) ──
                           if (showRateHint) ...[
                             SizedBox(height: _rh(1, 10)),
                             GestureDetector(
@@ -520,6 +516,76 @@ class CommonBookedCard extends StatelessWidget {
                               ),
                             ),
                           ],
+                          // ── rated strip (completed & rated) ──
+                          if (showRatedStrip) ...[
+                            SizedBox(height: _rh(1, 10)),
+                            GestureDetector(
+                              onTap: onRateTrekTap,
+                              child: Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: _rw(3.2, 15),
+                                  vertical: _rh(0.75, 8),
+                                ),
+                                decoration: BoxDecoration(
+                                  color: _BC.completed.withValues(alpha: 0.06),
+                                  borderRadius: BorderRadius.circular(
+                                    _rw(2.4, 11),
+                                  ),
+                                  border: Border.all(
+                                    color: _BC.completed.withValues(
+                                      alpha: 0.22,
+                                    ),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.verified_rounded,
+                                      color: _BC.completed,
+                                      size: _rw(4.2, 19),
+                                    ),
+                                    SizedBox(width: _rw(2.2, 10)),
+                                    Expanded(
+                                      child: Text(
+                                        'You rated this trek',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontFamily: 'Poppins',
+                                          fontSize: FontSize.s9,
+                                          fontWeight: FontWeight.w600,
+                                          color: _BC.ink,
+                                          height: 1.2,
+                                        ),
+                                      ),
+                                    ),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: List.generate(5, (i) {
+                                        return Icon(
+                                          i < ratingValue.round()
+                                              ? Icons.star_rounded
+                                              : Icons.star_border_rounded,
+                                          size: _rw(3.6, 16),
+                                          color: _BC.warning,
+                                        );
+                                      }),
+                                    ),
+                                    SizedBox(width: _rw(1.2, 6)),
+                                    Text(
+                                      ratingValue.toStringAsFixed(1),
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontSize: FontSize.s9,
+                                        fontWeight: FontWeight.w700,
+                                        color: _BC.completed,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -544,12 +610,12 @@ class CommonBookedCard extends StatelessWidget {
                               ),
                               child: Row(
                                 children: [
-                                  CustomPaint(
-                                    size: const Size(54, 22),
-                                    painter: _BarcodePainter(
-                                      seed: bookingId.hashCode,
-                                      color: _BC.ink.withValues(alpha: 0.7),
-                                    ),
+                                  // Animated route badge — a winding trail
+                                  // that "flows" toward a pulsing destination
+                                  // pin, tinted with the booking status color.
+                                  _RouteFlowBadge(
+                                    color: statusColor,
+                                    size: const Size(56, 24),
                                   ),
                                   SizedBox(width: _rw(2.2, 11)),
                                   Expanded(
@@ -593,33 +659,34 @@ class CommonBookedCard extends StatelessWidget {
                                       ],
                                     ),
                                   ),
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        'Details',
-                                        style: TextStyle(
-                                          fontFamily: 'Poppins',
-                                          fontSize: FontSize.s9,
-                                          fontWeight: FontWeight.w600,
-                                          color: _BC.brand,
+                                  if (onViewDetailsTap != null)
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          'Details',
+                                          style: TextStyle(
+                                            fontFamily: 'Poppins',
+                                            fontSize: FontSize.s9,
+                                            fontWeight: FontWeight.w600,
+                                            color: _BC.brand,
+                                          ),
                                         ),
-                                      ),
-                                      SizedBox(width: _rw(0.8, 4)),
-                                      Container(
-                                        padding: EdgeInsets.all(_rw(0.8, 4)),
-                                        decoration: const BoxDecoration(
-                                          color: _BC.brandSoft,
-                                          shape: BoxShape.circle,
+                                        SizedBox(width: _rw(0.8, 4)),
+                                        Container(
+                                          padding: EdgeInsets.all(_rw(0.8, 4)),
+                                          decoration: const BoxDecoration(
+                                            color: _BC.brandSoft,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Icon(
+                                            Icons.arrow_forward_rounded,
+                                            size: _rw(3.2, 14),
+                                            color: _BC.brand,
+                                          ),
                                         ),
-                                        child: Icon(
-                                          Icons.arrow_forward_rounded,
-                                          size: _rw(3.2, 14),
-                                          color: _BC.brand,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                      ],
+                                    ),
                                 ],
                               ),
                             ),
@@ -636,6 +703,129 @@ class CommonBookedCard extends StatelessWidget {
       ),
     );
   }
+}
+
+// ─────────────────────────────────────────────
+// ANIMATED ROUTE-FLOW BADGE (replaces hiker scene)
+// A faint winding trail with dashes flowing along it toward a
+// pulsing destination pin — start dot on the left, pin on the right.
+// ─────────────────────────────────────────────
+class _RouteFlowBadge extends StatefulWidget {
+  final Color color;
+  final Size size;
+  const _RouteFlowBadge({required this.color, required this.size});
+
+  @override
+  State<_RouteFlowBadge> createState() => _RouteFlowBadgeState();
+}
+
+class _RouteFlowBadgeState extends State<_RouteFlowBadge>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2600),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (_, __) => CustomPaint(
+        size: widget.size,
+        painter: _RouteFlowPainter(t: _ctrl.value, color: widget.color),
+      ),
+    );
+  }
+}
+
+class _RouteFlowPainter extends CustomPainter {
+  final double t;
+  final Color color;
+  const _RouteFlowPainter({required this.t, required this.color});
+
+  Path _buildRoute(Size size) {
+    final w = size.width;
+    final h = size.height;
+    return Path()
+      ..moveTo(3, h - 5)
+      ..cubicTo(w * 0.28, h - 2, w * 0.18, h * 0.15, w * 0.48, h * 0.5)
+      ..cubicTo(w * 0.72, h * 0.78, w * 0.78, 3, w - 7, 6);
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final route = _buildRoute(size);
+    final metrics = route.computeMetrics().toList();
+    if (metrics.isEmpty) return;
+    final ui.PathMetric metric = metrics.first;
+    final double length = metric.length;
+
+    // 1. Faint underlay of the full route.
+    canvas.drawPath(
+      route,
+      Paint()
+        ..color = color.withValues(alpha: 0.14)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.8
+        ..strokeCap = StrokeCap.round,
+    );
+
+    // 2. Flowing dashes ("marching ants") moving toward the destination.
+    const double dash = 5.0;
+    const double gap = 5.0;
+    const double cycle = dash + gap;
+    final double offset = t * cycle;
+    final dashPaint = Paint()
+      ..color = color.withValues(alpha: 0.85)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.8
+      ..strokeCap = StrokeCap.round;
+
+    for (double d = offset - cycle; d < length; d += cycle) {
+      final double start = d.clamp(0.0, length);
+      final double end = (d + dash).clamp(0.0, length);
+      if (end <= start) continue;
+      canvas.drawPath(metric.extractPath(start, end), dashPaint);
+    }
+
+    // 3. Start dot.
+    final Offset startPos = metric.getTangentForOffset(0)!.position;
+    canvas.drawCircle(
+      startPos,
+      2.4,
+      Paint()..color = color.withValues(alpha: 0.25),
+    );
+    canvas.drawCircle(startPos, 1.4, Paint()..color = color);
+
+    // 4. Destination pin with a soft expanding pulse ring.
+    final Offset endPos = metric.getTangentForOffset(length)!.position;
+    final double pulse = 0.5 - 0.5 * math.cos(t * 2 * math.pi); // 0→1→0
+    canvas.drawCircle(
+      endPos,
+      3.0 + pulse * 3.0,
+      Paint()
+        ..color = color.withValues(alpha: 0.28 * (1 - pulse))
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.2,
+    );
+    canvas.drawCircle(endPos, 2.8, Paint()..color = color);
+    canvas.drawCircle(endPos, 1.1, Paint()..color = Colors.white);
+  }
+
+  @override
+  bool shouldRepaint(_RouteFlowPainter old) => old.t != t || old.color != color;
 }
 
 // ─────────────────────────────────────────────
@@ -663,9 +853,6 @@ Path _buildTicketPath(
   return Path.combine(PathOperation.difference, ticket, notches);
 }
 
-// ─────────────────────────────────────────────
-// TICKET CLIPPER
-// ─────────────────────────────────────────────
 class _TicketClipper extends CustomClipper<Path> {
   final double cornerRadius;
   final double notchRadius;
@@ -689,9 +876,6 @@ class _TicketClipper extends CustomClipper<Path> {
       old.notchFromBottom != notchFromBottom;
 }
 
-// ─────────────────────────────────────────────
-// TICKET BORDER — outlines the shape on white
-// ─────────────────────────────────────────────
 class _TicketBorderPainter extends CustomPainter {
   final double cornerRadius;
   final double notchRadius;
@@ -728,9 +912,6 @@ class _TicketBorderPainter extends CustomPainter {
       old.color != color;
 }
 
-// ─────────────────────────────────────────────
-// DASHED PERFORATION
-// ─────────────────────────────────────────────
 class _DashedLinePainter extends CustomPainter {
   final Color color;
   const _DashedLinePainter({required this.color});
@@ -755,9 +936,6 @@ class _DashedLinePainter extends CustomPainter {
   bool shouldRepaint(_DashedLinePainter old) => old.color != color;
 }
 
-// ─────────────────────────────────────────────
-// DOTTED TRAIL
-// ─────────────────────────────────────────────
 class _DottedTrailPainter extends CustomPainter {
   final Color color;
   const _DottedTrailPainter({required this.color});
@@ -773,31 +951,4 @@ class _DottedTrailPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_DottedTrailPainter old) => old.color != color;
-}
-
-// ─────────────────────────────────────────────
-// BARCODE
-// ─────────────────────────────────────────────
-class _BarcodePainter extends CustomPainter {
-  final int seed;
-  final Color color;
-  const _BarcodePainter({required this.seed, required this.color});
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rnd = math.Random(seed);
-    final paint = Paint()..color = color;
-    double x = 0;
-    while (x < size.width) {
-      final double w = 0.8 + rnd.nextDouble() * 2.2;
-      final double h = rnd.nextBool()
-          ? size.height
-          : size.height * (0.6 + rnd.nextDouble() * 0.4);
-      canvas.drawRect(Rect.fromLTWH(x, size.height - h, w, h), paint);
-      x += w + 0.8 + rnd.nextDouble() * 1.8;
-    }
-  }
-
-  @override
-  bool shouldRepaint(_BarcodePainter old) =>
-      old.seed != seed || old.color != color;
 }

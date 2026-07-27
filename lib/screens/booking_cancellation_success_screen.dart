@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:sizer/sizer.dart';
 import 'package:shimmer_ai/shimmer_ai.dart';
@@ -8,11 +9,11 @@ import '../freezed_models/booking/booking_history_model.dart';
 import '../models/refund/refund_status_model.dart';
 import '../models/treaks/booking_cancelled_modal.dart';
 import '../utils/common_colors.dart';
-import '../utils/common_booked_details_card.dart';
+import '../utils/common_booked_card.dart';
 import '../utils/ist_date_utils.dart';
 
 // ─────────────────────────────────────────────
-//  DESIGN TOKENS — matches TravellerInformationScreen
+//  DESIGN TOKENS — matches BookingsCancelScreen
 // ─────────────────────────────────────────────
 class _TI {
   static const bg = CommonColors.offWhiteColor;
@@ -24,7 +25,6 @@ class _TI {
   static const teal = CommonColors.cFF0F7B6C;
   static const tealSoft = CommonColors.cFFE6F5F3;
   static const red = CommonColors.cFFDC2626;
-  static const redSoft = CommonColors.cFFFFE4E4;
   static const iconBadge = CommonColors.cFF111827;
   static const divider = CommonColors.trekroutecolorlight;
   static const orange = Color(0xFFFF9800);
@@ -34,29 +34,20 @@ class _TI {
     end: Alignment.bottomRight,
     colors: [Color(0xFF1B4332), Color(0xFF2D6A4F)],
   );
-
-  // Sheet tokens
-  static const sheetBg = Colors.white;
-  static const sheetSurface = Colors.white;
   static const sheetBorder = Color(0xFFE2E8F0);
-  static const sheetInk = Color(0xFF0F172A);
-  static const sheetInkMid = Color(0xFF64748B);
   static const sheetHandle = Color(0xFFD1D5DB);
-  static const sheetAccent = Color(0xFF111827);
 }
 
 class BookingCancellationSuccessScreen extends StatefulWidget {
   final BookingHistoryData? booking;
   final String refund;
   final BookingCancelledData? cancelledData;
-
   const BookingCancellationSuccessScreen({
     super.key,
     required this.booking,
     required this.refund,
     this.cancelledData,
   });
-
   @override
   State<BookingCancellationSuccessScreen> createState() =>
       _BookingCancellationSuccessScreenState();
@@ -67,49 +58,45 @@ class _BookingCancellationSuccessScreenState
     with TickerProviderStateMixin {
   final DashboardController dashboardC = Get.find<DashboardController>();
   final TrekController _trekC = Get.find<TrekController>();
-
   bool _isLoading = true;
-
   bool get _hasRefund => (widget.cancelledData?.totalRefundableAmount ?? 0) > 0;
   bool get _isAdvanceOnly => widget.cancelledData?.isAdvanceOnly == true;
   bool get _creditNoteEligible =>
       widget.cancelledData?.creditNoteEligible == true;
-
-  // Animations
   late final AnimationController _checkController;
+  late final AnimationController _ringController;
   late final AnimationController _entranceController;
-
   @override
   void initState() {
     super.initState();
-
     _checkController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
-
+    _ringController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    );
     _entranceController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     );
-
     _simulateLoading();
-
-    // Start polling if a cash refund was issued
     if (_hasRefund && widget.cancelledData?.bookingId != null) {
       _trekC.startRefundPolling(widget.cancelledData!.bookingId!.toString());
     }
   }
 
   void _simulateLoading() {
-    Future.delayed(const Duration(milliseconds: 1200), () {
-      if (mounted) {
-        setState(() => _isLoading = false);
-        _checkController.forward();
-        Future.delayed(const Duration(milliseconds: 300), () {
-          if (mounted) _entranceController.forward();
-        });
-      }
+    Future.delayed(const Duration(milliseconds: 1000), () {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      HapticFeedback.lightImpact();
+      _checkController.forward();
+      _ringController.forward();
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) _entranceController.forward();
+      });
     });
   }
 
@@ -117,6 +104,7 @@ class _BookingCancellationSuccessScreenState
   void dispose() {
     _trekC.stopRefundPolling();
     _checkController.dispose();
+    _ringController.dispose();
     _entranceController.dispose();
     super.dispose();
   }
@@ -142,9 +130,7 @@ class _BookingCancellationSuccessScreenState
 
   @override
   Widget build(BuildContext context) {
-    // No nested Sizer here — main.dart already wraps the whole app in one at
-    // the root, so a second instance here was redundant and this screen is
-    // the only one of its siblings that carried it this way.
+    // No nested Sizer here — main.dart already wraps the whole app in one.
     return Scaffold(
       backgroundColor: _TI.bg,
       appBar: _buildAppBar(),
@@ -158,13 +144,10 @@ class _BookingCancellationSuccessScreenState
                 children: [
                   _buildSuccessHero(),
                   SizedBox(height: 1.5.h),
-
                   _staggered(0, _buildCancellationStatusCard()),
-                  SizedBox(height: 1.5.h),
-
+                  SizedBox(height: 1.h),
                   _staggered(1, _buildBookingDetailsCard()),
-                  SizedBox(height: 1.5.h),
-
+                  SizedBox(height: 1.h),
                   _staggered(2, _buildNextStepsCard()),
                   SizedBox(height: 2.h),
                 ],
@@ -190,48 +173,66 @@ class _BookingCancellationSuccessScreenState
         preferredSize: const Size.fromHeight(1),
         child: Container(height: 1, color: _TI.divider),
       ),
-      title: Text(
-        'Cancellation Status',
-        textScaler: const TextScaler.linear(1.0),
-        style: TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: 13.sp,
-          fontWeight: FontWeight.w700,
-          color: _TI.ink,
+      title: Padding(
+        padding: EdgeInsets.only(left: 4.w),
+        child: Text(
+          'Cancellation Status',
+          textScaler: const TextScaler.linear(1.0),
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: 13.sp,
+            fontWeight: FontWeight.w700,
+            color: _TI.ink,
+          ),
         ),
       ),
     );
   }
 
   // ─────────────────────────────────────────────
-  //  HERO SUCCESS ANIMATION
+  //  HERO — animated check + expanding ripple rings
   // ─────────────────────────────────────────────
   Widget _buildSuccessHero() {
     return Column(
       children: [
-        ScaleTransition(
-          scale: CurvedAnimation(
-            parent: _checkController,
-            curve: Curves.elasticOut,
-          ),
-          child: Container(
-            width: 13.w,
-            height: 13.w,
-            decoration: BoxDecoration(
-              color: _TI.teal,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: _TI.teal.withValues(alpha: 0.25),
-                  blurRadius: 14,
-                  spreadRadius: 1,
+        SizedBox(
+          width: 22.w,
+          height: 22.w,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              _rippleRing(0.0),
+              _rippleRing(0.25),
+              ScaleTransition(
+                scale: CurvedAnimation(
+                  parent: _checkController,
+                  curve: Curves.elasticOut,
                 ),
-              ],
-            ),
-            child: Icon(Icons.check_rounded, color: Colors.white, size: 7.w),
+                child: Container(
+                  width: 13.w,
+                  height: 13.w,
+                  decoration: BoxDecoration(
+                    color: _TI.teal,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: _TI.teal.withValues(alpha: 0.25),
+                        blurRadius: 14,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    Icons.check_rounded,
+                    color: Colors.white,
+                    size: 7.w,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-        SizedBox(height: 1.5.h),
+        SizedBox(height: 1.h),
         Text(
           'Booking Cancelled',
           textScaler: const TextScaler.linear(1.0),
@@ -257,10 +258,38 @@ class _BookingCancellationSuccessScreenState
     );
   }
 
+  Widget _rippleRing(double delay) {
+    final anim = CurvedAnimation(
+      parent: _ringController,
+      curve: Interval(delay, 1.0, curve: Curves.easeOut),
+    );
+    return AnimatedBuilder(
+      animation: anim,
+      builder: (_, __) {
+        final v = anim.value;
+        return Opacity(
+          opacity: ((1 - v) * 0.45).clamp(0.0, 1.0),
+          child: Transform.scale(
+            scale: 0.6 + v * 1.1,
+            child: Container(
+              width: 14.w,
+              height: 14.w,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: _TI.teal, width: 2),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   // ─────────────────────────────────────────────
   //  CANCELLATION STATUS & REFUND CARD
   // ─────────────────────────────────────────────
   Widget _buildCancellationStatusCard() {
+    final double refundValue = double.tryParse(widget.refund) ?? 0;
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
       decoration: BoxDecoration(
@@ -276,7 +305,6 @@ class _BookingCancellationSuccessScreenState
             Icons.account_balance_wallet_outlined,
           ),
           SizedBox(height: 1.5.h),
-
           if (widget.cancelledData?.cancellationNumber != null) ...[
             _detailRow(
               'Cancellation ID',
@@ -286,8 +314,6 @@ class _BookingCancellationSuccessScreenState
           ],
           _detailRow('Cancelled On', _formatDate(DateTime.now())),
           SizedBox(height: 1.5.h),
-
-          // Context-aware message
           Container(
             padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.5.h),
             decoration: BoxDecoration(
@@ -321,7 +347,6 @@ class _BookingCancellationSuccessScreenState
               ],
             ),
           ),
-
           if (_hasRefund) ...[
             SizedBox(height: 1.5.h),
             Row(
@@ -341,14 +366,19 @@ class _BookingCancellationSuccessScreenState
                       ),
                     ),
                     SizedBox(height: 0.5.h),
-                    Text(
-                      '₹ ${widget.refund}',
-                      textScaler: const TextScaler.linear(1.0),
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w800,
-                        color: _TI.teal,
+                    TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0, end: refundValue),
+                      duration: const Duration(milliseconds: 1200),
+                      curve: Curves.easeOutCubic,
+                      builder: (_, val, __) => Text(
+                        '₹ ${val.toStringAsFixed(2)}',
+                        textScaler: const TextScaler.linear(1.0),
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w800,
+                          color: _TI.teal,
+                        ),
                       ),
                     ),
                   ],
@@ -388,8 +418,6 @@ class _BookingCancellationSuccessScreenState
               ],
             ),
           ],
-
-          // Credit note notice
           if (_creditNoteEligible) ...[
             SizedBox(height: 1.5.h),
             Container(
@@ -429,22 +457,11 @@ class _BookingCancellationSuccessScreenState
   }
 
   // ─────────────────────────────────────────────
-  //  BOOKING DETAILS RECAP
+  //  BOOKING RECAP — shared CommonBookedCard
   // ─────────────────────────────────────────────
   Widget _buildBookingDetailsCard() {
     if (widget.booking == null) return const SizedBox.shrink();
-
-    return Container(
-      decoration: BoxDecoration(
-        color: _TI.cardBg,
-        borderRadius: BorderRadius.circular(4.w),
-        border: Border.all(color: _TI.divider, width: 1),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(4.w),
-        child: UpcomingBookingCard(booking: widget.booking!),
-      ),
-    );
+    return CommonBookedCard(booking: widget.booking!);
   }
 
   // ─────────────────────────────────────────────
@@ -571,8 +588,12 @@ class _BookingCancellationSuccessScreenState
         ),
         child: GestureDetector(
           onTap: () {
-            Get.offAllNamed('/dashboard');
+            // Set the tab BEFORE navigating. The previous order mutated the
+            // observable while GetX was rebuilding routes, which marked the
+            // dashboard's Obx dirty mid-build and produced the red
+            // "markNeedsBuild() called during build" screen.
             dashboardC.selectedScreen.value = 1;
+            Get.offAllNamed('/dashboard');
           },
           child: Container(
             height: 5.5.h,
@@ -617,7 +638,7 @@ class _BookingCancellationSuccessScreenState
       isScrollControlled: true,
       builder: (_) => Container(
         decoration: BoxDecoration(
-          color: _TI.sheetBg,
+          color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(5.w)),
         ),
         padding: EdgeInsets.fromLTRB(5.w, 2.h, 5.w, 4.h),
@@ -629,7 +650,6 @@ class _BookingCancellationSuccessScreenState
             loading: (_) => true,
             orElse: () => false,
           );
-
           return Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -647,8 +667,17 @@ class _BookingCancellationSuccessScreenState
               ),
               _sheetHeader('Refund Status', Icons.track_changes),
               SizedBox(height: 2.h),
-              if (isPolling || statusData == null)
+              if (isPolling && statusData == null)
                 const Center(child: CircularProgressIndicator(color: _TI.brand))
+              else if (statusData == null)
+                Text(
+                  'Refund status is not available yet. Please check again shortly.',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 10.sp,
+                    color: _TI.inkMid,
+                  ),
+                )
               else ...[
                 _buildStatusStep(
                   'Cancellation Confirmed',
@@ -775,7 +804,6 @@ class _BookingCancellationSuccessScreenState
         : done
         ? _TI.teal
         : _TI.inkLight;
-
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 0.8.h),
       child: Row(
@@ -900,7 +928,13 @@ class _BookingCancellationSuccessScreenState
       'NOV',
       'DEC',
     ];
-    return '${months[date.month - 1]} ${date.day.toString().padLeft(2, '0')}, ${date.year}, ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')} ${date.hour >= 12 ? 'PM' : 'AM'}';
+    // Convert to a proper 12-hour clock — the previous version printed the
+    // 24-hour value with an AM/PM suffix (e.g. "15:10 PM").
+    final int h12 = date.hour % 12 == 0 ? 12 : date.hour % 12;
+    final String period = date.hour >= 12 ? 'PM' : 'AM';
+    return '${months[date.month - 1]} ${date.day.toString().padLeft(2, '0')}, '
+        '${date.year}, ${h12.toString().padLeft(2, '0')}:'
+        '${date.minute.toString().padLeft(2, '0')} $period';
   }
 
   // ─────────────────────────────────────────────
@@ -912,7 +946,6 @@ class _BookingCancellationSuccessScreenState
       child: Column(
         children: [
           SizedBox(height: 3.h),
-          // Hero shimmer
           Center(
             child: Column(
               children: [
@@ -946,13 +979,10 @@ class _BookingCancellationSuccessScreenState
             ),
           ),
           SizedBox(height: 3.h),
-          // Card 1
           _shimmerCard(),
           SizedBox(height: 2.h),
-          // Card 2
           _shimmerCard(),
           SizedBox(height: 2.h),
-          // Card 3
           _shimmerCard(),
         ],
       ),

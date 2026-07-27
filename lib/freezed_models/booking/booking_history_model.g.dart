@@ -98,8 +98,8 @@ _$BookingHistoryDataImpl _$$BookingHistoryDataImplFromJson(
           .toList(),
       bookingNumber: json['booking_number'] as String?,
       trekStatus: json['trek_status'] as String?,
-      ratingGiven: json['rating_given'] as bool?,
-      ratingValue: json['rating_value'],
+      ratingGiven: _parseBoolNullable(json['rating_given']),
+      ratingValue: _parseDoubleNullable(json['rating_value']),
       canCancel: json['can_cancel'] as bool?,
       cancellationMessage: json['cancellation_message'] as String?,
     );

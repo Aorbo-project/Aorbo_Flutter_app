@@ -546,10 +546,10 @@ mixin _$BookingHistoryData {
   String? get bookingNumber => throw _privateConstructorUsedError;
   @JsonKey(name: 'trek_status')
   String? get trekStatus => throw _privateConstructorUsedError;
-  @JsonKey(name: 'rating_given')
+  @JsonKey(name: 'rating_given', fromJson: _parseBoolNullable)
   bool? get ratingGiven => throw _privateConstructorUsedError;
-  @JsonKey(name: 'rating_value')
-  dynamic get ratingValue => throw _privateConstructorUsedError;
+  @JsonKey(name: 'rating_value', fromJson: _parseDoubleNullable)
+  double? get ratingValue => throw _privateConstructorUsedError;
   @JsonKey(name: 'can_cancel')
   bool? get canCancel => throw _privateConstructorUsedError;
   @JsonKey(name: 'cancellation_message')
@@ -618,8 +618,10 @@ abstract class $BookingHistoryDataCopyWith<$Res> {
       List<TravelersDataModel>? travelers,
       @JsonKey(name: 'booking_number') String? bookingNumber,
       @JsonKey(name: 'trek_status') String? trekStatus,
-      @JsonKey(name: 'rating_given') bool? ratingGiven,
-      @JsonKey(name: 'rating_value') dynamic ratingValue,
+      @JsonKey(name: 'rating_given', fromJson: _parseBoolNullable)
+      bool? ratingGiven,
+      @JsonKey(name: 'rating_value', fromJson: _parseDoubleNullable)
+      double? ratingValue,
       @JsonKey(name: 'can_cancel') bool? canCancel,
       @JsonKey(name: 'cancellation_message') String? cancellationMessage});
 
@@ -858,7 +860,7 @@ class _$BookingHistoryDataCopyWithImpl<$Res, $Val extends BookingHistoryData>
       ratingValue: freezed == ratingValue
           ? _value.ratingValue
           : ratingValue // ignore: cast_nullable_to_non_nullable
-              as dynamic,
+              as double?,
       canCancel: freezed == canCancel
           ? _value.canCancel
           : canCancel // ignore: cast_nullable_to_non_nullable
@@ -954,8 +956,10 @@ abstract class _$$BookingHistoryDataImplCopyWith<$Res>
       List<TravelersDataModel>? travelers,
       @JsonKey(name: 'booking_number') String? bookingNumber,
       @JsonKey(name: 'trek_status') String? trekStatus,
-      @JsonKey(name: 'rating_given') bool? ratingGiven,
-      @JsonKey(name: 'rating_value') dynamic ratingValue,
+      @JsonKey(name: 'rating_given', fromJson: _parseBoolNullable)
+      bool? ratingGiven,
+      @JsonKey(name: 'rating_value', fromJson: _parseDoubleNullable)
+      double? ratingValue,
       @JsonKey(name: 'can_cancel') bool? canCancel,
       @JsonKey(name: 'cancellation_message') String? cancellationMessage});
 
@@ -1194,7 +1198,7 @@ class __$$BookingHistoryDataImplCopyWithImpl<$Res>
       ratingValue: freezed == ratingValue
           ? _value.ratingValue
           : ratingValue // ignore: cast_nullable_to_non_nullable
-              as dynamic,
+              as double?,
       canCancel: freezed == canCancel
           ? _value.canCancel
           : canCancel // ignore: cast_nullable_to_non_nullable
@@ -1260,8 +1264,10 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
       final List<TravelersDataModel>? travelers,
       @JsonKey(name: 'booking_number') this.bookingNumber,
       @JsonKey(name: 'trek_status') this.trekStatus,
-      @JsonKey(name: 'rating_given') this.ratingGiven,
-      @JsonKey(name: 'rating_value') this.ratingValue,
+      @JsonKey(name: 'rating_given', fromJson: _parseBoolNullable)
+      this.ratingGiven,
+      @JsonKey(name: 'rating_value', fromJson: _parseDoubleNullable)
+      this.ratingValue,
       @JsonKey(name: 'can_cancel') this.canCancel,
       @JsonKey(name: 'cancellation_message') this.cancellationMessage})
       : _travelers = travelers;
@@ -1396,11 +1402,11 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
   @JsonKey(name: 'trek_status')
   final String? trekStatus;
   @override
-  @JsonKey(name: 'rating_given')
+  @JsonKey(name: 'rating_given', fromJson: _parseBoolNullable)
   final bool? ratingGiven;
   @override
-  @JsonKey(name: 'rating_value')
-  final dynamic ratingValue;
+  @JsonKey(name: 'rating_value', fromJson: _parseDoubleNullable)
+  final double? ratingValue;
   @override
   @JsonKey(name: 'can_cancel')
   final bool? canCancel;
@@ -1494,8 +1500,8 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
                 other.trekStatus == trekStatus) &&
             (identical(other.ratingGiven, ratingGiven) ||
                 other.ratingGiven == ratingGiven) &&
-            const DeepCollectionEquality()
-                .equals(other.ratingValue, ratingValue) &&
+            (identical(other.ratingValue, ratingValue) ||
+                other.ratingValue == ratingValue) &&
             (identical(other.canCancel, canCancel) ||
                 other.canCancel == canCancel) &&
             (identical(other.cancellationMessage, cancellationMessage) ||
@@ -1548,7 +1554,7 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
         bookingNumber,
         trekStatus,
         ratingGiven,
-        const DeepCollectionEquality().hash(ratingValue),
+        ratingValue,
         canCancel,
         cancellationMessage
       ]);
@@ -1624,8 +1630,10 @@ abstract class _BookingHistoryData implements BookingHistoryData {
       final List<TravelersDataModel>? travelers,
       @JsonKey(name: 'booking_number') final String? bookingNumber,
       @JsonKey(name: 'trek_status') final String? trekStatus,
-      @JsonKey(name: 'rating_given') final bool? ratingGiven,
-      @JsonKey(name: 'rating_value') final dynamic ratingValue,
+      @JsonKey(name: 'rating_given', fromJson: _parseBoolNullable)
+      final bool? ratingGiven,
+      @JsonKey(name: 'rating_value', fromJson: _parseDoubleNullable)
+      final double? ratingValue,
       @JsonKey(name: 'can_cancel') final bool? canCancel,
       @JsonKey(name: 'cancellation_message')
       final String? cancellationMessage}) = _$BookingHistoryDataImpl;
@@ -1750,11 +1758,11 @@ abstract class _BookingHistoryData implements BookingHistoryData {
   @JsonKey(name: 'trek_status')
   String? get trekStatus;
   @override
-  @JsonKey(name: 'rating_given')
+  @JsonKey(name: 'rating_given', fromJson: _parseBoolNullable)
   bool? get ratingGiven;
   @override
-  @JsonKey(name: 'rating_value')
-  dynamic get ratingValue;
+  @JsonKey(name: 'rating_value', fromJson: _parseDoubleNullable)
+  double? get ratingValue;
   @override
   @JsonKey(name: 'can_cancel')
   bool? get canCancel;
