@@ -112,6 +112,7 @@ _$TrekDataImpl _$$TrekDataImplFromJson(Map<String, dynamic> json) =>
     _$TrekDataImpl(
       id: json['id'] as int?,
       name: json['name'] as String?,
+      destination: json['destination'] as String?,
       vendor: json['vendor'] as String?,
       vendorName: json['vendor_name'] as String?,
       companyName: json['company_name'] as String?,
@@ -139,6 +140,7 @@ Map<String, dynamic> _$$TrekDataImplToJson(_$TrekDataImpl instance) =>
     <String, dynamic>{
       'id': instance.id,
       'name': instance.name,
+      'destination': instance.destination,
       'vendor': instance.vendor,
       'vendor_name': instance.vendorName,
       'company_name': instance.companyName,

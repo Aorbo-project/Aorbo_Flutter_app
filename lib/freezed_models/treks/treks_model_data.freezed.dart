@@ -1156,7 +1156,8 @@ TrekData _$TrekDataFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$TrekData {
   int? get id => throw _privateConstructorUsedError;
-  String? get name =>
+  String? get name => throw _privateConstructorUsedError;
+  String? get destination =>
       throw _privateConstructorUsedError; // BACKEND RETURNS "vendor"
   @JsonKey(name: 'vendor')
   String? get vendor =>
@@ -1200,6 +1201,7 @@ abstract class $TrekDataCopyWith<$Res> {
   $Res call(
       {int? id,
       String? name,
+      String? destination,
       @JsonKey(name: 'vendor') String? vendor,
       @JsonKey(name: 'vendor_name') String? vendorName,
       @JsonKey(name: 'company_name') String? companyName,
@@ -1236,6 +1238,7 @@ class _$TrekDataCopyWithImpl<$Res, $Val extends TrekData>
   $Res call({
     Object? id = freezed,
     Object? name = freezed,
+    Object? destination = freezed,
     Object? vendor = freezed,
     Object? vendorName = freezed,
     Object? companyName = freezed,
@@ -1259,6 +1262,10 @@ class _$TrekDataCopyWithImpl<$Res, $Val extends TrekData>
       name: freezed == name
           ? _value.name
           : name // ignore: cast_nullable_to_non_nullable
+              as String?,
+      destination: freezed == destination
+          ? _value.destination
+          : destination // ignore: cast_nullable_to_non_nullable
               as String?,
       vendor: freezed == vendor
           ? _value.vendor
@@ -1368,6 +1375,7 @@ abstract class _$$TrekDataImplCopyWith<$Res>
   $Res call(
       {int? id,
       String? name,
+      String? destination,
       @JsonKey(name: 'vendor') String? vendor,
       @JsonKey(name: 'vendor_name') String? vendorName,
       @JsonKey(name: 'company_name') String? companyName,
@@ -1405,6 +1413,7 @@ class __$$TrekDataImplCopyWithImpl<$Res>
   $Res call({
     Object? id = freezed,
     Object? name = freezed,
+    Object? destination = freezed,
     Object? vendor = freezed,
     Object? vendorName = freezed,
     Object? companyName = freezed,
@@ -1428,6 +1437,10 @@ class __$$TrekDataImplCopyWithImpl<$Res>
       name: freezed == name
           ? _value.name
           : name // ignore: cast_nullable_to_non_nullable
+              as String?,
+      destination: freezed == destination
+          ? _value.destination
+          : destination // ignore: cast_nullable_to_non_nullable
               as String?,
       vendor: freezed == vendor
           ? _value.vendor
@@ -1495,6 +1508,7 @@ class _$TrekDataImpl implements _TrekData {
   const _$TrekDataImpl(
       {this.id,
       this.name,
+      this.destination,
       @JsonKey(name: 'vendor') this.vendor,
       @JsonKey(name: 'vendor_name') this.vendorName,
       @JsonKey(name: 'company_name') this.companyName,
@@ -1517,6 +1531,8 @@ class _$TrekDataImpl implements _TrekData {
   final int? id;
   @override
   final String? name;
+  @override
+  final String? destination;
 // BACKEND RETURNS "vendor"
   @override
   @JsonKey(name: 'vendor')
@@ -1562,7 +1578,7 @@ class _$TrekDataImpl implements _TrekData {
 
   @override
   String toString() {
-    return 'TrekData(id: $id, name: $name, vendor: $vendor, vendorName: $vendorName, companyName: $companyName, businessName: $businessName, vendorLogo: $vendorLogo, hasDiscount: $hasDiscount, discountText: $discountText, rating: $rating, price: $price, duration: $duration, batchInfo: $batchInfo, badge: $badge, imageUrl: $imageUrl, cancellationPolicy: $cancellationPolicy)';
+    return 'TrekData(id: $id, name: $name, destination: $destination, vendor: $vendor, vendorName: $vendorName, companyName: $companyName, businessName: $businessName, vendorLogo: $vendorLogo, hasDiscount: $hasDiscount, discountText: $discountText, rating: $rating, price: $price, duration: $duration, batchInfo: $batchInfo, badge: $badge, imageUrl: $imageUrl, cancellationPolicy: $cancellationPolicy)';
   }
 
   @override
@@ -1572,6 +1588,8 @@ class _$TrekDataImpl implements _TrekData {
             other is _$TrekDataImpl &&
             (identical(other.id, id) || other.id == id) &&
             (identical(other.name, name) || other.name == name) &&
+            (identical(other.destination, destination) ||
+                other.destination == destination) &&
             (identical(other.vendor, vendor) || other.vendor == vendor) &&
             (identical(other.vendorName, vendorName) ||
                 other.vendorName == vendorName) &&
@@ -1604,6 +1622,7 @@ class _$TrekDataImpl implements _TrekData {
       runtimeType,
       id,
       name,
+      destination,
       vendor,
       vendorName,
       companyName,
@@ -1637,6 +1656,7 @@ abstract class _TrekData implements TrekData {
   const factory _TrekData(
       {final int? id,
       final String? name,
+      final String? destination,
       @JsonKey(name: 'vendor') final String? vendor,
       @JsonKey(name: 'vendor_name') final String? vendorName,
       @JsonKey(name: 'company_name') final String? companyName,
@@ -1660,6 +1680,8 @@ abstract class _TrekData implements TrekData {
   int? get id;
   @override
   String? get name;
+  @override
+  String? get destination;
   @override // BACKEND RETURNS "vendor"
   @JsonKey(name: 'vendor')
   String? get vendor;

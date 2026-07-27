@@ -1009,6 +1009,11 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                         _ticketRow('Destination', destinationName),
                         _dividerLine(),
                         _ticketRow(
+                          'Destination ID',
+                          trek?.destinationId?.toString() ?? 'N/A',
+                        ),
+                        _dividerLine(),
+                        _ticketRow(
                           'Trek Captain',
                           trek?.captainName ?? 'To be announced',
                         ),

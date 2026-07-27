@@ -170,6 +170,7 @@ class InvoicePdfService {
     final vendorLogoUrl = booking.trek?.vendor?.businessLogo ?? '';
 
     final trekTitle = booking.trek?.title ?? 'Trek';
+    final destinationName = booking.trek?.destinationName ?? '—';
     final trekDesc = booking.trek?.description ?? '';
     final durationDays = booking.trek?.durationDays ?? 0;
     final durationNights = booking.trek?.durationNights ?? 0;
@@ -266,6 +267,7 @@ class InvoicePdfService {
             vendorPhone: vendorPhone,
             vendorEmail: vendorEmail,
             trekTitle: trekTitle,
+            destinationName: destinationName,
             trekDescription: trekDesc,
             trekDuration: trekDuration,
             captainName: captainName,
@@ -338,6 +340,7 @@ class InvoicePdfService {
     required String vendorPhone,
     required String vendorEmail,
     required String trekTitle,
+    required String destinationName,
     required String trekDescription,
     required String trekDuration,
     required String captainName,
@@ -684,6 +687,7 @@ class InvoicePdfService {
                     _sectionTitle('TREK DETAILS', fontBold),
                     pw.SizedBox(height: 6),
                     _kvRow('Trek Name', trekTitle, font, fontSemi),
+                    _kvRow('Destination', destinationName, font, fontSemi),
                     _kvRow('Trek Operator', vendorName, font, fontSemi),
                     _kvRow(
                       'Boarding Point',

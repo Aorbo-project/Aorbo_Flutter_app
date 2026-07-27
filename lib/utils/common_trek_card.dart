@@ -232,7 +232,7 @@ class _CommonTrekCardState extends State<CommonTrekCard>
                               _buildHeader(trek, isFlexible),
                               SizedBox(height: _rh(1.6, 18)),
                               Text(
-                                trek?.name ?? '-',
+                                trek?.destination ?? trek?.name ?? '-',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 textScaler: const TextScaler.linear(1),

@@ -80,6 +80,8 @@ class TrekData with _$TrekData {
 
     String? name,
 
+    String? destination,
+
     // BACKEND RETURNS "vendor"
     @JsonKey(name: 'vendor')
     String? vendor,
