@@ -16,6 +16,27 @@ String? _parseImageUrl(String? path) {
   return 'https://api.aorbotreks.co.in/$path';
 }
 
+// ── NEW HELPERS FOR SAFE TYPE PARSING ──────────────────────────────────────
+double? _parseDoubleNullable(dynamic v) {
+  if (v == null) return null;
+  if (v is num) return v.toDouble();
+  if (v is String) return double.tryParse(v);
+  if (v is bool) return v ? 1.0 : 0.0;
+  return null;
+}
+
+bool? _parseBoolNullable(dynamic v) {
+  if (v == null) return null;
+  if (v is bool) return v;
+  if (v is num) return v != 0;
+  if (v is String) {
+    final s = v.toLowerCase();
+    return s == 'true' || s == '1' || s == 'yes';
+  }
+  return null;
+}
+// ──────────────────────────────────────────────────────────────────────────
+
 @freezed
 class BookingHistoryModel with _$BookingHistoryModel {
   const factory BookingHistoryModel({
@@ -136,9 +157,11 @@ class BookingHistoryData with _$BookingHistoryData {
 
     @JsonKey(name: 'trek_status') String? trekStatus,
 
-    @JsonKey(name: 'rating_given') bool? ratingGiven,
+    @JsonKey(name: 'rating_given', fromJson: _parseBoolNullable)
+    bool? ratingGiven,
 
-    @JsonKey(name: 'rating_value') dynamic ratingValue,
+    @JsonKey(name: 'rating_value', fromJson: _parseDoubleNullable)
+    double? ratingValue,
 
     @JsonKey(name: 'can_cancel') bool? canCancel,
 

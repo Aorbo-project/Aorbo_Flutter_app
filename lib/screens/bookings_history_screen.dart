@@ -67,8 +67,20 @@ class _BookingsScreenState extends State<BookingsScreen>
     )..forward();
     _fade = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
 
-    _dashboardC.selectedFilter.value = 'All Bookings';
-    _loadInitialData();
+    // CRITICAL: this screen is instantiated INSIDE the dashboard's Obx build
+    // (Obx(() => screens[selectedScreen.value])). Writing Rx values or
+    // starting a fetch synchronously here notifies other live Obx widgets
+    // while the framework is still building — the red
+    // "showSnackBar()/markNeedsBuild() called during build" screen seen after
+    // "Back to My Bookings". Both MUST run after the first frame.
+    // NOTE: requires a FULL RESTART to take effect — hot reload does not
+    // re-run initState.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _dashboardC.selectedFilter.value = 'All Bookings';
+      _loadInitialData();
+    });
+
     _scrollController.addListener(_onScroll);
   }
 
@@ -86,7 +98,6 @@ class _BookingsScreenState extends State<BookingsScreen>
   void _onScroll() {
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
-      print("Load More DAta");
       _loadMoreData();
     }
   }
@@ -99,7 +110,7 @@ class _BookingsScreenState extends State<BookingsScreen>
     _dashboardC.selectedScreen.value = 0;
   }
 
-  // ── STATUS HELPERS — ORIGINAL LOGIC ──────────────────────────────────────
+  // ── STATUS HELPERS ────────────────────────────────────────────────────────
   String _capitalize(String s) =>
       s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 
@@ -324,7 +335,8 @@ class _BookingsScreenState extends State<BookingsScreen>
     final createdAt = attempt['created_at'] as String?;
     final startDate = batch?['start_date'] as String?;
     final failureDescription =
-        attempt['failure_description'] as String? ?? 'Payment did not go through';
+        attempt['failure_description'] as String? ??
+        'Payment did not go through';
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
@@ -351,7 +363,10 @@ class _BookingsScreenState extends State<BookingsScreen>
             Row(
               children: [
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 2.5.w, vertical: 0.5.h),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 2.5.w,
+                    vertical: 0.5.h,
+                  ),
                   decoration: BoxDecoration(
                     color: _BkColors.cancelledBg,
                     borderRadius: BorderRadius.circular(20),
@@ -477,9 +492,7 @@ class _BookingsScreenState extends State<BookingsScreen>
               SizedBox(height: 2.5.h),
               GestureDetector(
                 onTap: () {
-                  setState(() {
-                    _dashboardC.selectedFilter.value = 'All Bookings';
-                  });
+                  _dashboardC.selectedFilter.value = 'All Bookings';
                   _dashboardC.getBookingHistory(refresh: true);
                 },
                 child: Container(
@@ -549,13 +562,11 @@ class _BookingsScreenState extends State<BookingsScreen>
         borderRadius: BorderRadius.circular(18),
         child: Column(
           children: [
-            // Status strip shimmer
             Container(
               width: double.infinity,
               height: 4.5.h,
               color: _BkColors.border,
             ).withShimmerAi(loading: true),
-
             IntrinsicHeight(
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -662,12 +673,12 @@ class _BookingsScreenState extends State<BookingsScreen>
     );
   }
 
-  // ── FILTER BOTTOM SHEET — ORIGINAL LOGIC ─────────────────────────────────
+  // ── FILTER BOTTOM SHEET ──────────────────────────────────────────────────
   void _showFilterBottomSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
+      builder: (sheetContext) => Container(
         decoration: BoxDecoration(
           color: CommonColors.whiteColor,
           borderRadius: BorderRadius.vertical(top: Radius.circular(5.w)),
@@ -675,7 +686,6 @@ class _BookingsScreenState extends State<BookingsScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Handle
             Container(
               width: 10.w,
               height: 0.5.h,
@@ -685,8 +695,6 @@ class _BookingsScreenState extends State<BookingsScreen>
                 borderRadius: BorderRadius.circular(1.w),
               ),
             ),
-
-            // Title
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 1.h),
               child: Row(
@@ -717,12 +725,10 @@ class _BookingsScreenState extends State<BookingsScreen>
                 ],
               ),
             ),
-
             Container(
               height: 1,
               color: CommonColors.greyColor.withValues(alpha: 0.2),
             ),
-
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -738,16 +744,22 @@ class _BookingsScreenState extends State<BookingsScreen>
                     : _pillBg(filter).withValues(alpha: 0.3);
 
                 return InkWell(
-                  onTap: () async {
-                    setState(() {
+                  onTap: () {
+                    // Close the sheet FIRST, then mutate state and fetch
+                    // AFTER the pop transition frame — mutating the Rx while
+                    // the sheet route is being removed marks the screen's
+                    // Obx dirty mid-frame and (combined with the controller's
+                    // snackbar) produced the red screen on "completed".
+                    Navigator.pop(sheetContext);
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (!mounted) return;
                       _dashboardC.selectedFilter.value = filter;
+                      if (filter == 'Failed Payments') {
+                        _dashboardC.getFailedBookingAttempts();
+                      } else {
+                        _dashboardC.getBookingHistory(refresh: true);
+                      }
                     });
-                    Navigator.pop(context);
-                    if (filter == 'Failed Payments') {
-                      _dashboardC.getFailedBookingAttempts();
-                    } else {
-                      _dashboardC.getBookingHistory(refresh: true);
-                    }
                   },
                   child: Container(
                     padding: EdgeInsets.symmetric(
