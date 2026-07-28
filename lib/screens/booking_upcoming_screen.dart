@@ -20,6 +20,8 @@ import '../utils/custom_snackbar.dart';
 import '../services/invoice_pdf_service.dart';
 import '../utils/ist_date_utils.dart';
 
+import '../widgets/rate_trek_popup.dart';
+
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS
 // ─────────────────────────────────────────────
@@ -89,7 +91,17 @@ class TicketClipper extends CustomClipper<Path> {
 // ─────────────────────────────────────────────
 class BookingsUpcomingScreen extends StatefulWidget {
   final dynamic bookingId;
-  const BookingsUpcomingScreen({super.key, required this.bookingId});
+
+  /// When true (e.g. user tapped "Rate" on the booking card), the rating
+  /// panel auto-opens once the booking loads — only for completed treks.
+  /// Already-rated bookings open in read-only mode.
+  final bool autoOpenRating;
+
+  const BookingsUpcomingScreen({
+    super.key,
+    required this.bookingId,
+    this.autoOpenRating = false,
+  });
 
   @override
   State<BookingsUpcomingScreen> createState() => _BookingsUpcomingScreenState();
@@ -104,18 +116,9 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
   late AnimationController _ratingPanelController;
   late Animation<double> _ratingPanelAnim;
 
-  late AnimationController _pulseController;
-  late Animation<double> _pulseAnim;
-
-  late AnimationController _shimmerController;
-  late AnimationController _borderRotationController;
-
-  late AnimationController _glowController;
-  late Animation<double> _glowAnim;
-
   bool _ratingPanelVisible = false;
-  final bool _ratingDismissed = false;
   bool _isFabPressed = false;
+  bool _autoOpenedRating = false;
 
   Set<int> openSections = {0};
 
@@ -125,6 +128,66 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
 
   bool _refundPollingStarted = false;
   Worker? _bookingDetailWorker;
+
+  // ── Rating eligibility ───────────────────────────────────────────────────
+  // A trek counts as completed when the backend says so, OR when its batch
+  // end date (arrival, in IST) has passed. Cancelled bookings never qualify.
+  bool _isTrekCompleted(BookingHistoryData b) {
+    final status = (b.status ?? '').toLowerCase();
+    if (status == 'cancelled') return false;
+    if (status == 'completed' ||
+        (b.trekStatus ?? '').toLowerCase() == 'completed') {
+      return true;
+    }
+    final end = ISTDateUtils.toIST(b.batch?.endDate);
+    if (end == null) return false;
+    return DateTime.now().isAfter(end);
+  }
+
+  /// Delegates to the single shared, type-tolerant check so this screen,
+  /// the popup, and the booking card can never disagree about rated state.
+  /// Also falls back to the booking history list if the detail API omits rating fields.
+  bool _isRated(BookingHistoryData? b) {
+    if (b == null) return false;
+
+    // 1. Check the detail object first
+    if (RateTrekPopup.isRated(b)) return true;
+
+    // 2. Fallback: Check the booking history list (which usually has rating fields)
+    try {
+      final listBookings = _dashboardC.bookingHistoryObserver.value.data.value
+          .maybeWhen(
+            success: (m) => m?.data ?? <BookingHistoryData>[],
+            orElse: () => <BookingHistoryData>[],
+          );
+      for (final bk in listBookings) {
+        if (bk.id == b.id && RateTrekPopup.isRated(bk)) {
+          return true;
+        }
+      }
+    } catch (_) {}
+
+    return false;
+  }
+
+  /// Opens the rating screen and REFETCHES the booking detail on return,
+  /// so the FAB disappears and the "You rated this trek" container appears
+  /// immediately — previously the stale detail kept the FAB alive.
+  Future<void> _openRateReview(
+    BookingHistoryData booking,
+    double rating,
+  ) async {
+    await Get.toNamed(
+      '/rate-review',
+      arguments: {'booking': booking, 'preSelectedRating': rating},
+    );
+    if (!mounted) return;
+    if (_ratingPanelVisible) _hideRatingPanel();
+    _dashboardC.getBookingDetail(bookingId: widget.bookingId ?? '0');
+    // Also refresh the list so the fallback check has the latest data
+    _dashboardC.getBookingHistory(refresh: true);
+  }
+  // ──────────────────────────────────────────────────────────────────────────
 
   Future<void> _handleTicketDownload(BookingHistoryData? booking) async {
     if (booking == null) {
@@ -189,13 +252,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
     final startDate = ISTDateUtils.toIST(batch?.startDate);
     final endDate = ISTDateUtils.toIST(batch?.endDate);
 
-    // Using source_city_name from backend
-    // sourceCityName is null only for bookings made before boarding-city
-    // selection was recorded (see Booking.city_id) — falling back to the
-    // vendor's registered city here previously showed a specific but
-    // essentially random city as if it were fact. Showing it as genuinely
-    // unrecorded is honest; a confident wrong answer is worse than "unknown"
-    // for a trip-critical detail like this.
     final String sourceCity = booking.sourceCityName ?? 'Not available';
     final String destinationName =
         trek?.destinationName ?? trek?.title ?? 'N/A';
@@ -267,41 +323,31 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
       reverseCurve: Curves.easeInCubic,
     );
 
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2200),
-    )..repeat(reverse: true);
-    _pulseAnim = Tween<double>(begin: 1.0, end: 1.035).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
-
-    _shimmerController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2800),
-    )..repeat();
-
-    _borderRotationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 4000),
-    )..repeat();
-
-    _glowController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2400),
-    )..repeat(reverse: true);
-    _glowAnim = Tween<double>(begin: 0.35, end: 0.6).animate(
-      CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
-    );
-
     _bookingDetailWorker = ever(_dashboardC.bookingDetailsObserver, (result) {
       result.maybeWhen(
         success: (r) {
           final booking = (r as BookingDetailsResponseModel).data;
-          if (booking?.status == 'cancelled' &&
-              booking?.id != null &&
+          if (booking == null) return;
+
+          if (booking.status == 'cancelled' &&
+              booking.id != null &&
               !_refundPollingStarted) {
             _refundPollingStarted = true;
-            _trekC.startRefundPolling(booking!.id!.toString());
+            _trekC.startRefundPolling(booking.id!.toString());
+          }
+
+          // Auto-open the rating panel ONLY if arriving via the card's
+          // "Rate" button, the trek is completed, AND it hasn't been rated yet.
+          if (widget.autoOpenRating &&
+              !_autoOpenedRating &&
+              _isTrekCompleted(booking) &&
+              !_isRated(booking)) {
+            _autoOpenedRating = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              Future.delayed(const Duration(milliseconds: 450), () {
+                if (mounted && !_ratingPanelVisible) _showRatingPanel();
+              });
+            });
           }
         },
         orElse: () {},
@@ -320,10 +366,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
 
     _animationController.dispose();
     _ratingPanelController.dispose();
-    _pulseController.dispose();
-    _shimmerController.dispose();
-    _borderRotationController.dispose();
-    _glowController.dispose();
     super.dispose();
   }
 
@@ -567,13 +609,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
     final endDate = ISTDateUtils.toIST(batch?.endDate);
     final bookingDate = ISTDateUtils.toIST(booking.bookingDate);
 
-    // Extracting names from the new API response
-    // sourceCityName is null only for bookings made before boarding-city
-    // selection was recorded (see Booking.city_id) — falling back to the
-    // vendor's registered city here previously showed a specific but
-    // essentially random city as if it were fact. Showing it as genuinely
-    // unrecorded is honest; a confident wrong answer is worse than "unknown"
-    // for a trip-critical detail like this.
     final String sourceCity = booking.sourceCityName ?? 'Not available';
     final String destinationName =
         trek?.destinationName ?? trek?.title ?? 'N/A';
@@ -1419,13 +1454,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
         statusBg = _TC.brandLight;
         statusIcon = Icons.sync_rounded;
       } else if (statusData != null && statusData!.refundApplicable == false) {
-        // Cancellation was a full deduction (e.g. advance-only, non-
-        // refundable per policy) — there is no refund being processed at
-        // all, so "Pending"/"Checking..." is actively misleading here. The
-        // backend already knows this for certain (refund_applicable: false,
-        // refund_status stays null forever for this booking) — this branch
-        // was missing, so it fell through to the generic "still checking"
-        // state indefinitely for every zero-refund cancellation.
         statusText = 'No Refund Applicable';
         statusSubText =
             statusData?.statusMessage ??
@@ -1832,12 +1860,8 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                   padding: EdgeInsets.symmetric(vertical: 4.h),
                   child: const Center(child: CircularProgressIndicator()),
                 )
-              else if (statusData != null && statusData!.refundApplicable == false)
-                // Full-deduction cancellation — a 3-step "Initiated / Processing
-                // / Credited" tracker would imply a refund is still coming when
-                // none ever will. Same gap as the summary card: nothing here
-                // checked refund_applicable before defaulting to the in-
-                // progress visual.
+              else if (statusData != null &&
+                  statusData!.refundApplicable == false)
                 Container(
                   width: double.infinity,
                   padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 3.h),
@@ -1847,7 +1871,11 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.info_outline_rounded, color: _TC.inkMid, size: 5.w),
+                      Icon(
+                        Icons.info_outline_rounded,
+                        color: _TC.inkMid,
+                        size: 5.w,
+                      ),
                       SizedBox(width: 3.w),
                       Expanded(
                         child: Text(
@@ -2084,17 +2112,98 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
     return '${months[ist.month - 1]} ${ist.day}, ${ist.year}';
   }
 
-  Widget _buildFloatingRatingButton({required BookingHistoryData bookingData}) {
-    final bool isCancelled = bookingData.status == 'cancelled';
-    final bool trekEnded =
-        bookingData.batch?.endDate != null &&
-        DateTime.now().isAfter(
-          DateTime.tryParse(bookingData.batch!.endDate!) ?? DateTime.now(),
-        );
-    if (isCancelled || !trekEnded) return const SizedBox.shrink();
+  // ── STATIC REVIEWED CONTAINER ───────────────────────────────────────────
+  Widget _buildReviewedContainer(BookingHistoryData booking) {
+    final double currentRating = RateTrekPopup.ratingValueOf(booking);
+    return Container(
+      width: double.infinity,
+      margin: EdgeInsets.symmetric(horizontal: 4.w),
+      padding: EdgeInsets.all(4.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _TC.teal.withValues(alpha: 0.25)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 10.w,
+            height: 10.w,
+            decoration: BoxDecoration(
+              color: _TC.tealLight,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(Icons.star_rounded, color: _TC.teal, size: 5.w),
+          ),
+          SizedBox(width: 3.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'You rated this trek',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w700,
+                    color: _TC.ink,
+                  ),
+                ),
+                SizedBox(height: 0.2.h),
+                Text(
+                  'Thanks for your feedback!',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 8.sp,
+                    color: _TC.inkMid,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: List.generate(5, (i) {
+              return Icon(
+                i < currentRating.round()
+                    ? Icons.star_rounded
+                    : Icons.star_border_rounded,
+                size: 5.w,
+                color: _TC.gold,
+              );
+            }),
+          ),
+          SizedBox(width: 2.w),
+          Text(
+            currentRating.toStringAsFixed(1),
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 11.sp,
+              fontWeight: FontWeight.w700,
+              color: _TC.teal,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-    final bool isReviewed = bookingData.ratingGiven == true;
-    final double currentRating = (bookingData.ratingValue ?? 0.0).toDouble();
+  Widget _buildFloatingRatingButton({required BookingHistoryData bookingData}) {
+    // If already reviewed, we show a static container in the list instead of the floating button.
+    if (_isRated(bookingData)) return const SizedBox.shrink();
+
+    // Rating UI exists ONLY for completed treks (arrival done, not cancelled).
+    if (!_isTrekCompleted(bookingData)) return const SizedBox.shrink();
+
+    final bool isReviewed = _isRated(bookingData);
+    final double currentRating = RateTrekPopup.ratingValueOf(bookingData);
 
     final Color primary = isReviewed
         ? const Color(0xFF0F766E)
@@ -2163,7 +2272,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                               SizedBox(height: 0.35.h),
                               Text(
                                 isReviewed
-                                    ? 'Tap to view your review'
+                                    ? 'Ratings cannot be changed once submitted'
                                     : 'Help other trekkers with your experience',
                                 style: TextStyle(
                                   fontFamily: 'Poppins',
@@ -2215,7 +2324,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                               children: [
                                 Text(
                                   isReviewed
-                                      ? 'Review saved'
+                                      ? 'Your rating'
                                       : 'Tap a star to rate',
                                   style: TextStyle(
                                     fontFamily: 'Poppins',
@@ -2239,17 +2348,12 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                             ),
                           ),
                           AnimatedRatingStars(
+                            key: ValueKey('stars_${isReviewed}_$currentRating'),
                             initialRating: currentRating,
                             readOnly: isReviewed,
                             onChanged: (rating) {
                               if (!isReviewed) {
-                                Get.toNamed(
-                                  '/rate-review',
-                                  arguments: {
-                                    'booking': bookingData,
-                                    'preSelectedRating': rating,
-                                  },
-                                );
+                                _openRateReview(bookingData, rating);
                               }
                             },
                             filledColor: const Color(0xFFFFB800),
@@ -2346,7 +2450,9 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isReviewed ? 'View Your Review' : 'Rate Your Trek',
+                      isReviewed
+                          ? 'You Rated ${currentRating.toStringAsFixed(1)} ★'
+                          : 'Rate Your Trek',
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontSize: 11.sp,
@@ -2357,7 +2463,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                     SizedBox(height: 0.2.h),
                     Text(
                       isReviewed
-                          ? 'Tap to open your feedback'
+                          ? 'Tap to view your rating'
                           : 'Help other trekkers discover',
                       style: TextStyle(
                         fontFamily: 'Poppins',
@@ -2591,18 +2697,15 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
 
             if (isLoading) return _buildShimmerLoading();
 
+            final bool isRated = _isRated(booking);
+            final bool showRatingFab =
+                booking != null && _isTrekCompleted(booking) && !isRated;
+
             return Stack(
               children: [
                 SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
-                  padding: EdgeInsets.only(
-                    bottom:
-                        (status == 'confirmed' &&
-                            booking != null &&
-                            !_ratingDismissed)
-                        ? 18.h
-                        : 0,
-                  ),
+                  padding: EdgeInsets.only(bottom: showRatingFab ? 18.h : 0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -2614,6 +2717,13 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                       if (status == 'cancelled' && booking != null) ...[
                         SizedBox(height: 2.5.h),
                         _buildRefundTrackerCard(booking),
+                      ],
+                      // ── STATIC RATING CONTAINER ──
+                      if (booking != null &&
+                          isRated &&
+                          _isTrekCompleted(booking)) ...[
+                        SizedBox(height: 2.5.h),
+                        _buildReviewedContainer(booking),
                       ],
                       SizedBox(height: 2.5.h),
                       Padding(
@@ -2869,14 +2979,12 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                     ],
                   ),
                 ),
-                if (status == 'confirmed' &&
-                    booking != null &&
-                    !_ratingDismissed)
+                if (showRatingFab)
                   Positioned(
                     left: 4.w,
                     right: 4.w,
                     bottom: 3.h,
-                    child: _buildFloatingRatingButton(bookingData: booking),
+                    child: _buildFloatingRatingButton(bookingData: booking!),
                   ),
                 Obx(
                   () => _trekC.cancellationDetailsResponseObserver.value

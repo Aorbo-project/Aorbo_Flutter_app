@@ -67,14 +67,6 @@ class _BookingsScreenState extends State<BookingsScreen>
     )..forward();
     _fade = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
 
-    // CRITICAL: this screen is instantiated INSIDE the dashboard's Obx build
-    // (Obx(() => screens[selectedScreen.value])). Writing Rx values or
-    // starting a fetch synchronously here notifies other live Obx widgets
-    // while the framework is still building — the red
-    // "showSnackBar()/markNeedsBuild() called during build" screen seen after
-    // "Back to My Bookings". Both MUST run after the first frame.
-    // NOTE: requires a FULL RESTART to take effect — hot reload does not
-    // re-run initState.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _dashboardC.selectedFilter.value = 'All Bookings';
@@ -302,6 +294,14 @@ class _BookingsScreenState extends State<BookingsScreen>
           booking: booking,
           onViewDetailsTap: () {
             Get.to(() => BookingsUpcomingScreen(bookingId: booking.id));
+          },
+          onRateTrekTap: () {
+            Get.to(
+              () => BookingsUpcomingScreen(
+                bookingId: booking.id,
+                autoOpenRating: true,
+              ),
+            );
           },
         ),
       ),
@@ -745,11 +745,6 @@ class _BookingsScreenState extends State<BookingsScreen>
 
                 return InkWell(
                   onTap: () {
-                    // Close the sheet FIRST, then mutate state and fetch
-                    // AFTER the pop transition frame — mutating the Rx while
-                    // the sheet route is being removed marks the screen's
-                    // Obx dirty mid-frame and (combined with the controller's
-                    // snackbar) produced the red screen on "completed".
                     Navigator.pop(sheetContext);
                     WidgetsBinding.instance.addPostFrameCallback((_) {
                       if (!mounted) return;

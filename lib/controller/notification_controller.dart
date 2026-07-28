@@ -46,14 +46,18 @@ class NotificationController extends GetxController {
   Future<void> fetchNotifications() async {
     try {
       isLoading.value = true;
-      final response = await repository.getApiCall(url: NetworkUrl.notifications);
+      final response = await repository.getApiCall(
+        url: NetworkUrl.notifications,
+      );
       if (response != null && response['success'] == true) {
         final data = response['data'];
         final List<dynamic> rows = data?['notifications'] ?? [];
         notifications.value = rows
             .map((e) => NotificationItem.fromJson(e as Map<String, dynamic>))
             .toList();
-        unreadCount.value = data?['unread_count'] is int ? data['unread_count'] : 0;
+        unreadCount.value = data?['unread_count'] is int
+            ? data['unread_count']
+            : 0;
         error = null;
       } else {
         error = 'Failed to load notifications';
@@ -72,7 +76,10 @@ class NotificationController extends GetxController {
     notifications.refresh();
     if (unreadCount.value > 0) unreadCount.value--;
     try {
-      await repository.putApiCall(url: NetworkUrl.notificationRead(item.id), body: {});
+      await repository.putApiCall(
+        url: NetworkUrl.notificationRead(item.id),
+        body: {},
+      );
     } catch (e) {
       logger.e('markAsRead error: $e');
     }
@@ -85,7 +92,10 @@ class NotificationController extends GetxController {
     notifications.refresh();
     unreadCount.value = 0;
     try {
-      await repository.putApiCall(url: NetworkUrl.notificationReadAll, body: {});
+      await repository.putApiCall(
+        url: NetworkUrl.notificationReadAll,
+        body: {},
+      );
     } catch (e) {
       logger.e('markAllAsRead error: $e');
     }

@@ -30,23 +30,29 @@ class DashboardController extends GetxController {
 
   VoidCallback? onDateAutoSelected;
 
-  final whatsNewObserver = const ApiResult<WhatsNewDataResponseModel>.init().obs;
-  final topTreksObserver = const ApiResult<TopTreksDataResponseModel>.init().obs;
-  final seasonalForcastObserver = const ApiResult<SeasonalForecastDataResponseModel>.init().obs;
-  final seasonalPicksObserver = const ApiResult<SeasonalPicksDataResponseModel>.init().obs;
+  final whatsNewObserver =
+      const ApiResult<WhatsNewDataResponseModel>.init().obs;
+  final topTreksObserver =
+      const ApiResult<TopTreksDataResponseModel>.init().obs;
+  final seasonalForcastObserver =
+      const ApiResult<SeasonalForecastDataResponseModel>.init().obs;
+  final seasonalPicksObserver =
+      const ApiResult<SeasonalPicksDataResponseModel>.init().obs;
 
   final bookingHistoryObserver = PaginationModel(
-      data: const ApiResult<BookingHistoryModel>.init().obs,
-      isLoading: false,
-      isPaginationCompleted: false,
-      page: 1,
-      error: "")
-      .obs;
+    data: const ApiResult<BookingHistoryModel>.init().obs,
+    isLoading: false,
+    isPaginationCompleted: false,
+    page: 1,
+    error: "",
+  ).obs;
 
-  final bookingDetailsObserver = ApiResult<BookingDetailsResponseModel>.init().obs;
+  final bookingDetailsObserver =
+      ApiResult<BookingDetailsResponseModel>.init().obs;
 
   RxMap<String, int> availableDates = <String, int>{}.obs;
-  final calenderTrekDatesObserver = const ApiResult<CalenderDatesResponseModel>.init().obs;
+  final calenderTrekDatesObserver =
+      const ApiResult<CalenderDatesResponseModel>.init().obs;
 
   // Cities list variables
   RxInt selectedCityId = 0.obs;
@@ -89,7 +95,6 @@ class DashboardController extends GetxController {
   RxBool isLoadingFailedAttempts = false.obs;
 
   //endregion
-
 
   //endregion
 
@@ -168,7 +173,9 @@ class DashboardController extends GetxController {
       return;
     }
 
-    logger.d('Fetching calendar dates for cityId: ${selectedCityId.value}, trekId: ${selectedTrekId.value}');
+    logger.d(
+      'Fetching calendar dates for cityId: ${selectedCityId.value}, trekId: ${selectedTrekId.value}',
+    );
 
     final DateTime currentDate = DateTime.now();
     final DateTime threeMonthsLater = currentDate.add(const Duration(days: 90));
@@ -203,209 +210,178 @@ class DashboardController extends GetxController {
   }
 
   static String convertDateYYYYMMDD(String date) {
-  if (date.isEmpty) return '';
+    if (date.isEmpty) return '';
 
-  try {
-
-    // Already correct format
-    if (RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(date)) {
-      return date;
-    }
-
-    DateTime parsedDate;
-
-    // dd/MM/yyyy
-    if (date.contains('/')) {
-      parsedDate = DateFormat('dd/MM/yyyy').parseStrict(date);
-
-    // dd-MM-yyyy
-    } else if (date.contains('-')) {
-      parsedDate = DateFormat('dd-MM-yyyy').parseStrict(date);
-
-    } else {
-      throw FormatException('Unknown date format');
-    }
-
-    return DateFormat('yyyy-MM-dd').format(parsedDate);
-
-  } catch (e) {
-    logger.w('Invalid date format: $e');
-    return '';
-  }
-}
-
-  Future<void> fetchCalenderTrekDates({
-  required int cityId,
-  required int trekId,
-  required String statDate,
-  required String endDate,
-}) async {
-  try {
-
-    // Clear previous data
-    availableDates.clear();
-
-    calenderTrekDatesObserver.value =
-        ApiResult.loading("Fetching available dates...");
-
-    logger.d(
-      'Fetching calendar dates API - '
-      'City: $cityId, '
-      'Trek: $trekId, '
-      'Start: $statDate, '
-      'End: $endDate',
-    );
-
-    final response = await _repository.getApiCall(
-      url: NetworkUrl.searchCalenderTrekDates(
-        cityId.toString(),
-        trekId.toString(),
-        statDate,
-        endDate,
-      ),
-    );
-
-    if (response != null) {
-
-      logger.d('Calendar API Response: $response');
-
-      final responseData =
-          CalenderDatesResponseModel.fromJson(response);
-
-      if (responseData.success == true) {
-
-        if (responseData.data?.dates != null &&
-            responseData.data!.dates!.isNotEmpty) {
-
-          // Sort dates ascending
-          final sortedDates =
-              responseData.data!.dates!.toList()
-                ..sort(
-                  (a, b) =>
-                      (a.date ?? '').compareTo(b.date ?? ''),
-                );
-
-          for (var dateData in sortedDates) {
-
-            // Skip null dates
-            if (dateData.date == null) continue;
-
-            final trekDate =
-                DateTime.tryParse(dateData.date!);
-
-            // Invalid date
-            if (trekDate == null) continue;
-
-            final now = DateTime.now();
-
-            final today = DateTime(
-              now.year,
-              now.month,
-              now.day,
-            );
-
-            // ─────────────────────────────
-            // IMPORTANT FIX
-            // Skip today/past dates because
-            // backend still marks started
-            // treks as available
-            // ─────────────────────────────
-
-            if (!trekDate.isAfter(today)) {
-
-              logger.d(
-                'Skipping started/past trek date: '
-                '${dateData.date}',
-              );
-
-              continue;
-            }
-
-            // Only add truly available dates
-            if (dateData.available == true) {
-
-              logger.d(
-                'Adding available future date: '
-                '${dateData.date}',
-              );
-
-              availableDates[dateData.date!] =
-                  dateData.trekCount ?? 0;
-            }
-          }
-
-          availableDates.refresh();
-
-          logger.d(
-            'Available dates loaded: '
-            '${availableDates.length}',
-          );
-
-          // Auto-select first available date
-          if (selectedDate.value == null &&
-              availableDates.isNotEmpty) {
-
-            _autoSelectFirstAvailableDate();
-          }
-
-        } else {
-
-          logger.d('No available dates found');
-
-          availableDates.clear();
-          availableDates.refresh();
-        }
-
-        calenderTrekDatesObserver.value =
-            ApiResult.success(responseData);
-
-        return;
+    try {
+      // Already correct format
+      if (RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(date)) {
+        return date;
       }
 
-      throw responseData.message ??
-          "Failed to fetch calendar dates";
+      DateTime parsedDate;
+
+      // dd/MM/yyyy
+      if (date.contains('/')) {
+        parsedDate = DateFormat('dd/MM/yyyy').parseStrict(date);
+
+        // dd-MM-yyyy
+      } else if (date.contains('-')) {
+        parsedDate = DateFormat('dd-MM-yyyy').parseStrict(date);
+      } else {
+        throw FormatException('Unknown date format');
+      }
+
+      return DateFormat('yyyy-MM-dd').format(parsedDate);
+    } catch (e) {
+      logger.w('Invalid date format: $e');
+      return '';
     }
-
-    throw "Response Body Null";
-
-  } catch (e) {
-
-    logger.e(
-      'Error fetching calendar dates: $e',
-    );
-
-    errorMessage.value = e.toString();
-
-    calenderTrekDatesObserver.value =
-        ApiResult.error(
-          'Failed to fetch calendar dates: '
-          '${e.toString()}',
-        );
   }
-}
+
+  Future<void> fetchCalenderTrekDates({
+    required int cityId,
+    required int trekId,
+    required String statDate,
+    required String endDate,
+  }) async {
+    try {
+      // Clear previous data
+      availableDates.clear();
+
+      calenderTrekDatesObserver.value = ApiResult.loading(
+        "Fetching available dates...",
+      );
+
+      logger.d(
+        'Fetching calendar dates API - '
+        'City: $cityId, '
+        'Trek: $trekId, '
+        'Start: $statDate, '
+        'End: $endDate',
+      );
+
+      final response = await _repository.getApiCall(
+        url: NetworkUrl.searchCalenderTrekDates(
+          cityId.toString(),
+          trekId.toString(),
+          statDate,
+          endDate,
+        ),
+      );
+
+      if (response != null) {
+        logger.d('Calendar API Response: $response');
+
+        final responseData = CalenderDatesResponseModel.fromJson(response);
+
+        if (responseData.success == true) {
+          if (responseData.data?.dates != null &&
+              responseData.data!.dates!.isNotEmpty) {
+            // Sort dates ascending
+            final sortedDates = responseData.data!.dates!.toList()
+              ..sort((a, b) => (a.date ?? '').compareTo(b.date ?? ''));
+
+            for (var dateData in sortedDates) {
+              // Skip null dates
+              if (dateData.date == null) continue;
+
+              final trekDate = DateTime.tryParse(dateData.date!);
+
+              // Invalid date
+              if (trekDate == null) continue;
+
+              final now = DateTime.now();
+
+              final today = DateTime(now.year, now.month, now.day);
+
+              // ─────────────────────────────
+              // IMPORTANT FIX
+              // Skip today/past dates because
+              // backend still marks started
+              // treks as available
+              // ─────────────────────────────
+
+              if (!trekDate.isAfter(today)) {
+                logger.d(
+                  'Skipping started/past trek date: '
+                  '${dateData.date}',
+                );
+
+                continue;
+              }
+
+              // Only add truly available dates
+              if (dateData.available == true) {
+                logger.d(
+                  'Adding available future date: '
+                  '${dateData.date}',
+                );
+
+                availableDates[dateData.date!] = dateData.trekCount ?? 0;
+              }
+            }
+
+            availableDates.refresh();
+
+            logger.d(
+              'Available dates loaded: '
+              '${availableDates.length}',
+            );
+
+            // Auto-select first available date
+            if (selectedDate.value == null && availableDates.isNotEmpty) {
+              _autoSelectFirstAvailableDate();
+            }
+          } else {
+            logger.d('No available dates found');
+
+            availableDates.clear();
+            availableDates.refresh();
+          }
+
+          calenderTrekDatesObserver.value = ApiResult.success(responseData);
+
+          return;
+        }
+
+        throw responseData.message ?? "Failed to fetch calendar dates";
+      }
+
+      throw "Response Body Null";
+    } catch (e) {
+      logger.e('Error fetching calendar dates: $e');
+
+      errorMessage.value = e.toString();
+
+      calenderTrekDatesObserver.value = ApiResult.error(
+        'Failed to fetch calendar dates: '
+        '${e.toString()}',
+      );
+    }
+  }
 
   void _autoSelectFirstAvailableDate() {
-  if (availableDates.isEmpty) return;
+    if (availableDates.isEmpty) return;
 
-  // ── Sort keys so we always pick the earliest available date ──
-  final sortedDates = availableDates.keys.toList()..sort();
-  final firstDateStr = sortedDates.first;
-  final firstDate = DateTime.tryParse(firstDateStr);
+    // ── Sort keys so we always pick the earliest available date ──
+    final sortedDates = availableDates.keys.toList()..sort();
+    final firstDateStr = sortedDates.first;
+    final firstDate = DateTime.tryParse(firstDateStr);
 
-  print('FIRST DATE STRING: $firstDateStr');
-  print('PARSED DATE: $firstDate');
+    print('FIRST DATE STRING: $firstDateStr');
+    print('PARSED DATE: $firstDate');
 
-  if (firstDate != null) {
-    logger.d('Auto-selecting first available date: $firstDateStr');
+    if (firstDate != null) {
+      logger.d('Auto-selecting first available date: $firstDateStr');
 
-    selectedDate.value = firstDate;
-    dateController.value.text = DateFormat('dd/MM/yyyy').format(firstDate);
-    dateController.refresh();
+      selectedDate.value = firstDate;
+      dateController.value.text = DateFormat('dd/MM/yyyy').format(firstDate);
+      dateController.refresh();
 
-    // Notify Dashboard to update weekend dates
-    onDateAutoSelected?.call();
+      // Notify Dashboard to update weekend dates
+      onDateAutoSelected?.call();
+    }
   }
-}
 
   bool isDateAvailable(DateTime? date) {
     if (date == null) return false;
@@ -440,7 +416,9 @@ class DashboardController extends GetxController {
   Future<void> fetchWhatsNew() async {
     try {
       whatsNewObserver.value = const ApiResult.loading("");
-      final response = await _repository.getApiCall(url: NetworkUrl.fetchWhatsNew);
+      final response = await _repository.getApiCall(
+        url: NetworkUrl.fetchWhatsNew,
+      );
       if (response != null) {
         final responseData = WhatsNewDataResponseModel.fromJson(response);
         if (responseData.success == true) {
@@ -459,7 +437,9 @@ class DashboardController extends GetxController {
   Future<void> fetchTopTreks() async {
     try {
       topTreksObserver.value = const ApiResult.loading("");
-      final response = await _repository.getApiCall(url: NetworkUrl.fetchTopTreks);
+      final response = await _repository.getApiCall(
+        url: NetworkUrl.fetchTopTreks,
+      );
       if (response != null) {
         final responseData = TopTreksDataResponseModel.fromJson(response);
         if (responseData.success == true) {
@@ -508,7 +488,10 @@ class DashboardController extends GetxController {
       if (currentlyFavorite) {
         await _repository.deleteApiCall(url: NetworkUrl.topTrekFavorite(id));
       } else {
-        await _repository.postApiCall(url: NetworkUrl.topTrekFavorite(id), body: {});
+        await _repository.postApiCall(
+          url: NetworkUrl.topTrekFavorite(id),
+          body: {},
+        );
       }
       return true;
     } catch (e) {
@@ -520,9 +503,13 @@ class DashboardController extends GetxController {
   Future<void> fetchSeasonalForeCasts() async {
     try {
       seasonalForcastObserver.value = const ApiResult.loading("");
-      final response = await _repository.getApiCall(url: NetworkUrl.fetchSeasonalForcasts);
+      final response = await _repository.getApiCall(
+        url: NetworkUrl.fetchSeasonalForcasts,
+      );
       if (response != null) {
-        final responseData = SeasonalForecastDataResponseModel.fromJson(response);
+        final responseData = SeasonalForecastDataResponseModel.fromJson(
+          response,
+        );
         if (responseData.success == true) {
           seasonalForcastObserver.value = ApiResult.success(responseData);
           return;
@@ -603,25 +590,22 @@ class DashboardController extends GetxController {
     }
   }
 
-
-
-
-  Future<void> getBookingHistory({
-    required bool refresh}) async {
-
+  Future<void> getBookingHistory({required bool refresh}) async {
     final observer = bookingHistoryObserver;
 
     try {
       if (refresh == true) {
         observer.value = PaginationModel(
-            data: const ApiResult<BookingHistoryModel>.init().obs,
-            isLoading: false,
-            isPaginationCompleted: false,
-            page: 1,
-            error: "");
+          data: const ApiResult<BookingHistoryModel>.init().obs,
+          isLoading: false,
+          isPaginationCompleted: false,
+          page: 1,
+          error: "",
+        );
       }
 
-      if (observer.value.isPaginationCompleted || observer.value.isLoading == true) {
+      if (observer.value.isPaginationCompleted ||
+          observer.value.isLoading == true) {
         return;
       }
 
@@ -635,7 +619,6 @@ class DashboardController extends GetxController {
       const maxListApiReturns = 20;
       observer.refresh();
 
-
       final response = await _repository.getApiCall(
         url: NetworkUrl.bookingHistoryWithStatus(
           page: observer.value.page,
@@ -645,25 +628,25 @@ class DashboardController extends GetxController {
         ),
       );
 
-
-
       final body = response;
       if (body != null) {
-        
-
-debugPrint("========== BOOKING HISTORY RESPONSE ==========");
-debugPrint(const JsonEncoder.withIndent('  ').convert(body));
-debugPrint("==============================================");
+        debugPrint("========== BOOKING HISTORY RESPONSE ==========");
+        debugPrint(const JsonEncoder.withIndent('  ').convert(body));
+        debugPrint("==============================================");
         final responseData = BookingHistoryModel.fromJson(body);
         if (responseData.success == true) {
-          observer.value.data.value.maybeWhen(success: (data) {
-            final oldList = (data as BookingHistoryModel?)?.data?.toList();
-            oldList?.addAll(responseData.data ?? List.empty());
-            observer.value.data.value =
-                ApiResult.success(responseData.copyWith(data: oldList));
-          }, orElse: () {
-            observer.value.data.value = ApiResult.success(responseData);
-          });
+          observer.value.data.value.maybeWhen(
+            success: (data) {
+              final oldList = (data as BookingHistoryModel?)?.data?.toList();
+              oldList?.addAll(responseData.data ?? List.empty());
+              observer.value.data.value = ApiResult.success(
+                responseData.copyWith(data: oldList),
+              );
+            },
+            orElse: () {
+              observer.value.data.value = ApiResult.success(responseData);
+            },
+          );
 
           observer.value.page = observer.value.page + 1;
           if ((responseData.data?.length ?? 0) < maxListApiReturns) {
@@ -683,6 +666,29 @@ debugPrint("==============================================");
       observer.value.isLoading = false;
       observer.refresh();
     }
+  }
+
+  /// Dedicated fetch for the RateTrekPopup. Fetches ONLY completed treks
+  /// so unrated older treks aren't missed due to pagination on the
+  /// 'All Bookings' list.
+  Future<List<BookingHistoryData>> fetchCompletedBookingsForPopup() async {
+    try {
+      final response = await _repository.getApiCall(
+        url: NetworkUrl.bookingHistoryWithStatus(
+          page: 1,
+          trekStatus: 'completed',
+        ),
+      );
+      if (response != null) {
+        final responseData = BookingHistoryModel.fromJson(response);
+        if (responseData.success == true) {
+          return responseData.data ?? [];
+        }
+      }
+    } catch (e) {
+      logger.e('Error fetching completed bookings for popup: $e');
+    }
+    return [];
   }
 
   Future<void> getFailedBookingAttempts() async {
@@ -707,12 +713,7 @@ debugPrint("==============================================");
     }
   }
 
-
-
-
-
   getBookingDetail({required dynamic bookingId}) async {
-
     try {
       bookingDetailsObserver.value = ApiResult.loading("");
       final response = await _repository.getApiCall(
@@ -725,13 +726,20 @@ debugPrint("==============================================");
           bookingDetailsObserver.value = ApiResult.success(body);
           bookingHistoryModal.value = body.data;
         } else {
-          bookingDetailsObserver.value = ApiResult.error(response['message'] ?? 'Failed to load dispute details');
+          bookingDetailsObserver.value = ApiResult.error(
+            response['message'] ?? 'Failed to load dispute details',
+          );
         }
       }
     } catch (e) {
-      bookingDetailsObserver.value = ApiResult.error('Failed to load dispute details: ${e.toString()}');
+      bookingDetailsObserver.value = ApiResult.error(
+        'Failed to load dispute details: ${e.toString()}',
+      );
       if (Get.context != null) {
-        CustomSnackBar.show(Get.context!, message: 'Failed to load dispute details: ${e.toString()}');
+        CustomSnackBar.show(
+          Get.context!,
+          message: 'Failed to load dispute details: ${e.toString()}',
+        );
       }
     }
     return null;
@@ -753,7 +761,8 @@ debugPrint("==============================================");
       await getBookingDetail(bookingId: bookingId);
       final booking = bookingHistoryModal.value;
       final bookingNumber = booking?.bookingNumber;
-      if (booking == null || bookingNumber == null || bookingNumber.isEmpty) return;
+      if (booking == null || bookingNumber == null || bookingNumber.isEmpty)
+        return;
 
       final bytes = await InvoicePdfService.generateInvoice(booking: booking);
 
@@ -788,7 +797,6 @@ debugPrint("==============================================");
 
     // Clear calendar data
     _clearCalendarData();
-
 
     // Clear booking cancellation data (temporary)
     bookingCancelledModal.value = BookingCancelledModal();
