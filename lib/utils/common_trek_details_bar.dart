@@ -5,14 +5,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:sizer/sizer.dart';
+import 'package:arobo_app/theme/app_tokens.dart';
 
 // Local to this bar only — AroboTheme.primary (0xFF0F172A, near-black
 // slate) is also used by search_summary_screen's own chrome, so it's kept
 // untouched there; this bar gets the forest-green identity established by
 // the trek card / filter bar redesign instead, via its own tokens.
 class _TabBarColors {
-  static const forestDeep = Color(0xFF1B4332);
-  static const forest = Color(0xFF2D6A4F);
+  static const forestDeep = AppColors.forestDeep;
+  static const forest = AppColors.forest;
 }
 
 class CommonTrekDetailsBar extends StatefulWidget {

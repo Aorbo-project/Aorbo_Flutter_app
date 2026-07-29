@@ -7,6 +7,8 @@ import '../utils/screen_constants.dart';
 import '../utils/common_images.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
+import 'package:arobo_app/theme/app_tokens.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS
@@ -17,7 +19,7 @@ class _C {
   static const ink = CommonColors.blackColor;
   static const inkMid = CommonColors.cFF6B7280;
   static const inkLight = CommonColors.grey_AEAEAE;
-  static const brand = Color(0xFF2D6A4F);
+  static const brand = AppColors.forest;
   static const teal = CommonColors.cFF0F7B6C;
   static const tealSoft = CommonColors.cFFE6F5F3;
   static const iconBadge = CommonColors.cFF111827;
@@ -188,7 +190,7 @@ class _MyAccountScreenState extends State<MyAccountScreen>
                         title: 'Traveller Information',
                         onTap: () async {
                           await _userC.getUserProfile();
-                          Get.toNamed('/traveller-information');
+                          Get.toNamed('/traveller-info');
                         },
                       ),
                       _buildDivider(),
@@ -352,20 +354,11 @@ class _MyAccountScreenState extends State<MyAccountScreen>
             children: [
               Text(
                 'Profile',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: FontSize.s13,
-                  fontWeight: FontWeight.w700,
-                  color: _C.ink,
-                ),
+                style: AppType.style(FontSize.s13, w: FontWeight.w700, color: _C.ink),
               ),
               Text(
                 'Manage account & preferences',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: FontSize.s9,
-                  color: _C.inkMid,
-                ),
+                style: AppType.style(FontSize.s9, color: _C.inkMid),
               ),
             ],
           ),
@@ -421,12 +414,7 @@ class _MyAccountScreenState extends State<MyAccountScreen>
               child: Center(
                 child: Text(
                   initial,
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: FontSize.s18,
-                    fontWeight: FontWeight.w700,
-                    color: _C.brand,
-                  ),
+                  style: AppType.style(FontSize.s18, w: FontWeight.w700, color: _C.brand),
                 ),
               ),
             ),
@@ -437,22 +425,12 @@ class _MyAccountScreenState extends State<MyAccountScreen>
                 children: [
                   Text(
                     name,
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: FontSize.s16,
-                      fontWeight: FontWeight.w700,
-                      color: _C.ink,
-                      height: 1.15,
-                    ),
+                    style: AppType.style(FontSize.s16, w: FontWeight.w700, color: _C.ink, height: 1.15),
                   ),
                   SizedBox(height: 0.4.h),
                   Text(
                     subtitle,
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: FontSize.s9,
-                      color: _C.inkMid,
-                    ),
+                    style: AppType.style(FontSize.s9, color: _C.inkMid),
                   ),
                 ],
               ),
@@ -468,13 +446,7 @@ class _MyAccountScreenState extends State<MyAccountScreen>
       padding: EdgeInsets.only(left: 1.w),
       child: Text(
         title,
-        style: TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: FontSize.s12,
-          fontWeight: FontWeight.w700,
-          color: _C.ink,
-          letterSpacing: 0.4,
-        ),
+        style: AppType.style(FontSize.s12, w: FontWeight.w700, color: _C.ink, letterSpacing: 0.4),
       ),
     );
   }
@@ -632,12 +604,7 @@ class _AnimatedMenuTileState extends State<_AnimatedMenuTile>
               Expanded(
                 child: Text(
                   widget.title,
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: FontSize.s11,
-                    fontWeight: FontWeight.w500,
-                    color: widget.isComingSoon ? _C.inkMid : _C.ink,
-                  ),
+                  style: AppType.style(FontSize.s11, w: FontWeight.w500, color: widget.isComingSoon ? _C.inkMid : _C.ink),
                 ),
               ),
               if (widget.trailingWidget != null) ...[
@@ -656,12 +623,7 @@ class _AnimatedMenuTileState extends State<_AnimatedMenuTile>
                   ),
                   child: Text(
                     'Soon',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: FontSize.s7,
-                      fontWeight: FontWeight.w500,
-                      color: _C.inkMid,
-                    ),
+                    style: AppType.style(FontSize.s7, w: FontWeight.w500, color: _C.inkMid),
                   ),
                 ),
                 SizedBox(width: 1.w),
@@ -772,12 +734,7 @@ class _AnimatedLogoutButtonState extends State<_AnimatedLogoutButton>
             SizedBox(width: 2.w),
             Text(
               'Logout Account',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: FontSize.s11,
-                fontWeight: FontWeight.w600,
-                color: _C.redText,
-              ),
+              style: AppType.style(FontSize.s11, w: FontWeight.w600, color: _C.redText),
             ),
           ],
         ),
@@ -810,12 +767,7 @@ class _LanguageChip extends StatelessWidget {
             SizedBox(width: 1.w),
             Text(
               'ENG',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: FontSize.s9,
-                fontWeight: FontWeight.w500,
-                color: _C.ink,
-              ),
+              style: AppType.style(FontSize.s9, w: FontWeight.w500, color: _C.ink),
             ),
             SizedBox(width: 0.5.w),
             Icon(Icons.keyboard_arrow_down_rounded, size: 14, color: _C.inkMid),
@@ -845,12 +797,7 @@ class _PendingBadge extends StatelessWidget {
       ),
       child: Text(
         amount,
-        style: TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: FontSize.s8,
-          fontWeight: FontWeight.w600,
-          color: _C.orange,
-        ),
+        style: AppType.style(FontSize.s8, w: FontWeight.w600, color: _C.orange),
       ),
     );
   }

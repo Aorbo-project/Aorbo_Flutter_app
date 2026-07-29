@@ -3,11 +3,13 @@ import 'package:arobo_app/utils/common_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
+import 'package:arobo_app/theme/app_tokens.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 class _FM {
   // Was CommonColors.trek_route_color (0xff212199, navy) — shared across 9
   // files, so overridden locally here rather than recolored globally.
-  static const total = Color(0xFF1B4332);
+  static const total = AppColors.forestDeep;
 }
 
 class TotalFareModal extends StatelessWidget {
@@ -120,11 +122,7 @@ class TotalFareModal extends StatelessWidget {
                     children: [
                       Text(
                         'Fare Breakup',
-                        style: GoogleFonts.poppins(
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF0F172A),
-                        ),
+                        style: AppType.style(16.sp, w: FontWeight.w600, color: AppColors.inkStrong),
                       ),
                       GestureDetector(
                         onTap: onClose,
@@ -134,7 +132,7 @@ class TotalFareModal extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: CommonColors.whiteColor,
                             shape: BoxShape.circle,
-                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                            border: Border.all(color: AppColors.divider),
                           ),
                           child: const Icon(
                             Icons.close,
@@ -211,11 +209,7 @@ class TotalFareModal extends StatelessWidget {
                         children: [
                           Text(
                             'Flexible Payment Plan Selected',
-                            style: GoogleFonts.poppins(
-                              fontSize: 10.sp,
-                              fontWeight: FontWeight.w600,
-                              color: CommonColors.cFF0F7B6C,
-                            ),
+                            style: AppType.style(10.sp, w: FontWeight.w600, color: CommonColors.cFF0F7B6C),
                           ),
                           SizedBox(height: 1.5.h),
                           _buildFareRow(
@@ -283,29 +277,20 @@ class TotalFareModal extends StatelessWidget {
         Flexible(
           child: Text(
             label,
-            style: GoogleFonts.poppins(
-              fontSize: isTotal ? 13.sp : 10.sp,
-              fontWeight: isTotal ? FontWeight.w700 : FontWeight.w400,
-              color: isTotal
-                  ? const Color(0xFF0F172A)
-                  : (isSub ? const Color(0xFF64748B) : CommonColors.blackColor),
-            ),
+            style: AppType.style(isTotal ? 13.sp : 10.sp, w: isTotal ? FontWeight.w700 : FontWeight.w400, color: isTotal
+                  ? AppColors.inkStrong
+                  : (isSub ? const Color(0xFF64748B) : CommonColors.blackColor)),
           ),
         ),
         const SizedBox(width: 10),
         Text(
           amount,
-          style: GoogleFonts.poppins(
-            fontSize: isTotal ? 13.sp : 10.sp,
-            fontWeight: isTotal ? FontWeight.w700 : FontWeight.w500,
-            color:
-                valueColor ??
+          style: AppType.style(isTotal ? 13.sp : 10.sp, w: isTotal ? FontWeight.w700 : FontWeight.w500, color: valueColor ??
                 (isTotal
                     ? _FM.total
                     : (isSub
                           ? const Color(0xFF64748B)
-                          : CommonColors.blackColor)),
-          ),
+                          : CommonColors.blackColor))),
         ),
       ],
     );

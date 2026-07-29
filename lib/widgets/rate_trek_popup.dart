@@ -6,39 +6,32 @@ import 'package:sizer/sizer.dart';
 import '../freezed_models/booking/booking_history_model.dart';
 import '../utils/ist_date_utils.dart';
 import '../utils/shared_preferences.dart';
+import 'package:arobo_app/theme/app_tokens.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 class RateTrekPopup {
   RateTrekPopup._();
 
   static const String _prefPrefix = 'rate_popup_shown_';
 
-  /// Prevents two triggers in the same session racing each other and
-  /// stacking two popups.
   static bool _visibleThisSession = false;
   static OverlayEntry? _overlayEntry;
 
-  /// Bulletproof check: sometimes freezed parsing of `ratingGiven`
-  /// (which comes as `true` or `"true"`) fails. We check both flag and value.
   static bool isRated(BookingHistoryData? b) {
     if (b == null) return false;
     return b.ratingGiven == true || (b.ratingValue ?? 0.0) > 0.0;
   }
 
-  /// Safely extracts the numeric rating value.
   static double ratingValueOf(BookingHistoryData? b) {
     return (b?.ratingValue ?? 0.0).toDouble();
   }
 
-  /// Clears the 24h persistence flag for a booking so the popup can be
-  /// tested again immediately. Call this temporarily from anywhere in debug.
   static Future<void> debugClearShownFlag(dynamic bookingId) async {
     if (bookingId == null) return;
     final pref = await SpUtil.getInstance();
     await pref.remove('$_prefPrefix$bookingId');
   }
 
-  /// Most recently completed, UNRATED, non-cancelled booking.
-  /// Returns null if nothing qualifies.
   static BookingHistoryData? findEligibleBooking(
     List<BookingHistoryData> bookings, {
     int recentWindowDays = 90,
@@ -52,10 +45,9 @@ class RateTrekPopup {
       final trekStatus = (b.trekStatus ?? '').toLowerCase();
       if (status == 'cancelled') continue;
 
-      // Bulletproof check: if either flag is true, it's rated.
       final bool isRated =
           b.ratingGiven == true || (b.ratingValue ?? 0.0) > 0.0;
-      if (isRated) continue; // already rated → never show
+      if (isRated) continue;
 
       final end = ISTDateUtils.toIST(b.batch?.endDate);
 
@@ -65,9 +57,6 @@ class RateTrekPopup {
 
       if (!isCompletedStatus && !isCompletedByDate) continue;
 
-      // If the backend explicitly says it's completed, we trust it and
-      // bypass the date window check (fixes issues where backend dates
-      // are in the future relative to the device clock).
       if (!isCompletedStatus && end != null) {
         if (now.difference(end).inDays > recentWindowDays) continue;
       }
@@ -80,8 +69,6 @@ class RateTrekPopup {
     return best;
   }
 
-  /// Checks eligibility + 24h persistence, then shows the side popup.
-  /// Safe to call on every app open — it self-guards.
   static Future<void> maybeShow(
     BuildContext context,
     List<BookingHistoryData> bookings,
@@ -97,35 +84,28 @@ class RateTrekPopup {
       return;
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // ⚠️ TESTING MODE: 24h guard disabled. Re-enable this block later!
-    // ─────────────────────────────────────────────────────────────────────────
-    // final pref = await SpUtil.getInstance();
-    // final key = '$_prefPrefix${booking.id}';
-    // final lastShownStr = pref.getString(key) ?? '';
-    // if (lastShownStr.isNotEmpty) {
-    //   final lastShown = DateTime.tryParse(lastShownStr);
-    //   if (lastShown != null &&
-    //       DateTime.now().difference(lastShown) < const Duration(hours: 24)) {
-    //     debugPrint('[RateTrekPopup] skipped — shown recently (24h guard)');
-    //     return; // shown recently — don't nag again this soon
-    //   }
-    // }
+    final pref = await SpUtil.getInstance();
+    final key = '$_prefPrefix${booking.id}';
+    final lastShownStr = pref.getString(key) ?? '';
+    if (lastShownStr.isNotEmpty) {
+      final lastShown = DateTime.tryParse(lastShownStr);
+      if (lastShown != null &&
+          DateTime.now().difference(lastShown) < const Duration(hours: 24)) {
+        return; // shown recently — don't nag again this soon
+      }
+    }
 
     if (!context.mounted) return;
-
     _visibleThisSession = true;
 
-    // Persist BEFORE showing so a crash/kill mid-dialog can't cause an
-    // instant re-nag loop. (Also disabled for testing)
-    // await pref.putString(key, DateTime.now().toIso8601String());
+    // Persist BEFORE showing so a crash mid-dialog can't cause a re-nag loop.
+    await pref.putString(key, DateTime.now().toIso8601String());
 
     if (!context.mounted) {
       _visibleThisSession = false;
       return;
     }
 
-    // Show the non-blocking overlay
     _overlayEntry = OverlayEntry(
       builder: (ctx) =>
           _RateTrekSidePopup(booking: booking, onClose: _removeOverlay),
@@ -140,9 +120,6 @@ class RateTrekPopup {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-//  SIDE POPUP WIDGET (Non-blocking overlay)
-// ─────────────────────────────────────────────────────────────────────────
 class _RateTrekSidePopup extends StatefulWidget {
   final BookingHistoryData booking;
   final VoidCallback onClose;
@@ -167,7 +144,6 @@ class _RateTrekSidePopupState extends State<_RateTrekSidePopup>
       duration: const Duration(milliseconds: 500),
     );
 
-    // Slides in from the right side
     _slideAnimation = Tween<Offset>(
       begin: const Offset(1.2, 0.0),
       end: Offset.zero,
@@ -207,8 +183,9 @@ class _RateTrekSidePopupState extends State<_RateTrekSidePopup>
     final title = widget.booking.trek?.title ?? 'Your trek';
 
     return Positioned(
-      top: 520,
-      right: 12,
+      right: 3.w,
+      bottom: 11
+          .h, // clears the bottom nav on every device — was top: 520 (offscreen on small phones)
       child: SafeArea(
         child: FadeTransition(
           opacity: _fadeAnimation,
@@ -226,14 +203,14 @@ class _RateTrekSidePopupState extends State<_RateTrekSidePopup>
 
   Widget _buildCard(String title) {
     return Container(
-      width: 82.w, // Side popup width
+      width: 82.w,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1B4332).withValues(alpha: 0.15),
+            color: AppColors.forestDeep.withValues(alpha: 0.15),
             blurRadius: 30,
             offset: const Offset(-4, 8),
           ),
@@ -242,22 +219,19 @@ class _RateTrekSidePopupState extends State<_RateTrekSidePopup>
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          // ── Background Trek Graphic ──
           Positioned(
             bottom: -25,
             right: -15,
             child: Icon(
               Icons.terrain_rounded,
               size: 110,
-              color: const Color(0xFF1B4332).withValues(alpha: 0.05),
+              color: AppColors.forestDeep.withValues(alpha: 0.05),
             ),
           ),
-
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              // ── Header Row ──
               Row(
                 children: [
                   Container(
@@ -265,7 +239,7 @@ class _RateTrekSidePopupState extends State<_RateTrekSidePopup>
                     height: 40,
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: [Color(0xFF1B4332), Color(0xFF2D6A4F)],
+                        colors: [AppColors.forestDeep, AppColors.forest],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
@@ -284,23 +258,13 @@ class _RateTrekSidePopupState extends State<_RateTrekSidePopup>
                       children: [
                         Text(
                           'Trek Completed! 🎉',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.w800,
-                            color: const Color(0xFF0F172A),
-                          ),
+                          style: AppType.style(12.sp, w: FontWeight.w800, color: AppColors.inkStrong),
                         ),
                         Text(
                           title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 9.sp,
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFF64748B),
-                          ),
+                          style: AppType.style(9.sp, w: FontWeight.w600, color: const Color(0xFF64748B)),
                         ),
                       ],
                     ),
@@ -322,20 +286,12 @@ class _RateTrekSidePopupState extends State<_RateTrekSidePopup>
                   ),
                 ],
               ),
-
               const SizedBox(height: 16),
-              const Divider(height: 1, color: Color(0xFFE2E8F0)),
+              const Divider(height: 1, color: AppColors.divider),
               const SizedBox(height: 16),
-
-              // ── Rating Row ──
               Text(
                 'How was your experience?',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 9.sp,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF0F172A),
-                ),
+                style: AppType.style(9.sp, w: FontWeight.w600, color: AppColors.inkStrong),
               ),
               const SizedBox(height: 10),
               Row(
@@ -366,19 +322,14 @@ class _RateTrekSidePopupState extends State<_RateTrekSidePopup>
                         vertical: 8,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF0F172A),
+                        color: AppColors.inkStrong,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
                         children: [
                           Text(
                             'Rate Now',
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 9.sp,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                            ),
+                            style: AppType.style(9.sp, w: FontWeight.w700, color: Colors.white),
                           ),
                           const SizedBox(width: 4),
                           const Icon(

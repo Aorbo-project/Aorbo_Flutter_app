@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
 import 'package:sizer/sizer.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 class PopularTreksScreen extends StatefulWidget {
   const PopularTreksScreen({super.key});
@@ -56,11 +57,7 @@ class _PopularTreksScreenState extends State<PopularTreksScreen> {
         title: Text(
           'Popular Treks',
           textScaler: const TextScaler.linear(1.0),
-          style: GoogleFonts.poppins(
-            fontSize: FontSize.s14,
-            fontWeight: FontWeight.w500,
-            color: CommonColors.blackColor,
-          ),
+          style: AppType.style(FontSize.s14, w: FontWeight.w500, color: CommonColors.blackColor),
         ),
       ),
       body: Obx(() {

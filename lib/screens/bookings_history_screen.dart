@@ -9,6 +9,8 @@ import '../utils/common_colors.dart';
 import '../utils/screen_constants.dart';
 import '../utils/common_booked_card.dart';
 import '../utils/ist_date_utils.dart';
+import 'package:arobo_app/theme/app_tokens.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS
@@ -22,16 +24,16 @@ class _BkColors {
   static const accent = Color(0xFF3B5BDB);
   static const accentLight = Color(0xFFEEF2FF);
   static const border = Color(0xFFE9ECEF);
-  static const badgeBg = Color(0xFF111827);
+  static const badgeBg = AppColors.ink;
 
   static const upcomingBg = Color(0xFFEEF2FF);
   static const upcomingFg = Color(0xFF3B5BDB);
-  static const ongoingBg = Color(0xFFE6F5F3);
-  static const ongoingFg = Color(0xFF0F7B6C);
-  static const completedBg = Color(0xFFF0FDF4);
+  static const ongoingBg = AppColors.tealSoft;
+  static const ongoingFg = AppColors.teal;
+  static const completedBg = AppColors.successSoft;
   static const completedFg = Color(0xFF16A34A);
   static const cancelledBg = Color(0xFFFEF2F2);
-  static const cancelledFg = Color(0xFFDC2626);
+  static const cancelledFg = AppColors.danger;
 }
 
 class BookingsScreen extends StatefulWidget {
@@ -218,12 +220,7 @@ class _BookingsScreenState extends State<BookingsScreen>
       iconTheme: const IconThemeData(color: _BkColors.ink),
       title: Text(
         'My Bookings',
-        style: TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: FontSize.s15,
-          fontWeight: FontWeight.w700,
-          color: _BkColors.ink,
-        ),
+        style: AppType.style(FontSize.s15, w: FontWeight.w700, color: _BkColors.ink),
       ),
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(1),
@@ -249,14 +246,9 @@ class _BookingsScreenState extends State<BookingsScreen>
                     _dashboardC.selectedFilter.value == 'All Bookings'
                         ? 'Filter'
                         : _capitalize(_dashboardC.selectedFilter.value),
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: FontSize.s9,
-                      fontWeight: FontWeight.w600,
-                      color: _dashboardC.selectedFilter.value == 'All Bookings'
+                    style: AppType.style(FontSize.s9, w: FontWeight.w600, color: _dashboardC.selectedFilter.value == 'All Bookings'
                           ? Colors.white
-                          : _pillFg(_dashboardC.selectedFilter.value),
-                    ),
+                          : _pillFg(_dashboardC.selectedFilter.value)),
                   ),
                   SizedBox(width: 1.w),
                   Icon(
@@ -276,7 +268,7 @@ class _BookingsScreenState extends State<BookingsScreen>
   }
 
   // ── BOOKING CARD ──────────────────────────────────────────────────────────
-  Widget _buildBookingCard(dynamic booking, int index) {
+  Widget _buildBookingCard(BookingHistoryData? booking, int index) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
       duration: Duration(milliseconds: 280 + index * 50),
@@ -291,18 +283,19 @@ class _BookingsScreenState extends State<BookingsScreen>
       child: Padding(
         padding: EdgeInsets.only(bottom: 0.w),
         child: CommonBookedCard(
-          booking: booking,
-          onViewDetailsTap: () {
-            Get.to(() => BookingsUpcomingScreen(bookingId: booking.id));
-          },
-          onRateTrekTap: () {
-            Get.to(
-              () => BookingsUpcomingScreen(
-                bookingId: booking.id,
-                autoOpenRating: true,
-              ),
-            );
-          },
+          booking: booking!,
+          onViewDetailsTap: booking.id == null
+              ? null
+              : () =>
+                    Get.to(() => BookingsUpcomingScreen(bookingId: booking.id)),
+          onRateTrekTap: booking.id == null
+              ? null
+              : () => Get.to(
+                  () => BookingsUpcomingScreen(
+                    bookingId: booking.id,
+                    autoOpenRating: true,
+                  ),
+                ),
         ),
       ),
     );
@@ -373,66 +366,39 @@ class _BookingsScreenState extends State<BookingsScreen>
                   ),
                   child: Text(
                     'Payment Failed',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: FontSize.s9,
-                      fontWeight: FontWeight.w700,
-                      color: _BkColors.cancelledFg,
-                    ),
+                    style: AppType.style(FontSize.s9, w: FontWeight.w700, color: _BkColors.cancelledFg),
                   ),
                 ),
                 const Spacer(),
                 if (createdAt != null)
                   Text(
                     _formatDate(createdAt),
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: FontSize.s9,
-                      color: _BkColors.inkLight,
-                    ),
+                    style: AppType.style(FontSize.s9, color: _BkColors.inkLight),
                   ),
               ],
             ),
             SizedBox(height: 1.2.h),
             Text(
               trekTitle,
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: FontSize.s13,
-                fontWeight: FontWeight.w700,
-                color: _BkColors.ink,
-              ),
+              style: AppType.style(FontSize.s13, w: FontWeight.w700, color: _BkColors.ink),
             ),
             if (startDate != null) ...[
               SizedBox(height: 0.5.h),
               Text(
                 'Departure: ${_formatDate(startDate)}',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: FontSize.s10,
-                  color: _BkColors.inkMid,
-                ),
+                style: AppType.style(FontSize.s10, color: _BkColors.inkMid),
               ),
             ],
             SizedBox(height: 1.h),
             Text(
               failureDescription,
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: FontSize.s10,
-                color: _BkColors.cancelledFg,
-              ),
+              style: AppType.style(FontSize.s10, color: _BkColors.cancelledFg),
             ),
             if (amount != null) ...[
               SizedBox(height: 1.h),
               Text(
                 '₹$amount — not charged',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: FontSize.s10,
-                  fontWeight: FontWeight.w600,
-                  color: _BkColors.inkMid,
-                ),
+                style: AppType.style(FontSize.s10, w: FontWeight.w600, color: _BkColors.inkMid),
               ),
             ],
           ],
@@ -468,12 +434,7 @@ class _BookingsScreenState extends State<BookingsScreen>
               hasFilter
                   ? 'No ${_capitalize(_dashboardC.selectedFilter.value)} bookings'
                   : 'No bookings yet',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: FontSize.s14,
-                fontWeight: FontWeight.w700,
-                color: _BkColors.ink,
-              ),
+              style: AppType.style(FontSize.s14, w: FontWeight.w700, color: _BkColors.ink),
             ),
             SizedBox(height: 0.8.h),
             Text(
@@ -481,12 +442,7 @@ class _BookingsScreenState extends State<BookingsScreen>
                   ? 'Try a different filter to see your bookings'
                   : 'Your upcoming treks will appear here',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: FontSize.s10,
-                color: _BkColors.inkMid,
-                height: 1.6,
-              ),
+              style: AppType.style(FontSize.s10, color: _BkColors.inkMid, height: 1.6),
             ),
             if (hasFilter) ...[
               SizedBox(height: 2.5.h),
@@ -506,12 +462,7 @@ class _BookingsScreenState extends State<BookingsScreen>
                   ),
                   child: Text(
                     'Clear filter',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: FontSize.s10,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
+                    style: AppType.style(FontSize.s10, w: FontWeight.w600, color: Colors.white),
                   ),
                 ),
               ),
@@ -715,12 +666,7 @@ class _BookingsScreenState extends State<BookingsScreen>
                   SizedBox(width: 3.w),
                   Text(
                     'Filter Bookings',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: FontSize.s13,
-                      fontWeight: FontWeight.w700,
-                      color: _BkColors.ink,
-                    ),
+                    style: AppType.style(FontSize.s13, w: FontWeight.w700, color: _BkColors.ink),
                   ),
                 ],
               ),
@@ -785,14 +731,9 @@ class _BookingsScreenState extends State<BookingsScreen>
                             filter == 'All Bookings'
                                 ? 'All Bookings'
                                 : _capitalize(filter),
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: FontSize.s11,
-                              fontWeight: isSelected
+                            style: AppType.style(FontSize.s11, w: isSelected
                                   ? FontWeight.w700
-                                  : FontWeight.w400,
-                              color: isSelected ? dotColor : _BkColors.ink,
-                            ),
+                                  : FontWeight.w400, color: isSelected ? dotColor : _BkColors.ink),
                           ),
                         ),
                         if (isSelected)

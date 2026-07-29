@@ -13,6 +13,7 @@ import 'package:pinput/pinput.dart';
 import 'dart:async';
 
 import '../controller/auth_controller.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 class OTPScreen extends StatefulWidget {
   // final String phoneNumber;
@@ -143,11 +144,7 @@ class _OTPScreenState extends State<OTPScreen>
     final defaultPinTheme = PinTheme(
       width: 25.sp,
       height: 30.sp,
-      textStyle: GoogleFonts.poppins(
-        fontSize: FontSize.s14,
-        fontWeight: FontWeight.w700,
-        color: CommonColors.blackColor,
-      ),
+      textStyle: AppType.style(FontSize.s14, w: FontWeight.w700, color: CommonColors.blackColor),
       decoration: BoxDecoration(
         color: CommonColors.whiteColor,
         borderRadius: BorderRadius.circular(15.sp),
@@ -238,21 +235,13 @@ class _OTPScreenState extends State<OTPScreen>
                                 Text(
                                   'Enter Verification Code',
                                   // textScaler: const TextScaler.linear(1.0),
-                                  style: GoogleFonts.poppins(
-                                    fontSize: FontSize.s14,
-                                    fontWeight: FontWeight.w600,
-                                    color: CommonColors.blackColor,
-                                  ),
+                                  style: AppType.style(FontSize.s14, w: FontWeight.w600, color: CommonColors.blackColor),
                                 ),
                                 SizedBox(height: 1.5.h),
                                 Text(
                                   'sent to +91 ${_authC.phoneNumberLoginTextField.value.text}',
                                   // textScaler: const TextScaler.linear(1.0),
-                                  style: GoogleFonts.poppins(
-                                    fontSize: FontSize.s10,
-                                    fontWeight: FontWeight.w500,
-                                    color: CommonColors.blackColor,
-                                  ),
+                                  style: AppType.style(FontSize.s10, w: FontWeight.w500, color: CommonColors.blackColor),
                                 ),
                               ],
                             ),
@@ -306,22 +295,13 @@ class _OTPScreenState extends State<OTPScreen>
                             if (_errorMessage != null)
                               Text(
                                 _errorMessage!,
-                                style: GoogleFonts.poppins(
-                                  fontSize: FontSize.s9,
-                                  color: CommonColors.red_B52424,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                                style: AppType.style(FontSize.s9, w: FontWeight.w500, color: CommonColors.red_B52424),
                               ),
                             SizedBox(height: 2.h),
                             Text(
                               controller.formatTime(),
                               // textScaler: const TextScaler.linear(1.0),
-                              style: GoogleFonts.poppins(
-                                fontSize: FontSize.s17,
-                                color: CommonColors.appYellowColor,
-                                fontWeight: FontWeight.w500,
-                                letterSpacing: 0.5.w,
-                              ),
+                              style: AppType.style(FontSize.s17, w: FontWeight.w500, color: CommonColors.appYellowColor, letterSpacing: 0.5.w),
                             ),
                             SizedBox(height: 3.h),
                             TextButton(

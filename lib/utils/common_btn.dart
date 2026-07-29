@@ -2,7 +2,12 @@ import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
+/// Same public API as before. Fixes:
+///  • Disabled state is now visually distinct even with a gradient
+///    (previously Ink painted the gradient regardless of isDisabled).
+///  • Tap is genuinely blocked when isDisabled — no more `() {}` hacks.
 class CommonButton extends StatelessWidget {
   final String text;
   final VoidCallback onPressed;
@@ -45,58 +50,66 @@ class CommonButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(borderRadius ?? 4.h);
+    final solid =
+        backgroundColor ?? CommonColors.searchbtn.withValues(alpha: 0.9);
+
     return SizedBox(
       width: isFullWidth ? double.infinity : (width ?? 40.w),
       height: height ?? 6.h,
-      child: ElevatedButton(
-        onPressed: isDisabled ? null : onPressed,
-        style: ElevatedButton.styleFrom(
-          padding: EdgeInsets.zero,
-          backgroundColor: Colors.transparent,
-          elevation: elevation ?? 3,
-          shadowColor: CommonColors.blackColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(borderRadius ?? 4.h),
-          ),
-          disabledBackgroundColor: backgroundColor?.withValues(alpha: 0.6) ??
-              CommonColors.searchbtn.withValues(alpha: 0.6),
-        ),
-        child: Ink(
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 150),
+        opacity: isDisabled ? 0.55 : 1.0,
+        child: Container(
           decoration: BoxDecoration(
-            gradient: gradient,
-            color: gradient == null
-                ? (backgroundColor ??
-                    CommonColors.searchbtn.withValues(alpha: 0.9))
-                : null,
-            borderRadius: BorderRadius.circular(borderRadius ?? 4.h),
+            borderRadius: radius,
+            boxShadow: isDisabled
+                ? null
+                : [
+                    BoxShadow(
+                      color: (gradient?.colors.first ?? solid).withValues(
+                        alpha: 0.30,
+                      ),
+                      blurRadius: (elevation ?? 3) * 3,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
           ),
-          child: Container(
-            width: double.infinity,
-            height: double.infinity,
-            alignment: Alignment.center,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (prefixIcon != null) ...[
-                  prefixIcon!,
-                  SizedBox(width: 1.w),
-                ],
-                Text(
-                  text,
-                  textScaler: const TextScaler.linear(1.0),
-                  style: TextStyle(
-                    fontSize: fontSize ?? FontSize.s14,
-                    fontWeight: fontWeight ?? FontWeight.w800,
-                    color: textColor ?? CommonColors.searchbtntext,
-                    fontFamily: fontFamily,
+          child: Material(
+            color: Colors.transparent,
+            child: Ink(
+              decoration: BoxDecoration(
+                gradient: gradient,
+                color: gradient == null ? solid : null,
+                borderRadius: radius,
+              ),
+              child: InkWell(
+                onTap: isDisabled ? null : onPressed,
+                borderRadius: radius,
+                splashColor: Colors.white.withValues(alpha: 0.15),
+                highlightColor: Colors.transparent,
+                child: Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (prefixIcon != null) ...[
+                        prefixIcon!,
+                        SizedBox(width: 1.w),
+                      ],
+                      Text(
+                        text,
+                        textScaler: const TextScaler.linear(1.0),
+                        style: AppType.style(fontSize ?? FontSize.s14, w: fontWeight ?? FontWeight.w800, color: textColor ?? CommonColors.searchbtntext),
+                      ),
+                      if (suffixIcon != null) ...[
+                        SizedBox(width: 1.w),
+                        suffixIcon!,
+                      ],
+                    ],
                   ),
                 ),
-                if (suffixIcon != null) ...[
-                  SizedBox(width: 1.w),
-                  suffixIcon!,
-                ],
-              ],
+              ),
             ),
           ),
         ),
@@ -104,28 +117,3 @@ class CommonButton extends StatelessWidget {
     );
   }
 }
-
-// Example usage:
-// CommonButton(
-//   text: 'Continue',
-//   onPressed: () {
-//     // Your action here
-//   },
-//   backgroundColor: CommonColors.appYellowColor,
-//   textColor: CommonColors.blackColor,
-//   isFullWidth: true,
-// );
-
-// For a custom styled button:
-// CommonButton(
-//   text: 'Custom Button',
-//   onPressed: () {},
-//   backgroundColor: Colors.blue,
-//   textColor: Colors.white,
-//   borderRadius: 10,
-//   elevation: 4,
-//   padding: EdgeInsets.symmetric(vertical: 12),
-//   isFullWidth: false,
-//   width: 200,
-//   prefixIcon: Icon(Icons.add),
-// );

@@ -15,6 +15,8 @@ import '../utils/common_colors.dart';
 import '../utils/common_booked_card.dart';
 import '../utils/custom_snackbar.dart';
 import '../utils/ist_date_utils.dart';
+import 'package:arobo_app/theme/app_tokens.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS — matches TravellerInformationScreen
@@ -25,7 +27,7 @@ class _TI {
   static const ink = CommonColors.blackColor;
   static const inkMid = CommonColors.cFF6B7280;
   static const inkLight = CommonColors.grey_AEAEAE;
-  static const brand = Color(0xFF2D6A4F);
+  static const brand = AppColors.forest;
   static const teal = CommonColors.cFF0F7B6C;
   static const tealSoft = CommonColors.cFFE6F5F3;
   static const red = CommonColors.cFFDC2626;
@@ -36,7 +38,7 @@ class _TI {
   static const holdFillGradient = LinearGradient(
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
-    colors: [Color(0xFF991B1B), Color(0xFFDC2626)],
+    colors: [Color(0xFF991B1B), AppColors.danger],
   );
 }
 
@@ -102,8 +104,7 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
       _lastTickSecond = sec;
       HapticFeedback.selectionClick();
     }
-    // Repaint countdown text / fill.
-    if (mounted) setState(() {});
+    // setState removed — the button already repaints via AnimatedBuilder.
   }
 
   void _onHoldStatus(AnimationStatus status) {
@@ -233,12 +234,7 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
         },
         child: Text(
           'Cancel Booking',
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 13.sp,
-            fontWeight: FontWeight.w700,
-            color: _TI.ink,
-          ),
+          style: AppType.style(13.sp, w: FontWeight.w700, color: _TI.ink),
         ),
       ),
     );
@@ -348,20 +344,11 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
                     children: [
                       Text(
                         'Your trek departs on',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 8.sp,
-                          color: _TI.inkMid,
-                        ),
+                        style: AppType.style(8.sp, color: _TI.inkMid),
                       ),
                       Text(
                         formattedDeparture,
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 10.sp,
-                          color: _TI.ink,
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: AppType.style(10.sp, w: FontWeight.w700, color: _TI.ink),
                       ),
                     ],
                   ),
@@ -373,22 +360,12 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
                   children: [
                     Text(
                       'TBR ID',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 8.sp,
-                        color: _TI.inkMid,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: AppType.style(8.sp, w: FontWeight.w600, color: _TI.inkMid),
                     ),
                     SizedBox(height: 0.2.h),
                     Text(
                       tbrId,
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 10.sp,
-                        color: _TI.ink,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: AppType.style(10.sp, w: FontWeight.w700, color: _TI.ink),
                     ),
                   ],
                 ),
@@ -401,21 +378,11 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
             children: [
               Text(
                 'Time remaining to departure',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 9.sp,
-                  color: _TI.inkMid,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: AppType.style(9.sp, w: FontWeight.w500, color: _TI.inkMid),
               ),
               Text(
                 '$days Days $remainingHours Hrs',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 10.sp,
-                  color: urgencyColor,
-                  fontWeight: FontWeight.w800,
-                ),
+                style: AppType.style(10.sp, w: FontWeight.w800, color: urgencyColor),
               ),
             ],
           ),
@@ -447,13 +414,7 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
                   Expanded(
                     child: Text(
                       data!.refundCalculation!.slabInfo!,
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 9.sp,
-                        color: urgencyColor,
-                        height: 1.4,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: AppType.style(9.sp, w: FontWeight.w600, color: urgencyColor, height: 1.4),
                     ),
                   ),
                 ],
@@ -517,13 +478,7 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
           if (loseItems.isNotEmpty) ...[
             Text(
               'CANCELLATION CHARGES',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 8.sp,
-                fontWeight: FontWeight.w700,
-                color: _TI.red,
-                letterSpacing: 1,
-              ),
+              style: AppType.style(8.sp, w: FontWeight.w700, color: _TI.red, letterSpacing: 1),
             ),
             SizedBox(height: 1.h),
             ...loseItems.map(
@@ -548,13 +503,7 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
           if (refundItems.isNotEmpty) ...[
             Text(
               'YOU WILL RECEIVE',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 8.sp,
-                fontWeight: FontWeight.w700,
-                color: _TI.teal,
-                letterSpacing: 1,
-              ),
+              style: AppType.style(8.sp, w: FontWeight.w700, color: _TI.teal, letterSpacing: 1),
             ),
             SizedBox(height: 1.h),
             ...refundItems.map(
@@ -581,12 +530,7 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
             children: [
               Text(
                 'Total Refund Amount',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.w700,
-                  color: _TI.ink,
-                ),
+                style: AppType.style(12.sp, w: FontWeight.w700, color: _TI.ink),
               ),
               _animatedRupee(
                 refund,
@@ -614,12 +558,7 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
                 Expanded(
                   child: Text(
                     'Refund will be processed to your original payment method within 5-7 business days.',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 9.sp,
-                      color: _TI.inkMid,
-                      height: 1.4,
-                    ),
+                    style: AppType.style(9.sp, color: _TI.inkMid, height: 1.4),
                   ),
                 ),
               ],
@@ -642,12 +581,7 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
         Expanded(
           child: Text(
             label,
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 10.sp,
-              fontWeight: isBold ? FontWeight.w700 : FontWeight.w500,
-              color: isBold ? _TI.ink : _TI.inkMid,
-            ),
+            style: AppType.style(10.sp, w: isBold ? FontWeight.w700 : FontWeight.w500, color: isBold ? _TI.ink : _TI.inkMid),
           ),
         ),
         TweenAnimationBuilder<double>(
@@ -660,12 +594,7 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
                 : "₹ ${val.toStringAsFixed(2)}";
             return Text(
               display,
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 10.sp,
-                fontWeight: isBold ? FontWeight.w800 : FontWeight.w600,
-                color: color,
-              ),
+              style: AppType.style(10.sp, w: isBold ? FontWeight.w800 : FontWeight.w600, color: color),
             );
           },
         ),
@@ -714,21 +643,11 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
           children: [
             Text(
               '${(100 - percent).toStringAsFixed(0)}% Deducted',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 8.sp,
-                color: _TI.red,
-                fontWeight: FontWeight.w600,
-              ),
+              style: AppType.style(8.sp, w: FontWeight.w600, color: _TI.red),
             ),
             Text(
               '${percent.toStringAsFixed(0)}% Refunded',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 8.sp,
-                color: _TI.teal,
-                fontWeight: FontWeight.w600,
-              ),
+              style: AppType.style(8.sp, w: FontWeight.w600, color: _TI.teal),
             ),
           ],
         ),
@@ -766,21 +685,11 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
               textAlignVertical: TextAlignVertical.top,
               decoration: InputDecoration(
                 hintText: 'Please enter your reason for cancellation...',
-                hintStyle: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 10.sp,
-                  color: _TI.inkLight,
-                  height: 1.5,
-                ),
+                hintStyle: AppType.style(10.sp, color: _TI.inkLight, height: 1.5),
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.all(3.w),
               ),
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 10.sp,
-                color: _TI.ink,
-                height: 1.5,
-              ),
+              style: AppType.style(10.sp, color: _TI.ink, height: 1.5),
             ),
           ),
         ],
@@ -834,12 +743,7 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
                         SizedBox(width: 1.5.w),
                         Text(
                           'Hold for $_holdSeconds seconds — this action cannot be undone',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 8.sp,
-                            color: _TI.inkLight,
-                            fontWeight: FontWeight.w500,
-                          ),
+                          style: AppType.style(8.sp, w: FontWeight.w500, color: _TI.inkLight),
                         ),
                       ],
                     ),
@@ -974,13 +878,7 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
                                   : holding
                                   ? 'Keep Holding · ${secondsLeft}s'
                                   : 'Hold to Cancel Booking',
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: 12.sp,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                                letterSpacing: 0.3,
-                              ),
+                              style: AppType.style(12.sp, w: FontWeight.w700, color: Colors.white, letterSpacing: 0.3),
                             ),
                           ],
                         ),
@@ -1083,12 +981,7 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
         Flexible(
           child: Text(
             title,
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 13.sp,
-              fontWeight: FontWeight.w700,
-              color: _TI.ink,
-            ),
+            style: AppType.style(13.sp, w: FontWeight.w700, color: _TI.ink),
           ),
         ),
       ],
@@ -1107,12 +1000,7 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
         final t = Curves.easeOutCubic.transform(_refundCountController.value);
         return Text(
           "₹ ${(value * t).toStringAsFixed(2)}",
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: fontSize,
-            fontWeight: fontWeight,
-            color: color,
-          ),
+          style: AppType.style(fontSize, w: fontWeight, color: color),
         );
       },
     );

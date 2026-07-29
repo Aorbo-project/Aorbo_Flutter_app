@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import '../../repository/network_url.dart';
 import '../profile/user_profile_model.dart';
 
 part 'booking_history_model.freezed.dart';
@@ -8,12 +9,11 @@ String? _toString(dynamic value) => value?.toString();
 
 String? _parseImageUrl(String? path) {
   if (path == null || path.isEmpty) return null;
-
-  if (path.startsWith('http')) {
-    return path;
-  }
-
-  return 'https://api.aorbotreks.co.in/$path';
+  if (path.startsWith('http')) return path;
+  final base = NetworkUrl.imageUrl.endsWith('/')
+      ? NetworkUrl.imageUrl
+      : '${NetworkUrl.imageUrl}/';
+  return '$base$path';
 }
 
 // ── NEW HELPERS FOR SAFE TYPE PARSING ──────────────────────────────────────
@@ -187,11 +187,9 @@ class Trek with _$Trek {
     @JsonKey(name: 'destination_id') int? destinationId,
     @JsonKey(name: 'city_ids') List<int>? cityIds,
 
-    // 👇 ADD THESE TWO LINES 👇
     @JsonKey(name: 'destination_name') String? destinationName,
     @JsonKey(name: 'city_names') List<String>? cityNames,
 
-    // 👆 --------------------- 👆
     @JsonKey(name: 'captain_name') String? captainName,
     @JsonKey(name: 'captain_phone') String? captainPhone,
     String? difficulty,

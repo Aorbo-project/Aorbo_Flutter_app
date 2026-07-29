@@ -12,6 +12,8 @@ import '../repository/repository.dart';
 import '../utils/common_btn.dart';
 import '../utils/common_colors.dart';
 import '../utils/screen_constants.dart';
+import 'package:arobo_app/theme/app_tokens.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 String _normalizePhone(String raw) {
   final digits = raw.replaceAll(RegExp(r'\D'), '');
@@ -22,22 +24,22 @@ String _normalizePhone(String raw) {
 //  DESIGN TOKENS
 // ─────────────────────────────────────────────
 class _C {
-  static const bg = Color(0xFFF5F8FF);
+  static const bg = AppColors.bgCool;
   static const cardBg = Colors.white;
-  static const ink = Color(0xFF111827);
-  static const inkMid = Color(0xFF6B7280);
-  static const inkLight = Color(0xFF9CA3AF);
-  static const teal = Color(0xFF0F7B6C);
-  static const tealSoft = Color(0xFFE6F5F3);
-  static const fieldBorder = Color(0xFFE5E7EB);
-  static const iconBadgeBg = Color(0xFF111827);
+  static const ink = AppColors.ink;
+  static const inkMid = AppColors.inkMid;
+  static const inkLight = AppColors.inkLight;
+  static const teal = AppColors.teal;
+  static const tealSoft = AppColors.tealSoft;
+  static const fieldBorder = AppColors.border;
+  static const iconBadgeBg = AppColors.ink;
   static const danger = Color(0xFFEF4444);
-  static const divider = Color(0xFFE5E7EB);
+  static const divider = AppColors.border;
   static const warn = Color(0xFFE67700);
   static const ctaGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF1B4332), Color(0xFF2D6A4F)],
+    colors: [AppColors.forestDeep, AppColors.forest],
   );
 }
 
@@ -290,11 +292,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
               Expanded(
                 child: Text(
                   message,
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: FontSize.s10,
-                    color: Colors.white,
-                  ),
+                  style: AppType.style(FontSize.s10, color: Colors.white),
                 ),
               ),
             ],
@@ -323,12 +321,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
       child: Center(
         child: Text(
           name.isNotEmpty ? name[0].toUpperCase() : '?',
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: FontSize.s14,
-            fontWeight: FontWeight.w700,
-            color: isSelected ? Colors.white : _C.teal,
-          ),
+          style: AppType.style(FontSize.s14, w: FontWeight.w700, color: isSelected ? Colors.white : _C.teal),
         ),
       ),
     );
@@ -391,12 +384,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
                         contact.displayName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: FontSize.s11,
-                          fontWeight: FontWeight.w600,
-                          color: isSelected ? _C.teal : _C.ink,
-                        ),
+                        style: AppType.style(FontSize.s11, w: FontWeight.w600, color: isSelected ? _C.teal : _C.ink),
                       ),
                       SizedBox(height: 0.3.h),
                       Row(
@@ -414,13 +402,9 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
                               phone,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: FontSize.s9,
-                                color: isSelected
+                              style: AppType.style(FontSize.s9, color: isSelected
                                     ? _C.teal.withValues(alpha: 0.7)
-                                    : _C.inkMid,
-                              ),
+                                    : _C.inkMid),
                             ),
                           ),
                         ],
@@ -440,12 +424,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
                     ),
                     child: Text(
                       'Added',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: FontSize.s8,
-                        fontWeight: FontWeight.w700,
-                        color: _C.teal,
-                      ),
+                      style: AppType.style(FontSize.s8, w: FontWeight.w700, color: _C.teal),
                     ),
                   )
                 else
@@ -475,23 +454,14 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
           SizedBox(height: 2.h),
           Text(
             'No contacts found',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: FontSize.s13,
-              fontWeight: FontWeight.w600,
-              color: _C.ink,
-            ),
+            style: AppType.style(FontSize.s13, w: FontWeight.w600, color: _C.ink),
           ),
           SizedBox(height: 0.8.h),
           Text(
             _allContacts.isEmpty
                 ? 'No contacts with phone numbers on this device'
                 : 'Try a different name or number',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: FontSize.s9,
-              color: _C.inkMid,
-            ),
+            style: AppType.style(FontSize.s9, color: _C.inkMid),
           ),
         ],
       ),
@@ -518,12 +488,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
             SizedBox(height: 2.h),
             Text(
               'Contacts access needed',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: FontSize.s13,
-                fontWeight: FontWeight.w600,
-                color: _C.ink,
-              ),
+              style: AppType.style(FontSize.s13, w: FontWeight.w600, color: _C.ink),
             ),
             SizedBox(height: 0.8.h),
             Text(
@@ -531,12 +496,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
                   ? 'Permission was denied permanently.\nEnable Contacts access in app settings.'
                   : 'Please allow access to your contacts\nto add emergency contacts.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: FontSize.s9,
-                color: _C.inkMid,
-                height: 1.6,
-              ),
+              style: AppType.style(FontSize.s9, color: _C.inkMid, height: 1.6),
             ),
             SizedBox(height: 2.h),
             GestureDetector(
@@ -549,12 +509,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
                 ),
                 child: Text(
                   isPermanent ? 'Open Settings' : 'Grant Permission',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontWeight: FontWeight.w600,
-                    fontSize: FontSize.s10,
-                    color: Colors.white,
-                  ),
+                  style: AppType.style(FontSize.s10, w: FontWeight.w600, color: Colors.white),
                 ),
               ),
             ),
@@ -585,12 +540,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
         ),
         title: Text(
           'Select Contacts',
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: FontSize.s14,
-            fontWeight: FontWeight.w700,
-            color: _C.ink,
-          ),
+          style: AppType.style(FontSize.s14, w: FontWeight.w700, color: _C.ink),
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
@@ -612,18 +562,10 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
                   ),
                   child: TextField(
                     controller: _searchController,
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: FontSize.s11,
-                      color: _C.ink,
-                    ),
+                    style: AppType.style(FontSize.s11, color: _C.ink),
                     decoration: InputDecoration(
                       hintText: 'Search by name or number…',
-                      hintStyle: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: FontSize.s10,
-                        color: _C.inkLight,
-                      ),
+                      hintStyle: AppType.style(FontSize.s10, color: _C.inkLight),
                       prefixIcon: Icon(
                         Icons.search_rounded,
                         color: _C.inkLight,
@@ -668,12 +610,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
                         slotsLeft > 0
                             ? '$slotsLeft slot${slotsLeft == 1 ? '' : 's'} remaining'
                             : 'All slots filled',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: FontSize.s9,
-                          fontWeight: FontWeight.w500,
-                          color: slotsLeft == 0 ? _C.warn : _C.inkMid,
-                        ),
+                        style: AppType.style(FontSize.s9, w: FontWeight.w500, color: slotsLeft == 0 ? _C.warn : _C.inkMid),
                       ),
                     ),
                     if (_selected.isNotEmpty)
@@ -688,12 +625,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
                         ),
                         child: Text(
                           '${_selected.length} selected',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: FontSize.s8,
-                            fontWeight: FontWeight.w700,
-                            color: _C.teal,
-                          ),
+                          style: AppType.style(FontSize.s8, w: FontWeight.w700, color: _C.teal),
                         ),
                       ),
                   ],
@@ -781,12 +713,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
                                               ? e.value.displayName[0]
                                                     .toUpperCase()
                                               : '?',
-                                          style: const TextStyle(
-                                            fontFamily: 'Poppins',
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w700,
-                                            color: Colors.white,
-                                          ),
+                                          style: AppType.style(11, w: FontWeight.w700, color: Colors.white),
                                         ),
                                       ),
                                     ),
@@ -798,11 +725,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
                         SizedBox(width: 2.w),
                         Text(
                           '${_selected.length} contact${_selected.length == 1 ? '' : 's'} selected',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: FontSize.s9,
-                            color: _C.inkMid,
-                          ),
+                          style: AppType.style(FontSize.s9, color: _C.inkMid),
                         ),
                       ],
                     ),

@@ -22,6 +22,8 @@ import 'package:arobo_app/utils/total_fare_modal.dart';
 import '../freezed_models/profile/user_profile_model.dart';
 import '../freezed_models/treks/trek_detail_model.dart';
 import '../utils/traveller_selection_utils.dart';
+import 'package:arobo_app/theme/app_tokens.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS
@@ -37,8 +39,8 @@ class _TI {
   // screens, so it's overridden locally here rather than recolored
   // globally. Cascades to the duration badge, payment-option selection,
   // coupon CTA, and a few small tags — all forest-green now.
-  static const brand = Color(0xFF2D6A4F);
-  static const brandDeep = Color(0xFF1B4332);
+  static const brand = AppColors.forest;
+  static const brandDeep = AppColors.forestDeep;
   static const teal = CommonColors.cFF0F7B6C;
   static const tealSoft = CommonColors.cFFE6F5F3;
   static const iconBadge = CommonColors.cFF111827;
@@ -52,11 +54,11 @@ class _TI {
   static const completedBg = Color(0xFFF3FAF8);
   static const sheetBg = Colors.white;
   static const sheetSurface = Colors.white;
-  static const sheetBorder = Color(0xFFE2E8F0);
-  static const sheetInk = Color(0xFF0F172A);
+  static const sheetBorder = AppColors.divider;
+  static const sheetInk = AppColors.inkStrong;
   static const sheetInkMid = Color(0xFF64748B);
   static const sheetHandle = Color(0xFFD1D5DB);
-  static const sheetAccent = Color(0xFF111827);
+  static const sheetAccent = AppColors.ink;
   static const checkboxBorder = Color(0xFF94A3B8);
 }
 
@@ -96,11 +98,7 @@ Widget _tiSheetHeader(BuildContext context, String title, IconData icon) =>
               SizedBox(width: 3.w),
               Text(
                 title,
-                style: GoogleFonts.poppins(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w700,
-                  color: _TI.sheetInk,
-                ),
+                style: AppType.style(14.sp, w: FontWeight.w700, color: _TI.sheetInk),
               ),
             ],
           ),
@@ -133,11 +131,7 @@ Widget _tiSheetInputContainer({required String label, required Widget child}) =>
         children: [
           Text(
             label,
-            style: GoogleFonts.poppins(
-              fontSize: 8.sp,
-              color: _TI.sheetInkMid,
-              fontWeight: FontWeight.w500,
-            ),
+            style: AppType.style(8.sp, w: FontWeight.w500, color: _TI.sheetInkMid),
           ),
           SizedBox(height: 0.5.h),
           child,
@@ -165,10 +159,7 @@ Widget _tiSheetTextField(
     readOnly: readOnly,
     inputFormatters: inputFormatters,
     textCapitalization: textCapitalization,
-    style: GoogleFonts.poppins(
-      fontSize: 12.sp,
-      color: readOnly ? _TI.sheetInkMid : _TI.sheetInk,
-    ),
+    style: AppType.style(12.sp, color: readOnly ? _TI.sheetInkMid : _TI.sheetInk),
     cursorColor: _TI.sheetAccent,
     decoration: const InputDecoration(
       border: InputBorder.none,
@@ -476,12 +467,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
         Flexible(
           child: Text(
             title,
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w700,
-              color: _TI.ink,
-            ),
+            style: AppType.style(14.sp, w: FontWeight.w700, color: _TI.ink),
           ),
         ),
       ],
@@ -521,12 +507,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
           Expanded(
             child: Text(
               value,
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 11.sp,
-                fontWeight: FontWeight.w500,
-                color: _TI.ink,
-              ),
+              style: AppType.style(11.sp, w: FontWeight.w500, color: _TI.ink),
             ),
           ),
         ],
@@ -684,21 +665,11 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                 travelData.title ?? 'Trek',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w800,
-                  color: _TI.ink,
-                ),
+                style: AppType.style(16.sp, w: FontWeight.w800, color: _TI.ink),
               ),
               Text(
                 vendorName,
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 11.sp,
-                  color: _TI.inkMid,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: AppType.style(11.sp, w: FontWeight.w500, color: _TI.inkMid),
               ),
             ],
           ),
@@ -800,12 +771,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                     ),
                     child: Text(
                       travelData.badge!.name!.toUpperCase(),
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 8.sp,
-                        fontWeight: FontWeight.w800,
-                        color: _TI.teal,
-                      ),
+                      style: AppType.style(8.sp, w: FontWeight.w800, color: _TI.teal),
                     ),
                   )
                 else
@@ -1038,12 +1004,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                   SizedBox(width: 2.w),
                   Text(
                     'Add New Traveller',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 11.sp,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
+                    style: AppType.style(11.sp, w: FontWeight.w600, color: Colors.white),
                   ),
                 ],
               ),
@@ -1139,20 +1100,11 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                 children: [
                   Text(
                     title,
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w600,
-                      color: _TI.ink,
-                    ),
+                    style: AppType.style(12.sp, w: FontWeight.w600, color: _TI.ink),
                   ),
                   Text(
                     subtitle,
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 9.sp,
-                      color: _TI.inkMid,
-                    ),
+                    style: AppType.style(9.sp, color: _TI.inkMid),
                   ),
                 ],
               ),
@@ -1424,19 +1376,11 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                             children: [
                               TextSpan(
                                 text: '₹ ',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14.sp,
-                                  fontWeight: FontWeight.w600,
-                                  color: _TI.brandDeep,
-                                ),
+                                style: AppType.style(14.sp, w: FontWeight.w600, color: _TI.brandDeep),
                               ),
                               TextSpan(
                                 text: '${payableNow ?? "--"}',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 16.sp,
-                                  fontWeight: FontWeight.w800,
-                                  color: _TI.brandDeep,
-                                ),
+                                style: AppType.style(16.sp, w: FontWeight.w800, color: _TI.brandDeep),
                               ),
                             ],
                           ),
@@ -1508,11 +1452,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
               Expanded(
                 child: Text(
                   _hintMessage!,
-                  style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontSize: 11.sp,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: AppType.style(11.sp, w: FontWeight.w500, color: Colors.white),
                 ),
               ),
             ],
@@ -1537,12 +1477,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
       ),
       title: Text(
         'Checkout',
-        style: TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: 13.sp,
-          fontWeight: FontWeight.w700,
-          color: _TI.ink,
-        ),
+        style: AppType.style(13.sp, w: FontWeight.w700, color: _TI.ink),
       ),
       actions: [
         Padding(
@@ -1575,11 +1510,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                 SizedBox(width: 1.w),
                 Text(
                   formattedTime,
-                  style: GoogleFonts.poppins(
-                    fontSize: 11.sp,
-                    fontWeight: FontWeight.w600,
-                    color: CommonColors.orangeColor,
-                  ),
+                  style: AppType.style(11.sp, w: FontWeight.w600, color: CommonColors.orangeColor),
                 ),
               ],
             ),
@@ -1681,20 +1612,11 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
               children: [
                 Text(
                   traveler.name ?? '-',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 11.sp,
-                    fontWeight: FontWeight.w600,
-                    color: _TI.ink,
-                  ),
+                  style: AppType.style(11.sp, w: FontWeight.w600, color: _TI.ink),
                 ),
                 Text(
                   '${traveler.gender ?? '-'} • ${traveler.age ?? '-'} yrs',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 9.sp,
-                    color: _TI.inkMid,
-                  ),
+                  style: AppType.style(9.sp, color: _TI.inkMid),
                 ),
               ],
             ),
@@ -1896,11 +1818,7 @@ class _ContactDetailsSheetState extends State<_ContactDetailsSheet> {
                 children: [
                   Text(
                     '+91',
-                    style: GoogleFonts.poppins(
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w700,
-                      color: _TI.sheetInk,
-                    ),
+                    style: AppType.style(12.sp, w: FontWeight.w700, color: _TI.sheetInk),
                   ),
                   SizedBox(width: 3.w),
                   Container(height: 2.h, width: 1, color: _TI.sheetBorder),
@@ -1951,20 +1869,12 @@ class _ContactDetailsSheetState extends State<_ContactDetailsSheet> {
                       children: [
                         Text(
                           'State of Residence',
-                          style: GoogleFonts.poppins(
-                            fontSize: 8.sp,
-                            color: _TI.sheetInkMid,
-                            fontWeight: FontWeight.w500,
-                          ),
+                          style: AppType.style(8.sp, w: FontWeight.w500, color: _TI.sheetInkMid),
                         ),
                         SizedBox(height: 0.25.h),
                         Text(
                           _stateName,
-                          style: GoogleFonts.poppins(
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.w500,
-                            color: _TI.sheetInk,
-                          ),
+                          style: AppType.style(12.sp, w: FontWeight.w500, color: _TI.sheetInk),
                         ),
                       ],
                     ),
@@ -2103,11 +2013,7 @@ class _TravellerFormSheetState extends State<_TravellerFormSheet> {
             children: [
               Text(
                 gender,
-                style: GoogleFonts.poppins(
-                  fontSize: 11.sp,
-                  fontWeight: FontWeight.w600,
-                  color: isSelected ? _TI.sheetInk : _TI.sheetInkMid,
-                ),
+                style: AppType.style(11.sp, w: FontWeight.w600, color: isSelected ? _TI.sheetInk : _TI.sheetInkMid),
               ),
               SizedBox(width: 2.w),
               Icon(
@@ -2178,11 +2084,7 @@ class _TravellerFormSheetState extends State<_TravellerFormSheet> {
                     children: [
                       Text(
                         'Gender',
-                        style: GoogleFonts.poppins(
-                          fontSize: 8.sp,
-                          color: _TI.sheetInkMid,
-                          fontWeight: FontWeight.w500,
-                        ),
+                        style: AppType.style(8.sp, w: FontWeight.w500, color: _TI.sheetInkMid),
                       ),
                       SizedBox(height: 0.5.h),
                       Row(

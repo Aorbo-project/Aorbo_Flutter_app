@@ -1,4 +1,6 @@
 import "package:flutter/material.dart";
+import 'package:arobo_app/theme/app_tokens.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 /// Slate + teal design tokens used by the search-summary / filter-bar
 /// screens. Kept as its own token set (not merged into [CommonColors])
@@ -8,12 +10,12 @@ import "package:flutter/material.dart";
 /// and common_filter_bar.dart for no visual benefit today.
 class AroboTheme {
   // ── Brand ─────────────────────────────────────────────
-  static const primary = Color(0xFF0F172A); // Deep Slate for Professional Look
+  static const primary = AppColors.inkStrong; // Deep Slate for Professional Look
   static const primaryLight = Color(0xFF334155);
-  static const teal = Color(0xFF0F7B6C);
-  static const tealLight = Color(0xFF1AA090);
+  static const teal = AppColors.teal;
+  static const tealLight = AppColors.tealLight;
   static const tealDeep = Color(0xFF0A5C50);
-  static const tealSoft = Color(0xFFE6F5F3);
+  static const tealSoft = AppColors.tealSoft;
   static const tealGlow = Color(0x330F7B6C);
   // ── Surfaces ──────────────────────────────────────────
   static const bg = Color(0xFFF8FAFC); // Clean Light Slate Background
@@ -21,19 +23,19 @@ class AroboTheme {
   static const elevated = Color(0xFFF1F5F9);
   static const surfaceCard = Color(0xFFE8F0EE);
   // ── Ink ───────────────────────────────────────────────
-  static const ink = Color(0xFF0F172A);
+  static const ink = AppColors.inkStrong;
   static const ink200 = Color(0xFF334155);
   static const ink400 = Color(0xFF64748B);
   static const inkMid = Color(0xFF94A3B8);
   static const inkLight = Color(0xFFCBD5E1);
-  static const ink600 = Color(0xFFE2E8F0);
+  static const ink600 = AppColors.divider;
   // ── Lines & status ────────────────────────────────────
-  static const border = Color(0xFFE2E8F0);
+  static const border = AppColors.divider;
   static const divider = Color(0xFFF1F5F9);
   static const danger = Color(0xFFEF4444);
-  static const star = Color(0xFFF59E0B);
-  static const price = Color(0xFF0F172A); // Dark Slate for Prices
-  static const iconBadge = Color(0xFF0F172A);
+  static const star = AppColors.warning;
+  static const price = AppColors.inkStrong; // Dark Slate for Prices
+  static const iconBadge = AppColors.inkStrong;
   // ── Gradients ─────────────────────────────────────────
   static const primaryGradient = LinearGradient(
     colors: [primary, primaryLight],
@@ -92,14 +94,7 @@ class AroboTheme {
     Color color = ink,
     double letterSpacing = 0,
     double height = 1.3,
-  }) => TextStyle(
-    fontFamily: 'Poppins',
-    fontSize: size,
-    fontWeight: weight,
-    color: color,
-    letterSpacing: letterSpacing,
-    height: height,
-  );
+  }) => AppType.style(size, w: weight, color: color, height: height, letterSpacing: letterSpacing);
   static const radiusCard = 16.0;
   static const radiusLg = 20.0;
   static const radiusXl = 24.0;

@@ -9,6 +9,7 @@ import '../utils/screen_constants.dart';
 import '../utils/vendor_coupon_card.dart';
 import '../models/coupon_code/coupon_code_model.dart';
 import '../controller/trek_controller.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 class CouponCodeScreen extends StatefulWidget {
   const CouponCodeScreen({super.key});
@@ -63,11 +64,7 @@ class _CouponCodeScreenState extends State<CouponCodeScreen> {
             SizedBox(width: 2.w),
             Text(
               'Coupon Code',
-              style: GoogleFonts.poppins(
-                fontSize: FontSize.s14,
-                fontWeight: FontWeight.w500,
-                color: CommonColors.blackColor,
-              ),
+              style: AppType.style(FontSize.s14, w: FontWeight.w500, color: CommonColors.blackColor),
             ),
           ],
         ),
@@ -99,16 +96,10 @@ class _CouponCodeScreenState extends State<CouponCodeScreen> {
                     Expanded(
                       child: TextField(
                         controller: _couponController,
-                        style: GoogleFonts.poppins(
-                          fontSize: FontSize.s11,
-                          color: CommonColors.blackColor,
-                        ),
+                        style: AppType.style(FontSize.s11, color: CommonColors.blackColor),
                         decoration: InputDecoration(
                           hintText: 'Enter Coupon Code',
-                          hintStyle: GoogleFonts.poppins(
-                            fontSize: FontSize.s11,
-                            color: const Color(0xff969696),
-                          ),
+                          hintStyle: AppType.style(FontSize.s11, color: const Color(0xff969696)),
                           contentPadding: EdgeInsets.symmetric(
                             horizontal: 4.w,
                             vertical: 1.5.h,
@@ -129,13 +120,9 @@ class _CouponCodeScreenState extends State<CouponCodeScreen> {
                       },
                       child: Text(
                         'Apply',
-                        style: GoogleFonts.poppins(
-                          fontSize: FontSize.s11,
-                          fontWeight: FontWeight.w500,
-                          color: _couponController.text.isNotEmpty
+                        style: AppType.style(FontSize.s11, w: FontWeight.w500, color: _couponController.text.isNotEmpty
                               ? CommonColors.blueColor
-                              : const Color(0xff969696),
-                        ),
+                              : const Color(0xff969696)),
                       ),
                     ),
                   ],
@@ -170,18 +157,12 @@ class _CouponCodeScreenState extends State<CouponCodeScreen> {
                         children: [
                           Text(
                             'Failed to load coupons',
-                            style: GoogleFonts.poppins(
-                              fontSize: FontSize.s12,
-                              color: CommonColors.blackColor,
-                            ),
+                            style: AppType.style(FontSize.s12, color: CommonColors.blackColor),
                           ),
                           SizedBox(height: 1.h),
                           Text(
                             couponErrorMessage,
-                            style: GoogleFonts.poppins(
-                              fontSize: FontSize.s10,
-                              color: CommonColors.blackColor.withValues(alpha: 0.6),
-                            ),
+                            style: AppType.style(FontSize.s10, color: CommonColors.blackColor.withValues(alpha: 0.6)),
                             textAlign: TextAlign.center,
                           ),
                           SizedBox(height: 2.h),
@@ -217,21 +198,13 @@ class _CouponCodeScreenState extends State<CouponCodeScreen> {
                             SizedBox(height: 2.h),
                             Text(
                               'No coupons for this trek yet',
-                              style: GoogleFonts.poppins(
-                                fontSize: FontSize.s12,
-                                fontWeight: FontWeight.w600,
-                                color: CommonColors.blackColor,
-                              ),
+                              style: AppType.style(FontSize.s12, w: FontWeight.w600, color: CommonColors.blackColor),
                               textAlign: TextAlign.center,
                             ),
                             SizedBox(height: 0.6.h),
                             Text(
                               'Check back closer to your travel date — offers are added regularly.',
-                              style: GoogleFonts.poppins(
-                                fontSize: FontSize.s10,
-                                color: CommonColors.blackColor.withValues(alpha: 0.6),
-                                height: 1.5,
-                              ),
+                              style: AppType.style(FontSize.s10, color: CommonColors.blackColor.withValues(alpha: 0.6), height: 1.5),
                               textAlign: TextAlign.center,
                             ),
                           ],

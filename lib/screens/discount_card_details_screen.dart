@@ -10,6 +10,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
 import 'package:sizer/sizer.dart';
 import '../utils/ist_date_utils.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 /// Coupon detail screen. Rebuilt to extend the same gradient-hero language
 /// as CouponGradientCard (utils/coupon_gradient_card.dart) instead of a
@@ -55,11 +56,7 @@ class DiscountCardDetailsScreen extends StatelessWidget {
         ),
         title: Text(
           'Offer details',
-          style: GoogleFonts.poppins(
-            fontSize: FontSize.s13,
-            fontWeight: FontWeight.w600,
-            color: heroTextColor,
-          ),
+          style: AppType.style(FontSize.s13, w: FontWeight.w600, color: heroTextColor),
         ),
       ),
       body: SingleChildScrollView(
@@ -168,22 +165,13 @@ class DiscountCardDetailsScreen extends StatelessWidget {
                   children: [
                     Text(
                       discountCard.title,
-                      style: GoogleFonts.poppins(
-                        fontSize: FontSize.s16,
-                        fontWeight: FontWeight.w800,
-                        color: textColor,
-                        height: 1.15,
-                      ),
+                      style: AppType.style(FontSize.s16, w: FontWeight.w800, color: textColor, height: 1.15),
                     ),
                     if (discountCard.subtitle.isNotEmpty) ...[
                       SizedBox(height: 0.7.h),
                       Text(
                         discountCard.subtitle,
-                        style: GoogleFonts.poppins(
-                          fontSize: FontSize.s9,
-                          color: textColor.withValues(alpha: 0.85),
-                          height: 1.4,
-                        ),
+                        style: AppType.style(FontSize.s9, color: textColor.withValues(alpha: 0.85), height: 1.4),
                       ),
                     ],
                     SizedBox(height: 1.8.h),
@@ -197,12 +185,7 @@ class DiscountCardDetailsScreen extends StatelessWidget {
                       discountCard.offerAmount,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.poppins(
-                        fontSize: FontSize.s20,
-                        fontWeight: FontWeight.w800,
-                        color: textColor,
-                        letterSpacing: -0.3,
-                      ),
+                      style: AppType.style(FontSize.s20, w: FontWeight.w800, color: textColor, letterSpacing: -0.3),
                     ),
                     SizedBox(height: 2.h),
                     GestureDetector(
@@ -228,12 +211,7 @@ class DiscountCardDetailsScreen extends StatelessWidget {
                           children: [
                             Text(
                               discountCard.code,
-                              style: GoogleFonts.poppins(
-                                fontSize: FontSize.s11,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 0.5,
-                                color: startColor,
-                              ),
+                              style: AppType.style(FontSize.s11, w: FontWeight.w700, color: startColor, letterSpacing: 0.5),
                             ),
                             SizedBox(width: 2.w),
                             Icon(Icons.copy_rounded, size: 15, color: startColor),
@@ -288,11 +266,7 @@ class DiscountCardDetailsScreen extends StatelessWidget {
         children: [
           Text(
             title,
-            style: GoogleFonts.poppins(
-              fontSize: FontSize.s12,
-              fontWeight: FontWeight.w700,
-              color: accent,
-            ),
+            style: AppType.style(FontSize.s12, w: FontWeight.w700, color: accent),
           ),
           SizedBox(height: 1.3.h),
           child,
@@ -313,11 +287,7 @@ class DiscountCardDetailsScreen extends StatelessWidget {
       isLast: isLast,
       child: Text(
         content,
-        style: GoogleFonts.poppins(
-          fontSize: FontSize.s10,
-          height: 1.55,
-          color: Colors.black87,
-        ),
+        style: AppType.style(FontSize.s10, color: Colors.black87, height: 1.55),
       ),
     );
   }
@@ -380,19 +350,11 @@ class DiscountCardDetailsScreen extends StatelessWidget {
         SizedBox(width: 2.w),
         Text(
           '$label: ',
-          style: GoogleFonts.poppins(
-            fontSize: FontSize.s10,
-            fontWeight: FontWeight.w500,
-            color: Colors.black54,
-          ),
+          style: AppType.style(FontSize.s10, w: FontWeight.w500, color: Colors.black54),
         ),
         Text(
           value,
-          style: GoogleFonts.poppins(
-            fontSize: FontSize.s10,
-            fontWeight: FontWeight.w700,
-            color: Colors.black87,
-          ),
+          style: AppType.style(FontSize.s10, w: FontWeight.w700, color: Colors.black87),
         ),
       ],
     );
@@ -441,22 +403,14 @@ class DiscountCardDetailsScreen extends StatelessWidget {
                   alignment: Alignment.center,
                   child: Text(
                     '${i + 1}',
-                    style: GoogleFonts.poppins(
-                      fontSize: FontSize.s8,
-                      fontWeight: FontWeight.w700,
-                      color: accent,
-                    ),
+                    style: AppType.style(FontSize.s8, w: FontWeight.w700, color: accent),
                   ),
                 ),
                 SizedBox(width: 2.5.w),
                 Expanded(
                   child: Text(
                     rawLines[i],
-                    style: GoogleFonts.poppins(
-                      fontSize: FontSize.s10,
-                      height: 1.5,
-                      color: Colors.black87,
-                    ),
+                    style: AppType.style(FontSize.s10, color: Colors.black87, height: 1.5),
                   ),
                 ),
               ],
@@ -499,11 +453,7 @@ class DiscountCardDetailsScreen extends StatelessWidget {
                   child: match != null
                       ? RichText(
                           text: TextSpan(
-                            style: GoogleFonts.poppins(
-                              fontSize: FontSize.s10,
-                              height: 1.5,
-                              color: Colors.black87,
-                            ),
+                            style: AppType.style(FontSize.s10, color: Colors.black87, height: 1.5),
                             children: [
                               TextSpan(
                                 text: '${match.group(1)}: ',
@@ -515,11 +465,7 @@ class DiscountCardDetailsScreen extends StatelessWidget {
                         )
                       : Text(
                           term,
-                          style: GoogleFonts.poppins(
-                            fontSize: FontSize.s10,
-                            height: 1.5,
-                            color: Colors.black87,
-                          ),
+                          style: AppType.style(FontSize.s10, color: Colors.black87, height: 1.5),
                         ),
                 ),
               ],

@@ -9,6 +9,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
 import 'package:get/get.dart';
 import 'package:shimmer_ai/shimmer_ai.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 const _emphasizedDecelerate = Cubic(0.05, 0.7, 0.1, 1.0);
 
@@ -37,11 +38,7 @@ class KnowMoreScreen extends StatelessWidget {
         title: Text(
           "What's New",
           textScaler: const TextScaler.linear(1.0),
-          style: GoogleFonts.poppins(
-            fontSize: FontSize.s14,
-            fontWeight: FontWeight.w600,
-            color: CommonColors.blackColor,
-          ),
+          style: AppType.style(FontSize.s14, w: FontWeight.w600, color: CommonColors.blackColor),
         ),
       ),
       body: Obx(() {
@@ -158,11 +155,7 @@ class _EmptyState extends StatelessWidget {
               'Nothing new right now',
               textAlign: TextAlign.center,
               textScaler: const TextScaler.linear(1.0),
-              style: GoogleFonts.poppins(
-                fontSize: FontSize.s12,
-                fontWeight: FontWeight.w600,
-                color: CommonColors.blackColor.withValues(alpha: 0.6),
-              ),
+              style: AppType.style(FontSize.s12, w: FontWeight.w600, color: CommonColors.blackColor.withValues(alpha: 0.6)),
             ),
           ],
         ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'header_scene.dart';
+import 'package:arobo_app/theme/app_tokens.dart';
 
 /// Everything visual about the dashboard header. The layout is static —
 /// only this object changes per season / festival / collaboration.
@@ -27,9 +28,9 @@ class DashboardHeaderTheme {
     required this.accent,
     required this.accentLight,
     required this.accentSoft,
-    this.ink = const Color(0xFF111827),
-    this.inkMid = const Color(0xFF6B7280),
-    this.inkLight = const Color(0xFF9CA3AF),
+    this.ink = AppColors.ink,
+    this.inkMid = AppColors.inkMid,
+    this.inkLight = AppColors.inkLight,
     this.logoOverrideUrl,
     this.scene = const HeaderSceneSpec([]),
   });
@@ -59,14 +60,14 @@ class DashboardHeaderTheme {
       gradientColors: rawGradient.length >= 2
           ? rawGradient
           : [...rawGradient, Colors.white],
-      accent: hexToColor(json['accent']?.toString(), const Color(0xFF0F7B6C)),
+      accent: hexToColor(json['accent']?.toString(), AppColors.teal),
       accentLight: hexToColor(
         json['accentLight']?.toString(),
-        const Color(0xFF1AA090),
+        AppColors.tealLight,
       ),
       accentSoft: hexToColor(
         json['accentSoft']?.toString(),
-        const Color(0xFFE6F5F3),
+        AppColors.tealSoft,
       ),
       logoOverrideUrl: (json['logoUrl']?.toString().isEmpty ?? true)
           ? null
@@ -85,9 +86,9 @@ class DashboardHeaderTheme {
     id: 'classic',
     tagline: 'Hike Beyond Limits with',
     gradientColors: [Color(0xFFFEF200), Color(0xFFFFFFFF)],
-    accent: Color(0xFF0F7B6C),
-    accentLight: Color(0xFF1AA090),
-    accentSoft: Color(0xFFE6F5F3),
+    accent: AppColors.teal,
+    accentLight: AppColors.tealLight,
+    accentSoft: AppColors.tealSoft,
     scene: HeaderSceneSpec([
       SceneLayer(
         type: 'sky',
@@ -97,20 +98,20 @@ class DashboardHeaderTheme {
       ),
       SceneLayer(
         type: 'mountains',
-        colors: [Color(0xFF0F7B6C), Color(0xFF1AA090)],
+        colors: [AppColors.teal, AppColors.tealLight],
         opacity: 0.08,
         speed: 0.4,
       ),
       SceneLayer(
         type: 'birds',
-        colors: [Color(0xFF111827)],
+        colors: [AppColors.ink],
         count: 3,
         opacity: 0.5,
       ),
       SceneLayer(
         type: 'particles',
         variant: 'sparkle',
-        colors: [Color(0xFF0F7B6C)],
+        colors: [AppColors.teal],
         count: 16,
         opacity: 0.6,
       ),
@@ -124,7 +125,7 @@ class DashboardHeaderTheme {
     badgeText: 'Monsoon Edition',
     gradientColors: [Color(0xFFBFD9E8), Color(0xFFFFFFFF)],
     accent: Color(0xFF14655B),
-    accentLight: Color(0xFF1AA090),
+    accentLight: AppColors.tealLight,
     accentSoft: Color(0xFFE0F0EE),
     scene: HeaderSceneSpec([
       SceneLayer(
@@ -298,9 +299,9 @@ class DashboardHeaderTheme {
     tagline: 'Bloom-Season Treks Begin with',
     badgeText: 'Spring Blooms',
     gradientColors: [Color(0xFFFBD5E0), Color(0xFFFFFFFF)],
-    accent: Color(0xFF0F7B6C),
-    accentLight: Color(0xFF1AA090),
-    accentSoft: Color(0xFFE6F5F3),
+    accent: AppColors.teal,
+    accentLight: AppColors.tealLight,
+    accentSoft: AppColors.tealSoft,
     scene: HeaderSceneSpec([
       SceneLayer(
         type: 'sky',

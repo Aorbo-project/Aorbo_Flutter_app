@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../widgets/custom_network_image.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 /// Whether a pick's [SeasonalGradientCard.imagePath] is a full photo (the
 /// default — rendered edge-to-edge, `BoxFit.cover`) or a transparent-
@@ -199,12 +200,7 @@ class SeasonalGradientCard extends StatelessWidget {
                       Text(
                         isAvoid ? 'AVOID' : 'RECOMMENDED',
                         textScaler: const TextScaler.linear(1.0),
-                        style: GoogleFonts.poppins(
-                          fontSize: 8.5,
-                          fontWeight: FontWeight.w700,
-                          color: verdictColor,
-                          letterSpacing: 0.4,
-                        ),
+                        style: AppType.style(8.5, w: FontWeight.w700, color: verdictColor, letterSpacing: 0.4),
                       ),
                     ],
                   ),
@@ -271,13 +267,7 @@ class SeasonalGradientCard extends StatelessWidget {
                             Text(
                               trekName,
                               textScaler: const TextScaler.linear(1.0),
-                              style: GoogleFonts.poppins(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: CommonColors.whiteColor,
-                                letterSpacing: -0.2,
-                                height: 1.15,
-                              ),
+                              style: AppType.style(14, w: FontWeight.w700, color: CommonColors.whiteColor, height: 1.15, letterSpacing: -0.2),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -285,12 +275,7 @@ class SeasonalGradientCard extends StatelessWidget {
                             Text(
                               reason,
                               textScaler: const TextScaler.linear(1.0),
-                              style: GoogleFonts.poppins(
-                                fontSize: 9.5,
-                                fontWeight: FontWeight.w400,
-                                color: CommonColors.whiteColor.withValues(alpha: 0.82),
-                                height: 1.3,
-                              ),
+                              style: AppType.style(9.5, w: FontWeight.w400, color: CommonColors.whiteColor.withValues(alpha: 0.82), height: 1.3),
                               maxLines: 3,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -315,13 +300,7 @@ class SeasonalGradientCard extends StatelessWidget {
                       Text(
                         trekName,
                         textScaler: const TextScaler.linear(1.0),
-                        style: GoogleFonts.poppins(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: CommonColors.whiteColor,
-                          letterSpacing: -0.2,
-                          height: 1.1,
-                        ),
+                        style: AppType.style(15, w: FontWeight.w700, color: CommonColors.whiteColor, height: 1.1, letterSpacing: -0.2),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -329,12 +308,7 @@ class SeasonalGradientCard extends StatelessWidget {
                       Text(
                         reason,
                         textScaler: const TextScaler.linear(1.0),
-                        style: GoogleFonts.poppins(
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w400,
-                          color: CommonColors.whiteColor.withValues(alpha: 0.82),
-                          height: 1.3,
-                        ),
+                        style: AppType.style(10.5, w: FontWeight.w400, color: CommonColors.whiteColor.withValues(alpha: 0.82), height: 1.3),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),

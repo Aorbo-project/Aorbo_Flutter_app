@@ -5,6 +5,7 @@ import 'package:sizer/sizer.dart';
 
 import '../utils/common_btn.dart';
 import '../utils/screen_constants.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 class claims extends StatefulWidget {
   const claims({super.key});
@@ -26,11 +27,7 @@ class _claims extends State<claims> {
           centerTitle: false,
           title: Text(
             'Claims',
-            style: GoogleFonts.poppins(
-              fontSize: FontSize.s11,
-              fontWeight: FontWeight.w500,
-              color: CommonColors.blackColor,
-            ),
+            style: AppType.style(FontSize.s11, w: FontWeight.w500, color: CommonColors.blackColor),
           ),
         ),
         body: Column(

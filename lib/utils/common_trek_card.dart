@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 import '../freezed_models/treks/treks_model_data.dart';
 import '../widgets/custom_network_image.dart';
+import 'package:arobo_app/theme/app_tokens.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 // ─────────────────────────────────────────────
 // DESIGN TOKENS — alpine / trail theme
@@ -16,15 +18,15 @@ class _TC {
   static const ink = Color(0xFF16281E);
   static const inkMid = Color(0xFF5B6E60);
   static const inkLight = Color(0xFF8FA396);
-  static const forest = Color(0xFF2D6A4F);
-  static const forestDeep = Color(0xFF1B4332);
-  static const forestSoft = Color(0xFFE8F3ED);
-  static const trailAmber = Color(0xFFD97706);
-  static const amberBg = Color(0xFFFFF8EB);
+  static const forest = AppColors.forest;
+  static const forestDeep = AppColors.forestDeep;
+  static const forestSoft = AppColors.forestSoft;
+  static const trailAmber = AppColors.amber;
+  static const amberBg = AppColors.amberSoft;
   static const amberBorder = Color(0xFFF5DFAE);
   static const divider = Color(0xFFE2EAE4);
-  static const success = Color(0xFF059669);
-  static const danger = Color(0xFFDC2626);
+  static const success = AppColors.success;
+  static const danger = AppColors.danger;
 }
 
 class CommonTrekCard extends StatefulWidget {
@@ -236,14 +238,7 @@ class _CommonTrekCardState extends State<CommonTrekCard>
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 textScaler: const TextScaler.linear(1),
-                                style: TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontSize: FontSize.s13,
-                                  fontWeight: FontWeight.w800,
-                                  color: _TC.ink,
-                                  height: 1.2,
-                                  letterSpacing: -0.2,
-                                ),
+                                style: AppType.style(FontSize.s13, w: FontWeight.w800, color: _TC.ink, height: 1.2, letterSpacing: -0.2),
                               ),
                               SizedBox(height: _rh(1.2, 14)),
                               Wrap(
@@ -339,12 +334,7 @@ class _CommonTrekCardState extends State<CommonTrekCard>
                   child: Text(
                     _vendorInitials(),
                     textScaler: const TextScaler.linear(1),
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: FontSize.s11,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
+                    style: AppType.style(FontSize.s11, w: FontWeight.w700, color: Colors.white),
                   ),
                 ),
         ),
@@ -357,14 +347,7 @@ class _CommonTrekCardState extends State<CommonTrekCard>
               Text(
                 'ORGANISED BY',
                 textScaler: const TextScaler.linear(1),
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: FontSize.s7,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1,
-                  color: _TC.inkLight,
-                  height: 1,
-                ),
+                style: AppType.style(FontSize.s7, w: FontWeight.w600, color: _TC.inkLight, height: 1, letterSpacing: 1),
               ),
               SizedBox(height: _rh(0.2, 2.5)),
               Row(
@@ -375,13 +358,7 @@ class _CommonTrekCardState extends State<CommonTrekCard>
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       textScaler: const TextScaler.linear(1),
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: FontSize.s10,
-                        fontWeight: FontWeight.w600,
-                        color: _TC.ink,
-                        height: 1.2,
-                      ),
+                      style: AppType.style(FontSize.s10, w: FontWeight.w600, color: _TC.ink, height: 1.2),
                     ),
                   ),
                   if (_isNewVendor()) ...[
@@ -421,13 +398,7 @@ class _CommonTrekCardState extends State<CommonTrekCard>
           Text(
             'NEW',
             textScaler: const TextScaler.linear(1),
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: FontSize.s7,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.6,
-              color: _TC.forest,
-            ),
+            style: AppType.style(FontSize.s7, w: FontWeight.w700, color: _TC.forest, letterSpacing: 0.6),
           ),
         ],
       ),
@@ -452,12 +423,7 @@ class _CommonTrekCardState extends State<CommonTrekCard>
           Text(
             '$ratingValue',
             textScaler: const TextScaler.linear(1),
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: FontSize.s8,
-              fontWeight: FontWeight.w700,
-              color: _TC.ink,
-            ),
+            style: AppType.style(FontSize.s8, w: FontWeight.w700, color: _TC.ink),
           ),
         ],
       ),
@@ -508,13 +474,7 @@ class _CommonTrekCardState extends State<CommonTrekCard>
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               textScaler: const TextScaler.linear(1),
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: FontSize.s7,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.5,
-                color: filled ? Colors.white : color,
-              ),
+              style: AppType.style(FontSize.s7, w: FontWeight.w700, color: filled ? Colors.white : color, letterSpacing: 0.5),
             ),
           ),
         ],
@@ -546,12 +506,7 @@ class _CommonTrekCardState extends State<CommonTrekCard>
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 textScaler: const TextScaler.linear(1),
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: FontSize.s9,
-                  fontWeight: FontWeight.w700,
-                  color: _TC.ink,
-                ),
+                style: AppType.style(FontSize.s9, w: FontWeight.w700, color: _TC.ink),
               ),
             ),
           ],
@@ -571,12 +526,7 @@ class _CommonTrekCardState extends State<CommonTrekCard>
               Text(
                 hasTotal ? '$available/$total slots left' : '$available slots',
                 textScaler: const TextScaler.linear(1),
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: FontSize.s8,
-                  fontWeight: FontWeight.w700,
-                  color: accent,
-                ),
+                style: AppType.style(FontSize.s8, w: FontWeight.w700, color: accent),
               ),
             ],
           ),
@@ -639,12 +589,7 @@ class _CommonTrekCardState extends State<CommonTrekCard>
                 child: Text(
                   trek?.discountText ?? '',
                   textScaler: const TextScaler.linear(1),
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: FontSize.s8,
-                    fontWeight: FontWeight.w700,
-                    color: _TC.danger,
-                  ),
+                  style: AppType.style(FontSize.s8, w: FontWeight.w700, color: _TC.danger),
                 ),
               ),
             ],
@@ -657,24 +602,12 @@ class _CommonTrekCardState extends State<CommonTrekCard>
           textScaler: const TextScaler.linear(1),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: FontSize.s14,
-            fontWeight: FontWeight.w800,
-            color: _TC.forestDeep,
-            letterSpacing: -0.2,
-            height: 1.15,
-          ),
+          style: AppType.style(FontSize.s14, w: FontWeight.w800, color: _TC.forestDeep, height: 1.15, letterSpacing: -0.2),
         ),
         Text(
           '/ person',
           textScaler: const TextScaler.linear(1),
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: FontSize.s8,
-            fontWeight: FontWeight.w500,
-            color: _TC.inkMid,
-          ),
+          style: AppType.style(FontSize.s8, w: FontWeight.w500, color: _TC.inkMid),
         ),
       ],
     );
@@ -717,13 +650,7 @@ class _CommonTrekCardState extends State<CommonTrekCard>
           Text(
             isShare ? 'Share' : 'Itinerary',
             textScaler: const TextScaler.linear(1),
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: FontSize.s7,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.3,
-              color: _TC.forestDeep,
-            ),
+            style: AppType.style(FontSize.s7, w: FontWeight.w700, color: _TC.forestDeep, letterSpacing: 0.3),
           ),
         ],
       ),

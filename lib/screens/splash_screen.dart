@@ -15,6 +15,7 @@ import 'package:pinput/pinput.dart';
 import 'dart:async';
 import 'package:shimmer/shimmer.dart';
 import 'package:sizer/sizer.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 class SplashWithLoginScreen extends StatefulWidget {
   const SplashWithLoginScreen({super.key});
@@ -378,11 +379,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
     final defaultPinTheme = PinTheme(
       width: 25.sp,
       height: 40.sp,
-      textStyle: GoogleFonts.poppins(
-        fontSize: FontSize.s16,
-        fontWeight: FontWeight.w700,
-        color: CommonColors.blackColor,
-      ),
+      textStyle: AppType.style(FontSize.s16, w: FontWeight.w700, color: CommonColors.blackColor),
       decoration: BoxDecoration(
         color: CommonColors.whiteColor,
         borderRadius: BorderRadius.circular(10.sp),
@@ -465,11 +462,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
               SizedBox(width: 5.w),
               Text(
                 "Verify OTP",
-                style: TextStyle(
-                  fontSize: FontSize.s14,
-                  fontFamily: "Poppins",
-                  fontWeight: FontWeight.w600,
-                ),
+                style: AppType.style(FontSize.s14, w: FontWeight.w600),
               ),
             ],
           ),
@@ -481,21 +474,12 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
               children: [
                 Text(
                   "Enter Verification Code",
-                  style: TextStyle(
-                    fontSize: FontSize.s14,
-                    fontFamily: "Poppins",
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: AppType.style(FontSize.s14, w: FontWeight.w600),
                 ),
                 SizedBox(height: 1.h),
                 Text(
                   "sent to +91 ${_authC.phoneNumberLoginTextField.value.text}",
-                  style: TextStyle(
-                    fontSize: FontSize.s12,
-                    fontFamily: "Poppins",
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black,
-                  ),
+                  style: AppType.style(FontSize.s12, w: FontWeight.w500, color: Colors.black),
                 ),
               ],
             ),
@@ -553,12 +537,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                     child: Text(
                       _otpC.formatTime(),
                       // textScaler: const TextScaler.linear(1.0),
-                      style: GoogleFonts.poppins(
-                        fontSize: FontSize.s14,
-                        color: CommonColors.blackColor,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 0.5.w,
-                      ),
+                      style: AppType.style(FontSize.s14, w: FontWeight.w500, color: CommonColors.blackColor, letterSpacing: 0.5.w),
                     ),
                   )
                 : Container(),
@@ -883,12 +862,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                   Text(
                     "By continuing, you agree to our",
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: FontSize.s10,
-                      fontFamily: "Poppins",
-                      fontWeight: FontWeight.w400,
-                      color: Colors.black,
-                    ),
+                    style: AppType.style(FontSize.s10, w: FontWeight.w400, color: Colors.black),
                   ),
                   SizedBox(height: 0.5.h),
                   Row(
@@ -896,30 +870,15 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                     children: [
                       Text(
                         "T&C",
-                        style: TextStyle(
-                          fontSize: FontSize.s9,
-                          fontWeight: FontWeight.w400,
-                          fontFamily: "Poppins",
-                          color: Colors.lightBlue,
-                        ),
+                        style: AppType.style(FontSize.s9, w: FontWeight.w400, color: Colors.lightBlue),
                       ),
                       Text(
                         "  &  ",
-                        style: TextStyle(
-                          fontSize: FontSize.s9,
-                          fontWeight: FontWeight.w400,
-                          fontFamily: "Poppins",
-                          color: Colors.black,
-                        ),
+                        style: AppType.style(FontSize.s9, w: FontWeight.w400, color: Colors.black),
                       ),
                       Text(
                         "Privacy Policy",
-                        style: TextStyle(
-                          fontSize: FontSize.s9,
-                          fontWeight: FontWeight.w400,
-                          fontFamily: "Poppins",
-                          color: Colors.lightBlue,
-                        ),
+                        style: AppType.style(FontSize.s9, w: FontWeight.w400, color: Colors.lightBlue),
                       ),
                     ],
                   ),

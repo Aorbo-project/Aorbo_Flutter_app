@@ -10,6 +10,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shimmer_ai/shimmer_ai.dart';
 import 'package:sizer/sizer.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 /// Seasonal Forecast: per season, a ranked "Top 5" recommended row and a
 /// separate "Avoid This Season" row, each a horizontally-swipeable set of
@@ -49,11 +50,7 @@ class _SeasonalForecastScreenState extends State<SeasonalForecastScreen> {
         iconTheme: const IconThemeData(color: CommonColors.blackColor),
         title: Text(
           'Seasonal Forecast',
-          style: GoogleFonts.poppins(
-            color: CommonColors.blackColor,
-            fontSize: FontSize.s11,
-            fontWeight: FontWeight.w500,
-          ),
+          style: AppType.style(FontSize.s11, w: FontWeight.w500, color: CommonColors.blackColor),
         ),
       ),
       body: Obx(() {
@@ -83,12 +80,7 @@ class _SeasonalForecastScreenState extends State<SeasonalForecastScreen> {
               padding: EdgeInsets.symmetric(horizontal: 4.w),
               child: Text(
                 data?.blurb ?? '',
-                style: GoogleFonts.poppins(
-                  fontSize: FontSize.s10,
-                  fontWeight: FontWeight.w400,
-                  color: CommonColors.blackColor.withValues(alpha: 0.65),
-                  height: 1.4,
-                ),
+                style: AppType.style(FontSize.s10, w: FontWeight.w400, color: CommonColors.blackColor.withValues(alpha: 0.65), height: 1.4),
               ).withShimmerAi(loading: loading),
             ),
             SizedBox(height: 2.5.h),
@@ -120,11 +112,7 @@ class _SeasonalForecastScreenState extends State<SeasonalForecastScreen> {
           return ChoiceChip(
             label: Text(
               label,
-              style: GoogleFonts.poppins(
-                fontSize: FontSize.s9,
-                fontWeight: FontWeight.w600,
-                color: isSelected ? CommonColors.whiteColor : CommonColors.blackColor,
-              ),
+              style: AppType.style(FontSize.s9, w: FontWeight.w600, color: isSelected ? CommonColors.whiteColor : CommonColors.blackColor),
             ),
             selected: isSelected,
             selectedColor: CommonColors.darkCyan,
@@ -146,11 +134,7 @@ class _SeasonalForecastScreenState extends State<SeasonalForecastScreen> {
       padding: EdgeInsets.symmetric(horizontal: 4.w),
       child: Text(
         title,
-        style: GoogleFonts.poppins(
-          fontSize: FontSize.s12,
-          fontWeight: FontWeight.w700,
-          color: CommonColors.blackColor,
-        ),
+        style: AppType.style(FontSize.s12, w: FontWeight.w700, color: CommonColors.blackColor),
       ).withShimmerAi(loading: loading),
     );
   }
@@ -185,10 +169,7 @@ class _SeasonalForecastScreenState extends State<SeasonalForecastScreen> {
         padding: EdgeInsets.symmetric(horizontal: 4.w),
         child: Text(
           'Nothing curated here yet.',
-          style: GoogleFonts.poppins(
-            fontSize: FontSize.s10,
-            color: CommonColors.blackColor.withValues(alpha: 0.45),
-          ),
+          style: AppType.style(FontSize.s10, color: CommonColors.blackColor.withValues(alpha: 0.45)),
         ),
       );
     }

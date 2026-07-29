@@ -4,14 +4,16 @@ import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:arobo_app/theme/app_tokens.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS
 // ─────────────────────────────────────────────
 class _C {
-  static const teal      = Color(0xFF0F7B6C);
-  static const tealLight = Color(0xFF1AA090);
-  static const tealSoft  = Color(0xFFE6F5F3);
+  static const teal      = AppColors.teal;
+  static const tealLight = AppColors.tealLight;
+  static const tealSoft  = AppColors.tealSoft;
   static const ink       = Color(0xFF121212);
   static const inkMid    = Color(0xFF444444);
   static const inkLight  = Color(0xFF888888);
@@ -152,11 +154,7 @@ class _AboutUsScreenState extends State<AboutUsScreen>
                     duration: const Duration(milliseconds: 200),
                     child: Text(
                       'About Us',
-                      style: GoogleFonts.poppins(
-                        fontSize: FontSize.s13,
-                        fontWeight: FontWeight.w600,
-                        color: _C.ink,
-                      ),
+                      style: AppType.style(FontSize.s13, w: FontWeight.w600, color: _C.ink),
                     ),
                   ),
                   const Spacer(),
@@ -270,13 +268,7 @@ class _AboutUsScreenState extends State<AboutUsScreen>
                     SizedBox(height: 1.h),
                     Text(
                       aboutUsData.title,
-                      style: GoogleFonts.poppins(
-                        fontSize: FontSize.s22,
-                        fontWeight: FontWeight.w700,
-                        color: _C.white,
-                        height: 1.25,
-                        letterSpacing: 0.3,
-                      ),
+                      style: AppType.style(FontSize.s22, w: FontWeight.w700, color: _C.white, height: 1.25, letterSpacing: 0.3),
                     ),
                   ],
                 ),
@@ -319,11 +311,7 @@ class _AboutUsScreenState extends State<AboutUsScreen>
           Expanded(
             child: Text(
               aboutUsData.welcomeText,
-              style: GoogleFonts.poppins(
-                fontSize: FontSize.s12,
-                height: 1.75,
-                color: _C.inkMid,
-              ),
+              style: AppType.style(FontSize.s12, color: _C.inkMid, height: 1.75),
             ),
           ),
         ],
@@ -432,11 +420,7 @@ class _AboutUsScreenState extends State<AboutUsScreen>
                   SizedBox(width: 2.w),
                   RichText(
                     text: TextSpan(
-                      style: GoogleFonts.poppins(
-                        fontSize: FontSize.s11,
-                        color: _C.inkLight,
-                        letterSpacing: 0.5,
-                      ),
+                      style: AppType.style(FontSize.s11, color: _C.inkLight, letterSpacing: 0.5),
                       children: const [
                         TextSpan(text: 'Crafted with passion  ·  '),
                         TextSpan(
@@ -481,18 +465,11 @@ class _AboutUsScreenState extends State<AboutUsScreen>
                         children: [
                           Text(
                             'Start your adventure',
-                            style: GoogleFonts.poppins(
-                              fontSize: FontSize.s13,
-                              fontWeight: FontWeight.w600,
-                              color: _C.white,
-                            ),
+                            style: AppType.style(FontSize.s13, w: FontWeight.w600, color: _C.white),
                           ),
                           Text(
                             'Discover trusted trekking partners',
-                            style: GoogleFonts.poppins(
-                              fontSize: FontSize.s11,
-                              color: const Color(0xBFFFFFFF),
-                            ),
+                            style: AppType.style(FontSize.s11, color: const Color(0xBFFFFFFF)),
                           ),
                         ],
                       ),
@@ -624,11 +601,7 @@ class _AnimatedSectionCardState extends State<_AnimatedSectionCard>
               SizedBox(width: 3.w),
               Text(
                 widget.section.title,
-                style: GoogleFonts.poppins(
-                  fontSize: FontSize.s13,
-                  fontWeight: FontWeight.w600,
-                  color: _C.ink,
-                ),
+                style: AppType.style(FontSize.s13, w: FontWeight.w600, color: _C.ink),
               ),
             ],
           ),
@@ -643,11 +616,7 @@ class _AnimatedSectionCardState extends State<_AnimatedSectionCard>
             ),
             child: Text(
               widget.section.content,
-              style: GoogleFonts.poppins(
-                fontSize: FontSize.s12,
-                height: 1.7,
-                color: _C.inkMid,
-              ),
+              style: AppType.style(FontSize.s12, color: _C.inkMid, height: 1.7),
             ),
           ),
         ],
@@ -677,22 +646,14 @@ class _AnimatedSectionCardState extends State<_AnimatedSectionCard>
               SizedBox(width: 2.w),
               Text(
                 widget.section.title,
-                style: GoogleFonts.poppins(
-                  fontSize: FontSize.s13,
-                  fontWeight: FontWeight.w600,
-                  color: _C.teal,
-                ),
+                style: AppType.style(FontSize.s13, w: FontWeight.w600, color: _C.teal),
               ),
             ],
           ),
           SizedBox(height: 1.h),
           Text(
             widget.section.content,
-            style: GoogleFonts.poppins(
-              fontSize: FontSize.s12,
-              height: 1.6,
-              color: _C.inkMid,
-            ),
+            style: AppType.style(FontSize.s12, color: _C.inkMid, height: 1.6),
           ),
         ],
       ),
@@ -757,11 +718,7 @@ class _ExpandableLinkTileState extends State<_ExpandableLinkTile>
                 Expanded(
                   child: Text(
                     widget.link.title,
-                    style: GoogleFonts.poppins(
-                      fontSize: FontSize.s13,
-                      fontWeight: FontWeight.w500,
-                      color: _C.ink,
-                    ),
+                    style: AppType.style(FontSize.s13, w: FontWeight.w500, color: _C.ink),
                   ),
                 ),
                 RotationTransition(
@@ -803,11 +760,7 @@ class _ExpandableLinkTileState extends State<_ExpandableLinkTile>
             ),
             child: Text(
               widget.link.content,
-              style: GoogleFonts.poppins(
-                fontSize: FontSize.s12,
-                height: 1.65,
-                color: _C.inkMid,
-              ),
+              style: AppType.style(FontSize.s12, color: _C.inkMid, height: 1.65),
             ),
           ),
         ),
@@ -883,12 +836,7 @@ class _EstablishedBadge extends StatelessWidget {
           SizedBox(width: 1.w),
           Text(
             'ESTABLISHED  2021',
-            style: GoogleFonts.poppins(
-              fontSize: FontSize.s9,
-              fontWeight: FontWeight.w600,
-              color: _C.white,
-              letterSpacing: 2,
-            ),
+            style: AppType.style(FontSize.s9, w: FontWeight.w600, color: _C.white, letterSpacing: 2),
           ),
         ],
       ),

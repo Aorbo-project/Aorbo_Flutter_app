@@ -32,22 +32,24 @@ import 'package:ntp/ntp.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import '../freezed_models/treks/treks_model_data.dart';
+import 'package:arobo_app/theme/app_tokens.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 /// Neutral palette for the body/calendar. The HEADER no longer reads from
 /// this — it is fully driven by DashboardHeaderTheme.
 class _C {
-  static const bg = Color(0xFFF5F8FF);
+  static const bg = AppColors.bgCool;
   static const cardBg = Color(0xFFFFFFFF);
-  static const ink = Color(0xFF111827);
-  static const inkMid = Color(0xFF6B7280);
-  static const inkLight = Color(0xFF9CA3AF);
-  static const teal = Color(0xFF0F7B6C);
-  static const tealLight = Color(0xFF1AA090);
-  static const tealSoft = Color(0xFFE6F5F3);
-  static const fieldBg = Color(0xFFF9FAFB);
-  static const fieldBorder = Color(0xFFE5E7EB);
+  static const ink = AppColors.ink;
+  static const inkMid = AppColors.inkMid;
+  static const inkLight = AppColors.inkLight;
+  static const teal = AppColors.teal;
+  static const tealLight = AppColors.tealLight;
+  static const tealSoft = AppColors.tealSoft;
+  static const fieldBg = AppColors.elevated;
+  static const fieldBorder = AppColors.border;
   static const shadow = Color(0x0D000000);
-  static const iconBadgeBg = Color(0xFF111827);
+  static const iconBadgeBg = AppColors.ink;
   static const danger = Color(0xFFEF4444);
 }
 
@@ -530,29 +532,19 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                   ),
                                 ),
                                 const SizedBox(width: 12),
-                                const Expanded(
+                                Expanded(
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         'Select Departure Date',
-                                        style: TextStyle(
-                                          fontFamily: 'Poppins',
-                                          fontSize: 15.5,
-                                          fontWeight: FontWeight.w700,
-                                          color: _C.ink,
-                                          letterSpacing: -0.3,
-                                        ),
+                                        style: AppType.style(15.5, w: FontWeight.w700, color: _C.ink, letterSpacing: -0.3),
                                       ),
                                       SizedBox(height: 2),
                                       Text(
                                         'Tap an available date to continue',
-                                        style: TextStyle(
-                                          fontFamily: 'Poppins',
-                                          fontSize: 10.5,
-                                          color: _C.inkMid,
-                                        ),
+                                        style: AppType.style(10.5, color: _C.inkMid),
                                       ),
                                     ],
                                   ),
@@ -641,13 +633,9 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                         ),
                                       ),
                                       const SizedBox(height: 12),
-                                      const Text(
+                                      Text(
                                         'Loading available dates…',
-                                        style: TextStyle(
-                                          fontFamily: 'Poppins',
-                                          fontSize: 11.5,
-                                          color: _C.inkMid,
-                                        ),
+                                        style: AppType.style(11.5, color: _C.inkMid),
                                       ),
                                     ],
                                   ),
@@ -746,13 +734,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                 headerStyle: HeaderStyle(
                                   formatButtonVisible: false,
                                   titleCentered: true,
-                                  titleTextStyle: const TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontSize: 14.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: _C.ink,
-                                    letterSpacing: -0.2,
-                                  ),
+                                  titleTextStyle: AppType.style(14.5, w: FontWeight.w700, color: _C.ink, letterSpacing: -0.2),
                                   leftChevronIcon: _chevron(
                                     Icons.chevron_left_rounded,
                                     _C.teal,
@@ -766,20 +748,8 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                   ),
                                 ),
                                 daysOfWeekStyle: DaysOfWeekStyle(
-                                  weekdayStyle: const TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: _C.inkMid,
-                                    letterSpacing: 0.4,
-                                  ),
-                                  weekendStyle: TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: _C.danger.withValues(alpha: 0.7),
-                                    letterSpacing: 0.4,
-                                  ),
+                                  weekdayStyle: AppType.style(10.5, w: FontWeight.w700, color: _C.inkMid, letterSpacing: 0.4),
+                                  weekendStyle: AppType.style(10.5, w: FontWeight.w700, color: _C.danger.withValues(alpha: 0.7), letterSpacing: 0.4),
                                   dowTextFormatter: (date, locale) =>
                                       DateFormat.E(locale)
                                           .format(date)
@@ -826,12 +796,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                 child: Center(
                   child: Text(
                     '3',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 9,
-                      fontWeight: FontWeight.w800,
-                      color: color,
-                    ),
+                    style: AppType.style(9, w: FontWeight.w800, color: color),
                   ),
                 ),
               )
@@ -854,12 +819,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
         const SizedBox(width: 5),
         Text(
           label,
-          style: const TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 9.5,
-            fontWeight: FontWeight.w500,
-            color: _C.inkMid,
-          ),
+          style: AppType.style(9.5, w: FontWeight.w500, color: _C.inkMid),
         ),
       ],
     );
@@ -931,35 +891,23 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
           children: [
             Text(
               '${day.day}',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 12.5,
-                fontWeight: isSelected || isAvailable
+              style: AppType.style(12.5, w: isSelected || isAvailable
                     ? FontWeight.w700
-                    : FontWeight.w500,
-                color: isSelected
+                    : FontWeight.w500, color: isSelected
                     ? Colors.white
                     : isAvailable
                     ? _C.teal
                     : isWeekend
                     ? _C.danger.withValues(alpha: 0.7)
-                    : _C.ink,
-                height: 1.0,
-              ),
+                    : _C.ink, height: 1.0),
             ),
             const SizedBox(height: 2),
             if (isAvailable)
               Text(
                 isSelected ? '✓' : '$trekCount',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 9,
-                  fontWeight: FontWeight.w800,
-                  color: isSelected
+                style: AppType.style(9, w: FontWeight.w800, color: isSelected
                       ? Colors.white.withValues(alpha: 0.95)
-                      : _C.teal,
-                  height: 1.0,
-                ),
+                      : _C.teal, height: 1.0),
               )
             else
               const SizedBox(height: 9),
@@ -1063,13 +1011,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                             Text(
                               ht.tagline,
                               textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: FontSize.s14,
-                                color: ht.ink,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: -0.2,
-                              ),
+                              style: AppType.style(FontSize.s14, w: FontWeight.w600, color: ht.ink, letterSpacing: -0.2),
                             ),
                             if (ht.badgeText != null)
                               Container(
@@ -1096,12 +1038,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                     const SizedBox(width: 4),
                                     Text(
                                       ht.badgeText!,
-                                      style: TextStyle(
-                                        fontFamily: 'Poppins',
-                                        fontSize: 9.5,
-                                        fontWeight: FontWeight.w600,
-                                        color: ht.accent,
-                                      ),
+                                      style: AppType.style(9.5, w: FontWeight.w600, color: ht.accent),
                                     ),
                                   ],
                                 ),
@@ -1172,14 +1109,9 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                         'Weekend Treks',
                                         textScaler:
                                             const TextScaler.linear(1.0),
-                                        style: TextStyle(
-                                          fontFamily: 'Poppins',
-                                          fontSize: FontSize.s10,
-                                          fontWeight: FontWeight.w600,
-                                          color: _isFormValid
+                                        style: AppType.style(FontSize.s10, w: FontWeight.w600, color: _isFormValid
                                               ? _C.ink
-                                              : _C.inkLight,
-                                        ),
+                                              : _C.inkLight),
                                       ),
                                       SizedBox(height: ScreenConstant.size4),
                                       SvgPicture.asset(
@@ -1200,12 +1132,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                             'Next: ${DateFormat('EEE, MMM d').format(_nearestWeekendDates.first)}',
                                             textScaler:
                                                 const TextScaler.linear(1.0),
-                                            style: TextStyle(
-                                              fontFamily: 'Poppins',
-                                              fontSize: FontSize.s8,
-                                              color: _C.inkMid,
-                                              fontWeight: FontWeight.w500,
-                                            ),
+                                            style: AppType.style(FontSize.s8, w: FontWeight.w500, color: _C.inkMid),
                                           ),
                                         ),
                                     ],
@@ -1245,14 +1172,9 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                         'Personalized Treks',
                                         textScaler:
                                             const TextScaler.linear(1.0),
-                                        style: TextStyle(
-                                          fontFamily: 'Poppins',
-                                          fontSize: FontSize.s10,
-                                          fontWeight: FontWeight.w600,
-                                          color: _isFormValid
+                                        style: AppType.style(FontSize.s10, w: FontWeight.w600, color: _isFormValid
                                               ? _C.ink
-                                              : _C.inkLight,
-                                        ),
+                                              : _C.inkLight),
                                       ),
                                       SizedBox(height: ScreenConstant.size4),
                                       SvgPicture.asset(
@@ -1273,12 +1195,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                             'Unique Trekking Routes',
                                             textScaler:
                                                 const TextScaler.linear(1.0),
-                                            style: TextStyle(
-                                              fontFamily: 'Poppins',
-                                              fontSize: FontSize.s8,
-                                              color: _C.inkMid,
-                                              fontWeight: FontWeight.w500,
-                                            ),
+                                            style: AppType.style(FontSize.s8, w: FontWeight.w500, color: _C.inkMid),
                                           ),
                                         ),
                                     ],
@@ -1425,21 +1342,11 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                   controller: controller,
                   readOnly: true,
                   onTap: onTap,
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: FontSize.s14,
-                    fontWeight: FontWeight.w600,
-                    color: ht.ink,
-                  ),
+                  style: AppType.style(FontSize.s14, w: FontWeight.w600, color: ht.ink),
                   decoration: InputDecoration(
                     border: InputBorder.none,
                     hintText: hint,
-                    hintStyle: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: FontSize.s14,
-                      fontWeight: FontWeight.w500,
-                      color: ht.inkLight,
-                    ),
+                    hintStyle: AppType.style(FontSize.s14, w: FontWeight.w500, color: ht.inkLight),
                     contentPadding: const EdgeInsets.only(right: 36),
                   ),
                 ),
@@ -1541,12 +1448,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                     Text(
                       'Departure Date',
                       textScaler: const TextScaler.linear(1.0),
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        color: ht.inkLight,
-                        fontSize: FontSize.s10,
-                        fontWeight: FontWeight.w500,
-                      ),
+                      style: AppType.style(FontSize.s10, w: FontWeight.w500, color: ht.inkLight),
                     ),
                     SizedBox(height: 0.2.h),
                     if (!isCityTrekSelected)
@@ -1610,12 +1512,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
             Text(
               dateText,
               textScaler: const TextScaler.linear(1.0),
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: FontSize.s12,
-                fontWeight: FontWeight.w600,
-                color: ht.ink,
-              ),
+              style: AppType.style(FontSize.s12, w: FontWeight.w600, color: ht.ink),
             ),
             if (selectedDateValue != null)
               Padding(
@@ -1633,12 +1530,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
             padding: const EdgeInsets.only(top: 4.0),
             child: Text(
               '${_dashboardC.getTrekCountForDate(selectedDateValue)} trek${_dashboardC.getTrekCountForDate(selectedDateValue) > 1 ? 's' : ''} available',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: FontSize.s8,
-                fontWeight: FontWeight.w500,
-                color: ht.accent,
-              ),
+              style: AppType.style(FontSize.s8, w: FontWeight.w500, color: ht.accent),
             ),
           ),
       ],
@@ -1654,11 +1546,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
         padding: const EdgeInsets.only(top: 8.0),
         child: Text(
           'No available dates found',
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: FontSize.s10,
-            color: ht.inkLight,
-          ),
+          style: AppType.style(FontSize.s10, color: ht.inkLight),
         ),
       );
     }
@@ -1736,30 +1624,20 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                 children: [
                   Text(
                     formattedDate,
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: FontSize.s10,
-                      fontWeight: isSelected
+                    style: AppType.style(FontSize.s10, w: isSelected
                           ? FontWeight.w700
-                          : FontWeight.w500,
-                      color: isSelected
+                          : FontWeight.w500, color: isSelected
                           ? ht.accent
                           : isDateAvailable
                           ? ht.accent
-                          : ht.inkMid,
-                    ),
+                          : ht.inkMid),
                   ),
                   if (isDateAvailable && trekCount > 0)
                     Padding(
                       padding: const EdgeInsets.only(top: 2.0),
                       child: Text(
                         '$trekCount',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: FontSize.s8,
-                          fontWeight: FontWeight.w700,
-                          color: ht.accent,
-                        ),
+                        style: AppType.style(FontSize.s8, w: FontWeight.w700, color: ht.accent),
                       ),
                     ),
                 ],
@@ -1856,23 +1734,13 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                   Text(
                                     "What's New",
                                     textScaler: const TextScaler.linear(1.0),
-                                    style: TextStyle(
-                                      fontFamily: 'Poppins',
-                                      fontSize: FontSize.s13,
-                                      fontWeight: FontWeight.w700,
-                                      color: _C.ink,
-                                      letterSpacing: -0.2,
-                                    ),
+                                    style: AppType.style(FontSize.s13, w: FontWeight.w700, color: _C.ink, letterSpacing: -0.2),
                                   ).withShimmerAi(loading: whatsNewLoading),
                                   SizedBox(height: 0.3.h),
                                   Text(
                                     'Adventure simplified combo delivers!',
                                     textScaler: const TextScaler.linear(1.0),
-                                    style: TextStyle(
-                                      fontFamily: 'Poppins',
-                                      fontSize: FontSize.s10,
-                                      color: _C.inkMid,
-                                    ),
+                                    style: AppType.style(FontSize.s10, color: _C.inkMid),
                                   ).withShimmerAi(loading: whatsNewLoading),
                                 ],
                               ),
@@ -1880,13 +1748,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                 onTap: () => Get.toNamed('/know-more-screen'),
                                 child: Text(
                                   'View more',
-                                  style: TextStyle(
-                                    fontFamily: 'Poppins',
-                                    color: _C.teal,
-                                    fontSize: FontSize.s11,
-                                    letterSpacing: 0.4,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                                  style: AppType.style(FontSize.s11, w: FontWeight.w600, color: _C.teal, letterSpacing: 0.4),
                                 ).withShimmerAi(loading: whatsNewLoading),
                               ),
                             ],
@@ -2031,23 +1893,13 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                   Text(
                                     'Top Treks',
                                     textScaler: const TextScaler.linear(1.0),
-                                    style: TextStyle(
-                                      fontFamily: 'Poppins',
-                                      fontSize: FontSize.s13,
-                                      fontWeight: FontWeight.w700,
-                                      color: _C.ink,
-                                      letterSpacing: -0.2,
-                                    ),
+                                    style: AppType.style(FontSize.s13, w: FontWeight.w700, color: _C.ink, letterSpacing: -0.2),
                                   ).withShimmerAi(loading: topTreksLoading),
                                   SizedBox(height: 0.3.h),
                                   Text(
                                     "Season's Best Treks, Ready for you!",
                                     textScaler: const TextScaler.linear(1.0),
-                                    style: TextStyle(
-                                      fontFamily: 'Poppins',
-                                      fontSize: FontSize.s10,
-                                      color: _C.inkMid,
-                                    ),
+                                    style: AppType.style(FontSize.s10, color: _C.inkMid),
                                   ).withShimmerAi(loading: topTreksLoading),
                                 ],
                               ),
@@ -2055,13 +1907,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                 onTap: () => Get.toNamed('/popular-treks'),
                                 child: Text(
                                   'View more',
-                                  style: TextStyle(
-                                    fontFamily: 'Poppins',
-                                    color: _C.teal,
-                                    fontSize: FontSize.s11,
-                                    letterSpacing: 0.4,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                                  style: AppType.style(FontSize.s11, w: FontWeight.w600, color: _C.teal, letterSpacing: 0.4),
                                 ).withShimmerAi(loading: topTreksLoading),
                               ),
                             ],
@@ -2187,13 +2033,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                     Text(
                                       'Seasonal Forecast',
                                       textScaler: const TextScaler.linear(1.0),
-                                      style: TextStyle(
-                                        fontFamily: 'Poppins',
-                                        fontSize: FontSize.s13,
-                                        fontWeight: FontWeight.w700,
-                                        color: _C.ink,
-                                        letterSpacing: -0.2,
-                                      ),
+                                      style: AppType.style(FontSize.s13, w: FontWeight.w700, color: _C.ink, letterSpacing: -0.2),
                                     ).withShimmerAi(loading: seasonalLoading),
                                     SizedBox(height: 0.3.h),
                                     Text(
@@ -2201,12 +2041,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                       textScaler: const TextScaler.linear(1.0),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontFamily: 'Poppins',
-                                        fontSize: FontSize.s10,
-                                        fontWeight: FontWeight.w400,
-                                        color: _C.inkMid,
-                                      ),
+                                      style: AppType.style(FontSize.s10, w: FontWeight.w400, color: _C.inkMid),
                                     ).withShimmerAi(loading: seasonalLoading),
                                   ],
                                 ),
@@ -2216,13 +2051,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                 onTap: () => Get.toNamed('/seasonal-forecast'),
                                 child: Text(
                                   'View more',
-                                  style: TextStyle(
-                                    fontFamily: 'Poppins',
-                                    letterSpacing: 0.4,
-                                    color: _C.teal,
-                                    fontSize: FontSize.s11,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                                  style: AppType.style(FontSize.s11, w: FontWeight.w600, color: _C.teal, letterSpacing: 0.4),
                                 ),
                               ).withShimmerAi(loading: seasonalLoading),
                             ],
@@ -2556,22 +2385,13 @@ class _NoTreksOnRouteState extends State<_NoTreksOnRoute>
                   Text(
                     'No treks on this route yet',
                     textScaler: TextScaler.linear(1.0),
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w700,
-                      color: widget.ink,
-                    ),
+                    style: AppType.style(11.5, w: FontWeight.w700, color: widget.ink),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     'Try a different source or destination',
                     textScaler: TextScaler.linear(1.0),
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 9.5,
-                      color: widget.inkMid,
-                    ),
+                    style: AppType.style(9.5, color: widget.inkMid),
                   ),
                 ],
               ),

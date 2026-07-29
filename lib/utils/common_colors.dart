@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:arobo_app/theme/app_tokens.dart';
 
 class CommonColors {
 
@@ -74,7 +75,7 @@ class CommonColors {
   static Color appBarBg = Color(0x334271ff); // 20% opacity
   // same as 20% opacity
 
-  static const Color offWhiteColor = Color(0xffFAFAFA);
+  static const Color offWhiteColor = AppColors.bg;
   static const Color offWhiteColor2 = Color(0xffFEFEFE);
   static const Color offWhiteColor3 = Color(0xffFFFFFB);
   static const Color shadowColor = Color(0xff5C5C5C);
@@ -177,12 +178,12 @@ class CommonColors {
   static const Color cBFFFFFFF = Color(0xBFFFFFFF);
   static const Color cFF0004FF = Color(0xFF0004FF);
   static const Color cFF001B38 = Color(0xFF001B38);
-  static const Color cFF0F7B6C = Color(0xFF0F7B6C);
+  static const Color cFF0F7B6C = AppColors.teal;
   static const Color cFF0FEEC4 = Color(0xFF0FEEC4);
-  static const Color cFF111827 = Color(0xFF111827);
+  static const Color cFF111827 = AppColors.ink;
   static const Color cFF121212 = Color(0xFF121212);
   static const Color cFF19FA00 = Color(0xFF19FA00);
-  static const Color cFF1AA090 = Color(0xFF1AA090);
+  static const Color cFF1AA090 = AppColors.tealLight;
   static const Color cFF3395FF = Color(0xFF3395FF);
   static const Color cFF343434 = Color(0xFF343434);
   static const Color cFF444444 = Color(0xFF444444);
@@ -193,7 +194,7 @@ class CommonColors {
   static const Color cFF5B5B5B = Color(0xFF5B5B5B);
   static const Color cFF61D5C7 = Color(0xFF61D5C7);
   static const Color cFF6A1B9A = Color(0xFF6A1B9A);
-  static const Color cFF6B7280 = Color(0xFF6B7280);
+  static const Color cFF6B7280 = AppColors.inkMid;
   static const Color cFF7ECBA1 = Color(0xFF7ECBA1);
   static const Color cFF868686 = Color(0xFF868686);
   static const Color cFF888888 = Color(0xFF888888);
@@ -208,9 +209,9 @@ class CommonColors {
   static const Color cFFD5D5D5 = Color(0xFFD5D5D5);
   static const Color cFFD8D8D8 = Color(0xFFD8D8D8);
   static const Color cFFDBEEFF = Color(0xFFDBEEFF);
-  static const Color cFFDC2626 = Color(0xFFDC2626);
-  static const Color cFFE5E7EB = Color(0xFFE5E7EB);
-  static const Color cFFE6F5F3 = Color(0xFFE6F5F3);
+  static const Color cFFDC2626 = AppColors.danger;
+  static const Color cFFE5E7EB = AppColors.border;
+  static const Color cFFE6F5F3 = AppColors.tealSoft;
   static const Color cFFE7E7E7 = Color(0xFFE7E7E7);
   static const Color cFFE8E8E8 = Color(0xFFE8E8E8);
   static const Color cFFE8F4F8 = Color(0xFFE8F4F8);
@@ -225,7 +226,7 @@ class CommonColors {
   static const Color cFFFED811 = Color(0xFFFED811);
   static const Color cFFFEF200 = Color(0xFFFEF200);
   static const Color cFFFFA000 = Color(0xFFFFA000);
-  static const Color cFFFFE4E4 = Color(0xFFFFE4E4);
+  static const Color cFFFFE4E4 = AppColors.dangerSoft;
   static const Color cFFFFF7ED = Color(0xFFFFF7ED);
   static const Color cFFFFFA5F = Color(0xFFFFFA5F);
   static const Color cFFFFFDF9 = Color(0xFFFFFDF9);

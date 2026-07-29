@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
 import 'package:sizer/sizer.dart';
 import '../utils/common_colors.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 const _emphasizedDecelerate = Cubic(0.05, 0.7, 0.1, 1.0);
 
@@ -168,10 +169,7 @@ class KnowMoreDetailsScreen extends StatelessWidget {
                                       Text(
                                         'Introducing to',
                                         textScaler: const TextScaler.linear(1.0),
-                                        style: GoogleFonts.poppins(
-                                          fontSize: FontSize.s10,
-                                          color: textColor.withValues(alpha: 0.85),
-                                        ),
+                                        style: AppType.style(FontSize.s10, color: textColor.withValues(alpha: 0.85)),
                                       ),
                                       SizedBox(height: 0.5.h),
                                       Text(
@@ -179,12 +177,7 @@ class KnowMoreDetailsScreen extends StatelessWidget {
                                         textScaler: const TextScaler.linear(1.0),
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
-                                        style: GoogleFonts.poppins(
-                                          fontSize: FontSize.s16,
-                                          fontWeight: FontWeight.w800,
-                                          color: textColor,
-                                          height: 1.2,
-                                        ),
+                                        style: AppType.style(FontSize.s16, w: FontWeight.w800, color: textColor, height: 1.2),
                                       ),
                                     ],
                                   ),
@@ -216,22 +209,14 @@ class KnowMoreDetailsScreen extends StatelessWidget {
                         Text(
                           knowMoreData?.detailedTitle ?? '',
                           textScaler: const TextScaler.linear(1.0),
-                          style: GoogleFonts.poppins(
-                            fontSize: FontSize.s15,
-                            fontWeight: FontWeight.w700,
-                            color: CommonColors.blackColor,
-                          ),
+                          style: AppType.style(FontSize.s15, w: FontWeight.w700, color: CommonColors.blackColor),
                         ),
                         if (knowMoreData?.detailedDescription != null) ...[
                           SizedBox(height: 1.2.h),
                           Text(
                             knowMoreData?.detailedDescription ?? '',
                             textScaler: const TextScaler.linear(1.0),
-                            style: GoogleFonts.poppins(
-                              fontSize: FontSize.s10,
-                              height: 1.6,
-                              color: CommonColors.blackColor.withValues(alpha: 0.68),
-                            ),
+                            style: AppType.style(FontSize.s10, color: CommonColors.blackColor.withValues(alpha: 0.68), height: 1.6),
                           ),
                         ],
                       ],
@@ -256,12 +241,7 @@ class KnowMoreDetailsScreen extends StatelessWidget {
                         child: Text(
                           'Why it matters',
                           textScaler: const TextScaler.linear(1.0),
-                          style: GoogleFonts.poppins(
-                            fontSize: FontSize.s12,
-                            fontWeight: FontWeight.w700,
-                            color: CommonColors.blackColor.withValues(alpha: 0.5),
-                            letterSpacing: 0.3,
-                          ),
+                          style: AppType.style(FontSize.s12, w: FontWeight.w700, color: CommonColors.blackColor.withValues(alpha: 0.5), letterSpacing: 0.3),
                         ),
                       ),
                       SizedBox(height: 0.8.h),
@@ -334,10 +314,7 @@ class KnowMoreDetailsScreen extends StatelessWidget {
                           Text(
                             knowMoreData?.callToAction ?? '',
                             textScaler: const TextScaler.linear(1.0),
-                            style: GoogleFonts.poppins(
-                              fontSize: FontSize.s12,
-                              fontWeight: FontWeight.w700,
-                            ),
+                            style: AppType.style(FontSize.s12, w: FontWeight.w700),
                           ),
                           const SizedBox(width: 8),
                           const Icon(Icons.arrow_forward, size: 16),
@@ -427,11 +404,7 @@ class _StepRow extends StatelessWidget {
             child: Text(
               '$number',
               textScaler: const TextScaler.linear(1.0),
-              style: GoogleFonts.poppins(
-                fontSize: FontSize.s11,
-                fontWeight: FontWeight.w800,
-                color: startColor,
-              ),
+              style: AppType.style(FontSize.s11, w: FontWeight.w800, color: startColor),
             ),
           ),
           SizedBox(width: ScreenConstant.size12),
@@ -439,11 +412,7 @@ class _StepRow extends StatelessWidget {
             child: Text(
               text,
               textScaler: const TextScaler.linear(1.0),
-              style: GoogleFonts.poppins(
-                fontSize: FontSize.s10,
-                height: 1.4,
-                color: CommonColors.blackColor.withValues(alpha: 0.8),
-              ),
+              style: AppType.style(FontSize.s10, color: CommonColors.blackColor.withValues(alpha: 0.8), height: 1.4),
             ),
           ),
         ],

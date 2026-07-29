@@ -7,6 +7,8 @@ import '../freezed_models/booking/booking_history_model.dart';
 import 'ist_date_utils.dart';
 import 'screen_constants.dart';
 import 'package:arobo_app/repository/repository.dart';
+import 'package:arobo_app/theme/app_tokens.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 // ─────────────────────────────────────────────
 // DESIGN TOKENS — refined for white scaffold
@@ -14,18 +16,18 @@ import 'package:arobo_app/repository/repository.dart';
 class _BC {
   static const bg = Colors.white;
   static const cardBorder = Color(0xFFDDE3EC);
-  static const ink = Color(0xFF0F172A);
+  static const ink = AppColors.inkStrong;
   static const inkMid = Color(0xFF64748B);
   static const inkLight = Color(0xFF94A3B8);
   static const iconBadge = Color(0xFF1E293B);
   static const brand = Color(0xFF3B82F6);
-  static const brandSoft = Color(0xFFDBEAFE);
-  static const divider = Color(0xFFE2E8F0);
-  static const upcoming = Color(0xFF2563EB);
-  static const completed = Color(0xFF059669);
+  static const brandSoft = AppColors.infoSoft;
+  static const divider = AppColors.divider;
+  static const upcoming = AppColors.info;
+  static const completed = AppColors.success;
   static const ongoing = Color(0xFF0891B2);
-  static const cancelled = Color(0xFFDC2626);
-  static const warning = Color(0xFFF59E0B);
+  static const cancelled = AppColors.danger;
+  static const warning = AppColors.warning;
   static const ratingBg = Color(0xFFFFFBEB);
   static const ratingBorder = Color(0xFFFDE68A);
 }
@@ -107,13 +109,7 @@ class CommonBookedCard extends StatelessWidget {
       child: Text(
         text.toUpperCase(),
         textScaler: const TextScaler.linear(1),
-        style: TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: FontSize.s8,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.5,
-          color: filled ? Colors.white : color,
-        ),
+        style: AppType.style(FontSize.s8, w: FontWeight.w700, color: filled ? Colors.white : color, letterSpacing: 0.5),
       ),
     );
   }
@@ -126,14 +122,7 @@ class CommonBookedCard extends StatelessWidget {
         Text(
           label.toUpperCase(),
           textScaler: const TextScaler.linear(1),
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: FontSize.s7,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.8,
-            color: _BC.inkLight,
-            height: 1,
-          ),
+          style: AppType.style(FontSize.s7, w: FontWeight.w600, color: _BC.inkLight, height: 1, letterSpacing: 0.8),
         ),
         SizedBox(height: _rh(0.3, 3.5)),
         Text(
@@ -141,13 +130,7 @@ class CommonBookedCard extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           textScaler: const TextScaler.linear(1),
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: FontSize.s11,
-            fontWeight: FontWeight.w700,
-            color: _BC.ink,
-            height: 1.2,
-          ),
+          style: AppType.style(FontSize.s11, w: FontWeight.w700, color: _BC.ink, height: 1.2),
         ),
       ],
     );
@@ -212,7 +195,7 @@ class CommonBookedCard extends StatelessWidget {
           ),
           color: _BC.bg,
           elevation: 5,
-          shadowColor: const Color(0xFF0F172A).withValues(alpha: 0.22),
+          shadowColor: AppColors.inkStrong.withValues(alpha: 0.22),
           child: CustomPaint(
             foregroundPainter: _TicketBorderPainter(
               cornerRadius: cornerRadius,
@@ -287,12 +270,7 @@ class CommonBookedCard extends StatelessWidget {
                                     : Center(
                                         child: Text(
                                           _initials(vendorName),
-                                          style: TextStyle(
-                                            fontFamily: 'Poppins',
-                                            fontSize: FontSize.s10,
-                                            fontWeight: FontWeight.w700,
-                                            color: Colors.white,
-                                          ),
+                                          style: AppType.style(FontSize.s10, w: FontWeight.w700, color: Colors.white),
                                         ),
                                       ),
                               ),
@@ -304,27 +282,14 @@ class CommonBookedCard extends StatelessWidget {
                                     Text(
                                       'ORGANISED BY',
                                       textScaler: const TextScaler.linear(1),
-                                      style: TextStyle(
-                                        fontFamily: 'Poppins',
-                                        fontSize: FontSize.s7,
-                                        fontWeight: FontWeight.w600,
-                                        letterSpacing: 1,
-                                        color: _BC.inkLight,
-                                        height: 1,
-                                      ),
+                                      style: AppType.style(FontSize.s7, w: FontWeight.w600, color: _BC.inkLight, height: 1, letterSpacing: 1),
                                     ),
                                     SizedBox(height: _rh(0.25, 3)),
                                     Text(
                                       vendorName,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontFamily: 'Poppins',
-                                        fontSize: FontSize.s10,
-                                        fontWeight: FontWeight.w600,
-                                        color: _BC.ink,
-                                        height: 1.25,
-                                      ),
+                                      style: AppType.style(FontSize.s10, w: FontWeight.w600, color: _BC.ink, height: 1.25),
                                     ),
                                   ],
                                 ),
@@ -353,14 +318,7 @@ class CommonBookedCard extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             textScaler: const TextScaler.linear(1),
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: FontSize.s13,
-                              fontWeight: FontWeight.w800,
-                              color: _BC.ink,
-                              height: 1.15,
-                              letterSpacing: -0.2,
-                            ),
+                            style: AppType.style(FontSize.s13, w: FontWeight.w800, color: _BC.ink, height: 1.15, letterSpacing: -0.2),
                           ),
                           if (destinationName.isNotEmpty)
                             Padding(
@@ -378,12 +336,7 @@ class CommonBookedCard extends StatelessWidget {
                                       destinationName,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontFamily: 'Poppins',
-                                        fontSize: FontSize.s9,
-                                        color: _BC.inkMid,
-                                        height: 1.25,
-                                      ),
+                                      style: AppType.style(FontSize.s9, color: _BC.inkMid, height: 1.25),
                                     ),
                                   ),
                                   if (difficulty.isNotEmpty &&
@@ -481,13 +434,7 @@ class CommonBookedCard extends StatelessWidget {
                                         'How was your trek? Tap to rate',
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          fontFamily: 'Poppins',
-                                          fontSize: FontSize.s9,
-                                          fontWeight: FontWeight.w600,
-                                          color: _BC.ink,
-                                          height: 1.2,
-                                        ),
+                                        style: AppType.style(FontSize.s9, w: FontWeight.w600, color: _BC.ink, height: 1.2),
                                       ),
                                     ),
                                     Container(
@@ -503,12 +450,7 @@ class CommonBookedCard extends StatelessWidget {
                                       ),
                                       child: Text(
                                         'Rate',
-                                        style: TextStyle(
-                                          fontFamily: 'Poppins',
-                                          fontSize: FontSize.s8,
-                                          fontWeight: FontWeight.w700,
-                                          color: Colors.white,
-                                        ),
+                                        style: AppType.style(FontSize.s8, w: FontWeight.w700, color: Colors.white),
                                       ),
                                     ),
                                   ],
@@ -550,13 +492,7 @@ class CommonBookedCard extends StatelessWidget {
                                         'You rated this trek',
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          fontFamily: 'Poppins',
-                                          fontSize: FontSize.s9,
-                                          fontWeight: FontWeight.w600,
-                                          color: _BC.ink,
-                                          height: 1.2,
-                                        ),
+                                        style: AppType.style(FontSize.s9, w: FontWeight.w600, color: _BC.ink, height: 1.2),
                                       ),
                                     ),
                                     Row(
@@ -574,12 +510,7 @@ class CommonBookedCard extends StatelessWidget {
                                     SizedBox(width: _rw(1.2, 6)),
                                     Text(
                                       ratingValue.toStringAsFixed(1),
-                                      style: TextStyle(
-                                        fontFamily: 'Poppins',
-                                        fontSize: FontSize.s9,
-                                        fontWeight: FontWeight.w700,
-                                        color: _BC.completed,
-                                      ),
+                                      style: AppType.style(FontSize.s9, w: FontWeight.w700, color: _BC.completed),
                                     ),
                                   ],
                                 ),
@@ -633,14 +564,7 @@ class CommonBookedCard extends StatelessWidget {
                                           textScaler: const TextScaler.linear(
                                             1,
                                           ),
-                                          style: TextStyle(
-                                            fontFamily: 'Poppins',
-                                            fontSize: FontSize.s10,
-                                            fontWeight: FontWeight.w700,
-                                            letterSpacing: 0.6,
-                                            color: _BC.ink,
-                                            height: 1.2,
-                                          ),
+                                          style: AppType.style(FontSize.s10, w: FontWeight.w700, color: _BC.ink, height: 1.2, letterSpacing: 0.6),
                                         ),
                                         Text(
                                           'Booked $bookingDate',
@@ -649,12 +573,7 @@ class CommonBookedCard extends StatelessWidget {
                                           textScaler: const TextScaler.linear(
                                             1,
                                           ),
-                                          style: TextStyle(
-                                            fontFamily: 'Poppins',
-                                            fontSize: FontSize.s8,
-                                            color: _BC.inkLight,
-                                            height: 1.2,
-                                          ),
+                                          style: AppType.style(FontSize.s8, color: _BC.inkLight, height: 1.2),
                                         ),
                                       ],
                                     ),
@@ -665,12 +584,7 @@ class CommonBookedCard extends StatelessWidget {
                                       children: [
                                         Text(
                                           'Details',
-                                          style: TextStyle(
-                                            fontFamily: 'Poppins',
-                                            fontSize: FontSize.s9,
-                                            fontWeight: FontWeight.w600,
-                                            color: _BC.brand,
-                                          ),
+                                          style: AppType.style(FontSize.s9, w: FontWeight.w600, color: _BC.brand),
                                         ),
                                         SizedBox(width: _rw(0.8, 4)),
                                         Container(

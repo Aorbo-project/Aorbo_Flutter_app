@@ -27,6 +27,8 @@ import '../utils/common_colors.dart';
 import '../utils/common_images.dart';
 import '../utils/common_safety_card.dart';
 import '../utils/screen_constants.dart';
+import 'package:arobo_app/theme/app_tokens.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 // ═════════════════════════════════════════════════════════════ CONSTANTS ═
 
@@ -55,24 +57,24 @@ String _firstPhoneOf(Contact c) =>
 // ═══════════════════════════════════════════════════════ DESIGN TOKENS ═══
 
 class _C {
-  static const bg = Color(0xFFF5F8FF);
+  static const bg = AppColors.bgCool;
   static const cardBg = Colors.white;
-  static const ink = Color(0xFF111827);
-  static const inkMid = Color(0xFF6B7280);
-  static const inkLight = Color(0xFF9CA3AF);
-  static const teal = Color(0xFF0F7B6C);
-  static const tealSoft = Color(0xFFE6F5F3);
-  static const fieldBg = Color(0xFFF9FAFB);
-  static const fieldBorder = Color(0xFFE5E7EB);
-  static const iconBadgeBg = Color(0xFF111827);
+  static const ink = AppColors.ink;
+  static const inkMid = AppColors.inkMid;
+  static const inkLight = AppColors.inkLight;
+  static const teal = AppColors.teal;
+  static const tealSoft = AppColors.tealSoft;
+  static const fieldBg = AppColors.elevated;
+  static const fieldBorder = AppColors.border;
+  static const iconBadgeBg = AppColors.ink;
   static const danger = Color(0xFFEF4444);
-  static const divider = Color(0xFFE5E7EB);
+  static const divider = AppColors.border;
   static const warnBg = Color(0xFFFFF3BF);
   static const warn = Color(0xFFE67700);
   static const ctaGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF1B4332), Color(0xFF2D6A4F)],
+    colors: [AppColors.forestDeep, AppColors.forest],
   );
 }
 
@@ -83,14 +85,7 @@ TextStyle _ts(
   Color c = _C.ink,
   double? h,
   double? ls,
-}) => TextStyle(
-  fontFamily: 'Poppins',
-  fontSize: size,
-  fontWeight: w,
-  color: c,
-  height: h,
-  letterSpacing: ls,
-);
+}) => AppType.style(size, w: w, color: c, height: h, letterSpacing: ls);
 
 /// Snackbar shown through a *sheet-local* messenger so it renders inside
 /// the sheet instead of behind the modal barrier.
@@ -2289,12 +2284,7 @@ class _PickerSheetState extends State<_PickerSheet>
                                                 ? e.value.displayName[0]
                                                       .toUpperCase()
                                                 : '?',
-                                            style: const TextStyle(
-                                              fontFamily: 'Poppins',
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.w700,
-                                              color: Colors.white,
-                                            ),
+                                            style: AppType.style(11, w: FontWeight.w700, color: Colors.white),
                                           ),
                                         ),
                                       ),

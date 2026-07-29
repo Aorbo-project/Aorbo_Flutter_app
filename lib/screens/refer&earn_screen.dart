@@ -7,6 +7,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../utils/common_colors.dart';
 import '../utils/common_images.dart';
 import '../utils/screen_constants.dart';
+import 'package:arobo_app/theme/app_tokens.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DATA MODEL
@@ -303,11 +305,7 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
       iconTheme: IconThemeData(color: CommonColors.blackColor),
       title: Text(
         'Refer & Earn',
-        style: GoogleFonts.poppins(
-          fontSize: FontSize.s16,
-          fontWeight: FontWeight.w600,
-          color: CommonColors.blackColor,
-        ),
+        style: AppType.style(FontSize.s16, w: FontWeight.w600, color: CommonColors.blackColor),
       ),
       actions: [
         Padding(
@@ -404,11 +402,7 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
                 ),
                 child: Text(
                   '🎁  Limited Offer',
-                  style: GoogleFonts.poppins(
-                    fontSize: FontSize.s9,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
-                  ),
+                  style: AppType.style(FontSize.s9, w: FontWeight.w500, color: Colors.white),
                 ),
               ),
               SizedBox(height: 1.5.h),
@@ -422,20 +416,11 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
                       children: [
                         Text(
                           'Refer & Earn',
-                          style: GoogleFonts.poppins(
-                            fontSize: FontSize.s13,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white.withValues(alpha: 0.85),
-                          ),
+                          style: AppType.style(FontSize.s13, w: FontWeight.w500, color: Colors.white.withValues(alpha: 0.85)),
                         ),
                         Text(
                           'Up to ₹1,000!',
-                          style: GoogleFonts.poppins(
-                            fontSize: FontSize.s22,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                            height: 1.1,
-                          ),
+                          style: AppType.style(FontSize.s22, w: FontWeight.w700, color: Colors.white, height: 1.1),
                         ),
                         SizedBox(height: 2.h),
                         _benefitRow('💰', 'You earn ₹50 per referral'),
@@ -471,11 +456,7 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
         Expanded(
           child: Text(
             text,
-            style: GoogleFonts.poppins(
-              fontSize: FontSize.s9,
-              color: Colors.white.withValues(alpha: 0.9),
-              height: 1.3,
-            ),
+            style: AppType.style(FontSize.s9, color: Colors.white.withValues(alpha: 0.9), height: 1.3),
           ),
         ),
       ],
@@ -514,20 +495,13 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
                 children: [
                   Text(
                     '₹1,000 Milestone',
-                    style: GoogleFonts.poppins(
-                      fontSize: FontSize.s12,
-                      fontWeight: FontWeight.w600,
-                      color: CommonColors.blackColor,
-                    ),
+                    style: AppType.style(FontSize.s12, w: FontWeight.w600, color: CommonColors.blackColor),
                   ),
                   Text(
                     remaining > 0
                         ? '$remaining more referrals to go!'
                         : '🎉 Milestone reached!',
-                    style: GoogleFonts.poppins(
-                      fontSize: FontSize.s9,
-                      color: Colors.grey.shade600,
-                    ),
+                    style: AppType.style(FontSize.s9, color: Colors.grey.shade600),
                   ),
                 ],
               ),
@@ -542,11 +516,7 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
                 ),
                 child: Text(
                   '$_completedCount / $_totalMilestone',
-                  style: GoogleFonts.poppins(
-                    fontSize: FontSize.s10,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
+                  style: AppType.style(FontSize.s10, w: FontWeight.w600, color: Colors.white),
                 ),
               ),
             ],
@@ -561,11 +531,9 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text('0',
-                  style: GoogleFonts.poppins(
-                      fontSize: FontSize.s8, color: Colors.grey.shade500)),
+                  style: AppType.style(FontSize.s8, color: Colors.grey.shade500)),
               Text('20',
-                  style: GoogleFonts.poppins(
-                      fontSize: FontSize.s8, color: Colors.grey.shade500)),
+                  style: AppType.style(FontSize.s8, color: Colors.grey.shade500)),
             ],
           ),
         ],
@@ -594,10 +562,7 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
                   SizedBox(width: 2.w),
                   Text(
                     'Your Referral Code',
-                    style: GoogleFonts.poppins(
-                      fontSize: FontSize.s10,
-                      color: Colors.grey.shade600,
-                    ),
+                    style: AppType.style(FontSize.s10, color: Colors.grey.shade600),
                   ),
                 ],
               ),
@@ -618,12 +583,7 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
                     ),
                     child: Text(
                       _referralCode,
-                      style: GoogleFonts.poppins(
-                        fontSize: FontSize.s14,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 3,
-                        color: const Color(0xFF2D2D8E),
-                      ),
+                      style: AppType.style(FontSize.s14, w: FontWeight.w700, color: const Color(0xFF2D2D8E), letterSpacing: 3),
                     ),
                   ),
 
@@ -677,11 +637,7 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
                                       color: Colors.white, size: 4.w),
                                   SizedBox(width: 1.5.w),
                                   Text('Copied!',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: FontSize.s10,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white,
-                                      )),
+                                      style: AppType.style(FontSize.s10, w: FontWeight.w600, color: Colors.white)),
                                 ],
                               )
                             : Row(
@@ -692,11 +648,7 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
                                       color: Colors.white, size: 4.w),
                                   SizedBox(width: 1.5.w),
                                   Text('Copy',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: FontSize.s10,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white,
-                                      )),
+                                      style: AppType.style(FontSize.s10, w: FontWeight.w600, color: Colors.white)),
                                 ],
                               ),
                       ),
@@ -756,11 +708,7 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
           child: Center(
             child: Text(
               title,
-              style: GoogleFonts.poppins(
-                fontSize: FontSize.s10,
-                fontWeight: sel ? FontWeight.w600 : FontWeight.w500,
-                color: sel ? CommonColors.blackColor : Colors.grey.shade500,
-              ),
+              style: AppType.style(FontSize.s10, w: sel ? FontWeight.w600 : FontWeight.w500, color: sel ? CommonColors.blackColor : Colors.grey.shade500),
             ),
           ),
         ),
@@ -862,11 +810,7 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
                   child: Center(
                     child: Text(
                       '$stepNum',
-                      style: GoogleFonts.poppins(
-                        fontSize: FontSize.s8,
-                        fontWeight: FontWeight.w700,
-                        color: gradientColors.last,
-                      ),
+                      style: AppType.style(FontSize.s8, w: FontWeight.w700, color: gradientColors.last),
                     ),
                   ),
                 ),
@@ -880,20 +824,12 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
               children: [
                 Text(
                   title,
-                  style: GoogleFonts.poppins(
-                    fontSize: FontSize.s12,
-                    fontWeight: FontWeight.w600,
-                    color: CommonColors.blackColor,
-                  ),
+                  style: AppType.style(FontSize.s12, w: FontWeight.w600, color: CommonColors.blackColor),
                 ),
                 SizedBox(height: 0.4.h),
                 Text(
                   description,
-                  style: GoogleFonts.poppins(
-                    fontSize: FontSize.s9,
-                    color: Colors.grey.shade600,
-                    height: 1.4,
-                  ),
+                  style: AppType.style(FontSize.s9, color: Colors.grey.shade600, height: 1.4),
                 ),
               ],
             ),
@@ -943,12 +879,7 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
               SizedBox(width: 3.w),
               Text(
                 'Refer Now & Earn ₹50',
-                style: GoogleFonts.poppins(
-                  fontSize: FontSize.s13,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                  letterSpacing: 0.3,
-                ),
+                style: AppType.style(FontSize.s13, w: FontWeight.w700, color: Colors.white, letterSpacing: 0.3),
               ),
             ],
           ),
@@ -1032,20 +963,12 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
           SizedBox(height: 1.h),
           Text(
             value,
-            style: GoogleFonts.poppins(
-              fontSize: FontSize.s18,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-              height: 1,
-            ),
+            style: AppType.style(FontSize.s18, w: FontWeight.w700, color: Colors.white, height: 1),
           ),
           SizedBox(height: 0.3.h),
           Text(
             label,
-            style: GoogleFonts.poppins(
-              fontSize: FontSize.s9,
-              color: Colors.white.withValues(alpha: 0.8),
-            ),
+            style: AppType.style(FontSize.s9, color: Colors.white.withValues(alpha: 0.8)),
           ),
         ],
       ),
@@ -1081,11 +1004,7 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
             child: Center(
               child: Text(
                 entry.initials,
-                style: GoogleFonts.poppins(
-                  fontSize: FontSize.s11,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                ),
+                style: AppType.style(FontSize.s11, w: FontWeight.w700, color: Colors.white),
               ),
             ),
           ),
@@ -1095,16 +1014,9 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(entry.name,
-                    style: GoogleFonts.poppins(
-                      fontSize: FontSize.s11,
-                      fontWeight: FontWeight.w600,
-                      color: CommonColors.blackColor,
-                    )),
+                    style: AppType.style(FontSize.s11, w: FontWeight.w600, color: CommonColors.blackColor)),
                 Text(entry.date,
-                    style: GoogleFonts.poppins(
-                      fontSize: FontSize.s9,
-                      color: Colors.grey.shade500,
-                    )),
+                    style: AppType.style(FontSize.s9, color: Colors.grey.shade500)),
               ],
             ),
           ),
@@ -1115,13 +1027,9 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
                 entry.status == ReferralStatus.completed
                     ? '+₹${entry.reward.toStringAsFixed(0)}'
                     : '₹${entry.reward.toStringAsFixed(0)}',
-                style: GoogleFonts.poppins(
-                  fontSize: FontSize.s12,
-                  fontWeight: FontWeight.w700,
-                  color: entry.status == ReferralStatus.completed
+                style: AppType.style(FontSize.s12, w: FontWeight.w700, color: entry.status == ReferralStatus.completed
                       ? const Color(0xFF2EAF7D)
-                      : Colors.grey.shade500,
-                ),
+                      : Colors.grey.shade500),
               ),
               SizedBox(height: 0.4.h),
               Container(
@@ -1133,11 +1041,7 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
                 ),
                 child: Text(
                   cfg['label'] as String,
-                  style: GoogleFonts.poppins(
-                    fontSize: FontSize.s8,
-                    fontWeight: FontWeight.w600,
-                    color: cfg['text'] as Color,
-                  ),
+                  style: AppType.style(FontSize.s8, w: FontWeight.w600, color: cfg['text'] as Color),
                 ),
               ),
             ],
@@ -1158,7 +1062,7 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
       case ReferralStatus.pending:
         return {
           'label': 'Pending',
-          'bg': const Color(0xFFF59E0B).withValues(alpha: 0.12),
+          'bg': AppColors.warning.withValues(alpha: 0.12),
           'text': const Color(0xFFB45309),
         };
       case ReferralStatus.expired:
@@ -1177,17 +1081,10 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
         Icon(Icons.group_add_rounded, size: 18.w, color: Colors.grey.shade300),
         SizedBox(height: 2.h),
         Text('No referrals yet',
-            style: GoogleFonts.poppins(
-              fontSize: FontSize.s14,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey.shade500,
-            )),
+            style: AppType.style(FontSize.s14, w: FontWeight.w600, color: Colors.grey.shade500)),
         SizedBox(height: 0.5.h),
         Text('Invite your friends and start earning!',
-            style: GoogleFonts.poppins(
-              fontSize: FontSize.s10,
-              color: Colors.grey.shade400,
-            )),
+            style: AppType.style(FontSize.s10, color: Colors.grey.shade400)),
         SizedBox(height: 6.h),
       ],
     );
@@ -1243,7 +1140,7 @@ class _ShareBottomSheet extends StatelessWidget {
         SnackBar(
           content: Text(
             'Referral message copied!',
-            style: GoogleFonts.poppins(fontSize: 12),
+            style: AppType.style(12),
           ),
           backgroundColor: const Color(0xFF52C4A0),
           behavior: SnackBarBehavior.floating,
@@ -1280,18 +1177,12 @@ class _ShareBottomSheet extends StatelessWidget {
 
           Text(
             'Share via',
-            style: GoogleFonts.poppins(
-              fontSize: FontSize.s14,
-              fontWeight: FontWeight.w600,
-            ),
+            style: AppType.style(FontSize.s14, w: FontWeight.w600),
           ),
           SizedBox(height: 0.5.h),
           Text(
             'Invite friends using your favourite app',
-            style: GoogleFonts.poppins(
-              fontSize: FontSize.s9,
-              color: Colors.grey.shade500,
-            ),
+            style: AppType.style(FontSize.s9, color: Colors.grey.shade500),
           ),
           SizedBox(height: 3.h),
 
@@ -1320,7 +1211,7 @@ class _ShareBottomSheet extends StatelessWidget {
               _ShareOption(
                 label: 'Copy Link',
                 icon: Icons.copy_rounded,
-                color: const Color(0xFF6B7280),
+                color: AppColors.inkMid,
                 onTap: () => _copyLink(context),
               ),
             ],
@@ -1342,20 +1233,12 @@ class _ShareBottomSheet extends StatelessWidget {
               children: [
                 Text(
                   'Message Preview',
-                  style: GoogleFonts.poppins(
-                    fontSize: FontSize.s9,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey.shade500,
-                  ),
+                  style: AppType.style(FontSize.s9, w: FontWeight.w600, color: Colors.grey.shade500),
                 ),
                 SizedBox(height: 0.8.h),
                 Text(
                   message,
-                  style: GoogleFonts.poppins(
-                    fontSize: FontSize.s9,
-                    color: Colors.grey.shade700,
-                    height: 1.5,
-                  ),
+                  style: AppType.style(FontSize.s9, color: Colors.grey.shade700, height: 1.5),
                   maxLines: 5,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -1399,11 +1282,7 @@ class _ShareOption extends StatelessWidget {
           SizedBox(height: 0.8.h),
           Text(
             label,
-            style: GoogleFonts.poppins(
-              fontSize: FontSize.s8,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey.shade700,
-            ),
+            style: AppType.style(FontSize.s8, w: FontWeight.w500, color: Colors.grey.shade700),
           ),
         ],
       ),

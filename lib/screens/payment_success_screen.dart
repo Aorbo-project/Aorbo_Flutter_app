@@ -10,6 +10,8 @@ import 'package:intl/intl.dart';
 import 'package:dotted_line/dotted_line.dart';
 import 'package:sizer/sizer.dart';
 import 'package:arobo_app/utils/ist_date_utils.dart';
+import 'package:arobo_app/theme/app_tokens.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 
 // ─────────────────────────────────────────────
@@ -18,15 +20,15 @@ import 'package:arobo_app/utils/ist_date_utils.dart';
 class _TC {
   static const bg         = Color(0xFFF4F7FF);
   static const cardBg     = Color(0xFFFFFFFF);
-  static const ink        = Color(0xFF0F172A);
+  static const ink        = AppColors.inkStrong;
   static const inkMid     = Color(0xFF64748B);
   static const inkLight   = Color(0xFF94A3B8);
-  static const accent     = Color(0xFF111827);
+  static const accent     = AppColors.ink;
   static const brand      = Color(0xFF4271FF);
   static const brandLight = Color(0xFFEEF2FF);
-  static const teal       = Color(0xFF0F7B6C);
-  static const tealLight  = Color(0xFFE6F5F3);
-  static const divider    = Color(0xFFE2E8F0);
+  static const teal       = AppColors.teal;
+  static const tealLight  = AppColors.tealSoft;
+  static const divider    = AppColors.divider;
   static const shadow     = Color(0x0A000000);
 }
 
@@ -119,9 +121,9 @@ class _TrekkingIconBannerState extends State<_TrekkingIconBanner>
   final List<Animation<double>> _floatAnims = [];
 
   static const _icons = [
-    (icon: Icons.hiking_rounded,          label: 'Trekking',    color: Color(0xFF0F7B6C)),
+    (icon: Icons.hiking_rounded,          label: 'Trekking',    color: AppColors.teal),
     (icon: Icons.landscape_rounded,       label: 'Mountains',   color: Color(0xFF4271FF)),
-    (icon: Icons.wb_sunny_rounded,        label: 'Sunrise',     color: Color(0xFFF59E0B)),
+    (icon: Icons.wb_sunny_rounded,        label: 'Sunrise',     color: AppColors.warning),
     (icon: Icons.forest_rounded,          label: 'Forest',      color: Color(0xFF22C55E)),
     (icon: Icons.air_rounded,             label: 'Fresh Air',   color: Color(0xFF06B6D4)),
   ];
@@ -211,7 +213,7 @@ class _TrekkingIconBannerState extends State<_TrekkingIconBanner>
                 padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 0.6.h),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF0F7B6C), Color(0xFF0D9488)],
+                    colors: [AppColors.teal, Color(0xFF0D9488)],
                   ),
                   borderRadius: BorderRadius.circular(20),
                 ),
@@ -222,13 +224,7 @@ class _TrekkingIconBannerState extends State<_TrekkingIconBanner>
                     SizedBox(width: 1.5.w),
                     Text(
                       'Your Ticket Is Ready',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: FontSize.s8,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                        letterSpacing: 0.5,
-                      ),
+                      style: AppType.style(FontSize.s8, w: FontWeight.w700, color: Colors.white, letterSpacing: 0.5),
                     ),
                   ],
                 ),
@@ -241,22 +237,12 @@ class _TrekkingIconBannerState extends State<_TrekkingIconBanner>
           // ── Trek-themed tagline ──────────────────────────────
           Text(
             'Your adventure starts here 🏔️',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: FontSize.s13,
-              fontWeight: FontWeight.w800,
-              color: _TC.ink,
-              height: 1.3,
-            ),
+            style: AppType.style(FontSize.s13, w: FontWeight.w800, color: _TC.ink, height: 1.3),
           ),
           SizedBox(height: 0.4.h),
           Text(
             'Pack your bags and embrace the trail.',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: FontSize.s9,
-              color: _TC.inkMid,
-            ),
+            style: AppType.style(FontSize.s9, color: _TC.inkMid),
           ),
 
           SizedBox(height: 2.h),
@@ -326,13 +312,7 @@ class _TrekkingIconBannerState extends State<_TrekkingIconBanner>
           // ── "Your Booking Ticket" label ──────────────────────
           Text(
             'Your Booking Ticket',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: FontSize.s11,
-              fontWeight: FontWeight.w700,
-              color: _TC.inkMid,
-              letterSpacing: 0.3,
-            ),
+            style: AppType.style(FontSize.s11, w: FontWeight.w700, color: _TC.inkMid, letterSpacing: 0.3),
           ),
           SizedBox(height: 1.h),
         ],
@@ -375,12 +355,7 @@ class _IconPill extends StatelessWidget {
         SizedBox(height: 0.8.h),
         Text(
           label,
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: FontSize.s7,
-            fontWeight: FontWeight.w600,
-            color: _TC.inkMid,
-          ),
+          style: AppType.style(FontSize.s7, w: FontWeight.w600, color: _TC.inkMid),
         ),
       ],
     );
@@ -580,7 +555,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [Color(0xFF0F7B6C), Color(0xFF0D9488), Color(0xFF0A5C52)],
+                    colors: [AppColors.teal, Color(0xFF0D9488), Color(0xFF0A5C52)],
                   ),
                 ),
                 child: Column(
@@ -599,22 +574,12 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                     SizedBox(height: 3.h),
                     Text(
                       'Booking Confirmed!',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 20.sp,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                        letterSpacing: 0.5,
-                      ),
+                      style: AppType.style(20.sp, w: FontWeight.w800, color: Colors.white, letterSpacing: 0.5),
                     ),
                     SizedBox(height: 1.h),
                     Text(
                       'Your adventure awaits',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 13.sp,
-                        color: Colors.white.withValues(alpha: 0.8),
-                      ),
+                      style: AppType.style(13.sp, color: Colors.white.withValues(alpha: 0.8)),
                     ),
                   ],
                 ),
@@ -686,7 +651,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
             padding: EdgeInsets.fromLTRB(5.w, 2.5.h, 5.w, 2.5.h),
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF0F7B6C), Color(0xFF0D9488)],
+                colors: [AppColors.teal, Color(0xFF0D9488)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -701,13 +666,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                 Expanded(
                   child: Text(
                     trek?.title ?? 'Trek Details',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: FontSize.s18,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                      height: 1.2,
-                    ),
+                    style: AppType.style(FontSize.s18, w: FontWeight.w800, color: Colors.white, height: 1.2),
                   ),
                 ),
                 SizedBox(width: 2.w),
@@ -730,13 +689,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                       SizedBox(width: 1.5.w),
                       Text(
                         'CONFIRMED',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: FontSize.s8,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                          letterSpacing: 0.8,
-                        ),
+                        style: AppType.style(FontSize.s8, w: FontWeight.w700, color: Colors.white, letterSpacing: 0.8),
                       ),
                     ],
                   ),
@@ -759,15 +712,12 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                       SizedBox(height: 0.3.h),
                       Text(
                         startDate != null ? DateFormat('E, dd MMM').format(startDate) : '-',
-                        style: TextStyle(
-                          fontFamily: 'Poppins', fontSize: FontSize.s13,
-                          fontWeight: FontWeight.w700, color: _TC.ink,
-                        ),
+                        style: AppType.style(FontSize.s13, w: FontWeight.w700, color: _TC.ink),
                       ),
                       SizedBox(height: 0.2.h),
                       Text(
                         data.city?.cityName ?? '-',
-                        style: TextStyle(fontFamily: 'Poppins', fontSize: FontSize.s8, color: _TC.inkMid),
+                        style: AppType.style(FontSize.s8, color: _TC.inkMid),
                       ),
                     ],
                   ),
@@ -786,10 +736,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                         ),
                         child: Text(
                           trek?.duration?.replaceAll('Days', 'D').replaceAll('Nights', 'N') ?? '-',
-                          style: TextStyle(
-                            fontFamily: 'Poppins', fontSize: FontSize.s8,
-                            fontWeight: FontWeight.w600, color: _TC.inkMid,
-                          ),
+                          style: AppType.style(FontSize.s8, w: FontWeight.w600, color: _TC.inkMid),
                         ),
                       ),
                     ],
@@ -805,16 +752,13 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                       Text(
                         endDate != null ? DateFormat('E, dd MMM').format(endDate) : '-',
                         textAlign: TextAlign.right,
-                        style: TextStyle(
-                          fontFamily: 'Poppins', fontSize: FontSize.s13,
-                          fontWeight: FontWeight.w700, color: _TC.ink,
-                        ),
+                        style: AppType.style(FontSize.s13, w: FontWeight.w700, color: _TC.ink),
                       ),
                       SizedBox(height: 0.2.h),
                       Text(
                         trek?.destinationData?.name ?? 'Destination',
                         textAlign: TextAlign.right,
-                        style: TextStyle(fontFamily: 'Poppins', fontSize: FontSize.s8, color: _TC.inkMid),
+                        style: AppType.style(FontSize.s8, color: _TC.inkMid),
                       ),
                     ],
                   ),
@@ -879,10 +823,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                         children: [
                           Icon(Icons.people_outline_rounded, size: 4.w, color: _TC.inkMid),
                           SizedBox(width: 2.w),
-                          Text('Traveller Details', style: TextStyle(
-                            fontFamily: 'Poppins', fontSize: FontSize.s10,
-                            fontWeight: FontWeight.w700, color: _TC.ink,
-                          )),
+                          Text('Traveller Details', style: AppType.style(FontSize.s10, w: FontWeight.w700, color: _TC.ink)),
                         ],
                       ),
                     ),
@@ -916,7 +857,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                             return Container(
                               padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.h),
                               decoration: BoxDecoration(
-                                border: isLast ? null : const Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+                                border: isLast ? null : const Border(bottom: BorderSide(color: AppColors.divider)),
                               ),
                               child: Row(
                                 children: [
@@ -934,17 +875,14 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                                         ),
                                         SizedBox(width: 2.w),
                                         Expanded(
-                                          child: Text(t.traveler?.name ?? '-', style: TextStyle(
-                                            fontFamily: 'Poppins', fontSize: FontSize.s9,
-                                            fontWeight: FontWeight.w600, color: _TC.ink,
-                                          )),
+                                          child: Text(t.traveler?.name ?? '-', style: AppType.style(FontSize.s9, w: FontWeight.w600, color: _TC.ink)),
                                         ),
                                       ],
                                     ),
                                   ),
                                   Expanded(flex: 2, child: Text(
                                     t.traveler?.age?.toString() ?? '-',
-                                    style: TextStyle(fontFamily: 'Poppins', fontSize: FontSize.s9, color: _TC.inkMid),
+                                    style: AppType.style(FontSize.s9, color: _TC.inkMid),
                                   )),
                                   Expanded(flex: 3, child: _genderPill(t.traveler?.gender ?? '-')),
                                 ],
@@ -1062,13 +1000,8 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Payment Successful', style: TextStyle(
-                                fontFamily: 'Poppins', fontSize: FontSize.s9, color: _TC.inkMid,
-                              )),
-                              Text('₹${payment?.amount ?? 0}', style: TextStyle(
-                                fontFamily: 'Poppins', fontSize: FontSize.s15,
-                                fontWeight: FontWeight.w800, color: _TC.teal,
-                              )),
+                              Text('Payment Successful', style: AppType.style(FontSize.s9, color: _TC.inkMid)),
+                              Text('₹${payment?.amount ?? 0}', style: AppType.style(FontSize.s15, w: FontWeight.w800, color: _TC.teal)),
                             ],
                           ),
                         ),
@@ -1178,24 +1111,14 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Trek details via contact', style: TextStyle(
-                    fontFamily: 'Poppins', fontSize: FontSize.s8, color: _TC.inkMid,
-                  )),
+                  Text('Trek details via contact', style: AppType.style(FontSize.s8, color: _TC.inkMid)),
                   SizedBox(height: 0.2.h),
                   if (captainName != null)
-                    Text(captainName, style: TextStyle(
-                      fontFamily: 'Poppins', fontSize: FontSize.s11,
-                      fontWeight: FontWeight.w600, color: _TC.ink,
-                    )),
+                    Text(captainName, style: AppType.style(FontSize.s11, w: FontWeight.w600, color: _TC.ink)),
                   if (captainPhone != null)
-                    Text(captainPhone, style: TextStyle(
-                      fontFamily: 'Poppins', fontSize: FontSize.s12,
-                      fontWeight: FontWeight.w700, color: _TC.brand,
-                    ))
+                    Text(captainPhone, style: AppType.style(FontSize.s12, w: FontWeight.w700, color: _TC.brand))
                   else
-                    Text('Contact number not available', style: TextStyle(
-                      fontFamily: 'Poppins', fontSize: FontSize.s9, color: _TC.inkMid,
-                    )),
+                    Text('Contact number not available', style: AppType.style(FontSize.s9, color: _TC.inkMid)),
                 ],
               ),
             ),
@@ -1243,10 +1166,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                 child: Icon(Icons.help_outline_rounded, size: 5.w, color: _TC.brand),
               ),
               SizedBox(width: 3.w),
-              Expanded(child: Text('Frequently Asked Questions', style: TextStyle(
-                fontFamily: 'Poppins', fontSize: FontSize.s11,
-                fontWeight: FontWeight.w600, color: _TC.ink,
-              ))),
+              Expanded(child: Text('Frequently Asked Questions', style: AppType.style(FontSize.s11, w: FontWeight.w600, color: _TC.ink))),
               Icon(Icons.arrow_forward_ios_rounded, size: 4.w, color: _TC.inkLight),
             ],
           ),
@@ -1265,13 +1185,13 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
             'Go Beyond,\nExplore More!',
             style: GoogleFonts.sourceSerif4(
               fontSize: FontSize.s28, fontWeight: FontWeight.bold,
-              color: const Color(0xFFE2E8F0), height: 1.2,
+              color: AppColors.divider, height: 1.2,
             ),
           ),
           SizedBox(height: 1.h),
           RichText(
             text: TextSpan(
-              style: TextStyle(fontFamily: 'Poppins', fontSize: FontSize.s10, color: _TC.inkLight),
+              style: AppType.style(FontSize.s10, color: _TC.inkLight),
               children: [
                 const TextSpan(text: 'Crafted with passion '),
                 WidgetSpan(
@@ -1305,10 +1225,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
               child: Icon(_sectionIcon(index), color: Colors.white, size: 3.8.w),
             ),
             SizedBox(width: 3.w),
-            Expanded(child: Text(title, style: TextStyle(
-              fontFamily: 'Poppins', fontSize: FontSize.s12,
-              fontWeight: FontWeight.w700, color: _TC.ink,
-            ))),
+            Expanded(child: Text(title, style: AppType.style(FontSize.s12, w: FontWeight.w700, color: _TC.ink))),
             AnimatedRotation(
               turns: isOpen ? 0.5 : 0,
               duration: const Duration(milliseconds: 250),
@@ -1343,14 +1260,8 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(flex: 5, child: Text(title, style: TextStyle(
-            fontFamily: 'Poppins', fontSize: FontSize.s9, color: _TC.inkMid,
-          ))),
-          Expanded(flex: 5, child: Text(value, textAlign: TextAlign.end, style: TextStyle(
-            fontFamily: 'Poppins', fontSize: FontSize.s9,
-            fontWeight: isHighlight ? FontWeight.w700 : FontWeight.w500,
-            color: isHighlight ? _TC.brand : _TC.ink,
-          ))),
+          Expanded(flex: 5, child: Text(title, style: AppType.style(FontSize.s9, color: _TC.inkMid))),
+          Expanded(flex: 5, child: Text(value, textAlign: TextAlign.end, style: AppType.style(FontSize.s9, w: isHighlight ? FontWeight.w700 : FontWeight.w500, color: isHighlight ? _TC.brand : _TC.ink))),
         ],
       ),
     );
@@ -1362,13 +1273,8 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(flex: 5, child: Text(title, style: TextStyle(
-            fontFamily: 'Poppins', fontSize: FontSize.s9, color: _TC.inkMid,
-          ))),
-          Expanded(flex: 4, child: Text(value, textAlign: TextAlign.end, style: TextStyle(
-            fontFamily: 'Poppins', fontSize: FontSize.s9,
-            fontWeight: FontWeight.w500, color: _TC.ink,
-          ))),
+          Expanded(flex: 5, child: Text(title, style: AppType.style(FontSize.s9, color: _TC.inkMid))),
+          Expanded(flex: 4, child: Text(value, textAlign: TextAlign.end, style: AppType.style(FontSize.s9, w: FontWeight.w500, color: _TC.ink))),
           SizedBox(width: 1.w),
           GestureDetector(
             onTap: () {},
@@ -1405,10 +1311,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
               child: Icon(icon, size: 5.w, color: Colors.white),
             ),
             SizedBox(height: 0.8.h),
-            Text(label, style: TextStyle(
-              fontFamily: 'Poppins', fontSize: FontSize.s9,
-              fontWeight: FontWeight.w600, color: _TC.ink,
-            )),
+            Text(label, style: AppType.style(FontSize.s9, w: FontWeight.w600, color: _TC.ink)),
           ],
         ),
       ),
@@ -1419,19 +1322,13 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
     height: 1, margin: EdgeInsets.symmetric(vertical: 0.3.h), color: _TC.divider,
   );
 
-  TextStyle _labelStyle() => TextStyle(
-    fontFamily: 'Poppins', fontSize: FontSize.s7,
-    fontWeight: FontWeight.w600, color: _TC.inkLight, letterSpacing: 0.8,
-  );
+  TextStyle _labelStyle() => AppType.style(FontSize.s7, w: FontWeight.w600, color: _TC.inkLight, letterSpacing: 0.8);
 
-  TextStyle _tableHeaderStyle() => TextStyle(
-    fontFamily: 'Poppins', fontSize: FontSize.s8,
-    fontWeight: FontWeight.w600, color: _TC.inkMid, letterSpacing: 0.4,
-  );
+  TextStyle _tableHeaderStyle() => AppType.style(FontSize.s8, w: FontWeight.w600, color: _TC.inkMid, letterSpacing: 0.4);
 
   Color _avatarColor(int index) {
     final colors = [_TC.brand, const Color(0xFF8B5CF6), const Color(0xFFEC4899),
-      _TC.teal, const Color(0xFFF59E0B), const Color(0xFFEF4444)];
+      _TC.teal, AppColors.warning, const Color(0xFFEF4444)];
     return colors[index % colors.length];
   }
 
@@ -1443,10 +1340,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
         color: (isFemale ? const Color(0xFFEC4899) : _TC.brand).withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Text(gender, textAlign: TextAlign.center, style: TextStyle(
-        fontFamily: 'Poppins', fontSize: FontSize.s8, fontWeight: FontWeight.w600,
-        color: isFemale ? const Color(0xFFEC4899) : _TC.brand,
-      )),
+      child: Text(gender, textAlign: TextAlign.center, style: AppType.style(FontSize.s8, w: FontWeight.w600, color: isFemale ? const Color(0xFFEC4899) : _TC.brand)),
     );
   }
 }

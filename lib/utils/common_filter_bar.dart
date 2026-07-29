@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../models/filter_category_model.dart';
+import 'package:arobo_app/theme/app_tokens.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TRAIL THEME TOKENS — matches CommonTrekCard's alpine palette
@@ -16,13 +18,13 @@ class _FT {
   static const ink = Color(0xFF16281E);
   static const inkMid = Color(0xFF5B6E60);
   static const inkLight = Color(0xFF8FA396);
-  static const forest = Color(0xFF2D6A4F);
-  static const forestDeep = Color(0xFF1B4332);
-  static const forestSoft = Color(0xFFE8F3ED);
-  static const amber = Color(0xFFD97706);
-  static const amberBg = Color(0xFFFFF8EB);
+  static const forest = AppColors.forest;
+  static const forestDeep = AppColors.forestDeep;
+  static const forestSoft = AppColors.forestSoft;
+  static const amber = AppColors.amber;
+  static const amberBg = AppColors.amberSoft;
   static const amberBorder = Color(0xFFF5DFAE);
-  static const danger = Color(0xFFDC2626);
+  static const danger = AppColors.danger;
   static const gradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
@@ -378,13 +380,7 @@ class _AroboFilterFabState extends State<AroboFilterFab> {
                       child: Center(
                         child: Text(
                           '$count',
-                          style: const TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                            height: 1.0,
-                          ),
+                          style: AppType.style(9.5, w: FontWeight.w800, color: Colors.white, height: 1.0),
                         ),
                       ),
                     ),

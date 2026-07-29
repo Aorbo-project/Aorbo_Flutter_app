@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:sizer/sizer.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 /// Material 3 "emphasized decelerate" easing — used for content entering the
 /// viewport (as opposed to "standard" easing, used for micro-interactions
@@ -214,13 +215,7 @@ class _KnowMoreCardState extends State<KnowMoreCard>
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 textScaler: const TextScaler.linear(1.0),
-                                style: GoogleFonts.poppins(
-                                  fontSize: FontSize.s14,
-                                  fontWeight: FontWeight.w800,
-                                  color: textColor,
-                                  height: 1.2,
-                                  letterSpacing: -0.2,
-                                ),
+                                style: AppType.style(FontSize.s14, w: FontWeight.w800, color: textColor, height: 1.2, letterSpacing: -0.2),
                               ),
                               SizedBox(height: ScreenConstant.size4),
                               Text(
@@ -229,11 +224,7 @@ class _KnowMoreCardState extends State<KnowMoreCard>
                                 maxLines: 3,
                                 overflow: TextOverflow.ellipsis,
                                 textScaler: const TextScaler.linear(1.0),
-                                style: GoogleFonts.poppins(
-                                  fontSize: FontSize.s8,
-                                  color: textColor.withValues(alpha: 0.85),
-                                  height: 1.35,
-                                ),
+                                style: AppType.style(FontSize.s8, color: textColor.withValues(alpha: 0.85), height: 1.35),
                               ),
                               if (widget.onKnowMoreTap != null) ...[
                                 SizedBox(height: ScreenConstant.size8),
@@ -247,11 +238,7 @@ class _KnowMoreCardState extends State<KnowMoreCard>
                                     Text(
                                       'Know more',
                                       textScaler: const TextScaler.linear(1.0),
-                                      style: GoogleFonts.poppins(
-                                        color: textColor,
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: FontSize.s9,
-                                      ),
+                                      style: AppType.style(FontSize.s9, w: FontWeight.w700, color: textColor),
                                     ),
                                     const SizedBox(width: 6),
                                     Container(

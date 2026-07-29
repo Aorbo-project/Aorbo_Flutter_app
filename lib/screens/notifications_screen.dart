@@ -4,6 +4,8 @@ import 'package:sizer/sizer.dart';
 
 import '../controller/notification_controller.dart';
 import '../utils/screen_constants.dart';
+import 'package:arobo_app/theme/app_tokens.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 // ─────────────────────────────────────────────
 //  TIME HELPERS
@@ -44,9 +46,9 @@ class _NT {
   static const offer = Color(0xFFE9C46A); // Gold
   static const general = Color(0xFF1A4D2E); // Forest
   static const ink = Color(0xFF1E1E1E);
-  static const inkMid = Color(0xFF6B7280);
-  static const inkLight = Color(0xFF9CA3AF);
-  static const divider = Color(0xFFE5E7EB);
+  static const inkMid = AppColors.inkMid;
+  static const inkLight = AppColors.inkLight;
+  static const divider = AppColors.border;
 }
 
 // ─────────────────────────────────────────────
@@ -184,12 +186,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                       SizedBox(width: 3.w),
                       Text(
                         'Notifications',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: FontSize.s20,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                        ),
+                        style: AppType.style(FontSize.s20, w: FontWeight.w800, color: Colors.white),
                       ),
                     ],
                   ),
@@ -216,12 +213,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                                   const SizedBox(width: 4),
                                   Text(
                                     'Mark all read',
-                                    style: TextStyle(
-                                      fontFamily: 'Poppins',
-                                      fontSize: FontSize.s9,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.white,
-                                    ),
+                                    style: AppType.style(FontSize.s9, w: FontWeight.w600, color: Colors.white),
                                   ),
                                 ],
                               ),
@@ -237,11 +229,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                   _unreadCount > 0
                       ? 'You have $_unreadCount unread updates'
                       : 'You\'re all caught up! 🏔️',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: FontSize.s11,
-                    color: Colors.white.withOpacity(0.8),
-                  ),
+                  style: AppType.style(FontSize.s11, color: Colors.white.withOpacity(0.8)),
                 ),
               ),
               SizedBox(height: 2.h),
@@ -276,12 +264,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                           children: [
                             Text(
                               f,
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: FontSize.s10,
-                                fontWeight: FontWeight.w700,
-                                color: isSelected ? _NT.primary : Colors.white,
-                              ),
+                              style: AppType.style(FontSize.s10, w: FontWeight.w700, color: isSelected ? _NT.primary : Colors.white),
                             ),
                             if (showBadge) ...[
                               const SizedBox(width: 6),
@@ -298,12 +281,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                                 ),
                                 child: Text(
                                   '$_unreadCount',
-                                  style: TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontSize: FontSize.s8,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.white,
-                                  ),
+                                  style: AppType.style(FontSize.s8, w: FontWeight.w700, color: Colors.white),
                                 ),
                               ),
                             ],
@@ -329,13 +307,7 @@ class _NotificationScreenState extends State<NotificationScreen>
       padding: EdgeInsets.fromLTRB(2.w, 2.h, 2.w, 1.h),
       child: Text(
         label,
-        style: TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: FontSize.s11,
-          fontWeight: FontWeight.w800,
-          color: _NT.inkMid,
-          letterSpacing: 1.2,
-        ),
+        style: AppType.style(FontSize.s11, w: FontWeight.w800, color: _NT.inkMid, letterSpacing: 1.2),
       ),
     );
   }
@@ -417,15 +389,9 @@ class _NotificationScreenState extends State<NotificationScreen>
                                   Flexible(
                                     child: Text(
                                       item.title,
-                                      style: TextStyle(
-                                        fontFamily: 'Poppins',
-                                        fontSize: FontSize.s12,
-                                        fontWeight: item.isRead
+                                      style: AppType.style(FontSize.s12, w: item.isRead
                                             ? FontWeight.w600
-                                            : FontWeight.w800,
-                                        color: _NT.ink,
-                                        height: 1.3,
-                                      ),
+                                            : FontWeight.w800, color: _NT.ink, height: 1.3),
                                     ),
                                   ),
                                   if (!item.isRead)
@@ -456,12 +422,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                                 item.message,
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontSize: FontSize.s10,
-                                  color: _NT.inkMid,
-                                  height: 1.4,
-                                ),
+                                style: AppType.style(FontSize.s10, color: _NT.inkMid, height: 1.4),
                               ),
                               const SizedBox(height: 8),
                               Row(
@@ -474,12 +435,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                                   const SizedBox(width: 4),
                                   Text(
                                     _relativeTime(item.createdAt),
-                                    style: TextStyle(
-                                      fontFamily: 'Poppins',
-                                      fontSize: FontSize.s9,
-                                      fontWeight: FontWeight.w500,
-                                      color: _NT.inkLight,
-                                    ),
+                                    style: AppType.style(FontSize.s9, w: FontWeight.w500, color: _NT.inkLight),
                                   ),
                                 ],
                               ),
@@ -576,22 +532,13 @@ class _NotificationScreenState extends State<NotificationScreen>
               _selectedFilter == 'Unread'
                   ? 'No Unread Notifications'
                   : 'You\'re all caught up!',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: FontSize.s14,
-                fontWeight: FontWeight.w700,
-                color: _NT.ink,
-              ),
+              style: AppType.style(FontSize.s14, w: FontWeight.w700, color: _NT.ink),
             ),
             SizedBox(height: 0.5.h),
             Text(
               'Trek alerts and reminders will land here.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: FontSize.s10,
-                color: _NT.inkMid,
-              ),
+              style: AppType.style(FontSize.s10, color: _NT.inkMid),
             ),
             SizedBox(height: 3.h),
             GestureDetector(
@@ -623,12 +570,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                     const SizedBox(width: 8),
                     Text(
                       'Refresh',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: FontSize.s11,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
+                      style: AppType.style(FontSize.s11, w: FontWeight.w600, color: Colors.white),
                     ),
                   ],
                 ),

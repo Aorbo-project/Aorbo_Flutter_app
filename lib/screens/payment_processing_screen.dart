@@ -14,36 +14,29 @@ import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:sizer/sizer.dart';
+import 'package:arobo_app/theme/app_tokens.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
-/// Local design tokens — same values as _TI in traveller_information_screen.dart,
-/// duplicated because Dart library privacy (the `_` prefix) is per-file, and
-/// every screen in this codebase already follows this same local-token-class
-/// convention (see _TI here, _Pay in payment_screen.dart).
 class _PP {
   static const bg = CommonColors.offWhiteColor;
   static const cardBg = CommonColors.whiteColor;
   static const ink = CommonColors.blackColor;
   static const inkMid = CommonColors.cFF6B7280;
-  static const brand = Color(0xFF2D6A4F);
+  static const brand = AppColors.forest;
   static const green = CommonColors.softGreen3;
   static const amber = CommonColors.orangeColor;
   static const red = CommonColors.appRedColor;
   static const divider = CommonColors.trekroutecolorlight;
 }
 
-/// Every state here maps to one real, verified signal — never to elapsed
-/// time. See the FSM design in the payment-processing-screen plan: Razorpay
-/// callback -> S2S verifyTrekOrder -> checkOrderStatus (the authoritative
-/// backend source of truth, returning real 'paid'/'refunded'/'expired'/
-/// 'pending' states) drive every transition.
 enum PaymentFlowState {
-  awaitingGateway, // Razorpay open, zero signal yet — the only generic-copy state
-  verifying, // Razorpay fired success; confirming with our backend (S2S)
+  awaitingGateway,
+  verifying,
   succeeded,
-  refundedAutomatically, // backend's real message, e.g. slot sold out mid-payment
+  refundedAutomatically,
   expiredOrFailed,
-  stillPending, // backend confirms genuinely still in flight
-  unknownTimeout, // last resort — even backend polling never resolved
+  stillPending,
+  unknownTimeout,
 }
 
 class PaymentProcessingScreen extends StatefulWidget {
@@ -70,14 +63,9 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
   PaymentFlowState _state = PaymentFlowState.awaitingGateway;
   String _message = 'Choose a payment option above to continue.';
 
-  // Active polling of the real backend order-status while we have no
-  // terminal signal yet — resolves the screen the moment real data is
-  // available instead of waiting out the full watchdog window (matches the
-  // Adyen "poll every 15 min for an hour" pattern, scaled to this app's
-  // much shorter payment window).
   Timer? _statusPoll;
   Timer? _watchdog;
-  bool _resolved = false; // guards against any double-resolution race
+  bool _resolved = false;
 
   @override
   void initState() {
@@ -97,7 +85,13 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
     super.dispose();
   }
 
-  // ── ENTRY POINTS ────────────────────────────────────────────────────────
+  /// API money fields are dynamic (often Strings). "1234.00" * 100 in Dart
+  /// is STRING REPETITION → .toInt() throws. Parse defensively.
+  int _toPaise(dynamic v) {
+    final n = v is num ? v.toDouble() : double.tryParse('${v ?? 0}') ?? 0.0;
+    return (n * 100).round();
+  }
+
   void _openRazorpay() async {
     try {
       final breakdown = widget.breakdown;
@@ -107,12 +101,11 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
         'order_id': params['order_id'] ?? '${_trekC.orderData.value.id}',
         'amount':
             params['amount'] ??
-            (((widget.selectedPaymentOption == 'full'
-                            ? breakdown?.finalAmount
-                            : breakdown?.amountToPayNow) ??
-                        0) *
-                    100)
-                .toInt(),
+            _toPaise(
+              widget.selectedPaymentOption == 'full'
+                  ? breakdown?.finalAmount
+                  : breakdown?.amountToPayNow,
+            ),
         'currency': params['currency'] ?? 'INR',
         'name': params['name'] ?? '${_trekC.trekDetailData.value.title}',
         'description':
@@ -126,17 +119,12 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
       _razorpay.open(options);
       _startWatchingForRealStatus();
     } catch (e) {
-      // _razorpay.open() failing synchronously (e.g. malformed options) must
-      // not leave this screen stuck — same class of bug fixed earlier in
-      // traveller_information_screen.dart, fixed here at the source instead.
       _resolveViaBackendCheck(
         fallbackMessage: 'Failed to open payment: ${e.toString()}',
       );
     }
   }
 
-  /// Arms both the active poll (resolves fast when the backend already
-  /// knows the answer) and the absolute-last-resort watchdog.
   void _startWatchingForRealStatus() {
     _statusPoll?.cancel();
     _statusPoll = Timer.periodic(const Duration(seconds: 15), (_) {
@@ -158,7 +146,6 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
     });
   }
 
-  // ── RAZORPAY CALLBACKS ──────────────────────────────────────────────────
   Future<void> _handlePaymentSuccess(PaymentSuccessResponse r) async {
     if (_resolved) return;
     if (mounted) setState(() => _state = PaymentFlowState.verifying);
@@ -176,9 +163,6 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
     if (verified) {
       _resolveSucceeded();
     } else {
-      // Razorpay says captured, our S2S verify disagreed — check the real
-      // order-status before assuming failure (per Razorpay's own best
-      // practice: trust the server-verified state, not a single signal).
       await _pollOrderStatus(force: true);
     }
   }
@@ -200,11 +184,6 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
     );
   }
 
-  // ── REAL BACKEND STATE (the authoritative source of truth) ─────────────
-  /// GET /v1/bookings/order-status/:order_id — returns real 'paid' /
-  /// 'refunded' / 'expired' / 'pending', with the backend's own real
-  /// messages for 'refunded' (e.g. slot sold out mid-payment). This is
-  /// what actually drives the screen — never a guess based on elapsed time.
   Future<void> _pollOrderStatus({bool force = false}) async {
     if (_resolved && !force) return;
     final orderId =
@@ -245,7 +224,9 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
     }
   }
 
-  Future<void> _resolveViaBackendCheck({required String fallbackMessage}) async {
+  Future<void> _resolveViaBackendCheck({
+    required String fallbackMessage,
+  }) async {
     final orderId =
         _trekC.orderData.value.id ??
         _trekC.orderNextActionParams['order_id']?.toString() ??
@@ -280,23 +261,21 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
 
     final String finalBookingId =
         bookingId ??
-        (_trekC.verifyOrderModal.value.data?.id ?? _trekC.orderData.value.id ?? '')
+        (_trekC.verifyOrderModal.value.data?.id ??
+                _trekC.orderData.value.id ??
+                '')
             .toString();
+
+    final int? invoiceBookingId = int.tryParse(finalBookingId);
+    if (invoiceBookingId != null) {
+      // Fire-and-forget — the booking succeeded regardless.
+      _dashboardC.generateAndUploadInvoice(invoiceBookingId);
+    }
 
     _trekC.clearBookingData();
     _dashboardC.clearSearchAndBookingData();
 
-    // Brief success flourish before navigating — matches industry pattern
-    // of showing an explicit success indicator, not an instant cut-away.
     Future.delayed(const Duration(milliseconds: 900), () {
-      // Rebuild the stack as Home -> Booking Details, not just Booking
-      // Details alone. A completed booking must clear Checkout/Trek
-      // Details/Search Results behind it (Get.off alone would leave
-      // Checkout in place, landing back on the payment page on back-press)
-      // — but wiping the ENTIRE stack down to nothing also removes Home,
-      // so a single back-press exits the app outright instead of landing
-      // on Home. DashboardMain already owns proper double-back-to-exit
-      // handling, so put that back as the root first.
       Get.offAll(() => const DashboardMain());
       Get.to(
         () => BookingsUpcomingScreen(bookingId: finalBookingId),
@@ -318,7 +297,6 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
     });
   }
 
-  // ── RETRY (fully self-contained — never bounces back to Checkout) ──────
   Future<void> _retry() async {
     if (!mounted) return;
     setState(() {
@@ -407,7 +385,6 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
     }
   }
 
-  // ── UI ───────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     final blockPop =
@@ -444,7 +421,9 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
           iconColor: _PP.amber,
           title: 'Payment Refunded',
           message: _message,
-          actions: [_primaryAction('BACK TO SEARCH', () => Get.until((r) => r.isFirst))],
+          actions: [
+            _primaryAction('BACK TO SEARCH', () => Get.until((r) => r.isFirst)),
+          ],
         );
       case PaymentFlowState.expiredOrFailed:
         return _statusCard(
@@ -532,7 +511,11 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
                   child: SizedBox(
                     width: 34.w,
                     height: 34.w,
-                    child: Lottie.asset(lottieAsset, repeat: loop, fit: BoxFit.contain),
+                    child: Lottie.asset(
+                      lottieAsset,
+                      repeat: loop,
+                      fit: BoxFit.contain,
+                    ),
                   ),
                 ),
               ),
@@ -543,23 +526,13 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
           Text(
             title,
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w700,
-              color: titleColor ?? _PP.ink,
-            ),
+            style: AppType.style(16.sp, w: FontWeight.w700, color: titleColor ?? _PP.ink),
           ),
           const SizedBox(height: 8),
           Text(
             message,
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 11.sp,
-              color: _PP.inkMid,
-              height: 1.4,
-            ),
+            style: AppType.style(11.sp, color: _PP.inkMid, height: 1.4),
           ),
           if (actions != null) ...[
             const SizedBox(height: 24),

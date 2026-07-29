@@ -9,6 +9,8 @@ import '../freezed_models/booking/booking_history_model.dart';
 import '../utils/common_colors.dart';
 import '../utils/screen_constants.dart';
 import '../utils/common_btn.dart';
+import 'package:arobo_app/theme/app_tokens.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 class IssueReportScreen extends StatefulWidget {
   const IssueReportScreen({super.key});
@@ -141,11 +143,7 @@ class _IssueReportScreenState extends State<IssueReportScreen> {
                 centerTitle: false,
                 title: Text(
                   'Dispute Report',
-                  style: GoogleFonts.poppins(
-                    fontSize: FontSize.s14,
-                    fontWeight: FontWeight.w600,
-                    color: CommonColors.blackColor,
-                  ),
+                  style: AppType.style(FontSize.s14, w: FontWeight.w600, color: CommonColors.blackColor),
                 ),
               ),
               body: _userC.isLoading.value
@@ -161,10 +159,7 @@ class _IssueReportScreenState extends State<IssueReportScreen> {
                           SizedBox(height: 2.h),
                           Text(
                             'Submitting your dispute...',
-                            style: GoogleFonts.poppins(
-                              fontSize: FontSize.s11,
-                              color: CommonColors.greyTextColor,
-                            ),
+                            style: AppType.style(FontSize.s11, color: CommonColors.greyTextColor),
                           ),
                         ],
                       ),
@@ -221,21 +216,12 @@ class _IssueReportScreenState extends State<IssueReportScreen> {
                   children: [
                     Text(
                       'Raise a Dispute for Your Trek Experience',
-                      style: GoogleFonts.poppins(
-                        fontSize: FontSize.s12,
-                        fontWeight: FontWeight.w600,
-                        color: CommonColors.blackColor,
-                        height: 1.3,
-                      ),
+                      style: AppType.style(FontSize.s12, w: FontWeight.w600, color: CommonColors.blackColor, height: 1.3),
                     ),
                     SizedBox(height: 1.h),
                     Text(
                       'Submit your concerns and disputes for proper resolution',
-                      style: GoogleFonts.poppins(
-                        fontSize: FontSize.s9,
-                        color: CommonColors.greyTextColor2,
-                        height: 1.3,
-                      ),
+                      style: AppType.style(FontSize.s9, color: CommonColors.greyTextColor2, height: 1.3),
                     ),
                   ],
                 ),
@@ -524,11 +510,7 @@ class _IssueReportScreenState extends State<IssueReportScreen> {
       children: [
         Text(
           label,
-          style: GoogleFonts.poppins(
-            fontSize: FontSize.s11,
-            fontWeight: FontWeight.w500,
-            color: CommonColors.blackColor,
-          ),
+          style: AppType.style(FontSize.s11, w: FontWeight.w500, color: CommonColors.blackColor),
         ),
         SizedBox(height: 1.h),
         Container(
@@ -545,22 +527,16 @@ class _IssueReportScreenState extends State<IssueReportScreen> {
             enabled: isEnabled,
             decoration: InputDecoration(
               hintText: hintText,
-              hintStyle: GoogleFonts.poppins(
-                fontSize: FontSize.s9,
-                color: CommonColors.greyTextColor,
-              ),
+              hintStyle: AppType.style(FontSize.s9, color: CommonColors.greyTextColor),
               border: InputBorder.none,
               contentPadding: EdgeInsets.symmetric(
                 horizontal: 3.w,
                 vertical: 2.h,
               ),
             ),
-            style: GoogleFonts.poppins(
-              fontSize: FontSize.s10,
-              color: isEnabled
+            style: AppType.style(FontSize.s10, color: isEnabled
                   ? CommonColors.blackColor
-                  : CommonColors.greyTextColor,
-            ),
+                  : CommonColors.greyTextColor),
           ),
         ),
       ],
@@ -577,11 +553,7 @@ class _IssueReportScreenState extends State<IssueReportScreen> {
       children: [
         Text(
           'Phone Number',
-          style: GoogleFonts.poppins(
-            fontSize: FontSize.s11,
-            fontWeight: FontWeight.w500,
-            color: CommonColors.blackColor,
-          ),
+          style: AppType.style(FontSize.s11, w: FontWeight.w500, color: CommonColors.blackColor),
         ),
         SizedBox(height: 1.h),
         Container(
@@ -608,20 +580,12 @@ class _IssueReportScreenState extends State<IssueReportScreen> {
                   children: [
                     Text(
                       'Country Code',
-                      style: GoogleFonts.poppins(
-                        fontSize: FontSize.s7,
-                        color: CommonColors.blackColor,
-                        fontWeight: FontWeight.w300,
-                      ),
+                      style: AppType.style(FontSize.s7, w: FontWeight.w300, color: CommonColors.blackColor),
                     ),
                     SizedBox(height: 0.4.h),
                     Text(
                       '+91(IND)',
-                      style: GoogleFonts.poppins(
-                        fontSize: FontSize.s10,
-                        fontWeight: FontWeight.w400,
-                        color: CommonColors.blackColor,
-                      ),
+                      style: AppType.style(FontSize.s10, w: FontWeight.w400, color: CommonColors.blackColor),
                     ),
                   ],
                 ),
@@ -640,23 +604,16 @@ class _IssueReportScreenState extends State<IssueReportScreen> {
                     children: [
                       Text(
                         'Phone Number',
-                        style: GoogleFonts.poppins(
-                          fontSize: FontSize.s7,
-                          color: CommonColors.blackColor,
-                          fontWeight: FontWeight.w300,
-                        ),
+                        style: AppType.style(FontSize.s7, w: FontWeight.w300, color: CommonColors.blackColor),
                       ),
                       TextFormField(
                         enabled: !isPhoneAvailable,
                         controller: phoneController,
                         keyboardType: TextInputType.phone,
                         maxLength: 10,
-                        style: GoogleFonts.poppins(
-                          fontSize: FontSize.s10,
-                          color: isPhoneAvailable
+                        style: AppType.style(FontSize.s10, color: isPhoneAvailable
                               ? CommonColors.greyTextColor
-                              : CommonColors.blackColor,
-                        ),
+                              : CommonColors.blackColor),
                         decoration: InputDecoration(
                           border: InputBorder.none,
                           counterText: '',
@@ -664,10 +621,7 @@ class _IssueReportScreenState extends State<IssueReportScreen> {
                           hintText: isPhoneAvailable
                               ? ''
                               : 'Enter Phone Number',
-                          hintStyle: GoogleFonts.poppins(
-                            fontSize: FontSize.s9,
-                            color: CommonColors.greyTextColor,
-                          ),
+                          hintStyle: AppType.style(FontSize.s9, color: CommonColors.greyTextColor),
                         ),
                       ),
                     ],
@@ -693,11 +647,7 @@ class _IssueReportScreenState extends State<IssueReportScreen> {
       children: [
         Text(
           label,
-          style: GoogleFonts.poppins(
-            fontSize: FontSize.s11,
-            fontWeight: FontWeight.w500,
-            color: CommonColors.blackColor,
-          ),
+          style: AppType.style(FontSize.s11, w: FontWeight.w500, color: CommonColors.blackColor),
         ),
         SizedBox(height: 1.h),
         Container(
@@ -720,10 +670,7 @@ class _IssueReportScreenState extends State<IssueReportScreen> {
               isExpanded: true,
               hint: Text(
                 'Select ${label.trim()}',
-                style: GoogleFonts.poppins(
-                  fontSize: FontSize.s10,
-                  color: CommonColors.greyTextColor,
-                ),
+                style: AppType.style(FontSize.s10, color: CommonColors.greyTextColor),
               ),
               value: value,
               onChanged: onChanged,
@@ -739,11 +686,7 @@ class _IssueReportScreenState extends State<IssueReportScreen> {
                     padding: EdgeInsets.symmetric(vertical: 1.h),
                     child: Text(
                       _formatDropdownText(item),
-                      style: GoogleFonts.poppins(
-                        fontSize: FontSize.s10,
-                        color: CommonColors.blackColor,
-                        fontWeight: FontWeight.w400,
-                      ),
+                      style: AppType.style(FontSize.s10, w: FontWeight.w400, color: CommonColors.blackColor),
                     ),
                   ),
                 );
@@ -779,21 +722,14 @@ class _IssueReportScreenState extends State<IssueReportScreen> {
           children: [
             Text(
               'Description (optional, max 2000 chars)',
-              style: GoogleFonts.poppins(
-                fontSize: FontSize.s11,
-                fontWeight: FontWeight.w500,
-                color: CommonColors.blackColor,
-              ),
+              style: AppType.style(FontSize.s11, w: FontWeight.w500, color: CommonColors.blackColor),
             ),
             Spacer(),
             Text(
               '${descriptionController.text.length}/2000',
-              style: GoogleFonts.poppins(
-                fontSize: FontSize.s8,
-                color: descriptionController.text.length > 2000
+              style: AppType.style(FontSize.s8, color: descriptionController.text.length > 2000
                     ? CommonColors.appRedColor
-                    : CommonColors.greyTextColor2,
-              ),
+                    : CommonColors.greyTextColor2),
             ),
           ],
         ),
@@ -821,17 +757,11 @@ class _IssueReportScreenState extends State<IssueReportScreen> {
             textAlignVertical: TextAlignVertical.top,
             decoration: InputDecoration(
               hintText: 'Describe your dispute in detail',
-              hintStyle: GoogleFonts.poppins(
-                fontSize: FontSize.s9,
-                color: CommonColors.greyTextColor,
-              ),
+              hintStyle: AppType.style(FontSize.s9, color: CommonColors.greyTextColor),
               border: InputBorder.none,
               contentPadding: EdgeInsets.all(2.w),
             ),
-            style: GoogleFonts.poppins(
-              fontSize: FontSize.s10,
-              color: CommonColors.blackColor,
-            ),
+            style: AppType.style(FontSize.s10, color: CommonColors.blackColor),
           ),
         ),
       ],
@@ -862,7 +792,7 @@ class _IssueReportScreenState extends State<IssueReportScreen> {
           ? const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFF1B4332), Color(0xFF2D6A4F)],
+              colors: [AppColors.forestDeep, AppColors.forest],
             )
           : CommonColors.disableBtnGradient,
       textColor: CommonColors.whiteColor,

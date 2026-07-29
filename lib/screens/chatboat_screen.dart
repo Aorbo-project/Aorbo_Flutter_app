@@ -8,6 +8,7 @@ import '../controller/chat_controller.dart';
 import '../utils/screen_constants.dart';
 import '../repository/faq_repository.dart';
 import '../services/socket_service.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 class Message {
   final String text;
@@ -407,20 +408,14 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                     hintText: currentMode == ChatMode.faq
                         ? 'Or type your question...'
                         : 'Type a message...',
-                    hintStyle: GoogleFonts.poppins(
-                      fontSize: FontSize.s11,
-                      color: Colors.grey.shade500,
-                    ),
+                    hintStyle: AppType.style(FontSize.s11, color: Colors.grey.shade500),
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.symmetric(
                       horizontal: 4.w,
                       vertical: 1.2.h,
                     ),
                   ),
-                  style: GoogleFonts.poppins(
-                    fontSize: FontSize.s11,
-                    color: CommonColors.blackColor,
-                  ),
+                  style: AppType.style(FontSize.s11, color: CommonColors.blackColor),
                   maxLines: 4,
                   minLines: 1,
                   textCapitalization: TextCapitalization.sentences,
@@ -468,11 +463,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           children: [
             Text(
               message.text,
-              style: GoogleFonts.poppins(
-                fontSize: FontSize.s11,
-                color: Colors.black87,
-                fontWeight: FontWeight.w500,
-              ),
+              style: AppType.style(FontSize.s11, w: FontWeight.w500, color: Colors.black87),
             ),
             SizedBox(height: 1.h),
             Row(
@@ -504,11 +495,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                           SizedBox(width: 2.w),
                           Text(
                             'Browse FAQs',
-                            style: GoogleFonts.poppins(
-                              fontSize: FontSize.s10,
-                              color: CommonColors.appBgColor,
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: AppType.style(FontSize.s10, w: FontWeight.w600, color: CommonColors.appBgColor),
                           ),
                         ],
                       ),
@@ -543,11 +530,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                           SizedBox(width: 2.w),
                           Text(
                             'Live Support',
-                            style: GoogleFonts.poppins(
-                              fontSize: FontSize.s10,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: AppType.style(FontSize.s10, w: FontWeight.w600, color: Colors.white),
                           ),
                         ],
                       ),
@@ -572,11 +555,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               ),
               child: Text(
                 message.text,
-                style: GoogleFonts.poppins(
-                  fontSize: FontSize.s9,
-                  color: Colors.grey.shade600,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: AppType.style(FontSize.s9, w: FontWeight.w500, color: Colors.grey.shade600),
               ),
             ),
           ],
@@ -586,11 +565,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       case MessageType.liveMessage:
         content = Text(
           message.text,
-          style: GoogleFonts.poppins(
-            fontSize: FontSize.s11,
-            color: isBot ? Colors.black87 : Colors.white,
-            fontWeight: FontWeight.w500,
-          ),
+          style: AppType.style(FontSize.s11, w: FontWeight.w500, color: isBot ? Colors.black87 : Colors.white),
         );
         break;
 
@@ -601,11 +576,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 children: [
                   Text(
                     message.text,
-                    style: GoogleFonts.poppins(
-                      fontSize: FontSize.s11,
-                      color: isBot ? Colors.black87 : Colors.white,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: AppType.style(FontSize.s11, w: FontWeight.w500, color: isBot ? Colors.black87 : Colors.white),
                   ),
                   if (isBot) ...[
                     SizedBox(height: 1.h),
@@ -631,11 +602,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                             ),
                             child: Text(
                               category,
-                              style: GoogleFonts.poppins(
-                                fontSize: FontSize.s10,
-                                color: CommonColors.appBgColor,
-                                fontWeight: FontWeight.w500,
-                              ),
+                              style: AppType.style(FontSize.s10, w: FontWeight.w500, color: CommonColors.appBgColor),
                             ),
                           ),
                         );
@@ -646,11 +613,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               )
             : Text(
                 message.text,
-                style: GoogleFonts.poppins(
-                  fontSize: FontSize.s11,
-                  color: isBot ? Colors.black87 : Colors.white,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: AppType.style(FontSize.s11, w: FontWeight.w500, color: isBot ? Colors.black87 : Colors.white),
               );
         break;
 
@@ -661,11 +624,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 children: [
                   Text(
                     message.text,
-                    style: GoogleFonts.poppins(
-                      fontSize: FontSize.s11,
-                      color: isBot ? Colors.black87 : Colors.white,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: AppType.style(FontSize.s11, w: FontWeight.w500, color: isBot ? Colors.black87 : Colors.white),
                   ),
                   if (isBot) ...[
                     SizedBox(height: 1.h),
@@ -691,11 +650,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                             ),
                             child: Text(
                               question,
-                              style: GoogleFonts.poppins(
-                                fontSize: FontSize.s10,
-                                color: CommonColors.appBgColor,
-                                fontWeight: FontWeight.w500,
-                              ),
+                              style: AppType.style(FontSize.s10, w: FontWeight.w500, color: CommonColors.appBgColor),
                             ),
                           ),
                         ),
@@ -706,33 +661,21 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               )
             : Text(
                 message.text,
-                style: GoogleFonts.poppins(
-                  fontSize: FontSize.s11,
-                  color: isBot ? Colors.black87 : Colors.white,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: AppType.style(FontSize.s11, w: FontWeight.w500, color: isBot ? Colors.black87 : Colors.white),
               );
         break;
 
       case MessageType.answer:
         content = MarkdownText(
           text: message.text,
-          style: GoogleFonts.poppins(
-            fontSize: FontSize.s11,
-            color: isBot ? Colors.black87 : Colors.white,
-            fontWeight: FontWeight.w500,
-          ),
+          style: AppType.style(FontSize.s11, w: FontWeight.w500, color: isBot ? Colors.black87 : Colors.white),
         );
         break;
 
       default:
         content = Text(
           message.text,
-          style: GoogleFonts.poppins(
-            fontSize: FontSize.s11,
-            color: isBot ? Colors.black87 : Colors.white,
-            fontWeight: FontWeight.w500,
-          ),
+          style: AppType.style(FontSize.s11, w: FontWeight.w500, color: isBot ? Colors.black87 : Colors.white),
         );
     }
 
@@ -865,11 +808,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         centerTitle: false,
         title: Text(
           'Chat with Aorbo',
-          style: GoogleFonts.poppins(
-            fontSize: FontSize.s15,
-            fontWeight: FontWeight.w500,
-            color: CommonColors.blackColor,
-          ),
+          style: AppType.style(FontSize.s15, w: FontWeight.w500, color: CommonColors.blackColor),
         ),
       ),
       body: Column(

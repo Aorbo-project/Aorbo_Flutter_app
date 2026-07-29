@@ -4,6 +4,8 @@ import 'package:sizer/sizer.dart';
 
 import 'package:arobo_app/models/user_profile/state_list_model.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
+import 'package:arobo_app/theme/app_tokens.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 /// "Select state of residence" bottom sheet — shared by every screen that
 /// needs a state picker (booking traveller info, account profile edit).
@@ -86,7 +88,7 @@ class _StateSelectionSheetState extends State<_StateSelectionSheet> {
               height: 0.5.h,
               margin: EdgeInsets.only(bottom: 1.5.h),
               decoration: BoxDecoration(
-                color: const Color(0xFFE5E7EB),
+                color: AppColors.border,
                 borderRadius: BorderRadius.circular(1.w),
               ),
             ),
@@ -96,11 +98,7 @@ class _StateSelectionSheetState extends State<_StateSelectionSheet> {
                 Text(
                   'Select state of residence',
                   textScaler: const TextScaler.linear(1.0),
-                  style: GoogleFonts.poppins(
-                    fontSize: FontSize.s14,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF0F172A),
-                  ),
+                  style: AppType.style(FontSize.s14, w: FontWeight.w700, color: AppColors.inkStrong),
                 ),
                 IconButton(
                   icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
@@ -115,7 +113,7 @@ class _StateSelectionSheetState extends State<_StateSelectionSheet> {
               decoration: BoxDecoration(
                 color: const Color(0xFFF8FAFC),
                 borderRadius: BorderRadius.circular(3.w),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                border: Border.all(color: AppColors.divider),
               ),
               child: Row(
                 children: [
@@ -124,12 +122,12 @@ class _StateSelectionSheetState extends State<_StateSelectionSheet> {
                   Expanded(
                     child: TextField(
                       controller: _searchController,
-                      style: GoogleFonts.poppins(fontSize: FontSize.s11, color: const Color(0xFF0F172A)),
-                      cursorColor: const Color(0xFF0F7B6C),
+                      style: AppType.style(FontSize.s11, color: AppColors.inkStrong),
+                      cursorColor: AppColors.teal,
                       decoration: InputDecoration(
                         hintText: 'Search state',
                         border: InputBorder.none,
-                        hintStyle: GoogleFonts.poppins(fontSize: FontSize.s10, color: const Color(0xFF94A3B8)),
+                        hintStyle: AppType.style(FontSize.s10, color: const Color(0xFF94A3B8)),
                       ),
                       onChanged: (value) {
                         setState(() {
@@ -149,12 +147,12 @@ class _StateSelectionSheetState extends State<_StateSelectionSheet> {
                   ? Center(
                       child: Text(
                         'No states match your search.',
-                        style: GoogleFonts.poppins(fontSize: FontSize.s10, color: const Color(0xFF64748B)),
+                        style: AppType.style(FontSize.s10, color: const Color(0xFF64748B)),
                       ),
                     )
                   : ListView.separated(
                       itemCount: _filtered.length,
-                      separatorBuilder: (_, __) => const Divider(color: Color(0xFFE2E8F0), height: 1),
+                      separatorBuilder: (_, __) => const Divider(color: AppColors.divider, height: 1),
                       itemBuilder: (context, index) {
                         final state = _filtered[index];
                         final isSelected = state.id == widget.selectedStateId;
@@ -162,14 +160,10 @@ class _StateSelectionSheetState extends State<_StateSelectionSheet> {
                           title: Text(
                             state.name ?? '',
                             textScaler: const TextScaler.linear(1.0),
-                            style: GoogleFonts.poppins(
-                              fontSize: FontSize.s11,
-                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
-                              color: isSelected ? const Color(0xFF0F7B6C) : const Color(0xFF0F172A),
-                            ),
+                            style: AppType.style(FontSize.s11, w: isSelected ? FontWeight.w700 : FontWeight.w400, color: isSelected ? AppColors.teal : AppColors.inkStrong),
                           ),
                           trailing: isSelected
-                              ? const Icon(Icons.check_circle_rounded, color: Color(0xFF0F7B6C))
+                              ? const Icon(Icons.check_circle_rounded, color: AppColors.teal)
                               : null,
                           onTap: () {
                             widget.onStateSelected(state);

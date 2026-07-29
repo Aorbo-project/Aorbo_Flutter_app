@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 class CommonBottomNav extends StatefulWidget {
   final int selectedIndex;
@@ -101,11 +102,7 @@ class _CommonBottomNavState extends State<CommonBottomNav> {
               SizedBox(width: 2.w),
               Text(
                 label,
-                style: GoogleFonts.poppins(
-                  fontSize: 11.sp,
-                  fontWeight: FontWeight.w600,
-                  color: widget.selectedIconColor ?? CommonColors.primaryColor,
-                ),
+                style: AppType.style(11.sp, w: FontWeight.w600, color: widget.selectedIconColor ?? CommonColors.primaryColor),
               ),
             ]
           ],

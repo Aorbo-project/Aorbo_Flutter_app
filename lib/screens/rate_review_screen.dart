@@ -10,6 +10,8 @@ import '../freezed_models/booking/booking_history_model.dart';
 import '../utils/common_btn.dart';
 import '../utils/common_colors.dart';
 import '../utils/screen_constants.dart';
+import 'package:arobo_app/theme/app_tokens.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS
@@ -29,7 +31,7 @@ class _R {
   static const star = CommonColors.completedColor2;
 
   static const emerald = Color(0xFF10B981);
-  static const amber = Color(0xFFF59E0B);
+  static const amber = AppColors.warning;
   static const rose = Color(0xFFEF4444);
   static const softBlue = Color(0xFFEFF6FF);
   static const softGreen = Color(0xFFECFDF5);
@@ -39,12 +41,12 @@ class _R {
   static const ctaGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF1B4332), Color(0xFF2D6A4F)],
+    colors: [AppColors.forestDeep, AppColors.forest],
   );
 
   static const Map<int, Color> ratingColor = {
     1: Color(0xFFEF4444),
-    2: Color(0xFFF59E0B),
+    2: AppColors.warning,
     3: Color(0xFFEAB308),
     4: Color(0xFF84CC16),
     5: Color(0xFF10B981),
@@ -93,14 +95,14 @@ class _RateReviewScreenState extends State<RateReviewScreen>
       subtitle: 'Felt safe throughout the trek',
       icon: CommonImages.protect,
       tint: _R.softGreen,
-      accent: Color(0xFF059669),
+      accent: AppColors.success,
     ),
     _CategoryItem(
       name: 'Organizer Manner',
       subtitle: 'Helpful and respectful organizer',
       icon: CommonImages.userAccount,
       tint: _R.softBlue,
-      accent: Color(0xFF2563EB),
+      accent: AppColors.info,
     ),
     _CategoryItem(
       name: 'Trek Planning',
@@ -405,12 +407,7 @@ class _RateReviewScreenState extends State<RateReviewScreen>
           Text(
             'Rate & Review',
             textScaler: const TextScaler.linear(1.0),
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: FontSize.s14,
-              fontWeight: FontWeight.w700,
-              color: _R.ink,
-            ),
+            style: AppType.style(FontSize.s14, w: FontWeight.w700, color: _R.ink),
           ),
         ],
       ),
@@ -478,12 +475,7 @@ class _RateReviewScreenState extends State<RateReviewScreen>
                       textScaler: const TextScaler.linear(1.0),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: FontSize.s8,
-                        fontWeight: FontWeight.w600,
-                        color: _R.teal,
-                      ),
+                      style: AppType.style(FontSize.s8, w: FontWeight.w600, color: _R.teal),
                     ),
                   ),
                 Row(
@@ -496,13 +488,7 @@ class _RateReviewScreenState extends State<RateReviewScreen>
                           Text(
                             'How was your experience?',
                             textScaler: const TextScaler.linear(1.0),
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: FontSize.s13,
-                              fontWeight: FontWeight.w700,
-                              color: _R.ink,
-                              height: 1.2,
-                            ),
+                            style: AppType.style(FontSize.s13, w: FontWeight.w700, color: _R.ink, height: 1.2),
                           ),
                           SizedBox(height: 0.45.h),
                           Text(
@@ -510,13 +496,7 @@ class _RateReviewScreenState extends State<RateReviewScreen>
                             textScaler: const TextScaler.linear(1.0),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: FontSize.s8,
-                              fontWeight: FontWeight.w400,
-                              color: _R.inkMid,
-                              height: 1.35,
-                            ),
+                            style: AppType.style(FontSize.s8, w: FontWeight.w400, color: _R.inkMid, height: 1.35),
                           ),
                         ],
                       ),
@@ -563,11 +543,7 @@ class _RateReviewScreenState extends State<RateReviewScreen>
                             child: Text(
                               'Tap a star to rate',
                               textScaler: const TextScaler.linear(1.0),
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: FontSize.s8,
-                                color: _R.inkLight,
-                              ),
+                              style: AppType.style(FontSize.s8, color: _R.inkLight),
                             ),
                           ),
                   ),
@@ -596,11 +572,7 @@ class _RateReviewScreenState extends State<RateReviewScreen>
                     textScaler: const TextScaler.linear(1.0),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: FontSize.s8,
-                      color: _R.inkMid,
-                    ),
+                    style: AppType.style(FontSize.s8, color: _R.inkMid),
                   ),
                 ),
               ],
@@ -717,12 +689,7 @@ class _RateReviewScreenState extends State<RateReviewScreen>
               children: [
                 AnimatedDefaultTextStyle(
                   duration: const Duration(milliseconds: 250),
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: FontSize.s8,
-                    color: countColor,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: AppType.style(FontSize.s8, w: FontWeight.w500, color: countColor),
                   child: Text(
                     words >= 20
                         ? '✓ Great detail'
@@ -735,11 +702,7 @@ class _RateReviewScreenState extends State<RateReviewScreen>
                 Text(
                   '$len characters',
                   textScaler: const TextScaler.linear(1.0),
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: FontSize.s8,
-                    color: _R.inkLight,
-                  ),
+                  style: AppType.style(FontSize.s8, color: _R.inkLight),
                 ),
               ],
             );
@@ -941,13 +904,7 @@ class _SectionHeader extends StatelessWidget {
               Text(
                 title,
                 textScaler: const TextScaler.linear(1.0),
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: FontSize.s12,
-                  fontWeight: FontWeight.w700,
-                  color: _R.ink,
-                  height: 1.2,
-                ),
+                style: AppType.style(FontSize.s12, w: FontWeight.w700, color: _R.ink, height: 1.2),
               ),
               SizedBox(height: 0.25.h),
               Text(
@@ -955,13 +912,7 @@ class _SectionHeader extends StatelessWidget {
                 textScaler: const TextScaler.linear(1.0),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: FontSize.s8,
-                  fontWeight: FontWeight.w400,
-                  color: _R.inkMid,
-                  height: 1.3,
-                ),
+                style: AppType.style(FontSize.s8, w: FontWeight.w400, color: _R.inkMid, height: 1.3),
               ),
             ],
           ),
@@ -1008,12 +959,7 @@ class _SelectionCounter extends StatelessWidget {
       child: Text(
         '$selected/$total',
         textScaler: const TextScaler.linear(1.0),
-        style: TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: FontSize.s8,
-          fontWeight: FontWeight.w700,
-          color: active ? _R.teal : _R.inkLight,
-        ),
+        style: AppType.style(FontSize.s8, w: FontWeight.w700, color: active ? _R.teal : _R.inkLight),
       ),
     );
   }
@@ -1115,13 +1061,7 @@ class _ProfessionalCategoryTile extends StatelessWidget {
                   textScaler: const TextScaler.linear(1.0),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: FontSize.s10,
-                    fontWeight: FontWeight.w700,
-                    color: _R.ink,
-                    height: 1.2,
-                  ),
+                  style: AppType.style(FontSize.s10, w: FontWeight.w700, color: _R.ink, height: 1.2),
                 ),
                 SizedBox(height: 0.2.h),
                 Text(
@@ -1129,13 +1069,7 @@ class _ProfessionalCategoryTile extends StatelessWidget {
                   textScaler: const TextScaler.linear(1.0),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: FontSize.s8,
-                    fontWeight: FontWeight.w400,
-                    color: _R.inkMid,
-                    height: 1.25,
-                  ),
+                  style: AppType.style(FontSize.s8, w: FontWeight.w400, color: _R.inkMid, height: 1.25),
                 ),
               ],
             ),
@@ -1520,12 +1454,7 @@ class _SentimentPill extends StatelessWidget {
           Text(
             label,
             textScaler: const TextScaler.linear(1.0),
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: FontSize.s9,
-              fontWeight: FontWeight.w600,
-              color: color,
-            ),
+            style: AppType.style(FontSize.s9, w: FontWeight.w600, color: color),
           ),
         ],
       ),
@@ -1620,21 +1549,11 @@ class _AnimatedTextFieldState extends State<_AnimatedTextField>
         maxLines: null,
         expands: true,
         textAlignVertical: TextAlignVertical.top,
-        style: TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: FontSize.s10,
-          color: _R.ink,
-          height: 1.35,
-        ),
+        style: AppType.style(FontSize.s10, color: _R.ink, height: 1.35),
         decoration: InputDecoration(
           hintText:
               'Describe your experience — what made it memorable? Any tips for future trekkers?',
-          hintStyle: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: FontSize.s8,
-            color: _R.inkLight,
-            height: 1.45,
-          ),
+          hintStyle: AppType.style(FontSize.s8, color: _R.inkLight, height: 1.45),
           border: InputBorder.none,
           contentPadding: EdgeInsets.all(3.2.w),
         ),

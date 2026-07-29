@@ -21,6 +21,8 @@ import '../services/invoice_pdf_service.dart';
 import '../utils/ist_date_utils.dart';
 
 import '../widgets/rate_trek_popup.dart';
+import 'package:arobo_app/theme/app_tokens.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS
@@ -28,23 +30,23 @@ import '../widgets/rate_trek_popup.dart';
 class _TC {
   static const bg = Color(0xFFF4F7FF);
   static const cardBg = Color(0xFFFFFFFF);
-  static const ink = Color(0xFF0F172A);
+  static const ink = AppColors.inkStrong;
   static const inkMid = Color(0xFF64748B);
   static const inkLight = Color(0xFF94A3B8);
-  static const accent = Color(0xFF111827);
+  static const accent = AppColors.ink;
   static const brand = Color(0xFF4271FF);
   static const brandLight = Color(0xFFEEF2FF);
-  static const teal = Color(0xFF0F7B6C);
-  static const tealLight = Color(0xFFE6F5F3);
-  static const divider = Color(0xFFE2E8F0);
+  static const teal = AppColors.teal;
+  static const tealLight = AppColors.tealSoft;
+  static const divider = AppColors.divider;
   static const shadow = Color(0x0A000000);
-  static const gold = Color(0xFFFFB800);
+  static const gold = AppColors.gold;
   static const goldDark = Color(0xFFE89B00);
 
-  static const red = Color(0xFFDC2626);
-  static const redLight = Color(0xFFFFE4E4);
-  static const amber = Color(0xFFF59E0B);
-  static const amberLight = Color(0xFFFEF3C7);
+  static const red = AppColors.danger;
+  static const redLight = AppColors.dangerSoft;
+  static const amber = AppColors.warning;
+  static const amberLight = AppColors.warningSoft;
 }
 
 // ─────────────────────────────────────────────
@@ -212,11 +214,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
               SizedBox(height: 2.h),
               Text(
                 'Generating ticket...',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 10.sp,
-                  color: _TC.ink,
-                ),
+                style: AppType.style(10.sp, color: _TC.ink),
               ),
             ],
           ),
@@ -412,11 +410,11 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
   List<Color> _getStatusGradient(String? status) {
     switch (status) {
       case 'confirmed':
-        return [const Color(0xFF0F7B6C), const Color(0xFF0D9488)];
+        return [AppColors.teal, const Color(0xFF0D9488)];
       case 'completed':
         return [const Color(0xFF4271FF), const Color(0xFF6366F1)];
       case 'cancelled':
-        return [const Color(0xFFDC2626), const Color(0xFFEF4444)];
+        return [AppColors.danger, const Color(0xFFEF4444)];
       default:
         return [const Color(0xFFEA580C), const Color(0xFFF97316)];
     }
@@ -474,12 +472,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
             Expanded(
               child: Text(
                 title,
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.w700,
-                  color: _TC.ink,
-                ),
+                style: AppType.style(12.sp, w: FontWeight.w700, color: _TC.ink),
               ),
             ),
             AnimatedRotation(
@@ -528,11 +521,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
             flex: 5,
             child: Text(
               title,
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 9.sp,
-                color: _TC.inkMid,
-              ),
+              style: AppType.style(9.sp, color: _TC.inkMid),
             ),
           ),
           Expanded(
@@ -540,12 +529,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
             child: Text(
               value,
               textAlign: TextAlign.end,
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 9.sp,
-                fontWeight: isHighlight ? FontWeight.w700 : FontWeight.w500,
-                color: isHighlight ? _TC.brand : _TC.ink,
-              ),
+              style: AppType.style(9.sp, w: isHighlight ? FontWeight.w700 : FontWeight.w500, color: isHighlight ? _TC.brand : _TC.ink),
             ),
           ),
         ],
@@ -588,13 +572,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
         ),
         child: Text(
           title,
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 8.sp,
-            fontWeight: FontWeight.w700,
-            color: _TC.accent,
-            letterSpacing: 0.5,
-          ),
+          style: AppType.style(8.sp, w: FontWeight.w700, color: _TC.accent, letterSpacing: 0.5),
         ),
       ),
     );
@@ -650,13 +628,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                 Expanded(
                   child: Text(
                     trek?.title ?? 'Trek Details',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                      height: 1.2,
-                    ),
+                    style: AppType.style(18.sp, w: FontWeight.w800, color: Colors.white, height: 1.2),
                   ),
                 ),
                 SizedBox(width: 2.w),
@@ -686,13 +658,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                       SizedBox(width: 1.5.w),
                       Text(
                         _getStatusText(booking.status).toUpperCase(),
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 8.sp,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                          letterSpacing: 0.8,
-                        ),
+                        style: AppType.style(8.sp, w: FontWeight.w700, color: Colors.white, letterSpacing: 0.8),
                       ),
                     ],
                   ),
@@ -713,36 +679,21 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                     children: [
                       Text(
                         'DEPARTURE',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 7.sp,
-                          fontWeight: FontWeight.w600,
-                          color: _TC.inkLight,
-                          letterSpacing: 0.8,
-                        ),
+                        style: AppType.style(7.sp, w: FontWeight.w600, color: _TC.inkLight, letterSpacing: 0.8),
                       ),
                       SizedBox(height: 0.3.h),
                       Text(
                         startDate != null
                             ? DateFormat('E, dd MMM').format(startDate)
                             : '-',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 13.sp,
-                          fontWeight: FontWeight.w700,
-                          color: _TC.ink,
-                        ),
+                        style: AppType.style(13.sp, w: FontWeight.w700, color: _TC.ink),
                       ),
                       SizedBox(height: 0.2.h),
                       Text(
                         sourceCity,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 8.sp,
-                          color: _TC.inkMid,
-                        ),
+                        style: AppType.style(8.sp, color: _TC.inkMid),
                       ),
                     ],
                   ),
@@ -767,12 +718,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                                   ?.replaceAll('Days', 'D')
                                   .replaceAll('Nights', 'N') ??
                               '-',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 8.sp,
-                            fontWeight: FontWeight.w600,
-                            color: _TC.inkMid,
-                          ),
+                          style: AppType.style(8.sp, w: FontWeight.w600, color: _TC.inkMid),
                         ),
                       ),
                     ],
@@ -785,13 +731,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                     children: [
                       Text(
                         'ARRIVAL',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 7.sp,
-                          fontWeight: FontWeight.w600,
-                          color: _TC.inkLight,
-                          letterSpacing: 0.8,
-                        ),
+                        style: AppType.style(7.sp, w: FontWeight.w600, color: _TC.inkLight, letterSpacing: 0.8),
                       ),
                       SizedBox(height: 0.3.h),
                       Text(
@@ -799,12 +739,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                             ? DateFormat('E, dd MMM').format(endDate)
                             : '-',
                         textAlign: TextAlign.right,
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 13.sp,
-                          fontWeight: FontWeight.w700,
-                          color: _TC.ink,
-                        ),
+                        style: AppType.style(13.sp, w: FontWeight.w700, color: _TC.ink),
                       ),
                       SizedBox(height: 0.2.h),
                       Text(
@@ -812,11 +747,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                         textAlign: TextAlign.right,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 8.sp,
-                          color: _TC.inkMid,
-                        ),
+                        style: AppType.style(8.sp, color: _TC.inkMid),
                       ),
                     ],
                   ),
@@ -890,12 +821,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                           SizedBox(width: 2.w),
                           Text(
                             'Traveller Details',
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 10.sp,
-                              fontWeight: FontWeight.w700,
-                              color: _TC.ink,
-                            ),
+                            style: AppType.style(10.sp, w: FontWeight.w700, color: _TC.ink),
                           ),
                         ],
                       ),
@@ -960,7 +886,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                                     ? null
                                     : const Border(
                                         bottom: BorderSide(
-                                          color: Color(0xFFE2E8F0),
+                                          color: AppColors.divider,
                                         ),
                                       ),
                               ),
@@ -970,34 +896,21 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                                     flex: 5,
                                     child: Text(
                                       t.traveler?.name ?? '-',
-                                      style: TextStyle(
-                                        fontFamily: 'Poppins',
-                                        fontSize: 9.sp,
-                                        fontWeight: FontWeight.w600,
-                                        color: _TC.ink,
-                                      ),
+                                      style: AppType.style(9.sp, w: FontWeight.w600, color: _TC.ink),
                                     ),
                                   ),
                                   Expanded(
                                     flex: 2,
                                     child: Text(
                                       t.traveler?.age?.toString() ?? '-',
-                                      style: TextStyle(
-                                        fontFamily: 'Poppins',
-                                        fontSize: 9.sp,
-                                        color: _TC.inkMid,
-                                      ),
+                                      style: AppType.style(9.sp, color: _TC.inkMid),
                                     ),
                                   ),
                                   Expanded(
                                     flex: 3,
                                     child: Text(
                                       t.traveler?.gender ?? '-',
-                                      style: TextStyle(
-                                        fontFamily: 'Poppins',
-                                        fontSize: 9.sp,
-                                        color: _TC.inkMid,
-                                      ),
+                                      style: AppType.style(9.sp, color: _TC.inkMid),
                                     ),
                                   ),
                                 ],
@@ -1353,13 +1266,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
     color: _TC.divider,
   );
 
-  TextStyle _tableHeaderStyle() => TextStyle(
-    fontFamily: 'Poppins',
-    fontSize: 8.sp,
-    fontWeight: FontWeight.w600,
-    color: _TC.inkMid,
-    letterSpacing: 0.4,
-  );
+  TextStyle _tableHeaderStyle() => AppType.style(8.sp, w: FontWeight.w600, color: _TC.inkMid, letterSpacing: 0.4);
 
   Widget _buildActionButton(
     IconData icon,
@@ -1397,12 +1304,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
             SizedBox(height: 0.8.h),
             Text(
               label,
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 9.sp,
-                fontWeight: FontWeight.w600,
-                color: _TC.ink,
-              ),
+              style: AppType.style(9.sp, w: FontWeight.w600, color: _TC.ink),
             ),
           ],
         ),
@@ -1512,12 +1414,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                 Expanded(
                   child: Text(
                     'Refund Tracker',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w700,
-                      color: _TC.ink,
-                    ),
+                    style: AppType.style(13.sp, w: FontWeight.w700, color: _TC.ink),
                   ),
                 ),
                 if (isPolling && !isProcessed && !isFailed)
@@ -1541,13 +1438,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                     ),
                     child: Text(
                       'COMPLETED',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 7.sp,
-                        fontWeight: FontWeight.w800,
-                        color: _TC.teal,
-                        letterSpacing: 0.5,
-                      ),
+                      style: AppType.style(7.sp, w: FontWeight.w800, color: _TC.teal, letterSpacing: 0.5),
                     ),
                   ),
               ],
@@ -1577,22 +1468,12 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                       children: [
                         Text(
                           statusText,
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 11.sp,
-                            fontWeight: FontWeight.w700,
-                            color: statusColor,
-                          ),
+                          style: AppType.style(11.sp, w: FontWeight.w700, color: statusColor),
                         ),
                         SizedBox(height: 0.3.h),
                         Text(
                           statusSubText,
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 8.sp,
-                            color: _TC.inkMid,
-                            height: 1.4,
-                          ),
+                          style: AppType.style(8.sp, color: _TC.inkMid, height: 1.4),
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -1609,20 +1490,11 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                 children: [
                   Text(
                     'Refund Amount',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 10.sp,
-                      color: _TC.inkMid,
-                    ),
+                    style: AppType.style(10.sp, color: _TC.inkMid),
                   ),
                   Text(
                     '₹ ${statusData?.refundAmount?.toStringAsFixed(2)}',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w700,
-                      color: _TC.ink,
-                    ),
+                    style: AppType.style(12.sp, w: FontWeight.w700, color: _TC.ink),
                   ),
                 ],
               ),
@@ -1658,14 +1530,9 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                         statusData?.refundSpeed == 'instant'
                             ? 'Instant refund — credited within minutes'
                             : 'Normal refund — 3 to 5 business days',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 8.sp,
-                          fontWeight: FontWeight.w500,
-                          color: statusData?.refundSpeed == 'instant'
+                        style: AppType.style(8.sp, w: FontWeight.w500, color: statusData?.refundSpeed == 'instant'
                               ? _TC.teal
-                              : _TC.amber,
-                        ),
+                              : _TC.amber),
                       ),
                     ),
                   ],
@@ -1684,12 +1551,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                   SizedBox(width: 2.w),
                   Text(
                     'Credited on ${_formatSettledAt(statusData?.refundProcessedAt)}',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 9.sp,
-                      fontWeight: FontWeight.w600,
-                      color: _TC.teal,
-                    ),
+                    style: AppType.style(9.sp, w: FontWeight.w600, color: _TC.teal),
                   ),
                 ],
               ),
@@ -1721,12 +1583,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                       SizedBox(width: 2.w),
                       Text(
                         'Contact Support',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 10.sp,
-                          fontWeight: FontWeight.w700,
-                          color: _TC.red,
-                        ),
+                        style: AppType.style(10.sp, w: FontWeight.w700, color: _TC.red),
                       ),
                     ],
                   ),
@@ -1756,12 +1613,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                     SizedBox(width: 2.w),
                     Text(
                       'Track Refund',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 11.sp,
-                        fontWeight: FontWeight.w700,
-                        color: _TC.brand,
-                      ),
+                      style: AppType.style(11.sp, w: FontWeight.w700, color: _TC.brand),
                     ),
                     SizedBox(width: 1.w),
                     Icon(
@@ -1835,12 +1687,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                   SizedBox(width: 3.w),
                   Text(
                     'Refund Status',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w700,
-                      color: _TC.ink,
-                    ),
+                    style: AppType.style(14.sp, w: FontWeight.w700, color: _TC.ink),
                   ),
                   const Spacer(),
                   if (isPolling)
@@ -1881,11 +1728,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                         child: Text(
                           statusData?.statusMessage ??
                               'This cancellation is not eligible for a refund per the policy terms.',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 11.sp,
-                            color: _TC.inkMid,
-                          ),
+                          style: AppType.style(11.sp, color: _TC.inkMid),
                         ),
                       ),
                     ],
@@ -1962,16 +1805,11 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                           child: Text(
                             statusData?.statusMessage ??
                                 'Checking refund status...',
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 9.sp,
-                              color: (statusData?.isFailed ?? false)
+                            style: AppType.style(9.sp, color: (statusData?.isFailed ?? false)
                                   ? _TC.red
                                   : (statusData?.isProcessed ?? false)
                                   ? _TC.teal
-                                  : _TC.inkMid,
-                              height: 1.4,
-                            ),
+                                  : _TC.inkMid, height: 1.4),
                           ),
                         ),
                       ],
@@ -1993,11 +1831,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                       SizedBox(width: 2.w),
                       Text(
                         'Speed: ${statusData?.refundSpeed == 'instant' ? 'Instant (within minutes)' : 'Normal (3–5 business days)'}',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 9.sp,
-                          color: _TC.inkMid,
-                        ),
+                        style: AppType.style(9.sp, color: _TC.inkMid),
                       ),
                     ],
                   ),
@@ -2016,12 +1850,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                     ),
                     child: Text(
                       'Close',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.w600,
-                        color: _TC.brand,
-                      ),
+                      style: AppType.style(12.sp, w: FontWeight.w600, color: _TC.brand),
                     ),
                   ),
                 ),
@@ -2064,16 +1893,11 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
         Expanded(
           child: Text(
             label,
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 11.sp,
-              color: isFailed
+            style: AppType.style(11.sp, w: done ? FontWeight.w600 : FontWeight.w400, color: isFailed
                   ? _TC.red
                   : done
                   ? _TC.ink
-                  : _TC.inkLight,
-              fontWeight: done ? FontWeight.w600 : FontWeight.w400,
-            ),
+                  : _TC.inkLight),
           ),
         ),
       ],
@@ -2149,21 +1973,12 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
               children: [
                 Text(
                   'You rated this trek',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 11.sp,
-                    fontWeight: FontWeight.w700,
-                    color: _TC.ink,
-                  ),
+                  style: AppType.style(11.sp, w: FontWeight.w700, color: _TC.ink),
                 ),
                 SizedBox(height: 0.2.h),
                 Text(
                   'Thanks for your feedback!',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 8.sp,
-                    color: _TC.inkMid,
-                  ),
+                  style: AppType.style(8.sp, color: _TC.inkMid),
                 ),
               ],
             ),
@@ -2183,12 +1998,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
           SizedBox(width: 2.w),
           Text(
             currentRating.toStringAsFixed(1),
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 11.sp,
-              fontWeight: FontWeight.w700,
-              color: _TC.teal,
-            ),
+            style: AppType.style(11.sp, w: FontWeight.w700, color: _TC.teal),
           ),
         ],
       ),
@@ -2262,24 +2072,14 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                                 isReviewed
                                     ? 'You rated this trek'
                                     : 'Rate your trek',
-                                style: TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontSize: 12.sp,
-                                  fontWeight: FontWeight.w800,
-                                  color: _TC.ink,
-                                ),
+                                style: AppType.style(12.sp, w: FontWeight.w800, color: _TC.ink),
                               ),
                               SizedBox(height: 0.35.h),
                               Text(
                                 isReviewed
                                     ? 'Ratings cannot be changed once submitted'
                                     : 'Help other trekkers with your experience',
-                                style: TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontSize: 8.sp,
-                                  fontWeight: FontWeight.w500,
-                                  color: _TC.inkMid,
-                                ),
+                                style: AppType.style(8.sp, w: FontWeight.w500, color: _TC.inkMid),
                               ),
                             ],
                           ),
@@ -2326,23 +2126,14 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                                   isReviewed
                                       ? 'Your rating'
                                       : 'Tap a star to rate',
-                                  style: TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontSize: 10.sp,
-                                    fontWeight: FontWeight.w700,
-                                    color: _TC.ink,
-                                  ),
+                                  style: AppType.style(10.sp, w: FontWeight.w700, color: _TC.ink),
                                 ),
                                 SizedBox(height: 0.2.h),
                                 Text(
                                   isReviewed
                                       ? '${currentRating.toStringAsFixed(1)} / 5.0'
                                       : 'Your feedback helps other trekkers',
-                                  style: TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontSize: 8.sp,
-                                    color: _TC.inkMid,
-                                  ),
+                                  style: AppType.style(8.sp, color: _TC.inkMid),
                                 ),
                               ],
                             ),
@@ -2356,7 +2147,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                                 _openRateReview(bookingData, rating);
                               }
                             },
-                            filledColor: const Color(0xFFFFB800),
+                            filledColor: AppColors.gold,
                             displayRatingValue: false,
                             interactiveTooltips: true,
                             customFilledIcon: Icons.star_rounded,
@@ -2429,7 +2220,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                   gradient: LinearGradient(
                     colors: isReviewed
                         ? const [Color(0xFF0F766E), Color(0xFF14B8A6)]
-                        : const [Color(0xFF0F172A), Color(0xFF3B82F6)],
+                        : const [AppColors.inkStrong, Color(0xFF3B82F6)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -2453,24 +2244,14 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                       isReviewed
                           ? 'You Rated ${currentRating.toStringAsFixed(1)} ★'
                           : 'Rate Your Trek',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 11.sp,
-                        fontWeight: FontWeight.w800,
-                        color: _TC.ink,
-                      ),
+                      style: AppType.style(11.sp, w: FontWeight.w800, color: _TC.ink),
                     ),
                     SizedBox(height: 0.2.h),
                     Text(
                       isReviewed
                           ? 'Tap to view your rating'
                           : 'Help other trekkers discover',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 7.sp,
-                        fontWeight: FontWeight.w500,
-                        color: _TC.inkMid,
-                      ),
+                      style: AppType.style(7.sp, w: FontWeight.w500, color: _TC.inkMid),
                     ),
                   ],
                 ),
@@ -2553,12 +2334,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
               SizedBox(width: 3.w),
               Text(
                 'Dispute Details',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 13.sp,
-                  fontWeight: FontWeight.w700,
-                  color: _TC.ink,
-                ),
+                style: AppType.style(13.sp, w: FontWeight.w700, color: _TC.ink),
               ),
             ],
           ),
@@ -2587,13 +2363,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                   child: Text(
                     'Your dispute is being reviewed by our support team. We will update you soon.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 8.sp,
-                      color: CommonColors.appRedColor,
-                      fontWeight: FontWeight.w500,
-                      height: 1.5,
-                    ),
+                    style: AppType.style(8.sp, w: FontWeight.w500, color: CommonColors.appRedColor, height: 1.5),
                   ),
                 ),
               ],
@@ -2612,20 +2382,11 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
         children: [
           Text(
             label,
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 9.sp,
-              color: _TC.inkMid,
-            ),
+            style: AppType.style(9.sp, color: _TC.inkMid),
           ),
           Text(
             value,
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 9.sp,
-              fontWeight: FontWeight.w600,
-              color: _TC.ink,
-            ),
+            style: AppType.style(9.sp, w: FontWeight.w600, color: _TC.ink),
           ),
         ],
       ),
@@ -2674,12 +2435,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
             centerTitle: false,
             title: Text(
               'Booking Details',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 15.sp,
-                fontWeight: FontWeight.w700,
-                color: _TC.ink,
-              ),
+              style: AppType.style(15.sp, w: FontWeight.w700, color: _TC.ink),
             ),
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(1),
@@ -2763,41 +2519,23 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                                   children: [
                                     Text(
                                       'Trek details via contact',
-                                      style: TextStyle(
-                                        fontFamily: 'Poppins',
-                                        fontSize: 8.sp,
-                                        color: _TC.inkMid,
-                                      ),
+                                      style: AppType.style(8.sp, color: _TC.inkMid),
                                     ),
                                     SizedBox(height: 0.2.h),
                                     if (booking?.trek?.captainName != null)
                                       Text(
                                         booking?.trek?.captainName ?? '',
-                                        style: TextStyle(
-                                          fontFamily: 'Poppins',
-                                          fontSize: 11.sp,
-                                          fontWeight: FontWeight.w600,
-                                          color: _TC.ink,
-                                        ),
+                                        style: AppType.style(11.sp, w: FontWeight.w600, color: _TC.ink),
                                       ),
                                     if (booking?.trek?.captainPhone != null)
                                       Text(
                                         booking?.trek?.captainPhone ?? '',
-                                        style: TextStyle(
-                                          fontFamily: 'Poppins',
-                                          fontSize: 12.sp,
-                                          fontWeight: FontWeight.w700,
-                                          color: _TC.brand,
-                                        ),
+                                        style: AppType.style(12.sp, w: FontWeight.w700, color: _TC.brand),
                                       )
                                     else
                                       Text(
                                         'Contact number not available',
-                                        style: TextStyle(
-                                          fontFamily: 'Poppins',
-                                          fontSize: 9.sp,
-                                          color: _TC.inkMid,
-                                        ),
+                                        style: AppType.style(9.sp, color: _TC.inkMid),
                                       ),
                                   ],
                                 ),
@@ -2907,12 +2645,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                                 Expanded(
                                   child: Text(
                                     'Frequently Asked Questions',
-                                    style: TextStyle(
-                                      fontFamily: 'Poppins',
-                                      fontSize: 11.sp,
-                                      fontWeight: FontWeight.w600,
-                                      color: _TC.ink,
-                                    ),
+                                    style: AppType.style(11.sp, w: FontWeight.w600, color: _TC.ink),
                                   ),
                                 ),
                                 Icon(
@@ -2945,18 +2678,14 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                               style: GoogleFonts.sourceSerif4(
                                 fontSize: 28.sp,
                                 fontWeight: FontWeight.bold,
-                                color: const Color(0xFFE2E8F0),
+                                color: AppColors.divider,
                                 height: 1.2,
                               ),
                             ),
                             SizedBox(height: 1.h),
                             RichText(
                               text: TextSpan(
-                                style: TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontSize: 10.sp,
-                                  color: _TC.inkLight,
-                                ),
+                                style: AppType.style(10.sp, color: _TC.inkLight),
                                 children: [
                                   const TextSpan(text: 'Crafted with passion '),
                                   WidgetSpan(

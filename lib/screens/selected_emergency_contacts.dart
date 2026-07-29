@@ -11,6 +11,8 @@ import '../repository/repository.dart';
 import '../utils/common_btn.dart';
 import '../utils/common_colors.dart';
 import '../utils/screen_constants.dart';
+import 'package:arobo_app/theme/app_tokens.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 // ─────────────────────────────────────────────
 //  CONSTANTS
@@ -38,24 +40,24 @@ String _normalizePhone(String raw) {
 //  DESIGN TOKENS
 // ─────────────────────────────────────────────
 class _C {
-  static const bg = Color(0xFFF5F8FF);
+  static const bg = AppColors.bgCool;
   static const cardBg = Colors.white;
-  static const ink = Color(0xFF111827);
-  static const inkMid = Color(0xFF6B7280);
-  static const inkLight = Color(0xFF9CA3AF);
-  static const teal = Color(0xFF0F7B6C);
-  static const tealSoft = Color(0xFFE6F5F3);
-  static const fieldBg = Color(0xFFF9FAFB);
-  static const fieldBorder = Color(0xFFE5E7EB);
-  static const iconBadgeBg = Color(0xFF111827);
+  static const ink = AppColors.ink;
+  static const inkMid = AppColors.inkMid;
+  static const inkLight = AppColors.inkLight;
+  static const teal = AppColors.teal;
+  static const tealSoft = AppColors.tealSoft;
+  static const fieldBg = AppColors.elevated;
+  static const fieldBorder = AppColors.border;
+  static const iconBadgeBg = AppColors.ink;
   static const danger = Color(0xFFEF4444);
-  static const divider = Color(0xFFE5E7EB);
+  static const divider = AppColors.border;
   static const warnBg = Color(0xFFFFF3BF);
   static const warn = Color(0xFFE67700);
   static const ctaGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF1B4332), Color(0xFF2D6A4F)],
+    colors: [AppColors.forestDeep, AppColors.forest],
   );
 }
 
@@ -298,34 +300,19 @@ class _SelectedEmergencyContactsScreenState
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.w)),
         title: Text(
           'Discard unsaved contacts?',
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: FontSize.s13,
-            fontWeight: FontWeight.w700,
-            color: _C.ink,
-          ),
+          style: AppType.style(FontSize.s13, w: FontWeight.w700, color: _C.ink),
         ),
         content: Text(
           'You have ${_pending.length} contact${_pending.length == 1 ? '' : 's'} that '
           'haven\'t been saved yet. Leaving now will discard them.',
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: FontSize.s10,
-            color: _C.inkMid,
-            height: 1.5,
-          ),
+          style: AppType.style(FontSize.s10, color: _C.inkMid, height: 1.5),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(
               'Keep editing',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: FontSize.s10,
-                fontWeight: FontWeight.w600,
-                color: _C.teal,
-              ),
+              style: AppType.style(FontSize.s10, w: FontWeight.w600, color: _C.teal),
             ),
           ),
           TextButton(
@@ -335,12 +322,7 @@ class _SelectedEmergencyContactsScreenState
             },
             child: Text(
               'Discard',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: FontSize.s10,
-                fontWeight: FontWeight.w600,
-                color: _C.danger,
-              ),
+              style: AppType.style(FontSize.s10, w: FontWeight.w600, color: _C.danger),
             ),
           ),
         ],
@@ -377,12 +359,7 @@ class _SelectedEmergencyContactsScreenState
               ),
               Text(
                 'Relationship with ${contact.displayName}',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: FontSize.s12,
-                  fontWeight: FontWeight.w700,
-                  color: _C.ink,
-                ),
+                style: AppType.style(FontSize.s12, w: FontWeight.w700, color: _C.ink),
               ),
               SizedBox(height: 2.h),
               Wrap(
@@ -410,12 +387,7 @@ class _SelectedEmergencyContactsScreenState
                       ),
                       child: Text(
                         rel,
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: FontSize.s10,
-                          fontWeight: FontWeight.w600,
-                          color: selected ? Colors.white : _C.inkMid,
-                        ),
+                        style: AppType.style(FontSize.s10, w: FontWeight.w600, color: selected ? Colors.white : _C.inkMid),
                       ),
                     ),
                   );
@@ -447,11 +419,7 @@ class _SelectedEmergencyContactsScreenState
               Expanded(
                 child: Text(
                   message,
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: FontSize.s10,
-                    color: Colors.white,
-                  ),
+                  style: AppType.style(FontSize.s10, color: Colors.white),
                 ),
               ),
             ],
@@ -512,12 +480,7 @@ class _SelectedEmergencyContactsScreenState
                   Expanded(
                     child: Text(
                       'Delete Contact',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: FontSize.s13,
-                        fontWeight: FontWeight.w700,
-                        color: _C.ink,
-                      ),
+                      style: AppType.style(FontSize.s13, w: FontWeight.w700, color: _C.ink),
                     ),
                   ),
                 ],
@@ -526,12 +489,7 @@ class _SelectedEmergencyContactsScreenState
               Text(
                 '"$name" will be permanently removed from your emergency '
                 'contacts and cannot be recovered.',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: FontSize.s9,
-                  color: _C.inkMid,
-                  height: 1.5,
-                ),
+                style: AppType.style(FontSize.s9, color: _C.inkMid, height: 1.5),
               ),
               SizedBox(height: 2.5.h),
               Row(
@@ -549,12 +507,7 @@ class _SelectedEmergencyContactsScreenState
                         child: Center(
                           child: Text(
                             'Cancel',
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: FontSize.s10,
-                              fontWeight: FontWeight.w600,
-                              color: _C.inkMid,
-                            ),
+                            style: AppType.style(FontSize.s10, w: FontWeight.w600, color: _C.inkMid),
                           ),
                         ),
                       ),
@@ -576,12 +529,7 @@ class _SelectedEmergencyContactsScreenState
                         child: Center(
                           child: Text(
                             'Delete',
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: FontSize.s10,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
+                            style: AppType.style(FontSize.s10, w: FontWeight.w600, color: Colors.white),
                           ),
                         ),
                       ),
@@ -609,12 +557,7 @@ class _SelectedEmergencyContactsScreenState
       child: Center(
         child: Text(
           name.isNotEmpty ? name[0].toUpperCase() : '?',
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: FontSize.s14,
-            fontWeight: FontWeight.w700,
-            color: _C.teal,
-          ),
+          style: AppType.style(FontSize.s14, w: FontWeight.w700, color: _C.teal),
         ),
       ),
     );
@@ -640,13 +583,7 @@ class _SelectedEmergencyContactsScreenState
       padding: EdgeInsets.only(bottom: 1.h, top: 0.5.h),
       child: Text(
         text,
-        style: TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: FontSize.s8,
-          fontWeight: FontWeight.w700,
-          color: _C.inkLight,
-          letterSpacing: 1.2,
-        ),
+        style: AppType.style(FontSize.s8, w: FontWeight.w700, color: _C.inkLight, letterSpacing: 1.2),
       ),
     );
   }
@@ -682,21 +619,12 @@ class _SelectedEmergencyContactsScreenState
                   name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: FontSize.s11,
-                    fontWeight: FontWeight.w600,
-                    color: _C.ink,
-                  ),
+                  style: AppType.style(FontSize.s11, w: FontWeight.w600, color: _C.ink),
                 ),
                 SizedBox(height: 0.3.h),
                 Text(
                   contact.phone ?? 'No number',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: FontSize.s9,
-                    color: _C.inkMid,
-                  ),
+                  style: AppType.style(FontSize.s9, color: _C.inkMid),
                 ),
                 if (contact.relationship?.isNotEmpty == true) ...[
                   SizedBox(height: 0.5.h),
@@ -711,12 +639,7 @@ class _SelectedEmergencyContactsScreenState
                     ),
                     child: Text(
                       contact.relationship!,
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: FontSize.s7,
-                        fontWeight: FontWeight.w600,
-                        color: _C.teal,
-                      ),
+                      style: AppType.style(FontSize.s7, w: FontWeight.w600, color: _C.teal),
                     ),
                   ),
                 ],
@@ -771,12 +694,7 @@ class _SelectedEmergencyContactsScreenState
                         contact.displayName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: FontSize.s11,
-                          fontWeight: FontWeight.w600,
-                          color: _C.ink,
-                        ),
+                        style: AppType.style(FontSize.s11, w: FontWeight.w600, color: _C.ink),
                       ),
                     ),
                     Container(
@@ -790,12 +708,7 @@ class _SelectedEmergencyContactsScreenState
                       ),
                       child: Text(
                         'Pending',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: FontSize.s7,
-                          fontWeight: FontWeight.w600,
-                          color: _C.warn,
-                        ),
+                        style: AppType.style(FontSize.s7, w: FontWeight.w600, color: _C.warn),
                       ),
                     ),
                   ],
@@ -803,11 +716,7 @@ class _SelectedEmergencyContactsScreenState
                 SizedBox(height: 0.3.h),
                 Text(
                   phone,
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: FontSize.s9,
-                    color: _C.inkMid,
-                  ),
+                  style: AppType.style(FontSize.s9, color: _C.inkMid),
                 ),
                 SizedBox(height: 0.6.h),
                 // Tappable relationship chip
@@ -828,12 +737,7 @@ class _SelectedEmergencyContactsScreenState
                       children: [
                         Text(
                           relationship,
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: FontSize.s8,
-                            fontWeight: FontWeight.w600,
-                            color: _C.teal,
-                          ),
+                          style: AppType.style(FontSize.s8, w: FontWeight.w600, color: _C.teal),
                         ),
                         SizedBox(width: 1.w),
                         Icon(
@@ -893,20 +797,11 @@ class _SelectedEmergencyContactsScreenState
                 children: [
                   Text(
                     'Add emergency contact',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: FontSize.s11,
-                      fontWeight: FontWeight.w600,
-                      color: _C.ink,
-                    ),
+                    style: AppType.style(FontSize.s11, w: FontWeight.w600, color: _C.ink),
                   ),
                   Text(
                     '$_slotsLeft slot${_slotsLeft == 1 ? '' : 's'} remaining',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: FontSize.s8,
-                      color: _C.inkLight,
-                    ),
+                    style: AppType.style(FontSize.s8, color: _C.inkLight),
                   ),
                 ],
               ),
@@ -943,23 +838,13 @@ class _SelectedEmergencyContactsScreenState
               SizedBox(height: 2.h),
               Text(
                 'No contacts yet',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: FontSize.s13,
-                  fontWeight: FontWeight.w600,
-                  color: _C.ink,
-                ),
+                style: AppType.style(FontSize.s13, w: FontWeight.w600, color: _C.ink),
               ),
               SizedBox(height: 0.8.h),
               Text(
                 'Add up to $kMaxEmergencyContacts trusted contacts who\nwill be notified in an emergency.',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: FontSize.s9,
-                  color: _C.inkMid,
-                  height: 1.6,
-                ),
+                style: AppType.style(FontSize.s9, color: _C.inkMid, height: 1.6),
               ),
             ],
           ),
@@ -994,12 +879,7 @@ class _SelectedEmergencyContactsScreenState
           ),
           title: Text(
             'Emergency Contacts',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: FontSize.s14,
-              fontWeight: FontWeight.w700,
-              color: _C.ink,
-            ),
+            style: AppType.style(FontSize.s14, w: FontWeight.w700, color: _C.ink),
           ),
           actions: [
             Container(
@@ -1018,12 +898,7 @@ class _SelectedEmergencyContactsScreenState
                 onPressed: () => Get.toNamed('/help'),
                 child: Text(
                   'FAQ',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: FontSize.s10,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
+                  style: AppType.style(FontSize.s10, w: FontWeight.w600, color: Colors.white),
                 ),
               ),
             ),
@@ -1046,21 +921,12 @@ class _SelectedEmergencyContactsScreenState
                       children: [
                         Text(
                           'Trusted contacts',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: FontSize.s13,
-                            fontWeight: FontWeight.w700,
-                            color: _C.ink,
-                          ),
+                          style: AppType.style(FontSize.s13, w: FontWeight.w700, color: _C.ink),
                         ),
                         SizedBox(height: 0.3.h),
                         Text(
                           'They will be notified in case of emergency',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: FontSize.s9,
-                            color: _C.inkMid,
-                          ),
+                          style: AppType.style(FontSize.s9, color: _C.inkMid),
                         ),
                       ],
                     ),
@@ -1091,14 +957,9 @@ class _SelectedEmergencyContactsScreenState
                         SizedBox(width: 1.w),
                         Text(
                           '$_total / $kMaxEmergencyContacts',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: FontSize.s10,
-                            fontWeight: FontWeight.w700,
-                            color: _total >= kMaxEmergencyContacts
+                          style: AppType.style(FontSize.s10, w: FontWeight.w700, color: _total >= kMaxEmergencyContacts
                                 ? _C.warn
-                                : _C.teal,
-                          ),
+                                : _C.teal),
                         ),
                       ],
                     ),
@@ -1194,11 +1055,7 @@ class _SelectedEmergencyContactsScreenState
                     children: [
                       Text(
                         '${_pending.length} contact${_pending.length == 1 ? '' : 's'} ready to save',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: FontSize.s9,
-                          color: _C.inkMid,
-                        ),
+                        style: AppType.style(FontSize.s9, color: _C.inkMid),
                       ),
                       SizedBox(height: 1.h),
                       CommonButton(

@@ -11,6 +11,8 @@ import '../models/treaks/booking_cancelled_modal.dart';
 import '../utils/common_colors.dart';
 import '../utils/common_booked_card.dart';
 import '../utils/ist_date_utils.dart';
+import 'package:arobo_app/theme/app_tokens.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS — matches BookingsCancelScreen
@@ -21,7 +23,7 @@ class _TI {
   static const ink = CommonColors.blackColor;
   static const inkMid = CommonColors.cFF6B7280;
   static const inkLight = CommonColors.grey_AEAEAE;
-  static const brand = Color(0xFF2D6A4F);
+  static const brand = AppColors.forest;
   static const teal = CommonColors.cFF0F7B6C;
   static const tealSoft = CommonColors.cFFE6F5F3;
   static const red = CommonColors.cFFDC2626;
@@ -32,9 +34,9 @@ class _TI {
   static const ctaGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF1B4332), Color(0xFF2D6A4F)],
+    colors: [AppColors.forestDeep, AppColors.forest],
   );
-  static const sheetBorder = Color(0xFFE2E8F0);
+  static const sheetBorder = AppColors.divider;
   static const sheetHandle = Color(0xFFD1D5DB);
 }
 
@@ -178,12 +180,7 @@ class _BookingCancellationSuccessScreenState
         child: Text(
           'Cancellation Status',
           textScaler: const TextScaler.linear(1.0),
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 13.sp,
-            fontWeight: FontWeight.w700,
-            color: _TI.ink,
-          ),
+          style: AppType.style(13.sp, w: FontWeight.w700, color: _TI.ink),
         ),
       ),
     );
@@ -236,23 +233,14 @@ class _BookingCancellationSuccessScreenState
         Text(
           'Booking Cancelled',
           textScaler: const TextScaler.linear(1.0),
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w800,
-            color: _TI.ink,
-          ),
+          style: AppType.style(14.sp, w: FontWeight.w800, color: _TI.ink),
         ),
         SizedBox(height: 0.4.h),
         Text(
           'Your cancellation request has been processed successfully.',
           textAlign: TextAlign.center,
           textScaler: const TextScaler.linear(1.0),
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 10.sp,
-            color: _TI.inkMid,
-          ),
+          style: AppType.style(10.sp, color: _TI.inkMid),
         ),
       ],
     );
@@ -336,12 +324,7 @@ class _BookingCancellationSuccessScreenState
                         ? 'Your refund will be processed to your original payment method.'
                         : 'No refund is applicable for this cancellation.',
                     textScaler: const TextScaler.linear(1.0),
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 9.sp,
-                      color: _TI.inkMid,
-                      height: 1.5,
-                    ),
+                    style: AppType.style(9.sp, color: _TI.inkMid, height: 1.5),
                   ),
                 ),
               ],
@@ -358,12 +341,7 @@ class _BookingCancellationSuccessScreenState
                     Text(
                       'Total Refund Amount',
                       textScaler: const TextScaler.linear(1.0),
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 9.sp,
-                        color: _TI.inkMid,
-                        fontWeight: FontWeight.w500,
-                      ),
+                      style: AppType.style(9.sp, w: FontWeight.w500, color: _TI.inkMid),
                     ),
                     SizedBox(height: 0.5.h),
                     TweenAnimationBuilder<double>(
@@ -373,12 +351,7 @@ class _BookingCancellationSuccessScreenState
                       builder: (_, val, __) => Text(
                         '₹ ${val.toStringAsFixed(2)}',
                         textScaler: const TextScaler.linear(1.0),
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.w800,
-                          color: _TI.teal,
-                        ),
+                        style: AppType.style(16.sp, w: FontWeight.w800, color: _TI.teal),
                       ),
                     ),
                   ],
@@ -404,12 +377,7 @@ class _BookingCancellationSuccessScreenState
                         Text(
                           'Track Refund',
                           textScaler: const TextScaler.linear(1.0),
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 9.sp,
-                            fontWeight: FontWeight.w700,
-                            color: _TI.teal,
-                          ),
+                          style: AppType.style(9.sp, w: FontWeight.w700, color: _TI.teal),
                         ),
                       ],
                     ),
@@ -439,12 +407,7 @@ class _BookingCancellationSuccessScreenState
                     child: Text(
                       'A credit note for GST reversal will be shared to your registered email.',
                       textScaler: const TextScaler.linear(1.0),
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 8.sp,
-                        color: _TI.orange,
-                        height: 1.4,
-                      ),
+                      style: AppType.style(8.sp, color: _TI.orange, height: 1.4),
                     ),
                   ),
                 ],
@@ -542,23 +505,13 @@ class _BookingCancellationSuccessScreenState
               Text(
                 title,
                 textScaler: const TextScaler.linear(1.0),
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 11.sp,
-                  fontWeight: FontWeight.w700,
-                  color: _TI.ink,
-                ),
+                style: AppType.style(11.sp, w: FontWeight.w700, color: _TI.ink),
               ),
               SizedBox(height: 0.3.h),
               Text(
                 subtitle,
                 textScaler: const TextScaler.linear(1.0),
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 9.sp,
-                  color: _TI.inkMid,
-                  height: 1.4,
-                ),
+                style: AppType.style(9.sp, color: _TI.inkMid, height: 1.4),
               ),
             ],
           ),
@@ -613,13 +566,7 @@ class _BookingCancellationSuccessScreenState
               child: Text(
                 'Back to My Bookings',
                 textScaler: const TextScaler.linear(1.0),
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                  letterSpacing: 0.3,
-                ),
+                style: AppType.style(12.sp, w: FontWeight.w700, color: Colors.white, letterSpacing: 0.3),
               ),
             ),
           ),
@@ -672,11 +619,7 @@ class _BookingCancellationSuccessScreenState
               else if (statusData == null)
                 Text(
                   'Refund status is not available yet. Please check again shortly.',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 10.sp,
-                    color: _TI.inkMid,
-                  ),
+                  style: AppType.style(10.sp, color: _TI.inkMid),
                 )
               else ...[
                 _buildStatusStep(
@@ -718,11 +661,7 @@ class _BookingCancellationSuccessScreenState
                   child: Text(
                     statusData?.statusMessage ?? 'Checking refund status...',
                     textScaler: const TextScaler.linear(1.0),
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 9.sp,
-                      color: _TI.inkMid,
-                    ),
+                    style: AppType.style(9.sp, color: _TI.inkMid),
                   ),
                 ),
                 if (statusData?.refundSpeed != null) ...[
@@ -730,11 +669,7 @@ class _BookingCancellationSuccessScreenState
                   Text(
                     'Speed: ${statusData?.refundSpeed == 'instant' ? 'Instant (within minutes)' : 'Normal (3–5 business days)'}',
                     textScaler: const TextScaler.linear(1.0),
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 8.sp,
-                      color: _TI.inkLight,
-                    ),
+                    style: AppType.style(8.sp, color: _TI.inkLight),
                   ),
                 ],
               ],
@@ -767,12 +702,7 @@ class _BookingCancellationSuccessScreenState
             Text(
               title,
               textScaler: const TextScaler.linear(1.0),
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 13.sp,
-                fontWeight: FontWeight.w700,
-                color: _TI.ink,
-              ),
+              style: AppType.style(13.sp, w: FontWeight.w700, color: _TI.ink),
             ),
           ],
         ),
@@ -814,12 +744,7 @@ class _BookingCancellationSuccessScreenState
             child: Text(
               label,
               textScaler: const TextScaler.linear(1.0),
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 10.sp,
-                color: color,
-                fontWeight: done ? FontWeight.w600 : FontWeight.w400,
-              ),
+              style: AppType.style(10.sp, w: done ? FontWeight.w600 : FontWeight.w400, color: color),
             ),
           ),
         ],
@@ -850,12 +775,7 @@ class _BookingCancellationSuccessScreenState
           child: Text(
             title,
             textScaler: const TextScaler.linear(1.0),
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 13.sp,
-              fontWeight: FontWeight.w700,
-              color: _TI.ink,
-            ),
+            style: AppType.style(13.sp, w: FontWeight.w700, color: _TI.ink),
           ),
         ),
       ],
@@ -869,21 +789,12 @@ class _BookingCancellationSuccessScreenState
         Text(
           label,
           textScaler: const TextScaler.linear(1.0),
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 10.sp,
-            color: _TI.inkMid,
-          ),
+          style: AppType.style(10.sp, color: _TI.inkMid),
         ),
         Text(
           value,
           textScaler: const TextScaler.linear(1.0),
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 10.sp,
-            fontWeight: FontWeight.w600,
-            color: _TI.ink,
-          ),
+          style: AppType.style(10.sp, w: FontWeight.w600, color: _TI.ink),
         ),
       ],
     );

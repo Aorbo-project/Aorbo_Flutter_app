@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'dart:math';
 
 import '../widgets/custom_network_image.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 /// Photo-first "Top Treks" card: full-bleed image, bottom gradient scrim,
 /// a floating "Top Pick" badge, a heart-save action, and title/description
@@ -246,12 +247,7 @@ class _TopTreksCardState extends State<TopTreksCard>
                       Text(
                         widget.badgeText,
                         textScaler: const TextScaler.linear(1.0),
-                        style: GoogleFonts.poppins(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: CommonColors.blackColor,
-                          letterSpacing: 0.1,
-                        ),
+                        style: AppType.style(10, w: FontWeight.w700, color: CommonColors.blackColor, letterSpacing: 0.1),
                       ),
                     ],
                   ),
@@ -307,12 +303,7 @@ class _TopTreksCardState extends State<TopTreksCard>
                       Text(
                         widget.kicker!.toUpperCase(),
                         textScaler: const TextScaler.linear(1.0),
-                        style: GoogleFonts.poppins(
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.w700,
-                          color: CommonColors.secondaryColor,
-                          letterSpacing: 1.1,
-                        ),
+                        style: AppType.style(9.5, w: FontWeight.w700, color: CommonColors.secondaryColor, letterSpacing: 1.1),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -321,13 +312,7 @@ class _TopTreksCardState extends State<TopTreksCard>
                     Text(
                       widget.title,
                       textScaler: const TextScaler.linear(1.0),
-                      style: GoogleFonts.poppins(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: CommonColors.whiteColor,
-                        letterSpacing: -0.2,
-                        height: 1.1,
-                      ),
+                      style: AppType.style(18, w: FontWeight.w700, color: CommonColors.whiteColor, height: 1.1, letterSpacing: -0.2),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -347,13 +332,9 @@ class _TopTreksCardState extends State<TopTreksCard>
                           Text(
                             widget.meta!,
                             textScaler: const TextScaler.linear(1.0),
-                            style: GoogleFonts.poppins(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w500,
-                              color: CommonColors.whiteColor.withValues(
+                            style: AppType.style(10, w: FontWeight.w500, color: CommonColors.whiteColor.withValues(
                                 alpha: 0.85,
-                              ),
-                            ),
+                              )),
                           ),
                         ],
                       ),
@@ -362,12 +343,7 @@ class _TopTreksCardState extends State<TopTreksCard>
                     Text(
                       widget.description,
                       textScaler: const TextScaler.linear(1.0),
-                      style: GoogleFonts.poppins(
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w400,
-                        color: CommonColors.whiteColor.withValues(alpha: 0.78),
-                        height: 1.3,
-                      ),
+                      style: AppType.style(10.5, w: FontWeight.w400, color: CommonColors.whiteColor.withValues(alpha: 0.78), height: 1.3),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),

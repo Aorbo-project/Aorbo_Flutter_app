@@ -11,8 +11,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart' hide FormData, Response;
 
-/// Thrown by [Repository.postApiCall] when the server returns HTTP 429.
-/// Carries the server-provided [waitSeconds] so callers can sync their countdown.
 class RateLimitException implements Exception {
   final String message;
   final int waitSeconds;
@@ -26,7 +24,6 @@ class Repository {
 
   static String token = "";
 
-
   Repository._internal();
 
   factory Repository() {
@@ -38,10 +35,7 @@ class Repository {
       baseUrl: NetworkUrl.baseUrl,
       connectTimeout: const Duration(seconds: 40),
       receiveTimeout: const Duration(seconds: 40),
-      headers: {
-        'Accept': '*/*',
-        'Content-Type': 'application/json',
-      },
+      headers: {'Accept': '*/*', 'Content-Type': 'application/json'},
     ),
   );
 
@@ -70,17 +64,12 @@ class Repository {
           logger.e("❌ onError: Error ->> ${error.error}");
           logger.e("Response ->> ${error.response}");
 
-          // Session expired — clear local state and redirect to login.
-          // 401 always means an invalid/expired/revoked session. 403 is
-          // shared with unrelated ownership checks elsewhere (e.g. "this
-          // issue report isn't yours"), so only log out for the specific
-          // session-related codes the backend attaches to those 403s —
-          // never on a bare 403 with no code.
           final statusCode = error.response?.statusCode;
           final errorCode = (error.response?.data is Map)
               ? (error.response?.data as Map)['code']
               : null;
-          final isSessionInvalid = statusCode == 401 ||
+          final isSessionInvalid =
+              statusCode == 401 ||
               (statusCode == 403 &&
                   (errorCode == 'ACCOUNT_INACTIVE' ||
                       errorCode == 'INVALID_TOKEN_TYPE'));
@@ -96,8 +85,8 @@ class Repository {
   }
 
   Future<bool> isInternetAvailable() async {
-    final List<ConnectivityResult> connectivityResult =
-        await (Connectivity().checkConnectivity());
+    final List<ConnectivityResult> connectivityResult = await (Connectivity()
+        .checkConnectivity());
     if (connectivityResult.contains(ConnectivityResult.mobile)) {
       return true;
     } else if (connectivityResult.contains(ConnectivityResult.wifi)) {
@@ -107,8 +96,6 @@ class Repository {
     }
   }
 
-  /// Returns per-request [Options] with the current auth token,
-  /// avoiding race conditions from mutating shared Dio headers.
   Future<Options> _authOptions({Map<String, dynamic>? extra}) async {
     final String? accessToken = await sp!.getString(SpUtil.accessToken);
     token = accessToken ?? "";
@@ -143,10 +130,6 @@ class Repository {
     try {
       if (internetAvailable) {
         final opts = await _authOptions();
-        // dio's connectTimeout/receiveTimeout reset on every received byte,
-        // so a very slow "trickle" connection can keep resetting them and
-        // hang far longer than the nominal timeout. This explicit wall-clock
-        // timeout is a hard upper bound regardless of that.
         Response response = await dio
             .get(url, options: opts)
             .timeout(const Duration(seconds: 45));
@@ -156,7 +139,9 @@ class Repository {
         return null;
       }
     } on TimeoutException {
-      throw Exception("Request timed out. Please check your connection and try again.");
+      throw Exception(
+        "Request timed out. Please check your connection and try again.",
+      );
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionTimeout) {
         throw Exception("Connection Timeout Exception");
@@ -180,13 +165,13 @@ class Repository {
             .timeout(const Duration(seconds: 45));
         return response.data;
       } else {
-        noInternetDialog(onRetry: () async {
-          await postApiCall(url: url, body: body);
-        });
-        return null;
+        showToastMessage(msg: "Please check your internet connection and try.");
+        return null; // caller owns retry — a hidden retry here was discarded anyway
       }
     } on TimeoutException {
-      throw Exception("Request timed out. Please check your connection and try again.");
+      throw Exception(
+        "Request timed out. Please check your connection and try again.",
+      );
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionTimeout) {
         throw Exception("Connection Timeout Exception");
@@ -197,12 +182,14 @@ class Repository {
       logger.w("Dio Exception Message ->> ${e.message.toString()}");
       logger.w("Dio Exception Data ->> ${e.response?.data?.toString()}");
 
-      // 429 — propagate rate-limit details so callers can sync UI timers
       if (e.response?.statusCode == 429 && e.response?.data is Map) {
         final data = e.response!.data as Map;
-        // -1 = sentinel for "daily cap hit, no specific wait time" (backend omits wait_seconds)
-        final waitSecs = data['wait_seconds'] is int ? data['wait_seconds'] as int : -1;
-        final msg = data['message'] is String ? data['message'] as String : 'Too many requests. Please wait.';
+        final waitSecs = data['wait_seconds'] is int
+            ? data['wait_seconds'] as int
+            : -1;
+        final msg = data['message'] is String
+            ? data['message'] as String
+            : 'Too many requests. Please wait.';
         throw RateLimitException(msg, waitSecs);
       }
 
@@ -213,8 +200,8 @@ class Repository {
                 e.response?.data[0]['message'] is String
             ? e.response?.data[0]['message']
             : e.response?.data is Map && e.response?.data['message'] is String
-                ? e.response?.data['message']
-                : e.message,
+            ? e.response?.data['message']
+            : e.message,
       );
     }
   }
@@ -229,13 +216,13 @@ class Repository {
             .timeout(const Duration(seconds: 45));
         return response.data;
       } else {
-        noInternetDialog(onRetry: () async {
-          await putApiCall(url: url, body: body);
-        });
-        return null;
+        showToastMessage(msg: "Please check your internet connection and try.");
+        return null; // caller owns retry — a hidden retry here was discarded anyway
       }
     } on TimeoutException {
-      throw Exception("Request timed out. Please check your connection and try again.");
+      throw Exception(
+        "Request timed out. Please check your connection and try again.",
+      );
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionTimeout) {
         throw Exception("Connection Timeout Exception");
@@ -259,13 +246,13 @@ class Repository {
             .timeout(const Duration(seconds: 45));
         return response.data;
       } else {
-        noInternetDialog(onRetry: () async {
-          await patchApiCall(url: url, body: body);
-        });
-        return null;
+        showToastMessage(msg: "Please check your internet connection and try.");
+        return null; // caller owns retry — a hidden retry here was discarded anyway
       }
     } on TimeoutException {
-      throw Exception("Request timed out. Please check your connection and try again.");
+      throw Exception(
+        "Request timed out. Please check your connection and try again.",
+      );
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionTimeout) {
         throw Exception("Connection Timeout Exception");
@@ -289,13 +276,13 @@ class Repository {
             .timeout(const Duration(seconds: 45));
         return response.data;
       } else {
-        noInternetDialog(onRetry: () async {
-          await deleteApiCall(url: url);
-        });
-        return null;
+        showToastMessage(msg: "Please check your internet connection and try.");
+        return null; // caller owns retry — a hidden retry here was discarded anyway
       }
     } on TimeoutException {
-      throw Exception("Request timed out. Please check your connection and try again.");
+      throw Exception(
+        "Request timed out. Please check your connection and try again.",
+      );
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionTimeout) {
         throw Exception("Connection Timeout Exception");

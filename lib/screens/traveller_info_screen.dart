@@ -15,32 +15,34 @@ import '../utils/common_colors.dart';
 import '../utils/common_images.dart';
 import '../utils/screen_constants.dart';
 import '../utils/state_selection_bottom_sheet.dart';
+import 'package:arobo_app/theme/app_tokens.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 class _C {
-  static const bg = Color(0xFFF5F8FF);
+  static const bg = AppColors.bgCool;
   static const cardBg = Color(0xFFFFFFFF);
-  static const ink = Color(0xFF111827);
-  static const inkMid = Color(0xFF6B7280);
-  static const inkLight = Color(0xFF9CA3AF);
-  static const teal = Color(0xFF0F7B6C);
-  static const tealLight = Color(0xFF1AA090);
-  static const tealSoft = Color(0xFFE6F5F3);
-  static const fieldBg = Color(0xFFF9FAFB);
-  static const fieldBorder = Color(0xFFE5E7EB);
+  static const ink = AppColors.ink;
+  static const inkMid = AppColors.inkMid;
+  static const inkLight = AppColors.inkLight;
+  static const teal = AppColors.teal;
+  static const tealLight = AppColors.tealLight;
+  static const tealSoft = AppColors.tealSoft;
+  static const fieldBg = AppColors.elevated;
+  static const fieldBorder = AppColors.border;
   static const shadow = Color(0x0D000000);
-  static const iconBadgeBg = Color(0xFF111827);
+  static const iconBadgeBg = AppColors.ink;
   static const danger = Color(0xFFEF4444);
   // Was CommonColors.filterGradient (bright blue) on the Save/Update/Add
   // buttons — overridden locally to match the app's forest-green theme.
   static const ctaGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF1B4332), Color(0xFF2D6A4F)],
+    colors: [AppColors.forestDeep, AppColors.forest],
   );
 }
 
 class _NC {
-  static const ink = Color(0xFF0F172A);
+  static const ink = AppColors.inkStrong;
 }
 
 const _kAnimDuration = Duration(milliseconds: 280);
@@ -312,12 +314,7 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
                     SizedBox(width: 3.w),
                     Text(
                       'Delete Traveller',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: FontSize.s13,
-                        fontWeight: FontWeight.w700,
-                        color: _C.ink,
-                      ),
+                      style: AppType.style(FontSize.s13, w: FontWeight.w700, color: _C.ink),
                     ),
                   ],
                 ),
@@ -348,12 +345,7 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
                                     ? traveller.name!
                                     : '?')[0]
                                 .toUpperCase(),
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: FontSize.s12,
-                              fontWeight: FontWeight.w700,
-                              color: _C.teal,
-                            ),
+                            style: AppType.style(FontSize.s12, w: FontWeight.w700, color: _C.teal),
                           ),
                         ),
                       ),
@@ -363,20 +355,11 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
                         children: [
                           Text(
                             traveller.name ?? 'Unknown',
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: FontSize.s10,
-                              fontWeight: FontWeight.w600,
-                              color: _C.ink,
-                            ),
+                            style: AppType.style(FontSize.s10, w: FontWeight.w600, color: _C.ink),
                           ),
                           Text(
                             '${traveller.gender ?? '-'}, Age ${traveller.age ?? '-'}',
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: FontSize.s9,
-                              color: _C.inkMid,
-                            ),
+                            style: AppType.style(FontSize.s9, color: _C.inkMid),
                           ),
                         ],
                       ),
@@ -386,12 +369,7 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
                 SizedBox(height: 1.5.h),
                 Text(
                   'This traveller will be permanently removed from your profile and cannot be recovered.',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: FontSize.s9,
-                    color: _C.inkMid,
-                    height: 1.5,
-                  ),
+                  style: AppType.style(FontSize.s9, color: _C.inkMid, height: 1.5),
                 ),
                 SizedBox(height: 2.5.h),
                 Row(
@@ -409,12 +387,7 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
                           child: Center(
                             child: Text(
                               'Cancel',
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: FontSize.s10,
-                                fontWeight: FontWeight.w600,
-                                color: _C.inkMid,
-                              ),
+                              style: AppType.style(FontSize.s10, w: FontWeight.w600, color: _C.inkMid),
                             ),
                           ),
                         ),
@@ -449,12 +422,7 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
                                 SizedBox(width: 1.5.w),
                                 Text(
                                   'Delete',
-                                  style: TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontSize: FontSize.s10,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                  ),
+                                  style: AppType.style(FontSize.s10, w: FontWeight.w600, color: Colors.white),
                                 ),
                               ],
                             ),
@@ -589,12 +557,7 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
         iconTheme: const IconThemeData(color: _C.ink),
         title: Text(
           'Traveller Details',
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: FontSize.s15,
-            fontWeight: FontWeight.w700,
-            color: _NC.ink,
-          ),
+          style: AppType.style(FontSize.s15, w: FontWeight.w700, color: _NC.ink),
         ),
       ),
       body: Obx(() {
@@ -736,12 +699,7 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
                 onPressed: _enterContactEditMode,
                 child: Text(
                   'Edit',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: FontSize.s10,
-                    fontWeight: FontWeight.w600,
-                    color: _C.teal,
-                  ),
+                  style: AppType.style(FontSize.s10, w: FontWeight.w600, color: _C.teal),
                 ),
               )
             : IconButton(
@@ -753,11 +711,7 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
       children: [
         Text(
           'Trip ticket details will be provided to',
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: FontSize.s9,
-            color: _C.inkLight,
-          ),
+          style: AppType.style(FontSize.s9, color: _C.inkLight),
         ),
         SizedBox(height: 1.5.h),
         _buildReadRow(
@@ -896,12 +850,7 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
                 child: Text(
                   title,
                   textScaler: const TextScaler.linear(1.0),
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: FontSize.s10,
-                    fontWeight: FontWeight.w600,
-                    color: _C.ink,
-                  ),
+                  style: AppType.style(FontSize.s10, w: FontWeight.w600, color: _C.ink),
                 ),
               ),
               if (trailing != null) trailing,
@@ -928,12 +877,7 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
           child: Text(
             value,
             textScaler: const TextScaler.linear(1.0),
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: FontSize.s10,
-              fontWeight: FontWeight.w500,
-              color: _C.ink,
-            ),
+            style: AppType.style(FontSize.s10, w: FontWeight.w500, color: _C.ink),
           ),
         ),
       ],
@@ -944,12 +888,7 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
     return Text(
       label,
       textScaler: const TextScaler.linear(1.0),
-      style: TextStyle(
-        fontFamily: 'Poppins',
-        fontSize: FontSize.s9,
-        fontWeight: FontWeight.w500,
-        color: _C.inkMid,
-      ),
+      style: AppType.style(FontSize.s9, w: FontWeight.w500, color: _C.inkMid),
     );
   }
 
@@ -979,18 +918,10 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
         maxLength: maxLength,
         inputFormatters: inputFormatters,
         textCapitalization: textCapitalization,
-        style: TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: FontSize.s10,
-          color: readOnly ? _C.inkMid : _C.ink,
-        ),
+        style: AppType.style(FontSize.s10, color: readOnly ? _C.inkMid : _C.ink),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: FontSize.s10,
-            color: _C.inkLight,
-          ),
+          hintStyle: AppType.style(FontSize.s10, color: _C.inkLight),
           counterText: '',
           isDense: true,
           filled: true,
@@ -1031,12 +962,7 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
         padding: EdgeInsets.only(right: 3.w),
         child: Text(
           '+91',
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: FontSize.s10,
-            fontWeight: FontWeight.w700,
-            color: _C.ink,
-          ),
+          style: AppType.style(FontSize.s10, w: FontWeight.w700, color: _C.ink),
         ),
       ),
       suffixIcon: Icon(
@@ -1077,12 +1003,7 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
                       Text(
                         'State of Residence',
                         textScaler: const TextScaler.linear(1.0),
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: FontSize.s7,
-                          color: _C.inkLight,
-                          fontWeight: FontWeight.w300,
-                        ),
+                        style: AppType.style(FontSize.s7, w: FontWeight.w300, color: _C.inkLight),
                       ),
                       SizedBox(height: 0.25.h),
                       AnimatedSwitcher(
@@ -1093,14 +1014,9 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
                               : _selectedState,
                           key: ValueKey(_selectedState),
                           textScaler: const TextScaler.linear(1.0),
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: FontSize.s10,
-                            fontWeight: FontWeight.w400,
-                            color: _selectedState.isEmpty
+                          style: AppType.style(FontSize.s10, w: FontWeight.w400, color: _selectedState.isEmpty
                                 ? _C.inkLight
-                                : _C.ink,
-                          ),
+                                : _C.ink),
                         ),
                       ),
                     ],
@@ -1143,12 +1059,7 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
           child: Center(
             child: AnimatedDefaultTextStyle(
               duration: _kAnimDuration,
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: FontSize.s10,
-                fontWeight: FontWeight.w600,
-                color: isSelected ? Colors.white : _C.inkMid,
-              ),
+              style: AppType.style(FontSize.s10, w: FontWeight.w600, color: isSelected ? Colors.white : _C.inkMid),
               child: Text(gender, textScaler: const TextScaler.linear(1.0)),
             ),
           ),
@@ -1168,11 +1079,7 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
       ),
       child: Text(
         'No travellers added yet. Use the add traveller section below.',
-        style: TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: FontSize.s10,
-          color: _C.inkMid,
-        ),
+        style: AppType.style(FontSize.s10, color: _C.inkMid),
       ),
     );
   }
@@ -1224,12 +1131,7 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
                               ? travelData.name!
                               : '?')[0]
                           .toUpperCase(),
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: FontSize.s12,
-                        fontWeight: FontWeight.w700,
-                        color: _C.teal,
-                      ),
+                      style: AppType.style(FontSize.s12, w: FontWeight.w700, color: _C.teal),
                     ),
                   ),
                 ),
@@ -1241,21 +1143,12 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
                       Text(
                         travelData.name ?? '-',
                         textScaler: const TextScaler.linear(1.0),
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: FontSize.s10,
-                          fontWeight: FontWeight.w600,
-                          color: _C.ink,
-                        ),
+                        style: AppType.style(FontSize.s10, w: FontWeight.w600, color: _C.ink),
                       ),
                       Text(
                         '${travelData.gender ?? '-'}, Age ${travelData.age ?? '-'}',
                         textScaler: const TextScaler.linear(1.0),
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: FontSize.s9,
-                          color: _C.inkMid,
-                        ),
+                        style: AppType.style(FontSize.s9, color: _C.inkMid),
                       ),
                     ],
                   ),
@@ -1278,12 +1171,7 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
                         child: Text(
                           isExpanded ? 'Cancel' : 'Edit',
                           key: ValueKey(isExpanded),
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: FontSize.s9,
-                            fontWeight: FontWeight.w600,
-                            color: isExpanded ? _C.inkMid : _C.teal,
-                          ),
+                          style: AppType.style(FontSize.s9, w: FontWeight.w600, color: isExpanded ? _C.inkMid : _C.teal),
                         ),
                       ),
                     ),
@@ -1421,12 +1309,7 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
                 Expanded(
                   child: Text(
                     'Add Traveller',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: FontSize.s13,
-                      fontWeight: FontWeight.w600,
-                      color: _C.ink,
-                    ),
+                    style: AppType.style(FontSize.s13, w: FontWeight.w600, color: _C.ink),
                   ),
                 ),
                 AnimatedSwitcher(
@@ -1499,11 +1382,7 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
                         padding: EdgeInsets.only(left: 12.w, top: 0.8.h),
                         child: Text(
                           'Tap to add a new traveller profile.',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: FontSize.s9,
-                            color: _C.inkMid,
-                          ),
+                          style: AppType.style(FontSize.s9, color: _C.inkMid),
                         ),
                       ),
               ),

@@ -17,6 +17,8 @@ import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/common_images.dart';
 import 'package:arobo_app/utils/custom_snackbar.dart';
 import 'package:arobo_app/utils/total_fare_modal.dart';
+import 'package:arobo_app/theme/app_tokens.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 // ─────────────────────────────────────────────
 // DESIGN TOKENS
@@ -24,22 +26,22 @@ import 'package:arobo_app/utils/total_fare_modal.dart';
 class _Pay {
   static const bg = Color(0xFFF4F7FF);
   static const cardBg = Color(0xFFFFFFFF);
-  static const ink = Color(0xFF0F172A);
+  static const ink = AppColors.inkStrong;
   static const inkMid = Color(0xFF64748B);
   static const inkLight = Color(0xFFADB5BD);
   // Was Color(0xFF3B5BDB) (blue) / Color(0xFFEEF2FF) (blue tint) — realigned
   // to the app's forest-green theme; drives ~20 selection/icon/progress spots.
-  static const accent = Color(0xFF2D6A4F);
+  static const accent = AppColors.forest;
   static const accentLight = Color(0xFFDCEFE2);
   static const ctaGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF1B4332), Color(0xFF2D6A4F)],
+    colors: [AppColors.forestDeep, AppColors.forest],
   );
   static const border = Color(0xFFE9ECEF);
   static const divider = Color(0xFFF1F5F9);
-  static const green = Color(0xFF0F7B6C);
-  static const greenLight = Color(0xFFE6F5F3);
+  static const green = AppColors.teal;
+  static const greenLight = AppColors.tealSoft;
   static const orange = Color(0xFFE67700);
   static const orangeLight = Color(0xFFFFF3BF);
   static const red = Color(0xFFE03131);
@@ -468,11 +470,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                   Text(
                     formattedTime,
                     textScaler: const TextScaler.linear(1.0),
-                    style: GoogleFonts.poppins(
-                      fontSize: 11.sp,
-                      fontWeight: FontWeight.w600,
-                      color: CommonColors.orangeColor,
-                    ),
+                    style: AppType.style(11.sp, w: FontWeight.w600, color: CommonColors.orangeColor),
                   ),
                 ],
               ),
@@ -510,11 +508,7 @@ class _PaymentScreenState extends State<PaymentScreen>
           Text(
             "Lock your spot. Adventure's calling!",
             textScaler: const TextScaler.linear(1.0),
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 10.sp,
-              color: _Pay.inkMid,
-            ),
+            style: AppType.style(10.sp, color: _Pay.inkMid),
           ),
           const SizedBox(height: 14),
           _paymentOption(
@@ -598,21 +592,12 @@ class _PaymentScreenState extends State<PaymentScreen>
                   Text(
                     title,
                     textScaler: const TextScaler.linear(1.0),
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w600,
-                      color: _Pay.ink,
-                    ),
+                    style: AppType.style(12.sp, w: FontWeight.w600, color: _Pay.ink),
                   ),
                   Text(
                     subtitle,
                     textScaler: const TextScaler.linear(1.0),
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 9.sp,
-                      color: _Pay.inkMid,
-                    ),
+                    style: AppType.style(9.sp, color: _Pay.inkMid),
                   ),
                 ],
               ),
@@ -663,11 +648,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                     Text(
                       'Coupon Code',
                       textScaler: const TextScaler.linear(1.0),
-                      style: GoogleFonts.poppins(
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.w500,
-                        color: CommonColors.blackColor,
-                      ),
+                      style: AppType.style(14.sp, w: FontWeight.w500, color: CommonColors.blackColor),
                     ),
                     const Spacer(),
                     GestureDetector(
@@ -758,10 +739,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                                         child: Center(
                                           child: Text(
                                             'Enter Coupon Code',
-                                            style: GoogleFonts.poppins(
-                                              fontSize: 11.sp,
-                                              color: const Color(0xff969696),
-                                            ),
+                                            style: AppType.style(11.sp, color: const Color(0xff969696)),
                                           ),
                                         ),
                                       ),
@@ -772,13 +750,9 @@ class _PaymentScreenState extends State<PaymentScreen>
                                       },
                                       child: Text(
                                         'Apply',
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 11.sp,
-                                          fontWeight: FontWeight.w500,
-                                          color: _couponCtrl.text.isNotEmpty
+                                        style: AppType.style(11.sp, w: FontWeight.w500, color: _couponCtrl.text.isNotEmpty
                                               ? CommonColors.blueColor
-                                              : const Color(0xff969696),
-                                        ),
+                                              : const Color(0xff969696)),
                                       ),
                                     ),
                                   ],
@@ -796,10 +770,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                                   ),
                                   child: Text(
                                     appliedCoupon,
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 11.sp,
-                                      color: const Color(0xff969696),
-                                    ),
+                                    style: AppType.style(11.sp, color: const Color(0xff969696)),
                                   ),
                                 ),
                               ),
@@ -834,11 +805,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                                         isCouponValid
                                             ? BookingMessages.remove
                                             : BookingMessages.apply,
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 11.sp,
-                                          fontWeight: FontWeight.w500,
-                                          color: CommonColors.whiteColor,
-                                        ),
+                                        style: AppType.style(11.sp, w: FontWeight.w500, color: CommonColors.whiteColor),
                                       ),
                                     ),
                                   ),
@@ -854,11 +821,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                           padding: EdgeInsets.only(left: 1.w),
                           child: Text(
                             _couponError ?? '',
-                            style: GoogleFonts.poppins(
-                              fontSize: 7.sp,
-                              color: CommonColors.appRedColor,
-                              fontWeight: FontWeight.w400,
-                            ),
+                            style: AppType.style(7.sp, w: FontWeight.w400, color: CommonColors.appRedColor),
                           ),
                         ),
                       ],
@@ -952,21 +915,12 @@ class _PaymentScreenState extends State<PaymentScreen>
                   Text(
                     label,
                     textScaler: const TextScaler.linear(1.0),
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 11.sp,
-                      fontWeight: FontWeight.w600,
-                      color: _Pay.ink,
-                    ),
+                    style: AppType.style(11.sp, w: FontWeight.w600, color: _Pay.ink),
                   ),
                   Text(
                     subtitle,
                     textScaler: const TextScaler.linear(1.0),
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 8.sp,
-                      color: _Pay.inkMid,
-                    ),
+                    style: AppType.style(8.sp, color: _Pay.inkMid),
                   ),
                 ],
               ),
@@ -1011,12 +965,7 @@ class _PaymentScreenState extends State<PaymentScreen>
       child: Center(
         child: Text(
           'R',
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w800,
-            color: Colors.white,
-          ),
+          style: AppType.style(14.sp, w: FontWeight.w800, color: Colors.white),
         ),
       ),
     );
@@ -1043,11 +992,7 @@ class _PaymentScreenState extends State<PaymentScreen>
         Text(
           '256-bit SSL encrypted payment · 100% secure',
           textScaler: const TextScaler.linear(1.0),
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 8.sp,
-            color: _Pay.inkMid,
-          ),
+          style: AppType.style(8.sp, color: _Pay.inkMid),
         ),
       ],
     );
@@ -1089,12 +1034,7 @@ class _PaymentScreenState extends State<PaymentScreen>
         Text(
           label,
           textScaler: const TextScaler.linear(1.0),
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 13.sp,
-            fontWeight: FontWeight.w700,
-            color: _Pay.ink,
-          ),
+          style: AppType.style(13.sp, w: FontWeight.w700, color: _Pay.ink),
         ),
       ],
     );
@@ -1109,11 +1049,7 @@ class _PaymentScreenState extends State<PaymentScreen>
           child: Text(
             text,
             textScaler: const TextScaler.linear(1.0),
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 10.sp,
-              color: _Pay.inkMid,
-            ),
+            style: AppType.style(10.sp, color: _Pay.inkMid),
           ),
         ),
       ],
@@ -1134,12 +1070,7 @@ class _PaymentScreenState extends State<PaymentScreen>
           Text(
             trek.title ?? '-',
             textScaler: const TextScaler.linear(1.0),
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w700,
-              color: _Pay.ink,
-            ),
+            style: AppType.style(14.sp, w: FontWeight.w700, color: _Pay.ink),
           ),
           const SizedBox(height: 10),
           _infoRow(
@@ -1184,12 +1115,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                   Text(
                     'Coupon applied — ${fareReq.couponCode}',
                     textScaler: const TextScaler.linear(1.0),
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 9.sp,
-                      fontWeight: FontWeight.w600,
-                      color: _Pay.green,
-                    ),
+                    style: AppType.style(9.sp, w: FontWeight.w600, color: _Pay.green),
                   ),
                 ],
               ),
@@ -1223,13 +1149,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                   Text(
                     'Traveller ${i + 1}',
                     textScaler: const TextScaler.linear(1.0),
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 10.sp,
-                      fontWeight: FontWeight.w700,
-                      color: _Pay.accent,
-                      letterSpacing: 0.3,
-                    ),
+                    style: AppType.style(10.sp, w: FontWeight.w700, color: _Pay.accent, letterSpacing: 0.3),
                   ),
                   const SizedBox(height: 8),
                 ],
@@ -1273,23 +1193,13 @@ class _PaymentScreenState extends State<PaymentScreen>
         Text(
           label,
           textScaler: const TextScaler.linear(1.0),
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 8.sp,
-            color: _Pay.inkLight,
-            fontWeight: FontWeight.w500,
-          ),
+          style: AppType.style(8.sp, w: FontWeight.w500, color: _Pay.inkLight),
         ),
         const SizedBox(height: 3),
         Text(
           value.isEmpty ? '-' : value,
           textScaler: const TextScaler.linear(1.0),
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 11.sp,
-            fontWeight: FontWeight.w600,
-            color: _Pay.ink,
-          ),
+          style: AppType.style(11.sp, w: FontWeight.w600, color: _Pay.ink),
         ),
       ],
     );
@@ -1328,12 +1238,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                 child: Text(
                   'View full',
                   textScaler: const TextScaler.linear(1.0),
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 9.sp,
-                    fontWeight: FontWeight.w600,
-                    color: _Pay.accent,
-                  ),
+                  style: AppType.style(9.sp, w: FontWeight.w600, color: _Pay.accent),
                 ),
               ),
             ],
@@ -1343,11 +1248,7 @@ class _PaymentScreenState extends State<PaymentScreen>
             Center(
               child: Text(
                 'Loading fare…',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 10.sp,
-                  color: _Pay.inkMid,
-                ),
+                style: AppType.style(10.sp, color: _Pay.inkMid),
               ),
             )
           else ...[
@@ -1400,22 +1301,12 @@ class _PaymentScreenState extends State<PaymentScreen>
           Text(
             label,
             textScaler: const TextScaler.linear(1.0),
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 10.sp,
-              fontWeight: isBold ? FontWeight.w700 : FontWeight.w400,
-              color: isBold ? _Pay.ink : _Pay.inkMid,
-            ),
+            style: AppType.style(10.sp, w: isBold ? FontWeight.w700 : FontWeight.w400, color: isBold ? _Pay.ink : _Pay.inkMid),
           ),
           Text(
             value,
             textScaler: const TextScaler.linear(1.0),
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: isBold ? 13.sp : 10.sp,
-              fontWeight: isBold ? FontWeight.w700 : FontWeight.w500,
-              color: valueColor ?? _Pay.ink,
-            ),
+            style: AppType.style(isBold ? 13.sp : 10.sp, w: isBold ? FontWeight.w700 : FontWeight.w500, color: valueColor ?? _Pay.ink),
           ),
         ],
       ),
@@ -1460,12 +1351,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                 child: Text(
                   'Coupon Code',
                   textScaler: const TextScaler.linear(1.0),
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 13.sp,
-                    fontWeight: FontWeight.w700,
-                    color: _Pay.ink,
-                  ),
+                  style: AppType.style(13.sp, w: FontWeight.w700, color: _Pay.ink),
                 ),
               ),
               GestureDetector(
@@ -1524,24 +1410,15 @@ class _PaymentScreenState extends State<PaymentScreen>
                               Text(
                                 appliedCode,
                                 textScaler: const TextScaler.linear(1.0),
-                                style: TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontSize: 12.sp,
-                                  fontWeight: FontWeight.w700,
-                                  color: isCouponApplied
+                                style: AppType.style(12.sp, w: FontWeight.w700, color: isCouponApplied
                                       ? _Pay.green
-                                      : _Pay.red,
-                                ),
+                                      : _Pay.red),
                               ),
                               if (isCouponApplied)
                                 Text(
                                   'You save ₹$discountText',
                                   textScaler: const TextScaler.linear(1.0),
-                                  style: TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontSize: 9.sp,
-                                    color: _Pay.green,
-                                  ),
+                                  style: AppType.style(9.sp, color: _Pay.green),
                                 ),
                             ],
                           ),
@@ -1556,12 +1433,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                           child: Text(
                             'Remove',
                             textScaler: const TextScaler.linear(1.0),
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 9.sp,
-                              fontWeight: FontWeight.w600,
-                              color: _Pay.red,
-                            ),
+                            style: AppType.style(9.sp, w: FontWeight.w600, color: _Pay.red),
                           ),
                         ),
                       ],
@@ -1596,12 +1468,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                             child: Text(
                               'Browse & apply coupon codes',
                               textScaler: const TextScaler.linear(1.0),
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: 11.sp,
-                                color: _Pay.accent,
-                                fontWeight: FontWeight.w500,
-                              ),
+                              style: AppType.style(11.sp, w: FontWeight.w500, color: _Pay.accent),
                             ),
                           ),
                           Icon(
@@ -1618,11 +1485,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                   Text(
                     _couponError!,
                     textScaler: const TextScaler.linear(1.0),
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 8.sp,
-                      color: _Pay.red,
-                    ),
+                    style: AppType.style(8.sp, color: _Pay.red),
                   ),
                 ],
               ],
@@ -1683,11 +1546,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                             Text(
                               BookingMessages.totalFare,
                               textScaler: const TextScaler.linear(1.0),
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: 9.sp,
-                                color: _Pay.inkMid,
-                              ),
+                              style: AppType.style(9.sp, color: _Pay.inkMid),
                             ),
                             const SizedBox(width: 4),
                             Icon(
@@ -1702,21 +1561,12 @@ class _PaymentScreenState extends State<PaymentScreen>
                               ? '₹${bd?.amountToPayNow}'
                               : '--',
                           textScaler: const TextScaler.linear(1.0),
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 18.sp,
-                            fontWeight: FontWeight.w800,
-                            color: _Pay.accent,
-                          ),
+                          style: AppType.style(18.sp, w: FontWeight.w800, color: _Pay.accent),
                         ),
                         Text(
                           BookingMessages.taxIncluded,
                           textScaler: const TextScaler.linear(1.0),
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 8.sp,
-                            color: _Pay.inkLight,
-                          ),
+                          style: AppType.style(8.sp, color: _Pay.inkLight),
                         ),
                       ],
                     ),
@@ -1830,11 +1680,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                             const SizedBox(height: 12),
                             Text(
                               'Calculating fare…',
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: 11.sp,
-                                color: _Pay.inkMid,
-                              ),
+                              style: AppType.style(11.sp, color: _Pay.inkMid),
                             ),
                           ],
                         ),
@@ -1871,23 +1717,14 @@ class _PaymentScreenState extends State<PaymentScreen>
                 Text(
                   'Something went wrong',
                   textScaler: const TextScaler.linear(1.0),
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w700,
-                    color: _Pay.ink,
-                  ),
+                  style: AppType.style(14.sp, w: FontWeight.w700, color: _Pay.ink),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   _paymentErrorMessage,
                   textAlign: TextAlign.center,
                   textScaler: const TextScaler.linear(1.0),
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 10.sp,
-                    color: _Pay.inkMid,
-                  ),
+                  style: AppType.style(10.sp, color: _Pay.inkMid),
                 ),
                 const SizedBox(height: 20),
                 Row(
@@ -1941,12 +1778,7 @@ class _PaymentScreenState extends State<PaymentScreen>
       title: Text(
         'Payment',
         textScaler: const TextScaler.linear(1.0),
-        style: TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: 14.sp,
-          fontWeight: FontWeight.w700,
-          color: _Pay.ink,
-        ),
+        style: AppType.style(14.sp, w: FontWeight.w700, color: _Pay.ink),
       ),
       actions: [
         Padding(

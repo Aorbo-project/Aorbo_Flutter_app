@@ -6,6 +6,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:sizer/sizer.dart';
+import 'package:arobo_app/theme/app_tokens.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 class LogoutScreen extends StatefulWidget {
   const LogoutScreen({super.key});
@@ -322,7 +324,7 @@ class _LogoutScreenState extends State<LogoutScreen>
                   boxShadow: [
                     BoxShadow(
                       color:
-                          const Color(0xFFDC2626).withValues(alpha: 0.18),
+                          AppColors.danger.withValues(alpha: 0.18),
                       blurRadius: 20,
                       spreadRadius: -2,
                       offset: const Offset(0, 8),
@@ -335,7 +337,7 @@ class _LogoutScreenState extends State<LogoutScreen>
                     width: 8.w,
                     height: 8.w,
                     colorFilter: const ColorFilter.mode(
-                      Color(0xFFDC2626),
+                      AppColors.danger,
                       BlendMode.srcIn,
                     ),
                   ),
@@ -351,13 +353,7 @@ class _LogoutScreenState extends State<LogoutScreen>
             child: Text(
               "You'll need to sign in again\nto continue your adventure.",
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: "Poppins",
-                fontSize: FontSize.s11,
-                fontWeight: FontWeight.w500,
-                color: const Color(0xFF6B7280),
-                height: 1.6,
-              ),
+              style: AppType.style(FontSize.s11, w: FontWeight.w500, color: AppColors.inkMid, height: 1.6),
             ),
           ),
 
@@ -393,12 +389,12 @@ class _LogoutScreenState extends State<LogoutScreen>
                     end: Alignment.bottomRight,
                     colors: [
                       Color(0xFFEF4444),
-                      Color(0xFFDC2626),
+                      AppColors.danger,
                     ],
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFFDC2626)
+                      color: AppColors.danger
                           .withValues(alpha: _logoutPressed ? 0.2 : 0.4),
                       blurRadius: _logoutPressed ? 8 : 18,
                       spreadRadius: -2,
@@ -432,13 +428,7 @@ class _LogoutScreenState extends State<LogoutScreen>
                             SizedBox(width: 2.5.w),
                             Text(
                               'Yes, Logout',
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: FontSize.s14,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                                letterSpacing: 0.2,
-                              ),
+                              style: AppType.style(FontSize.s14, w: FontWeight.w700, color: Colors.white, letterSpacing: 0.2),
                             ),
                           ],
                         ),
@@ -465,22 +455,16 @@ class _LogoutScreenState extends State<LogoutScreen>
                 height: 6.h,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(4.h),
-                  color: const Color(0xFFF9FAFB),
+                  color: AppColors.elevated,
                   border: Border.all(
-                    color: const Color(0xFFE5E7EB),
+                    color: AppColors.border,
                     width: 1.2,
                   ),
                 ),
                 child: Center(
                   child: Text(
                     'Cancel',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: FontSize.s14,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF374151),
-                      letterSpacing: 0.1,
-                    ),
+                    style: AppType.style(FontSize.s14, w: FontWeight.w600, color: const Color(0xFF374151), letterSpacing: 0.1),
                   ),
                 ),
               ),

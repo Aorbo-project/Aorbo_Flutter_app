@@ -4,6 +4,7 @@ import 'package:sizer/sizer.dart';
 import 'screen_constants.dart';
 import '../models/coupon_code/coupon_code_model.dart';
 import 'ist_date_utils.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 const Color _accentStart = Color(0xFFE8925A);
 const Color _accentEnd = Color(0xFFF4C68A);
@@ -87,12 +88,7 @@ class _CouponTermsSheetContent extends StatelessWidget {
               Expanded(
                 child: Text(
                   coupon?.code ?? '',
-                  style: GoogleFonts.poppins(
-                    fontSize: FontSize.s16,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.5,
-                    color: _ink,
-                  ),
+                  style: AppType.style(FontSize.s16, w: FontWeight.w800, color: _ink, letterSpacing: 1.5),
                 ),
               ),
               GestureDetector(
@@ -112,11 +108,7 @@ class _CouponTermsSheetContent extends StatelessWidget {
           SizedBox(height: 2.h),
           Text(
             'Terms & Conditions',
-            style: GoogleFonts.poppins(
-              fontSize: FontSize.s13,
-              fontWeight: FontWeight.w700,
-              color: _ink,
-            ),
+            style: AppType.style(FontSize.s13, w: FontWeight.w700, color: _ink),
           ),
           SizedBox(height: 1.2.h),
           ...terms.map(
@@ -140,11 +132,7 @@ class _CouponTermsSheetContent extends StatelessWidget {
                   Expanded(
                     child: Text(
                       term,
-                      style: GoogleFonts.poppins(
-                        fontSize: FontSize.s10,
-                        color: _inkSoft,
-                        height: 1.5,
-                      ),
+                      style: AppType.style(FontSize.s10, color: _inkSoft, height: 1.5),
                     ),
                   ),
                 ],
@@ -155,16 +143,12 @@ class _CouponTermsSheetContent extends StatelessWidget {
             SizedBox(height: 1.h),
             Text(
               'How To Apply',
-              style: GoogleFonts.poppins(
-                fontSize: FontSize.s13,
-                fontWeight: FontWeight.w700,
-                color: _ink,
-              ),
+              style: AppType.style(FontSize.s13, w: FontWeight.w700, color: _ink),
             ),
             SizedBox(height: 0.8.h),
             Text(
               coupon!.howToApply!,
-              style: GoogleFonts.poppins(fontSize: FontSize.s10, color: _inkSoft, height: 1.5),
+              style: AppType.style(FontSize.s10, color: _inkSoft, height: 1.5),
             ),
           ],
           SizedBox(height: 1.6.h),
@@ -177,12 +161,7 @@ class _CouponTermsSheetContent extends StatelessWidget {
               coupon?.footerNote?.isNotEmpty == true
                   ? coupon!.footerNote!
                   : 'Book now and start your adventure with Aorbo Treks!',
-              style: GoogleFonts.poppins(
-                fontSize: FontSize.s10,
-                fontWeight: FontWeight.w700,
-                color: _accentText,
-                height: 1.5,
-              ),
+              style: AppType.style(FontSize.s10, w: FontWeight.w700, color: _accentText, height: 1.5),
             ),
           ),
         ],

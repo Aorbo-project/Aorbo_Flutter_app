@@ -7,6 +7,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../utils/common_btn.dart';
 import '../utils/common_colors.dart';
 import '../utils/screen_constants.dart';
+import 'package:arobo_app/theme/app_tokens.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS  (matches Help screen)
@@ -24,12 +26,12 @@ class _C {
   static const ctaGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF1B4332), Color(0xFF2D6A4F)],
+    colors: [AppColors.forestDeep, AppColors.forest],
   );
 }
 
 class _NC {
-  static const ink = Color(0xFF0F172A);
+  static const ink = AppColors.inkStrong;
 }
 
 class ContactSupportScreen extends StatefulWidget {
@@ -272,12 +274,7 @@ class _ContactSupportScreenState extends State<ContactSupportScreen>
       iconTheme: const IconThemeData(color: _C.ink),
       title: Text(
         'Contact Support',
-        style: TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: FontSize.s15,
-          fontWeight: FontWeight.w700,
-          color: _NC.ink,
-        ),
+        style: AppType.style(FontSize.s15, w: FontWeight.w700, color: _NC.ink),
       ),
     );
   }
@@ -325,22 +322,12 @@ class _ContactSupportScreenState extends State<ContactSupportScreen>
               children: [
                 Text(
                   'Send us a message',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: FontSize.s13,
-                    fontWeight: FontWeight.w600,
-                    color: _C.ink,
-                  ),
+                  style: AppType.style(FontSize.s13, w: FontWeight.w600, color: _C.ink),
                 ),
                 SizedBox(height: 0.4.h),
                 Text(
                   'Share your concern and our team will get back to you via email.',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: FontSize.s9,
-                    color: _C.inkMid,
-                    height: 1.4,
-                  ),
+                  style: AppType.style(FontSize.s9, color: _C.inkMid, height: 1.4),
                 ),
               ],
             ),
@@ -353,13 +340,7 @@ class _ContactSupportScreenState extends State<ContactSupportScreen>
   Widget _buildSectionLabel(String label) {
     return Text(
       label,
-      style: TextStyle(
-        fontFamily: 'Poppins',
-        fontSize: FontSize.s8,
-        fontWeight: FontWeight.w600,
-        color: _C.inkMid,
-        letterSpacing: 1.2,
-      ),
+      style: AppType.style(FontSize.s8, w: FontWeight.w600, color: _C.inkMid, letterSpacing: 1.2),
     );
   }
 
@@ -403,22 +384,12 @@ class _ContactSupportScreenState extends State<ContactSupportScreen>
               children: [
                 Text(
                   'Email',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: FontSize.s9,
-                    fontWeight: FontWeight.w500,
-                    color: _C.inkMid,
-                  ),
+                  style: AppType.style(FontSize.s9, w: FontWeight.w500, color: _C.inkMid),
                 ),
                 SizedBox(height: 0.3.h),
                 Text(
                   _supportEmail,
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: FontSize.s11,
-                    fontWeight: FontWeight.w600,
-                    color: _C.ink,
-                  ),
+                  style: AppType.style(FontSize.s11, w: FontWeight.w600, color: _C.ink),
                 ),
               ],
             ),
@@ -437,12 +408,7 @@ class _ContactSupportScreenState extends State<ContactSupportScreen>
                   SizedBox(width: 1.w),
                   Text(
                     'Copy',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: FontSize.s9,
-                      fontWeight: FontWeight.w600,
-                      color: _C.ink,
-                    ),
+                    style: AppType.style(FontSize.s9, w: FontWeight.w600, color: _C.ink),
                   ),
                 ],
               ),
@@ -500,12 +466,7 @@ class _ContactSupportScreenState extends State<ContactSupportScreen>
                 Expanded(
                   child: Text(
                     _topics[i]['label'],
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: FontSize.s10,
-                      fontWeight: FontWeight.w600,
-                      color: isSelected ? Colors.white : _C.ink,
-                    ),
+                    style: AppType.style(FontSize.s10, w: FontWeight.w600, color: isSelected ? Colors.white : _C.ink),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -602,12 +563,7 @@ class _ContactSupportScreenState extends State<ContactSupportScreen>
           padding: EdgeInsets.only(left: 1.w, bottom: 0.7.h),
           child: Text(
             label,
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: FontSize.s10,
-              fontWeight: FontWeight.w600,
-              color: _C.ink,
-            ),
+            style: AppType.style(FontSize.s10, w: FontWeight.w600, color: _C.ink),
           ),
         ),
         TextFormField(
@@ -615,18 +571,10 @@ class _ContactSupportScreenState extends State<ContactSupportScreen>
           validator: validator,
           keyboardType: keyboardType,
           maxLines: maxLines,
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: FontSize.s10,
-            color: _C.ink,
-          ),
+          style: AppType.style(FontSize.s10, color: _C.ink),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: FontSize.s10,
-              color: _C.inkLight,
-            ),
+            hintStyle: AppType.style(FontSize.s10, color: _C.inkLight),
             prefixIcon: maxLines == 1
                 ? Icon(icon, color: _C.inkMid, size: 5.w)
                 : Padding(
@@ -658,10 +606,7 @@ class _ContactSupportScreenState extends State<ContactSupportScreen>
               borderSide:
                   const BorderSide(color: CommonColors.materialRed, width: 1.4),
             ),
-            errorStyle: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: FontSize.s8,
-            ),
+            errorStyle: AppType.style(FontSize.s8),
           ),
         ),
       ],
@@ -702,12 +647,7 @@ class _ContactSupportScreenState extends State<ContactSupportScreen>
           Expanded(
             child: Text(
               'Our team typically responds within 24 hours.',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: FontSize.s9,
-                color: _C.teal,
-                fontWeight: FontWeight.w500,
-              ),
+              style: AppType.style(FontSize.s9, w: FontWeight.w500, color: _C.teal),
             ),
           ),
         ],

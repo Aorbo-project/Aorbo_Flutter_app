@@ -6,6 +6,8 @@ import '../repository/faq_repository.dart';
 import '../utils/common_btn.dart';
 import '../utils/common_colors.dart';
 import '../utils/screen_constants.dart';
+import 'package:arobo_app/theme/app_tokens.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS  (matches app-wide pattern)
@@ -25,7 +27,7 @@ class _C {
   static const ctaGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF1B4332), Color(0xFF2D6A4F)],
+    colors: [AppColors.forestDeep, AppColors.forest],
   );
 }
 
@@ -37,7 +39,7 @@ class HelpScreen extends StatefulWidget {
 }
 
 class _NC {
-  static const ink = Color(0xFF0F172A);
+  static const ink = AppColors.inkStrong;
 }
 
 class _HelpScreenState extends State<HelpScreen>
@@ -209,12 +211,7 @@ class _HelpScreenState extends State<HelpScreen>
       iconTheme: const IconThemeData(color: _C.ink),
       title: Text(
         'Help',
-        style: TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: FontSize.s15,
-          fontWeight: FontWeight.w700,
-          color: _NC.ink,
-        ),
+        style: AppType.style(FontSize.s15, w: FontWeight.w700, color: _NC.ink),
       ),
     );
   }
@@ -264,22 +261,12 @@ class _HelpScreenState extends State<HelpScreen>
               children: [
                 Text(
                   'How can we help you?',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: FontSize.s13,
-                    fontWeight: FontWeight.w600,
-                    color: _C.ink,
-                  ),
+                  style: AppType.style(FontSize.s13, w: FontWeight.w600, color: _C.ink),
                 ),
                 SizedBox(height: 0.4.h),
                 Text(
                   'Browse our FAQs or chat with our support team.',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: FontSize.s9,
-                    color: _C.inkMid,
-                    height: 1.4,
-                  ),
+                  style: AppType.style(FontSize.s9, color: _C.inkMid, height: 1.4),
                 ),
               ],
             ),
@@ -295,13 +282,7 @@ class _HelpScreenState extends State<HelpScreen>
   Widget _buildSectionLabel(String label) {
     return Text(
       label,
-      style: TextStyle(
-        fontFamily: 'Poppins',
-        fontSize: FontSize.s8,
-        fontWeight: FontWeight.w600,
-        color: _C.inkMid,
-        letterSpacing: 1.2,
-      ),
+      style: AppType.style(FontSize.s8, w: FontWeight.w600, color: _C.inkMid, letterSpacing: 1.2),
     );
   }
 
@@ -362,12 +343,7 @@ class _HelpScreenState extends State<HelpScreen>
                     child: Center(
                       child: Text(
                         '${index + 1}',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: FontSize.s9,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
+                        style: AppType.style(FontSize.s9, w: FontWeight.w700, color: Colors.white),
                       ),
                     ),
                   ),
@@ -375,12 +351,7 @@ class _HelpScreenState extends State<HelpScreen>
                   Expanded(
                     child: Text(
                       faq['question'],
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontWeight: FontWeight.w500,
-                        fontSize: FontSize.s10,
-                        color: _C.ink,
-                      ),
+                      style: AppType.style(FontSize.s10, w: FontWeight.w500, color: _C.ink),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -425,12 +396,7 @@ class _HelpScreenState extends State<HelpScreen>
                   // Answer text with Markdown support
                   MarkdownText(
                     text: faq['answer'],
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: FontSize.s10,
-                      color: _C.inkMid,
-                      height: 1.6,
-                    ),
+                    style: AppType.style(FontSize.s10, color: _C.inkMid, height: 1.6),
                   ),
 
                   // Tags display
@@ -448,12 +414,7 @@ class _HelpScreenState extends State<HelpScreen>
                           ),
                           child: Text(
                             '#$tag',
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: FontSize.s8,
-                              color: _C.inkMid,
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: AppType.style(FontSize.s8, w: FontWeight.w600, color: _C.inkMid),
                           ),
                         );
                       }).toList(),
@@ -551,12 +512,7 @@ class _HelpScreenState extends State<HelpScreen>
             SizedBox(width: 1.5.w),
             Text(
               label,
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: FontSize.s10,
-                fontWeight: FontWeight.w500,
-                color: isActive ? activeColor : _C.inkMid,
-              ),
+              style: AppType.style(FontSize.s10, w: FontWeight.w500, color: isActive ? activeColor : _C.inkMid),
             ),
           ],
         ),
@@ -596,21 +552,12 @@ class _HelpScreenState extends State<HelpScreen>
               children: [
                 Text(
                   'Still need help?',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: FontSize.s13,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
+                  style: AppType.style(FontSize.s13, w: FontWeight.w700, color: Colors.white),
                 ),
                 SizedBox(height: 0.4.h),
                 Text(
                   'Our support team is available 24/7',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: FontSize.s9,
-                    color: Colors.white.withValues(alpha: 0.8),
-                  ),
+                  style: AppType.style(FontSize.s9, color: Colors.white.withValues(alpha: 0.8)),
                 ),
               ],
             ),
@@ -629,12 +576,7 @@ class _HelpScreenState extends State<HelpScreen>
               ),
               child: Text(
                 'Chat now',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: FontSize.s10,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
+                style: AppType.style(FontSize.s10, w: FontWeight.w600, color: Colors.white),
               ),
             ),
           ),

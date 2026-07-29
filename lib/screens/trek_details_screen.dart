@@ -19,6 +19,8 @@ import '../utils/common_trek_details_bar.dart';
 import '../utils/common_btn.dart';
 import '../widgets/cancellation_policy_widget.dart';
 import '../utils/ist_date_utils.dart';
+import 'package:arobo_app/theme/app_tokens.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 // One entry per distinct boarding CITY (not per stage — two boarding stages
 // in the same city are still a single choice for the customer). Shared by
@@ -49,8 +51,8 @@ class _C {
   // constant cascades to every icon badge, the route timeline, boarding
   // chip selection, and the policy/notes callouts on this screen, aligning
   // them with the forest-green identity the trek card redesign set.
-  static const brand = Color(0xFF2D6A4F);
-  static const brandDeep = Color(0xFF1B4332);
+  static const brand = AppColors.forest;
+  static const brandDeep = AppColors.forestDeep;
   static const teal = CommonColors.cFF0F7B6C;
   static const tealSoft = CommonColors.cFFE6F5F3;
   static const iconBadge = CommonColors.cFF111827;
@@ -505,13 +507,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     textScaler: const TextScaler.linear(1.0),
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 12.0.sp,
-                      fontWeight: FontWeight.w700,
-                      color: _C.ink,
-                      height: 1.2,
-                    ),
+                    style: AppType.style(12.0.sp, w: FontWeight.w700, color: _C.ink, height: 1.2),
                   ),
                   Text(
                     trek?.companyName ??
@@ -521,13 +517,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     textScaler: const TextScaler.linear(1.0),
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 9.0.sp,
-                      fontWeight: FontWeight.w500,
-                      color: _C.inkMid,
-                      height: 1.2,
-                    ),
+                    style: AppType.style(9.0.sp, w: FontWeight.w500, color: _C.inkMid, height: 1.2),
                   ),
                 ],
               ),
@@ -606,7 +596,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
           }
           await _userC.getUserProfile();
           _trekC.trekBatchId.value = _trekC.trekDetailData.value.batchId ?? 0;
-          Get.toNamed('/traveller-info');
+          Get.toNamed('/traveller-information');
         },
         gradient: _C.ctaGradient,
         textColor: CommonColors.whiteColor,
@@ -715,12 +705,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
           child: Text(
             title,
             textScaler: const TextScaler.linear(1.0),
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 14.0.sp,
-              fontWeight: FontWeight.w700,
-              color: _C.ink,
-            ),
+            style: AppType.style(14.0.sp, w: FontWeight.w700, color: _C.ink),
           ),
         ),
       ],
@@ -737,12 +722,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
             Text(
               expanded ? 'Hide $label' : 'View all $label',
               textScaler: const TextScaler.linear(1.0),
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 10.0.sp,
-                fontWeight: FontWeight.w600,
-                color: _C.brand,
-              ),
+              style: AppType.style(10.0.sp, w: FontWeight.w600, color: _C.brand),
             ),
             const SizedBox(width: 6),
             Icon(
@@ -775,12 +755,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
             child: Text(
               text,
               textScaler: const TextScaler.linear(1.0),
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 10.0.sp,
-                color: _C.ink,
-                height: 1.55,
-              ),
+              style: AppType.style(10.0.sp, color: _C.ink, height: 1.55),
             ),
           ),
         ],
@@ -916,12 +891,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                           child: Text(
                             'Day ${idx + 1}',
                             textScaler: const TextScaler.linear(1.0),
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 9.0.sp,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                            ),
+                            style: AppType.style(9.0.sp, w: FontWeight.w700, color: Colors.white),
                           ),
                         ),
                         SizedBox(width: 2.w),
@@ -929,12 +899,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                           child: Text(
                             'Day ${idx + 1} Activities',
                             textScaler: const TextScaler.linear(1.0),
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 10.0.sp,
-                              fontWeight: FontWeight.w500,
-                              color: _C.brand,
-                            ),
+                            style: AppType.style(10.0.sp, w: FontWeight.w500, color: _C.brand),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -964,13 +929,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                                 '+ ${activities.length - 4} more '
                                 '${activities.length - 4 == 1 ? 'activity' : 'activities'}',
                                 textScaler: const TextScaler.linear(1.0),
-                                style: TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontSize: 9.0.sp,
-                                  color: _C.brand,
-                                  fontWeight: FontWeight.w600,
-                                  decoration: TextDecoration.underline,
-                                ),
+                                style: AppType.style(9.0.sp, w: FontWeight.w600, color: _C.brand, decoration: TextDecoration.underline),
                               ),
                             ),
                           ),
@@ -1077,12 +1036,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
         Text(
           text,
           textScaler: const TextScaler.linear(1.0),
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 12.0.sp,
-            fontWeight: FontWeight.w600,
-            color: color,
-          ),
+          style: AppType.style(12.0.sp, w: FontWeight.w600, color: color),
         ),
       ],
     );
@@ -1113,12 +1067,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
             child: Text(
               text,
               textScaler: const TextScaler.linear(1.0),
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 10.0.sp,
-                color: _C.ink,
-                height: 1.55,
-              ),
+              style: AppType.style(10.0.sp, color: _C.ink, height: 1.55),
             ),
           ),
         ],
@@ -1159,12 +1108,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                         child: Text(
                           'D${i + 1}',
                           textScaler: const TextScaler.linear(1.0),
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 8.0.sp,
-                            fontWeight: FontWeight.w700,
-                            color: _C.brand,
-                          ),
+                          style: AppType.style(8.0.sp, w: FontWeight.w700, color: _C.brand),
                         ),
                       ),
                     ),
@@ -1182,12 +1126,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                         Text(
                           'Check in to ${acc.details?.location ?? '-'}',
                           textScaler: const TextScaler.linear(1.0),
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 11.0.sp,
-                            fontWeight: FontWeight.w600,
-                            color: _C.ink,
-                          ),
+                          style: AppType.style(11.0.sp, w: FontWeight.w600, color: _C.ink),
                         ),
                         SizedBox(height: 0.3.h),
                         Row(
@@ -1201,11 +1140,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                             Text(
                               acc.type ?? '-',
                               textScaler: const TextScaler.linear(1.0),
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: 9.0.sp,
-                                color: _C.inkMid,
-                              ),
+                              style: AppType.style(9.0.sp, color: _C.inkMid),
                             ),
                           ],
                         ),
@@ -1253,12 +1188,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                     (_trekC.trekDetailData.value.averageRating ?? 0.0)
                         .toStringAsFixed(1),
                     textScaler: const TextScaler.linear(1.0),
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 20.0.sp,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                    ),
+                    style: AppType.style(20.0.sp, w: FontWeight.w800, color: Colors.white),
                   ),
                 ),
               ),
@@ -1278,11 +1208,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                     Text(
                       '${_trekC.trekDetailData.value.totalReviews ?? 0} ratings  ·  ${_trekC.trekDetailData.value.reviewCommentsCount ?? 0} reviews',
                       textScaler: const TextScaler.linear(1.0),
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 9.0.sp,
-                        color: _C.inkMid,
-                      ),
+                      style: AppType.style(9.0.sp, color: _C.inkMid),
                     ),
                   ],
                 ),
@@ -1295,12 +1221,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
           Text(
             'People like',
             textScaler: const TextScaler.linear(1.0),
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 12.0.sp,
-              fontWeight: FontWeight.w600,
-              color: _C.ink,
-            ),
+            style: AppType.style(12.0.sp, w: FontWeight.w600, color: _C.ink),
           ),
           SizedBox(height: 1.5.h),
           ...[
@@ -1330,12 +1251,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
           Text(
             'Sort by',
             textScaler: const TextScaler.linear(1.0),
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 11.0.sp,
-              fontWeight: FontWeight.w600,
-              color: _C.ink,
-            ),
+            style: AppType.style(11.0.sp, w: FontWeight.w600, color: _C.ink),
           ),
           SizedBox(height: 1.h),
           SingleChildScrollView(
@@ -1383,11 +1299,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
             child: Text(
               label,
               textScaler: const TextScaler.linear(1.0),
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 9.0.sp,
-                color: _C.inkMid,
-              ),
+              style: AppType.style(9.0.sp, color: _C.inkMid),
             ),
           ),
           Expanded(
@@ -1410,12 +1322,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
           Text(
             value.toStringAsFixed(1),
             textScaler: const TextScaler.linear(1.0),
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 9.0.sp,
-              fontWeight: FontWeight.w600,
-              color: _C.ink,
-            ),
+            style: AppType.style(9.0.sp, w: FontWeight.w600, color: _C.ink),
           ),
         ],
       ),
@@ -1468,12 +1375,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                         (review.customerName?.isNotEmpty == true)
                             ? review.customerName![0].toUpperCase()
                             : '?',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 12.0.sp,
-                          fontWeight: FontWeight.w700,
-                          color: _C.brand,
-                        ),
+                        style: AppType.style(12.0.sp, w: FontWeight.w700, color: _C.brand),
                       ),
                     ),
                   ),
@@ -1484,21 +1386,12 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                       Text(
                         review.customerName ?? '-',
                         textScaler: const TextScaler.linear(1.0),
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 10.0.sp,
-                          fontWeight: FontWeight.w600,
-                          color: _C.ink,
-                        ),
+                        style: AppType.style(10.0.sp, w: FontWeight.w600, color: _C.ink),
                       ),
                       Text(
                         dateStr,
                         textScaler: const TextScaler.linear(1.0),
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 8.0.sp,
-                          color: _C.inkLight,
-                        ),
+                        style: AppType.style(8.0.sp, color: _C.inkLight),
                       ),
                     ],
                   ),
@@ -1524,12 +1417,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                     Text(
                       '${review.ratingValue}',
                       textScaler: const TextScaler.linear(1.0),
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 9.0.sp,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
+                      style: AppType.style(9.0.sp, w: FontWeight.w700, color: Colors.white),
                     ),
                   ],
                 ),
@@ -1541,12 +1429,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
             child: Text(
               review.content ?? '-',
               textScaler: const TextScaler.linear(1.0),
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 9.0.sp,
-                color: _C.inkMid,
-                height: 1.5,
-              ),
+              style: AppType.style(9.0.sp, color: _C.inkMid, height: 1.5),
               maxLines: 4,
               overflow: TextOverflow.ellipsis,
             ),
@@ -1579,12 +1462,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
         child: Text(
           text,
           textScaler: const TextScaler.linear(1.0),
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 9.0.sp,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-            color: isSelected ? _C.brand : _C.ink,
-          ),
+          style: AppType.style(9.0.sp, w: isSelected ? FontWeight.w600 : FontWeight.w400, color: isSelected ? _C.brand : _C.ink),
         ),
       ),
     );
@@ -1637,12 +1515,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
               Text(
                 title,
                 textScaler: const TextScaler.linear(1.0),
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 11.0.sp,
-                  fontWeight: FontWeight.w600,
-                  color: _C.brand,
-                ),
+                style: AppType.style(11.0.sp, w: FontWeight.w600, color: _C.brand),
               ),
             ],
           ),
@@ -1650,12 +1523,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
           Text(
             content,
             textScaler: const TextScaler.linear(1.0),
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 9.0.sp,
-              color: _C.inkMid,
-              height: 1.6,
-            ),
+            style: AppType.style(9.0.sp, color: _C.inkMid, height: 1.6),
           ),
         ],
       ),
@@ -1750,13 +1618,7 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
               Text(
                 'Select Your Boarding Point',
                 textScaler: const TextScaler.linear(1.0),
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 9.0.sp,
-                  fontWeight: FontWeight.w600,
-                  color: _C.brand,
-                  letterSpacing: 0.6,
-                ),
+                style: AppType.style(9.0.sp, w: FontWeight.w600, color: _C.brand, letterSpacing: 0.6),
               ),
             ],
           ),
@@ -1776,12 +1638,7 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
                 return ChoiceChip(
                   label: Text(
                     label,
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 9.5.sp,
-                      fontWeight: FontWeight.w500,
-                      color: isSelected ? Colors.white : _C.ink,
-                    ),
+                    style: AppType.style(9.5.sp, w: FontWeight.w500, color: isSelected ? Colors.white : _C.ink),
                   ),
                   selected: isSelected,
                   selectedColor: _C.brand,
@@ -1799,12 +1656,7 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
             Text(
               'Please select a boarding city to continue',
               textScaler: const TextScaler.linear(1.0),
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 8.5.sp,
-                fontWeight: FontWeight.w500,
-                color: Colors.red.shade600,
-              ),
+              style: AppType.style(8.5.sp, w: FontWeight.w500, color: Colors.red.shade600),
             ),
           ],
         ],
@@ -1880,12 +1732,7 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
               Text(
                 'Trek Route',
                 textScaler: const TextScaler.linear(1.0),
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 14.0.sp,
-                  fontWeight: FontWeight.w700,
-                  color: _C.ink,
-                ),
+                style: AppType.style(14.0.sp, w: FontWeight.w700, color: _C.ink),
               ),
             ],
           ),
@@ -1926,13 +1773,7 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
                         Text(
                           'Boarding Point',
                           textScaler: const TextScaler.linear(1.0),
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 8.0.sp,
-                            fontWeight: FontWeight.w600,
-                            color: _C.brand,
-                            letterSpacing: 0.8,
-                          ),
+                          style: AppType.style(8.0.sp, w: FontWeight.w600, color: _C.brand, letterSpacing: 0.8),
                         ),
                         Text(
                           boarding.city?.cityName != null &&
@@ -1940,21 +1781,12 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
                               ? '${boarding.city?.cityName} — ${boarding.destination ?? '-'}'
                               : boarding.destination ?? '-',
                           textScaler: const TextScaler.linear(1.0),
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 10.0.sp,
-                            fontWeight: FontWeight.w500,
-                            color: _C.ink,
-                          ),
+                          style: AppType.style(10.0.sp, w: FontWeight.w500, color: _C.ink),
                         ),
                         Text(
                           _formatDateTime(boarding.dateTime)['time'] ?? '-',
                           textScaler: const TextScaler.linear(1.0),
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 9.0.sp,
-                            color: _C.inkMid,
-                          ),
+                          style: AppType.style(9.0.sp, color: _C.inkMid),
                         ),
                       ],
                     ),
@@ -1988,12 +1820,7 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
                     Text(
                       showFullRoute ? 'Hide trek route' : 'View all trek route',
                       textScaler: const TextScaler.linear(1.0),
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 10.0.sp,
-                        fontWeight: FontWeight.w600,
-                        color: _C.brand,
-                      ),
+                      style: AppType.style(10.0.sp, w: FontWeight.w600, color: _C.brand),
                     ),
                     const SizedBox(width: 6),
                     Icon(
@@ -2038,20 +1865,12 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
                   Text(
                     fmt['time'] ?? '',
                     textScaler: const TextScaler.linear(1.0),
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 9.0.sp,
-                      color: _C.inkMid,
-                    ),
+                    style: AppType.style(9.0.sp, color: _C.inkMid),
                   ),
                   Text(
                     fmt['date'] ?? '',
                     textScaler: const TextScaler.linear(1.0),
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 8.0.sp,
-                      color: _C.inkLight,
-                    ),
+                    style: AppType.style(8.0.sp, color: _C.inkLight),
                   ),
                 ],
               ),
@@ -2095,12 +1914,7 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
                         child: Text(
                           label,
                           textScaler: const TextScaler.linear(1.0),
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 10.0.sp,
-                            fontWeight: FontWeight.w600,
-                            color: _C.ink,
-                          ),
+                          style: AppType.style(10.0.sp, w: FontWeight.w600, color: _C.ink),
                         ),
                       ),
                       if (stop.meansOfTransport != null &&
@@ -2117,12 +1931,7 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
                           child: Text(
                             stop.meansOfTransport!,
                             textScaler: const TextScaler.linear(1.0),
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 7.0.sp,
-                              color: _C.teal,
-                              fontWeight: FontWeight.w500,
-                            ),
+                            style: AppType.style(7.0.sp, w: FontWeight.w500, color: _C.teal),
                           ),
                         ),
                     ],

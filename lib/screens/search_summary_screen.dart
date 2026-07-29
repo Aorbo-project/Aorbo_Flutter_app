@@ -24,6 +24,8 @@ import 'package:sizer/sizer.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import '../freezed_models/treks/treks_model_data.dart';
+import 'package:arobo_app/theme/app_tokens.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 class SearchSummaryScreen extends StatefulWidget {
   const SearchSummaryScreen({super.key});
@@ -311,29 +313,19 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
                                   ),
                                 ),
                                 const SizedBox(width: 12),
-                                const Expanded(
+                                Expanded(
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         'Select Departure Date',
-                                        style: TextStyle(
-                                          fontFamily: 'Poppins',
-                                          fontSize: 15.5,
-                                          fontWeight: FontWeight.w700,
-                                          color: AroboTheme.ink,
-                                          letterSpacing: -0.3,
-                                        ),
+                                        style: AppType.style(15.5, w: FontWeight.w700, color: AroboTheme.ink, letterSpacing: -0.3),
                                       ),
                                       SizedBox(height: 2),
                                       Text(
                                         'Tap an available date to continue',
-                                        style: TextStyle(
-                                          fontFamily: 'Poppins',
-                                          fontSize: 10.5,
-                                          color: AroboTheme.inkMid,
-                                        ),
+                                        style: AppType.style(10.5, color: AroboTheme.inkMid),
                                       ),
                                     ],
                                   ),
@@ -422,13 +414,9 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
                                         ),
                                       ),
                                       const SizedBox(height: 12),
-                                      const Text(
+                                      Text(
                                         'Loading available dates…',
-                                        style: TextStyle(
-                                          fontFamily: 'Poppins',
-                                          fontSize: 11.5,
-                                          color: AroboTheme.inkMid,
-                                        ),
+                                        style: AppType.style(11.5, color: AroboTheme.inkMid),
                                       ),
                                     ],
                                   ),
@@ -530,13 +518,7 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
                                 headerStyle: HeaderStyle(
                                   formatButtonVisible: false,
                                   titleCentered: true,
-                                  titleTextStyle: const TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontSize: 14.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: AroboTheme.ink,
-                                    letterSpacing: -0.2,
-                                  ),
+                                  titleTextStyle: AppType.style(14.5, w: FontWeight.w700, color: AroboTheme.ink, letterSpacing: -0.2),
                                   leftChevronIcon: _chevron(
                                     Icons.chevron_left_rounded,
                                     AroboTheme.teal,
@@ -550,22 +532,10 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
                                   ),
                                 ),
                                 daysOfWeekStyle: DaysOfWeekStyle(
-                                  weekdayStyle: const TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: AroboTheme.inkMid,
-                                    letterSpacing: 0.4,
-                                  ),
-                                  weekendStyle: TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: AroboTheme.danger.withValues(
+                                  weekdayStyle: AppType.style(10.5, w: FontWeight.w700, color: AroboTheme.inkMid, letterSpacing: 0.4),
+                                  weekendStyle: AppType.style(10.5, w: FontWeight.w700, color: AroboTheme.danger.withValues(
                                       alpha: 0.7,
-                                    ),
-                                    letterSpacing: 0.4,
-                                  ),
+                                    ), letterSpacing: 0.4),
                                   dowTextFormatter: (date, locale) =>
                                       DateFormat.E(locale)
                                           .format(date)
@@ -608,12 +578,7 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
                 child: Center(
                   child: Text(
                     '3',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 9,
-                      fontWeight: FontWeight.w800,
-                      color: color,
-                    ),
+                    style: AppType.style(9, w: FontWeight.w800, color: color),
                   ),
                 ),
               )
@@ -636,12 +601,7 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
         const SizedBox(width: 5),
         Text(
           label,
-          style: const TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 9.5,
-            fontWeight: FontWeight.w500,
-            color: AroboTheme.inkMid,
-          ),
+          style: AppType.style(9.5, w: FontWeight.w500, color: AroboTheme.inkMid),
         ),
       ],
     );
@@ -716,35 +676,23 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
           children: [
             Text(
               '${day.day}',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 12.5,
-                fontWeight: isSelected || isAvailable
+              style: AppType.style(12.5, w: isSelected || isAvailable
                     ? FontWeight.w700
-                    : FontWeight.w500,
-                color: isSelected
+                    : FontWeight.w500, color: isSelected
                     ? Colors.white
                     : isAvailable
                     ? AroboTheme.teal
                     : isWeekend
                     ? AroboTheme.danger.withValues(alpha: 0.7)
-                    : AroboTheme.ink,
-                height: 1.0,
-              ),
+                    : AroboTheme.ink, height: 1.0),
             ),
             const SizedBox(height: 2),
             if (isAvailable)
               Text(
                 isSelected ? '✓' : '$trekCount',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 9,
-                  fontWeight: FontWeight.w800,
-                  color: isSelected
+                style: AppType.style(9, w: FontWeight.w800, color: isSelected
                       ? Colors.white.withValues(alpha: 0.95)
-                      : AroboTheme.teal,
-                  height: 1.0,
-                ),
+                      : AroboTheme.teal, height: 1.0),
               )
             else
               const SizedBox(height: 9),
@@ -769,7 +717,7 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
         // Was AroboTheme.bg (0xFFF8FAFC, cool slate) — matched to the
         // app-wide standard background (0xFFFAFAFA) used on Trek Details,
         // Checkout, My Account, Plan Your Trek, etc.
-        backgroundColor: const Color(0xFFFAFAFA),
+        backgroundColor: AppColors.bg,
         appBar: _buildAppBar(),
         floatingActionButton: AroboFilterFab(
           activeFilters: activeFilters,

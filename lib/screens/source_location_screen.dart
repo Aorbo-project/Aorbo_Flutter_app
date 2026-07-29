@@ -7,6 +7,8 @@ import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:sizer/sizer.dart';
+import 'package:arobo_app/theme/app_tokens.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 // ─────────────────────────────────────────────
 //  TREKKING THEME TOKENS
@@ -14,8 +16,8 @@ import 'package:sizer/sizer.dart';
 class _T {
   // Greens — pine forest
   static const pineDark = Color(0xFF122B20);
-  static const pine = Color(0xFF1B4332);
-  static const forest = Color(0xFF2D6A4F);
+  static const pine = AppColors.forestDeep;
+  static const forest = AppColors.forest;
   static const moss = Color(0xFF52B788);
   static const mossSoft = Color(0xFFDCEFE2);
 
@@ -27,11 +29,11 @@ class _T {
   // (CommonColors.offWhiteColor, 0xFFFAFAFA) used on Trek Details, Checkout,
   // My Account, etc. This screen previously had its own tinted F4F6F1/EEF7F1
   // pair, which stood out against every other screen's near-white body.
-  static const bg = Color(0xFFFAFAFA);
+  static const bg = AppColors.bg;
   static const card = Colors.white;
   static const focusBg = Color(0xFFEFF5EF);
   static const divider = Color(0xFFE4E9E2);
-  static const heroBg = Color(0xFFFAFAFA);
+  static const heroBg = AppColors.bg;
 
   // Ink
   static const ink = Color(0xFF16261E);
@@ -1052,23 +1054,12 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
                   children: [
                     Text(
                       'Plan Your Trek',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: FontSize.s16,
-                        fontWeight: FontWeight.w700,
-                        color: _T.ink,
-                        letterSpacing: 0.2,
-                      ),
+                      style: AppType.style(FontSize.s16, w: FontWeight.w700, color: _T.ink, letterSpacing: 0.2),
                     ),
                     SizedBox(height: 0.4.h),
                     Text(
                       'Pick your starting city, then choose the trail',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: FontSize.s10,
-                        fontWeight: FontWeight.w400,
-                        color: _T.inkMid,
-                      ),
+                      style: AppType.style(FontSize.s10, w: FontWeight.w400, color: _T.inkMid),
                     ),
                   ],
                 ),
@@ -1239,12 +1230,7 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
               textAlignVertical: TextAlignVertical.center,
               cursorColor: _T.forest,
               inputFormatters: [LengthLimitingTextInputFormatter(60)],
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: FontSize.s11,
-                fontWeight: FontWeight.w500,
-                color: enabled ? _T.ink : _T.inkLight,
-              ),
+              style: AppType.style(FontSize.s11, w: FontWeight.w500, color: enabled ? _T.ink : _T.inkLight),
               decoration: InputDecoration(
                 suffixIcon: value.text.isNotEmpty
                     ? IconButton(
@@ -1259,17 +1245,9 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
                       )
                     : null,
                 hintText: hint,
-                hintStyle: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: FontSize.s11,
-                  color: _T.inkLight,
-                ),
+                hintStyle: AppType.style(FontSize.s11, color: _T.inkLight),
                 errorText: errorText,
-                errorStyle: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: FontSize.s8,
-                  color: _T.error,
-                ),
+                errorStyle: AppType.style(FontSize.s8, color: _T.error),
                 border: InputBorder.none,
                 focusedBorder: InputBorder.none,
                 enabledBorder: InputBorder.none,
@@ -1392,12 +1370,7 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
               SizedBox(width: 1.8.w),
               AnimatedDefaultTextStyle(
                 duration: const Duration(milliseconds: 200),
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: FontSize.s11,
-                  fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-                  color: color,
-                ),
+                style: AppType.style(FontSize.s11, w: active ? FontWeight.w700 : FontWeight.w500, color: color),
                 child: Text(label),
               ),
             ],
@@ -1425,12 +1398,7 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
           child: Text(
             _tab == _Tab.cities ? 'Popular Cities' : 'Popular Treks',
             key: ValueKey(_tab),
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: FontSize.s12,
-              fontWeight: FontWeight.w700,
-              color: _T.ink,
-            ),
+            style: AppType.style(FontSize.s12, w: FontWeight.w700, color: _T.ink),
           ),
         ),
         const Spacer(),
@@ -1508,12 +1476,7 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
                   SizedBox(width: 1.5.w),
                   Text(
                     'Recent',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: FontSize.s10,
-                      fontWeight: FontWeight.w700,
-                      color: _T.inkMid,
-                    ),
+                    style: AppType.style(FontSize.s10, w: FontWeight.w700, color: _T.inkMid),
                   ),
                   const Spacer(),
                   GestureDetector(
@@ -1530,12 +1493,7 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
                       ),
                       child: Text(
                         'Clear',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: FontSize.s9,
-                          fontWeight: FontWeight.w600,
-                          color: _T.clay,
-                        ),
+                        style: AppType.style(FontSize.s9, w: FontWeight.w600, color: _T.clay),
                       ),
                     ),
                   ),
@@ -1630,23 +1588,14 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
             Text(
               title,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: FontSize.s13,
-                fontWeight: FontWeight.w700,
-                color: _T.ink,
-              ),
+              style: AppType.style(FontSize.s13, w: FontWeight.w700, color: _T.ink),
             ),
             if (subtitle != null) ...[
               SizedBox(height: 0.8.h),
               Text(
                 subtitle,
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: FontSize.s10,
-                  color: _T.inkMid,
-                ),
+                style: AppType.style(FontSize.s10, color: _T.inkMid),
               ),
             ],
           ],
@@ -1679,12 +1628,7 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
             Text(
               message,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: FontSize.s12,
-                fontWeight: FontWeight.w700,
-                color: _T.ink,
-              ),
+              style: AppType.style(FontSize.s12, w: FontWeight.w700, color: _T.ink),
             ),
             SizedBox(height: 2.h),
             ElevatedButton.icon(
@@ -1701,11 +1645,7 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
               icon: Icon(Icons.refresh_rounded, size: 4.5.w),
               label: Text(
                 'Retry',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: FontSize.s10,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: AppType.style(FontSize.s10, w: FontWeight.w600),
               ),
             ),
           ],
@@ -1882,13 +1822,7 @@ class _ListItemState extends State<_ListItem> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     text: TextSpan(
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: FontSize.s11,
-                        color: _T.ink,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 0.1,
-                      ),
+                      style: AppType.style(FontSize.s11, w: FontWeight.w500, color: _T.ink, letterSpacing: 0.1),
                       children: spans,
                     ),
                   ),

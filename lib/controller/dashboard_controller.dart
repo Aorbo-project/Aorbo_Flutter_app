@@ -54,7 +54,6 @@ class DashboardController extends GetxController {
   final calenderTrekDatesObserver =
       const ApiResult<CalenderDatesResponseModel>.init().obs;
 
-  // Cities list variables
   RxInt selectedCityId = 0.obs;
   RxInt selectedTrekId = 0.obs;
   Rx<TextEditingController> fromController = TextEditingController().obs;
@@ -71,13 +70,9 @@ class DashboardController extends GetxController {
   RxString errorMessage = ''.obs;
   RxInt selectedScreen = 0.obs;
 
-  // Debounce timer for calendar API calls
   Timer? _calendarDebounceTimer;
-
-  // Track if initial fetch has been attempted
   final bool _hasAttemptedInitialCalendarFetch = false;
 
-  //region Booking history
   Rx<BookingHistoryData?> bookingHistoryModal = BookingHistoryData().obs;
   RxList<BookingHistoryData> bookingList = <BookingHistoryData>[].obs;
   RxBool isLoadingBookingHistory = false.obs;
@@ -87,23 +82,13 @@ class DashboardController extends GetxController {
   Rx<BookingCancelledModal> bookingCancelledModal = BookingCancelledModal().obs;
   Rx<BookingCancelledData> bookingCancelledData = BookingCancelledData().obs;
 
-  // Failed/expired payment attempts — never became a real booking, so they
-  // live outside bookingHistoryObserver's pagination pipeline entirely and
-  // are fetched from a dedicated endpoint (see getFailedBookingAttempts).
   RxList<Map<String, dynamic>> failedBookingAttempts =
       <Map<String, dynamic>>[].obs;
   RxBool isLoadingFailedAttempts = false.obs;
 
-  //endregion
-
-  //endregion
-
-  //region Dispute Detail
   RxBool isLoadingDisputeDetail = false.obs;
   Rx<DisputeDetailModal> disputeDetailModal = DisputeDetailModal().obs;
   RxList<Disputes> disputeDetailDataList = <Disputes>[].obs;
-
-  //endregion
 
   @override
   void onInit() {
@@ -114,26 +99,15 @@ class DashboardController extends GetxController {
   }
 
   void _initializeControllers() {
-    // Initialize controllers if needed
-    if (fromController.value.text.isEmpty) {
-      fromController.value = TextEditingController();
-    }
-    if (toController.value.text.isEmpty) {
-      toController.value = TextEditingController();
-    }
-    if (dateController.value.text.isEmpty) {
-      dateController.value = TextEditingController();
-    }
+    // Field initializers already construct them; no action needed here.
   }
 
   void _setupObservers() {
-    // Listen to city selection changes
     ever(selectedCityId, (cityId) {
       logger.d('City ID changed to: $cityId');
       _onCityOrTrekChanged();
     });
 
-    // Listen to trek selection changes
     ever(selectedTrekId, (trekId) {
       logger.d('Trek ID changed to: $trekId');
       _onCityOrTrekChanged();
@@ -141,18 +115,14 @@ class DashboardController extends GetxController {
   }
 
   void _onCityOrTrekChanged() {
-    // Cancel previous timer to avoid multiple rapid API calls
     _calendarDebounceTimer?.cancel();
 
-    // Check if both city and trek are selected
     if (selectedCityId.value != 0 && selectedTrekId.value != 0) {
       logger.d('Both city and trek selected, scheduling calendar fetch');
-      // Add debounce to prevent rapid API calls when both values change
       _calendarDebounceTimer = Timer(const Duration(milliseconds: 500), () {
         _fetchCalendarDatesForSelection();
       });
     } else {
-      // Clear available dates when selection is incomplete
       logger.d('City or trek not selected, clearing available dates');
       _clearCalendarData();
     }
@@ -194,18 +164,9 @@ class DashboardController extends GetxController {
   @override
   void onClose() {
     _calendarDebounceTimer?.cancel();
-
-    // Dispose controllers
-    if (fromController.value.text.isNotEmpty) {
-      fromController.value.dispose();
-    }
-    if (toController.value.text.isNotEmpty) {
-      toController.value.dispose();
-    }
-    if (dateController.value.text.isNotEmpty) {
-      dateController.value.dispose();
-    }
-
+    fromController.value.dispose();
+    toController.value.dispose();
+    dateController.value.dispose();
     super.onClose();
   }
 
@@ -213,18 +174,14 @@ class DashboardController extends GetxController {
     if (date.isEmpty) return '';
 
     try {
-      // Already correct format
       if (RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(date)) {
         return date;
       }
 
       DateTime parsedDate;
 
-      // dd/MM/yyyy
       if (date.contains('/')) {
         parsedDate = DateFormat('dd/MM/yyyy').parseStrict(date);
-
-        // dd-MM-yyyy
       } else if (date.contains('-')) {
         parsedDate = DateFormat('dd-MM-yyyy').parseStrict(date);
       } else {
@@ -245,19 +202,9 @@ class DashboardController extends GetxController {
     required String endDate,
   }) async {
     try {
-      // Clear previous data
       availableDates.clear();
-
       calenderTrekDatesObserver.value = ApiResult.loading(
         "Fetching available dates...",
-      );
-
-      logger.d(
-        'Fetching calendar dates API - '
-        'City: $cityId, '
-        'Trek: $trekId, '
-        'Start: $statDate, '
-        'End: $endDate',
       );
 
       final response = await _repository.getApiCall(
@@ -270,77 +217,40 @@ class DashboardController extends GetxController {
       );
 
       if (response != null) {
-        logger.d('Calendar API Response: $response');
-
         final responseData = CalenderDatesResponseModel.fromJson(response);
 
         if (responseData.success == true) {
           if (responseData.data?.dates != null &&
               responseData.data!.dates!.isNotEmpty) {
-            // Sort dates ascending
             final sortedDates = responseData.data!.dates!.toList()
               ..sort((a, b) => (a.date ?? '').compareTo(b.date ?? ''));
 
             for (var dateData in sortedDates) {
-              // Skip null dates
               if (dateData.date == null) continue;
-
               final trekDate = DateTime.tryParse(dateData.date!);
-
-              // Invalid date
               if (trekDate == null) continue;
 
               final now = DateTime.now();
-
               final today = DateTime(now.year, now.month, now.day);
 
-              // ─────────────────────────────
-              // IMPORTANT FIX
-              // Skip today/past dates because
-              // backend still marks started
-              // treks as available
-              // ─────────────────────────────
+              if (!trekDate.isAfter(today)) continue;
 
-              if (!trekDate.isAfter(today)) {
-                logger.d(
-                  'Skipping started/past trek date: '
-                  '${dateData.date}',
-                );
-
-                continue;
-              }
-
-              // Only add truly available dates
               if (dateData.available == true) {
-                logger.d(
-                  'Adding available future date: '
-                  '${dateData.date}',
-                );
-
                 availableDates[dateData.date!] = dateData.trekCount ?? 0;
               }
             }
 
             availableDates.refresh();
 
-            logger.d(
-              'Available dates loaded: '
-              '${availableDates.length}',
-            );
-
-            // Auto-select first available date
             if (selectedDate.value == null && availableDates.isNotEmpty) {
               _autoSelectFirstAvailableDate();
             }
           } else {
-            logger.d('No available dates found');
-
             availableDates.clear();
             availableDates.refresh();
           }
 
           calenderTrekDatesObserver.value = ApiResult.success(responseData);
-
           return;
         }
 
@@ -350,12 +260,9 @@ class DashboardController extends GetxController {
       throw "Response Body Null";
     } catch (e) {
       logger.e('Error fetching calendar dates: $e');
-
       errorMessage.value = e.toString();
-
       calenderTrekDatesObserver.value = ApiResult.error(
-        'Failed to fetch calendar dates: '
-        '${e.toString()}',
+        'Failed to fetch calendar dates: ${e.toString()}',
       );
     }
   }
@@ -363,22 +270,15 @@ class DashboardController extends GetxController {
   void _autoSelectFirstAvailableDate() {
     if (availableDates.isEmpty) return;
 
-    // ── Sort keys so we always pick the earliest available date ──
     final sortedDates = availableDates.keys.toList()..sort();
     final firstDateStr = sortedDates.first;
     final firstDate = DateTime.tryParse(firstDateStr);
 
-    print('FIRST DATE STRING: $firstDateStr');
-    print('PARSED DATE: $firstDate');
-
     if (firstDate != null) {
       logger.d('Auto-selecting first available date: $firstDateStr');
-
       selectedDate.value = firstDate;
       dateController.value.text = DateFormat('dd/MM/yyyy').format(firstDate);
       dateController.refresh();
-
-      // Notify Dashboard to update weekend dates
       onDateAutoSelected?.call();
     }
   }
@@ -386,19 +286,15 @@ class DashboardController extends GetxController {
   bool isDateAvailable(DateTime? date) {
     if (date == null) return false;
     String dateStr = DateFormat('yyyy-MM-dd').format(date);
-    final isAvailable = availableDates.containsKey(dateStr);
-    logger.d('Date $dateStr is available: $isAvailable');
-    return isAvailable;
+    return availableDates.containsKey(dateStr);
   }
 
   int getTrekCountForDate(DateTime? date) {
     if (date == null) return 0;
     String dateStr = DateFormat('yyyy-MM-dd').format(date);
-    final count = availableDates[dateStr] ?? 0;
-    return count;
+    return availableDates[dateStr] ?? 0;
   }
 
-  // Get upcoming available dates (next 7 days)
   List<DateTime> getUpcomingAvailableDates() {
     final now = DateTime.now();
     final upcomingDates = <DateTime>[];
@@ -455,9 +351,6 @@ class DashboardController extends GetxController {
     }
   }
 
-  /// Dedicated seasonal_forecast_picks backend — Top-5 / Avoid cards for
-  /// today's IST season (or ?season= override). Distinct from the legacy
-  /// fetchSeasonalForcasts / seasonalForcastObserver above.
   Future<void> fetchSeasonalPicks({String? season}) async {
     try {
       seasonalPicksObserver.value = const ApiResult.loading("");
@@ -480,9 +373,6 @@ class DashboardController extends GetxController {
     }
   }
 
-  /// Toggles a Top Treks card's favorite state on the backend. Returns
-  /// true on success so the caller can update local UI state; false means
-  /// the caller should roll back its optimistic update.
   Future<bool> toggleTopTrekFavorite(int id, bool currentlyFavorite) async {
     try {
       if (currentlyFavorite) {
@@ -531,7 +421,6 @@ class DashboardController extends GetxController {
       final response = await _repository.getApiCall(
         url: NetworkUrl.getStateList,
       );
-
       if (response != null) {
         stateListData.value = StateListModel.fromJson(response);
         stateList.value = stateListData.value.data ?? [];
@@ -554,7 +443,6 @@ class DashboardController extends GetxController {
       final response = await _repository.getApiCall(
         url: NetworkUrl.getCitiesList,
       );
-
       if (response != null) {
         citiesData.value = GetCities.fromJson(response);
         logger.d('Cities loaded: ${citiesData.value.data?.length ?? 0}');
@@ -576,7 +464,6 @@ class DashboardController extends GetxController {
       final response = await _repository.getApiCall(
         url: NetworkUrl.getTreksList,
       );
-
       if (response != null) {
         trekData.value = TrekModal.fromJson(response);
         logger.d('Treks loaded: ${trekData.value.data?.length ?? 0}');
@@ -590,20 +477,23 @@ class DashboardController extends GetxController {
     }
   }
 
+  int _historyGeneration = 0;
   Future<void> getBookingHistory({required bool refresh}) async {
     final observer = bookingHistoryObserver;
 
-    try {
-      if (refresh == true) {
-        observer.value = PaginationModel(
-          data: const ApiResult<BookingHistoryModel>.init().obs,
-          isLoading: false,
-          isPaginationCompleted: false,
-          page: 1,
-          error: "",
-        );
-      }
+    if (refresh == true) {
+      _historyGeneration++;
+      observer.value = PaginationModel(
+        data: const ApiResult<BookingHistoryModel>.init().obs,
+        isLoading: false,
+        isPaginationCompleted: false,
+        page: 1,
+        error: "",
+      );
+    }
+    final myGeneration = _historyGeneration;
 
+    try {
       if (observer.value.isPaginationCompleted ||
           observer.value.isLoading == true) {
         return;
@@ -627,6 +517,8 @@ class DashboardController extends GetxController {
               : selectedFilter.value,
         ),
       );
+
+      if (myGeneration != _historyGeneration) return;
 
       final body = response;
       if (body != null) {
@@ -660,6 +552,7 @@ class DashboardController extends GetxController {
       }
       throw "Response Body Null";
     } catch (e) {
+      if (myGeneration != _historyGeneration) return;
       errorMessage.value = 'Failed to search treks: ${e.toString()}';
       CustomSnackBar.show(Get.context!, message: errorMessage.value);
       observer.value.data.value = ApiResult.error(e.toString());
@@ -668,9 +561,6 @@ class DashboardController extends GetxController {
     }
   }
 
-  /// Dedicated fetch for the RateTrekPopup. Fetches ONLY completed treks
-  /// so unrated older treks aren't missed due to pagination on the
-  /// 'All Bookings' list.
   Future<List<BookingHistoryData>> fetchCompletedBookingsForPopup() async {
     try {
       final response = await _repository.getApiCall(
@@ -745,17 +635,6 @@ class DashboardController extends GetxController {
     return null;
   }
 
-  /// Generates the same invoice PDF InvoicePdfService already produces for
-  /// in-app preview/share, and uploads those exact bytes so the backend can
-  /// email it — the backend never regenerates the invoice itself, it only
-  /// attaches what the app already built. Fire-and-forget: called right
-  /// after a booking succeeds, failure here must never block or surface an
-  /// error on the success screen since the booking itself already went through.
-  ///
-  /// [bookingId] is only needed to fetch the booking detail (that lookup is
-  /// keyed by the raw internal id, matching getBookingDetail's existing
-  /// convention) — the actual upload is keyed by the booking's customer-
-  /// facing booking_number (e.g. "BI20260141"), not the internal id.
   Future<void> generateAndUploadInvoice(int bookingId) async {
     try {
       await getBookingDetail(bookingId: bookingId);
@@ -782,10 +661,7 @@ class DashboardController extends GetxController {
     }
   }
 
-  /// Clears search and temporary booking related data
-  /// Call this after successful payment to reset filters and temporary data
   void clearSearchAndBookingData() {
-    // Clear search filters
     selectedTrekId.value = 0;
     fromController.value.clear();
     fromController.refresh();
@@ -795,14 +671,11 @@ class DashboardController extends GetxController {
     dateController.refresh();
     selectedDate.value = null;
 
-    // Clear calendar data
     _clearCalendarData();
 
-    // Clear booking cancellation data (temporary)
     bookingCancelledModal.value = BookingCancelledModal();
     bookingCancelledData.value = BookingCancelledData();
 
-    // Clear dispute detail data (temporary)
     disputeDetailModal.value = DisputeDetailModal();
     disputeDetailDataList.clear();
 

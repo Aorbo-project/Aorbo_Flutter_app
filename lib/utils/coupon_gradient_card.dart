@@ -3,6 +3,7 @@ import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 /// Material 3 "emphasized decelerate" easing — same entrance curve as
 /// KnowMoreCard, so cards across the app feel like one system.
@@ -197,12 +198,7 @@ class _CouponGradientCardState extends State<CouponGradientCard>
                                 child: Text(
                                   widget.badgeLabel!.toUpperCase(),
                                   textScaler: const TextScaler.linear(1.0),
-                                  style: GoogleFonts.poppins(
-                                    fontSize: FontSize.s7,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 0.5,
-                                    color: textColor,
-                                  ),
+                                  style: AppType.style(FontSize.s7, w: FontWeight.w700, color: textColor, letterSpacing: 0.5),
                                 ),
                               ),
                               SizedBox(height: 1.1.h),
@@ -216,13 +212,7 @@ class _CouponGradientCardState extends State<CouponGradientCard>
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               textScaler: const TextScaler.linear(1.0),
-                              style: GoogleFonts.poppins(
-                                fontSize: FontSize.s20,
-                                fontWeight: FontWeight.w800,
-                                color: textColor,
-                                height: 1.1,
-                                letterSpacing: -0.4,
-                              ),
+                              style: AppType.style(FontSize.s20, w: FontWeight.w800, color: textColor, height: 1.1, letterSpacing: -0.4),
                             ),
                             SizedBox(height: 0.7.h),
                             Text(
@@ -230,11 +220,7 @@ class _CouponGradientCardState extends State<CouponGradientCard>
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               textScaler: const TextScaler.linear(1.0),
-                              style: GoogleFonts.poppins(
-                                fontSize: FontSize.s9,
-                                color: textColor.withValues(alpha: 0.85),
-                                height: 1.4,
-                              ),
+                              style: AppType.style(FontSize.s9, color: textColor.withValues(alpha: 0.85), height: 1.4),
                             ),
                           ],
                         ),
@@ -262,12 +248,7 @@ class _CouponGradientCardState extends State<CouponGradientCard>
                                     Text(
                                       widget.code,
                                       textScaler: const TextScaler.linear(1.0),
-                                      style: GoogleFonts.poppins(
-                                        fontWeight: FontWeight.w700,
-                                        color: startColor,
-                                        fontSize: FontSize.s9,
-                                        letterSpacing: 0.4,
-                                      ),
+                                      style: AppType.style(FontSize.s9, w: FontWeight.w700, color: startColor, letterSpacing: 0.4),
                                     ),
                                     SizedBox(width: 1.8.w),
                                     Icon(Icons.copy_rounded,

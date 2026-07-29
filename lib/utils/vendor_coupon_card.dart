@@ -6,6 +6,7 @@ import '../models/coupon_code/coupon_code_model.dart';
 import 'auth_utils.dart';
 import 'coupon_display_helper.dart';
 import 'coupon_terms_sheet.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
 /// Card for vendor-assigned (non-PLATFORM scope) coupons on the checkout
 /// Coupon Code screen. Approved design: flat white card, thin gradient
@@ -93,43 +94,26 @@ class VendorCouponCard extends StatelessWidget {
                     ),
                     child: Text(
                       'FOR THIS TREK',
-                      style: GoogleFonts.poppins(
-                        fontSize: FontSize.s7,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.6,
-                        color: blocked ? _labelSoft : _accentText,
-                      ),
+                      style: AppType.style(FontSize.s7, w: FontWeight.w700, color: blocked ? _labelSoft : _accentText, letterSpacing: 0.6),
                     ),
                   ),
                   SizedBox(height: 1.3.h),
                   Text(
                     _headline,
-                    style: GoogleFonts.poppins(
-                      fontSize: FontSize.s18,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.4,
-                      color: _ink,
-                    ),
+                    style: AppType.style(FontSize.s18, w: FontWeight.w800, color: _ink, letterSpacing: -0.4),
                   ),
                   if (_conditionText != null) ...[
                     SizedBox(height: 0.5.h),
                     Text(
                       _conditionText!,
-                      style: GoogleFonts.poppins(
-                        fontSize: FontSize.s9,
-                        color: _inkSoft,
-                        height: 1.5,
-                      ),
+                      style: AppType.style(FontSize.s9, color: _inkSoft, height: 1.5),
                     ),
                   ],
                   if (blocked) ...[
                     SizedBox(height: 0.3.h),
                     Text(
                       _blockedReason,
-                      style: GoogleFonts.poppins(
-                        fontSize: FontSize.s9,
-                        color: _labelSoft,
-                      ),
+                      style: AppType.style(FontSize.s9, color: _labelSoft),
                     ),
                   ],
                   SizedBox(height: 1.8.h),
@@ -145,12 +129,7 @@ class VendorCouponCard extends StatelessWidget {
                         ),
                         child: Text(
                           coupon?.code ?? '',
-                          style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.w700,
-                            fontSize: FontSize.s9,
-                            letterSpacing: 0.3,
-                            color: blocked ? _inkSoft : _accentText,
-                          ),
+                          style: AppType.style(FontSize.s9, w: FontWeight.w700, color: blocked ? _inkSoft : _accentText, letterSpacing: 0.3),
                         ),
                       ),
                       Row(
@@ -180,11 +159,7 @@ class VendorCouponCard extends StatelessWidget {
                               ),
                               child: Text(
                                 'Used',
-                                style: GoogleFonts.poppins(
-                                  fontSize: FontSize.s9,
-                                  fontWeight: FontWeight.w700,
-                                  color: _inkSoft,
-                                ),
+                                style: AppType.style(FontSize.s9, w: FontWeight.w700, color: _inkSoft),
                               ),
                             )
                           else
@@ -198,11 +173,7 @@ class VendorCouponCard extends StatelessWidget {
                                 ),
                                 child: Text(
                                   isApplied ? 'Applied' : 'Apply',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: FontSize.s9,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.white,
-                                  ),
+                                  style: AppType.style(FontSize.s9, w: FontWeight.w700, color: Colors.white),
                                 ),
                               ),
                             ),

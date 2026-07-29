@@ -13,6 +13,7 @@
   import 'package:flutter_touch_ripple/flutter_touch_ripple.dart';
 
   import '../utils/custom_snackbar.dart';
+import 'package:arobo_app/theme/app_typography.dart';
 
   class LoginScreen extends StatefulWidget {
     const LoginScreen({super.key});
@@ -109,35 +110,19 @@
                             children: [
                               TextSpan(
                                 text: 'Your Trek,\n',
-                                style: GoogleFonts.poppins(
-                                  fontSize: FontSize.s19,
-                                  fontWeight: FontWeight.w700,
-                                  color: CommonColors.blackColor,
-                                ),
+                                style: AppType.style(FontSize.s19, w: FontWeight.w700, color: CommonColors.blackColor),
                               ),
                               TextSpan(
                                 text: 'just a\n',
-                                style: GoogleFonts.poppins(
-                                  fontSize: FontSize.s19,
-                                  fontWeight: FontWeight.w600,
-                                  color: CommonColors.whiteColor,
-                                ),
+                                style: AppType.style(FontSize.s19, w: FontWeight.w600, color: CommonColors.whiteColor),
                               ),
                               TextSpan(
                                 text: 'Click\n',
-                                style: GoogleFonts.poppins(
-                                  fontSize: FontSize.s19,
-                                  fontWeight: FontWeight.w600,
-                                  color: CommonColors.whiteColor,
-                                ),
+                                style: AppType.style(FontSize.s19, w: FontWeight.w600, color: CommonColors.whiteColor),
                               ),
                               TextSpan(
                                 text: 'Away !',
-                                style: GoogleFonts.poppins(
-                                  fontSize: FontSize.s19,
-                                  fontWeight: FontWeight.w700,
-                                  color: CommonColors.appYellowColor,
-                                ),
+                                style: AppType.style(FontSize.s19, w: FontWeight.w700, color: CommonColors.appYellowColor),
                               ),
                             ],
                           ),

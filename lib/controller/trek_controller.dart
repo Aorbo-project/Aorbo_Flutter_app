@@ -29,13 +29,6 @@ class TrekController extends GetxController {
   final Repository repository = Repository();
   final DashboardController _dashboardC = Get.find<DashboardController>();
 
-  // Bumped on every refresh() call to searchTreks. Lets an in-flight request
-  // detect that a newer refresh has since superseded it, so its response gets
-  // discarded instead of merged into the new list — without this, two
-  // near-simultaneous calls (e.g. a double-tap on the Search button, which has
-  // no debounce guard) both reset to page 1 and fire independent requests;
-  // whichever response lands second sees the first one's result already
-  // sitting in `success` state and appends onto it, duplicating every card.
   int _searchGeneration = 0;
 
   final treksResponseObserver = PaginationModel(
@@ -73,21 +66,14 @@ class TrekController extends GetxController {
   Rx<TextEditingController> cancellationReasonController =
       TextEditingController().obs;
 
-  // Trek search results
   RxBool isLoading = false.obs;
   RxString errorMessage = ''.obs;
   Rx<TrekDetailModal> trekDetailModal = TrekDetailModal().obs;
   Rx<TrekDetailData> trekDetailData = TrekDetailData().obs;
   RxInt trekDetailId = 0.obs;
 
-  // Customer's chosen boarding/source city for this booking (Booking.city_id
-  // on the backend). Auto-selected when the trek has exactly one boarding
-  // point; must be explicitly chosen by the customer on trek_details_screen
-  // when there's more than one, and survives navigation into
-  // traveller_information_screen where calculateFare() actually sends it.
   Rx<int?> selectedBoardingCityId = Rx<int?>(null);
 
-  //region AddTrek
   RxInt trekPersonCount = 0.obs;
   RxList<Traveler> travellerDetailList = <Traveler>[].obs;
   RxInt trekBatchId = 0.obs;
@@ -96,38 +82,25 @@ class TrekController extends GetxController {
   Rx<Order> orderData = Order().obs;
   Rx<BookingData> orderBookingData = BookingData().obs;
 
-  // Backend-driven next_action routing — populated from raw API responses so
-  // screens don't need to re-derive navigation logic.
   Rx<String> orderNextAction = 'OPEN_RAZORPAY'.obs;
   RxMap<String, dynamic> orderNextActionParams = <String, dynamic>{}.obs;
   Rx<String> cancelNextAction = 'SHOW_CANCELLATION_CONFIRMED'.obs;
   RxMap<String, dynamic> cancelNextActionParams = <String, dynamic>{}.obs;
 
-  //endregion
-  //region VerifyTrek
   RxString orderId = ''.obs;
   RxString paymentId = ''.obs;
   RxString signature = ''.obs;
   Rx<VerifyOrderModal> verifyOrderModal = VerifyOrderModal().obs;
 
-  //endregion
-  //region Rate and review
   RxDouble rating = 0.0.obs;
   Rx<TextEditingController> reviewController = TextEditingController().obs;
-
-  //endregion
 
   final vendorCouponsObserver = const ApiResult<CouponCodeModel>.init().obs;
   final validateCouponObserver =
       const ApiResult<ValidateCouponCodeResponseModel>.init().obs;
 
-  //endregion
-
-  //region Issue Report
   Rx<SubmitIssueModal> submitIssueModal = SubmitIssueModal().obs;
   Rx<SubmitIssueData> submitIssueData = SubmitIssueData().obs;
-
-  //endregion
 
   @override
   void onInit() {
@@ -235,7 +208,6 @@ class TrekController extends GetxController {
     });
   }
 
-  /// Fetch live refund status from backend (driven by Razorpay webhooks).
   Future<void> fetchRefundStatus(String bookingId) async {
     try {
       final response = await repository.getApiCall(
@@ -244,23 +216,18 @@ class TrekController extends GetxController {
       if (response != null) {
         final model = RefundStatusModel.fromJson(response);
         refundStatusObserver.value = ApiResult.success(model);
-        // A full-deduction cancellation's refund_status stays null forever —
-        // nothing was ever going to move it to processing/processed, so
-        // without this the 5-minute timer below ran indefinitely (until the
-        // screen closed) polling for a status that could never change.
         if (model.nextAction == 'NO_REFUND_APPLICABLE') {
           stopRefundPolling();
         }
       }
     } catch (e) {
-      // Non-fatal — polling failure should not surface an error to the user
+      // Non-fatal
     }
   }
 
-  /// Start 5-minute polling for refund status (fallback when socket event is missed).
   void startRefundPolling(String bookingId) {
     stopRefundPolling();
-    fetchRefundStatus(bookingId); // immediate first fetch
+    fetchRefundStatus(bookingId);
     _refundPollTimer = Timer.periodic(
       const Duration(seconds: 300),
       (_) => fetchRefundStatus(bookingId),
@@ -278,10 +245,9 @@ class TrekController extends GetxController {
     _socketService.removeAllListeners('refund:initiated');
     _socketService.removeAllListeners('refund:processed');
     _socketService.removeAllListeners('refund:failed');
+    // dispose unconditionally
     reviewController.value.dispose();
-    if (cancellationReasonController.value.text.isNotEmpty) {
-      cancellationReasonController.value.dispose();
-    }
+    cancellationReasonController.value.dispose();
     super.onClose();
   }
 
@@ -334,15 +300,8 @@ class TrekController extends GetxController {
           orElse: () => "0",
         ),
         travelerCount: calculateFareRequestModel.value.travelerCount,
-        // trekBatchId.value gets reset to 0 by clearBookingData() after every
-        // successful booking and is only repopulated when the Trek Details
-        // screen re-initializes — if the coupon dialog opens before that
-        // happens for a new trek, it stays 0 and the request silently drops
-        // batch context, making the backend check "already used" across ALL
-        // of this customer's bookings instead of just this TBR. trekDetailData
-        // is populated directly from the trek-detail API response that must
-        // already be loaded for this screen to exist, so it's never stale.
-        batchId: (trekDetailData.value.batchId != null &&
+        batchId:
+            (trekDetailData.value.batchId != null &&
                 trekDetailData.value.batchId! > 0)
             ? trekDetailData.value.batchId
             : (trekBatchId.value > 0 ? trekBatchId.value : null),
@@ -447,9 +406,6 @@ class TrekController extends GetxController {
         ),
       );
 
-      // A newer refresh() call started while this request was in flight —
-      // that call already reset observer.value to its own fresh state, so
-      // merging this stale response into it would duplicate every card.
       if (myGeneration != _searchGeneration) return;
 
       final body = response;
@@ -482,6 +438,8 @@ class TrekController extends GetxController {
       }
       throw "Response Body Null";
     } catch (e) {
+      // first line, so a stale timeout can't clobber fresh results:
+      if (myGeneration != _searchGeneration) return;
       errorMessage.value = 'Failed to search treks: ${e.toString()}';
       CustomSnackBar.show(Get.context!, message: errorMessage.value);
       observer.value.data.value = ApiResult.error(e.toString());
@@ -505,11 +463,6 @@ class TrekController extends GetxController {
           trekDetailModal.value = TrekDetailModal.fromJson(response);
           trekDetailData.value = trekDetailModal.value.data ?? TrekDetailData();
 
-          // Reset per-trek, then auto-select when there's exactly one
-          // boarding option — matches trek_details_screen's existing
-          // boardingCandidates logic (is_boarding_point==true, deduped).
-          // When there's more than one, this stays null until the customer
-          // picks one on that screen.
           selectedBoardingCityId.value = null;
           final boardingStages = (trekDetailData.value.trekStages ?? [])
               .where((s) => s.isBoardingPoint == true && s.cityId != null)
@@ -537,10 +490,6 @@ class TrekController extends GetxController {
   Future<void> calculateFare() async {
     try {
       calculateFareResponseModel.value = ApiResult.loading("");
-      // Always send the customer's current boarding-city selection (set on
-      // trek_details_screen, required when the trek has more than one
-      // boarding option) rather than whatever was in the model when it was
-      // first constructed.
       calculateFareRequestModel.value = calculateFareRequestModel.value
           .copyWith(boardingCityId: selectedBoardingCityId.value);
       final response = await repository.postApiCall(
@@ -561,10 +510,10 @@ class TrekController extends GetxController {
       }
       throw "Response Body Null";
     } catch (e) {
-      errorMessage.value = 'Failed to search treks: ${e.toString()}';
+      errorMessage.value = 'Failed to calculate fare: ${e.toString()}';
       CustomSnackBar.show(Get.context!, message: errorMessage.value);
       calculateFareResponseModel.value = ApiResult.error(
-        'Failed to search treks: ${e.toString()}',
+        'Failed to calculate fare: ${e.toString()}',
       );
     }
   }
@@ -606,10 +555,6 @@ class TrekController extends GetxController {
               pendingOrderId.toString(),
             );
           }
-
-          logger.d(
-            'TrekController createTrekOrder - next_action: ${orderNextAction.value}',
-          );
         } else {
           errorMessage.value = response['message'];
           logger.e(errorMessage.value);
@@ -625,19 +570,11 @@ class TrekController extends GetxController {
     }
   }
 
-  /// Verifies a Razorpay payment and creates the booking. Safe to call more
-  /// than once with the SAME orderId/paymentId — the backend is idempotent.
-  /// Returns true only when the booking was confirmed; false on any failure.
-  /// Verifies a Razorpay payment and creates the booking. Safe to call more
-  /// than once with the SAME orderId/paymentId — the backend is idempotent.
-  /// Returns true only when the booking was confirmed; false on any failure.
   Future<bool> verifyTrekOrder({
     required String razorpayOrderId,
     required String razorpayPaymentId,
     required String razorpaySignature,
   }) async {
-    // REMOVED showLoaderDialog() to prevent UI conflicts and flashes.
-
     String body = json.encode({
       "razorpay_order_id": razorpayOrderId,
       "razorpay_payment_id": razorpayPaymentId,
@@ -657,10 +594,8 @@ class TrekController extends GetxController {
               response['next_action'] ?? 'SHOW_BOOKING_CONFIRMED';
 
           if (nextAction == 'SHOW_BOOKING_CONFIRMED') {
-            // Booking is confirmed — nothing left to resume on next launch.
             final pref = await SpUtil.getInstance();
             await pref.remove(SpUtil.pendingOrderId);
-            // Refresh cached list in background so My Bookings is up to date
             Get.find<DashboardController>().getBookingHistory(refresh: true);
             return true;
           }
@@ -703,9 +638,6 @@ class TrekController extends GetxController {
       switch (status) {
         case 'paid':
           await pref.remove(SpUtil.pendingOrderId);
-          logger.d(
-            'checkPendingOrderOnResume: order already paid — booking exists, nothing to reopen',
-          );
           Get.find<DashboardController>().getBookingHistory(refresh: true);
           if (Get.context != null) {
             CustomSnackBar.show(
@@ -818,9 +750,10 @@ class TrekController extends GetxController {
       }
       throw "Response Body Null";
     } catch (e) {
-      CustomSnackBar.show(Get.context!, message: errorMessage.value);
+      // show the REAL error, not a stale one:
+      CustomSnackBar.error(e.toString());
       cancellationDetailsResponseObserver.value = ApiResult.error(
-        'Failed to get calcellation details treks: ${e.toString()}',
+        'Failed to load cancellation details: ${e.toString()}',
       );
       return e.toString();
     }
@@ -948,8 +881,6 @@ class TrekController extends GetxController {
     return false;
   }
 
-  /// Clears all booking and payment related data
-  /// Call this after successful payment to reset the controller for next booking
   clearBookingData() {
     trekPersonCount.value = 0;
     travellerDetailList.clear();
@@ -966,17 +897,6 @@ class TrekController extends GetxController {
 
     rating.value = 0.0;
     reviewController.value.clear();
-
-    // NOTE: deliberately NOT resetting calculateFareRequestModel here.
-    // traveller_information_screen keeps a debounce() worker on that Rx
-    // value for as long as its widget is alive on the nav stack (even when
-    // not the visible screen) — writing to it from here can retrigger a
-    // real calculate-fare API call with meaningless placeholder data
-    // (batchId: 1), which the backend correctly rejects and which then
-    // surfaces as a spurious error snackbar right after payment succeeds.
-    // The actual coupon-leak bug (see traveller_information_screen.dart
-    // initState) is fixed at the point a new checkout session starts,
-    // which is the correct place to decide whether a coupon is still valid.
 
     logger.d('TrekController: Booking data cleared');
   }
