@@ -1,4 +1,3 @@
-import 'dart:developer';
 import 'package:arobo_app/controller/coupon_controller.dart';
 import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/controller/trek_controller.dart';
@@ -11,7 +10,6 @@ import 'package:arobo_app/utils/common_bottom_nav.dart';
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/custom_snackbar.dart';
 import 'package:arobo_app/widgets/rate_trek_popup.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';

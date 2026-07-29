@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:sizer/sizer.dart';
 
 /// Centralized typography system for consistent text styling across the app.
 /// All font sizes use .sp extension for responsive scaling.
 class AppText {
 
-  /// Default font family
+  // NOTE: AppText is a legacy shim. New code should use AppType from
+  // lib/theme/app_typography.dart which is sizer-backed and token-aligned.
+  // Poppins is bundled as a local asset font (pubspec.yaml line 86-97),
+  // so GoogleFonts.poppins() is not needed — TextStyle(fontFamily:'Poppins')
+  // produces identical output without the CDN lookup.
   static TextStyle _base({
     required double size,
     required FontWeight weight,
     double? height,
   }) {
-    return GoogleFonts.poppins(
+    return TextStyle(
+      fontFamily: 'Poppins',
       fontSize: size.sp,
       fontWeight: weight,
       height: height,

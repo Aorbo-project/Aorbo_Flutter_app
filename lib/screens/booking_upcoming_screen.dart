@@ -2713,7 +2713,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                     left: 4.w,
                     right: 4.w,
                     bottom: 3.h,
-                    child: _buildFloatingRatingButton(bookingData: booking!),
+                    child: _buildFloatingRatingButton(bookingData: booking),
                   ),
                 Obx(
                   () => _trekC.cancellationDetailsResponseObserver.value

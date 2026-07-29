@@ -1,6 +1,5 @@
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
 import 'package:get/get.dart';
 import '../models/chat_data.dart';
@@ -775,7 +774,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           children: [
             Text(
               'Support is typing',
-              style: GoogleFonts.poppins(
+              style: TextStyle(
+                fontFamily: 'Poppins',
                 fontSize: FontSize.s11,
                 color: Colors.grey.shade600,
                 fontStyle: FontStyle.italic,

@@ -3,7 +3,6 @@ import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:arobo_app/widgets/custom_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'package:sizer/sizer.dart';
 import 'package:arobo_app/theme/app_typography.dart';

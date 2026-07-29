@@ -5,9 +5,6 @@ import 'package:arobo_app/utils/common_images.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
-
-// import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sizer/sizer.dart';
 import 'package:pinput/pinput.dart';
 import 'dart:async';

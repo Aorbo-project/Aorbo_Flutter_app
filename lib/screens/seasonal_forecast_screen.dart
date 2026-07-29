@@ -7,7 +7,6 @@ import 'package:arobo_app/utils/seasonal_forecast_mock_data.dart';
 import 'package:arobo_app/utils/seasonal_gradient_card.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:shimmer_ai/shimmer_ai.dart';
 import 'package:sizer/sizer.dart';
 import 'package:arobo_app/theme/app_typography.dart';

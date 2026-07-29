@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
 import 'screen_constants.dart';
 import '../models/coupon_code/coupon_code_model.dart';

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
 import 'screen_constants.dart';
 import '../models/coupon_code/coupon_code_model.dart';
@@ -139,11 +138,12 @@ class VendorCouponCard extends StatelessWidget {
                             onTap: () => showCouponTermsSheet(context, coupon),
                             child: Text(
                               'T&C*',
-                              style: GoogleFonts.poppins(
-                                fontSize: FontSize.s9,
-                                fontWeight: FontWeight.w600,
+                              style: AppType.style(
+                                FontSize.s9,
+                                w: FontWeight.w600,
                                 color: blocked ? _labelSoft : _accentText,
                                 decoration: TextDecoration.underline,
+                              ).copyWith(
                                 decorationColor: blocked ? _labelSoft : _accentText,
                               ),
                             ),

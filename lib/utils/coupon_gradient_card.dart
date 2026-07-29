@@ -1,7 +1,6 @@
 import 'package:arobo_app/utils/app_theme.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
 import 'package:arobo_app/theme/app_typography.dart';
 
@@ -263,11 +262,13 @@ class _CouponGradientCardState extends State<CouponGradientCard>
                               child: Text(
                                 'T&C*',
                                 textScaler: const TextScaler.linear(1.0),
-                                style: GoogleFonts.poppins(
-                                  fontSize: FontSize.s9,
-                                  fontWeight: FontWeight.w600,
+                                style: AppType.style(
+                                  FontSize.s9,
+                                  w: FontWeight.w600,
                                   color: textColor.withValues(alpha: 0.9),
                                   decoration: TextDecoration.underline,
+                                  letterSpacing: null,
+                                ).copyWith(
                                   decorationColor:
                                       textColor.withValues(alpha: 0.9),
                                 ),
