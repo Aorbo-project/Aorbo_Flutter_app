@@ -194,7 +194,14 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
   // countdown below doesn't auto-pop this screen while the user is on that
   // pushed screen actively paying.
   bool _isPaymentInFlight = false;
-  static const int _totalTimerSecs = 5 * 60;
+  // Must match FARE_TOKEN_TTL_MINUTES in the backend's
+  // services/fareCalculationService.js — this is only the progress-bar
+  // denominator/display cap though, not the source of truth; the actual
+  // countdown is re-synced from the server's real expires_at on every fresh
+  // fare response (see _syncTimerToExpiry), so a mismatch here would only
+  // ever show a momentarily wrong progress-bar fill, never let a stale
+  // token slip through.
+  static const int _totalTimerSecs = 7 * 60;
   final RxInt _remainingSecs = _totalTimerSecs.obs;
   bool _isTimerExpired = false;
   bool _didExitOnExpiry = false;
@@ -325,16 +332,21 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
     if (_didExitOnExpiry && !userInitiated) return;
     _didExitOnExpiry = true;
     // Close any bottom sheet / dialog sitting above this screen first,
-    // otherwise the pop below would only dismiss the sheet and the user
-    // would stay on an expired checkout.
+    // otherwise the navigation below would only dismiss the sheet and the
+    // user would stay on an expired checkout.
     Navigator.of(context).popUntil((route) => route is PageRoute);
     CustomSnackBar.show(
       context,
       message: 'Payment session timed out. Please start over.',
     );
-    if (Navigator.of(context).canPop()) {
-      Navigator.of(context).pop();
-    }
+    // A plain pop() only undoes this one push, landing back on Trek
+    // Details — the stale fare/traveler selection state there would let the
+    // customer walk straight back into another expired checkout. Reset all
+    // the way to Search Results instead, matching what "start over" in the
+    // snackbar above actually promises. SearchSummaryScreen takes no route
+    // arguments and reads everything from its GetX controllers, which stay
+    // alive across this navigation, so its results aren't lost.
+    Get.offAllNamed('/search');
   }
 
   void _triggerHint(String message, GlobalKey key, int targetIndex) {
