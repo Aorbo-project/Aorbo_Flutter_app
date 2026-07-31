@@ -236,4 +236,11 @@ class AuthController extends GetxController {
       logger.e('FCM token registration setup failed: $e');
     }
   }
+
+  @override
+  void onClose() {
+    phoneNumberLoginTextField.value.dispose();
+    otpTextField.value.dispose();
+    super.onClose();
+  }
 }

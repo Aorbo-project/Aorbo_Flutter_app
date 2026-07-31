@@ -406,7 +406,8 @@ mixin _$CancellationDataModel {
   @JsonKey(name: 'final_amount')
   double? get finalAmount => throw _privateConstructorUsedError;
   @JsonKey(name: 'advance_amount')
-  int? get advanceAmount => throw _privateConstructorUsedError;
+  double? get advanceAmount =>
+      throw _privateConstructorUsedError; // ✅ FIXED: Changed from int? to double?
   @JsonKey(name: 'cancellation_policy_id')
   int? get cancellationPolicyId => throw _privateConstructorUsedError;
   @JsonKey(name: 'cancellation_policy_name')
@@ -450,7 +451,7 @@ abstract class $CancellationDataModelCopyWith<$Res> {
       @JsonKey(name: 'customer_id') int? customerId,
       @JsonKey(name: 'customer_name') String? customerName,
       @JsonKey(name: 'final_amount') double? finalAmount,
-      @JsonKey(name: 'advance_amount') int? advanceAmount,
+      @JsonKey(name: 'advance_amount') double? advanceAmount,
       @JsonKey(name: 'cancellation_policy_id') int? cancellationPolicyId,
       @JsonKey(name: 'cancellation_policy_name') String? cancellationPolicyName,
       @JsonKey(name: 'cancellation_policy_type') String? cancellationPolicyType,
@@ -529,7 +530,7 @@ class _$CancellationDataModelCopyWithImpl<$Res,
       advanceAmount: freezed == advanceAmount
           ? _value.advanceAmount
           : advanceAmount // ignore: cast_nullable_to_non_nullable
-              as int?,
+              as double?,
       cancellationPolicyId: freezed == cancellationPolicyId
           ? _value.cancellationPolicyId
           : cancellationPolicyId // ignore: cast_nullable_to_non_nullable
@@ -630,7 +631,7 @@ abstract class _$$CancellationDataModelImplCopyWith<$Res>
       @JsonKey(name: 'customer_id') int? customerId,
       @JsonKey(name: 'customer_name') String? customerName,
       @JsonKey(name: 'final_amount') double? finalAmount,
-      @JsonKey(name: 'advance_amount') int? advanceAmount,
+      @JsonKey(name: 'advance_amount') double? advanceAmount,
       @JsonKey(name: 'cancellation_policy_id') int? cancellationPolicyId,
       @JsonKey(name: 'cancellation_policy_name') String? cancellationPolicyName,
       @JsonKey(name: 'cancellation_policy_type') String? cancellationPolicyType,
@@ -710,7 +711,7 @@ class __$$CancellationDataModelImplCopyWithImpl<$Res>
       advanceAmount: freezed == advanceAmount
           ? _value.advanceAmount
           : advanceAmount // ignore: cast_nullable_to_non_nullable
-              as int?,
+              as double?,
       cancellationPolicyId: freezed == cancellationPolicyId
           ? _value.cancellationPolicyId
           : cancellationPolicyId // ignore: cast_nullable_to_non_nullable
@@ -805,7 +806,8 @@ class _$CancellationDataModelImpl implements _CancellationDataModel {
   final double? finalAmount;
   @override
   @JsonKey(name: 'advance_amount')
-  final int? advanceAmount;
+  final double? advanceAmount;
+// ✅ FIXED: Changed from int? to double?
   @override
   @JsonKey(name: 'cancellation_policy_id')
   final int? cancellationPolicyId;
@@ -932,7 +934,7 @@ abstract class _CancellationDataModel implements CancellationDataModel {
       @JsonKey(name: 'customer_id') final int? customerId,
       @JsonKey(name: 'customer_name') final String? customerName,
       @JsonKey(name: 'final_amount') final double? finalAmount,
-      @JsonKey(name: 'advance_amount') final int? advanceAmount,
+      @JsonKey(name: 'advance_amount') final double? advanceAmount,
       @JsonKey(name: 'cancellation_policy_id') final int? cancellationPolicyId,
       @JsonKey(name: 'cancellation_policy_name')
       final String? cancellationPolicyName,
@@ -972,8 +974,8 @@ abstract class _CancellationDataModel implements CancellationDataModel {
   double? get finalAmount;
   @override
   @JsonKey(name: 'advance_amount')
-  int? get advanceAmount;
-  @override
+  double? get advanceAmount;
+  @override // ✅ FIXED: Changed from int? to double?
   @JsonKey(name: 'cancellation_policy_id')
   int? get cancellationPolicyId;
   @override
@@ -1021,7 +1023,8 @@ mixin _$RefundCalculation {
   double? get refund => throw _privateConstructorUsedError;
   double? get deduction => throw _privateConstructorUsedError;
   @JsonKey(name: 'deduction_percent')
-  int? get deductionPercent => throw _privateConstructorUsedError;
+  double? get deductionPercent =>
+      throw _privateConstructorUsedError; // ✅ FIXED: Changed from int? to double?
   @JsonKey(name: 'policy_type')
   String? get policyType => throw _privateConstructorUsedError;
   @JsonKey(name: 'policy_name')
@@ -1060,7 +1063,7 @@ abstract class $RefundCalculationCopyWith<$Res> {
   $Res call(
       {double? refund,
       double? deduction,
-      @JsonKey(name: 'deduction_percent') int? deductionPercent,
+      @JsonKey(name: 'deduction_percent') double? deductionPercent,
       @JsonKey(name: 'policy_type') String? policyType,
       @JsonKey(name: 'policy_name') String? policyName,
       @JsonKey(name: 'slab_info') String? slabInfo,
@@ -1118,7 +1121,7 @@ class _$RefundCalculationCopyWithImpl<$Res, $Val extends RefundCalculation>
       deductionPercent: freezed == deductionPercent
           ? _value.deductionPercent
           : deductionPercent // ignore: cast_nullable_to_non_nullable
-              as int?,
+              as double?,
       policyType: freezed == policyType
           ? _value.policyType
           : policyType // ignore: cast_nullable_to_non_nullable
@@ -1194,7 +1197,7 @@ abstract class _$$RefundCalculationImplCopyWith<$Res>
   $Res call(
       {double? refund,
       double? deduction,
-      @JsonKey(name: 'deduction_percent') int? deductionPercent,
+      @JsonKey(name: 'deduction_percent') double? deductionPercent,
       @JsonKey(name: 'policy_type') String? policyType,
       @JsonKey(name: 'policy_name') String? policyName,
       @JsonKey(name: 'slab_info') String? slabInfo,
@@ -1251,7 +1254,7 @@ class __$$RefundCalculationImplCopyWithImpl<$Res>
       deductionPercent: freezed == deductionPercent
           ? _value.deductionPercent
           : deductionPercent // ignore: cast_nullable_to_non_nullable
-              as int?,
+              as double?,
       policyType: freezed == policyType
           ? _value.policyType
           : policyType // ignore: cast_nullable_to_non_nullable
@@ -1335,7 +1338,8 @@ class _$RefundCalculationImpl implements _RefundCalculation {
   final double? deduction;
   @override
   @JsonKey(name: 'deduction_percent')
-  final int? deductionPercent;
+  final double? deductionPercent;
+// ✅ FIXED: Changed from int? to double?
   @override
   @JsonKey(name: 'policy_type')
   final String? policyType;
@@ -1466,7 +1470,7 @@ abstract class _RefundCalculation implements RefundCalculation {
   const factory _RefundCalculation(
       {final double? refund,
       final double? deduction,
-      @JsonKey(name: 'deduction_percent') final int? deductionPercent,
+      @JsonKey(name: 'deduction_percent') final double? deductionPercent,
       @JsonKey(name: 'policy_type') final String? policyType,
       @JsonKey(name: 'policy_name') final String? policyName,
       @JsonKey(name: 'slab_info') final String? slabInfo,
@@ -1489,8 +1493,8 @@ abstract class _RefundCalculation implements RefundCalculation {
   double? get deduction;
   @override
   @JsonKey(name: 'deduction_percent')
-  int? get deductionPercent;
-  @override
+  double? get deductionPercent;
+  @override // ✅ FIXED: Changed from int? to double?
   @JsonKey(name: 'policy_type')
   String? get policyType;
   @override
@@ -1558,8 +1562,7 @@ mixin _$RefundBreakdown {
   @JsonKey(name: 'payment_method')
   String? get paymentMethod => throw _privateConstructorUsedError;
   @JsonKey(name: 'credit_note_eligible')
-  bool? get creditNoteEligible =>
-      throw _privateConstructorUsedError; // FLEX-01: advance forfeited, credit note issued for GST, no cash refund
+  bool? get creditNoteEligible => throw _privateConstructorUsedError;
   @JsonKey(name: 'is_advance_only')
   bool? get isAdvanceOnly => throw _privateConstructorUsedError;
 
@@ -1837,7 +1840,6 @@ class _$RefundBreakdownImpl implements _RefundBreakdown {
   @override
   @JsonKey(name: 'credit_note_eligible')
   final bool? creditNoteEligible;
-// FLEX-01: advance forfeited, credit note issued for GST, no cash refund
   @override
   @JsonKey(name: 'is_advance_only')
   final bool? isAdvanceOnly;
@@ -1967,7 +1969,7 @@ abstract class _RefundBreakdown implements RefundBreakdown {
   @override
   @JsonKey(name: 'credit_note_eligible')
   bool? get creditNoteEligible;
-  @override // FLEX-01: advance forfeited, credit note issued for GST, no cash refund
+  @override
   @JsonKey(name: 'is_advance_only')
   bool? get isAdvanceOnly;
   @override

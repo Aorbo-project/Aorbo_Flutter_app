@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'package:arobo_app/controller/coupon_controller.dart';
 import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/controller/trek_controller.dart';
@@ -6,10 +7,13 @@ import 'package:arobo_app/freezed_models/booking/booking_history_model.dart';
 import 'package:arobo_app/screens/bookings_history_screen.dart';
 import 'package:arobo_app/screens/dashboard_widget.dart';
 import 'package:arobo_app/screens/my_account_screen.dart';
+import 'package:arobo_app/screens/traveller_information_screen.dart';
+import 'package:arobo_app/services/booking_draft_service.dart';
 import 'package:arobo_app/utils/common_bottom_nav.dart';
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/custom_snackbar.dart';
 import 'package:arobo_app/widgets/rate_trek_popup.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -23,17 +27,28 @@ class DashboardMain extends StatefulWidget {
 class _DashboardMainState extends State<DashboardMain> {
   late final DashboardController _dashboardC;
   DateTime? _lastBackPressTime;
+
   @override
   void initState() {
     super.initState();
     _dashboardC = Get.put(DashboardController(), permanent: true);
     final trekC = Get.put(TrekController(), permanent: true);
     Get.put(CouponController(), permanent: true);
-    Get.put(UserController(), permanent: true);
+    final userC = Get.put(UserController(), permanent: true);
     trekC.checkPendingOrderOnResume();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       _maybeShowRateTrekPopup();
+      final resumed = await BookingDraftService.checkAndResume(trekC, userC);
+      if (resumed && mounted) {
+        Get.to(() => const TravellerInformationScreen());
+      }
     });
+  }
+
+  @override
+  void dispose() {
+    RateTrekPopup.dismiss(); // ← FIXED: clean up overlay on dispose
+    super.dispose();
   }
 
   /// Unwraps the booking history from:
@@ -57,8 +72,6 @@ class _DashboardMainState extends State<DashboardMain> {
     if (!mounted) return;
 
     try {
-      // Fetch specifically 'completed' treks so we don't miss unrated ones
-      // that might be pushed to page 2+ of the 'All Bookings' list.
       final List<BookingHistoryData> bookings = await _dashboardC
           .fetchCompletedBookingsForPopup();
 

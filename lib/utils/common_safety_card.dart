@@ -1,7 +1,8 @@
   import 'package:flutter/material.dart';
+  import 'package:google_fonts/google_fonts.dart';
   import 'package:sizer/sizer.dart';
+  import 'package:arobo_app/theme/app_typography.dart';
   import 'screen_constants.dart';
-  import '../theme/app_typography.dart';
 
   class CommonSafetyCard extends StatelessWidget {
     final String title;
@@ -108,11 +109,8 @@
           Text(
             title,
             style: AppType.style(
-              FontSize.s12,
+              FontSize.s12, // Responsive font size
               w: FontWeight.w800,
-              color: Colors.white,
-              height: 1.2,
-            ).copyWith(
               shadows: [
                 Shadow(
                   offset: Offset(1, 1),
@@ -120,6 +118,8 @@
                   color: Colors.pink,
                 ),
               ],
+              color: Colors.white,
+              height: 1.2,
             ),
           ),
           SizedBox(height: 0.6.h),
@@ -128,7 +128,7 @@
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
             style: AppType.style(
-              FontSize.s10,
+              FontSize.s10, // Responsive font size
               w: FontWeight.w500,
               color: Colors.white.withValues(alpha: 0.9),
               height: 1.5,

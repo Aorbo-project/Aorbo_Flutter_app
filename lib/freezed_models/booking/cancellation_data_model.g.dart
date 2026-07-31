@@ -50,7 +50,7 @@ _$CancellationDataModelImpl _$$CancellationDataModelImplFromJson(
       customerId: json['customer_id'] as int?,
       customerName: json['customer_name'] as String?,
       finalAmount: (json['final_amount'] as num?)?.toDouble(),
-      advanceAmount: json['advance_amount'] as int?,
+      advanceAmount: (json['advance_amount'] as num?)?.toDouble(),
       cancellationPolicyId: json['cancellation_policy_id'] as int?,
       cancellationPolicyName: json['cancellation_policy_name'] as String?,
       cancellationPolicyType: json['cancellation_policy_type'] as String?,
@@ -104,7 +104,7 @@ _$RefundCalculationImpl _$$RefundCalculationImplFromJson(
     _$RefundCalculationImpl(
       refund: (json['refund'] as num?)?.toDouble(),
       deduction: (json['deduction'] as num?)?.toDouble(),
-      deductionPercent: json['deduction_percent'] as int?,
+      deductionPercent: (json['deduction_percent'] as num?)?.toDouble(),
       policyType: json['policy_type'] as String?,
       policyName: json['policy_name'] as String?,
       slabInfo: json['slab_info'] as String?,

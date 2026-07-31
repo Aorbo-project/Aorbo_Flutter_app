@@ -14,6 +14,13 @@ class RateTrekPopup {
 
   static const String _prefPrefix = 'rate_popup_shown_';
 
+  // ── MANUAL TESTING SWITCH ──────────────────────────────────────────────
+  // Set true to force the popup to show on every fresh app launch, ignoring
+  // both the "already shown this session" and the 24-hour re-nag guard.
+  // Flip back to false before shipping - this is a testing convenience
+  // only, the real guards below are untouched and still fully implemented.
+  static const bool debugAlwaysShow = false; // ← FIXED: was true
+
   static bool _visibleThisSession = false;
   static OverlayEntry? _overlayEntry;
 
@@ -30,6 +37,13 @@ class RateTrekPopup {
     if (bookingId == null) return;
     final pref = await SpUtil.getInstance();
     await pref.remove('$_prefPrefix$bookingId');
+  }
+
+  /// Public dismiss — call from DashboardMain.dispose() to prevent
+  /// the OverlayEntry from leaking when the widget tree is torn down.
+  static void dismiss() {
+    // ← FIXED: new public method
+    _removeOverlay();
   }
 
   static BookingHistoryData? findEligibleBooking(
@@ -73,7 +87,7 @@ class RateTrekPopup {
     BuildContext context,
     List<BookingHistoryData> bookings,
   ) async {
-    if (_visibleThisSession) {
+    if (_visibleThisSession && !debugAlwaysShow) {
       debugPrint('[RateTrekPopup] skipped — already visible this session');
       return;
     }
@@ -86,12 +100,15 @@ class RateTrekPopup {
 
     final pref = await SpUtil.getInstance();
     final key = '$_prefPrefix${booking.id}';
-    final lastShownStr = pref.getString(key) ?? '';
-    if (lastShownStr.isNotEmpty) {
-      final lastShown = DateTime.tryParse(lastShownStr);
-      if (lastShown != null &&
-          DateTime.now().difference(lastShown) < const Duration(hours: 24)) {
-        return; // shown recently — don't nag again this soon
+
+    if (!debugAlwaysShow) {
+      final lastShownStr = pref.getString(key) ?? '';
+      if (lastShownStr.isNotEmpty) {
+        final lastShown = DateTime.tryParse(lastShownStr);
+        if (lastShown != null &&
+            DateTime.now().difference(lastShown) < const Duration(hours: 24)) {
+          return; // shown recently — don't nag again this soon
+        }
       }
     }
 
@@ -184,8 +201,7 @@ class _RateTrekSidePopupState extends State<_RateTrekSidePopup>
 
     return Positioned(
       right: 3.w,
-      bottom: 11
-          .h, // clears the bottom nav on every device — was top: 520 (offscreen on small phones)
+      bottom: 11.h,
       child: SafeArea(
         child: FadeTransition(
           opacity: _fadeAnimation,
@@ -258,13 +274,21 @@ class _RateTrekSidePopupState extends State<_RateTrekSidePopup>
                       children: [
                         Text(
                           'Trek Completed! 🎉',
-                          style: AppType.style(12.sp, w: FontWeight.w800, color: AppColors.inkStrong),
+                          style: AppType.style(
+                            12.sp,
+                            w: FontWeight.w800,
+                            color: AppColors.inkStrong,
+                          ),
                         ),
                         Text(
                           title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: AppType.style(9.sp, w: FontWeight.w600, color: const Color(0xFF64748B)),
+                          style: AppType.style(
+                            9.sp,
+                            w: FontWeight.w600,
+                            color: const Color(0xFF64748B),
+                          ),
                         ),
                       ],
                     ),
@@ -291,7 +315,11 @@ class _RateTrekSidePopupState extends State<_RateTrekSidePopup>
               const SizedBox(height: 16),
               Text(
                 'How was your experience?',
-                style: AppType.style(9.sp, w: FontWeight.w600, color: AppColors.inkStrong),
+                style: AppType.style(
+                  9.sp,
+                  w: FontWeight.w600,
+                  color: AppColors.inkStrong,
+                ),
               ),
               const SizedBox(height: 10),
               Row(
@@ -329,7 +357,11 @@ class _RateTrekSidePopupState extends State<_RateTrekSidePopup>
                         children: [
                           Text(
                             'Rate Now',
-                            style: AppType.style(9.sp, w: FontWeight.w700, color: Colors.white),
+                            style: AppType.style(
+                              9.sp,
+                              w: FontWeight.w700,
+                              color: Colors.white,
+                            ),
                           ),
                           const SizedBox(width: 4),
                           const Icon(

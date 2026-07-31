@@ -1,8 +1,21 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:intl/intl.dart';
+import '../../repository/network_url.dart';
 
 part 'trek_detail_model.freezed.dart';
 part 'trek_detail_model.g.dart';
+
+// Same relative-path -> absolute-URL handling used for business_logo in
+// booking_history_model.dart, so a bare path like "uploads/logo.png"
+// resolves the same way here as it does on the bookings/invoice screens.
+String? _parseImageUrl(String? path) {
+  if (path == null || path.isEmpty) return null;
+  if (path.startsWith('http')) return path;
+  final base = NetworkUrl.imageUrl.endsWith('/')
+      ? NetworkUrl.imageUrl
+      : '${NetworkUrl.imageUrl}/';
+  return '$base$path';
+}
 
 @freezed
 class TrekDetailModal with _$TrekDetailModal {
@@ -121,7 +134,12 @@ class Activities with _$Activities {
 
 @freezed
 class Vendor with _$Vendor {
-  const factory Vendor({int? id, User? user}) = _Vendor;
+  const factory Vendor({
+    int? id,
+    User? user,
+    @JsonKey(name: 'business_logo', fromJson: _parseImageUrl)
+    String? businessLogo,
+  }) = _Vendor;
 
   factory Vendor.fromJson(Map<String, dynamic> json) => _$VendorFromJson(json);
 }

@@ -6,6 +6,7 @@ import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:arobo_app/widgets/custom_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
 import 'package:sizer/sizer.dart';
 import '../utils/ist_date_utils.dart';
@@ -351,9 +352,12 @@ class DiscountCardDetailsScreen extends StatelessWidget {
           '$label: ',
           style: AppType.style(FontSize.s10, w: FontWeight.w500, color: Colors.black54),
         ),
-        Text(
-          value,
-          style: AppType.style(FontSize.s10, w: FontWeight.w700, color: Colors.black87),
+        Expanded(
+          child: Text(
+            value,
+            style: AppType.style(FontSize.s10, w: FontWeight.w700, color: Colors.black87),
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
       ],
     );

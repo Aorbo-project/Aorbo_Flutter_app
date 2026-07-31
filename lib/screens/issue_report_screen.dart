@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
 import 'package:shimmer_ai/shimmer_ai.dart';
 import '../controller/user_controller.dart';
@@ -90,6 +91,7 @@ class _IssueReportScreenState extends State<IssueReportScreen> {
 
   void _loadUserProfile() async {
     await _userC.getUserProfile();
+    if (!mounted) return;
     _populateUserData();
   }
 

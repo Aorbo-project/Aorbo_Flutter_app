@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
 import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/controller/trek_controller.dart';
@@ -23,6 +24,8 @@ import '../freezed_models/treks/trek_detail_model.dart';
 import '../utils/traveller_selection_utils.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
+import 'package:arobo_app/services/booking_draft_service.dart';
+import 'package:arobo_app/widgets/trek_card_ui.dart';
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS
@@ -33,11 +36,6 @@ class _TI {
   static const ink = CommonColors.blackColor;
   static const inkMid = CommonColors.cFF6B7280;
   static const inkLight = CommonColors.grey_AEAEAE;
-  // Was CommonColors.trek_route_color (0xff212199, navy indigo) — same
-  // fix as Trek Details: that shared token is also used by 7 other
-  // screens, so it's overridden locally here rather than recolored
-  // globally. Cascades to the duration badge, payment-option selection,
-  // coupon CTA, and a few small tags — all forest-green now.
   static const brand = AppColors.forest;
   static const brandDeep = AppColors.forestDeep;
   static const teal = CommonColors.cFF0F7B6C;
@@ -49,7 +47,6 @@ class _TI {
     end: Alignment.bottomRight,
     colors: [brandDeep, brand],
   );
-  // Completed-section treatment
   static const completedBg = Color(0xFFF3FAF8);
   static const sheetBg = Colors.white;
   static const sheetSurface = Colors.white;
@@ -75,6 +72,7 @@ Widget _tiSheetHandle() => Center(
     ),
   ),
 );
+
 Widget _tiSheetHeader(BuildContext context, String title, IconData icon) =>
     Padding(
       padding: EdgeInsets.only(bottom: 2.h),
@@ -97,7 +95,11 @@ Widget _tiSheetHeader(BuildContext context, String title, IconData icon) =>
               SizedBox(width: 3.w),
               Text(
                 title,
-                style: AppType.style(14.sp, w: FontWeight.w700, color: _TI.sheetInk),
+                style: AppType.style(
+                  14.sp,
+                  w: FontWeight.w700,
+                  color: _TI.sheetInk,
+                ),
               ),
             ],
           ),
@@ -117,26 +119,38 @@ Widget _tiSheetHeader(BuildContext context, String title, IconData icon) =>
         ],
       ),
     );
+
 Widget _tiSheetInputContainer({required String label, required Widget child}) =>
     Container(
       decoration: BoxDecoration(
         color: _TI.sheetSurface,
         border: Border.all(color: _TI.sheetBorder),
-        borderRadius: BorderRadius.circular(2.w),
+        borderRadius: BorderRadius.circular(2.5.w),
       ),
-      padding: EdgeInsets.only(left: 4.w, right: 3.w, top: 1.h, bottom: 1.h),
+      padding: EdgeInsets.only(
+        left: 4.w,
+        right: 3.w,
+        top: 1.2.h,
+        bottom: 1.2.h,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
-            style: AppType.style(8.sp, w: FontWeight.w500, color: _TI.sheetInkMid),
+            style: AppType.style(
+              8.sp,
+              w: FontWeight.w600,
+              color: _TI.sheetInkMid,
+              letterSpacing: 0.5,
+            ),
           ),
           SizedBox(height: 0.5.h),
           child,
         ],
       ),
     );
+
 Widget _tiSheetTextField(
   BuildContext context,
   TextEditingController controller, {
@@ -158,7 +172,11 @@ Widget _tiSheetTextField(
     readOnly: readOnly,
     inputFormatters: inputFormatters,
     textCapitalization: textCapitalization,
-    style: AppType.style(12.sp, color: readOnly ? _TI.sheetInkMid : _TI.sheetInk),
+    style: AppType.style(
+      12.sp,
+      color: readOnly ? _TI.sheetInkMid : _TI.sheetInk,
+      w: FontWeight.w500,
+    ),
     cursorColor: _TI.sheetAccent,
     decoration: const InputDecoration(
       border: InputBorder.none,
@@ -188,35 +206,23 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
   String _selectedPaymentOption = 'full';
   List<Traveler> selectedTravellers = [];
   bool _isCouponExpanded = true;
-  // The actual payment UI/Razorpay/verification/retry logic lives entirely
-  // in PaymentProcessingScreen. This flag only exists so the fare-hold
-  // countdown below doesn't auto-pop this screen while the user is on that
-  // pushed screen actively paying.
   bool _isPaymentInFlight = false;
-  // Must match FARE_TOKEN_TTL_MINUTES in the backend's
-  // services/fareCalculationService.js — this is only the progress-bar
-  // denominator/display cap though, not the source of truth; the actual
-  // countdown is re-synced from the server's real expires_at on every fresh
-  // fare response (see _syncTimerToExpiry), so a mismatch here would only
-  // ever show a momentarily wrong progress-bar fill, never let a stale
-  // token slip through.
-  static const int _totalTimerSecs = 7 * 60;
+  static const int _totalTimerSecs = 5 * 60;
   final RxInt _remainingSecs = _totalTimerSecs.obs;
   bool _isTimerExpired = false;
   bool _didExitOnExpiry = false;
   Timer? _timer;
-  // GetX workers — must be disposed, otherwise they keep firing after
-  // this screen is popped.
   Worker? _fareDebounceWorker;
   Worker? _fareResponseWorker;
-  // Validation & Hints
   final GlobalKey _contactCardKey = GlobalKey();
   final GlobalKey _travellerCardKey = GlobalKey();
   late AnimationController _shakeController;
-  int _shakeTargetIndex = -1; // -1: none, 1: contact, 2: travellers
+  int _shakeTargetIndex = -1;
   String? _hintMessage;
   Timer? _hintTimer;
+
   bool get _isFlexiblePolicy => travelData.cancellationPolicy?.id == 5;
+
   @override
   void initState() {
     super.initState();
@@ -226,21 +232,16 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
       duration: const Duration(milliseconds: 500),
     );
     _selectedPaymentOption = _isFlexiblePolicy ? 'advance' : 'full';
-    // payFull must always reflect the selected option — the option tiles
-    // only exist for flexible-policy treks, so without this a non-flexible
-    // order could be created with a stale payFull value.
     _trekC.createOrderRequestModel.value = _trekC.createOrderRequestModel.value
         .copyWith(
           payFull: !_isFlexiblePolicy || _selectedPaymentOption == 'full',
         );
-    // BUGFIX 2026-07-25: only carry the coupon forward if we're re-entering
-    // checkout for the SAME batch (e.g. app backgrounded mid-flow). A coupon
-    // validated for a previous, unrelated batch must never leak into a new
-    // one — it isn't guaranteed to even be assigned to this trek.
+
     final previousBatchId = _trekC.calculateFareRequestModel.value.batchId;
     final newBatchId = travelData.batchId ?? 1;
     final existingCoupon = _trekC.calculateFareRequestModel.value.couponCode;
     final carryOverCoupon = previousBatchId == newBatchId;
+
     selectedTravellers = List.from(_trekC.travellerDetailList);
     final restoredCount = selectedTravellers.isNotEmpty
         ? selectedTravellers.length
@@ -253,7 +254,10 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
           travelerCount: restoredCount,
           addInsurance: false,
           addFreeCancellationProtection: false,
-          couponCode: (carryOverCoupon && existingCoupon != null && existingCoupon.isNotEmpty)
+          couponCode:
+              (carryOverCoupon &&
+                  existingCoupon != null &&
+                  existingCoupon.isNotEmpty)
               ? existingCoupon
               : '',
         );
@@ -276,9 +280,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
 
   @override
   void dispose() {
-    // NOTE: never touch UserController's shared controllers here — mutating
-    // controllers owned by another lifecycle is what caused the
-    // "used after being disposed" red screen.
     _timer?.cancel();
     _hintTimer?.cancel();
     _fareDebounceWorker?.dispose();
@@ -319,33 +320,18 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
   }
 
   void _handleTimerExpired({bool userInitiated = false}) {
-    // Always record expiry, even while a payment is in flight — we
-    // re-check this the moment the user returns from the payment screen.
     _isTimerExpired = true;
     if (!mounted || _isPaymentInFlight) return;
-    // _didExitOnExpiry only guards the automatic pop-once behaviour (so the
-    // periodic countdown timer / resync don't stack multiple pops). A direct
-    // user tap on Pay Now after that must still give feedback — otherwise,
-    // once auto-expiry has fired once, every subsequent tap on an already-
-    // expired screen silently does nothing at all.
     if (_didExitOnExpiry && !userInitiated) return;
     _didExitOnExpiry = true;
-    // Close any bottom sheet / dialog sitting above this screen first,
-    // otherwise the navigation below would only dismiss the sheet and the
-    // user would stay on an expired checkout.
     Navigator.of(context).popUntil((route) => route is PageRoute);
     CustomSnackBar.show(
       context,
       message: 'Payment session timed out. Please start over.',
     );
-    // A plain pop() only undoes this one push, landing back on Trek
-    // Details — the stale fare/traveler selection state there would let the
-    // customer walk straight back into another expired checkout. Reset all
-    // the way to Search Results instead, matching what "start over" in the
-    // snackbar above actually promises. SearchSummaryScreen takes no route
-    // arguments and reads everything from its GetX controllers, which stay
-    // alive across this navigation, so its results aren't lost.
-    Get.offAllNamed('/search');
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    }
   }
 
   void _triggerHint(String message, GlobalKey key, int targetIndex) {
@@ -395,7 +381,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
     return true;
   }
 
-  // ── PAYMENT LOGIC ────────────────────────────────────────────────────────
   Future<void> _handlePayNow() async {
     if (_isPaymentInFlight) return;
     if (_isTimerExpired || _remainingSecs.value <= 0) {
@@ -424,7 +409,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
       );
       if (!mounted) return;
       setState(() => _isPaymentInFlight = false);
-      // Session may have expired while the user was on the payment screen.
       if (_isTimerExpired || _remainingSecs.value <= 0) {
         _handleTimerExpired();
       }
@@ -439,7 +423,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
     }
   }
 
-  // ── UI HELPERS ───────────────────────────────────────────────────────────
   BoxDecoration _cardDecoration({bool isCompleted = false}) {
     return BoxDecoration(
       color: isCompleted ? _TI.completedBg : _TI.cardBg,
@@ -448,6 +431,15 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
         color: isCompleted ? _TI.teal.withValues(alpha: 0.45) : _TI.divider,
         width: isCompleted ? 1.4 : 1,
       ),
+      boxShadow: isCompleted
+          ? [
+              BoxShadow(
+                color: _TI.teal.withValues(alpha: 0.1),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ]
+          : null,
     );
   }
 
@@ -465,6 +457,15 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
           decoration: BoxDecoration(
             color: isCompleted ? _TI.teal : _TI.iconBadge,
             borderRadius: BorderRadius.circular(2.5.w),
+            boxShadow: isCompleted
+                ? [
+                    BoxShadow(
+                      color: _TI.teal.withValues(alpha: 0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : null,
           ),
           child: Center(
             child: Icon(
@@ -530,13 +531,45 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
-        backgroundColor: CommonColors.completedColor,
+        content: Row(
+          children: [
+            Container(
+              width: 8.w,
+              height: 8.w,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.check_rounded,
+                color: Colors.white,
+                size: 18,
+              ),
+            ),
+            SizedBox(width: 3.w),
+            Expanded(
+              child: Text(
+                message,
+                style: AppType.style(
+                  11.sp,
+                  w: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: _TI.brandDeep,
+        behavior: SnackBarBehavior.floating,
+        margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+        padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.4.h),
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(3.w)),
+        duration: const Duration(seconds: 2),
       ),
     );
   }
 
-  // ── BOTTOM SHEETS ────────────────────────────────────────────────────────
   Future<void> _showContactDetailsBottomSheet({bool isEdit = false}) async {
     final saved = await showModalBottomSheet<bool>(
       context: context,
@@ -561,8 +594,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
     );
     if (saved != true || !mounted) return;
     if (isEdit) {
-      // The profile was refreshed by the API call — re-map selected
-      // travellers to the fresh objects so edited name/age show up.
       setState(_refreshSelectedTravellers);
     } else {
       _autoSelectNewestTraveller();
@@ -580,10 +611,9 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
       return sel;
     }).toList();
     _trekC.travellerDetailList.value = List.from(selectedTravellers);
+    BookingDraftService.save(_trekC);
   }
 
-  /// After creating a traveller, auto-select them if there is still an
-  /// unfilled seat for this booking.
   void _autoSelectNewestTraveller() {
     final adultCount = _trekC.calculateFareRequestModel.value.travelerCount;
     final travelers =
@@ -601,11 +631,11 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
             .calculateFareRequestModel
             .value
             .copyWith(travelerCount: selectedTravellers.length);
+        BookingDraftService.save(_trekC);
       }
     });
   }
 
-  // ── BUILD ─────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -638,7 +668,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                 ],
               ),
             ),
-            // Loading overlay
             Obx(
               () => _trekC.calculateFareResponseModel.value.maybeWhen(
                 loading: (_) => Container(
@@ -657,162 +686,41 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
     );
   }
 
-  // ── SECTIONS BUILDER ──────────────────────────────────────────────────────
   Widget _buildTripSummary() {
-    final vendorName = travelData.vendor?.user?.name ?? 'Aorbo Treks';
-    final hasBadge =
-        travelData.badge?.name != null && travelData.badge!.name!.isNotEmpty;
-    final hasSlots = (travelData.availableSlots ?? 0) > 0;
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
-      decoration: _cardDecoration(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                travelData.title ?? 'Trek',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppType.style(16.sp, w: FontWeight.w800, color: _TI.ink),
-              ),
-              Text(
-                vendorName,
-                style: AppType.style(11.sp, w: FontWeight.w500, color: _TI.inkMid),
-              ),
-            ],
-          ),
-          Divider(color: _TI.divider, height: 3.h),
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'FROM',
-                      style: TextStyle(
-                        fontSize: 8.sp,
-                        fontWeight: FontWeight.w600,
-                        color: _TI.inkLight,
-                      ),
-                    ),
-                    Text(
-                      _formatDate(travelData.startDate),
-                      style: TextStyle(
-                        fontSize: 11.sp,
-                        fontWeight: FontWeight.w700,
-                        color: _TI.ink,
-                      ),
-                    ),
-                    Text(
-                      _dashboardC.fromController.value.text,
-                      style: TextStyle(fontSize: 9.sp, color: _TI.inkMid),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 0.8.h),
-                decoration: BoxDecoration(
-                  color: _TI.brand,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  '${travelData.durationDays ?? 0}D | ${travelData.durationNights ?? 0}N',
-                  style: TextStyle(
-                    fontSize: 9.sp,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      'TO',
-                      style: TextStyle(
-                        fontSize: 8.sp,
-                        fontWeight: FontWeight.w600,
-                        color: _TI.inkLight,
-                      ),
-                    ),
-                    Text(
-                      _calculateEndDate(
-                        travelData.startDate,
-                        travelData.durationDays,
-                      ),
-                      style: TextStyle(
-                        fontSize: 11.sp,
-                        fontWeight: FontWeight.w700,
-                        color: _TI.ink,
-                      ),
-                    ),
-                    Text(
-                      _dashboardC.toController.value.text,
-                      style: TextStyle(fontSize: 9.sp, color: _TI.inkMid),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          if (hasBadge || hasSlots) ...[
-            SizedBox(height: 1.5.h),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                if (hasBadge)
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 2.5.w,
-                      vertical: 0.5.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _TI.tealSoft,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: _TI.teal.withValues(alpha: 0.3),
-                      ),
-                    ),
-                    child: Text(
-                      travelData.badge!.name!.toUpperCase(),
-                      style: AppType.style(8.sp, w: FontWeight.w800, color: _TI.teal),
-                    ),
-                  )
-                else
-                  const SizedBox.shrink(),
-                if (hasSlots)
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.local_fire_department_rounded,
-                        size: 4.w,
-                        color: CommonColors.appRedColor,
-                      ),
-                      SizedBox(width: 1.5.w),
-                      Text(
-                        '${travelData.availableSlots} slots left',
-                        style: TextStyle(
-                          fontSize: 10.sp,
-                          fontWeight: FontWeight.w700,
-                          color: CommonColors.appRedColor,
-                        ),
-                      ),
-                    ],
-                  )
-                else
-                  const SizedBox.shrink(),
-              ],
-            ),
-          ],
-        ],
-      ),
+    final data = travelData;
+    final vendorName = data.vendor?.user?.name ?? 'Aorbo Treks';
+    final isFlexible = data.cancellationPolicy?.id == 5;
+    final badgeText = data.badge?.name ?? '';
+    final durationText =
+        '${data.durationDays ?? 0}D | ${data.durationNights ?? 0}N';
+    final departure = data.startDate ?? '-';
+    final availableSlots = data.availableSlots ?? 0;
+    final totalCapacity = data.capacity ?? 0;
+    final price = '₹${data.basePrice ?? '0'}';
+    // TrekDetailData has no imageUrl/image field - the only image source is
+    // the `images` list, so pick the cover image (falling back to the first
+    // image if none is flagged as cover).
+    final coverImage = () {
+      final imgs = data.images ?? const [];
+      if (imgs.isEmpty) return null;
+      final cover = imgs.where((i) => i.isCover == true);
+      return cover.isNotEmpty ? cover.first.url : imgs.first.url;
+    }();
+
+    return TrekCardUI(
+      title: data.title ?? 'Trek',
+      vendorName: vendorName,
+      isFlexible: isFlexible,
+      badgeText: badgeText,
+      durationText: durationText,
+      rating: data.averageRating,
+      departure: departure,
+      availableSlots: availableSlots,
+      totalCapacity: totalCapacity,
+      price: price,
+      imageUrl: coverImage,
+      vendorLogo: data.vendor?.businessLogo,
+      onContinue: null,
     );
   }
 
@@ -846,7 +754,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                 child: Container(
                   padding: EdgeInsets.symmetric(
                     horizontal: 3.w,
-                    vertical: 0.5.h,
+                    vertical: 0.8.h,
                   ),
                   decoration: BoxDecoration(
                     color: _TI.brand.withValues(alpha: 0.08),
@@ -855,13 +763,24 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                       color: _TI.brand.withValues(alpha: 0.25),
                     ),
                   ),
-                  child: Text(
-                    isCompleted ? 'Edit' : 'Add',
-                    style: TextStyle(
-                      fontSize: 9.sp,
-                      fontWeight: FontWeight.w600,
-                      color: _TI.brand,
-                    ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isCompleted ? Icons.edit_outlined : Icons.add_rounded,
+                        size: 4.w,
+                        color: _TI.brand,
+                      ),
+                      SizedBox(width: 1.5.w),
+                      Text(
+                        isCompleted ? 'Edit' : 'Add',
+                        style: TextStyle(
+                          fontSize: 9.sp,
+                          fontWeight: FontWeight.w600,
+                          color: _TI.brand,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -946,6 +865,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                       _trekC.travellerDetailList.value = List.from(
                         selectedTravellers,
                       );
+                      BookingDraftService.save(_trekC);
                     }, active: adultCount > 1),
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 4.w),
@@ -994,28 +914,42 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
               },
             ),
           SizedBox(height: 1.5.h),
-          // Separate, full-width Add New Traveller button
           GestureDetector(
             onTap: () => _showTravellerBottomSheet(),
             child: Container(
               width: double.infinity,
-              padding: EdgeInsets.symmetric(vertical: 1.4.h),
+              padding: EdgeInsets.symmetric(vertical: 1.5.h),
               decoration: BoxDecoration(
-                color: _TI.iconBadge,
+                color: _TI.brand.withValues(alpha: 0.04),
                 borderRadius: BorderRadius.circular(3.w),
+                border: Border.all(
+                  color: _TI.brand.withValues(alpha: 0.3),
+                  width: 1.5,
+                ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.person_add_alt_1_rounded,
-                    color: Colors.white,
-                    size: 4.5.w,
+                  Container(
+                    padding: EdgeInsets.all(1.5.w),
+                    decoration: BoxDecoration(
+                      color: _TI.brand.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.person_add_alt_1_rounded,
+                      color: _TI.brand,
+                      size: 4.5.w,
+                    ),
                   ),
-                  SizedBox(width: 2.w),
+                  SizedBox(width: 2.5.w),
                   Text(
                     'Add New Traveller',
-                    style: AppType.style(11.sp, w: FontWeight.w600, color: Colors.white),
+                    style: AppType.style(
+                      11.sp,
+                      w: FontWeight.w600,
+                      color: _TI.brand,
+                    ),
                   ),
                 ],
               ),
@@ -1111,12 +1045,13 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                 children: [
                   Text(
                     title,
-                    style: AppType.style(12.sp, w: FontWeight.w600, color: _TI.ink),
+                    style: AppType.style(
+                      12.sp,
+                      w: FontWeight.w600,
+                      color: _TI.ink,
+                    ),
                   ),
-                  Text(
-                    subtitle,
-                    style: AppType.style(9.sp, color: _TI.inkMid),
-                  ),
+                  Text(subtitle, style: AppType.style(9.sp, color: _TI.inkMid)),
                 ],
               ),
             ),
@@ -1304,7 +1239,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
     );
   }
 
-  // ── BOTTOM BAR & OVERLAYS ─────────────────────────────────────────────────
   Widget _buildBottomBar() {
     return Container(
       decoration: BoxDecoration(
@@ -1387,11 +1321,19 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                             children: [
                               TextSpan(
                                 text: '₹ ',
-                                style: AppType.style(14.sp, w: FontWeight.w600, color: _TI.brandDeep),
+                                style: AppType.style(
+                                  14.sp,
+                                  w: FontWeight.w600,
+                                  color: _TI.brandDeep,
+                                ),
                               ),
                               TextSpan(
                                 text: '${payableNow ?? "--"}',
-                                style: AppType.style(16.sp, w: FontWeight.w800, color: _TI.brandDeep),
+                                style: AppType.style(
+                                  16.sp,
+                                  w: FontWeight.w800,
+                                  color: _TI.brandDeep,
+                                ),
                               ),
                             ],
                           ),
@@ -1463,7 +1405,11 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
               Expanded(
                 child: Text(
                   _hintMessage!,
-                  style: AppType.style(11.sp, w: FontWeight.w500, color: Colors.white),
+                  style: AppType.style(
+                    11.sp,
+                    w: FontWeight.w500,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ],
@@ -1521,7 +1467,11 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                 SizedBox(width: 1.w),
                 Text(
                   formattedTime,
-                  style: AppType.style(11.sp, w: FontWeight.w600, color: CommonColors.orangeColor),
+                  style: AppType.style(
+                    11.sp,
+                    w: FontWeight.w600,
+                    color: CommonColors.orangeColor,
+                  ),
                 ),
               ],
             ),
@@ -1543,20 +1493,29 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
     );
   }
 
-  // ── SMALL UI COMPONENTS ───────────────────────────────────────────────────
   Widget _counterBtn(IconData icon, VoidCallback onTap, {bool active = true}) {
     return GestureDetector(
       onTap: active ? onTap : null,
-      child: Container(
-        width: 8.w,
-        height: 8.w,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 9.w,
+        height: 9.w,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: active ? _TI.iconBadge : const Color(0xFFF1F5F9),
+          color: active ? _TI.brand : const Color(0xFFF1F5F9),
+          boxShadow: active
+              ? [
+                  BoxShadow(
+                    color: _TI.brand.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
         ),
         child: Icon(
           icon,
-          size: 4.w,
+          size: 4.5.w,
           color: active ? Colors.white : _TI.inkLight,
         ),
       ),
@@ -1565,20 +1524,96 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
 
   Widget _buildExistingTravellerItem(Traveler traveler, bool isSelected) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.h),
+      padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.5.h),
       decoration: BoxDecoration(
         color: isSelected ? _TI.tealSoft : Colors.white,
         borderRadius: BorderRadius.circular(3.w),
         border: Border.all(
-          color: isSelected ? _TI.teal.withValues(alpha: 0.4) : _TI.divider,
+          color: isSelected ? _TI.teal : _TI.divider,
           width: isSelected ? 1.5 : 1,
         ),
+        boxShadow: isSelected
+            ? [
+                BoxShadow(
+                  color: _TI.teal.withValues(alpha: 0.15),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : null,
       ),
       child: Row(
         children: [
+          Container(
+            width: 11.w,
+            height: 11.w,
+            decoration: BoxDecoration(
+              color: isSelected ? _TI.teal : _TI.iconBadge,
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                (traveler.name ?? '?')[0].toUpperCase(),
+                style: AppType.style(
+                  12.sp,
+                  w: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+          SizedBox(width: 3.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  traveler.name ?? '-',
+                  style: AppType.style(
+                    11.sp,
+                    w: FontWeight.w600,
+                    color: _TI.ink,
+                  ),
+                ),
+                SizedBox(height: 0.3.h),
+                Text(
+                  '${traveler.gender ?? '-'} • ${traveler.age ?? '-'} yrs',
+                  style: AppType.style(9.sp, color: _TI.inkMid),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(width: 2.w),
+          GestureDetector(
+            onTap: () => _showTravellerBottomSheet(traveller: traveler),
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 2.5.w, vertical: 0.6.h),
+              decoration: BoxDecoration(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: _TI.divider),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.edit_outlined, size: 3.5.w, color: _TI.inkMid),
+                  SizedBox(width: 1.w),
+                  Text(
+                    'Edit',
+                    style: TextStyle(
+                      fontSize: 9.sp,
+                      fontWeight: FontWeight.w600,
+                      color: _TI.inkMid,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SizedBox(width: 2.w),
           SizedBox(
-            width: 24,
-            height: 24,
+            width: 6.w,
+            height: 6.w,
             child: Checkbox(
               value: isSelected,
               onChanged: (bool? value) {
@@ -1594,6 +1629,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                   _trekC.travellerDetailList.value = List.from(
                     selectedTravellers,
                   );
+                  BookingDraftService.save(_trekC);
                   _trekC.calculateFareRequestModel.value = _trekC
                       .calculateFareRequestModel
                       .value
@@ -1613,42 +1649,9 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
               ),
               activeColor: _TI.teal,
               checkColor: Colors.white,
-              side: const BorderSide(color: _TI.checkboxBorder, width: 1.5),
-            ),
-          ),
-          SizedBox(width: 3.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  traveler.name ?? '-',
-                  style: AppType.style(11.sp, w: FontWeight.w600, color: _TI.ink),
-                ),
-                Text(
-                  '${traveler.gender ?? '-'} • ${traveler.age ?? '-'} yrs',
-                  style: AppType.style(9.sp, color: _TI.inkMid),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(width: 2.w),
-          GestureDetector(
-            onTap: () => _showTravellerBottomSheet(traveller: traveler),
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 2.5.w, vertical: 0.4.h),
-              decoration: BoxDecoration(
-                color: _TI.brand.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: _TI.brand.withValues(alpha: 0.2)),
-              ),
-              child: Text(
-                'Edit',
-                style: TextStyle(
-                  fontSize: 9.sp,
-                  fontWeight: FontWeight.w600,
-                  color: _TI.brand,
-                ),
+              side: BorderSide(
+                color: isSelected ? _TI.teal : _TI.checkboxBorder,
+                width: 1.5,
               ),
             ),
           ),
@@ -1674,8 +1677,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
     }
     try {
       final start = DateTime.parse(startDate);
-      // A trek's last day is start + (days - 1): a 2D/1N trek starting on
-      // the 1st ends on the 2nd, not the 3rd.
       final end = start.add(Duration(days: (durationDays - 1).clamp(0, 365)));
       return '${end.day.toString().padLeft(2, '0')}-${end.month.toString().padLeft(2, '0')}-${end.year}';
     } catch (_) {
@@ -1686,8 +1687,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
 
 // ─────────────────────────────────────────────
 //  CONTACT DETAILS SHEET
-//  Owns its own controllers — created and disposed with the sheet itself,
-//  never shared with any GetX controller or parent screen.
 // ─────────────────────────────────────────────
 class _ContactDetailsSheet extends StatefulWidget {
   const _ContactDetailsSheet({required this.isEdit});
@@ -1704,13 +1703,11 @@ class _ContactDetailsSheetState extends State<_ContactDetailsSheet> {
   int _stateId = 0;
   String _stateName = BookingConstants.defaultState;
   bool _isSaving = false;
+
   @override
   void initState() {
     super.initState();
     final customer = _userC.userProfileData.value.customer;
-    // Phone is always locked (login identity, never editable here) — so it
-    // always shows the customer's actual login number, even on first-time
-    // "Add Contact Details".
     _phoneCtrl = TextEditingController(
       text: (customer?.phone ?? '').replaceFirst('+91', ''),
     );
@@ -1721,11 +1718,6 @@ class _ContactDetailsSheetState extends State<_ContactDetailsSheet> {
       _stateId = customer!.state!.id!;
       _stateName = customer.state!.name ?? BookingConstants.defaultState;
     } else {
-      // No saved state yet — the field displays BookingConstants.defaultState
-      // as a convenience default, but that's just text unless backed by a
-      // real id from the loaded state list. Without this, _stateId stays 0
-      // and _validate() silently blocks Save even though the field already
-      // shows "Telangana" as selected.
       final matches = _dashboardC.stateList.where(
         (s) => s.name == BookingConstants.defaultState,
       );
@@ -1829,7 +1821,11 @@ class _ContactDetailsSheetState extends State<_ContactDetailsSheet> {
                 children: [
                   Text(
                     '+91',
-                    style: AppType.style(12.sp, w: FontWeight.w700, color: _TI.sheetInk),
+                    style: AppType.style(
+                      12.sp,
+                      w: FontWeight.w700,
+                      color: _TI.sheetInk,
+                    ),
                   ),
                   SizedBox(width: 3.w),
                   Container(height: 2.h, width: 1, color: _TI.sheetBorder),
@@ -1840,7 +1836,7 @@ class _ContactDetailsSheetState extends State<_ContactDetailsSheet> {
                       _phoneCtrl,
                       keyboardType: TextInputType.phone,
                       maxLength: 10,
-                      readOnly: true, // Locked — login identity
+                      readOnly: true,
                     ),
                   ),
                   Icon(
@@ -1866,12 +1862,12 @@ class _ContactDetailsSheetState extends State<_ContactDetailsSheet> {
               decoration: BoxDecoration(
                 color: _TI.sheetSurface,
                 border: Border.all(color: _TI.sheetBorder),
-                borderRadius: BorderRadius.circular(2.w),
+                borderRadius: BorderRadius.circular(2.5.w),
               ),
               padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
               child: InkWell(
                 onTap: _pickState,
-                borderRadius: BorderRadius.circular(2.w),
+                borderRadius: BorderRadius.circular(2.5.w),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -1880,12 +1876,20 @@ class _ContactDetailsSheetState extends State<_ContactDetailsSheet> {
                       children: [
                         Text(
                           'State of Residence',
-                          style: AppType.style(8.sp, w: FontWeight.w500, color: _TI.sheetInkMid),
+                          style: AppType.style(
+                            8.sp,
+                            w: FontWeight.w600,
+                            color: _TI.sheetInkMid,
+                          ),
                         ),
                         SizedBox(height: 0.25.h),
                         Text(
                           _stateName,
-                          style: AppType.style(12.sp, w: FontWeight.w500, color: _TI.sheetInk),
+                          style: AppType.style(
+                            12.sp,
+                            w: FontWeight.w500,
+                            color: _TI.sheetInk,
+                          ),
                         ),
                       ],
                     ),
@@ -1917,12 +1921,9 @@ class _ContactDetailsSheetState extends State<_ContactDetailsSheet> {
 
 // ─────────────────────────────────────────────
 //  TRAVELLER ADD/EDIT SHEET
-//  Owns its own controllers and focus node — same lifecycle-safety rule.
 // ─────────────────────────────────────────────
 class _TravellerFormSheet extends StatefulWidget {
   const _TravellerFormSheet({this.traveller});
-
-  /// null = add mode, non-null = edit mode.
   final Traveler? traveller;
   @override
   State<_TravellerFormSheet> createState() => _TravellerFormSheetState();
@@ -1935,7 +1936,9 @@ class _TravellerFormSheetState extends State<_TravellerFormSheet> {
   final FocusNode _nameFocus = FocusNode();
   String _gender = '';
   bool _isSubmitting = false;
+
   bool get _isEdit => widget.traveller?.id != null;
+
   @override
   void initState() {
     super.initState();
@@ -2010,27 +2013,31 @@ class _TravellerFormSheetState extends State<_TravellerFormSheet> {
         onTap: () => setState(() => _gender = gender),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          height: 5.5.h,
+          height: 6.h,
           decoration: BoxDecoration(
             color: isSelected ? _TI.tealSoft : Colors.white,
             border: Border.all(
               color: isSelected ? _TI.teal : _TI.sheetBorder,
               width: isSelected ? 1.5 : 1,
             ),
-            borderRadius: BorderRadius.circular(3.w),
+            borderRadius: BorderRadius.circular(2.5.w),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                gender,
-                style: AppType.style(11.sp, w: FontWeight.w600, color: isSelected ? _TI.sheetInk : _TI.sheetInkMid),
+              Icon(
+                gender == 'Male' ? Icons.male : Icons.female,
+                size: 4.5.w,
+                color: isSelected ? _TI.teal : _TI.sheetInkMid,
               ),
               SizedBox(width: 2.w),
-              Icon(
-                isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
-                size: 4.w,
-                color: isSelected ? _TI.teal : _TI.sheetInkMid,
+              Text(
+                gender,
+                style: AppType.style(
+                  11.sp,
+                  w: FontWeight.w600,
+                  color: isSelected ? _TI.sheetInk : _TI.sheetInkMid,
+                ),
               ),
             ],
           ),
@@ -2072,7 +2079,7 @@ class _TravellerFormSheetState extends State<_TravellerFormSheet> {
             ),
             SizedBox(height: 1.5.h),
             Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
                   flex: 4,
@@ -2095,7 +2102,11 @@ class _TravellerFormSheetState extends State<_TravellerFormSheet> {
                     children: [
                       Text(
                         'Gender',
-                        style: AppType.style(8.sp, w: FontWeight.w500, color: _TI.sheetInkMid),
+                        style: AppType.style(
+                          8.sp,
+                          w: FontWeight.w600,
+                          color: _TI.sheetInkMid,
+                        ),
                       ),
                       SizedBox(height: 0.5.h),
                       Row(

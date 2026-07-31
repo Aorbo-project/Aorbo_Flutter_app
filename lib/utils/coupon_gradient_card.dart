@@ -1,6 +1,7 @@
 import 'package:arobo_app/utils/app_theme.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
 import 'package:arobo_app/theme/app_typography.dart';
 
@@ -267,8 +268,6 @@ class _CouponGradientCardState extends State<CouponGradientCard>
                                   w: FontWeight.w600,
                                   color: textColor.withValues(alpha: 0.9),
                                   decoration: TextDecoration.underline,
-                                  letterSpacing: null,
-                                ).copyWith(
                                   decorationColor:
                                       textColor.withValues(alpha: 0.9),
                                 ),

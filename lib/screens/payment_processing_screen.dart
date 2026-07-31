@@ -275,8 +275,19 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
     _trekC.clearBookingData();
     _dashboardC.clearSearchAndBookingData();
 
+    // ← FIXED: replaced Get.offAll (which destroyed & recreated
+    //    DashboardMain, re-triggering initState → rate popup)
+    //    with Get.until (pops back to the EXISTING DashboardMain)
+    //    + Get.to (pushes booking detail on top).
     Future.delayed(const Duration(milliseconds: 900), () {
-      Get.offAll(() => const DashboardMain());
+      // Pop every route above the first one (DashboardMain).
+      // This removes TravellerInformationScreen and
+      // PaymentProcessingScreen from the stack.
+      Get.until((route) => route.isFirst);
+
+      // Push the booking-detail screen on top of the still-alive
+      // DashboardMain. No new DashboardMain is created, so its
+      // initState (and the rate popup) will NOT re-fire.
       Get.to(
         () => BookingsUpcomingScreen(bookingId: finalBookingId),
         transition: Transition.rightToLeftWithFade,
@@ -526,7 +537,11 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
           Text(
             title,
             textAlign: TextAlign.center,
-            style: AppType.style(16.sp, w: FontWeight.w700, color: titleColor ?? _PP.ink),
+            style: AppType.style(
+              16.sp,
+              w: FontWeight.w700,
+              color: titleColor ?? _PP.ink,
+            ),
           ),
           const SizedBox(height: 8),
           Text(

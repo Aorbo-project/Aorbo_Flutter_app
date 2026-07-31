@@ -18,6 +18,9 @@ class AppType {
     double? height,
     double? letterSpacing,
     TextDecoration? decoration,
+    Color? decorationColor,
+    FontStyle? fontStyle,
+    List<Shadow>? shadows,
   }) => TextStyle(
     fontFamily: 'Poppins',
     fontSize: size,
@@ -26,6 +29,9 @@ class AppType {
     height: height,
     letterSpacing: letterSpacing,
     decoration: decoration,
+    decorationColor: decorationColor,
+    fontStyle: fontStyle,
+    shadows: shadows,
   );
 
   // ── Semantic ramp ──────────────────────────

@@ -8,6 +8,7 @@
   import 'package:flutter/material.dart';
   import 'package:flutter/services.dart';
   import 'package:get/get.dart';
+  import 'package:google_fonts/google_fonts.dart';
   import 'package:sizer/sizer.dart';
   import 'package:flutter_touch_ripple/flutter_touch_ripple.dart';
 
@@ -24,7 +25,9 @@ import 'package:arobo_app/theme/app_typography.dart';
   class _LoginScreenState extends State<LoginScreen>
       with SingleTickerProviderStateMixin {
 
-    final AuthController _authC = Get.put(AuthController(), permanent: true);
+    final AuthController _authC = Get.isRegistered<AuthController>()
+        ? Get.find<AuthController>()
+        : Get.put(AuthController(), permanent: true);
 
     final FocusNode _phoneFocusNode = FocusNode();
     late AnimationController _animationController;

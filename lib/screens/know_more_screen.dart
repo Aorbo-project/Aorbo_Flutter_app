@@ -5,6 +5,7 @@ import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:arobo_app/utils/know_more_card.dart';
 import 'package:arobo_app/models/know_more_data.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
 import 'package:get/get.dart';
 import 'package:shimmer_ai/shimmer_ai.dart';

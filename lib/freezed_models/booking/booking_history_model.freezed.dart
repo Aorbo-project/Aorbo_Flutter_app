@@ -1793,13 +1793,11 @@ mixin _$Trek {
   @JsonKey(name: 'destination_id')
   int? get destinationId => throw _privateConstructorUsedError;
   @JsonKey(name: 'city_ids')
-  List<int>? get cityIds =>
-      throw _privateConstructorUsedError; // 👇 ADD THESE TWO LINES 👇
+  List<int>? get cityIds => throw _privateConstructorUsedError;
   @JsonKey(name: 'destination_name')
   String? get destinationName => throw _privateConstructorUsedError;
   @JsonKey(name: 'city_names')
-  List<String>? get cityNames =>
-      throw _privateConstructorUsedError; // 👆 --------------------- 👆
+  List<String>? get cityNames => throw _privateConstructorUsedError;
   @JsonKey(name: 'captain_name')
   String? get captainName => throw _privateConstructorUsedError;
   @JsonKey(name: 'captain_phone')
@@ -2192,7 +2190,6 @@ class _$TrekImpl implements _Trek {
     return EqualUnmodifiableListView(value);
   }
 
-// 👇 ADD THESE TWO LINES 👇
   @override
   @JsonKey(name: 'destination_name')
   final String? destinationName;
@@ -2207,7 +2204,6 @@ class _$TrekImpl implements _Trek {
     return EqualUnmodifiableListView(value);
   }
 
-// 👆 --------------------- 👆
   @override
   @JsonKey(name: 'captain_name')
   final String? captainName;
@@ -2360,13 +2356,13 @@ abstract class _Trek implements Trek {
   @override
   @JsonKey(name: 'city_ids')
   List<int>? get cityIds;
-  @override // 👇 ADD THESE TWO LINES 👇
+  @override
   @JsonKey(name: 'destination_name')
   String? get destinationName;
   @override
   @JsonKey(name: 'city_names')
   List<String>? get cityNames;
-  @override // 👆 --------------------- 👆
+  @override
   @JsonKey(name: 'captain_name')
   String? get captainName;
   @override

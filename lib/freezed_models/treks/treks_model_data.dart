@@ -4,20 +4,18 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'treks_model_data.freezed.dart';
 part 'treks_model_data.g.dart';
 
-
 @freezed
 class CalenderDatesResponseModel with _$CalenderDatesResponseModel {
   const factory CalenderDatesResponseModel({
     bool? success,
     String? message,
     CalenderDataModel? data,
-    int? count
+    int? count,
   }) = _CalenderDatesResponseModel;
 
   factory CalenderDatesResponseModel.fromJson(Map<String, dynamic> json) =>
       _$CalenderDatesResponseModelFromJson(json);
 }
-
 
 @freezed
 class CalenderDataModel with _$CalenderDataModel {
@@ -37,22 +35,21 @@ class TrekDatesModel with _$TrekDatesModel {
   const factory TrekDatesModel({
     String? date,
     @JsonKey(name: 'trek_count') int? trekCount,
-    @JsonKey(name: 'has_treks') bool? available
+    @JsonKey(name: 'has_treks') bool? available,
   }) = _TrekDatesModel;
 
   factory TrekDatesModel.fromJson(Map<String, dynamic> json) =>
       _$TrekDatesModelFromJson(json);
 }
 
-
 @freezed
 class FetchTreksResponseModel with _$FetchTreksResponseModel {
   const factory FetchTreksResponseModel({
     bool? success,
     String? message,
-    @JsonKey(name:"search_context") SearchContextModel? searchContext,
+    @JsonKey(name: "search_context") SearchContextModel? searchContext,
     List<TrekData>? data,
-    int? count
+    int? count,
   }) = _FetchTreksResponseModel;
 
   factory FetchTreksResponseModel.fromJson(Map<String, dynamic> json) =>
@@ -64,9 +61,9 @@ class SearchContextModel with _$SearchContextModel {
   const factory SearchContextModel({
     String? from,
     String? to,
-    @JsonKey(name:"selected_date") dynamic selectedDate,
-    @JsonKey(name:"weekend_mode") bool? weekendMode,
-    @JsonKey(name:"weekend_dates") List<String>? weekendDates
+    @JsonKey(name: "selected_date") dynamic selectedDate,
+    @JsonKey(name: "weekend_mode") bool? weekendMode,
+    @JsonKey(name: "weekend_dates") List<String>? weekendDates,
   }) = _SearchContextModel;
 
   factory SearchContextModel.fromJson(Map<String, dynamic> json) =>
@@ -83,30 +80,23 @@ class TrekData with _$TrekData {
     String? destination,
 
     // BACKEND RETURNS "vendor"
-    @JsonKey(name: 'vendor')
-    String? vendor,
+    @JsonKey(name: 'vendor') String? vendor,
 
     // Personal name of the vendor's user account — backend key: "vendor_name"
-    @JsonKey(name: 'vendor_name')
-    String? vendorName,
+    @JsonKey(name: 'vendor_name') String? vendorName,
 
     // Business/company name — backend key: "company_name"
-    @JsonKey(name: 'company_name')
-    String? companyName,
+    @JsonKey(name: 'company_name') String? companyName,
 
     // fallback
-    @JsonKey(name: 'business_name')
-    String? businessName,
+    @JsonKey(name: 'business_name') String? businessName,
 
     // Vendor logo URL — backend key: "vendorLogo"
-    @JsonKey(name: 'vendorLogo')
-    String? vendorLogo,
+    @JsonKey(name: 'vendorLogo') String? vendorLogo,
 
-    @JsonKey(name: 'hasDiscount')
-    bool? hasDiscount,
+    @JsonKey(name: 'hasDiscount') bool? hasDiscount,
 
-    @JsonKey(name: 'discountText')
-    String? discountText,
+    @JsonKey(name: 'discountText') String? discountText,
 
     double? rating,
 
@@ -118,8 +108,7 @@ class TrekData with _$TrekData {
 
     Badge? badge,
 
-    @JsonKey(name: 'imageUrl')
-    String? imageUrl,
+    @JsonKey(name: 'imageUrl') String? imageUrl,
 
     @JsonKey(name: 'cancellation_policy')
     CancellationPolicy? cancellationPolicy,
@@ -129,24 +118,12 @@ class TrekData with _$TrekData {
       _$TrekDataFromJson(json);
 }
 
-
-
-@freezed
-class Badge with _$Badge {
-  const factory Badge({
-    int? id,
-    String? name,
-    String? icon,
-    String? color,
-    String? category,
-  }) = _Badge;
-
-  factory Badge.fromJson(Map<String, dynamic> json) =>
-      _$BadgeFromJson(json);
-}
-
-
-
+// NOTE: Badge is intentionally NOT redefined here - it's already imported
+// from trek_detail_model.dart above. This file used to also declare its
+// own `class Badge`, which collided with that import and broke compilation
+// (two classes named Badge in scope). TrekData.badge below now refers to
+// the shared Badge from trek_detail_model.dart, same as BatchInfo and
+// CancellationPolicy already did.
 
 @freezed
 class TrekBatchesResponseModel with _$TrekBatchesResponseModel {
@@ -154,7 +131,7 @@ class TrekBatchesResponseModel with _$TrekBatchesResponseModel {
     bool? success,
     String? message,
     List<TrekBatchDataModel>? data,
-    int? count
+    int? count,
   }) = _TrekBatchesResponseModel;
 
   factory TrekBatchesResponseModel.fromJson(Map<String, dynamic> json) =>
@@ -166,10 +143,10 @@ class TrekBatchDataModel with _$TrekBatchDataModel {
   const factory TrekBatchDataModel({
     int? id,
     @JsonKey(name: 'trek_id') int? trekId,
-    @JsonKey(name:'start_date') String? startDate,
-    @JsonKey(name:'end_date') String? endDate,
-    @JsonKey(name:'available_slots') int? availableSlots,
-    String? status
+    @JsonKey(name: 'start_date') String? startDate,
+    @JsonKey(name: 'end_date') String? endDate,
+    @JsonKey(name: 'available_slots') int? availableSlots,
+    String? status,
   }) = _TrekBatchDataModel;
 
   factory TrekBatchDataModel.fromJson(Map<String, dynamic> json) =>

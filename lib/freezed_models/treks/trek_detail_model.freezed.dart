@@ -2084,6 +2084,8 @@ Vendor _$VendorFromJson(Map<String, dynamic> json) {
 mixin _$Vendor {
   int? get id => throw _privateConstructorUsedError;
   User? get user => throw _privateConstructorUsedError;
+  @JsonKey(name: 'business_logo', fromJson: _parseImageUrl)
+  String? get businessLogo => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -2095,7 +2097,11 @@ abstract class $VendorCopyWith<$Res> {
   factory $VendorCopyWith(Vendor value, $Res Function(Vendor) then) =
       _$VendorCopyWithImpl<$Res, Vendor>;
   @useResult
-  $Res call({int? id, User? user});
+  $Res call(
+      {int? id,
+      User? user,
+      @JsonKey(name: 'business_logo', fromJson: _parseImageUrl)
+      String? businessLogo});
 
   $UserCopyWith<$Res>? get user;
 }
@@ -2115,6 +2121,7 @@ class _$VendorCopyWithImpl<$Res, $Val extends Vendor>
   $Res call({
     Object? id = freezed,
     Object? user = freezed,
+    Object? businessLogo = freezed,
   }) {
     return _then(_value.copyWith(
       id: freezed == id
@@ -2125,6 +2132,10 @@ class _$VendorCopyWithImpl<$Res, $Val extends Vendor>
           ? _value.user
           : user // ignore: cast_nullable_to_non_nullable
               as User?,
+      businessLogo: freezed == businessLogo
+          ? _value.businessLogo
+          : businessLogo // ignore: cast_nullable_to_non_nullable
+              as String?,
     ) as $Val);
   }
 
@@ -2148,7 +2159,11 @@ abstract class _$$VendorImplCopyWith<$Res> implements $VendorCopyWith<$Res> {
       __$$VendorImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({int? id, User? user});
+  $Res call(
+      {int? id,
+      User? user,
+      @JsonKey(name: 'business_logo', fromJson: _parseImageUrl)
+      String? businessLogo});
 
   @override
   $UserCopyWith<$Res>? get user;
@@ -2167,6 +2182,7 @@ class __$$VendorImplCopyWithImpl<$Res>
   $Res call({
     Object? id = freezed,
     Object? user = freezed,
+    Object? businessLogo = freezed,
   }) {
     return _then(_$VendorImpl(
       id: freezed == id
@@ -2177,6 +2193,10 @@ class __$$VendorImplCopyWithImpl<$Res>
           ? _value.user
           : user // ignore: cast_nullable_to_non_nullable
               as User?,
+      businessLogo: freezed == businessLogo
+          ? _value.businessLogo
+          : businessLogo // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -2184,7 +2204,11 @@ class __$$VendorImplCopyWithImpl<$Res>
 /// @nodoc
 @JsonSerializable()
 class _$VendorImpl implements _Vendor {
-  const _$VendorImpl({this.id, this.user});
+  const _$VendorImpl(
+      {this.id,
+      this.user,
+      @JsonKey(name: 'business_logo', fromJson: _parseImageUrl)
+      this.businessLogo});
 
   factory _$VendorImpl.fromJson(Map<String, dynamic> json) =>
       _$$VendorImplFromJson(json);
@@ -2193,10 +2217,13 @@ class _$VendorImpl implements _Vendor {
   final int? id;
   @override
   final User? user;
+  @override
+  @JsonKey(name: 'business_logo', fromJson: _parseImageUrl)
+  final String? businessLogo;
 
   @override
   String toString() {
-    return 'Vendor(id: $id, user: $user)';
+    return 'Vendor(id: $id, user: $user, businessLogo: $businessLogo)';
   }
 
   @override
@@ -2205,12 +2232,14 @@ class _$VendorImpl implements _Vendor {
         (other.runtimeType == runtimeType &&
             other is _$VendorImpl &&
             (identical(other.id, id) || other.id == id) &&
-            (identical(other.user, user) || other.user == user));
+            (identical(other.user, user) || other.user == user) &&
+            (identical(other.businessLogo, businessLogo) ||
+                other.businessLogo == businessLogo));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(runtimeType, id, user);
+  int get hashCode => Object.hash(runtimeType, id, user, businessLogo);
 
   @JsonKey(ignore: true)
   @override
@@ -2227,7 +2256,11 @@ class _$VendorImpl implements _Vendor {
 }
 
 abstract class _Vendor implements Vendor {
-  const factory _Vendor({final int? id, final User? user}) = _$VendorImpl;
+  const factory _Vendor(
+      {final int? id,
+      final User? user,
+      @JsonKey(name: 'business_logo', fromJson: _parseImageUrl)
+      final String? businessLogo}) = _$VendorImpl;
 
   factory _Vendor.fromJson(Map<String, dynamic> json) = _$VendorImpl.fromJson;
 
@@ -2235,6 +2268,9 @@ abstract class _Vendor implements Vendor {
   int? get id;
   @override
   User? get user;
+  @override
+  @JsonKey(name: 'business_logo', fromJson: _parseImageUrl)
+  String? get businessLogo;
   @override
   @JsonKey(ignore: true)
   _$$VendorImplCopyWith<_$VendorImpl> get copyWith =>

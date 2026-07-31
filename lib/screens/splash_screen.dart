@@ -41,7 +41,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
   late Animation<double> _scaleAnimation;
   Animation<double>? _shakeAnimation;
 
-  final AuthController _authC = Get.put(AuthController());
+  final AuthController _authC = Get.put(AuthController(), permanent: true);
 
   // final TextEditingController _phoneController = TextEditingController();
   bool isValid = false;

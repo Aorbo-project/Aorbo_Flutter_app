@@ -2,6 +2,7 @@ import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/seasonal_forecast_mock_data.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../widgets/custom_network_image.dart';
 import 'package:arobo_app/theme/app_typography.dart';

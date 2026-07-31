@@ -198,12 +198,14 @@ _$VendorImpl _$$VendorImplFromJson(Map<String, dynamic> json) => _$VendorImpl(
       user: json['user'] == null
           ? null
           : User.fromJson(json['user'] as Map<String, dynamic>),
+      businessLogo: _parseImageUrl(json['business_logo'] as String?),
     );
 
 Map<String, dynamic> _$$VendorImplToJson(_$VendorImpl instance) =>
     <String, dynamic>{
       'id': instance.id,
       'user': instance.user,
+      'business_logo': instance.businessLogo,
     };
 
 _$UserImpl _$$UserImplFromJson(Map<String, dynamic> json) => _$UserImpl(

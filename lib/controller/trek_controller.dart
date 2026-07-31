@@ -24,6 +24,7 @@ import '../repository/repository.dart';
 import '../repository/network_url.dart';
 import '../utils/auth_utils.dart';
 import '../utils/shared_preferences.dart';
+import '../services/booking_draft_service.dart';
 
 class TrekController extends GetxController {
   final Repository repository = Repository();
@@ -555,6 +556,10 @@ class TrekController extends GetxController {
               pendingOrderId.toString(),
             );
           }
+          // Order now exists server-side - checkPendingOrderOnResume()
+          // covers recovery from here on, so the pre-order draft is no
+          // longer needed.
+          await BookingDraftService.clear();
         } else {
           errorMessage.value = response['message'];
           logger.e(errorMessage.value);
@@ -885,6 +890,7 @@ class TrekController extends GetxController {
     trekPersonCount.value = 0;
     travellerDetailList.clear();
     trekBatchId.value = 0;
+    BookingDraftService.clear();
 
     orderModal.value = BookingResponse();
     orderData.value = Order();

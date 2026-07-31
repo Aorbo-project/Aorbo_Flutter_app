@@ -1,4 +1,3 @@
-
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'cancellation_data_model.freezed.dart';
@@ -11,8 +10,9 @@ class RequestCancellationResponseModel with _$RequestCancellationResponseModel {
     String? message,
   }) = _RequestCancellationResponseModel;
 
-  factory RequestCancellationResponseModel.fromJson(Map<String, dynamic> json) =>
-      _$RequestCancellationResponseModelFromJson(json);
+  factory RequestCancellationResponseModel.fromJson(
+    Map<String, dynamic> json,
+  ) => _$RequestCancellationResponseModelFromJson(json);
 }
 
 @freezed
@@ -23,8 +23,9 @@ class CancellationDetailsResponseModel with _$CancellationDetailsResponseModel {
     CancellationDataModel? data,
   }) = _CancellationDetailsResponseModel;
 
-  factory CancellationDetailsResponseModel.fromJson(Map<String, dynamic> json) =>
-      _$CancellationDetailsResponseModelFromJson(json);
+  factory CancellationDetailsResponseModel.fromJson(
+    Map<String, dynamic> json,
+  ) => _$CancellationDetailsResponseModelFromJson(json);
 }
 
 @freezed
@@ -36,7 +37,8 @@ class CancellationDataModel with _$CancellationDataModel {
     @JsonKey(name: 'customer_id') int? customerId,
     @JsonKey(name: 'customer_name') String? customerName,
     @JsonKey(name: 'final_amount') double? finalAmount,
-    @JsonKey(name: 'advance_amount') int? advanceAmount,
+    @JsonKey(name: 'advance_amount')
+    double? advanceAmount, // ✅ FIXED: Changed from int? to double?
     @JsonKey(name: 'cancellation_policy_id') int? cancellationPolicyId,
     @JsonKey(name: 'cancellation_policy_name') String? cancellationPolicyName,
     @JsonKey(name: 'cancellation_policy_type') String? cancellationPolicyType,
@@ -59,7 +61,8 @@ class RefundCalculation with _$RefundCalculation {
   const factory RefundCalculation({
     double? refund,
     double? deduction,
-    @JsonKey(name: 'deduction_percent') int? deductionPercent,
+    @JsonKey(name: 'deduction_percent')
+    double? deductionPercent, // ✅ FIXED: Changed from int? to double?
     @JsonKey(name: 'policy_type') String? policyType,
     @JsonKey(name: 'policy_name') String? policyName,
     @JsonKey(name: 'slab_info') String? slabInfo,
@@ -93,7 +96,6 @@ class RefundBreakdown with _$RefundBreakdown {
     @JsonKey(name: 'razorpay_fee') double? razorpayFee,
     @JsonKey(name: 'payment_method') String? paymentMethod,
     @JsonKey(name: 'credit_note_eligible') bool? creditNoteEligible,
-    // FLEX-01: advance forfeited, credit note issued for GST, no cash refund
     @JsonKey(name: 'is_advance_only') bool? isAdvanceOnly,
   }) = _RefundBreakdown;
 
@@ -103,10 +105,7 @@ class RefundBreakdown with _$RefundBreakdown {
 
 @freezed
 class RefundItem with _$RefundItem {
-  const factory RefundItem({
-    String? item,
-    double? amount,
-  }) = _RefundItem;
+  const factory RefundItem({String? item, double? amount}) = _RefundItem;
 
   factory RefundItem.fromJson(Map<String, dynamic> json) =>
       _$RefundItemFromJson(json);
@@ -114,10 +113,7 @@ class RefundItem with _$RefundItem {
 
 @freezed
 class LoseItem with _$LoseItem {
-  const factory LoseItem({
-    String? item,
-    double? amount,
-  }) = _LoseItem;
+  const factory LoseItem({String? item, double? amount}) = _LoseItem;
 
   factory LoseItem.fromJson(Map<String, dynamic> json) =>
       _$LoseItemFromJson(json);

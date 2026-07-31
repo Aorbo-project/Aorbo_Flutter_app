@@ -1,5 +1,6 @@
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
 import 'package:get/get.dart';
 import '../models/chat_data.dart';
@@ -311,6 +312,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     try {
       // Initialize the chat controller
       await _chatController.initializeChat();
+      if (!mounted) return;
 
       setState(() {
         isConnectedToSupport = true;
@@ -348,7 +350,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
       try {
         final result = await _faqRepository.fetchChatbotReply(text);
-        
+        if (!mounted) return;
+
         setState(() {
           isTyping = false;
         });
@@ -774,9 +777,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           children: [
             Text(
               'Support is typing',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: FontSize.s11,
+              style: AppType.style(
+                FontSize.s11,
                 color: Colors.grey.shade600,
                 fontStyle: FontStyle.italic,
               ),

@@ -157,23 +157,6 @@ Map<String, dynamic> _$$TrekDataImplToJson(_$TrekDataImpl instance) =>
       'cancellation_policy': instance.cancellationPolicy,
     };
 
-_$BadgeImpl _$$BadgeImplFromJson(Map<String, dynamic> json) => _$BadgeImpl(
-      id: json['id'] as int?,
-      name: json['name'] as String?,
-      icon: json['icon'] as String?,
-      color: json['color'] as String?,
-      category: json['category'] as String?,
-    );
-
-Map<String, dynamic> _$$BadgeImplToJson(_$BadgeImpl instance) =>
-    <String, dynamic>{
-      'id': instance.id,
-      'name': instance.name,
-      'icon': instance.icon,
-      'color': instance.color,
-      'category': instance.category,
-    };
-
 _$TrekBatchesResponseModelImpl _$$TrekBatchesResponseModelImplFromJson(
         Map<String, dynamic> json) =>
     _$TrekBatchesResponseModelImpl(

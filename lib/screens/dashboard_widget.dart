@@ -336,7 +336,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
       context,
       MaterialPageRoute(builder: (_) => SourceLocationScreen()),
     );
-    if (selectedCity != null) {
+    if (selectedCity != null && mounted) {
       setState(() {
         _dashboardC.fromController.value.text = selectedCity.name;
       });
@@ -348,7 +348,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
       context,
       MaterialPageRoute(builder: (_) => SourceLocationScreen()),
     );
-    if (selectedTrek != null) {
+    if (selectedTrek != null && mounted) {
       setState(() {
         _dashboardC.toController.value.text = selectedTrek.name;
       });
