@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:arobo_app/freezed_models/booking/booking_data_model.dart';
 import 'package:arobo_app/screens/coupon_code_screen.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
@@ -261,6 +262,12 @@ class _PaymentScreenState extends State<PaymentScreen>
   }
 
   Future<void> _handlePaymentError(PaymentFailureResponse r) async {
+    FirebaseCrashlytics.instance.recordError(
+      'Razorpay payment failed: code=${r.code} message=${r.message}',
+      null,
+      reason: 'Razorpay EVENT_PAYMENT_ERROR (payment_screen)',
+      fatal: false,
+    );
     if (!mounted) return;
 
     final orderId =
