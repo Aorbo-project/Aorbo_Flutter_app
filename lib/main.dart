@@ -9,6 +9,7 @@ import 'package:arobo_app/utils/Preferences.dart';
 import 'package:arobo_app/utils/app_theme.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -31,7 +32,7 @@ void main() async {
     debugPrint(
       '╔══ UNCAUGHT ZONE ERROR ══╗\n$error\n$stack\n╚═════════════════════════╝',
     );
-    // TODO: FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
     // Swallow only in debug. In release, let it surface so OS/store vitals
     // report it — silent swallowing ships invisible crashes.
     return kDebugMode;
@@ -40,6 +41,8 @@ void main() async {
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(!kDebugMode);
+  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
   await Preferences.initPref();
   sp = await SpUtil.getInstance();
 
@@ -161,6 +164,12 @@ class MyApp extends StatelessWidget {
           theme: AppTheme.lightTheme,
           initialRoute: '/',
           getPages: routes,
+          routingCallback: (routing) {
+            final screen = routing?.current;
+            if (screen != null && screen.isNotEmpty) {
+              FirebaseCrashlytics.instance.log('Screen: $screen');
+            }
+          },
         );
       },
     );

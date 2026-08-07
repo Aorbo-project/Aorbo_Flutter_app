@@ -8,6 +8,7 @@ import 'package:arobo_app/utils/custom_alert_dialog.dart';
 import 'package:arobo_app/utils/shared_preferences.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart' hide FormData, Response;
 
@@ -45,6 +46,9 @@ class Repository {
         onRequest: (options, handler) async {
           final curl = _toCurl(options);
           debugPrint("📡 CURL: $curl");
+          FirebaseCrashlytics.instance.log(
+            'API → ${options.method} ${options.path}',
+          );
 
           if (options.data is FormData) {
             logger.w("Data is FormData");
@@ -58,11 +62,24 @@ class Repository {
           logger.i("✅ onResponse: RealUri ->> ${response.realUri}");
           logger.i("StatusCode ->> ${response.statusCode}");
           logger.d("Data ->> ${response.data}");
+          FirebaseCrashlytics.instance.log(
+            'API ← ${response.statusCode} ${response.requestOptions.path}',
+          );
           return handler.next(response);
         },
         onError: (error, handler) async {
           logger.e("❌ onError: Error ->> ${error.error}");
           logger.e("Response ->> ${error.response}");
+          FirebaseCrashlytics.instance.log(
+            'API ✕ ${error.response?.statusCode} ${error.requestOptions.path}',
+          );
+          FirebaseCrashlytics.instance.recordError(
+            error,
+            error.stackTrace,
+            reason:
+                'API error: ${error.requestOptions.method} ${error.requestOptions.path}',
+            fatal: false,
+          );
 
           final statusCode = error.response?.statusCode;
           final errorCode = (error.response?.data is Map)

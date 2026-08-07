@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:arobo_app/main.dart';
 import 'package:arobo_app/utils/shared_preferences.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -159,6 +160,9 @@ class AuthController extends GetxController {
           // Store profile completion state so the app can prompt new/incomplete users
           await sp!.putBool(SpUtil.profileCompleted, customer?.profileCompleted ?? false);
           await sp!.putBool(SpUtil.isNewCustomer, customer?.isNewCustomer ?? false);
+          FirebaseCrashlytics.instance.setUserIdentifier(
+            customer?.id?.toString() ?? '',
+          );
           registerFcmToken();
           return true;
         } catch (parseError) {
