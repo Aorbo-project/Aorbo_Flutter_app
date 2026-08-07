@@ -1232,6 +1232,9 @@ class _PaymentScreenState extends State<PaymentScreen>
                         success: (r) => r as CalculateFareResponseModel,
                         orElse: () => null,
                       );
+                  FirebaseCrashlytics.instance.log(
+                    'Popup: Fare breakdown sheet (payment)',
+                  );
                   showModalBottomSheet(
                     context: context,
                     backgroundColor: Colors.transparent,
@@ -1534,6 +1537,9 @@ class _PaymentScreenState extends State<PaymentScreen>
                 Expanded(
                   child: GestureDetector(
                     onTap: () {
+                      FirebaseCrashlytics.instance.log(
+                        'Popup: Fare breakdown sheet (payment footer)',
+                      );
                       showModalBottomSheet(
                         context: context,
                         backgroundColor: Colors.transparent,

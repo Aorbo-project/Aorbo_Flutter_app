@@ -3,6 +3,7 @@ import 'package:arobo_app/controller/trek_controller.dart';
 import 'package:arobo_app/controller/user_controller.dart';
 import 'package:arobo_app/repository/repository.dart';
 import 'package:arobo_app/widgets/custom_network_image.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
@@ -768,6 +769,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
     List<String> images,
     int initial,
   ) {
+    FirebaseCrashlytics.instance.log('Popup: Trek image viewer');
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,

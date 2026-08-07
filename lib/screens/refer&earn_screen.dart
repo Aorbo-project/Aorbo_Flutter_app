@@ -1,3 +1,4 @@
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -240,6 +241,7 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
   // ─────────────────────────────────────────────────────────────────────────
 
   void _openShareSheet() {
+    FirebaseCrashlytics.instance.log('Popup: Refer & earn share sheet');
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,

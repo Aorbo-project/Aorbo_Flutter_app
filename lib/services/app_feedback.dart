@@ -9,6 +9,7 @@
 
 import 'dart:async';
 import 'dart:collection';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -92,6 +93,9 @@ class AppFeedback {
     }
     _busy = true;
     final req = _queue.removeFirst();
+    FirebaseCrashlytics.instance.log(
+      'Toast (${req.kind.name}): ${req.message}',
+    );
     _haptic(req.kind);
     _entry = OverlayEntry(
       builder: (_) => _FeedbackToast(

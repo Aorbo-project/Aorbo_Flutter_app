@@ -1,5 +1,6 @@
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -55,6 +56,7 @@ showAlertDialog({String? msg}) {
       ),
     ],
   );
+  FirebaseCrashlytics.instance.log('Popup: Generic alert dialog: $msg');
   showDialog(
     context: Get.context!,
     builder: (BuildContext context) {
@@ -64,6 +66,7 @@ showAlertDialog({String? msg}) {
 }
 
 noInternetDialog({required Function() onRetry}) {
+  FirebaseCrashlytics.instance.log('Popup: No internet dialog');
   showDialog(
     context: Get.context!,
     barrierDismissible: false,

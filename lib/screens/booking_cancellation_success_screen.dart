@@ -1,3 +1,4 @@
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -679,6 +680,9 @@ class _BookingCancellationSuccessScreenState
   //  REFUND STATUS BOTTOM SHEET
   // ─────────────────────────────────────────────
   void _showRefundStatusSheet(BuildContext context) {
+    FirebaseCrashlytics.instance.log(
+      'Popup: Refund status sheet (cancellation success)',
+    );
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,

@@ -1,3 +1,4 @@
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
@@ -24,6 +25,7 @@ const Color _inkSoft = Color(0xFF6B6B7B);
 /// a short T&C list previously left a large empty gap below the card,
 /// showing the scrim through it.
 void showCouponTermsSheet(BuildContext context, CouponCardData? coupon) {
+  FirebaseCrashlytics.instance.log('Popup: Coupon terms sheet');
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,

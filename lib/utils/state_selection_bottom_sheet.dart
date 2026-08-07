@@ -1,3 +1,4 @@
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
@@ -17,6 +18,7 @@ Future<void> showStateSelectionBottomSheet({
   required int? selectedStateId,
   required ValueChanged<StateListData> onStateSelected,
 }) {
+  FirebaseCrashlytics.instance.log('Popup: State selection sheet');
   return showModalBottomSheet(
     context: context,
     isScrollControlled: true,

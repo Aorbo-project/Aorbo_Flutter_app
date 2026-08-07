@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:arobo_app/freezed_models/booking/booking_data_model.dart';
 import 'package:arobo_app/screens/coupon_code_screen.dart';
 import 'package:arobo_app/screens/payment_processing_screen.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -1267,6 +1268,9 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                           success: (r) => r as CalculateFareResponseModel,
                           orElse: () => null,
                         );
+                    FirebaseCrashlytics.instance.log(
+                      'Popup: Fare breakdown sheet (traveller info)',
+                    );
                     showModalBottomSheet(
                       context: context,
                       backgroundColor: Colors.transparent,
