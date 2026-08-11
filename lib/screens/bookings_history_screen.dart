@@ -17,7 +17,7 @@ import 'package:arobo_app/theme/app_typography.dart';
 // ─────────────────────────────────────────────
 class _BkColors {
   static const bg = Color(0xFFF4F7FF);
-  static const cardBg = Color(0xFFFFFFFF);
+  static const cardBg = AppColors.surface;
   static const ink = Color(0xFF1A1D2E);
   static const inkMid = Color(0xFF6C7293);
   static const inkLight = Color(0xFFADB5BD);

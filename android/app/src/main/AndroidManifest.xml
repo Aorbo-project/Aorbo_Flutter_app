@@ -9,6 +9,7 @@
         android:usesCleartextTraffic="true">
         <activity
             android:name=".MainActivity"
+            android:enableOnBackInvokedCallback="true"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:exported="true"
             android:hardwareAccelerated="true"
@@ -58,7 +59,11 @@
         </intent>
         <package android:name="com.phonepe.app" />
     </queries>
+    <!-- Impeller is stable on Android now and gives smoother animations and
+         fewer jank-causing shader compilation stalls than the legacy Skia
+         backend. Re-enabled as part of the modernization pass — worth a
+         full regression pass on Maps/PDF/video screens before release. -->
     <meta-data
         android:name="io.flutter.embedding.android.EnableImpeller"
-        android:value="false" />
+        android:value="true" />
 </manifest>

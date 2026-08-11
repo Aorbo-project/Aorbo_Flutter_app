@@ -733,7 +733,7 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
           opacity: _fadeAnim,
           child: RefreshIndicator(
             color: AroboTheme.primary,
-            backgroundColor: Colors.white,
+            backgroundColor: AppColors.surface,
             onRefresh: _onRefresh,
             child: CustomScrollView(
               controller: _scrollController,

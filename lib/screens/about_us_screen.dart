@@ -19,7 +19,7 @@ class _C {
   static const inkLight  = Color(0xFF888888);
   static const divider   = Color(0xFFEEEEEE);
   static const cardBg    = Color(0xFFF9F9F7);
-  static const white     = Color(0xFFFFFFFF);
+  static const white     = AppColors.surface;
   static const footerText= Color(0xFFD8D8D8);
   static const red       = Color(0xFFB52424);
 }

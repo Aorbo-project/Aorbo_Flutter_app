@@ -39,7 +39,7 @@ import 'package:arobo_app/theme/app_typography.dart';
 /// this — it is fully driven by DashboardHeaderTheme.
 class _C {
   static const bg = AppColors.bgCool;
-  static const cardBg = Color(0xFFFFFFFF);
+  static const cardBg = AppColors.surface;
   static const ink = AppColors.ink;
   static const inkMid = AppColors.inkMid;
   static const inkLight = AppColors.inkLight;
@@ -539,12 +539,20 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                     children: [
                                       Text(
                                         'Select Departure Date',
-                                        style: AppType.style(15.5, w: FontWeight.w700, color: _C.ink, letterSpacing: -0.3),
+                                        style: AppType.style(
+                                          15.5,
+                                          w: FontWeight.w700,
+                                          color: _C.ink,
+                                          letterSpacing: -0.3,
+                                        ),
                                       ),
                                       SizedBox(height: 2),
                                       Text(
                                         'Tap an available date to continue',
-                                        style: AppType.style(10.5, color: _C.inkMid),
+                                        style: AppType.style(
+                                          10.5,
+                                          color: _C.inkMid,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -635,7 +643,10 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                       const SizedBox(height: 12),
                                       Text(
                                         'Loading available dates…',
-                                        style: AppType.style(11.5, color: _C.inkMid),
+                                        style: AppType.style(
+                                          11.5,
+                                          color: _C.inkMid,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -734,7 +745,12 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                 headerStyle: HeaderStyle(
                                   formatButtonVisible: false,
                                   titleCentered: true,
-                                  titleTextStyle: AppType.style(14.5, w: FontWeight.w700, color: _C.ink, letterSpacing: -0.2),
+                                  titleTextStyle: AppType.style(
+                                    14.5,
+                                    w: FontWeight.w700,
+                                    color: _C.ink,
+                                    letterSpacing: -0.2,
+                                  ),
                                   leftChevronIcon: _chevron(
                                     Icons.chevron_left_rounded,
                                     _C.teal,
@@ -748,8 +764,18 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                   ),
                                 ),
                                 daysOfWeekStyle: DaysOfWeekStyle(
-                                  weekdayStyle: AppType.style(10.5, w: FontWeight.w700, color: _C.inkMid, letterSpacing: 0.4),
-                                  weekendStyle: AppType.style(10.5, w: FontWeight.w700, color: _C.danger.withValues(alpha: 0.7), letterSpacing: 0.4),
+                                  weekdayStyle: AppType.style(
+                                    10.5,
+                                    w: FontWeight.w700,
+                                    color: _C.inkMid,
+                                    letterSpacing: 0.4,
+                                  ),
+                                  weekendStyle: AppType.style(
+                                    10.5,
+                                    w: FontWeight.w700,
+                                    color: _C.danger.withValues(alpha: 0.7),
+                                    letterSpacing: 0.4,
+                                  ),
                                   dowTextFormatter: (date, locale) =>
                                       DateFormat.E(locale)
                                           .format(date)
@@ -891,23 +917,33 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
           children: [
             Text(
               '${day.day}',
-              style: AppType.style(12.5, w: isSelected || isAvailable
+              style: AppType.style(
+                12.5,
+                w: isSelected || isAvailable
                     ? FontWeight.w700
-                    : FontWeight.w500, color: isSelected
+                    : FontWeight.w500,
+                color: isSelected
                     ? Colors.white
                     : isAvailable
                     ? _C.teal
                     : isWeekend
                     ? _C.danger.withValues(alpha: 0.7)
-                    : _C.ink, height: 1.0),
+                    : _C.ink,
+                height: 1.0,
+              ),
             ),
             const SizedBox(height: 2),
             if (isAvailable)
               Text(
                 isSelected ? '✓' : '$trekCount',
-                style: AppType.style(9, w: FontWeight.w800, color: isSelected
+                style: AppType.style(
+                  9,
+                  w: FontWeight.w800,
+                  color: isSelected
                       ? Colors.white.withValues(alpha: 0.95)
-                      : _C.teal, height: 1.0),
+                      : _C.teal,
+                  height: 1.0,
+                ),
               )
             else
               const SizedBox(height: 9),
@@ -945,9 +981,28 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                 key: ValueKey(
                   'scene_${ht.id}',
                 ), // clean restart on theme switch
-                scene: ht.scene,
+                // FORCEFUL FIX: If the theme has no layers (e.g. from an empty
+                // remote config), fall back to the classic animated scene so
+                // the user never sees a dead gradient.
+                scene: ht.scene.layers.isEmpty
+                    ? DashboardHeaderTheme.classic.scene
+                    : ht.scene,
               ),
             ),
+            if (HeaderThemeController.debugThemeSwitcherEnabled)
+              SafeArea(
+                bottom: false,
+                child: Align(
+                  alignment: Alignment.topRight,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 6, right: 6),
+                    child: _DebugSeasonSwitcher(
+                      current: ht,
+                      controller: _themeC,
+                    ),
+                  ),
+                ),
+              ),
             SafeArea(
               bottom: false,
               child: Padding(
@@ -1011,7 +1066,12 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                             Text(
                               ht.tagline,
                               textAlign: TextAlign.center,
-                              style: AppType.style(FontSize.s14, w: FontWeight.w600, color: ht.ink, letterSpacing: -0.2),
+                              style: AppType.style(
+                                FontSize.s14,
+                                w: FontWeight.w600,
+                                color: ht.ink,
+                                letterSpacing: -0.2,
+                              ),
                             ),
                             if (ht.badgeText != null)
                               Container(
@@ -1038,7 +1098,11 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                     const SizedBox(width: 4),
                                     Text(
                                       ht.badgeText!,
-                                      style: AppType.style(9.5, w: FontWeight.w600, color: ht.accent),
+                                      style: AppType.style(
+                                        9.5,
+                                        w: FontWeight.w600,
+                                        color: ht.accent,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -1342,11 +1406,19 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                   controller: controller,
                   readOnly: true,
                   onTap: onTap,
-                  style: AppType.style(FontSize.s14, w: FontWeight.w600, color: ht.ink),
+                  style: AppType.style(
+                    FontSize.s14,
+                    w: FontWeight.w600,
+                    color: ht.ink,
+                  ),
                   decoration: InputDecoration(
                     border: InputBorder.none,
                     hintText: hint,
-                    hintStyle: AppType.style(FontSize.s14, w: FontWeight.w500, color: ht.inkLight),
+                    hintStyle: AppType.style(
+                      FontSize.s14,
+                      w: FontWeight.w500,
+                      color: ht.inkLight,
+                    ),
                     contentPadding: const EdgeInsets.only(right: 36),
                   ),
                 ),
@@ -1448,7 +1520,11 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                     Text(
                       'Departure Date',
                       textScaler: const TextScaler.linear(1.0),
-                      style: AppType.style(FontSize.s10, w: FontWeight.w500, color: ht.inkLight),
+                      style: AppType.style(
+                        FontSize.s10,
+                        w: FontWeight.w500,
+                        color: ht.inkLight,
+                      ),
                     ),
                     SizedBox(height: 0.2.h),
                     if (!isCityTrekSelected)
@@ -1512,7 +1588,11 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
             Text(
               dateText,
               textScaler: const TextScaler.linear(1.0),
-              style: AppType.style(FontSize.s12, w: FontWeight.w600, color: ht.ink),
+              style: AppType.style(
+                FontSize.s12,
+                w: FontWeight.w600,
+                color: ht.ink,
+              ),
             ),
             if (selectedDateValue != null)
               Padding(
@@ -1530,7 +1610,11 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
             padding: const EdgeInsets.only(top: 4.0),
             child: Text(
               '${_dashboardC.getTrekCountForDate(selectedDateValue)} trek${_dashboardC.getTrekCountForDate(selectedDateValue) > 1 ? 's' : ''} available',
-              style: AppType.style(FontSize.s8, w: FontWeight.w500, color: ht.accent),
+              style: AppType.style(
+                FontSize.s8,
+                w: FontWeight.w500,
+                color: ht.accent,
+              ),
             ),
           ),
       ],
@@ -1624,20 +1708,26 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                 children: [
                   Text(
                     formattedDate,
-                    style: AppType.style(FontSize.s10, w: isSelected
-                          ? FontWeight.w700
-                          : FontWeight.w500, color: isSelected
+                    style: AppType.style(
+                      FontSize.s10,
+                      w: isSelected ? FontWeight.w700 : FontWeight.w500,
+                      color: isSelected
                           ? ht.accent
                           : isDateAvailable
                           ? ht.accent
-                          : ht.inkMid),
+                          : ht.inkMid,
+                    ),
                   ),
                   if (isDateAvailable && trekCount > 0)
                     Padding(
                       padding: const EdgeInsets.only(top: 2.0),
                       child: Text(
                         '$trekCount',
-                        style: AppType.style(FontSize.s8, w: FontWeight.w700, color: ht.accent),
+                        style: AppType.style(
+                          FontSize.s8,
+                          w: FontWeight.w700,
+                          color: ht.accent,
+                        ),
                       ),
                     ),
                 ],
@@ -1734,13 +1824,21 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                   Text(
                                     "What's New",
                                     textScaler: const TextScaler.linear(1.0),
-                                    style: AppType.style(FontSize.s13, w: FontWeight.w700, color: _C.ink, letterSpacing: -0.2),
+                                    style: AppType.style(
+                                      FontSize.s13,
+                                      w: FontWeight.w700,
+                                      color: _C.ink,
+                                      letterSpacing: -0.2,
+                                    ),
                                   ).withShimmerAi(loading: whatsNewLoading),
                                   SizedBox(height: 0.3.h),
                                   Text(
                                     'Adventure simplified combo delivers!',
                                     textScaler: const TextScaler.linear(1.0),
-                                    style: AppType.style(FontSize.s10, color: _C.inkMid),
+                                    style: AppType.style(
+                                      FontSize.s10,
+                                      color: _C.inkMid,
+                                    ),
                                   ).withShimmerAi(loading: whatsNewLoading),
                                 ],
                               ),
@@ -1748,7 +1846,12 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                 onTap: () => Get.toNamed('/know-more-screen'),
                                 child: Text(
                                   'View more',
-                                  style: AppType.style(FontSize.s11, w: FontWeight.w600, color: _C.teal, letterSpacing: 0.4),
+                                  style: AppType.style(
+                                    FontSize.s11,
+                                    w: FontWeight.w600,
+                                    color: _C.teal,
+                                    letterSpacing: 0.4,
+                                  ),
                                 ).withShimmerAi(loading: whatsNewLoading),
                               ),
                             ],
@@ -1893,13 +1996,21 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                   Text(
                                     'Top Treks',
                                     textScaler: const TextScaler.linear(1.0),
-                                    style: AppType.style(FontSize.s13, w: FontWeight.w700, color: _C.ink, letterSpacing: -0.2),
+                                    style: AppType.style(
+                                      FontSize.s13,
+                                      w: FontWeight.w700,
+                                      color: _C.ink,
+                                      letterSpacing: -0.2,
+                                    ),
                                   ).withShimmerAi(loading: topTreksLoading),
                                   SizedBox(height: 0.3.h),
                                   Text(
                                     "Season's Best Treks, Ready for you!",
                                     textScaler: const TextScaler.linear(1.0),
-                                    style: AppType.style(FontSize.s10, color: _C.inkMid),
+                                    style: AppType.style(
+                                      FontSize.s10,
+                                      color: _C.inkMid,
+                                    ),
                                   ).withShimmerAi(loading: topTreksLoading),
                                 ],
                               ),
@@ -1907,7 +2018,12 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                 onTap: () => Get.toNamed('/popular-treks'),
                                 child: Text(
                                   'View more',
-                                  style: AppType.style(FontSize.s11, w: FontWeight.w600, color: _C.teal, letterSpacing: 0.4),
+                                  style: AppType.style(
+                                    FontSize.s11,
+                                    w: FontWeight.w600,
+                                    color: _C.teal,
+                                    letterSpacing: 0.4,
+                                  ),
                                 ).withShimmerAi(loading: topTreksLoading),
                               ),
                             ],
@@ -2033,7 +2149,12 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                     Text(
                                       'Seasonal Forecast',
                                       textScaler: const TextScaler.linear(1.0),
-                                      style: AppType.style(FontSize.s13, w: FontWeight.w700, color: _C.ink, letterSpacing: -0.2),
+                                      style: AppType.style(
+                                        FontSize.s13,
+                                        w: FontWeight.w700,
+                                        color: _C.ink,
+                                        letterSpacing: -0.2,
+                                      ),
                                     ).withShimmerAi(loading: seasonalLoading),
                                     SizedBox(height: 0.3.h),
                                     Text(
@@ -2041,7 +2162,11 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                       textScaler: const TextScaler.linear(1.0),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: AppType.style(FontSize.s10, w: FontWeight.w400, color: _C.inkMid),
+                                      style: AppType.style(
+                                        FontSize.s10,
+                                        w: FontWeight.w400,
+                                        color: _C.inkMid,
+                                      ),
                                     ).withShimmerAi(loading: seasonalLoading),
                                   ],
                                 ),
@@ -2051,7 +2176,12 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                 onTap: () => Get.toNamed('/seasonal-forecast'),
                                 child: Text(
                                   'View more',
-                                  style: AppType.style(FontSize.s11, w: FontWeight.w600, color: _C.teal, letterSpacing: 0.4),
+                                  style: AppType.style(
+                                    FontSize.s11,
+                                    w: FontWeight.w600,
+                                    color: _C.teal,
+                                    letterSpacing: 0.4,
+                                  ),
                                 ),
                               ).withShimmerAi(loading: seasonalLoading),
                             ],
@@ -2242,6 +2372,59 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
 // ---------------------------------------------------------------------------
 
 /// Staggered fade + slide-up entrance for header sections.
+/// DEV-ONLY: lets QA tap through every seasonal theme on the live header
+/// without touching the backend or the system clock. Gated behind
+/// [HeaderThemeController.debugThemeSwitcherEnabled] — set that to false
+/// (or wrap it in kDebugMode) before shipping.
+class _DebugSeasonSwitcher extends StatelessWidget {
+  final DashboardHeaderTheme current;
+  final HeaderThemeController controller;
+  const _DebugSeasonSwitcher({required this.current, required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    final themes = DashboardHeaderTheme.allSeasonal;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.35),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: themes.map((t) {
+          final isActive = t.id == current.id;
+          return GestureDetector(
+            onTap: () => controller.debugSetTheme(t),
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 2),
+              width: 22,
+              height: 22,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: t.accent,
+                border: Border.all(
+                  color: isActive ? Colors.white : Colors.transparent,
+                  width: 2,
+                ),
+              ),
+              child: Text(
+                t.id[0].toUpperCase(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
 class _FadeSlideIn extends StatefulWidget {
   final Widget child;
   final int delayMs;
@@ -2385,7 +2568,11 @@ class _NoTreksOnRouteState extends State<_NoTreksOnRoute>
                   Text(
                     'No treks on this route yet',
                     textScaler: TextScaler.linear(1.0),
-                    style: AppType.style(11.5, w: FontWeight.w700, color: widget.ink),
+                    style: AppType.style(
+                      11.5,
+                      w: FontWeight.w700,
+                      color: widget.ink,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(

@@ -1,5 +1,6 @@
 import "package:arobo_app/utils/common_colors.dart";
 import "package:arobo_app/utils/app_text_styles.dart";
+import "package:arobo_app/theme/app_tokens.dart";
 import "package:flutter/material.dart";
 
 class AroboPersonalization {
@@ -60,13 +61,13 @@ class AppTheme {
   }
 
   static Color hexToColor(String? hex) {
-    if (hex == null || hex.isEmpty) return const Color(0xFFFFFFFF);
+    if (hex == null || hex.isEmpty) return AppColors.surface;
     hex = hex.replaceAll('#', '');
     if (hex.length == 6) hex = 'FF$hex';
     try {
       return Color(int.parse(hex, radix: 16));
     } catch (e) {
-      return const Color(0xFFFFFFFF);
+      return AppColors.surface;
     }
   }
 

@@ -35,7 +35,7 @@ bool _isYesterday(DateTime? dt) =>
 // ─────────────────────────────────────────────
 class _NT {
   static const bg = Color(0xFFF8F9FA); // Light crisp gray
-  static const card = Color(0xFFFFFFFF);
+  static const card = AppColors.surface;
   static const primary = Color(0xFF1A4D2E); // Deep forest green
   static const primaryLight = Color(0xFF2C5F2D);
   static const accent = Color(0xFFF4A261); // Sunrise orange

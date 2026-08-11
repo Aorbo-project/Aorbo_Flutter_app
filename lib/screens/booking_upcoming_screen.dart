@@ -23,13 +23,14 @@ import '../utils/ist_date_utils.dart';
 import '../widgets/rate_trek_popup.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
+import 'package:arobo_app/widgets/logger.dart';
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS
 // ─────────────────────────────────────────────
 class _TC {
   static const bg = Color(0xFFF4F7FF);
-  static const cardBg = Color(0xFFFFFFFF);
+  static const cardBg = AppColors.surface;
   static const ink = AppColors.inkStrong;
   static const inkMid = Color(0xFF64748B);
   static const inkLight = Color(0xFF94A3B8);
@@ -167,7 +168,9 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
           return true;
         }
       }
-    } catch (_) {}
+    } catch (e) {
+      logger.w('BookingUpcomingScreen: rating fallback lookup failed', error: e);
+    }
 
     return false;
   }
@@ -2190,8 +2193,8 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
             borderRadius: BorderRadius.circular(30),
             gradient: LinearGradient(
               colors: isReviewed
-                  ? const [Color(0xFFFFFFFF), Color(0xFFF0FDFA)]
-                  : const [Color(0xFFFFFFFF), Color(0xFFF6F9FF)],
+                  ? const [AppColors.surface, Color(0xFFF0FDFA)]
+                  : const [AppColors.surface, Color(0xFFF6F9FF)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -2427,7 +2430,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
         return Scaffold(
           backgroundColor: _TC.bg,
           appBar: AppBar(
-            backgroundColor: Colors.white,
+            backgroundColor: AppColors.surface,
             scrolledUnderElevation: 0,
             elevation: 0,
             automaticallyImplyLeading: true,

@@ -6,6 +6,7 @@ import 'package:sizer/sizer.dart';
 import '../utils/common_btn.dart';
 import '../utils/screen_constants.dart';
 import 'package:arobo_app/theme/app_typography.dart';
+import 'package:arobo_app/theme/app_tokens.dart';
 
 class claims extends StatefulWidget {
   const claims({super.key});
@@ -18,7 +19,7 @@ class _claims extends State<claims> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.surface,
         appBar: AppBar(
           backgroundColor: CommonColors.lightBlueColor3.withValues(alpha: 0.2),
           scrolledUnderElevation: 0,

@@ -25,7 +25,9 @@ class CommonLogics {
         ));
         await dio.post(NetworkUrl.logoutPath, data: '{}');
       }
-    } catch (_) {}
+    } catch (e) {
+      log('CommonLogics.logOut: server-side token revocation failed (non-fatal): $e');
+    }
 
     await sp!.clear();
     await Get.deleteAll(force: true);

@@ -1,6 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:intl/intl.dart';
 import '../../repository/network_url.dart';
+import '../../widgets/logger.dart';
 
 part 'trek_detail_model.freezed.dart';
 part 'trek_detail_model.g.dart';
@@ -106,11 +107,16 @@ extension TrekDetailDataExtension on TrekDetailData {
     // Try to parse "yyyy-MM-dd hh:mm a" format (e.g., 2026-05-09 12:00 PM)
     try {
       return DateFormat('yyyy-MM-dd hh:mm a').parse(dateTimeStr);
-    } catch (_) {}
+    } catch (_) {
+      // Expected to fail whenever dateTimeStr isn't in the custom format;
+      // silently falls through to DateTime.parse below.
+    }
     // Fallback to default parse
     try {
       return DateTime.parse(dateTimeStr);
-    } catch (_) {}
+    } catch (e) {
+      logger.w('TrekDetailModel: unparseable dateTime "$dateTimeStr"', error: e);
+    }
     return null;
   }
 }

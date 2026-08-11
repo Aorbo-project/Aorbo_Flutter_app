@@ -7,6 +7,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../utils/ist_date_utils.dart';
+import '../widgets/logger.dart';
 
 class InvoicePdfService {
   // ─────────────────────────────────────────────
@@ -37,7 +38,9 @@ class InvoicePdfService {
           'hh:mm a',
         ).format(DateTime(2000, 1, 1, int.parse(p[0]), int.parse(p[1])));
       }
-    } catch (_) {}
+    } catch (e) {
+      logger.w('InvoicePdfService: could not format time "$t"', error: e);
+    }
     return t;
   }
 
@@ -55,7 +58,9 @@ class InvoicePdfService {
           parts.length >= 3 ? int.parse(parts[2]) : 0,
         );
       }
-    } catch (_) {}
+    } catch (e) {
+      logger.w('InvoicePdfService: could not combine date/time "$timeStr"', error: e);
+    }
     return date;
   }
 
@@ -216,7 +221,9 @@ class InvoicePdfService {
         'assets/images/img/aorbologo.png',
       );
       aorboLogo = pw.MemoryImage(aorboBytes.buffer.asUint8List());
-    } catch (_) {}
+    } catch (e) {
+      logger.e('InvoicePdfService: failed to load bundled Aorbo logo', error: e);
+    }
 
     if (vendorLogoUrl.isNotEmpty) {
       try {
@@ -226,7 +233,9 @@ class InvoicePdfService {
         if (response.statusCode == 200) {
           vendorLogo = pw.MemoryImage(response.bodyBytes);
         }
-      } catch (_) {}
+      } catch (e) {
+        logger.w('InvoicePdfService: failed to fetch vendor logo from $vendorLogoUrl', error: e);
+      }
     }
 
     final theme = pw.ThemeData.withFont(

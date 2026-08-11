@@ -231,7 +231,7 @@ import 'package:arobo_app/theme/app_typography.dart';
                                     if (isValidPhoneNumber) {
                                       final phone = _authC.phoneNumberLoginTextField.value.text;
                                       final success = await _authC.requestOtp(phone);
-                                      if (success) {
+                                      if (success && mounted) {
                                         Get.to(const OTPScreen());
                                       }
                                     } else {

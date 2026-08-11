@@ -20,7 +20,7 @@ import 'package:arobo_app/theme/app_typography.dart';
 
 class _C {
   static const bg = AppColors.bgCool;
-  static const cardBg = Color(0xFFFFFFFF);
+  static const cardBg = AppColors.surface;
   static const ink = AppColors.ink;
   static const inkMid = AppColors.inkMid;
   static const inkLight = AppColors.inkLight;

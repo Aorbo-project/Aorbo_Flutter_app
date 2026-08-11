@@ -36,6 +36,7 @@ import '../theme/app_tokens.dart';
 import '../theme/app_typography.dart';
 import 'app_dialog.dart';
 import '../widgets/trek_card_ui.dart';
+import '../widgets/logger.dart';
 
 class BookingDraftService {
   BookingDraftService._();
@@ -79,7 +80,9 @@ class BookingDraftService {
     try {
       final pref = await SpUtil.getInstance();
       await pref.remove(_draftKey);
-    } catch (_) {}
+    } catch (e, st) {
+      logger.w('BookingDraftService: failed to clear draft', error: e, stackTrace: st);
+    }
   }
 
   /// Checks for a saved draft and, if found and not stale, re-fetches the

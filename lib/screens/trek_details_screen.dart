@@ -595,6 +595,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
             return;
           }
           await _userC.getUserProfile();
+          if (!mounted) return;
           _trekC.trekBatchId.value = _trekC.trekDetailData.value.batchId ?? 0;
           Get.toNamed('/traveller-information');
         },
@@ -1642,7 +1643,7 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
                   ),
                   selected: isSelected,
                   selectedColor: _C.brand,
-                  backgroundColor: Colors.white,
+                  backgroundColor: AppColors.surface,
                   side: BorderSide(
                     color: isSelected ? _C.brand : _C.brand.withValues(alpha: 0.3),
                   ),
