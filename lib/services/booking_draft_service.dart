@@ -207,7 +207,8 @@ class _BookingResumeSheetContent extends StatelessWidget {
           SizedBox(height: 2.h),
           TrekCardUI(
             title: data.title ?? 'Trek',
-            vendorName: data.vendor?.user?.name ?? 'Aorbo Treks',
+            vendorName:
+                data.vendor?.businessName ?? data.vendor?.user?.name ?? 'Aorbo Treks',
             isFlexible: isFlexible,
             badgeText: data.badge?.name ?? '',
             durationText: durationText,

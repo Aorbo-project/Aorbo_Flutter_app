@@ -139,6 +139,7 @@ class Vendor with _$Vendor {
     User? user,
     @JsonKey(name: 'business_logo', fromJson: _parseImageUrl)
     String? businessLogo,
+    @JsonKey(name: 'business_name') String? businessName,
   }) = _Vendor;
 
   factory Vendor.fromJson(Map<String, dynamic> json) => _$VendorFromJson(json);

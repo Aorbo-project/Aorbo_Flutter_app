@@ -689,7 +689,8 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
 
   Widget _buildTripSummary() {
     final data = travelData;
-    final vendorName = data.vendor?.user?.name ?? 'Aorbo Treks';
+    final vendorName =
+        data.vendor?.businessName ?? data.vendor?.user?.name ?? 'Aorbo Treks';
     final isFlexible = data.cancellationPolicy?.id == 5;
     final badgeText = data.badge?.name ?? '';
     final durationText =
