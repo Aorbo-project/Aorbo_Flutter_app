@@ -441,9 +441,10 @@ _$LatestReviewsImpl _$$LatestReviewsImplFromJson(Map<String, dynamic> json) =>
     _$LatestReviewsImpl(
       customerId: json['customer_id'] as int?,
       customerName: json['customer_name'] as String?,
-      ratingValue: (json['rating_value'] as num?)?.toDouble(),
+      ratingValue: json['rating_value'] as int?,
       content: json['content'] as String?,
       createdAt: json['created_at'] as String?,
+      categoryHighlights: json['category_highlights'] as Map<String, dynamic>?,
     );
 
 Map<String, dynamic> _$$LatestReviewsImplToJson(_$LatestReviewsImpl instance) =>
@@ -453,4 +454,5 @@ Map<String, dynamic> _$$LatestReviewsImplToJson(_$LatestReviewsImpl instance) =>
       'rating_value': instance.ratingValue,
       'content': instance.content,
       'created_at': instance.createdAt,
+      'category_highlights': instance.categoryHighlights,
     };

@@ -30,6 +30,7 @@ import 'package:sizer/sizer.dart';
 import 'package:arobo_app/utils/custom_snackbar.dart';
 import 'package:ntp/ntp.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../freezed_models/treks/treks_model_data.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
@@ -96,6 +97,10 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
   final List<DateTime> _nearestWeekendDates = [];
   final Map<int, bool> _favoriteTreks = {};
 
+  // GetX Reactive Map to track routes the user has clicked "Notify Me" for.
+  // This survives screen navigations and syncs with SharedPreferences.
+  final RxMap<String, bool> _notifiedRoutes = <String, bool>{}.obs;
+
   // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------
@@ -103,7 +108,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
   String getFullImageUrl(String? path) {
     if (path == null || path.isEmpty) return '';
     if (path.startsWith('http')) return path;
-    return '[api.aorbotreks.co.in$path](https://api.aorbotreks.co.in$path)';
+    return 'https://api.aorbotreks.co.in$path';
   }
 
   List<String> _safeGradient(List<dynamic>? gradient, List<String> fallback) {
@@ -126,6 +131,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
         : Get.put(HeaderThemeController());
 
     _initializeNTPTime();
+    _loadNotifiedRoutes();
 
     _animationController = AnimationController(
       vsync: this,
@@ -146,18 +152,24 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _resetAllScrolls();
-      // These set Rx values synchronously before their first `await`, which
-      // notifies an Obx that's an ancestor of this widget in the tree. When
-      // Dashboard is freshly mounted mid-build (e.g. Get.offAll rebuilding
-      // Home after a booking completes) rather than at cold app-start, that
-      // notification lands while Flutter is still building this very
-      // subtree — "setState() or markNeedsBuild() called during build."
-      // Deferring to after the first frame avoids the collision regardless
-      // of when/how this widget gets mounted.
       _dashboardC.fetchWhatsNew();
       _dashboardC.fetchTopTreks();
       _dashboardC.fetchSeasonalPicks();
     });
+  }
+
+  /// Loads locally saved notification preferences so they persist across app restarts.
+  Future<void> _loadNotifiedRoutes() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final keys = prefs.getKeys();
+      for (var key in keys) {
+        if (key.startsWith('notify_')) {
+          final routeKey = key.substring(7);
+          _notifiedRoutes[routeKey] = prefs.getBool(key) ?? false;
+        }
+      }
+    } catch (_) {}
   }
 
   @override
@@ -380,10 +392,6 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
   }
 
   void _handleSearchPress() async {
-    // _isPressed already drove the button's shadow styling but never actually
-    // blocked re-entry — a fast double-tap could fire _handleSearch() (and
-    // searchTreks(refresh: true)) twice before the first tap's 150ms
-    // animation delay even finished, duplicating every search result card.
     if (_isPressed) return;
     setState(() => _isPressed = true);
     _animationController.forward();
@@ -799,7 +807,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
   }
 
   // ---------------------------------------------------------------------------
-  // Calendar cell helpers (unchanged)
+  // Calendar cell helpers
   // ---------------------------------------------------------------------------
 
   Widget _legendItem({
@@ -971,19 +979,12 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 800),
         curve: Curves.easeOutCubic,
-        // Fallback color only — the scene paints the animated sky.
         color: ht.gradientColors.first,
         child: Stack(
           children: [
-            // Layered animated scene (sky, weather, mountains, fireworks…)
             Positioned.fill(
               child: HeaderSceneBackground(
-                key: ValueKey(
-                  'scene_${ht.id}',
-                ), // clean restart on theme switch
-                // FORCEFUL FIX: If the theme has no layers (e.g. from an empty
-                // remote config), fall back to the classic animated scene so
-                // the user never sees a dead gradient.
+                key: ValueKey('scene_${ht.id}'),
                 scene: ht.scene.layers.isEmpty
                     ? DashboardHeaderTheme.classic.scene
                     : ht.scene,
@@ -1014,7 +1015,6 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                   children: [
                     SizedBox(height: ScreenConstant.size20),
 
-                    // Logo + Help (structure static; logo swappable for collabs)
                     _FadeSlideIn(
                       delayMs: 0,
                       child: Container(
@@ -1057,7 +1057,6 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                     ),
                     SizedBox(height: 2.h),
 
-                    // Tagline + seasonal/festival badge
                     _FadeSlideIn(
                       delayMs: 120,
                       child: Center(
@@ -1113,168 +1112,9 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                     ),
                     SizedBox(height: ScreenConstant.size27),
 
-                    // Search card
                     _FadeSlideIn(delayMs: 220, child: _buildSearchCard(ht)),
                     SizedBox(height: ScreenConstant.size20),
 
-                    /*
-                    // ---- Trek Types Card (Weekend / Personalized) ----
-                    // Temporarily disabled. Restore by uncommenting.
-                    Container(
-                      margin: const EdgeInsets.only(left: 20, right: 20),
-                      child: Card(
-                        color: CommonColors.whiteColor,
-                        shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(ScreenConstant.size12),
-                        ),
-                        child: Padding(
-                          padding: EdgeInsets.all(ScreenConstant.size15),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: InkWell(
-                                  onTap: () async {
-                                    if (!_isFormValid) {
-                                      CustomSnackBar.show(
-                                        context,
-                                        message: 'Please provide valid inputs',
-                                      );
-                                      return;
-                                    }
-                                    if (_nearestWeekendDates.isEmpty) {
-                                      _updateNearestWeekendDates();
-                                    }
-                                    await _trekC.fetchWeekendTreks(
-                                      cityId:
-                                          _dashboardC.fromController.value.text,
-                                      trekId:
-                                          _dashboardC.toController.value.text,
-                                      date:
-                                          _dashboardC.dateController.value.text,
-                                      refresh: true,
-                                    );
-                                    Get.toNamed(
-                                      '/weekend-treks',
-                                      arguments: {
-                                        'city': _dashboardC
-                                            .fromController.value.text,
-                                        'trek':
-                                            _dashboardC.toController.value.text,
-                                        'date': _dashboardC
-                                            .dateController.value.text,
-                                        'weekendDates': _nearestWeekendDates,
-                                      },
-                                    );
-                                  },
-                                  child: Column(
-                                    children: [
-                                      Text(
-                                        'Weekend Treks',
-                                        textScaler:
-                                            const TextScaler.linear(1.0),
-                                        style: AppType.style(FontSize.s10, w: FontWeight.w600, color: _isFormValid
-                                              ? _C.ink
-                                              : _C.inkLight),
-                                      ),
-                                      SizedBox(height: ScreenConstant.size4),
-                                      SvgPicture.asset(
-                                        CommonImages.weekend,
-                                        height: ScreenConstant.size25,
-                                        width: ScreenConstant.size25,
-                                        colorFilter: ColorFilter.mode(
-                                          _isFormValid ? _C.teal : _C.inkLight,
-                                          BlendMode.srcIn,
-                                        ),
-                                      ),
-                                      if (_isFormValid &&
-                                          _nearestWeekendDates.isNotEmpty)
-                                        Padding(
-                                          padding:
-                                              const EdgeInsets.only(top: 4),
-                                          child: Text(
-                                            'Next: ${DateFormat('EEE, MMM d').format(_nearestWeekendDates.first)}',
-                                            textScaler:
-                                                const TextScaler.linear(1.0),
-                                            style: AppType.style(FontSize.s8, w: FontWeight.w500, color: _C.inkMid),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                width: 1,
-                                height: ScreenConstant.size50,
-                                color: _C.fieldBorder,
-                              ),
-                              Expanded(
-                                child: InkWell(
-                                  onTap: () {
-                                    if (!_isFormValid) {
-                                      CustomSnackBar.show(
-                                        context,
-                                        message: 'Please provide valid inputs',
-                                      );
-                                      return;
-                                    }
-                                    Get.toNamed(
-                                      '/personalized-treks',
-                                      arguments: {
-                                        'city': _dashboardC
-                                            .fromController.value.text,
-                                        'trek':
-                                            _dashboardC.toController.value.text,
-                                        'date': _dashboardC
-                                            .dateController.value.text,
-                                      },
-                                    );
-                                  },
-                                  child: Column(
-                                    children: [
-                                      Text(
-                                        'Personalized Treks',
-                                        textScaler:
-                                            const TextScaler.linear(1.0),
-                                        style: AppType.style(FontSize.s10, w: FontWeight.w600, color: _isFormValid
-                                              ? _C.ink
-                                              : _C.inkLight),
-                                      ),
-                                      SizedBox(height: ScreenConstant.size4),
-                                      SvgPicture.asset(
-                                        CommonImages.weekend2,
-                                        height: ScreenConstant.size25,
-                                        width: ScreenConstant.size25,
-                                        colorFilter: ColorFilter.mode(
-                                          _isFormValid ? _C.teal : _C.inkLight,
-                                          BlendMode.srcIn,
-                                        ),
-                                      ),
-                                      if (_isFormValid &&
-                                          _nearestWeekendDates.isNotEmpty)
-                                        Padding(
-                                          padding:
-                                              const EdgeInsets.only(top: 4),
-                                          child: Text(
-                                            'Unique Trekking Routes',
-                                            textScaler:
-                                                const TextScaler.linear(1.0),
-                                            style: AppType.style(FontSize.s8, w: FontWeight.w500, color: _C.inkMid),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: ScreenConstant.size20),
-                    */
-
-                    // Search button — themed accent + breathing glow
                     _FadeSlideIn(
                       delayMs: 340,
                       child: Center(
@@ -1470,23 +1310,46 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
         return dt.isAfter(today.subtract(const Duration(days: 1)));
       }).toList();
 
-      // Route chosen, dates finished loading, nothing bookable →
-      // full-section empty state instead of untappable chips.
+      final bool hasNoValidDates =
+          upcomingDates.isEmpty ||
+          upcomingDates.every((d) {
+            final dt = DateTime.tryParse(d.date ?? '');
+            return dt == null || !_dashboardC.isDateAvailable(dt);
+          });
+
       final bool noTreksOnRoute =
-          isCityTrekSelected &&
-          !datesLoading &&
-          upcomingDates.isEmpty &&
-          dateText.isEmpty;
+          isCityTrekSelected && !datesLoading && hasNoValidDates;
 
       if (noTreksOnRoute) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: _NoTreksOnRoute(
-            accent: ht.accent,
-            accentSoft: ht.accentSoft,
-            ink: ht.ink,
-            inkMid: ht.inkMid,
+        if (dateText.isNotEmpty || selectedDateValue != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              _dashboardC.selectedDate.value = null;
+              _dashboardC.dateController.value.clear();
+            }
+          });
+        }
+
+        final String routeKey =
+            '${_dashboardC.selectedCityId.value}_${_dashboardC.selectedTrekId.value}';
+        final bool isInitiallyNotified = _notifiedRoutes[routeKey] ?? false;
+
+        return _NoTreksOnRouteSection(
+          accent: ht.accent,
+          accentSoft: ht.accentSoft,
+          ink: ht.ink,
+          inkMid: ht.inkMid,
+          inkLight: ht.inkLight,
+          fieldBg: _C.fieldBg,
+          fieldBorder: _C.fieldBorder,
+          isInitiallyNotified: isInitiallyNotified,
+          onNotifyMe: () => _showNotifyMeBottomSheet(
+            ht,
+            _dashboardC.fromController.value.text,
+            _dashboardC.toController.value.text,
+            routeKey: routeKey,
           ),
+          onChangeRoute: _handleChangeRoute,
         );
       }
 
@@ -1532,9 +1395,8 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                         padding: const EdgeInsets.only(top: 4.0),
                         child: Text(
                           'Select source & destination first',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: FontSize.s10,
+                          style: AppType.style(
+                            FontSize.s10,
                             color: ht.inkLight,
                             fontStyle: FontStyle.italic,
                           ),
@@ -1570,6 +1432,55 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
         ),
       );
     });
+  }
+
+  /// Scrolls the dashboard to the top so the user can see and edit both
+  /// the "From" and "To" fields, then opens the source-location picker.
+  void _handleChangeRoute() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+      );
+    }
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) _selectSourceLocation();
+    });
+  }
+
+  /// Shows a themed bottom sheet that simulates the notify-me subscription
+  /// flow: loading → success → auto-close. The `onSuccess` callback is
+  /// invoked only after the "API call" completes, so the caller can update
+  /// its inline state accurately.
+  Future<void> _showNotifyMeBottomSheet(
+    DashboardHeaderTheme ht,
+    String from,
+    String to, {
+    required String routeKey,
+  }) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      barrierColor: Colors.black.withValues(alpha: 0.4),
+      builder: (ctx) => _NotifyMeSheet(
+        ht: ht,
+        from: from,
+        to: to,
+        onSuccess: () async {
+          // Simulate API Call
+          await Future.delayed(const Duration(milliseconds: 1200));
+
+          // Save to SharedPreferences for permanent persistence
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setBool('notify_$routeKey', true);
+
+          // Update the reactive map so Obx rebuilds the UI instantly
+          _notifiedRoutes[routeKey] = true;
+        },
+      ),
+    );
   }
 
   Widget _buildSelectedDateDisplay(
@@ -1866,11 +1777,6 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                 return _buildShimmerPagePlaceholder();
                               }
 
-                              // The infinite-loop PageView trick (index %
-                              // length, repeated forever) only makes sense
-                              // with 2+ distinct cards — with exactly one,
-                              // it just shows the same card over and over,
-                              // which reads as duplicate/broken content.
                               if (whatsNewCardsData.length <= 1) {
                                 if (whatsNewCardsData.isEmpty) {
                                   return const SizedBox();
@@ -1972,10 +1878,6 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                       return const SizedBox();
                     }
 
-                    // 4:5 portrait, matching the recommended upload spec
-                    // (1080x1350 / min 720x900) and the grid card ratio on
-                    // the "View more" screen — same ratio everywhere a
-                    // Top Treks photo is displayed.
                     final topTreksCardWidth = 68.w;
                     final topTreksCardHeight = topTreksCardWidth * 1.25;
 
@@ -2103,9 +2005,6 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                           orElse: () => null,
                         );
 
-                    // Explicit generic — see seasonal_forecast_screen.dart
-                    // for why an inferred `[]` here has crashed in release
-                    // builds as List<dynamic> instead of List<SeasonalPickItem>.
                     final topPicks =
                         seasonalData?.topPicks ?? <SeasonalPickItem>[];
                     final avoidPicks =
@@ -2123,9 +2022,6 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                     );
                     final label = seasonalData?.label ?? '';
 
-                    // Preview: top picks + one avoid pick, so the home
-                    // screen shows both sides, not just the "good news"
-                    // half — capped so the row still fits comfortably.
                     final previewPicks = [
                       ...topPicks.take(4),
                       ...avoidPicks.take(1),
@@ -2210,11 +2106,6 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                       final resolvedImagePath = getFullImageUrl(
                                         pick.imagePath,
                                       );
-                                      // Only "photo" mode falls back to
-                                      // a stock photo when empty — an
-                                      // empty illustration is a valid,
-                                      // handled state inside the card
-                                      // (gradient alone, no overlay).
                                       final displayImagePath =
                                           pickImageType ==
                                               SeasonalPickImageType.illustration
@@ -2371,11 +2262,6 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
 // Header animation helpers
 // ---------------------------------------------------------------------------
 
-/// Staggered fade + slide-up entrance for header sections.
-/// DEV-ONLY: lets QA tap through every seasonal theme on the live header
-/// without touching the backend or the system clock. Gated behind
-/// [HeaderThemeController.debugThemeSwitcherEnabled] — set that to false
-/// (or wrap it in kDebugMode) before shipping.
 class _DebugSeasonSwitcher extends StatelessWidget {
   final DashboardHeaderTheme current;
   final HeaderThemeController controller;
@@ -2476,113 +2362,469 @@ class _FadeSlideInState extends State<_FadeSlideIn>
   }
 }
 
-/// Compact animated empty state shown when the selected From→To route has
-/// no bookable trek dates: a hiker gently pacing across a faded peak.
-class _NoTreksOnRoute extends StatefulWidget {
+// ---------------------------------------------------------------------------
+// No Treks / Notify Me Widgets
+// ---------------------------------------------------------------------------
+
+/// Themed empty-state that replaces the Departure Date row when no treks
+/// are available on the selected route. Mirrors the visual rhythm of the
+/// "From"/"To" fields: themed accent icon, AppType typography, TouchRipple
+/// feedback, and proper async state management for the notify-me flow.
+class _NoTreksOnRouteSection extends StatefulWidget {
   final Color accent;
   final Color accentSoft;
   final Color ink;
   final Color inkMid;
+  final Color inkLight;
+  final Color fieldBg;
+  final Color fieldBorder;
+  final bool isInitiallyNotified;
 
-  const _NoTreksOnRoute({
+  /// Called when the user taps "Notify Me". Must complete without throwing
+  /// for the UI to switch to the "Confirmed" state.
+  final Future<void> Function() onNotifyMe;
+
+  /// Called when the user taps "Change Route".
+  final VoidCallback onChangeRoute;
+
+  const _NoTreksOnRouteSection({
     required this.accent,
     required this.accentSoft,
     required this.ink,
     required this.inkMid,
+    required this.inkLight,
+    required this.fieldBg,
+    required this.fieldBorder,
+    required this.isInitiallyNotified,
+    required this.onNotifyMe,
+    required this.onChangeRoute,
   });
 
   @override
-  State<_NoTreksOnRoute> createState() => _NoTreksOnRouteState();
+  State<_NoTreksOnRouteSection> createState() => _NoTreksOnRouteSectionState();
 }
 
-class _NoTreksOnRouteState extends State<_NoTreksOnRoute>
+class _NoTreksOnRouteSectionState extends State<_NoTreksOnRouteSection> {
+  bool _isSaving = false;
+
+  // Derives confirmed state directly from the parent's prop.
+  // No local state drift is possible.
+  bool get _isConfirmed => widget.isInitiallyNotified;
+
+  Future<void> _handleNotifyMe() async {
+    setState(() => _isSaving = true);
+    try {
+      await widget.onNotifyMe();
+      // The parent's reactive state will update isInitiallyNotified,
+      // which will cause _isConfirmed to become true automatically.
+    } catch (_) {
+      if (!mounted) return;
+      CustomSnackBar.show(
+        context,
+        message: 'Something went wrong. Please try again.',
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isSaving = _isSaving;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 14.0),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // ── Message ──
+            Text(
+              'No treks available on this route yet.',
+              textScaler: const TextScaler.linear(1.0),
+              style: AppType.style(
+                FontSize.s12,
+                w: FontWeight.w600,
+                color: widget.inkMid,
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // ── Action area ──
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 280),
+              child: _isConfirmed
+                  ? _buildConfirmedChip()
+                  : _buildActionButtons(isSaving),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Confirmed inline chip ──────────────────────────────────────────
+  Widget _buildConfirmedChip() {
+    return Container(
+      key: const ValueKey('confirmed'),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: widget.accentSoft,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: widget.accent.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.check_circle_outline_rounded,
+            size: 15,
+            color: widget.accent,
+          ),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              'We\'ll notify you when treks open up!',
+              overflow: TextOverflow.ellipsis,
+              style: AppType.style(
+                FontSize.s10,
+                w: FontWeight.w600,
+                color: widget.accent,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Action buttons ─────────────────────────────────────────────────
+  Widget _buildActionButtons(bool isSaving) {
+    return Wrap(
+      key: const ValueKey('actions'),
+      spacing: 8,
+      runSpacing: 8,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        // Change Route — solid accent button with TouchRipple
+        _ThemedChip(
+          label: 'Change Route',
+          icon: Icons.swap_horiz_rounded,
+          iconSize: 14,
+          fontSize: FontSize.s10,
+          isSolid: true,
+          accent: widget.accent,
+          accentSoft: widget.accentSoft,
+          onTap: widget.onChangeRoute,
+        ),
+
+        // Notify Me — outlined button with loading spinner
+        _ThemedChip(
+          label: 'Notify Me',
+          icon: isSaving ? null : Icons.notifications_active_outlined,
+          iconSize: 14,
+          fontSize: FontSize.s10,
+          isSolid: false,
+          accent: widget.accent,
+          accentSoft: widget.accentSoft,
+          isLoading: isSaving,
+          onTap: isSaving ? null : _handleNotifyMe,
+        ),
+      ],
+    );
+  }
+}
+
+/// Small reusable chip button that matches the search-card theme.
+class _ThemedChip extends StatelessWidget {
+  final String label;
+  final IconData? icon;
+  final double iconSize;
+  final double fontSize;
+  final bool isSolid;
+  final Color accent;
+  final Color accentSoft;
+  final bool isLoading;
+  final VoidCallback? onTap;
+
+  const _ThemedChip({
+    required this.label,
+    required this.icon,
+    required this.iconSize,
+    required this.fontSize,
+    required this.isSolid,
+    required this.accent,
+    required this.accentSoft,
+    this.isLoading = false,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final disabled = onTap == null;
+
+    return TouchRipple(
+      rippleColor: accent.withValues(alpha: 0.08),
+      onTap: onTap,
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 200),
+        opacity: disabled ? 0.6 : 1.0,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: isSolid ? accent : accentSoft,
+            borderRadius: BorderRadius.circular(10),
+            border: isSolid
+                ? null
+                : Border.all(color: accent.withValues(alpha: 0.4)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isLoading)
+                SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(accent),
+                  ),
+                )
+              else if (icon != null)
+                Icon(
+                  icon,
+                  size: iconSize,
+                  color: isSolid ? Colors.white : accent,
+                ),
+              if (icon != null || isLoading) const SizedBox(width: 6),
+              Text(
+                label,
+                style: AppType.style(
+                  fontSize,
+                  w: FontWeight.w600,
+                  color: isSolid ? Colors.white : accent,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Self-contained notify-me bottom-sheet content. The auto-close timer
+/// lives in [initState] so it fires exactly once, not on every rebuild.
+class _NotifyMeSheet extends StatefulWidget {
+  final DashboardHeaderTheme ht;
+  final String from;
+  final String to;
+  final Future<void> Function() onSuccess;
+
+  const _NotifyMeSheet({
+    required this.ht,
+    required this.from,
+    required this.to,
+    required this.onSuccess,
+  });
+
+  @override
+  State<_NotifyMeSheet> createState() => _NotifyMeSheetState();
+}
+
+class _NotifyMeSheetState extends State<_NotifyMeSheet>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 1600),
-  )..repeat(reverse: true);
+  bool _isLoading = true;
+  bool _hasError = false;
+  Timer? _autoCloseTimer;
+  late final AnimationController _slideController;
+  late final Animation<double> _slideAnim;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _slideController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 420),
+    );
+    _slideAnim = CurvedAnimation(
+      parent: _slideController,
+      curve: Curves.easeOutCubic,
+    );
+    _slideController.forward();
+
+    _performAction();
+  }
+
+  Future<void> _performAction() async {
+    try {
+      await widget.onSuccess();
+
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _hasError = false;
+      });
+
+      // Start the auto-close countdown only after success is shown.
+      _autoCloseTimer = Timer(const Duration(seconds: 4), () {
+        if (mounted && Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _hasError = true;
+      });
+
+      // Close sheet after a short delay on error
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted && Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+      });
+    }
+  }
 
   @override
   void dispose() {
-    _c.dispose();
+    _autoCloseTimer?.cancel();
+    _slideController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: const Duration(milliseconds: 350),
-      curve: Curves.easeOut,
-      builder: (_, v, child) => Opacity(
-        opacity: v,
-        child: Transform.scale(scale: 0.96 + 0.04 * v, child: child),
+    final ht = widget.ht;
+
+    return AnimatedBuilder(
+      animation: _slideAnim,
+      builder: (context, child) => Transform.translate(
+        offset: Offset(0, (1 - _slideAnim.value) * 40),
+        child: Opacity(opacity: _slideAnim.value, child: child),
       ),
       child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-        decoration: BoxDecoration(
-          color: widget.accentSoft.withValues(alpha: 0.55),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: widget.accent.withValues(alpha: 0.25)),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+          left: 24,
+          right: 24,
+          top: 24,
         ),
-        child: Row(
+        decoration: BoxDecoration(
+          color: _C.cardBg,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            SizedBox(
-              width: 46,
-              height: 40,
-              child: AnimatedBuilder(
-                animation: _c,
-                builder: (_, __) {
-                  final t = _c.value;
-                  return Stack(
-                    children: [
-                      Positioned(
-                        bottom: 0,
-                        left: 4,
-                        child: Icon(
-                          Icons.terrain_rounded,
-                          size: 34,
-                          color: widget.accent.withValues(alpha: 0.3),
-                        ),
-                      ),
-                      Positioned(
-                        bottom: 8 + 4 * math.sin(t * math.pi),
-                        left: 8 + 14 * t,
-                        child: Icon(
-                          Icons.hiking_rounded,
-                          size: 19,
-                          color: widget.accent,
-                        ),
-                      ),
-                    ],
-                  );
-                },
+            // Drag handle
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 24),
+              decoration: BoxDecoration(
+                color: _C.inkLight.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(10),
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'No treks on this route yet',
-                    textScaler: TextScaler.linear(1.0),
-                    style: AppType.style(
-                      11.5,
-                      w: FontWeight.w700,
-                      color: widget.ink,
+
+            // Icon
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: ht.accentSoft,
+                shape: BoxShape.circle,
+              ),
+              child: _isLoading
+                  ? SizedBox(
+                      width: 32,
+                      height: 32,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        valueColor: AlwaysStoppedAnimation<Color>(ht.accent),
+                      ),
+                    )
+                  : Icon(
+                      _hasError
+                          ? Icons.error_outline_rounded
+                          : Icons.check_circle_rounded,
+                      size: 48,
+                      color: _hasError ? _C.danger : ht.accent,
+                    ),
+            ),
+            const SizedBox(height: 20),
+
+            // Title
+            Text(
+              _isLoading
+                  ? 'Subscribing…'
+                  : _hasError
+                  ? 'Something went wrong'
+                  : 'You\'re on the list!',
+              style: AppType.style(
+                FontSize.s16,
+                w: FontWeight.w700,
+                color: _C.ink,
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            // Body
+            Text(
+              _isLoading
+                  ? 'Setting up notifications for ${widget.from} → ${widget.to}…'
+                  : _hasError
+                  ? 'Please check your connection and try again.'
+                  : 'We\'ll send you a push notification as soon as treks '
+                        'become available from ${widget.from} to ${widget.to}.',
+              textAlign: TextAlign.center,
+              style: AppType.style(FontSize.s11, color: _C.inkMid, height: 1.5),
+            ),
+            const SizedBox(height: 24),
+
+            // Close button
+            SizedBox(
+              width: double.infinity,
+              child: TouchRipple(
+                rippleColor: ht.accent.withValues(alpha: 0.08),
+                onTap: () {
+                  _autoCloseTimer?.cancel();
+                  Navigator.of(context).pop();
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: _C.fieldBorder),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Center(
+                    child: Text(
+                      'Close',
+                      style: AppType.style(
+                        FontSize.s12,
+                        w: FontWeight.w600,
+                        color: _C.ink,
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Try a different source or destination',
-                    textScaler: TextScaler.linear(1.0),
-                    style: AppType.style(9.5, color: widget.inkMid),
-                  ),
-                ],
+                ),
               ),
             ),
+            if (!_isLoading && !_hasError) ...[
+              const SizedBox(height: 12),
+              Text(
+                'Auto-closing in a few seconds…',
+                style: AppType.style(FontSize.s9, color: _C.inkLight),
+              ),
+            ],
+            const SizedBox(height: 8),
           ],
         ),
       ),

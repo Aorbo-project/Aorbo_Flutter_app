@@ -5083,10 +5083,14 @@ mixin _$LatestReviews {
   @JsonKey(name: 'customer_name')
   String? get customerName => throw _privateConstructorUsedError;
   @JsonKey(name: 'rating_value')
-  double? get ratingValue => throw _privateConstructorUsedError;
+  int? get ratingValue => throw _privateConstructorUsedError;
   String? get content => throw _privateConstructorUsedError;
   @JsonKey(name: 'created_at')
-  String? get createdAt => throw _privateConstructorUsedError;
+  String? get createdAt =>
+      throw _privateConstructorUsedError; // 👇 ADD THIS LINE
+  @JsonKey(name: 'category_highlights')
+  Map<String, dynamic>? get categoryHighlights =>
+      throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -5103,9 +5107,11 @@ abstract class $LatestReviewsCopyWith<$Res> {
   $Res call(
       {@JsonKey(name: 'customer_id') int? customerId,
       @JsonKey(name: 'customer_name') String? customerName,
-      @JsonKey(name: 'rating_value') double? ratingValue,
+      @JsonKey(name: 'rating_value') int? ratingValue,
       String? content,
-      @JsonKey(name: 'created_at') String? createdAt});
+      @JsonKey(name: 'created_at') String? createdAt,
+      @JsonKey(name: 'category_highlights')
+      Map<String, dynamic>? categoryHighlights});
 }
 
 /// @nodoc
@@ -5126,6 +5132,7 @@ class _$LatestReviewsCopyWithImpl<$Res, $Val extends LatestReviews>
     Object? ratingValue = freezed,
     Object? content = freezed,
     Object? createdAt = freezed,
+    Object? categoryHighlights = freezed,
   }) {
     return _then(_value.copyWith(
       customerId: freezed == customerId
@@ -5139,7 +5146,7 @@ class _$LatestReviewsCopyWithImpl<$Res, $Val extends LatestReviews>
       ratingValue: freezed == ratingValue
           ? _value.ratingValue
           : ratingValue // ignore: cast_nullable_to_non_nullable
-              as double?,
+              as int?,
       content: freezed == content
           ? _value.content
           : content // ignore: cast_nullable_to_non_nullable
@@ -5148,6 +5155,10 @@ class _$LatestReviewsCopyWithImpl<$Res, $Val extends LatestReviews>
           ? _value.createdAt
           : createdAt // ignore: cast_nullable_to_non_nullable
               as String?,
+      categoryHighlights: freezed == categoryHighlights
+          ? _value.categoryHighlights
+          : categoryHighlights // ignore: cast_nullable_to_non_nullable
+              as Map<String, dynamic>?,
     ) as $Val);
   }
 }
@@ -5163,9 +5174,11 @@ abstract class _$$LatestReviewsImplCopyWith<$Res>
   $Res call(
       {@JsonKey(name: 'customer_id') int? customerId,
       @JsonKey(name: 'customer_name') String? customerName,
-      @JsonKey(name: 'rating_value') double? ratingValue,
+      @JsonKey(name: 'rating_value') int? ratingValue,
       String? content,
-      @JsonKey(name: 'created_at') String? createdAt});
+      @JsonKey(name: 'created_at') String? createdAt,
+      @JsonKey(name: 'category_highlights')
+      Map<String, dynamic>? categoryHighlights});
 }
 
 /// @nodoc
@@ -5184,6 +5197,7 @@ class __$$LatestReviewsImplCopyWithImpl<$Res>
     Object? ratingValue = freezed,
     Object? content = freezed,
     Object? createdAt = freezed,
+    Object? categoryHighlights = freezed,
   }) {
     return _then(_$LatestReviewsImpl(
       customerId: freezed == customerId
@@ -5197,7 +5211,7 @@ class __$$LatestReviewsImplCopyWithImpl<$Res>
       ratingValue: freezed == ratingValue
           ? _value.ratingValue
           : ratingValue // ignore: cast_nullable_to_non_nullable
-              as double?,
+              as int?,
       content: freezed == content
           ? _value.content
           : content // ignore: cast_nullable_to_non_nullable
@@ -5206,6 +5220,10 @@ class __$$LatestReviewsImplCopyWithImpl<$Res>
           ? _value.createdAt
           : createdAt // ignore: cast_nullable_to_non_nullable
               as String?,
+      categoryHighlights: freezed == categoryHighlights
+          ? _value._categoryHighlights
+          : categoryHighlights // ignore: cast_nullable_to_non_nullable
+              as Map<String, dynamic>?,
     ));
   }
 }
@@ -5218,7 +5236,10 @@ class _$LatestReviewsImpl implements _LatestReviews {
       @JsonKey(name: 'customer_name') this.customerName,
       @JsonKey(name: 'rating_value') this.ratingValue,
       this.content,
-      @JsonKey(name: 'created_at') this.createdAt});
+      @JsonKey(name: 'created_at') this.createdAt,
+      @JsonKey(name: 'category_highlights')
+      final Map<String, dynamic>? categoryHighlights})
+      : _categoryHighlights = categoryHighlights;
 
   factory _$LatestReviewsImpl.fromJson(Map<String, dynamic> json) =>
       _$$LatestReviewsImplFromJson(json);
@@ -5231,16 +5252,29 @@ class _$LatestReviewsImpl implements _LatestReviews {
   final String? customerName;
   @override
   @JsonKey(name: 'rating_value')
-  final double? ratingValue;
+  final int? ratingValue;
   @override
   final String? content;
   @override
   @JsonKey(name: 'created_at')
   final String? createdAt;
+// 👇 ADD THIS LINE
+  final Map<String, dynamic>? _categoryHighlights;
+// 👇 ADD THIS LINE
+  @override
+  @JsonKey(name: 'category_highlights')
+  Map<String, dynamic>? get categoryHighlights {
+    final value = _categoryHighlights;
+    if (value == null) return null;
+    if (_categoryHighlights is EqualUnmodifiableMapView)
+      return _categoryHighlights;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableMapView(value);
+  }
 
   @override
   String toString() {
-    return 'LatestReviews(customerId: $customerId, customerName: $customerName, ratingValue: $ratingValue, content: $content, createdAt: $createdAt)';
+    return 'LatestReviews(customerId: $customerId, customerName: $customerName, ratingValue: $ratingValue, content: $content, createdAt: $createdAt, categoryHighlights: $categoryHighlights)';
   }
 
   @override
@@ -5256,13 +5290,21 @@ class _$LatestReviewsImpl implements _LatestReviews {
                 other.ratingValue == ratingValue) &&
             (identical(other.content, content) || other.content == content) &&
             (identical(other.createdAt, createdAt) ||
-                other.createdAt == createdAt));
+                other.createdAt == createdAt) &&
+            const DeepCollectionEquality()
+                .equals(other._categoryHighlights, _categoryHighlights));
   }
 
   @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(
-      runtimeType, customerId, customerName, ratingValue, content, createdAt);
+      runtimeType,
+      customerId,
+      customerName,
+      ratingValue,
+      content,
+      createdAt,
+      const DeepCollectionEquality().hash(_categoryHighlights));
 
   @JsonKey(ignore: true)
   @override
@@ -5280,12 +5322,13 @@ class _$LatestReviewsImpl implements _LatestReviews {
 
 abstract class _LatestReviews implements LatestReviews {
   const factory _LatestReviews(
-          {@JsonKey(name: 'customer_id') final int? customerId,
-          @JsonKey(name: 'customer_name') final String? customerName,
-          @JsonKey(name: 'rating_value') final double? ratingValue,
-          final String? content,
-          @JsonKey(name: 'created_at') final String? createdAt}) =
-      _$LatestReviewsImpl;
+      {@JsonKey(name: 'customer_id') final int? customerId,
+      @JsonKey(name: 'customer_name') final String? customerName,
+      @JsonKey(name: 'rating_value') final int? ratingValue,
+      final String? content,
+      @JsonKey(name: 'created_at') final String? createdAt,
+      @JsonKey(name: 'category_highlights')
+      final Map<String, dynamic>? categoryHighlights}) = _$LatestReviewsImpl;
 
   factory _LatestReviews.fromJson(Map<String, dynamic> json) =
       _$LatestReviewsImpl.fromJson;
@@ -5298,12 +5341,15 @@ abstract class _LatestReviews implements LatestReviews {
   String? get customerName;
   @override
   @JsonKey(name: 'rating_value')
-  double? get ratingValue;
+  int? get ratingValue;
   @override
   String? get content;
   @override
   @JsonKey(name: 'created_at')
   String? get createdAt;
+  @override // 👇 ADD THIS LINE
+  @JsonKey(name: 'category_highlights')
+  Map<String, dynamic>? get categoryHighlights;
   @override
   @JsonKey(ignore: true)
   _$$LatestReviewsImplCopyWith<_$LatestReviewsImpl> get copyWith =>

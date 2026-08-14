@@ -30,11 +30,6 @@ class NotificationItem {
   }
 }
 
-/// Backs the in-app notification inbox (NotificationScreen) with the real
-/// backend endpoint (GET /api/v1/customer/notifications) instead of the
-/// hardcoded sample list that used to live directly in the screen — the
-/// endpoint already existed and was already populated by every push the
-/// backend sends, the Flutter app just never called it.
 class NotificationController extends GetxController {
   final Repository repository = Repository();
 
@@ -52,12 +47,25 @@ class NotificationController extends GetxController {
       if (response != null && response['success'] == true) {
         final data = response['data'];
         final List<dynamic> rows = data?['notifications'] ?? [];
-        notifications.value = rows
+
+        // ✅ FIX 1: Auto-clear notifications older than 7 days
+        final now = DateTime.now();
+        final sevenDaysAgo = now.subtract(const Duration(days: 7));
+
+        final parsedItems = rows
             .map((e) => NotificationItem.fromJson(e as Map<String, dynamic>))
+            .where(
+              (item) =>
+                  item.createdAt != null &&
+                  item.createdAt!.isAfter(sevenDaysAgo),
+            )
             .toList();
-        unreadCount.value = data?['unread_count'] is int
-            ? data['unread_count']
-            : 0;
+
+        notifications.value = parsedItems;
+
+        // ✅ FIX 2: Recalculate unread count based ONLY on the filtered list
+        // This prevents the UI from showing unread badges for notifications that were auto-cleared
+        unreadCount.value = parsedItems.where((item) => !item.isRead).length;
         error = null;
       } else {
         error = 'Failed to load notifications';

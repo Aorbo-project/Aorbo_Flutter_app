@@ -13,13 +13,10 @@ class UserController extends GetxController {
   Rx<UserProfileData> userProfileData = UserProfileData().obs;
   RxBool isLoading = false.obs;
 
-  // ── LEGACY SHARED CONTROLLERS ──────────────────────────────────────────
-  // Kept ONLY for backwards compatibility with older screens that still
-  // read/write them. Do NOT attach these to TextFields in new code —
-  // sharing these across routes/bottom sheets is what caused the
-  // "TextEditingController was used after being disposed" red screen.
+  // Legacy controllers kept for backward compatibility
   Rx<TextEditingController> emailController = TextEditingController().obs;
   Rx<TextEditingController> phoneNumberController = TextEditingController().obs;
+  Rx<TextEditingController> nameController = TextEditingController().obs;
   RxInt stateUpdateId = 0.obs;
   RxString selectedGender = ''.obs;
   Rx<TextEditingController> nameControllerTraveller =
@@ -32,6 +29,7 @@ class UserController extends GetxController {
   void onClose() {
     emailController.value.dispose();
     phoneNumberController.value.dispose();
+    nameController.value.dispose();
     nameControllerTraveller.value.dispose();
     ageControllerTraveller.value.dispose();
     super.onClose();
@@ -48,13 +46,14 @@ class UserController extends GetxController {
       final response = await repository.getApiCall(
         url: NetworkUrl.getUserProfile,
       );
-
       if (response != null) {
         userModal.value = UserProfileModal.fromJson(response);
         userProfileData.value = userModal.value.data ?? UserProfileData();
+
+        final customer = userProfileData.value.customer;
         phoneNumberController.value.text =
-            userProfileData.value.customer?.phone?.replaceFirst('+91', '') ??
-            '';
+            customer?.phone?.replaceFirst('+91', '') ?? '';
+        nameController.value.text = customer?.name ?? '';
       }
     } catch (e) {
       _showError(e.toString());
@@ -63,21 +62,25 @@ class UserController extends GetxController {
     }
   }
 
-  // ── PARAMETERIZED API METHODS ──────────────────────────────────────────
-  // All return true only on confirmed backend success, so callers can
-  // decide what to do with their own UI state.
-
   Future<bool> updateProfileDetails({
     required String email,
     required int stateId,
+    String? name,
   }) async {
     isLoading.value = true;
     try {
-      final String body = json.encode({"email": email, "state_id": stateId});
+      final Map<String, dynamic> bodyMap = {
+        "email": email,
+        "state_id": stateId,
+      };
+      if (name != null && name.trim().isNotEmpty) bodyMap["name"] = name.trim();
+
+      final String body = json.encode(bodyMap);
       final response = await repository.putApiCall(
         url: NetworkUrl.getUserProfile,
         body: body,
       );
+
       if (response != null && response['success'] == true) {
         await getUserProfile();
         return true;
@@ -116,8 +119,7 @@ class UserController extends GetxController {
         return true;
       }
       _showError(
-        response?['message']?.toString() ??
-            'Could not add traveller. Please try again.',
+        response?['message']?.toString() ?? 'Could not add traveller.',
       );
       return false;
     } catch (e) {
@@ -150,8 +152,7 @@ class UserController extends GetxController {
         return true;
       }
       _showError(
-        response?['message']?.toString() ??
-            'Could not update traveller. Please try again.',
+        response?['message']?.toString() ?? 'Could not update traveller.',
       );
       return false;
     } catch (e) {
@@ -162,9 +163,6 @@ class UserController extends GetxController {
     }
   }
 
-  // Returns true only once the backend has confirmed the soft-delete —
-  // callers must not remove the traveler from local/UI state on any other
-  // outcome, or a failed delete looks identical to a successful one.
   Future<bool> deleteTraveler(int travelerId) async {
     isLoading.value = true;
     try {
@@ -187,11 +185,11 @@ class UserController extends GetxController {
     }
   }
 
-  // ── LEGACY WRAPPERS (older call sites) ─────────────────────────────────
   Future<void> updateUserProfile() async {
     await updateProfileDetails(
       email: emailController.value.text,
       stateId: stateUpdateId.value,
+      name: nameController.value.text,
     );
   }
 

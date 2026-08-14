@@ -29,7 +29,9 @@ import 'package:arobo_app/theme/app_typography.dart';
 Map<int, TrekStages> boardingCitiesFor(List<TrekStages>? trekStages) {
   final Map<int, TrekStages> result = {};
   for (final s in trekStages ?? <TrekStages>[]) {
-    if (s.isBoardingPoint == true && s.cityId != null && !result.containsKey(s.cityId)) {
+    if (s.isBoardingPoint == true &&
+        s.cityId != null &&
+        !result.containsKey(s.cityId)) {
       result[s.cityId!] = s;
     }
   }
@@ -45,12 +47,6 @@ class _C {
   static const ink = CommonColors.blackColor;
   static const inkMid = CommonColors.cFF6B7280;
   static const inkLight = CommonColors.grey_AEAEAE;
-  // Was CommonColors.trek_route_color (0xff212199, navy indigo) — that
-  // shared token is also used by 7 other unrelated screens, so it's
-  // overridden locally here rather than recolored globally. This one
-  // constant cascades to every icon badge, the route timeline, boarding
-  // chip selection, and the policy/notes callouts on this screen, aligning
-  // them with the forest-green identity the trek card redesign set.
   static const brand = AppColors.forest;
   static const brandDeep = AppColors.forestDeep;
   static const teal = CommonColors.cFF0F7B6C;
@@ -106,13 +102,6 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
   final List<GlobalKey> _sectionKeys = List.generate(8, (index) => GlobalKey());
   final GlobalKey _tabBarKey = GlobalKey();
 
-  // ValueNotifier instead of a plain field + setState: the scroll listener
-  // below used to setState() the whole screen on every section-boundary
-  // crossing, forcing a rebuild of all 8 eagerly-built sections (heavy —
-  // see the SliverToBoxAdapter comment further down) on every scroll
-  // frame. Only the tab bar actually needs to react to this value, so it
-  // alone listens via ValueListenableBuilder — the rest of the screen
-  // never rebuilds because of scroll position anymore.
   final ValueNotifier<int> _selectedTabIndex = ValueNotifier<int>(0);
   bool _showFullItinerary = false;
   bool _showFullFeatures = false;
@@ -124,25 +113,10 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
 
   bool _isFav = false;
 
-  LinearGradient getRatingColor(double rating) {
-    if (rating >= 3.0 && rating <= 3.8) {
-      return const LinearGradient(
-        colors: [Color(0xFFFFFA5F), Color(0xFFFFFA5F)],
-      );
-    } else if (rating < 3.0) {
-      return const LinearGradient(
-        colors: [Color(0xFFFF6B3A), Color(0xFFFF6B3A)],
-      );
-    }
-    return const LinearGradient(colors: [Color(0xFF19FA00), Color(0xFF4EE53D)]);
-  }
-
   @override
   void initState() {
     super.initState();
 
-    // Make sure the tab bar starts highlighted on whichever section is
-    // actually rendered first, instead of always assuming "Trek Route".
     final visibility = _sectionVisibilityFlags();
     final firstVisible = visibility.indexWhere((v) => v);
     _selectedTabIndex.value = firstVisible == -1 ? 0 : firstVisible;
@@ -171,14 +145,6 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
     });
   }
 
-  // ── Bulletproof Scroll Sync Logic ──────────
-  //
-  // ScrollController listeners fire on every position update — on a
-  // high-refresh-rate touchscreen that's more often than once per
-  // rendered frame during a drag. _framePending collapses however many
-  // times this fires in between into a single check right before the
-  // next frame paints, instead of doing the RenderBox walk below on every
-  // single one.
   bool _framePending = false;
 
   void _onScroll() {
@@ -200,9 +166,6 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
     final double headerBottom =
         tabBarBox.localToGlobal(Offset.zero).dy + tabBarBox.size.height;
 
-    // If we are at the absolute bottom of the scroll view, force select
-    // the last available section. This fixes the issue where the last
-    // section can't physically scroll flush against the tab bar.
     if (_scrollController.position.hasContentDimensions &&
         _scrollController.offset >=
             _scrollController.position.maxScrollExtent - 10.0) {
@@ -288,7 +251,6 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
         final double headerBottom =
             tabBarBox.localToGlobal(Offset.zero).dy + tabBarBox.size.height;
 
-        // Small padding so the section header isn't flush against the bar.
         final double padding = 1.h;
 
         final double target =
@@ -309,7 +271,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
             )
             .then((_) {
               _isUserScrolling = false;
-              _syncSelectedTabToScroll(); // Force sync once the animation finishes
+              _syncSelectedTabToScroll();
             });
       } else {
         _isUserScrolling = false;
@@ -412,9 +374,6 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                   child: Container(
                     margin: EdgeInsets.symmetric(horizontal: 2.w),
                     child: Center(
-                      // Only this widget rebuilds when the scroll position
-                      // crosses a section boundary — not the rest of the
-                      // (heavy, eagerly-built) screen below it.
                       child: ValueListenableBuilder<int>(
                         valueListenable: _selectedTabIndex,
                         builder: (context, selectedIndex, _) =>
@@ -428,9 +387,6 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                 ),
               ),
             ),
-            // Replaced SliverList with SliverToBoxAdapter to eagerly build all
-            // sections. This prevents GlobalKeys from being destroyed when
-            // scrolled off-screen, fixing taps from extreme top to bottom.
             SliverToBoxAdapter(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -444,9 +400,6 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
     );
   }
 
-  // ─────────────────────────────────────────────
-  //  PERSISTENT APP BAR
-  // ─────────────────────────────────────────────
   Widget _buildSliverAppBar() {
     final trek = widget.trek;
 
@@ -507,7 +460,12 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     textScaler: const TextScaler.linear(1.0),
-                    style: AppType.style(12.0.sp, w: FontWeight.w700, color: _C.ink, height: 1.2),
+                    style: AppType.style(
+                      12.0.sp,
+                      w: FontWeight.w700,
+                      color: _C.ink,
+                      height: 1.2,
+                    ),
                   ),
                   Text(
                     trek?.companyName ??
@@ -517,7 +475,12 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     textScaler: const TextScaler.linear(1.0),
-                    style: AppType.style(9.0.sp, w: FontWeight.w500, color: _C.inkMid, height: 1.2),
+                    style: AppType.style(
+                      9.0.sp,
+                      w: FontWeight.w500,
+                      color: _C.inkMid,
+                      height: 1.2,
+                    ),
                   ),
                 ],
               ),
@@ -558,9 +521,6 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
     );
   }
 
-  // ─────────────────────────────────────────────
-  //  BOTTOM BAR
-  // ─────────────────────────────────────────────
   Widget _buildBottomBar() {
     return Container(
       padding: EdgeInsets.fromLTRB(10.w, 1.5.h, 10.w, 2.5.h),
@@ -609,28 +569,22 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
     );
   }
 
-  // ─────────────────────────────────────────────
-  //  SECTION VISIBILITY (single source of truth)
-  // ─────────────────────────────────────────────
   List<bool> _sectionVisibilityFlags() {
     final detail = _trekC.trekDetailData.value;
     return [
-      detail.trekStages?.isNotEmpty == true, // 0 - Trek Route
-      detail.itineraryItems?.isNotEmpty == true, // 1 - Itinerary
-      detail.activities?.isNotEmpty == true, // 2 - Activities
-      detail.accommodations?.isNotEmpty == true, // 3 - Accommodation
-      detail.inclusions?.isNotEmpty == true, // 4 - Inclusions/Exclusions
-      detail.latestReviews?.isNotEmpty == true, // 5 - Reviews
-      detail.cancellationPolicy?.rules?.isNotEmpty == true, // 6 - Cancellation
+      detail.trekStages?.isNotEmpty == true,
+      detail.itineraryItems?.isNotEmpty == true,
+      detail.activities?.isNotEmpty == true,
+      detail.accommodations?.isNotEmpty == true,
+      detail.inclusions?.isNotEmpty == true,
+      detail.latestReviews?.isNotEmpty == true,
+      detail.cancellationPolicy?.rules?.isNotEmpty == true,
       (detail.trekkingRules?.isNotEmpty == true) ||
           (detail.emergencyProtocols?.isNotEmpty == true) ||
-          (detail.organizerNotes?.isNotEmpty == true), // 7 - Other Policies
+          (detail.organizerNotes?.isNotEmpty == true),
     ];
   }
 
-  // ─────────────────────────────────────────────
-  //  SECTIONS BUILDER
-  // ─────────────────────────────────────────────
   List<Widget> _buildSections() {
     final detail = _trekC.trekDetailData.value;
     final visibility = _sectionVisibilityFlags();
@@ -723,7 +677,11 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
             Text(
               expanded ? 'Hide $label' : 'View all $label',
               textScaler: const TextScaler.linear(1.0),
-              style: AppType.style(10.0.sp, w: FontWeight.w600, color: _C.brand),
+              style: AppType.style(
+                10.0.sp,
+                w: FontWeight.w600,
+                color: _C.brand,
+              ),
             ),
             const SizedBox(width: 6),
             Icon(
@@ -826,15 +784,15 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
       children: List.generate(5, (i) {
         final v = rating - i;
         return Padding(
-          padding: EdgeInsets.only(right: i < 4 ? 1.w : 0),
+          padding: EdgeInsets.only(right: i < 4 ? 0.5.w : 0),
           child: Icon(
             v >= 1.0
-                ? Icons.star
+                ? Icons.star_rounded
                 : v >= 0.5
-                ? Icons.star_half
-                : Icons.star_border,
+                ? Icons.star_half_rounded
+                : Icons.star_border_rounded,
             size: size,
-            color: v > 0 ? CommonColors.completedColor2 : Colors.grey.shade300,
+            color: v > 0 ? _C.brand : _C.divider,
           ),
         );
       }),
@@ -892,7 +850,11 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                           child: Text(
                             'Day ${idx + 1}',
                             textScaler: const TextScaler.linear(1.0),
-                            style: AppType.style(9.0.sp, w: FontWeight.w700, color: Colors.white),
+                            style: AppType.style(
+                              9.0.sp,
+                              w: FontWeight.w700,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                         SizedBox(width: 2.w),
@@ -900,7 +862,11 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                           child: Text(
                             'Day ${idx + 1} Activities',
                             textScaler: const TextScaler.linear(1.0),
-                            style: AppType.style(10.0.sp, w: FontWeight.w500, color: _C.brand),
+                            style: AppType.style(
+                              10.0.sp,
+                              w: FontWeight.w500,
+                              color: _C.brand,
+                            ),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -930,7 +896,12 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                                 '+ ${activities.length - 4} more '
                                 '${activities.length - 4 == 1 ? 'activity' : 'activities'}',
                                 textScaler: const TextScaler.linear(1.0),
-                                style: AppType.style(9.0.sp, w: FontWeight.w600, color: _C.brand, decoration: TextDecoration.underline),
+                                style: AppType.style(
+                                  9.0.sp,
+                                  w: FontWeight.w600,
+                                  color: _C.brand,
+                                  decoration: TextDecoration.underline,
+                                ),
                               ),
                             ),
                           ),
@@ -1109,7 +1080,11 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                         child: Text(
                           'D${i + 1}',
                           textScaler: const TextScaler.linear(1.0),
-                          style: AppType.style(8.0.sp, w: FontWeight.w700, color: _C.brand),
+                          style: AppType.style(
+                            8.0.sp,
+                            w: FontWeight.w700,
+                            color: _C.brand,
+                          ),
                         ),
                       ),
                     ),
@@ -1127,7 +1102,11 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                         Text(
                           'Check in to ${acc.details?.location ?? '-'}',
                           textScaler: const TextScaler.linear(1.0),
-                          style: AppType.style(11.0.sp, w: FontWeight.w600, color: _C.ink),
+                          style: AppType.style(
+                            11.0.sp,
+                            w: FontWeight.w600,
+                            color: _C.ink,
+                          ),
                         ),
                         SizedBox(height: 0.3.h),
                         Row(
@@ -1166,171 +1145,305 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
         ? _sortedReviews
         : _sortedReviews.take(5).toList();
 
+    final avgRating =
+        _trekC.trekDetailData.value.averageRating?.toDouble() ?? 0.0;
+
     return _card(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _sectionHeader('Ratings & Reviews', Icons.star_rounded),
-          SizedBox(height: 2.h),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Container(
-                width: 18.w,
-                height: 18.w,
-                decoration: BoxDecoration(
-                  gradient: getRatingColor(
-                    _trekC.trekDetailData.value.averageRating?.toDouble() ?? 0,
-                  ),
-                  borderRadius: BorderRadius.circular(3.w),
-                ),
-                child: Center(
-                  child: Text(
-                    (_trekC.trekDetailData.value.averageRating ?? 0.0)
-                        .toStringAsFixed(1),
-                    textScaler: const TextScaler.linear(1.0),
-                    style: AppType.style(20.0.sp, w: FontWeight.w800, color: Colors.white),
-                  ),
-                ),
+          SizedBox(height: 2.5.h),
+
+          // Premium Rating Summary Header
+          Container(
+            padding: EdgeInsets.all(4.w),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [_C.brand.withValues(alpha: 0.05), _C.tealSoft],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              SizedBox(width: 4.w),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildStarRating(
-                      rating:
-                          _trekC.trekDetailData.value.averageRating
-                              ?.toDouble() ??
-                          0.0,
-                      size: 5.w,
-                    ),
-                    SizedBox(height: 0.5.h),
-                    Text(
-                      '${_trekC.trekDetailData.value.totalReviews ?? 0} ratings  ·  ${_trekC.trekDetailData.value.reviewCommentsCount ?? 0} reviews',
-                      textScaler: const TextScaler.linear(1.0),
-                      style: AppType.style(9.0.sp, color: _C.inkMid),
-                    ),
-                  ],
+              borderRadius: BorderRadius.circular(4.w),
+              border: Border.all(color: _C.brand.withValues(alpha: 0.1)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 20.w,
+                  height: 20.w,
+                  decoration: BoxDecoration(
+                    gradient: _C.ctaGradient,
+                    borderRadius: BorderRadius.circular(4.w),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _C.brand.withValues(alpha: 0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        avgRating.toStringAsFixed(1),
+                        textScaler: const TextScaler.linear(1.0),
+                        style: AppType.style(
+                          22.0.sp,
+                          w: FontWeight.w800,
+                          color: Colors.white,
+                          height: 1,
+                        ),
+                      ),
+                      SizedBox(height: 0.5.h),
+                      Icon(Icons.star_rounded, color: Colors.white, size: 4.w),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+                SizedBox(width: 4.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildStarRating(rating: avgRating, size: 4.5.w),
+                      SizedBox(height: 1.h),
+                      Text(
+                        '${_trekC.trekDetailData.value.totalReviews ?? 0} ratings',
+                        textScaler: const TextScaler.linear(1.0),
+                        style: AppType.style(
+                          10.0.sp,
+                          w: FontWeight.w600,
+                          color: _C.ink,
+                        ),
+                      ),
+                      Text(
+                        '${_trekC.trekDetailData.value.reviewCommentsCount ?? 0} verified reviews',
+                        textScaler: const TextScaler.linear(1.0),
+                        style: AppType.style(9.0.sp, color: _C.inkMid),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-          SizedBox(height: 2.h),
-          Divider(color: _C.divider, height: 1),
-          SizedBox(height: 2.h),
+
+          SizedBox(height: 3.h),
+
           Text(
-            'People like',
+            'What people loved',
             textScaler: const TextScaler.linear(1.0),
-            style: AppType.style(12.0.sp, w: FontWeight.w600, color: _C.ink),
+            style: AppType.style(12.0.sp, w: FontWeight.w700, color: _C.ink),
           ),
           SizedBox(height: 1.5.h),
           ...[
             {
               'label': 'Safety & Security',
               'value': (ratings?.safetySecurity ?? 0.0).toDouble(),
+              'icon': Icons.shield_outlined,
             },
             {
               'label': 'Organizer Manner',
               'value': (ratings?.organizerManner ?? 0.0).toDouble(),
+              'icon': Icons.support_agent_rounded,
             },
             {
               'label': 'Trek Planning',
               'value': (ratings?.trekPlanning ?? 0.0).toDouble(),
+              'icon': Icons.map_outlined,
             },
             {
               'label': 'Women Safety',
               'value': (ratings?.womenSafety ?? 0.0).toDouble(),
+              'icon': Icons.female_rounded,
             },
           ].map(
-            (item) =>
-                _ratingBar(item['label'] as String, item['value'] as double),
-          ),
-          SizedBox(height: 2.h),
-          Divider(color: _C.divider, height: 1),
-          SizedBox(height: 2.h),
-          Text(
-            'Sort by',
-            textScaler: const TextScaler.linear(1.0),
-            style: AppType.style(11.0.sp, w: FontWeight.w600, color: _C.ink),
-          ),
-          SizedBox(height: 1.h),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: EdgeInsets.only(right: 2.w),
-            child: Row(
-              children:
-                  [
-                        'Recent Reviews',
-                        'Solo Traveller',
-                        'High to Low Ratings',
-                        'Low to High Ratings',
-                      ]
-                      .map((t) => _buildSortButton(t, t == _selectedSortOption))
-                      .toList(),
+            (item) => _premiumRatingBar(
+              item['label'] as String,
+              item['value'] as double,
+              item['icon'] as IconData,
             ),
           ),
+
+          SizedBox(height: 3.h),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Reviews',
+                textScaler: const TextScaler.linear(1.0),
+                style: AppType.style(
+                  12.0.sp,
+                  w: FontWeight.w700,
+                  color: _C.ink,
+                ),
+              ),
+              PopupMenuButton<String>(
+                onSelected: (value) {
+                  setState(() {
+                    _selectedSortOption = value;
+                    _sortedReviews = _sortReviews(
+                      _trekC.trekDetailData.value.latestReviews ?? [],
+                      value,
+                    );
+                  });
+                },
+                offset: Offset(0, 4.h),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(3.w),
+                ),
+                itemBuilder: (context) =>
+                    [
+                      'Recent Reviews',
+                      'Solo Traveller',
+                      'High to Low Ratings',
+                      'Low to High Ratings',
+                    ].map((String choice) {
+                      return PopupMenuItem<String>(
+                        value: choice,
+                        child: Row(
+                          children: [
+                            if (choice == _selectedSortOption)
+                              Icon(Icons.check, size: 4.w, color: _C.brand)
+                            else
+                              SizedBox(width: 4.w),
+                            SizedBox(width: 2.w),
+                            Text(
+                              choice,
+                              style: AppType.style(
+                                10.0.sp,
+                                w: FontWeight.w500,
+                                color: _C.ink,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 3.w,
+                    vertical: 0.8.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _C.brand.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(2.w),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Sort: ',
+                        style: AppType.style(9.0.sp, color: _C.inkMid),
+                      ),
+                      Text(
+                        _selectedSortOption,
+                        style: AppType.style(
+                          9.0.sp,
+                          w: FontWeight.w600,
+                          color: _C.brand,
+                        ),
+                      ),
+                      SizedBox(width: 1.w),
+                      Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        color: _C.brand,
+                        size: 4.w,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+
           SizedBox(height: 2.h),
+
           SizedBox(
-            height: 20.h,
+            height: 22.h,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: displayed.length,
-              itemBuilder: (_, i) => _reviewCard(displayed[i]),
+              itemBuilder: (_, i) => _premiumReviewCard(displayed[i]),
             ),
           ),
-          if (_sortedReviews.length > 5)
+
+          if (_sortedReviews.length > 5) ...[
+            SizedBox(height: 1.h),
             _toggleBtn(
               'Reviews',
               _showFullReviews,
               () => setState(() => _showFullReviews = !_showFullReviews),
             ),
+          ],
         ],
       ),
     );
   }
 
-  Widget _ratingBar(String label, double value) {
+  Widget _premiumRatingBar(String label, double value, IconData icon) {
     return Padding(
-      padding: EdgeInsets.only(bottom: 1.2.h),
+      padding: EdgeInsets.only(bottom: 1.5.h),
       child: Row(
         children: [
-          Expanded(
-            flex: 5,
-            child: Text(
-              label,
-              textScaler: const TextScaler.linear(1.0),
-              style: AppType.style(9.0.sp, color: _C.inkMid),
+          Container(
+            width: 8.w,
+            height: 8.w,
+            decoration: BoxDecoration(
+              color: _C.tealSoft,
+              borderRadius: BorderRadius.circular(2.w),
             ),
+            child: Icon(icon, color: _C.teal, size: 4.w),
           ),
+          SizedBox(width: 3.w),
           Expanded(
-            flex: 4,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: (value / 5.0).clamp(0.0, 1.0),
-                minHeight: 6,
-                backgroundColor: _C.divider,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  CommonColors.completedColor2,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      label,
+                      textScaler: const TextScaler.linear(1.0),
+                      style: AppType.style(
+                        9.5.sp,
+                        w: FontWeight.w600,
+                        color: _C.ink,
+                      ),
+                    ),
+                    Text(
+                      value.toStringAsFixed(1),
+                      textScaler: const TextScaler.linear(1.0),
+                      style: AppType.style(
+                        9.5.sp,
+                        w: FontWeight.w700,
+                        color: _C.brand,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
+                SizedBox(height: 0.8.h),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: (value / 5.0).clamp(0.0, 1.0),
+                    minHeight: 6,
+                    backgroundColor: _C.divider,
+                    valueColor: AlwaysStoppedAnimation<Color>(_C.brand),
+                  ),
+                ),
+              ],
             ),
-          ),
-          SizedBox(width: 2.w),
-          SvgPicture.asset(CommonImages.yellowstar, width: 3.w, height: 3.w),
-          SizedBox(width: 1.w),
-          Text(
-            value.toStringAsFixed(1),
-            textScaler: const TextScaler.linear(1.0),
-            style: AppType.style(9.0.sp, w: FontWeight.w600, color: _C.ink),
           ),
         ],
       ),
     );
   }
 
-  Widget _reviewCard(LatestReviews review) {
+  Widget _premiumReviewCard(LatestReviews review) {
     String dateStr = '-';
     if (review.createdAt != null && review.createdAt!.isNotEmpty) {
       try {
@@ -1340,131 +1453,205 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
       }
     }
 
+    final bool hasContent =
+        review.content != null && review.content!.trim().isNotEmpty;
+
+    // Parse category highlights (gracefully handles null from older API)
+    final highlights = review.categoryHighlights;
+    final List<String> likedCategories = [];
+    if (highlights != null) {
+      if (highlights['safety_security_rated'] == true)
+        likedCategories.add('Safety');
+      if (highlights['organizer_manner_rated'] == true)
+        likedCategories.add('Organizer');
+      if (highlights['trek_planning_rated'] == true)
+        likedCategories.add('Planning');
+      if (highlights['women_safety_rated'] == true)
+        likedCategories.add('Women Safety');
+    }
+
     return Container(
       width: 75.w,
       margin: EdgeInsets.only(right: 3.w),
       padding: EdgeInsets.all(4.w),
       decoration: BoxDecoration(
         color: _C.cardBg,
-        borderRadius: BorderRadius.circular(3.w),
-        border: Border.all(color: _C.divider),
+        borderRadius: BorderRadius.circular(4.w),
+        border: Border.all(color: _C.brand.withValues(alpha: 0.08)),
         boxShadow: [
           BoxShadow(
-            color: _C.shadow,
-            blurRadius: 6,
-            offset: const Offset(0, 2),
+            color: _C.shadow.withValues(alpha: 0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    width: 8.w,
-                    height: 8.w,
-                    decoration: BoxDecoration(
-                      color: _C.brand.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Text(
-                        (review.customerName?.isNotEmpty == true)
-                            ? review.customerName![0].toUpperCase()
-                            : '?',
-                        style: AppType.style(12.0.sp, w: FontWeight.w700, color: _C.brand),
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      width: 9.w,
+                      height: 9.w,
+                      decoration: BoxDecoration(
+                        gradient: _C.ctaGradient,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(
+                          (review.customerName?.isNotEmpty == true)
+                              ? review.customerName![0].toUpperCase()
+                              : '?',
+                          style: AppType.style(
+                            12.0.sp,
+                            w: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                  SizedBox(width: 2.w),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        review.customerName ?? '-',
-                        textScaler: const TextScaler.linear(1.0),
-                        style: AppType.style(10.0.sp, w: FontWeight.w600, color: _C.ink),
+                    SizedBox(width: 2.5.w),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            review.customerName ?? '-',
+                            textScaler: const TextScaler.linear(1.0),
+                            style: AppType.style(
+                              10.0.sp,
+                              w: FontWeight.w700,
+                              color: _C.ink,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          SizedBox(height: 0.2.h),
+                          Text(
+                            dateStr,
+                            textScaler: const TextScaler.linear(1.0),
+                            style: AppType.style(8.0.sp, color: _C.inkLight),
+                          ),
+                        ],
                       ),
-                      Text(
-                        dateStr,
-                        textScaler: const TextScaler.linear(1.0),
-                        style: AppType.style(8.0.sp, color: _C.inkLight),
-                      ),
-                    ],
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
+              SizedBox(width: 2.w),
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.3.h),
+                padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.4.h),
                 decoration: BoxDecoration(
-                  gradient: getRatingColor(
-                    (review.ratingValue ?? 0.0).toDouble(),
-                  ),
+                  color: _C.brand,
                   borderRadius: BorderRadius.circular(1.5.w),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
-                      Icons.star_rounded,
-                      color: Colors.white,
-                      size: 12,
-                    ),
-                    const SizedBox(width: 3),
+                    Icon(Icons.star_rounded, color: Colors.white, size: 3.w),
+                    SizedBox(width: 1.w),
                     Text(
                       '${review.ratingValue}',
                       textScaler: const TextScaler.linear(1.0),
-                      style: AppType.style(9.0.sp, w: FontWeight.w700, color: Colors.white),
+                      style: AppType.style(
+                        9.5.sp,
+                        w: FontWeight.w700,
+                        color: Colors.white,
+                      ),
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          SizedBox(height: 1.h),
+          SizedBox(height: 1.5.h),
+
+          // Content area — switches between written review and highlight chips
           Expanded(
-            child: Text(
-              review.content ?? '-',
-              textScaler: const TextScaler.linear(1.0),
-              style: AppType.style(9.0.sp, color: _C.inkMid, height: 1.5),
-              maxLines: 4,
-              overflow: TextOverflow.ellipsis,
-            ),
+            child: hasContent
+                ? Text(
+                    review.content!,
+                    textScaler: const TextScaler.linear(1.0),
+                    style: AppType.style(9.5.sp, color: _C.inkMid, height: 1.6),
+                    maxLines: 5,
+                    overflow: TextOverflow.ellipsis,
+                  )
+                : likedCategories.isNotEmpty
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Loved these aspects:',
+                        textScaler: const TextScaler.linear(1.0),
+                        style: AppType.style(
+                          8.5.sp,
+                          w: FontWeight.w500,
+                          color: _C.inkLight,
+                          height: 1.3,
+                        ),
+                      ),
+                      SizedBox(height: 0.8.h),
+                      Wrap(
+                        spacing: 1.5.w,
+                        runSpacing: 1.h,
+                        children: likedCategories.map((cat) {
+                          return Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 2.w,
+                              vertical: 0.5.h,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _C.tealSoft,
+                              borderRadius: BorderRadius.circular(1.5.w),
+                              border: Border.all(
+                                color: _C.brand.withValues(alpha: 0.15),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.check_circle_rounded,
+                                  size: 3.w,
+                                  color: _C.teal,
+                                ),
+                                SizedBox(width: 1.w),
+                                Text(
+                                  cat,
+                                  textScaler: const TextScaler.linear(1.0),
+                                  style: AppType.style(
+                                    8.0.sp,
+                                    w: FontWeight.w600,
+                                    color: _C.brand,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  )
+                : Center(
+                    child: Text(
+                      'Rated ${review.ratingValue} stars',
+                      textScaler: const TextScaler.linear(1.0),
+                      style: AppType.style(
+                        9.0.sp,
+                        color: _C.inkLight,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildSortButton(String text, bool isSelected) {
-    return GestureDetector(
-      onTap: () => setState(() {
-        _selectedSortOption = text;
-        _sortedReviews = _sortReviews(
-          _trekC.trekDetailData.value.latestReviews ?? [],
-          text,
-        );
-      }),
-      child: Container(
-        margin: EdgeInsets.only(right: 2.w),
-        padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 0.8.h),
-        decoration: BoxDecoration(
-          color: isSelected ? _C.brand.withValues(alpha: 0.1) : _C.cardBg,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected ? _C.brand : _C.divider,
-            width: isSelected ? 1.5 : 1,
-          ),
-        ),
-        child: Text(
-          text,
-          textScaler: const TextScaler.linear(1.0),
-          style: AppType.style(9.0.sp, w: isSelected ? FontWeight.w600 : FontWeight.w400, color: isSelected ? _C.brand : _C.ink),
-        ),
       ),
     );
   }
@@ -1516,7 +1703,11 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
               Text(
                 title,
                 textScaler: const TextScaler.linear(1.0),
-                style: AppType.style(11.0.sp, w: FontWeight.w600, color: _C.brand),
+                style: AppType.style(
+                  11.0.sp,
+                  w: FontWeight.w600,
+                  color: _C.brand,
+                ),
               ),
             ],
           ),
@@ -1591,11 +1782,6 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
     }).toList();
   }
 
-  // This trek has more than one boarding city — the customer must pick one
-  // (mandatory, not skippable) before proceeding, since the vendor needs to
-  // know which city each traveler boards from. Selection is stored on
-  // TrekController so it survives navigation into traveller_information_screen,
-  // where calculateFare() actually sends it as boarding_city_id.
   Widget _buildBoardingCityPicker(
     TrekController ctrl,
     Map<int, TrekStages> boardingByCityId,
@@ -1619,7 +1805,12 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
               Text(
                 'Select Your Boarding Point',
                 textScaler: const TextScaler.linear(1.0),
-                style: AppType.style(9.0.sp, w: FontWeight.w600, color: _C.brand, letterSpacing: 0.6),
+                style: AppType.style(
+                  9.0.sp,
+                  w: FontWeight.w600,
+                  color: _C.brand,
+                  letterSpacing: 0.6,
+                ),
               ),
             ],
           ),
@@ -1639,13 +1830,19 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
                 return ChoiceChip(
                   label: Text(
                     label,
-                    style: AppType.style(9.5.sp, w: FontWeight.w500, color: isSelected ? Colors.white : _C.ink),
+                    style: AppType.style(
+                      9.5.sp,
+                      w: FontWeight.w500,
+                      color: isSelected ? Colors.white : _C.ink,
+                    ),
                   ),
                   selected: isSelected,
                   selectedColor: _C.brand,
                   backgroundColor: AppColors.surface,
                   side: BorderSide(
-                    color: isSelected ? _C.brand : _C.brand.withValues(alpha: 0.3),
+                    color: isSelected
+                        ? _C.brand
+                        : _C.brand.withValues(alpha: 0.3),
                   ),
                   onSelected: (_) => ctrl.selectedBoardingCityId.value = cityId,
                 );
@@ -1657,7 +1854,11 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
             Text(
               'Please select a boarding city to continue',
               textScaler: const TextScaler.linear(1.0),
-              style: AppType.style(8.5.sp, w: FontWeight.w500, color: Colors.red.shade600),
+              style: AppType.style(
+                8.5.sp,
+                w: FontWeight.w500,
+                color: Colors.red.shade600,
+              ),
             ),
           ],
         ],
@@ -1733,7 +1934,11 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
               Text(
                 'Trek Route',
                 textScaler: const TextScaler.linear(1.0),
-                style: AppType.style(14.0.sp, w: FontWeight.w700, color: _C.ink),
+                style: AppType.style(
+                  14.0.sp,
+                  w: FontWeight.w700,
+                  color: _C.ink,
+                ),
               ),
             ],
           ),
@@ -1774,7 +1979,12 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
                         Text(
                           'Boarding Point',
                           textScaler: const TextScaler.linear(1.0),
-                          style: AppType.style(8.0.sp, w: FontWeight.w600, color: _C.brand, letterSpacing: 0.8),
+                          style: AppType.style(
+                            8.0.sp,
+                            w: FontWeight.w600,
+                            color: _C.brand,
+                            letterSpacing: 0.8,
+                          ),
                         ),
                         Text(
                           boarding.city?.cityName != null &&
@@ -1782,7 +1992,11 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
                               ? '${boarding.city?.cityName} — ${boarding.destination ?? '-'}'
                               : boarding.destination ?? '-',
                           textScaler: const TextScaler.linear(1.0),
-                          style: AppType.style(10.0.sp, w: FontWeight.w500, color: _C.ink),
+                          style: AppType.style(
+                            10.0.sp,
+                            w: FontWeight.w500,
+                            color: _C.ink,
+                          ),
                         ),
                         Text(
                           _formatDateTime(boarding.dateTime)['time'] ?? '-',
@@ -1821,7 +2035,11 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
                     Text(
                       showFullRoute ? 'Hide trek route' : 'View all trek route',
                       textScaler: const TextScaler.linear(1.0),
-                      style: AppType.style(10.0.sp, w: FontWeight.w600, color: _C.brand),
+                      style: AppType.style(
+                        10.0.sp,
+                        w: FontWeight.w600,
+                        color: _C.brand,
+                      ),
                     ),
                     const SizedBox(width: 6),
                     Icon(
@@ -1915,7 +2133,11 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
                         child: Text(
                           label,
                           textScaler: const TextScaler.linear(1.0),
-                          style: AppType.style(10.0.sp, w: FontWeight.w600, color: _C.ink),
+                          style: AppType.style(
+                            10.0.sp,
+                            w: FontWeight.w600,
+                            color: _C.ink,
+                          ),
                         ),
                       ),
                       if (stop.meansOfTransport != null &&
@@ -1932,7 +2154,11 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
                           child: Text(
                             stop.meansOfTransport!,
                             textScaler: const TextScaler.linear(1.0),
-                            style: AppType.style(7.0.sp, w: FontWeight.w500, color: _C.teal),
+                            style: AppType.style(
+                              7.0.sp,
+                              w: FontWeight.w500,
+                              color: _C.teal,
+                            ),
                           ),
                         ),
                     ],

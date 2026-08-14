@@ -226,7 +226,19 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
   @override
   void initState() {
     super.initState();
+
+    // FIX: Ensure user profile is fetched if it hasn't been loaded yet.
+    if (_userC.userProfileData.value.customer == null) {
+      _userC.getUserProfile();
+    }
+
     travelData = _trekC.trekDetailData.value;
+
+    // FIX: Ensure batch ID is set for draft saving
+    if (_trekC.trekBatchId.value == 0 && travelData.batchId != null) {
+      _trekC.trekBatchId.value = travelData.batchId!;
+    }
+
     _shakeController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
@@ -578,14 +590,18 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
       builder: (_) => _ContactDetailsSheet(isEdit: isEdit),
     );
     if (saved != true || !mounted) return;
-    setState(() {});
+
+    setState(() {}); // Force rebuild just in case
+
     _showSuccessSnack(
       isEdit ? 'Contact details updated' : 'Contact details saved',
     );
   }
 
   Future<void> _showTravellerBottomSheet({Traveler? traveller}) async {
-    final isEdit = traveller != null;
+    // FIX: Ensure we only treat it as an "edit" if the traveler actually has an ID.
+    // This allows passing a dummy Traveler with just a name to pre-fill the "Add" form.
+    final isEdit = traveller != null && traveller.id != null;
     final saved = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -593,25 +609,29 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
       builder: (_) => _TravellerFormSheet(traveller: traveller),
     );
     if (saved != true || !mounted) return;
+
     if (isEdit) {
-      setState(_refreshSelectedTravellers);
+      _refreshSelectedTravellers();
     } else {
       _autoSelectNewestTraveller();
     }
+
     _showSuccessSnack(isEdit ? 'Traveller updated' : 'Traveller added');
   }
 
   void _refreshSelectedTravellers() {
     final all =
         _userC.userProfileData.value.customer?.travelers ?? const <Traveler>[];
-    selectedTravellers = selectedTravellers.map((sel) {
-      for (final t in all) {
-        if (t.id == sel.id) return t;
-      }
-      return sel;
-    }).toList();
-    _trekC.travellerDetailList.value = List.from(selectedTravellers);
-    BookingDraftService.save(_trekC);
+    setState(() {
+      selectedTravellers = selectedTravellers.map((sel) {
+        for (final t in all) {
+          if (t.id == sel.id) return t;
+        }
+        return sel;
+      }).toList();
+      _trekC.travellerDetailList.value = List.from(selectedTravellers);
+      BookingDraftService.save(_trekC);
+    });
   }
 
   void _autoSelectNewestTraveller() {
@@ -634,6 +654,15 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
         BookingDraftService.save(_trekC);
       }
     });
+  }
+
+  Future<void> _addMyselfAsTraveler() async {
+    final customer = _userC.userProfileData.value.customer;
+    if (customer == null) return;
+    // Pass a dummy Traveler with just the name pre-filled.
+    // Since ID is null, the bottom sheet will treat it as "Add New" but pre-fill the name.
+    final preFilled = Traveler(name: customer.name);
+    await _showTravellerBottomSheet(traveller: preFilled);
   }
 
   @override
@@ -697,9 +726,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
     final availableSlots = data.availableSlots ?? 0;
     final totalCapacity = data.capacity ?? 0;
     final price = '₹${data.basePrice ?? '0'}';
-    // TrekDetailData has no imageUrl/image field - the only image source is
-    // the `images` list, so pick the cover image (falling back to the first
-    // image if none is flagged as cover).
     final coverImage = () {
       final imgs = data.images ?? const [];
       if (imgs.isEmpty) return null;
@@ -725,235 +751,381 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
   }
 
   Widget _buildContactSection() {
-    final customer = _userC.userProfileData.value.customer;
-    final isCompleted =
-        customer?.email != null &&
-        customer?.phone != null &&
-        customer?.state?.id != null;
-    return Container(
-      key: _contactCardKey,
-      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
-      decoration: _cardDecoration(isCompleted: isCompleted),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: _sectionHeader(
-                  'Contact Details',
-                  Icons.contact_phone_outlined,
-                  isCompleted: isCompleted,
-                ),
-              ),
-              SizedBox(width: 2.w),
-              GestureDetector(
-                onTap: () =>
-                    _showContactDetailsBottomSheet(isEdit: isCompleted),
-                child: Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 3.w,
-                    vertical: 0.8.h,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _TI.brand.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: _TI.brand.withValues(alpha: 0.25),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        isCompleted ? Icons.edit_outlined : Icons.add_rounded,
-                        size: 4.w,
-                        color: _TI.brand,
-                      ),
-                      SizedBox(width: 1.5.w),
-                      Text(
-                        isCompleted ? 'Edit' : 'Add',
-                        style: TextStyle(
-                          fontSize: 9.sp,
-                          fontWeight: FontWeight.w600,
-                          color: _TI.brand,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 0.5.h),
-          Text(
-            'Ticket details will be sent to this contact information',
-            style: TextStyle(
-              fontSize: 8.sp,
-              color: _TI.inkMid,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-          SizedBox(height: 1.h),
-          if (!isCompleted)
-            Text(
-              'Tap "Add" to enter your phone, email and state.',
-              style: TextStyle(fontSize: 9.sp, color: _TI.inkMid),
-            )
-          else ...[
-            _infoRow(CommonImages.phone, customer?.phone ?? '-'),
-            _infoRow(CommonImages.email, customer?.email ?? '-'),
-            _infoRow(CommonImages.location4, customer?.state?.name ?? '-'),
-          ],
-        ],
-      ),
-    );
-  }
+    return Obx(() {
+      final customer = _userC.userProfileData.value.customer;
+      final isCompleted =
+          customer?.email != null &&
+          customer?.phone != null &&
+          customer?.state?.id != null;
 
-  Widget _buildTravellerSection() {
-    final adultCountReq = _trekC.calculateFareRequestModel.value.travelerCount;
-    final isCompleted = selectedTravellers.length >= adultCountReq;
-    final savedTravellers =
-        _userC.userProfileData.value.customer?.travelers ?? const [];
-    return Container(
-      key: _travellerCardKey,
-      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
-      decoration: _cardDecoration(isCompleted: isCompleted),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _sectionHeader(
-            'Traveller Details',
-            Icons.badge_outlined,
-            isCompleted: isCompleted,
-          ),
-          SizedBox(height: 1.5.h),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Adults (18+ years)',
-                style: TextStyle(
-                  fontSize: 11.sp,
-                  fontWeight: FontWeight.w600,
-                  color: _TI.ink,
-                ),
-              ),
-              Obx(() {
-                final adultCount =
-                    _trekC.calculateFareRequestModel.value.travelerCount;
-                final maxSlots = travelData.availableSlots ?? 0;
-                final canIncrement = maxSlots <= 0 || adultCount < maxSlots;
-                return Row(
-                  children: [
-                    _counterBtn(Icons.remove, () {
-                      if (adultCount <= 1) return;
-                      final newCount = adultCount - 1;
-                      setState(() {
-                        _trekC.calculateFareRequestModel.value = _trekC
-                            .calculateFareRequestModel
-                            .value
-                            .copyWith(travelerCount: newCount);
-                        if (selectedTravellers.length > newCount) {
-                          selectedTravellers = selectedTravellers
-                              .take(newCount)
-                              .toList();
-                        }
-                      });
-                      _trekC.trekPersonCount.value = newCount;
-                      _trekC.travellerDetailList.value = List.from(
-                        selectedTravellers,
-                      );
-                      BookingDraftService.save(_trekC);
-                    }, active: adultCount > 1),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 4.w),
-                      child: Text(
-                        '$adultCount',
-                        style: TextStyle(
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.w700,
-                          color: _TI.ink,
-                        ),
-                      ),
-                    ),
-                    _counterBtn(Icons.add, () {
-                      final newCount = adultCount + 1;
-                      setState(() {
-                        _trekC.calculateFareRequestModel.value = _trekC
-                            .calculateFareRequestModel
-                            .value
-                            .copyWith(travelerCount: newCount);
-                      });
-                      _trekC.trekPersonCount.value = newCount;
-                    }, active: canIncrement),
-                  ],
-                );
-              }),
-            ],
-          ),
-          SizedBox(height: 1.5.h),
-          if (savedTravellers.isEmpty)
-            Text(
-              'No travellers added yet. Use "Add New Traveller" below to create one.',
-              style: TextStyle(fontSize: 9.sp, color: _TI.inkMid),
-            )
-          else
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: savedTravellers.length,
-              separatorBuilder: (_, __) => SizedBox(height: 1.h),
-              itemBuilder: (context, index) {
-                final traveler = savedTravellers[index];
-                final isSelected = selectedTravellers.any(
-                  (t) => t.id == traveler.id,
-                );
-                return _buildExistingTravellerItem(traveler, isSelected);
-              },
-            ),
-          SizedBox(height: 1.5.h),
-          GestureDetector(
-            onTap: () => _showTravellerBottomSheet(),
-            child: Container(
+      return Container(
+        key: _contactCardKey,
+        padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+        decoration: _cardDecoration(isCompleted: isCompleted),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // PRIMARY USER HINT BANNER
+            Container(
               width: double.infinity,
-              padding: EdgeInsets.symmetric(vertical: 1.5.h),
+              padding: EdgeInsets.all(2.5.w),
+              margin: EdgeInsets.only(bottom: 1.5.h),
               decoration: BoxDecoration(
-                color: _TI.brand.withValues(alpha: 0.04),
-                borderRadius: BorderRadius.circular(3.w),
-                border: Border.all(
-                  color: _TI.brand.withValues(alpha: 0.3),
-                  width: 1.5,
-                ),
+                color: _TI.tealSoft,
+                borderRadius: BorderRadius.circular(2.w),
+                border: Border.all(color: _TI.teal.withValues(alpha: 0.2)),
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Container(
-                    padding: EdgeInsets.all(1.5.w),
-                    decoration: BoxDecoration(
-                      color: _TI.brand.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.person_add_alt_1_rounded,
-                      color: _TI.brand,
-                      size: 4.5.w,
-                    ),
-                  ),
-                  SizedBox(width: 2.5.w),
-                  Text(
-                    'Add New Traveller',
-                    style: AppType.style(
-                      11.sp,
-                      w: FontWeight.w600,
-                      color: _TI.brand,
+                  Icon(Icons.info_outline_rounded, size: 4.w, color: _TI.teal),
+                  SizedBox(width: 2.w),
+                  Expanded(
+                    child: Text(
+                      'You are the primary account holder. Tickets & updates will be sent to this contact.',
+                      style: AppType.style(
+                        8.sp,
+                        color: _TI.teal,
+                        w: FontWeight.w500,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: _sectionHeader(
+                    'Contact Details',
+                    Icons.contact_phone_outlined,
+                    isCompleted: isCompleted,
+                  ),
+                ),
+                SizedBox(width: 2.w),
+                GestureDetector(
+                  onTap: () =>
+                      _showContactDetailsBottomSheet(isEdit: isCompleted),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 3.w,
+                      vertical: 0.8.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _TI.brand.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: _TI.brand.withValues(alpha: 0.25),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          isCompleted ? Icons.edit_outlined : Icons.add_rounded,
+                          size: 4.w,
+                          color: _TI.brand,
+                        ),
+                        SizedBox(width: 1.5.w),
+                        Text(
+                          isCompleted ? 'Edit' : 'Add',
+                          style: TextStyle(
+                            fontSize: 9.sp,
+                            fontWeight: FontWeight.w600,
+                            color: _TI.brand,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 0.5.h),
+            Text(
+              'Ticket details will be sent to this contact information',
+              style: TextStyle(
+                fontSize: 8.sp,
+                color: _TI.inkMid,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+            SizedBox(height: 1.h),
+            if (!isCompleted)
+              Text(
+                'Tap "Add" to enter your phone, email and state.',
+                style: TextStyle(fontSize: 9.sp, color: _TI.inkMid),
+              )
+            else ...[
+              _infoRow(CommonImages.phone, customer?.phone ?? '-'),
+              _infoRow(CommonImages.email, customer?.email ?? '-'),
+              _infoRow(CommonImages.location4, customer?.state?.name ?? '-'),
+            ],
+          ],
+        ),
+      );
+    });
+  }
+
+  Widget _buildTravellerSection() {
+    return Obx(() {
+      final adultCountReq =
+          _trekC.calculateFareRequestModel.value.travelerCount;
+      final isCompleted = selectedTravellers.length >= adultCountReq;
+      final savedTravellers =
+          _userC.userProfileData.value.customer?.travelers ?? const [];
+
+      final maxSlots = travelData.availableSlots ?? 0;
+      final isSlotsFull = maxSlots > 0 && adultCountReq >= maxSlots;
+
+      return Container(
+        key: _travellerCardKey,
+        padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+        decoration: _cardDecoration(isCompleted: isCompleted),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _sectionHeader(
+              'Traveller Details',
+              Icons.badge_outlined,
+              isCompleted: isCompleted,
+            ),
+            SizedBox(height: 1.5.h),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Adults (18+ years)',
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w600,
+                    color: _TI.ink,
+                  ),
+                ),
+                Builder(
+                  builder: (context) {
+                    final canIncrement = !isSlotsFull;
+                    return Row(
+                      children: [
+                        _counterBtn(Icons.remove, () {
+                          if (adultCountReq <= 1) return;
+                          final newCount = adultCountReq - 1;
+                          setState(() {
+                            _trekC.calculateFareRequestModel.value = _trekC
+                                .calculateFareRequestModel
+                                .value
+                                .copyWith(travelerCount: newCount);
+                            if (selectedTravellers.length > newCount) {
+                              selectedTravellers = selectedTravellers
+                                  .take(newCount)
+                                  .toList();
+                            }
+                          });
+                          _trekC.trekPersonCount.value = newCount;
+                          _trekC.travellerDetailList.value = List.from(
+                            selectedTravellers,
+                          );
+                          BookingDraftService.save(_trekC);
+                        }, active: adultCountReq > 1),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 4.w),
+                          child: Text(
+                            '$adultCountReq',
+                            style: TextStyle(
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.w700,
+                              color: _TI.ink,
+                            ),
+                          ),
+                        ),
+                        _counterBtn(Icons.add, () {
+                          final newCount = adultCountReq + 1;
+                          setState(() {
+                            _trekC.calculateFareRequestModel.value = _trekC
+                                .calculateFareRequestModel
+                                .value
+                                .copyWith(travelerCount: newCount);
+                          });
+                          _trekC.trekPersonCount.value = newCount;
+                        }, active: canIncrement),
+                      ],
+                    );
+                  },
+                ),
+              ],
+            ),
+            if (isSlotsFull)
+              Padding(
+                padding: EdgeInsets.only(top: 0.5.h),
+                child: Text(
+                  '⚠️ Maximum capacity ($maxSlots slots) reached for this batch.',
+                  style: TextStyle(
+                    fontSize: 8.sp,
+                    color: CommonColors.orangeColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            SizedBox(height: 1.5.h),
+            if (savedTravellers.isEmpty)
+              _buildEmptyTravellerState()
+            else
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: savedTravellers.length,
+                separatorBuilder: (_, __) => SizedBox(height: 1.h),
+                itemBuilder: (context, index) {
+                  final traveler = savedTravellers[index];
+                  final isSelected = selectedTravellers.any(
+                    (t) => t.id == traveler.id,
+                  );
+                  return _buildExistingTravellerItem(traveler, isSelected);
+                },
+              ),
+            SizedBox(height: 1.5.h),
+            GestureDetector(
+              onTap: () => _showTravellerBottomSheet(),
+              child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(vertical: 1.5.h),
+                decoration: BoxDecoration(
+                  color: _TI.brand.withValues(alpha: 0.04),
+                  borderRadius: BorderRadius.circular(3.w),
+                  border: Border.all(
+                    color: _TI.brand.withValues(alpha: 0.3),
+                    width: 1.5,
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(1.5.w),
+                      decoration: BoxDecoration(
+                        color: _TI.brand.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.person_add_alt_1_rounded,
+                        color: _TI.brand,
+                        size: 4.5.w,
+                      ),
+                    ),
+                    SizedBox(width: 2.5.w),
+                    Text(
+                      'Add New Traveller',
+                      style: AppType.style(
+                        11.sp,
+                        w: FontWeight.w600,
+                        color: _TI.brand,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  Widget _buildEmptyTravellerState() {
+    final customer = _userC.userProfileData.value.customer;
+    final hasName = customer?.name?.isNotEmpty == true;
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 3.h),
+      decoration: BoxDecoration(
+        color: _TI.tealSoft,
+        borderRadius: BorderRadius.circular(3.w),
+        border: Border.all(color: _TI.teal.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.group_add_rounded, size: 10.w, color: _TI.brand),
+          SizedBox(height: 1.h),
+          Text(
+            'Who is traveling?',
+            style: AppType.style(12.sp, w: FontWeight.w700, color: _TI.ink),
+          ),
+          SizedBox(height: 0.5.h),
+          Text(
+            'Add yourself or your group members to proceed with the booking.',
+            textAlign: TextAlign.center,
+            style: AppType.style(9.sp, color: _TI.inkMid),
+          ),
+          SizedBox(height: 2.h),
+          Row(
+            children: [
+              if (hasName)
+                Expanded(
+                  child: GestureDetector(
+                    onTap: _addMyselfAsTraveler,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(vertical: 1.2.h),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(2.w),
+                        border: Border.all(color: _TI.brand),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.person_outline,
+                            size: 4.w,
+                            color: _TI.brand,
+                          ),
+                          SizedBox(width: 2.w),
+                          Text(
+                            'Add Myself',
+                            style: AppType.style(
+                              10.sp,
+                              w: FontWeight.w600,
+                              color: _TI.brand,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              if (hasName) SizedBox(width: 3.w),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => _showTravellerBottomSheet(),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(vertical: 1.2.h),
+                    decoration: BoxDecoration(
+                      gradient: _TI.ctaGradient,
+                      borderRadius: BorderRadius.circular(2.w),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.person_add_alt_1_rounded,
+                          size: 4.w,
+                          color: Colors.white,
+                        ),
+                        SizedBox(width: 2.w),
+                        Text(
+                          'Add New',
+                          style: AppType.style(
+                            10.sp,
+                            w: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -1937,6 +2109,8 @@ class _TravellerFormSheetState extends State<_TravellerFormSheet> {
   String _gender = '';
   bool _isSubmitting = false;
 
+  // FIX: Only consider it an "edit" if the traveler actually has an ID.
+  // This allows passing a dummy Traveler with just a name to pre-fill the "Add" form.
   bool get _isEdit => widget.traveller?.id != null;
 
   @override

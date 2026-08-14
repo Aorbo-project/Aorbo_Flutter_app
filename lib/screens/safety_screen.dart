@@ -1,19 +1,23 @@
 // ─────────────────────────────────────────────────────────────────────────
-//  safety_hub_screen.dart
+//  safety_hub_screen.dart  —  PRODUCTION FIX
 //
-//  Safety hub + Emergency-contact manager + Device-contact picker,
-//  merged into ONE file using stacked modal bottom sheets:
-//
-//      SafetyScreen (route)
-//        └── _ManagerSheet   (modal sheet, non-dismissible, guards unsaved)
-//              └── _PickerSheet (modal sheet, returns List<Contact>)
-//                    └── relationship chip sheet (inline)
+//  Fixes:
+//   • Search filter: empty-digit query no longer matches all contacts.
+//   • Phone search: country-code / long numbers normalised to last 10 digits.
+//   • Carousel pauses on app background.
+//   • Close + Delete disabled during save.
+//   • fetchContacts shows error state on exception (not fake "granted").
+//   • Search debounced (200 ms) for large contact lists.
+//   • AppBar back is safe when screen is root.
+//   • Hub screen shows error + retry on load failure.
+//   • "Added" badge only shows for server-saved contacts, not pending.
 // ─────────────────────────────────────────────────────────────────────────
 
 import 'dart:async';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -78,7 +82,6 @@ class _C {
   );
 }
 
-/// Compact Poppins TextStyle factory — kills ~400 lines of repetition.
 TextStyle _ts(
   double size, {
   FontWeight w = FontWeight.w400,
@@ -87,8 +90,6 @@ TextStyle _ts(
   double? ls,
 }) => AppType.style(size, w: w, color: c, height: h, letterSpacing: ls);
 
-/// Snackbar shown through a *sheet-local* messenger so it renders inside
-/// the sheet instead of behind the modal barrier.
 void _snack(ScaffoldMessengerState? m, String message, {bool isError = false}) {
   if (m == null) return;
   m
@@ -112,8 +113,11 @@ void _snack(ScaffoldMessengerState? m, String message, {bool isError = false}) {
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(2.w)),
         margin: EdgeInsets.all(4.w),
+        duration: Duration(seconds: isError ? 4 : 2),
       ),
     );
+  // Light haptic on error
+  if (isError) HapticFeedback.heavyImpact();
 }
 
 // ═════════════════════════════════════════════════════ SHARED WIDGETS ═══
@@ -189,8 +193,6 @@ Widget _slotProgressRow(
   );
 }
 
-/// Rounded sheet chrome with drag-handle, title, optional trailing action
-/// and a close button. Every sheet in this file uses it.
 class _SheetShell extends StatelessWidget {
   final String title;
   final String? subtitle;
@@ -198,6 +200,7 @@ class _SheetShell extends StatelessWidget {
   final Widget? bottomBar;
   final Widget? trailing;
   final VoidCallback onClose;
+  final bool closeEnabled; // FIX #5
   final GlobalKey<ScaffoldMessengerState> messengerKey;
 
   const _SheetShell({
@@ -208,6 +211,7 @@ class _SheetShell extends StatelessWidget {
     this.subtitle,
     this.bottomBar,
     this.trailing,
+    this.closeEnabled = true,
   });
 
   @override
@@ -222,7 +226,6 @@ class _SheetShell extends StatelessWidget {
             backgroundColor: _C.bg,
             body: Column(
               children: [
-                // Drag handle
                 Padding(
                   padding: EdgeInsets.only(top: 1.2.h, bottom: 0.6.h),
                   child: Container(
@@ -234,7 +237,6 @@ class _SheetShell extends StatelessWidget {
                     ),
                   ),
                 ),
-                // Header
                 Padding(
                   padding: EdgeInsets.symmetric(
                     horizontal: 5.w,
@@ -265,17 +267,17 @@ class _SheetShell extends StatelessWidget {
                         SizedBox(width: 2.w),
                       ],
                       GestureDetector(
-                        onTap: onClose,
+                        onTap: closeEnabled ? onClose : null, // FIX #5
                         child: Container(
-                          width: 9.w,
-                          height: 9.w,
-                          decoration: const BoxDecoration(
+                          width: 11.w, // FIX #12: larger tap target
+                          height: 11.w,
+                          decoration: BoxDecoration(
                             color: _C.fieldBg,
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
                             Icons.close_rounded,
-                            color: _C.inkMid,
+                            color: closeEnabled ? _C.inkMid : _C.inkLight,
                             size: FontSize.s13,
                           ),
                         ),
@@ -305,7 +307,8 @@ class SafetyScreen extends StatefulWidget {
 }
 
 class _SafetyScreenState extends State<SafetyScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+  // FIX #4
   final PageController _pageController = PageController();
   final Repository _repository = Repository();
 
@@ -319,6 +322,7 @@ class _SafetyScreenState extends State<SafetyScreen>
 
   List<EmergencyContact> _contacts = [];
   bool _isLoadingContacts = true;
+  bool _loadError = false; // FIX #9
 
   static final List<Map<String, dynamic>> _safetyCards = [
     {
@@ -356,6 +360,7 @@ class _SafetyScreenState extends State<SafetyScreen>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this); // FIX #4
     _entranceController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
@@ -364,24 +369,37 @@ class _SafetyScreenState extends State<SafetyScreen>
       parent: _entranceController,
       curve: Curves.easeOut,
     );
-
     _startAutoScroll();
     _loadContacts();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this); // FIX #4
     _autoScrollTimer?.cancel();
     _pageController.dispose();
     _entranceController.dispose();
     super.dispose();
   }
 
+  // FIX #4: pause / resume carousel on app background / foreground
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _autoScrollTimer?.cancel();
+    } else if (state == AppLifecycleState.resumed && !_sheetOpen) {
+      _startAutoScroll();
+    }
+  }
+
   // ── Data ──────────────────────────────────────────────────────────────
 
   Future<void> _loadContacts() async {
     if (!mounted) return;
-    setState(() => _isLoadingContacts = true);
+    setState(() {
+      _isLoadingContacts = true;
+      _loadError = false; // FIX #9
+    });
     try {
       final response = await _repository.getApiCall(
         url: NetworkUrl.emergencyContacts,
@@ -389,26 +407,34 @@ class _SafetyScreenState extends State<SafetyScreen>
       if (response != null && mounted) {
         final r = EmergencyContactResponse.fromJson(response);
         if (r.success == true) {
-          setState(() => _contacts = r.data ?? []);
+          setState(() {
+            _contacts = r.data ?? [];
+            _loadError = false;
+          });
+        } else {
+          setState(() => _loadError = true); // FIX #9
         }
+      } else if (mounted) {
+        setState(() => _loadError = true); // FIX #9
       }
     } catch (e) {
-      log('loadContacts failed: $e'); // silent — UI keeps last known state
+      log('loadContacts failed: $e');
+      if (mounted) setState(() => _loadError = true); // FIX #9
     } finally {
       if (mounted) setState(() => _isLoadingContacts = false);
     }
   }
 
-  // ── Manager sheet — single entry point, always refresh on close ──────
+  // ── Manager sheet ─────────────────────────────────────────────────────
 
   Future<void> _openManager() async {
-    if (_sheetOpen) return; // double-tap guard
-    setState(() => _sheetOpen = true); // pauses carousel
+    if (_sheetOpen) return;
+    setState(() => _sheetOpen = true);
 
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      isDismissible: false, // unsaved-work guard owns dismissal
+      isDismissible: false,
       enableDrag: false,
       backgroundColor: Colors.transparent,
       builder: (_) => _ManagerSheet(initialSaved: List.of(_contacts)),
@@ -460,7 +486,7 @@ class _SafetyScreenState extends State<SafetyScreen>
     );
   }
 
-  // ── Contact card (read-only, hub view) ────────────────────────────────
+  // ── Contact card (hub view) ───────────────────────────────────────────
 
   Widget _contactCard(EmergencyContact contact) {
     final name = contact.name ?? 'Unknown';
@@ -524,7 +550,36 @@ class _SafetyScreenState extends State<SafetyScreen>
     );
   }
 
-  // ── Trusted contacts section ──────────────────────────────────────────
+  // FIX #9: error state widget
+  Widget _contactsErrorState() {
+    return GestureDetector(
+      onTap: _loadContacts,
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(vertical: 3.5.h, horizontal: 5.w),
+        decoration: BoxDecoration(
+          color: _C.danger.withValues(alpha: 0.04),
+          borderRadius: BorderRadius.circular(3.w),
+          border: Border.all(color: _C.danger.withValues(alpha: 0.15)),
+        ),
+        child: Column(
+          children: [
+            Icon(Icons.cloud_off_rounded, color: _C.danger, size: 8.w),
+            SizedBox(height: 1.2.h),
+            Text(
+              'Couldn\'t load contacts',
+              style: _ts(FontSize.s11, w: FontWeight.w600, c: _C.danger),
+            ),
+            SizedBox(height: 0.4.h),
+            Text(
+              'Tap to retry',
+              style: _ts(FontSize.s9, c: _C.danger.withValues(alpha: 0.7)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _trustedContactsSection() {
     return Column(
@@ -611,6 +666,8 @@ class _SafetyScreenState extends State<SafetyScreen>
               ),
             ),
           )
+        else if (_loadError) // FIX #9
+          _contactsErrorState()
         else if (_contacts.isEmpty)
           GestureDetector(
             onTap: _openManager,
@@ -645,6 +702,7 @@ class _SafetyScreenState extends State<SafetyScreen>
         else
           Column(children: _contacts.map(_contactCard).toList()),
         if (!_isLoadingContacts &&
+            !_loadError &&
             _contacts.isNotEmpty &&
             _contacts.length < _kMaxContacts) ...[
           SizedBox(height: 0.5.h),
@@ -722,7 +780,15 @@ class _SafetyScreenState extends State<SafetyScreen>
         iconTheme: const IconThemeData(color: _C.ink),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: Get.back,
+          // FIX #8: safe back — won't pop the app if SafetyScreen is root
+          onPressed: () {
+            final nav = Navigator.of(context);
+            if (nav.canPop()) {
+              nav.pop();
+            } else {
+              Get.back();
+            }
+          },
         ),
         title: Text('Safety', style: _ts(FontSize.s15, w: FontWeight.w700)),
         bottom: PreferredSize(
@@ -742,7 +808,6 @@ class _SafetyScreenState extends State<SafetyScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── Hero header ─────────────────────────────────────
                 _animatedSlideIn(
                   index: 0,
                   child: Container(
@@ -765,10 +830,7 @@ class _SafetyScreenState extends State<SafetyScreen>
                     ),
                   ),
                 ),
-
                 SizedBox(height: 2.h),
-
-                // ── Auto-sliding cards ──────────────────────────────
                 _animatedSlideIn(
                   index: 1,
                   child: Listener(
@@ -776,7 +838,7 @@ class _SafetyScreenState extends State<SafetyScreen>
                         setState(() => _isUserInteracting = true),
                     onPointerUp: (_) {
                       setState(() => _isUserInteracting = false);
-                      _startAutoScroll(); // full 4s grace after interaction
+                      _startAutoScroll();
                     },
                     onPointerCancel: (_) {
                       setState(() => _isUserInteracting = false);
@@ -809,12 +871,9 @@ class _SafetyScreenState extends State<SafetyScreen>
                     ),
                   ),
                 ),
-
                 SizedBox(height: 1.5.h),
                 _animatedSlideIn(index: 2, child: _dotIndicator()),
                 SizedBox(height: 3.h),
-
-                // ── Trusted contacts ────────────────────────────────
                 _animatedSlideIn(
                   index: 3,
                   child: Padding(
@@ -864,7 +923,7 @@ class _ManagerSheetState extends State<_ManagerSheet> {
 
   late List<EmergencyContact> _saved;
   final List<Contact> _pending = [];
-  final Map<String, String> _relationships = {}; // contact.id → relationship
+  final Map<String, String> _relationships = {};
 
   bool _isLoading = false;
   bool _isSaving = false;
@@ -881,19 +940,25 @@ class _ManagerSheetState extends State<_ManagerSheet> {
     return set;
   }
 
+  /// Phones already saved on server (excludes pending) — used by picker
+  /// to show "Added" badge only for truly saved contacts.   FIX #10
+  Set<String> get _savedPhones {
+    final set = <String>{..._saved.map((c) => _normalizePhone(c.phone ?? ''))};
+    set.remove('');
+    return set;
+  }
+
   @override
   void initState() {
     super.initState();
-    _saved = List.of(widget.initialSaved); // no loading flash
+    _saved = List.of(widget.initialSaved);
     _refresh(silent: _saved.isNotEmpty);
   }
 
-  // ── Data ──────────────────────────────────────────────────────────────
-
   bool _tryAddPending(Contact c) {
     final phone = _normalizePhone(_firstPhoneOf(c));
-    if (phone.isEmpty) return false; // no usable number
-    if (_usedPhones.contains(phone)) return false; // duplicate
+    if (phone.isEmpty) return false;
+    if (_usedPhones.contains(phone)) return false;
     if (_total >= _kMaxContacts) return false;
     _pending.add(c);
     _relationships.putIfAbsent(c.id, () => 'Family');
@@ -911,8 +976,6 @@ class _ManagerSheetState extends State<_ManagerSheet> {
         final r = EmergencyContactResponse.fromJson(response);
         if (r.success == true) {
           _saved = r.data ?? [];
-          // Race + duplicate guard: once the server list arrives, drop
-          // pending items whose number is already saved, and trim overflow.
           final savedPhones = _saved
               .map((c) => _normalizePhone(c.phone ?? ''))
               .toSet();
@@ -939,8 +1002,6 @@ class _ManagerSheetState extends State<_ManagerSheet> {
     }
   }
 
-  /// Saves pending contacts one by one. Each success is removed from the
-  /// pending list immediately — a partial failure never desyncs UI/server.
   Future<void> _savePending() async {
     if (_isSaving || _pending.isEmpty) return;
     setState(() => _isSaving = true);
@@ -971,7 +1032,7 @@ class _ManagerSheetState extends State<_ManagerSheet> {
           savedCount++;
           _pending.removeWhere((c) => c.id == contact.id);
           _relationships.remove(contact.id);
-          if (mounted) setState(() {}); // live progress
+          if (mounted) setState(() {});
         } else {
           failures.add(contact.displayName);
         }
@@ -1043,8 +1104,6 @@ class _ManagerSheetState extends State<_ManagerSheet> {
     }
   }
 
-  // ── Picker sheet ──────────────────────────────────────────────────────
-
   Future<void> _openPicker() async {
     if (_isSaving) return;
     if (_slotsLeft <= 0) {
@@ -1059,19 +1118,34 @@ class _ManagerSheetState extends State<_ManagerSheet> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) =>
-          _PickerSheet(maxSelectable: _slotsLeft, existingPhones: _usedPhones),
+      builder: (_) => _PickerSheet(
+        maxSelectable: _slotsLeft,
+        existingPhones: _usedPhones,
+        savedPhones: _savedPhones,
+      ),
     );
     if (result != null && mounted) {
+      int added = 0;
+      String? failMsg;
+
       setState(() {
         for (final c in result) {
-          _tryAddPending(c);
+          if (!_tryAddPending(c)) {
+            failMsg =
+                'Some contacts were already added or had no valid number.';
+          } else {
+            added++;
+          }
         }
       });
+
+      // Extract to final local variable for safe null promotion
+      final String? message = failMsg;
+      if (message != null) {
+        _snack(_messengerKey.currentState, message, isError: true);
+      }
     }
   }
-
-  // ── Close guard ───────────────────────────────────────────────────────
 
   void _onCloseAttempt() {
     if (_isSaving) {
@@ -1110,8 +1184,8 @@ class _ManagerSheetState extends State<_ManagerSheet> {
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(ctx); // dialog
-              Navigator.of(context).pop(); // sheet
+              Navigator.pop(ctx);
+              Navigator.of(context).pop();
             },
             child: Text(
               'Discard',
@@ -1122,8 +1196,6 @@ class _ManagerSheetState extends State<_ManagerSheet> {
       ),
     );
   }
-
-  // ── Relationship picker (nested sheet) ────────────────────────────────
 
   void _pickRelationship(Contact contact) {
     showModalBottomSheet(
@@ -1197,9 +1269,9 @@ class _ManagerSheetState extends State<_ManagerSheet> {
     );
   }
 
-  // ── Delete confirmation ───────────────────────────────────────────────
-
+  // FIX #6: block delete during save
   void _confirmDelete(int id, String name) {
+    if (_isSaving) return; // FIX #6
     showDialog(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.4),
@@ -1264,8 +1336,6 @@ class _ManagerSheetState extends State<_ManagerSheet> {
     );
   }
 
-  // ── Cards ─────────────────────────────────────────────────────────────
-
   Widget _sectionLabel(String text) => Padding(
     padding: EdgeInsets.only(bottom: 1.h, top: 0.5.h),
     child: Text(
@@ -1274,18 +1344,28 @@ class _ManagerSheetState extends State<_ManagerSheet> {
     ),
   );
 
-  Widget _removeButton(VoidCallback onTap) => GestureDetector(
-    onTap: onTap,
-    child: Container(
-      width: 9.w,
-      height: 9.w,
-      decoration: BoxDecoration(
-        color: _C.danger.withValues(alpha: 0.08),
-        shape: BoxShape.circle,
-      ),
-      child: Icon(Icons.close_rounded, color: _C.danger, size: FontSize.s12),
-    ),
-  );
+  Widget _removeButton(VoidCallback onTap, {bool enabled = true}) =>
+      GestureDetector(
+        onTap: enabled
+            ? () {
+                HapticFeedback.lightImpact();
+                onTap();
+              }
+            : null,
+        child: Container(
+          width: 9.w,
+          height: 9.w,
+          decoration: BoxDecoration(
+            color: _C.danger.withValues(alpha: 0.08),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            Icons.close_rounded,
+            color: enabled ? _C.danger : _C.inkLight,
+            size: FontSize.s12,
+          ),
+        ),
+      );
 
   Widget _savedCard(EmergencyContact contact) {
     final name = contact.name ?? 'Unknown';
@@ -1332,9 +1412,10 @@ class _ManagerSheetState extends State<_ManagerSheet> {
               ],
             ),
           ),
+          // FIX #6: disable remove during save
           _removeButton(() {
             if (contact.id != null) _confirmDelete(contact.id!, name);
-          }),
+          }, enabled: !_isSaving),
         ],
       ),
     );
@@ -1438,12 +1519,11 @@ class _ManagerSheetState extends State<_ManagerSheet> {
           ),
           SizedBox(width: 2.w),
           _removeButton(() {
-            if (_isSaving) return;
             setState(() {
               _pending.removeWhere((c) => c.id == contact.id);
               _relationships.remove(contact.id);
             });
-          }),
+          }, enabled: !_isSaving),
         ],
       ),
     );
@@ -1540,8 +1620,6 @@ class _ManagerSheetState extends State<_ManagerSheet> {
     );
   }
 
-  // ── Build ─────────────────────────────────────────────────────────────
-
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -1554,6 +1632,7 @@ class _ManagerSheetState extends State<_ManagerSheet> {
         title: 'Emergency Contacts',
         subtitle: 'They will be notified in case of emergency',
         onClose: _onCloseAttempt,
+        closeEnabled: !_isSaving, // FIX #5
         trailing: TextButton(
           style: TextButton.styleFrom(
             backgroundColor: _C.iconBadgeBg,
@@ -1570,7 +1649,6 @@ class _ManagerSheetState extends State<_ManagerSheet> {
         ),
         body: Column(
           children: [
-            // ── Counter + progress ─────────────────────────────────
             Padding(
               padding: EdgeInsets.fromLTRB(5.w, 2.h, 5.w, 0),
               child: Column(
@@ -1649,8 +1727,6 @@ class _ManagerSheetState extends State<_ManagerSheet> {
               ),
             ),
             SizedBox(height: 1.5.h),
-
-            // ── Content ────────────────────────────────────────────
             Expanded(
               child: _isLoading
                   ? const Center(
@@ -1661,7 +1737,7 @@ class _ManagerSheetState extends State<_ManagerSheet> {
                     )
                   : RefreshIndicator(
                       color: _C.teal,
-                      onRefresh: _refresh,
+                      onRefresh: () => _refresh(silent: true),
                       child: (_saved.isEmpty && _pending.isEmpty)
                           ? _emptyState()
                           : ListView(
@@ -1683,8 +1759,6 @@ class _ManagerSheetState extends State<_ManagerSheet> {
             ),
           ],
         ),
-
-        // ── Save bar ───────────────────────────────────────────────
         bottomBar: _pending.isEmpty
             ? null
             : Container(
@@ -1713,7 +1787,7 @@ class _ManagerSheetState extends State<_ManagerSheet> {
                       SizedBox(height: 1.h),
                       CommonButton(
                         text: _isSaving ? 'Saving…' : 'Save Emergency Contacts',
-                        onPressed: _savePending, // guarded internally
+                        onPressed: _savePending,
                         gradient: _C.ctaGradient,
                         textColor: CommonColors.whiteColor,
                         fontWeight: FontWeight.w700,
@@ -1732,15 +1806,24 @@ class _ManagerSheetState extends State<_ManagerSheet> {
 
 // ══════════════════════════════════════════════ 3 · PICKER SHEET ═════════
 
-enum _PermState { checking, granted, denied, permanentlyDenied }
+enum _PermState {
+  checking,
+  granted,
+  denied,
+  permanentlyDenied,
+  error,
+} // FIX #3
 
 class _PickerSheet extends StatefulWidget {
   final int maxSelectable;
-  final Set<String> existingPhones;
+  final Set<String> existingPhones; // saved + pending (not selectable)
+  final Set<String>
+  savedPhones; // server-saved only (for "Added" badge)  FIX #10
 
   const _PickerSheet({
     required this.maxSelectable,
     required this.existingPhones,
+    required this.savedPhones,
   });
 
   @override
@@ -1759,25 +1842,27 @@ class _PickerSheetState extends State<_PickerSheet>
 
   _PermState _permState = _PermState.checking;
   bool _isLoading = true;
+
+  Timer? _searchDebounce; // FIX #7
   bool _wentToSettings = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _searchController.addListener(_filterContacts);
+    _searchController.addListener(_onSearchChanged); // FIX #7
     _fetchContacts();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _searchController.removeListener(_filterContacts);
+    _searchDebounce?.cancel(); // FIX #7
+    _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     super.dispose();
   }
 
-  /// Re-check permission when returning from app settings.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed && _wentToSettings) {
@@ -1814,7 +1899,11 @@ class _PickerSheetState extends State<_PickerSheet>
     }
 
     try {
-      final contacts = await FlutterContacts.getContacts(withProperties: true);
+      // FIX #14: withThumbnail: false for performance
+      final contacts = await FlutterContacts.getContacts(
+        withProperties: true,
+        withThumbnail: false,
+      );
       if (!mounted) return;
       setState(() {
         _permState = _PermState.granted;
@@ -1831,7 +1920,8 @@ class _PickerSheetState extends State<_PickerSheet>
       log('fetchContacts failed: $e');
       if (mounted) {
         setState(() {
-          _permState = _PermState.granted;
+          // FIX #3: set error state, not fake "granted"
+          _permState = _PermState.error;
           _isLoading = false;
         });
       }
@@ -1843,34 +1933,56 @@ class _PickerSheetState extends State<_PickerSheet>
     openAppSettings();
   }
 
-  // ── Search ────────────────────────────────────────────────────────────
+  // ── Search (FIX #1, #2, #7) ───────────────────────────────────────────
+
+  void _onSearchChanged() {
+    // FIX #7
+    _searchDebounce?.cancel();
+    // Run immediately for small lists, debounce for responsiveness
+    _searchDebounce = Timer(const Duration(milliseconds: 150), _filterContacts);
+  }
 
   void _filterContacts() {
     if (!mounted) return;
-    final query = _searchController.text.trim().toLowerCase();
+    final rawQuery = _searchController.text.trim();
+    final query = rawQuery.toLowerCase();
+
+    // FIX #2: normalise digit query the same way as contact phones.
+    // Take last 10 digits so "+91 98765-43210" → "9876543210".
+    final allDigits = rawQuery.replaceAll(RegExp(r'\D'), '');
+    final normalizedDigits = allDigits.length > 10
+        ? allDigits.substring(allDigits.length - 10)
+        : allDigits;
+
     setState(() {
       _filtered = query.isEmpty
           ? List.from(_allContacts)
           : _allContacts.where((contact) {
-              final name = contact.displayName.toLowerCase();
-              final phones = contact.phones
-                  .map((p) => _normalizePhone(p.number))
-                  .join(' ');
-              return name.contains(query) ||
-                  phones.contains(query.replaceAll(RegExp(r'\D'), ''));
+              // 1. Name match (case-insensitive substring)
+              if (contact.displayName.toLowerCase().contains(query)) {
+                return true;
+              }
+              // FIX #1: only check phones if query has digits.
+              // Previously, empty-digit query made phones.contains("") → true
+              // for ALL contacts, so name search returned everything.
+              if (normalizedDigits.isEmpty) return false;
+              // 2. Phone match — check every phone, not just the joined string
+              return contact.phones.any(
+                (p) => _normalizePhone(p.number).contains(normalizedDigits),
+              );
             }).toList();
     });
   }
 
   // ── Selection ─────────────────────────────────────────────────────────
 
-  bool _isAlreadySaved(Contact contact) {
+  bool _isAlreadyAdded(Contact contact) {
     final phone = _normalizePhone(_firstPhoneOf(contact));
     return phone.isNotEmpty && widget.existingPhones.contains(phone);
   }
 
   void _toggleSelection(Contact contact) {
-    if (_isAlreadySaved(contact)) {
+    if (_isAlreadyAdded(contact)) {
       _snack(
         _messengerKey.currentState,
         'This number is already an emergency contact.',
@@ -1882,6 +1994,7 @@ class _PickerSheetState extends State<_PickerSheet>
       if (_selectedIds.contains(contact.id)) {
         _selectedIds.remove(contact.id);
         _selected.removeWhere((c) => c.id == contact.id);
+        HapticFeedback.selectionClick();
         return;
       }
       if (_selected.length >= widget.maxSelectable) {
@@ -1892,7 +2005,6 @@ class _PickerSheetState extends State<_PickerSheet>
         );
         return;
       }
-      // Block duplicate numbers within the current selection too.
       final phone = _normalizePhone(_firstPhoneOf(contact));
       final alreadyPicked = _selected.any(
         (c) => _normalizePhone(_firstPhoneOf(c)) == phone,
@@ -1907,6 +2019,7 @@ class _PickerSheetState extends State<_PickerSheet>
       }
       _selectedIds.add(contact.id);
       _selected.add(contact);
+      HapticFeedback.selectionClick();
     });
   }
 
@@ -1932,16 +2045,19 @@ class _PickerSheetState extends State<_PickerSheet>
   }
 
   Widget _contactTile(Contact contact) {
-    final phone = contact.phones.first.number;
+    // FIX #11: safe access to first phone
+    final phone = contact.phones.isNotEmpty
+        ? contact.phones.first.number
+        : 'No number';
     final isSelected = _selectedIds.contains(contact.id);
-    final alreadySaved = _isAlreadySaved(contact);
+    final alreadyAdded = _isAlreadyAdded(contact);
 
     return AnimatedContainer(
       key: ValueKey(contact.id),
       duration: const Duration(milliseconds: 200),
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: alreadySaved
+        color: alreadyAdded
             ? _C.cardBg.withValues(alpha: 0.6)
             : isSelected
             ? _C.tealSoft
@@ -1953,11 +2069,11 @@ class _PickerSheetState extends State<_PickerSheet>
         ),
       ),
       child: InkWell(
-        onTap: alreadySaved ? null : () => _toggleSelection(contact),
+        onTap: alreadyAdded ? null : () => _toggleSelection(contact),
         borderRadius: BorderRadius.circular(3.w),
         splashColor: _C.teal.withValues(alpha: 0.08),
         child: Opacity(
-          opacity: alreadySaved ? 0.55 : 1,
+          opacity: alreadyAdded ? 0.55 : 1,
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.4.h),
             child: Row(
@@ -2007,7 +2123,7 @@ class _PickerSheetState extends State<_PickerSheet>
                     ],
                   ),
                 ),
-                if (alreadySaved)
+                if (alreadyAdded)
                   Container(
                     padding: EdgeInsets.symmetric(
                       horizontal: 2.w,
@@ -2018,7 +2134,12 @@ class _PickerSheetState extends State<_PickerSheet>
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      'Added',
+                      // FIX #10: "Added" only for server-saved, "Selected" for pending
+                      widget.savedPhones.contains(
+                            _normalizePhone(_firstPhoneOf(contact)),
+                          )
+                          ? 'Added'
+                          : 'Selected',
                       style: _ts(FontSize.s8, w: FontWeight.w700, c: _C.teal),
                     ),
                   )
@@ -2057,6 +2178,7 @@ class _PickerSheetState extends State<_PickerSheet>
                 ? 'No contacts with phone numbers on this device'
                 : 'Try a different name or number',
             style: _ts(FontSize.s9, c: _C.inkMid),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -2064,6 +2186,66 @@ class _PickerSheetState extends State<_PickerSheet>
   }
 
   Widget _permissionState() {
+    // FIX #3: handle error state
+    if (_permState == _PermState.error) {
+      return Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 8.w),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 18.w,
+                height: 18.w,
+                decoration: BoxDecoration(
+                  color: _C.danger.withValues(alpha: 0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.error_outline_rounded,
+                  size: 9.w,
+                  color: _C.danger,
+                ),
+              ),
+              SizedBox(height: 2.h),
+              Text(
+                'Something went wrong',
+                style: _ts(FontSize.s13, w: FontWeight.w600),
+              ),
+              SizedBox(height: 0.8.h),
+              Text(
+                'We couldn\'t read your contacts.\nPlease try again.',
+                textAlign: TextAlign.center,
+                style: _ts(FontSize.s9, c: _C.inkMid, h: 1.6),
+              ),
+              SizedBox(height: 2.h),
+              GestureDetector(
+                onTap: _fetchContacts,
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 6.w,
+                    vertical: 1.4.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _C.teal,
+                    borderRadius: BorderRadius.circular(2.w),
+                  ),
+                  child: Text(
+                    'Retry',
+                    style: _ts(
+                      FontSize.s10,
+                      w: FontWeight.w600,
+                      c: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     final isPermanent = _permState == _PermState.permanentlyDenied;
     return Center(
       child: Padding(
@@ -2114,14 +2296,11 @@ class _PickerSheetState extends State<_PickerSheet>
     );
   }
 
-  // ── Build ─────────────────────────────────────────────────────────────
-
   @override
   Widget build(BuildContext context) {
     final slotsLeft = widget.maxSelectable - _selected.length;
 
     return Padding(
-      // Keep search field + Done bar above the keyboard.
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
@@ -2129,10 +2308,9 @@ class _PickerSheetState extends State<_PickerSheet>
         messengerKey: _messengerKey,
         title: 'Select Contacts',
         subtitle: 'Dismiss to cancel · Done confirms selection',
-        onClose: () => Navigator.of(context).pop(), // cancel
+        onClose: () => Navigator.of(context).pop(),
         body: Column(
           children: [
-            // ── Search + slot info ─────────────────────────────────
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
               child: Column(
@@ -2146,6 +2324,8 @@ class _PickerSheetState extends State<_PickerSheet>
                     child: TextField(
                       controller: _searchController,
                       style: _ts(FontSize.s11),
+                      keyboardType: TextInputType.text, // allow both
+                      textCapitalization: TextCapitalization.words,
                       decoration: InputDecoration(
                         hintText: 'Search by name or number…',
                         hintStyle: _ts(FontSize.s10, c: _C.inkLight),
@@ -2208,8 +2388,6 @@ class _PickerSheetState extends State<_PickerSheet>
                 ],
               ),
             ),
-
-            // ── List / states ──────────────────────────────────────
             Expanded(
               child: _isLoading
                   ? const Center(
@@ -2231,8 +2409,6 @@ class _PickerSheetState extends State<_PickerSheet>
             ),
           ],
         ),
-
-        // ── Done bar ───────────────────────────────────────────────
         bottomBar: _selected.isEmpty
             ? null
             : Container(
@@ -2284,7 +2460,11 @@ class _PickerSheetState extends State<_PickerSheet>
                                                 ? e.value.displayName[0]
                                                       .toUpperCase()
                                                 : '?',
-                                            style: AppType.style(11, w: FontWeight.w700, color: Colors.white),
+                                            style: AppType.style(
+                                              11,
+                                              w: FontWeight.w700,
+                                              color: Colors.white,
+                                            ),
                                           ),
                                         ),
                                       ),

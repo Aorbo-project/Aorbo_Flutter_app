@@ -32,8 +32,6 @@ class _C {
   static const shadow = Color(0x0D000000);
   static const iconBadgeBg = AppColors.ink;
   static const danger = Color(0xFFEF4444);
-  // Was CommonColors.filterGradient (bright blue) on the Save/Update/Add
-  // buttons — overridden locally to match the app's forest-green theme.
   static const ctaGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
@@ -167,6 +165,18 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
     });
   }
 
+  void _addMyselfAsTraveler(String name) {
+    _resetTravellerForm();
+    _userC.nameControllerTraveller.value.text = name;
+    setState(() {
+      _expandedTravellerIndex = null;
+      _isAddTravellerExpanded = true;
+    });
+    Future.delayed(const Duration(milliseconds: 50), () {
+      if (mounted) FocusScope.of(context).requestFocus(nameNode);
+    });
+  }
+
   void _closeAddTravellerForm() {
     _resetTravellerForm();
     setState(() => _isAddTravellerExpanded = false);
@@ -194,9 +204,14 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
   }
 
   bool _validateContactForm() {
+    final name = _userC.nameController.value.text.trim();
     final email = _userC.emailController.value.text.trim();
     final phone = _userC.phoneNumberController.value.text.trim();
 
+    if (name.isEmpty) {
+      _showSnack('Please enter your name.');
+      return false;
+    }
     if (phone.isEmpty || phone.length != 10) {
       _showSnack('Phone number must be 10 digits.');
       return false;
@@ -314,7 +329,11 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
                     SizedBox(width: 3.w),
                     Text(
                       'Delete Traveller',
-                      style: AppType.style(FontSize.s13, w: FontWeight.w700, color: _C.ink),
+                      style: AppType.style(
+                        FontSize.s13,
+                        w: FontWeight.w700,
+                        color: _C.ink,
+                      ),
                     ),
                   ],
                 ),
@@ -345,7 +364,11 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
                                     ? traveller.name!
                                     : '?')[0]
                                 .toUpperCase(),
-                            style: AppType.style(FontSize.s12, w: FontWeight.w700, color: _C.teal),
+                            style: AppType.style(
+                              FontSize.s12,
+                              w: FontWeight.w700,
+                              color: _C.teal,
+                            ),
                           ),
                         ),
                       ),
@@ -355,7 +378,11 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
                         children: [
                           Text(
                             traveller.name ?? 'Unknown',
-                            style: AppType.style(FontSize.s10, w: FontWeight.w600, color: _C.ink),
+                            style: AppType.style(
+                              FontSize.s10,
+                              w: FontWeight.w600,
+                              color: _C.ink,
+                            ),
                           ),
                           Text(
                             '${traveller.gender ?? '-'}, Age ${traveller.age ?? '-'}',
@@ -369,7 +396,11 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
                 SizedBox(height: 1.5.h),
                 Text(
                   'This traveller will be permanently removed from your profile and cannot be recovered.',
-                  style: AppType.style(FontSize.s9, color: _C.inkMid, height: 1.5),
+                  style: AppType.style(
+                    FontSize.s9,
+                    color: _C.inkMid,
+                    height: 1.5,
+                  ),
                 ),
                 SizedBox(height: 2.5.h),
                 Row(
@@ -387,7 +418,11 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
                           child: Center(
                             child: Text(
                               'Cancel',
-                              style: AppType.style(FontSize.s10, w: FontWeight.w600, color: _C.inkMid),
+                              style: AppType.style(
+                                FontSize.s10,
+                                w: FontWeight.w600,
+                                color: _C.inkMid,
+                              ),
                             ),
                           ),
                         ),
@@ -422,7 +457,11 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
                                 SizedBox(width: 1.5.w),
                                 Text(
                                   'Delete',
-                                  style: AppType.style(FontSize.s10, w: FontWeight.w600, color: Colors.white),
+                                  style: AppType.style(
+                                    FontSize.s10,
+                                    w: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
                                 ),
                               ],
                             ),
@@ -453,11 +492,6 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
         return;
       }
 
-      // deleteTraveler() calls getUserProfile() internally on success, which
-      // updates _userC.userProfileData — the _profileWorker listener above
-      // picks that up and this screen re-renders from the confirmed backend
-      // state. Nothing is removed from the UI unless the server actually
-      // deleted it; a failed delete must never look like a successful one.
       final deleted = await _userC.deleteTraveler(traveller.id!);
       if (!deleted || !mounted) return;
 
@@ -557,7 +591,11 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
         iconTheme: const IconThemeData(color: _C.ink),
         title: Text(
           'Traveller Details',
-          style: AppType.style(FontSize.s15, w: FontWeight.w700, color: _NC.ink),
+          style: AppType.style(
+            FontSize.s15,
+            w: FontWeight.w700,
+            color: _NC.ink,
+          ),
         ),
       ),
       body: Obx(() {
@@ -686,6 +724,10 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
   }
 
   Widget _buildContactCard() {
+    final customer = _userC.userProfileData.value.customer;
+    final rawName = customer?.name?.trim() ?? '';
+    final displayName = rawName.isNotEmpty ? rawName : 'Primary User';
+
     return _buildCard(
       icon: CommonImages.phone,
       title: 'Contact Information',
@@ -699,7 +741,11 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
                 onPressed: _enterContactEditMode,
                 child: Text(
                   'Edit',
-                  style: AppType.style(FontSize.s10, w: FontWeight.w600, color: _C.teal),
+                  style: AppType.style(
+                    FontSize.s10,
+                    w: FontWeight.w600,
+                    color: _C.teal,
+                  ),
                 ),
               )
             : IconButton(
@@ -709,26 +755,57 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
               ),
       ),
       children: [
-        Text(
-          'Trip ticket details will be provided to',
-          style: AppType.style(FontSize.s9, color: _C.inkLight),
+        Container(
+          width: double.infinity,
+          padding: EdgeInsets.all(3.w),
+          decoration: BoxDecoration(
+            color: _C.tealSoft,
+            borderRadius: BorderRadius.circular(2.w),
+            border: Border.all(color: _C.teal.withValues(alpha: 0.2)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(1.w),
+                ),
+                child: Text(
+                  '👤 Primary',
+                  style: AppType.style(
+                    FontSize.s8,
+                    w: FontWeight.w700,
+                    color: _C.teal,
+                  ),
+                ),
+              ),
+              SizedBox(width: 2.w),
+              Expanded(
+                child: Text(
+                  'You are the main account holder. Tickets & updates will be sent to $displayName.',
+                  style: AppType.style(
+                    FontSize.s9,
+                    color: _C.teal,
+                    w: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
         SizedBox(height: 1.5.h),
-        _buildReadRow(
-          icon: CommonImages.phone,
-          value: _userC.userProfileData.value.customer?.phone ?? '-',
-        ),
+        _buildReadRow(icon: CommonImages.account, value: displayName),
         SizedBox(height: 0.8.h),
-        _buildReadRow(
-          icon: CommonImages.email,
-          value: _userC.userProfileData.value.customer?.email ?? '-',
-        ),
+        _buildReadRow(icon: CommonImages.phone, value: customer?.phone ?? '-'),
+        SizedBox(height: 0.8.h),
+        _buildReadRow(icon: CommonImages.email, value: customer?.email ?? '-'),
         SizedBox(height: 0.8.h),
         _buildReadRow(
           icon: CommonImages.location4,
           value: () {
             final idx = _dashboardC.stateList.indexWhere(
-              (e) => e.id == _userC.userProfileData.value.customer?.state?.id,
+              (e) => e.id == customer?.state?.id,
             );
             return idx >= 0 ? _dashboardC.stateList[idx].name ?? '-' : '-';
           }(),
@@ -758,6 +835,14 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
                         height: 1,
                       ),
                       SizedBox(height: 2.h),
+                      _buildFieldLabel('Full Name'),
+                      SizedBox(height: 0.6.h),
+                      _buildTextField(
+                        controller: _userC.nameController.value,
+                        hint: 'Your Name',
+                        textCapitalization: TextCapitalization.words,
+                      ),
+                      SizedBox(height: 1.8.h),
                       _buildFieldLabel('Phone Number'),
                       SizedBox(height: 0.6.h),
                       _buildPhoneField(),
@@ -789,6 +874,7 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
 
   void _enterContactEditMode() {
     final customer = _userC.userProfileData.value.customer;
+    _userC.nameController.value.text = customer?.name ?? '';
     _userC.phoneNumberController.value.text = (customer?.phone ?? '')
         .replaceFirst('+91', '');
     _userC.emailController.value.text = customer?.email ?? '';
@@ -850,7 +936,11 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
                 child: Text(
                   title,
                   textScaler: const TextScaler.linear(1.0),
-                  style: AppType.style(FontSize.s10, w: FontWeight.w600, color: _C.ink),
+                  style: AppType.style(
+                    FontSize.s10,
+                    w: FontWeight.w600,
+                    color: _C.ink,
+                  ),
                 ),
               ),
               if (trailing != null) trailing,
@@ -877,7 +967,11 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
           child: Text(
             value,
             textScaler: const TextScaler.linear(1.0),
-            style: AppType.style(FontSize.s10, w: FontWeight.w500, color: _C.ink),
+            style: AppType.style(
+              FontSize.s10,
+              w: FontWeight.w500,
+              color: _C.ink,
+            ),
           ),
         ),
       ],
@@ -918,7 +1012,10 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
         maxLength: maxLength,
         inputFormatters: inputFormatters,
         textCapitalization: textCapitalization,
-        style: AppType.style(FontSize.s10, color: readOnly ? _C.inkMid : _C.ink),
+        style: AppType.style(
+          FontSize.s10,
+          color: readOnly ? _C.inkMid : _C.ink,
+        ),
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: AppType.style(FontSize.s10, color: _C.inkLight),
@@ -1003,7 +1100,11 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
                       Text(
                         'State of Residence',
                         textScaler: const TextScaler.linear(1.0),
-                        style: AppType.style(FontSize.s7, w: FontWeight.w300, color: _C.inkLight),
+                        style: AppType.style(
+                          FontSize.s7,
+                          w: FontWeight.w300,
+                          color: _C.inkLight,
+                        ),
                       ),
                       SizedBox(height: 0.25.h),
                       AnimatedSwitcher(
@@ -1014,9 +1115,13 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
                               : _selectedState,
                           key: ValueKey(_selectedState),
                           textScaler: const TextScaler.linear(1.0),
-                          style: AppType.style(FontSize.s10, w: FontWeight.w400, color: _selectedState.isEmpty
+                          style: AppType.style(
+                            FontSize.s10,
+                            w: FontWeight.w400,
+                            color: _selectedState.isEmpty
                                 ? _C.inkLight
-                                : _C.ink),
+                                : _C.ink,
+                          ),
                         ),
                       ),
                     ],
@@ -1059,7 +1164,11 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
           child: Center(
             child: AnimatedDefaultTextStyle(
               duration: _kAnimDuration,
-              style: AppType.style(FontSize.s10, w: FontWeight.w600, color: isSelected ? Colors.white : _C.inkMid),
+              style: AppType.style(
+                FontSize.s10,
+                w: FontWeight.w600,
+                color: isSelected ? Colors.white : _C.inkMid,
+              ),
               child: Text(gender, textScaler: const TextScaler.linear(1.0)),
             ),
           ),
@@ -1069,17 +1178,103 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
   }
 
   Widget _buildEmptyTravellerState() {
+    final customer = _userC.userProfileData.value.customer;
+    final rawName = customer?.name?.trim() ?? '';
+    final hasName = rawName.isNotEmpty;
+
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 3.h),
       decoration: BoxDecoration(
         color: _C.fieldBg,
-        borderRadius: BorderRadius.circular(2.w),
+        borderRadius: BorderRadius.circular(3.w),
         border: Border.all(color: _C.fieldBorder),
       ),
-      child: Text(
-        'No travellers added yet. Use the add traveller section below.',
-        style: AppType.style(FontSize.s10, color: _C.inkMid),
+      child: Column(
+        children: [
+          Icon(Icons.group_add_rounded, size: 10.w, color: _C.teal),
+          SizedBox(height: 1.h),
+          Text(
+            'Who is traveling?',
+            style: AppType.style(
+              FontSize.s12,
+              w: FontWeight.w700,
+              color: _C.ink,
+            ),
+          ),
+          SizedBox(height: 0.5.h),
+          Text(
+            'Add yourself or your group members to your profile so you can quickly select them during checkout.',
+            textAlign: TextAlign.center,
+            style: AppType.style(FontSize.s9, color: _C.inkMid, height: 1.4),
+          ),
+          SizedBox(height: 2.h),
+          Row(
+            children: [
+              if (hasName)
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => _addMyselfAsTraveler(rawName),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(vertical: 1.2.h),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(2.w),
+                        border: Border.all(color: _C.teal),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.person_outline, size: 4.w, color: _C.teal),
+                          SizedBox(width: 2.w),
+                          Text(
+                            'Add Myself',
+                            style: AppType.style(
+                              FontSize.s10,
+                              w: FontWeight.w600,
+                              color: _C.teal,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              if (hasName) SizedBox(width: 3.w),
+              Expanded(
+                child: GestureDetector(
+                  onTap: _openAddTravellerForm,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(vertical: 1.2.h),
+                    decoration: BoxDecoration(
+                      gradient: _C.ctaGradient,
+                      borderRadius: BorderRadius.circular(2.w),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.person_add_alt_1_rounded,
+                          size: 4.w,
+                          color: Colors.white,
+                        ),
+                        SizedBox(width: 2.w),
+                        Text(
+                          'Add New',
+                          style: AppType.style(
+                            FontSize.s10,
+                            w: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -1131,7 +1326,11 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
                               ? travelData.name!
                               : '?')[0]
                           .toUpperCase(),
-                      style: AppType.style(FontSize.s12, w: FontWeight.w700, color: _C.teal),
+                      style: AppType.style(
+                        FontSize.s12,
+                        w: FontWeight.w700,
+                        color: _C.teal,
+                      ),
                     ),
                   ),
                 ),
@@ -1143,7 +1342,11 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
                       Text(
                         travelData.name ?? '-',
                         textScaler: const TextScaler.linear(1.0),
-                        style: AppType.style(FontSize.s10, w: FontWeight.w600, color: _C.ink),
+                        style: AppType.style(
+                          FontSize.s10,
+                          w: FontWeight.w600,
+                          color: _C.ink,
+                        ),
                       ),
                       Text(
                         '${travelData.gender ?? '-'}, Age ${travelData.age ?? '-'}',
@@ -1171,7 +1374,11 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
                         child: Text(
                           isExpanded ? 'Cancel' : 'Edit',
                           key: ValueKey(isExpanded),
-                          style: AppType.style(FontSize.s9, w: FontWeight.w600, color: isExpanded ? _C.inkMid : _C.teal),
+                          style: AppType.style(
+                            FontSize.s9,
+                            w: FontWeight.w600,
+                            color: isExpanded ? _C.inkMid : _C.teal,
+                          ),
                         ),
                       ),
                     ),
@@ -1309,7 +1516,11 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
                 Expanded(
                   child: Text(
                     'Add Traveller',
-                    style: AppType.style(FontSize.s13, w: FontWeight.w600, color: _C.ink),
+                    style: AppType.style(
+                      FontSize.s13,
+                      w: FontWeight.w600,
+                      color: _C.ink,
+                    ),
                   ),
                 ),
                 AnimatedSwitcher(

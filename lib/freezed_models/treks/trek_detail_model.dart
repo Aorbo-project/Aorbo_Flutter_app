@@ -115,7 +115,10 @@ extension TrekDetailDataExtension on TrekDetailData {
     try {
       return DateTime.parse(dateTimeStr);
     } catch (e) {
-      logger.w('TrekDetailModel: unparseable dateTime "$dateTimeStr"', error: e);
+      logger.w(
+        'TrekDetailModel: unparseable dateTime "$dateTimeStr"',
+        error: e,
+      );
     }
     return null;
   }
@@ -315,9 +318,12 @@ class LatestReviews with _$LatestReviews {
   const factory LatestReviews({
     @JsonKey(name: 'customer_id') int? customerId,
     @JsonKey(name: 'customer_name') String? customerName,
-    @JsonKey(name: 'rating_value') double? ratingValue,
+    @JsonKey(name: 'rating_value') int? ratingValue,
     String? content,
     @JsonKey(name: 'created_at') String? createdAt,
+    // 👇 ADD THIS LINE
+    @JsonKey(name: 'category_highlights')
+    Map<String, dynamic>? categoryHighlights,
   }) = _LatestReviews;
 
   factory LatestReviews.fromJson(Map<String, dynamic> json) =>

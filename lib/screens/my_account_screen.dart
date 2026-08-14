@@ -25,7 +25,6 @@ class _C {
   static const iconBadge = CommonColors.cFF111827;
   static const divider = CommonColors.trekroutecolorlight;
   static const shadow = CommonColors.c0A000000;
-
   static final orange = CommonColors.cFFEA580C;
   static final redText = CommonColors.cFFDC2626;
   static final redBorder = CommonColors.cFFFFE4E4;
@@ -177,9 +176,7 @@ class _MyAccountScreenState extends State<MyAccountScreen>
                     child: _buildUserHeader(),
                   ),
                 ),
-
                 SizedBox(height: 2.5.h),
-
                 _buildAnimatedSection(
                   index: 0,
                   label: 'TRAVEL MANAGEMENT',
@@ -202,9 +199,7 @@ class _MyAccountScreenState extends State<MyAccountScreen>
                     ],
                   ),
                 ),
-
                 SizedBox(height: 2.h),
-
                 _buildAnimatedSection(
                   index: 1,
                   label: 'SECURITY & HELP',
@@ -230,9 +225,7 @@ class _MyAccountScreenState extends State<MyAccountScreen>
                     ],
                   ),
                 ),
-
                 SizedBox(height: 2.h),
-
                 _buildAnimatedSection(
                   index: 2,
                   label: 'EARNINGS & CLAIMS',
@@ -253,9 +246,7 @@ class _MyAccountScreenState extends State<MyAccountScreen>
                     ],
                   ),
                 ),
-
                 SizedBox(height: 2.h),
-
                 _buildAnimatedSection(
                   index: 3,
                   label: 'MORE',
@@ -283,9 +274,7 @@ class _MyAccountScreenState extends State<MyAccountScreen>
                     ],
                   ),
                 ),
-
                 SizedBox(height: 3.h),
-
                 SlideTransition(
                   position: _logoutSlide,
                   child: FadeTransition(
@@ -293,7 +282,6 @@ class _MyAccountScreenState extends State<MyAccountScreen>
                     child: _buildLogoutButton(),
                   ),
                 ),
-
                 SizedBox(height: 4.h),
               ],
             ),
@@ -354,7 +342,11 @@ class _MyAccountScreenState extends State<MyAccountScreen>
             children: [
               Text(
                 'Profile',
-                style: AppType.style(FontSize.s13, w: FontWeight.w700, color: _C.ink),
+                style: AppType.style(
+                  FontSize.s13,
+                  w: FontWeight.w700,
+                  color: _C.ink,
+                ),
               ),
               Text(
                 'Manage account & preferences',
@@ -375,17 +367,17 @@ class _MyAccountScreenState extends State<MyAccountScreen>
     return Obx(() {
       final customer = _userC.userProfileData.value.customer;
 
-      final name = customer?.name?.isNotEmpty == true
-          ? customer!.name!
-          : 'Hey there';
+      // ✅ FIX: Robust fallback if backend hasn't returned a name yet
+      final rawName = customer?.name?.trim() ?? '';
+      final name = rawName.isNotEmpty ? rawName : 'Primary User';
 
-      final subtitle = customer?.phone?.isNotEmpty == true
-          ? customer!.phone!.replaceFirst('+91', '+91 ')
-          : 'Manage your account & preferences';
+      final phone = customer?.phone?.replaceFirst('+91', '') ?? '';
+      final subtitle = phone.isNotEmpty ? '+91 $phone' : 'Manage your account';
 
-      final initial = customer?.name?.isNotEmpty == true
-          ? customer!.name![0].toUpperCase()
-          : '?';
+      // Use first letter of name, or first digit of phone if name is missing
+      final initial = rawName.isNotEmpty
+          ? rawName[0].toUpperCase()
+          : (phone.isNotEmpty ? phone[0] : 'U');
 
       return Container(
         width: double.infinity,
@@ -414,7 +406,11 @@ class _MyAccountScreenState extends State<MyAccountScreen>
               child: Center(
                 child: Text(
                   initial,
-                  style: AppType.style(FontSize.s18, w: FontWeight.w700, color: _C.brand),
+                  style: AppType.style(
+                    FontSize.s18,
+                    w: FontWeight.w700,
+                    color: _C.brand,
+                  ),
                 ),
               ),
             ),
@@ -425,12 +421,45 @@ class _MyAccountScreenState extends State<MyAccountScreen>
                 children: [
                   Text(
                     name,
-                    style: AppType.style(FontSize.s16, w: FontWeight.w700, color: _C.ink, height: 1.15),
+                    style: AppType.style(
+                      FontSize.s16,
+                      w: FontWeight.w700,
+                      color: _C.ink,
+                      height: 1.15,
+                    ),
                   ),
-                  SizedBox(height: 0.4.h),
-                  Text(
-                    subtitle,
-                    style: AppType.style(FontSize.s9, color: _C.inkMid),
+                  SizedBox(height: 0.5.h),
+                  Row(
+                    children: [
+                      // ✅ NEW: Primary Account Holder Badge
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 2.w,
+                          vertical: 0.3.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _C.tealSoft,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          '👤 Primary',
+                          style: AppType.style(
+                            FontSize.s7,
+                            w: FontWeight.w600,
+                            color: _C.teal,
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 2.w),
+                      Expanded(
+                        child: Text(
+                          subtitle,
+                          style: AppType.style(FontSize.s9, color: _C.inkMid),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -446,7 +475,12 @@ class _MyAccountScreenState extends State<MyAccountScreen>
       padding: EdgeInsets.only(left: 1.w),
       child: Text(
         title,
-        style: AppType.style(FontSize.s12, w: FontWeight.w700, color: _C.ink, letterSpacing: 0.4),
+        style: AppType.style(
+          FontSize.s12,
+          w: FontWeight.w700,
+          color: _C.ink,
+          letterSpacing: 0.4,
+        ),
       ),
     );
   }
@@ -604,7 +638,11 @@ class _AnimatedMenuTileState extends State<_AnimatedMenuTile>
               Expanded(
                 child: Text(
                   widget.title,
-                  style: AppType.style(FontSize.s11, w: FontWeight.w500, color: widget.isComingSoon ? _C.inkMid : _C.ink),
+                  style: AppType.style(
+                    FontSize.s11,
+                    w: FontWeight.w500,
+                    color: widget.isComingSoon ? _C.inkMid : _C.ink,
+                  ),
                 ),
               ),
               if (widget.trailingWidget != null) ...[
@@ -623,7 +661,11 @@ class _AnimatedMenuTileState extends State<_AnimatedMenuTile>
                   ),
                   child: Text(
                     'Soon',
-                    style: AppType.style(FontSize.s7, w: FontWeight.w500, color: _C.inkMid),
+                    style: AppType.style(
+                      FontSize.s7,
+                      w: FontWeight.w500,
+                      color: _C.inkMid,
+                    ),
                   ),
                 ),
                 SizedBox(width: 1.w),
@@ -734,7 +776,11 @@ class _AnimatedLogoutButtonState extends State<_AnimatedLogoutButton>
             SizedBox(width: 2.w),
             Text(
               'Logout Account',
-              style: AppType.style(FontSize.s11, w: FontWeight.w600, color: _C.redText),
+              style: AppType.style(
+                FontSize.s11,
+                w: FontWeight.w600,
+                color: _C.redText,
+              ),
             ),
           ],
         ),
@@ -767,7 +813,11 @@ class _LanguageChip extends StatelessWidget {
             SizedBox(width: 1.w),
             Text(
               'ENG',
-              style: AppType.style(FontSize.s9, w: FontWeight.w500, color: _C.ink),
+              style: AppType.style(
+                FontSize.s9,
+                w: FontWeight.w500,
+                color: _C.ink,
+              ),
             ),
             SizedBox(width: 0.5.w),
             Icon(Icons.keyboard_arrow_down_rounded, size: 14, color: _C.inkMid),
