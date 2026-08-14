@@ -13,6 +13,7 @@
   import 'package:flutter_touch_ripple/flutter_touch_ripple.dart';
 
   import '../utils/custom_snackbar.dart';
+  import '../utils/phone_input_formatter.dart';
 import 'package:arobo_app/theme/app_typography.dart';
 
   class LoginScreen extends StatefulWidget {
@@ -175,8 +176,7 @@ import 'package:arobo_app/theme/app_typography.dart';
                                               value.length == 10;
                                         },
                                         inputFormatters: [
-                                          FilteringTextInputFormatter.digitsOnly,
-                                          LengthLimitingTextInputFormatter(10),
+                                          IndianMobileNumberFormatter(),
                                         ],
                                         style: TextStyle(fontSize: FontSize.s10),
                                         decoration: InputDecoration(

@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:get/get.dart';
@@ -293,6 +294,9 @@ class _SelectedEmergencyContactsScreenState
       return;
     }
     // FIX: unsaved selections are no longer silently discarded.
+    FirebaseCrashlytics.instance.log(
+      'Popup: Discard unsaved contacts confirm (selected contacts)',
+    );
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -333,6 +337,9 @@ class _SelectedEmergencyContactsScreenState
   // ── Relationship picker ───────────────────────────────────────────────
 
   void _pickRelationship(Contact contact) {
+    FirebaseCrashlytics.instance.log(
+      'Popup: Relationship picker sheet (selected contacts)',
+    );
     showModalBottomSheet(
       context: context,
       backgroundColor: _C.cardBg,
@@ -437,6 +444,9 @@ class _SelectedEmergencyContactsScreenState
   // ── Delete confirmation ───────────────────────────────────────────────
 
   void _confirmDelete(int id, String name) {
+    FirebaseCrashlytics.instance.log(
+      'Popup: Delete contact confirm (selected contacts)',
+    );
     showDialog(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.4),

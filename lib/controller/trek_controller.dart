@@ -209,6 +209,13 @@ class TrekController extends GetxController {
     });
   }
 
+  // Tracks the interval the poll timer is CURRENTLY running at, so a
+  // server-suggested change (next_action_params.poll_interval_seconds) is
+  // only ever acted on when it genuinely differs — avoids tearing down and
+  // recreating the Timer on every single tick for no reason.
+  int _refundPollIntervalSeconds = 300;
+  String? _refundPollBookingId;
+
   Future<void> fetchRefundStatus(String bookingId) async {
     try {
       final response = await repository.getApiCall(
@@ -219,6 +226,23 @@ class TrekController extends GetxController {
         refundStatusObserver.value = ApiResult.success(model);
         if (model.nextAction == 'NO_REFUND_APPLICABLE') {
           stopRefundPolling();
+          return;
+        }
+        // FIXED 2026-08-08: the poll interval was previously a fixed
+        // client-side constant that ignored this field entirely — parsed
+        // but never acted on. A backend change to the interval (e.g. to
+        // reduce server load) would have had zero effect on the app without
+        // a release. Now reschedules the timer to match whenever the server
+        // suggests a genuinely different interval, only while still polling
+        // this same booking (a stale response arriving after
+        // stopRefundPolling()/a different booking started must not resurrect it).
+        final suggested = model.nextActionParams?.pollIntervalSeconds;
+        if (suggested != null &&
+            suggested > 0 &&
+            suggested != _refundPollIntervalSeconds &&
+            _refundPollTimer != null &&
+            _refundPollBookingId == bookingId) {
+          _reschedulePoll(bookingId, suggested);
         }
       }
     } catch (e) {
@@ -226,8 +250,19 @@ class TrekController extends GetxController {
     }
   }
 
+  void _reschedulePoll(String bookingId, int intervalSeconds) {
+    _refundPollIntervalSeconds = intervalSeconds;
+    _refundPollTimer?.cancel();
+    _refundPollTimer = Timer.periodic(
+      Duration(seconds: intervalSeconds),
+      (_) => fetchRefundStatus(bookingId),
+    );
+  }
+
   void startRefundPolling(String bookingId) {
     stopRefundPolling();
+    _refundPollBookingId = bookingId;
+    _refundPollIntervalSeconds = 300;
     fetchRefundStatus(bookingId);
     _refundPollTimer = Timer.periodic(
       const Duration(seconds: 300),
@@ -238,6 +273,7 @@ class TrekController extends GetxController {
   void stopRefundPolling() {
     _refundPollTimer?.cancel();
     _refundPollTimer = null;
+    _refundPollBookingId = null;
   }
 
   @override

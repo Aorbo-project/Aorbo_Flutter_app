@@ -3,6 +3,7 @@
 // Animated no-internet bottom sheet matching the app's forest/teal theme.
 import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sizer/sizer.dart';
@@ -39,6 +40,7 @@ class NoInternetSheet {
   static void show(BuildContext context) {
     if (_isShowing) return;
     _isShowing = true;
+    FirebaseCrashlytics.instance.log('Popup: No internet overlay sheet');
     _overlayEntry = OverlayEntry(
       builder: (ctx) => _NoInternetAnimatedSheet(
         onRetry: () {

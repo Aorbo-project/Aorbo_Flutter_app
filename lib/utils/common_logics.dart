@@ -5,6 +5,7 @@ import 'package:arobo_app/repository/network_url.dart';
 import 'package:arobo_app/screens/splash_screen.dart';
 import 'package:arobo_app/utils/shared_preferences.dart';
 import 'package:dio/dio.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:get/get.dart';
 import '../main.dart';
 
@@ -29,6 +30,7 @@ class CommonLogics {
       log('CommonLogics.logOut: server-side token revocation failed (non-fatal): $e');
     }
 
+    await FirebaseCrashlytics.instance.setUserIdentifier('');
     await sp!.clear();
     await Get.deleteAll(force: true);
     Get.offAll(() => SplashWithLoginScreen());

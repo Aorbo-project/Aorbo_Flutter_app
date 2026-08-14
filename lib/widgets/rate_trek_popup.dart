@@ -1,3 +1,4 @@
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -123,6 +124,7 @@ class RateTrekPopup {
       return;
     }
 
+    FirebaseCrashlytics.instance.log('Popup: Rate trek nag popup');
     _overlayEntry = OverlayEntry(
       builder: (ctx) =>
           _RateTrekSidePopup(booking: booking, onClose: _removeOverlay),

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:animated_rating_stars/animated_rating_stars.dart';
 import 'package:arobo_app/controller/trek_controller.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
@@ -202,6 +203,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
 
     final policyType = booking.cancellationPolicyType?.toString();
 
+    FirebaseCrashlytics.instance.log('Popup: Ticket download dialog');
     Get.dialog(
       Center(
         child: Container(
@@ -1635,6 +1637,9 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
   }
 
   void _showRefundStatusSheet(BuildContext context) {
+    FirebaseCrashlytics.instance.log(
+      'Popup: Refund status sheet (upcoming booking)',
+    );
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,

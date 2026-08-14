@@ -6,6 +6,7 @@ import 'package:arobo_app/utils/common_images.dart';
 import 'package:arobo_app/utils/common_logics.dart';
 import 'package:arobo_app/utils/custom_snackbar.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
+import 'package:arobo_app/utils/phone_input_formatter.dart';
 import 'package:arobo_app/screens/update_version_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -706,10 +707,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                         onChanged: (value) {
                           setState(() {});
                         },
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                          LengthLimitingTextInputFormatter(10),
-                        ],
+                        inputFormatters: [IndianMobileNumberFormatter()],
                         style: TextStyle(fontSize: FontSize.s10),
                         decoration: InputDecoration(
                           hintText: 'Enter your Mobile Number',

@@ -1,5 +1,6 @@
 import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/screens/booking_upcoming_screen.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sizer/sizer.dart';
@@ -626,6 +627,7 @@ class _BookingsScreenState extends State<BookingsScreen>
 
   // ── FILTER BOTTOM SHEET ──────────────────────────────────────────────────
   void _showFilterBottomSheet(BuildContext context) {
+    FirebaseCrashlytics.instance.log('Popup: Bookings filter sheet');
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,

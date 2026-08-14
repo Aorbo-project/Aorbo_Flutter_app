@@ -9,6 +9,7 @@ import 'package:arobo_app/screens/dashboard_main.dart';
 import 'package:arobo_app/utils/booking_constants.dart';
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/custom_snackbar.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
@@ -168,6 +169,12 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
   }
 
   Future<void> _handlePaymentError(PaymentFailureResponse r) async {
+    FirebaseCrashlytics.instance.recordError(
+      'Razorpay payment failed: code=${r.code} message=${r.message}',
+      null,
+      reason: 'Razorpay EVENT_PAYMENT_ERROR (payment_processing_screen)',
+      fatal: false,
+    );
     if (_resolved) return;
     await _resolveViaBackendCheck(
       fallbackMessage: (r.message?.isNotEmpty ?? false)

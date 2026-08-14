@@ -50,8 +50,18 @@ class RefundStatusData {
   });
 
   RefundStatusData.fromJson(Map<String, dynamic> json) {
-    bookingId = json['booking_id'];
-    cancellationId = json['cancellation_id'];
+    // Defensive parsing, matching refundAmount below — the backend always
+    // sends these as real JSON numbers today (parseInt(booking_id) in
+    // getRefundStatus), but a direct `bookingId = json['booking_id']`
+    // assignment is an implicit dynamic->int downcast that throws a
+    // TypeError at parse time the moment that ever changes (e.g. a raw SQL
+    // query returning a BIGINT id as a string, which some MySQL drivers do).
+    bookingId = json['booking_id'] != null
+        ? int.tryParse(json['booking_id'].toString())
+        : null;
+    cancellationId = json['cancellation_id'] != null
+        ? int.tryParse(json['cancellation_id'].toString())
+        : null;
     cancellationNumber = json['cancellation_number'];
     cancellationDate = json['cancellation_date'];
     refundAmount = json['refund_amount'] != null
@@ -78,6 +88,8 @@ class RefundStatusNextActionParams {
   RefundStatusNextActionParams({this.pollIntervalSeconds});
 
   RefundStatusNextActionParams.fromJson(Map<String, dynamic> json) {
-    pollIntervalSeconds = json['poll_interval_seconds'];
+    pollIntervalSeconds = json['poll_interval_seconds'] != null
+        ? int.tryParse(json['poll_interval_seconds'].toString())
+        : null;
   }
 }

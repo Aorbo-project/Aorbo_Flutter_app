@@ -1,3 +1,4 @@
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -361,7 +362,22 @@ class _BookingCancellationSuccessScreenState
             ),
             SizedBox(height: 1.2.h),
           ],
-          _detailRow('Cancelled On', _formatDate(DateTime.now())),
+          _detailRow(
+            'Cancelled On',
+            // FIXED 2026-08-08: was DateTime.now() — the DEVICE's own clock,
+            // wrong whenever the phone's time/timezone is off, even though
+            // the server recorded the real cancellation instant correctly.
+            // cancellationDate is the server's own cancellation_date field
+            // (confirmCancellation's response); ISTDateUtils.toIST() shifts
+            // it to IST correctly regardless of device timezone, matching
+            // _formatDate's assumption that the DateTime it's given already
+            // represents the wall-clock time to display. Falls back to
+            // device time only if the server value is ever missing.
+            _formatDate(
+              ISTDateUtils.toIST(widget.cancelledData?.cancellationDate) ??
+                  DateTime.now(),
+            ),
+          ),
           SizedBox(height: 1.5.h),
           Container(
             padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.5.h),
@@ -679,6 +695,9 @@ class _BookingCancellationSuccessScreenState
   //  REFUND STATUS BOTTOM SHEET
   // ─────────────────────────────────────────────
   void _showRefundStatusSheet(BuildContext context) {
+    FirebaseCrashlytics.instance.log(
+      'Popup: Refund status sheet (cancellation success)',
+    );
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,

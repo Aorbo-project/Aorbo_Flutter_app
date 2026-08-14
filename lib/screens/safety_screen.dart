@@ -23,6 +23,8 @@ import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sizer/sizer.dart';
 
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+
 import '../models/emergency_contact_model.dart';
 import '../repository/network_url.dart';
 import '../repository/repository.dart';
@@ -430,6 +432,8 @@ class _SafetyScreenState extends State<SafetyScreen>
   Future<void> _openManager() async {
     if (_sheetOpen) return;
     setState(() => _sheetOpen = true);
+
+    FirebaseCrashlytics.instance.log('Popup: Emergency contacts manager sheet');
 
     await showModalBottomSheet(
       context: context,
@@ -1160,6 +1164,11 @@ class _ManagerSheetState extends State<_ManagerSheet> {
       Navigator.of(context).pop();
       return;
     }
+
+    FirebaseCrashlytics.instance.log(
+      'Popup: Discard unsaved contacts confirm (safety)',
+    );
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -1198,6 +1207,9 @@ class _ManagerSheetState extends State<_ManagerSheet> {
   }
 
   void _pickRelationship(Contact contact) {
+    FirebaseCrashlytics.instance.log(
+      'Popup: Relationship picker sheet (safety)',
+    );
     showModalBottomSheet(
       context: context,
       backgroundColor: _C.cardBg,
@@ -1272,6 +1284,7 @@ class _ManagerSheetState extends State<_ManagerSheet> {
   // FIX #6: block delete during save
   void _confirmDelete(int id, String name) {
     if (_isSaving) return; // FIX #6
+    FirebaseCrashlytics.instance.log('Popup: Delete contact confirm (safety)');
     showDialog(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.4),
