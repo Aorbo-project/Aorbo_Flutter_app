@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:arobo_app/main.dart';
 import 'package:arobo_app/utils/shared_preferences.dart';
+import 'package:dio/dio.dart' show Options, DioException;
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -185,6 +186,41 @@ class AuthController extends GetxController {
       final msg = e.toString().replaceFirst('Exception: ', '');
       CustomSnackBar.show(Get.context!, message: msg.isNotEmpty ? msg : 'Verification failed. Please try again.');
       return false;
+    }
+  }
+
+  // Splash-gate check: confirms the cached session is still accepted by the
+  // server BEFORE splash_screen.dart routes into the authenticated app.
+  // Previously splash trusted the local isLoggedIn flag alone and routed to
+  // /dashboard optimistically; a stale/invalidated token only surfaced once
+  // the dashboard's own calls (or registerFcmToken below) hit the 401
+  // interceptor in repository.dart — which then yanked the user back to
+  // login a beat after dashboard had already rendered (the splash→dashboard
+  // →login flicker). This makes that check happen first, while still on
+  // splash, so dashboard is only ever shown once the session is confirmed.
+  //
+  // Fails OPEN on anything that isn't an explicit 401/403 rejection — a
+  // timeout or dropped connection is not proof the session is dead and must
+  // never force a still-valid session to log out.
+  Future<bool> validateSession() async {
+    try {
+      final accessToken = sp!.getString(SpUtil.accessToken);
+      final response = await repository.dio
+          .get(
+            NetworkUrl.getUserProfile,
+            options: Options(
+              headers: accessToken != null
+                  ? {'Authorization': 'Bearer $accessToken'}
+                  : {},
+            ),
+          )
+          .timeout(const Duration(seconds: 10));
+      return response.statusCode == 200;
+    } on DioException catch (e) {
+      final statusCode = e.response?.statusCode;
+      return statusCode != 401 && statusCode != 403;
+    } catch (_) {
+      return true;
     }
   }
 

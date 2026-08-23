@@ -8,6 +8,7 @@ import 'package:get/get.dart';
 import 'package:sizer/sizer.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
+import 'package:arobo_app/theme/app_button.dart';
 
 // ─────────────────────────────────────────────
 //  TREKKING THEME TOKENS
@@ -320,6 +321,19 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final fromValid = _hasValidFromSelection;
+      // A fallback-matched selection (id 0, name-only) sets _pendingTrekName,
+      // which is local state that resets to null on every screen
+      // reconstruction — even though the text itself was restored from the
+      // controller and is still showing. Check what's actually displayed,
+      // not just the internal id/pending flags, or a reopened screen with a
+      // fallback-matched destination wrongly looks "incomplete" again.
+      final toValid = _hasValidToSelection || _toCtrl.text.trim().isNotEmpty;
+      // Both already picked (e.g. reopening with a prior selection) — there's
+      // nothing left to fill in, so don't force-focus/highlight either field.
+      if (fromValid && toValid) {
+        _refreshFiltered();
+        return;
+      }
       if (fromValid) {
         setState(() {
           _tab = _Tab.treks;
@@ -851,7 +865,11 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
   @override
   Widget build(BuildContext context) {
     ScreenConstant.setScreenAwareConstant(context);
-    return AnnotatedRegion<SystemUiOverlayStyle>(
+    return MediaQuery(
+      data: MediaQuery.of(
+        context,
+      ).copyWith(textScaler: const TextScaler.linear(1.0)),
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.dark,
       child: Scaffold(
         backgroundColor: _T.bg,
@@ -865,14 +883,21 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
                 children: [
                   _buildPremiumAppBar(),
                   _buildHeroRouteCard(),
-                  _buildContextualSuggestions(),
-                  Expanded(child: _buildSearchResults()),
+                  // Once both are picked, "Choose Departure Date" below is
+                  // the only next action — a leftover suggestion/results
+                  // list here has nothing left to offer and just reads as
+                  // a redundant, unexplained button.
+                  if (!(_fromCityId != 0 && _selectedTrekId != 0)) ...[
+                    _buildContextualSuggestions(),
+                    Expanded(child: _buildSearchResults()),
+                  ],
                 ],
               ),
             ),
             _buildStickyFooter(),
           ],
         ),
+      ),
       ),
     );
   }
@@ -911,7 +936,7 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
               Text(
                 "Plan your trek",
                 style: AppType.style(
-                  FontSize.s16,
+                  FontSize.s13,
                   w: FontWeight.w700,
                   color: _T.ink,
                   letterSpacing: -0.5,
@@ -934,7 +959,7 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
       margin: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       decoration: BoxDecoration(
         color: _T.card,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
             color: _T.pine.withAlpha(12),
@@ -957,7 +982,7 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
             controller: _fromCtrl,
             focusNode: _fromFocus,
             icon: Icons.trip_origin,
-            isActive: _tab == _Tab.cities,
+            isActive: _tab == _Tab.cities && _fromFocus.hasFocus,
             onTap: () => _setActiveField(_Tab.cities),
             errorText: _fromErrorText(),
           ),
@@ -968,7 +993,7 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
             controller: _toCtrl,
             focusNode: _toFocus,
             icon: Icons.terrain,
-            isActive: _tab == _Tab.treks,
+            isActive: _tab == _Tab.treks && _toFocus.hasFocus,
             onTap: () => _setActiveField(_Tab.treks),
             errorText: _toErrorText(),
           ),
@@ -1016,31 +1041,22 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
       child: AnimatedContainer(
         duration: Duration(milliseconds: 300),
         curve: Curves.easeOutCubic,
-        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
           color: isActive ? _T.focusBg : Colors.transparent,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(18),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                AnimatedContainer(
-                  duration: Duration(milliseconds: 300),
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: isActive ? _T.forest : _T.mossSoft,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Icon(
-                    icon,
-                    color: isActive ? Colors.white : _T.forest,
-                    size: 20,
-                  ),
+                Icon(
+                  icon,
+                  color: isActive ? _T.forest : _T.inkMid,
+                  size: 22,
                 ),
-                SizedBox(width: 16),
+                SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1049,18 +1065,19 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
                         label,
                         style: AppType.style(
                           FontSize.s9,
-                          w: FontWeight.w700,
+                          w: FontWeight.w600,
                           color: _T.inkMid,
-                          letterSpacing: 0.8,
+                          letterSpacing: 0.5,
                         ),
                       ),
-                      SizedBox(height: 6),
+                      SizedBox(height: 4),
                       TextField(
                         controller: controller,
                         focusNode: focusNode,
                         onChanged: _onSearchChanged,
                         onSubmitted: (_) => _onSubmitField(),
                         textInputAction: TextInputAction.done,
+                        maxLines: 1,
                         decoration: InputDecoration(
                           isCollapsed: true,
                           border: InputBorder.none,
@@ -1071,7 +1088,7 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
                           ),
                         ),
                         style: AppType.style(
-                          FontSize.s13,
+                          FontSize.s12,
                           w: FontWeight.w600,
                           color: _T.ink,
                         ),
@@ -1099,7 +1116,7 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
             ),
             if (errorText != null)
               Padding(
-                padding: EdgeInsets.only(top: 8, left: 58),
+                padding: EdgeInsets.only(top: 8, left: 34),
                 child: Text(
                   errorText,
                   style: AppType.style(
@@ -1222,43 +1239,13 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
       bottom: canContinue ? 24 : -100,
       left: 24,
       right: 24,
-      child: GestureDetector(
-        onTap: _closeWithResult,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 18),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(colors: [_T.pine, _T.forest]),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: _T.forest.withAlpha(80),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Center(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(
-                  Icons.calendar_month_rounded,
-                  size: 20,
-                  color: Colors.white,
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  "Choose Departure Date",
-                  style: AppType.style(
-                    FontSize.s13,
-                    w: FontWeight.w700,
-                    color: Colors.white,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
+      child: AppButton.primary(
+        text: "Choose Departure Date",
+        onPressed: _closeWithResult,
+        prefixIcon: const Icon(
+          Icons.calendar_month_rounded,
+          size: 20,
+          color: Colors.white,
         ),
       ),
     );
@@ -1425,12 +1412,17 @@ class _PremiumChip extends StatelessWidget {
               color: isCity ? _T.forest : _T.clay,
             ),
             SizedBox(width: 8),
-            Text(
-              label,
-              style: AppType.style(
-                FontSize.s11,
-                w: FontWeight.w600,
-                color: _T.ink,
+            ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: 140),
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppType.style(
+                  FontSize.s11,
+                  w: FontWeight.w600,
+                  color: _T.ink,
+                ),
               ),
             ),
           ],
@@ -1457,11 +1449,11 @@ class _PremiumListItem extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: Duration(milliseconds: 200),
-        margin: EdgeInsets.only(bottom: 12),
-        padding: EdgeInsets.all(16),
+        margin: EdgeInsets.only(bottom: 10),
+        padding: EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: _T.card,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(color: _T.divider, width: 0.5),
           boxShadow: [
             BoxShadow(
@@ -1474,19 +1466,19 @@ class _PremiumListItem extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              width: 44,
-              height: 44,
+              width: 36,
+              height: 36,
               decoration: BoxDecoration(
                 color: isCity ? _T.mossSoft : _T.claySoft,
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 isCity ? Icons.location_city_rounded : Icons.terrain_rounded,
                 color: isCity ? _T.forest : _T.clay,
-                size: 22,
+                size: 18,
               ),
             ),
-            SizedBox(width: 16),
+            SizedBox(width: 14),
             Expanded(child: _buildHighlightedText(label, query)),
             Icon(Icons.arrow_forward_ios_rounded, size: 14, color: _T.inkLight),
           ],
@@ -1499,7 +1491,9 @@ class _PremiumListItem extends StatelessWidget {
     if (query.isEmpty)
       return Text(
         text,
-        style: AppType.style(FontSize.s12, w: FontWeight.w600, color: _T.ink),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: AppType.style(FontSize.s11, w: FontWeight.w600, color: _T.ink),
       );
     final q = query.toLowerCase();
     final lower = text.toLowerCase();
@@ -1507,11 +1501,15 @@ class _PremiumListItem extends StatelessWidget {
     if (idx == -1)
       return Text(
         text,
-        style: AppType.style(FontSize.s12, w: FontWeight.w600, color: _T.ink),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: AppType.style(FontSize.s11, w: FontWeight.w600, color: _T.ink),
       );
     return RichText(
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
       text: TextSpan(
-        style: AppType.style(FontSize.s12, w: FontWeight.w600, color: _T.ink),
+        style: AppType.style(FontSize.s11, w: FontWeight.w600, color: _T.ink),
         children: [
           TextSpan(text: text.substring(0, idx)),
           TextSpan(

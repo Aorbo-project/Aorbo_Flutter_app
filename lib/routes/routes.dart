@@ -42,7 +42,18 @@ final routes = [
   GetPage(name: '/', page: () => const SplashWithLoginScreen()),
   GetPage(name: '/login', page: () => const LoginScreen()),
   GetPage(name: '/otp', page: () => OTPScreen()),
-  GetPage(name: '/dashboard', page: () => const DashboardMain()),
+  // Fade: dashboard is always reached via offAllNamed right after splash's
+  // own logo animation (or OTP verify). splash_screen.dart freezes its
+  // breathing animation right before navigating (see _leavingToDashboard)
+  // so this fades between two STATIC frames — smooth, not glitchy. 150ms
+  // was too abrupt a cut; 250ms reads as a deliberate cross-dissolve
+  // without feeling slow.
+  GetPage(
+    name: '/dashboard',
+    page: () => const DashboardMain(),
+    transition: Transition.fade,
+    transitionDuration: const Duration(milliseconds: 250),
+  ),
   GetPage(name: '/search', page: () => SearchSummaryScreen()),
   GetPage(name: '/trek-details', page: () => TrekDetailsScreen(trek: null,)),
   GetPage(name: '/traveller-information', page: () => TravellerInformationScreen()),

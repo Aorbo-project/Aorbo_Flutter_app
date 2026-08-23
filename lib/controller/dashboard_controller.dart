@@ -169,6 +169,16 @@ class DashboardController extends GetxController {
     );
   }
 
+  /// Fires the calendar-availability fetch immediately, skipping the
+  /// debounce — for use right after a deliberate, completed route
+  /// selection (not the reactive per-keystroke case the debounce guards).
+  /// Cancels any pending debounced fetch so it doesn't also fire later.
+  Future<void> fetchCalendarDatesNow() async {
+    _calendarDebounceTimer?.cancel();
+    await _fetchCalendarDatesForSelection();
+    checkRouteNotificationStatus(selectedCityId.value, selectedTrekId.value);
+  }
+
   @override
   void onClose() {
     _calendarDebounceTimer?.cancel();

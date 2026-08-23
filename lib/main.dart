@@ -14,6 +14,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
 import 'package:sizer/sizer.dart';
 
@@ -25,6 +26,37 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 SpUtil? sp;
 
+final FlutterLocalNotificationsPlugin _localNotifications =
+    FlutterLocalNotificationsPlugin();
+
+const AndroidNotificationChannel _fcmChannel = AndroidNotificationChannel(
+  'trek_platform_events',
+  'Aorbo Notifications',
+  description: 'Booking, payment, and trek updates',
+  importance: Importance.high,
+);
+
+Future<void> _initLocalNotifications() async {
+  const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+  const initSettings = InitializationSettings(android: androidInit);
+  await _localNotifications.initialize(initSettings);
+
+  await _localNotifications
+      .resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin
+      >()
+      ?.createNotificationChannel(_fcmChannel);
+}
+
+// Resolves once Firebase/Preferences/Repository are ready. runApp() no
+// longer waits on this — splash_screen.dart awaits it right before it first
+// needs `sp`/the network stack, which is ~800ms into its own animation,
+// comfortably after this normally finishes. Previously all of this was
+// awaited BEFORE runApp(), so Flutter couldn't draw its first frame until
+// it completed — the native splash sat on a blank screen for ~900ms with
+// zero visual activity before the logo even appeared.
+late Future<void> appBootstrapFuture;
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -32,7 +64,12 @@ void main() async {
     debugPrint(
       '╔══ UNCAUGHT ZONE ERROR ══╗\n$error\n$stack\n╚═════════════════════════╝',
     );
-    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    // Firebase may not be initialized yet this early in the timeline now —
+    // guard so a startup-time error doesn't throw again inside its own
+    // handler.
+    try {
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    } catch (_) {}
     // Swallow only in debug. In release, let it surface so OS/store vitals
     // report it — silent swallowing ships invisible crashes.
     return kDebugMode;
@@ -40,16 +77,18 @@ void main() async {
 
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
+  appBootstrapFuture = _bootstrap();
+
+  runApp(const MyApp());
+}
+
+Future<void> _bootstrap() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(!kDebugMode);
   FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
   await Preferences.initPref();
   sp = await SpUtil.getInstance();
-
-  // Moved from _deferredInit — it's synchronous interceptor wiring.
   await Repository().initRepo();
-
-  runApp(const MyApp());
 
   _deferredInit();
 }
@@ -95,9 +134,41 @@ void _deferredInit() {
       FirebaseMessaging.onBackgroundMessage(
         _firebaseMessagingBackgroundHandler,
       );
+
+      try {
+        await _initLocalNotifications();
+      } catch (e) {
+        debugPrint('Local notifications init failed: $e');
+      }
     }
 
-    FirebaseMessaging.onMessage.listen((_) {});
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
+      if (Platform.isIOS) return;
+
+      final notification = message.notification;
+      final title = notification?.title ?? message.data['title'];
+      final body = notification?.body ?? message.data['body'];
+      if (title == null && body == null) return;
+
+      try {
+        await _localNotifications.show(
+          message.hashCode,
+          title,
+          body,
+          NotificationDetails(
+            android: AndroidNotificationDetails(
+              _fcmChannel.id,
+              _fcmChannel.name,
+              channelDescription: _fcmChannel.description,
+              importance: Importance.high,
+              priority: Priority.high,
+            ),
+          ),
+        );
+      } catch (e) {
+        debugPrint('Failed to show foreground notification: $e');
+      }
+    });
 
     FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
       try {
@@ -166,9 +237,17 @@ class MyApp extends StatelessWidget {
           getPages: routes,
           routingCallback: (routing) {
             final screen = routing?.current;
-            if (screen != null && screen.isNotEmpty) {
+            if (screen == null || screen.isEmpty) return;
+            // The very first route push happens synchronously during
+            // runApp()'s initial build — now potentially before
+            // appBootstrapFuture's Firebase.initializeApp() has completed,
+            // since that no longer blocks runApp(). Accessing
+            // FirebaseCrashlytics.instance before Firebase is ready throws,
+            // which in release mode renders as a blank gray ErrorWidget —
+            // this guard is what keeps that from ever surfacing to the user.
+            try {
               FirebaseCrashlytics.instance.log('Screen: $screen');
-            }
+            } catch (_) {}
           },
         );
       },

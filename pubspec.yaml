@@ -36,6 +36,7 @@ dependencies:
   firebase_app_check: ^0.3.2+4
   firebase_messaging: ^15.2.4
   firebase_crashlytics: ^4.3.7
+  flutter_local_notifications: ^18.0.1
   animated_rating_stars: ^1.0.1
   device_info_plus: ^11.3.0
   google_maps_flutter: ^2.10.1
@@ -105,12 +106,19 @@ flutter_launcher_icons:
   adaptive_icon_foreground: "assets/images/img/app_icon3.png"
 
 flutter_native_splash:
+  # No logo image here on purpose — the Android 12+ SplashScreen API forces
+  # any icon into a small square slot, and aorbologo.png is a wide wordmark
+  # (1183x330px), which got scaled-and-cropped into an unreadable fragment.
+  # Only the background color needs to match splash_screen.dart's gradient
+  # start color (#FEF200) — that's what makes the native→Flutter handoff
+  # invisible. The full, correctly-proportioned logo reveal happens entirely
+  # inside splash_screen.dart's own animation, moments later.
   image: "assets/images/img/transparent.png"
-  color: "#000000"
+  color: "#FEF200"
   android: true
   ios: true
 
   android_12:
     image: "assets/images/img/transparent.png"
-    icon_background_color: "#000000"
-    color: "#000000"
+    icon_background_color: "#FEF200"
+    color: "#FEF200"

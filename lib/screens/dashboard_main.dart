@@ -9,6 +9,7 @@ import 'package:arobo_app/screens/dashboard_widget.dart';
 import 'package:arobo_app/screens/my_account_screen.dart';
 import 'package:arobo_app/screens/traveller_information_screen.dart';
 import 'package:arobo_app/services/booking_draft_service.dart';
+import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/utils/common_bottom_nav.dart';
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/custom_snackbar.dart';
@@ -123,6 +124,7 @@ class _DashboardMainState extends State<DashboardMain> {
         _handleBackPress();
       },
       child: Scaffold(
+        backgroundColor: AppColors.bgCool,
         body: Obx(() => _buildScreen(_dashboardC.selectedScreen.value)),
         bottomNavigationBar: Obx(
           () => CommonBottomNav(

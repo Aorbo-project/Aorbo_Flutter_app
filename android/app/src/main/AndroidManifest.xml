@@ -59,11 +59,17 @@
         </intent>
         <package android:name="com.phonepe.app" />
     </queries>
-    <!-- Impeller is stable on Android now and gives smoother animations and
-         fewer jank-causing shader compilation stalls than the legacy Skia
-         backend. Re-enabled as part of the modernization pass — worth a
-         full regression pass on Maps/PDF/video screens before release. -->
+    <!-- Disabled 2026-08-24: confirmed via logcat that on a budget Unisoc
+         device (Samsung SM-A035F / Galaxy A03) Impeller's Vulkan backend
+         renders a blank gray screen — the app process runs fine (no crash,
+         "Fully drawn" in ~460ms) but nothing ever paints. Weak/buggy Vulkan
+         driver support on low-end Unisoc/MediaTek GPUs is a known Impeller
+         compatibility gap. Falling back to the legacy Skia/OpenGL backend,
+         which has much broader real-device coverage — a working app on
+         budget hardware matters more than Impeller's smoother animations,
+         especially now that the splash animation itself no longer relies
+         on any shader effects (Shimmer/ShaderMask removed this session). -->
     <meta-data
         android:name="io.flutter.embedding.android.EnableImpeller"
-        android:value="true" />
+        android:value="false" />
 </manifest>

@@ -1,5 +1,6 @@
 import 'package:arobo_app/controller/auth_controller.dart';
 import 'package:arobo_app/controller/otp_controller.dart';
+import 'package:arobo_app/main.dart';
 import 'package:arobo_app/utils/common_btn.dart';
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/common_images.dart';
@@ -14,7 +15,6 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:pinput/pinput.dart';
 import 'dart:async';
-import 'package:shimmer/shimmer.dart';
 import 'package:sizer/sizer.dart';
 import 'package:arobo_app/theme/app_typography.dart';
 
@@ -29,8 +29,13 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
     with TickerProviderStateMixin {
   late AnimationController _logoController;
   late Animation<Alignment> _logoAlignmentAnimation;
-  late Animation<double> _logoWidthAnimation;
-  late Animation<double> _logoHeightAnimation;
+  // Logo width/height are deliberately NOT Tweens built once in initState.
+  // They used to be (via Sizer's .w/.h), but on a slower device initState()
+  // can run before the platform delivers real window metrics — Sizer's
+  // global state was still zero at that exact moment, so the Tween baked in
+  // 0.0 forever (confirmed via on-device debug logging: w=0.0 h=0.0). Now
+  // computed fresh every frame from MediaQuery in the builder below, so
+  // it's always correct regardless of that timing.
   late AnimationController _formController;
   late Animation<Offset> _formOffsetAnimation;
   late AnimationController _breathingController;
@@ -49,6 +54,11 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
   bool showOtp = false;
   bool _splashDone = false;
   bool _formSlideDone = false;
+  // Set right before navigating to /dashboard so the shimmer/breathing
+  // animations freeze on a static frame before the fade transition starts —
+  // otherwise the fade blends two actively-moving screens together and
+  // reads as a glitch instead of a smooth crossfade.
+  bool _leavingToDashboard = false;
 
   Timer? _timer;
 
@@ -159,32 +169,27 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
     super.initState();
     _otpC = Get.put(OTPController());
 
-    // Logo Animations
+    // Logo Animations — 700ms was overcorrecting on "don't make it feel
+    // laggy": rapid-fire motion with no hold time reads as broken/glitchy
+    // to the eye even when every frame renders correctly. 950ms is the
+    // middle ground — still much snappier than the original 1200ms, but
+    // slow enough to read as a deliberate motion, not a blur.
     _logoController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 950),
     );
 
+    // Moves to near the top — required so the logo stays visible ABOVE
+    // the login form, which slides up and covers the bottom 85% of the
+    // screen. (Briefly tried keeping this centered to avoid overlapping
+    // dashboard's header logo during the fade, but that hid the logo
+    // behind the login form entirely — much worse. The fade-overlap is
+    // instead solved by hiding the logo outright right before navigating;
+    // see _leavingToDashboard in the builder below.)
     _logoAlignmentAnimation =
         AlignmentTween(
           begin: Alignment.center,
-          end: const Alignment(0.0, -0.88), // Your target alignment
-        ).animate(
-          CurvedAnimation(parent: _logoController, curve: Curves.easeInOut),
-        );
-
-    _logoWidthAnimation =
-        Tween<double>(
-          begin: 70.w, // Your initial width
-          end: 46.w, // Your target width
-        ).animate(
-          CurvedAnimation(parent: _logoController, curve: Curves.easeInOut),
-        );
-
-    _logoHeightAnimation =
-        Tween<double>(
-          begin: 50.h, // Your initial height
-          end: 10.h, // Your target height
+          end: const Alignment(0.0, -0.88),
         ).animate(
           CurvedAnimation(parent: _logoController, curve: Curves.easeInOut),
         );
@@ -268,9 +273,18 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
           _breathingController.forward(); // Or .repeat(reverse: true)
         }
 
-        // Delay slightly for UX before checking login status
-        Future.delayed(const Duration(milliseconds: 300), () async {
-          // Adjust delay as needed
+        // Hold on the settled logo before doing anything else — 120ms was
+        // too brief to actually register as a "landed" moment, making the
+        // whole sequence feel like one uninterrupted blur rather than
+        // motion-then-pause-then-next-thing.
+        Future.delayed(const Duration(milliseconds: 400), () async {
+          if (!mounted) return;
+
+          // main.dart's Firebase/Preferences/Repository init now runs
+          // concurrently with this animation instead of blocking the first
+          // frame — wait for it here, right before `sp`/the network stack
+          // are actually needed. Normally already done by this point.
+          await appBootstrapFuture;
           if (!mounted) return;
 
           final validateResponse = await _authC.validateVersion();
@@ -286,12 +300,26 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
           }
 
           if (CommonLogics.checkUserLogin()) {
-            // Self-healing sync: catches a token that failed to register on
-            // a previous run (flaky network, brief backend outage) without
-            // waiting for this session's next login, which for a completed
-            // profile may never happen again.
-            _authC.registerFcmToken();
-            Get.offAllNamed('/dashboard');
+            // Confirm the cached session is still accepted by the server
+            // BEFORE committing to /dashboard — see validateSession's doc
+            // comment for why (splash→dashboard→login flicker bug).
+            final sessionValid = await _authC.validateSession();
+            if (!mounted) return;
+
+            if (sessionValid) {
+              // Self-healing sync: catches a token that failed to register
+              // on a previous run (flaky network, brief backend outage)
+              // without waiting for this session's next login, which for a
+              // completed profile may never happen again.
+              _authC.registerFcmToken();
+              _goToDashboard();
+            } else {
+              // Explicit server rejection — the cached flag lied, clear it
+              // so the user lands cleanly on the login form instead of a
+              // dashboard that would immediately bounce them back out.
+              await sp!.clear();
+              _startFormAnimation();
+            }
           } else {
             _startFormAnimation(); // Defined below, handles form slide up
           }
@@ -299,14 +327,27 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
       }
     });
 
-    // Start the initial logo animation
-    // (Your original code had a delay before this, you can keep a small one if desired)
-    Future.delayed(const Duration(milliseconds: 200), () {
-      // Optional: short delay
+    // Start the logo animation on the very next frame — no artificial delay
+    // before motion begins, so the first thing the user sees is already in
+    // motion (matches the native splash's icon, which was already visible).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _logoController.forward();
       }
     });
+  }
+
+  // Freezes the logo's breathing/shimmer animation on a static frame, then
+  // navigates — so the (short, 150ms) fade into /dashboard blends two still
+  // frames instead of blending a moving splash into a moving dashboard.
+  void _goToDashboard() {
+    if (!mounted) {
+      Get.offAllNamed('/dashboard');
+      return;
+    }
+    _breathingController.stop();
+    setState(() => _leavingToDashboard = true);
+    Get.offAllNamed('/dashboard');
   }
 
   void _startFormAnimation() {
@@ -419,7 +460,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
 
           if (verified) {
             _authC.phoneNumberLoginTextField.value.clear();
-            Get.offAllNamed('/dashboard');
+            _goToDashboard();
           } else {
             setState(() {
               isError = true;
@@ -799,31 +840,30 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
               _breathingController,
             ]),
             builder: (context, child) {
+              // Computed fresh from MediaQuery every frame — see the field
+              // comment above for why this can't be a Tween built once in
+              // initState.
+              final screenSize = MediaQuery.of(context).size;
+              final t = Curves.easeInOut.transform(_logoController.value);
+              final w = screenSize.width * 0.70 +
+                  (screenSize.width * 0.46 - screenSize.width * 0.70) * t;
+              final h = screenSize.height * 0.50 +
+                  (screenSize.height * 0.10 - screenSize.height * 0.50) * t;
+              final align = _logoAlignmentAnimation.value;
+
+              if (_leavingToDashboard) return const SizedBox.shrink();
+
               final baseLogo = SizedBox(
-                width: _logoWidthAnimation.value,
-                height: _logoHeightAnimation.value,
+                width: w,
+                height: h,
                 child: Image.asset(CommonImages.logo1, fit: BoxFit.contain),
               );
 
-              final breathingLogo = ScaleTransition(
-                scale: _breathingAnimation,
-                child: baseLogo,
-              );
-
-              final shimmerLogo = _splashDone
-                  ? Shimmer.fromColors(
-                      baseColor: Colors.black,
-                      highlightColor: Colors.white.withValues(alpha: 0.6),
-                      period: const Duration(milliseconds: 3000),
-                      direction: ShimmerDirection.ltr,
-                      child: breathingLogo,
-                    )
+              final logo = _splashDone
+                  ? ScaleTransition(scale: _breathingAnimation, child: baseLogo)
                   : baseLogo;
 
-              return Align(
-                alignment: _logoAlignmentAnimation.value,
-                child: shimmerLogo,
-              );
+              return Align(alignment: align, child: logo);
             },
           ),
           //       if (CommonLogics.checkUserLogin()) {

@@ -23,6 +23,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:get/get.dart';
+import 'package:lottie/lottie.dart';
 import 'dart:async';
 import 'package:flutter_touch_ripple/flutter_touch_ripple.dart';
 import 'package:shimmer_ai/shimmer_ai.dart';
@@ -329,12 +330,18 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
       MaterialPageRoute(builder: (_) => const SourceLocationScreen()),
     );
 
-    // If the user successfully completed the route selection,
-    // automatically open the calendar to show available dates!
+    // If the user successfully completed the route selection, check
+    // availability immediately (no debounce) and only open the calendar
+    // if there's actually something to show — otherwise the dashboard's
+    // own "no treks on this route" card takes over, no empty popup.
     if (completed == true && mounted) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _selectDate(context);
-      });
+      await _dashboardC.fetchCalendarDatesNow();
+      if (!mounted) return;
+      if (_dashboardC.availableDates.isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _selectDate(context);
+        });
+      }
     }
   }
 
@@ -345,9 +352,13 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
     );
 
     if (completed == true && mounted) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _selectDate(context);
-      });
+      await _dashboardC.fetchCalendarDatesNow();
+      if (!mounted) return;
+      if (_dashboardC.availableDates.isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _selectDate(context);
+        });
+      }
     }
   }
 
@@ -1101,50 +1112,66 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
 
                     _FadeSlideIn(
                       delayMs: 340,
-                      child: Center(
-                        child: AnimatedBuilder(
-                          animation: Listenable.merge([
-                            _scaleAnimation,
-                            _glowController,
-                          ]),
-                          builder: (context, child) {
-                            final glowAlpha = _isPressed
-                                ? 0.0
-                                : 0.20 + 0.16 * _glowController.value;
-                            return Transform.scale(
-                              scale: _scaleAnimation.value,
-                              child: Container(
-                                width: MediaQuery.of(context).size.width * 0.75,
-                                height: ScreenConstant.size44,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(30),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: ht.accent.withValues(
-                                        alpha: glowAlpha,
+                      // The "no treks on this route" inline card already has
+                      // its own Change Route / Notify Me buttons — showing
+                      // this main CTA too would just duplicate them.
+                      child: Obx(() {
+                        if (_computeNoTreksOnRoute()) {
+                          return const SizedBox.shrink();
+                        }
+                        return Column(
+                          children: [
+                            Center(
+                              child: AnimatedBuilder(
+                                animation: Listenable.merge([
+                                  _scaleAnimation,
+                                  _glowController,
+                                ]),
+                                builder: (context, child) {
+                                  final glowAlpha = _isPressed
+                                      ? 0.0
+                                      : 0.20 + 0.16 * _glowController.value;
+                                  return Transform.scale(
+                                    scale: _scaleAnimation.value,
+                                    child: Container(
+                                      width:
+                                          MediaQuery.of(context).size.width *
+                                          0.75,
+                                      height: ScreenConstant.size44,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(
+                                          30,
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: ht.accent.withValues(
+                                              alpha: glowAlpha,
+                                            ),
+                                            blurRadius:
+                                                12 + 6 * _glowController.value,
+                                            offset: const Offset(0, 5),
+                                          ),
+                                        ],
                                       ),
-                                      blurRadius:
-                                          12 + 6 * _glowController.value,
-                                      offset: const Offset(0, 5),
+                                      child: CommonButton(
+                                        textColor: Colors.white,
+                                        text: 'Search',
+                                        onPressed: _handleSearchPress,
+                                        backgroundColor: ht.accent,
+                                        fontSize: FontSize.s15,
+                                        fontWeight: FontWeight.w600,
+                                        isFullWidth: true,
+                                      ),
                                     ),
-                                  ],
-                                ),
-                                child: CommonButton(
-                                  textColor: Colors.white,
-                                  text: 'Search',
-                                  onPressed: _handleSearchPress,
-                                  backgroundColor: ht.accent,
-                                  fontSize: FontSize.s15,
-                                  fontWeight: FontWeight.w600,
-                                  isFullWidth: true,
-                                ),
+                                  );
+                                },
                               ),
-                            );
-                          },
-                        ),
-                      ),
+                            ),
+                            SizedBox(height: ScreenConstant.size30),
+                          ],
+                        );
+                      }),
                     ),
-                    SizedBox(height: ScreenConstant.size30),
                   ],
                 ),
               ),
@@ -1222,29 +1249,30 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
             ),
             SizedBox(width: ScreenConstant.size12),
             Expanded(
-              child: MediaQuery(
-                data: MediaQuery.of(
-                  context,
-                ).copyWith(textScaler: const TextScaler.linear(1.0)),
-                child: TextFormField(
-                  controller: controller,
-                  readOnly: true,
-                  onTap: onTap,
-                  style: AppType.style(
-                    FontSize.s14,
-                    w: FontWeight.w600,
-                    color: ht.ink,
-                  ),
-                  decoration: InputDecoration(
-                    border: InputBorder.none,
-                    hintText: hint,
-                    hintStyle: AppType.style(
-                      FontSize.s14,
-                      w: FontWeight.w500,
-                      color: ht.inkLight,
-                    ),
-                    contentPadding: const EdgeInsets.only(right: 36),
-                  ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                child: ValueListenableBuilder<TextEditingValue>(
+                  valueListenable: controller,
+                  builder: (context, value, _) {
+                    final hasValue = value.text.isNotEmpty;
+                    return Text(
+                      hasValue ? value.text : hint,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textScaler: const TextScaler.linear(1.0),
+                      style: hasValue
+                          ? AppType.style(
+                              FontSize.s14,
+                              w: FontWeight.w600,
+                              color: ht.ink,
+                            )
+                          : AppType.style(
+                              FontSize.s14,
+                              w: FontWeight.w500,
+                              color: ht.inkLight,
+                            ),
+                    );
+                  },
                 ),
               ),
             ),
@@ -1261,18 +1289,60 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
     );
   }
 
+  /// Single source of truth for "does the selected route currently have
+  /// zero bookable dates". Read reactively — call only from inside an
+  /// Obx (or another reactive builder) so Rx dependencies are tracked.
+  /// Shared by the date section's empty state and the Search button, so
+  /// the two can never drift out of sync with each other.
+  bool _computeNoTreksOnRoute() {
+    final cityId = _dashboardC.selectedCityId.value;
+    final trekId = _dashboardC.selectedTrekId.value;
+    final observerState = _dashboardC.calenderTrekDatesObserver.value;
+
+    final bool isCityTrekSelected = cityId != 0 && trekId != 0;
+    final bool datesLoading = observerState.maybeWhen(
+      loading: (_) => true,
+      orElse: () => false,
+    );
+
+    final List<TrekDatesModel> calenderTrekDates = observerState.maybeWhen(
+      success: (r) =>
+          (r as CalenderDatesResponseModel).data?.dates ?? <TrekDatesModel>[],
+      orElse: () => <TrekDatesModel>[],
+    );
+
+    final DateTime now = _ntpTime ?? DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    final List<TrekDatesModel> upcomingDates = calenderTrekDates.where((d) {
+      if (d.date == null) return false;
+      final dt = DateTime.tryParse(d.date!);
+      if (dt == null) return false;
+      return dt.isAfter(today.subtract(const Duration(days: 1)));
+    }).toList();
+
+    final bool hasNoValidDates =
+        upcomingDates.isEmpty ||
+        upcomingDates.every((d) {
+          final dt = DateTime.tryParse(d.date ?? '');
+          return dt == null || !_dashboardC.isDateAvailable(dt);
+        });
+
+    return isCityTrekSelected && !datesLoading && hasNoValidDates;
+  }
+
   /// Departure-date section. If the selected route has NO bookable dates,
   /// the whole section (calendar icon + label + chips) is replaced by a
   /// compact animated empty state.
   Widget _buildDateSection(DashboardHeaderTheme ht) {
     return Obx(() {
-      final cityId = _dashboardC.selectedCityId.value;
-      final trekId = _dashboardC.selectedTrekId.value;
       final selectedDateValue = _dashboardC.selectedDate.value;
       final dateText = _dashboardC.dateController.value.text;
       final observerState = _dashboardC.calenderTrekDatesObserver.value;
 
-      final bool isCityTrekSelected = cityId != 0 && trekId != 0;
+      final bool isCityTrekSelected =
+          _dashboardC.selectedCityId.value != 0 &&
+          _dashboardC.selectedTrekId.value != 0;
       final bool datesLoading = observerState.maybeWhen(
         loading: (_) => true,
         orElse: () => false,
@@ -1294,15 +1364,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
         return dt.isAfter(today.subtract(const Duration(days: 1)));
       }).toList();
 
-      final bool hasNoValidDates =
-          upcomingDates.isEmpty ||
-          upcomingDates.every((d) {
-            final dt = DateTime.tryParse(d.date ?? '');
-            return dt == null || !_dashboardC.isDateAvailable(dt);
-          });
-
-      final bool noTreksOnRoute =
-          isCityTrekSelected && !datesLoading && hasNoValidDates;
+      final bool noTreksOnRoute = _computeNoTreksOnRoute();
 
       if (noTreksOnRoute) {
         if (dateText.isNotEmpty || selectedDateValue != null) {
@@ -1643,6 +1705,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
     ScreenConstant.setScreenAwareConstant(context);
 
     return Scaffold(
+      backgroundColor: _C.bg,
       body: SingleChildScrollView(
         physics: const ClampingScrollPhysics(),
         controller: _scrollController,
@@ -2185,13 +2248,18 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
   // Shimmer placeholder helpers
   // ---------------------------------------------------------------------------
 
+  // Single card only — shimmer_ai gives every .withShimmerAi() instance its
+  // own independently-timed AnimationController (confirmed via package
+  // source), so two adjacent shimmering cards never stay in phase and their
+  // brightness bands visibly misalign right at the seam between them. A
+  // second "peek" card wasn't worth that broken-looking artifact, and real
+  // data mostly renders a single card here anyway (see the `length <= 1`
+  // branch above).
   Widget _buildShimmerPagePlaceholder() {
-    return ListView.builder(
-      scrollDirection: Axis.horizontal,
-      itemCount: 2,
-      itemBuilder: (_, __) => Container(
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
         width: MediaQuery.of(context).size.width * 0.82,
-        margin: EdgeInsets.only(right: ScreenConstant.size6),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -2222,22 +2290,20 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
     );
   }
 
+  // Single card only — same shimmer_ai desync issue as
+  // _buildShimmerPagePlaceholder above: 3 adjacent independently-timed
+  // shimmer sweeps would look even more visibly broken than 2 did.
   Widget _buildSeasonalPicksShimmerPlaceholder(double width, double height) {
-    return Row(
-      children: List.generate(
-        3,
-        (i) => Padding(
-          padding: EdgeInsets.only(right: 3.w),
-          child: Container(
-            width: width,
-            height: height,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
-            ),
-          ).withShimmerAi(loading: true),
+    return Padding(
+      padding: EdgeInsets.only(left: ScreenConstant.size12),
+      child: Container(
+        width: width,
+        height: height,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
         ),
-      ),
+      ).withShimmerAi(loading: true),
     );
   }
 }
@@ -2427,14 +2493,42 @@ class _NoTreksOnRouteSectionState extends State<_NoTreksOnRouteSection> {
           mainAxisSize: MainAxisSize.min,
           children: [
             // ── Message ──
-            Text(
-              'No treks available on this route yet.',
-              textScaler: const TextScaler.linear(1.0),
-              style: AppType.style(
-                FontSize.s12,
-                w: FontWeight.w600,
-                color: widget.inkMid,
-              ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 28,
+                  height: 28,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: widget.accent.withValues(alpha: 0.08),
+                  ),
+                  child: ClipOval(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: Lottie.asset(
+                        'assets/animations/hiking_animation.json',
+                        repeat: true,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    'No treks available on this route yet.',
+                    textScaler: const TextScaler.linear(1.0),
+                    style: AppType.style(
+                      FontSize.s10,
+                      w: FontWeight.w500,
+                      color: widget.inkMid,
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 10),
 
