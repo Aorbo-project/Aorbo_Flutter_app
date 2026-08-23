@@ -47,3 +47,16 @@ app.*.map.json
 # npm artifacts (should not exist in a Flutter project)
 package-lock.json
 node_modules/
+
+# Android signing — never commit the keystore or its passwords
+android/key.properties
+android/**/*.jks
+android/**/*.keystore
+
+# Android local machine config / build cache — machine-specific, never shared
+android/local.properties
+android/.gradle/
+
+# Shareable release build outputs — regenerated on demand, not source
+/release-apk-for-team/
+/debug-symbols/
