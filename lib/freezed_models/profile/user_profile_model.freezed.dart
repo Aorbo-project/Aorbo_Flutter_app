@@ -722,9 +722,13 @@ Traveler _$TravelerFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$Traveler {
+// 🔥 FIX: Added @JsonKey to safely parse IDs even if the API sends them as Strings
+  @JsonKey(fromJson: _toInt)
   int? get id => throw _privateConstructorUsedError;
+  @JsonKey(fromJson: _toInt)
   int? get customerId => throw _privateConstructorUsedError;
   String? get name => throw _privateConstructorUsedError;
+  @JsonKey(fromJson: _toInt)
   int? get age => throw _privateConstructorUsedError;
   String? get gender => throw _privateConstructorUsedError;
   String? get phone => throw _privateConstructorUsedError;
@@ -746,10 +750,10 @@ abstract class $TravelerCopyWith<$Res> {
       _$TravelerCopyWithImpl<$Res, Traveler>;
   @useResult
   $Res call(
-      {int? id,
-      int? customerId,
+      {@JsonKey(fromJson: _toInt) int? id,
+      @JsonKey(fromJson: _toInt) int? customerId,
       String? name,
-      int? age,
+      @JsonKey(fromJson: _toInt) int? age,
       String? gender,
       String? phone,
       String? email,
@@ -842,10 +846,10 @@ abstract class _$$TravelerImplCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {int? id,
-      int? customerId,
+      {@JsonKey(fromJson: _toInt) int? id,
+      @JsonKey(fromJson: _toInt) int? customerId,
       String? name,
-      int? age,
+      @JsonKey(fromJson: _toInt) int? age,
       String? gender,
       String? phone,
       String? email,
@@ -931,10 +935,10 @@ class __$$TravelerImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$TravelerImpl implements _Traveler {
   const _$TravelerImpl(
-      {this.id,
-      this.customerId,
+      {@JsonKey(fromJson: _toInt) this.id,
+      @JsonKey(fromJson: _toInt) this.customerId,
       this.name,
-      this.age,
+      @JsonKey(fromJson: _toInt) this.age,
       this.gender,
       this.phone,
       this.email,
@@ -946,13 +950,17 @@ class _$TravelerImpl implements _Traveler {
   factory _$TravelerImpl.fromJson(Map<String, dynamic> json) =>
       _$$TravelerImplFromJson(json);
 
+// 🔥 FIX: Added @JsonKey to safely parse IDs even if the API sends them as Strings
   @override
+  @JsonKey(fromJson: _toInt)
   final int? id;
   @override
+  @JsonKey(fromJson: _toInt)
   final int? customerId;
   @override
   final String? name;
   @override
+  @JsonKey(fromJson: _toInt)
   final int? age;
   @override
   final String? gender;
@@ -1027,10 +1035,10 @@ class _$TravelerImpl implements _Traveler {
 
 abstract class _Traveler implements Traveler {
   const factory _Traveler(
-      {final int? id,
-      final int? customerId,
+      {@JsonKey(fromJson: _toInt) final int? id,
+      @JsonKey(fromJson: _toInt) final int? customerId,
       final String? name,
-      final int? age,
+      @JsonKey(fromJson: _toInt) final int? age,
       final String? gender,
       final String? phone,
       final String? email,
@@ -1042,13 +1050,16 @@ abstract class _Traveler implements Traveler {
   factory _Traveler.fromJson(Map<String, dynamic> json) =
       _$TravelerImpl.fromJson;
 
-  @override
+  @override // 🔥 FIX: Added @JsonKey to safely parse IDs even if the API sends them as Strings
+  @JsonKey(fromJson: _toInt)
   int? get id;
   @override
+  @JsonKey(fromJson: _toInt)
   int? get customerId;
   @override
   String? get name;
   @override
+  @JsonKey(fromJson: _toInt)
   int? get age;
   @override
   String? get gender;

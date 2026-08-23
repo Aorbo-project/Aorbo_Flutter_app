@@ -27,6 +27,7 @@ import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
 import 'package:arobo_app/services/booking_draft_service.dart';
 import 'package:arobo_app/widgets/trek_card_ui.dart';
+import 'package:dio/dio.dart';
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS
@@ -228,14 +229,12 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
   void initState() {
     super.initState();
 
-    // FIX: Ensure user profile is fetched if it hasn't been loaded yet.
     if (_userC.userProfileData.value.customer == null) {
       _userC.getUserProfile();
     }
 
     travelData = _trekC.trekDetailData.value;
 
-    // FIX: Ensure batch ID is set for draft saving
     if (_trekC.trekBatchId.value == 0 && travelData.batchId != null) {
       _trekC.trekBatchId.value = travelData.batchId!;
     }
@@ -592,7 +591,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
     );
     if (saved != true || !mounted) return;
 
-    setState(() {}); // Force rebuild just in case
+    setState(() {});
 
     _showSuccessSnack(
       isEdit ? 'Contact details updated' : 'Contact details saved',
@@ -600,8 +599,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
   }
 
   Future<void> _showTravellerBottomSheet({Traveler? traveller}) async {
-    // FIX: Ensure we only treat it as an "edit" if the traveler actually has an ID.
-    // This allows passing a dummy Traveler with just a name to pre-fill the "Add" form.
     final isEdit = traveller != null && traveller.id != null;
     final saved = await showModalBottomSheet<bool>(
       context: context,
@@ -660,8 +657,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
   Future<void> _addMyselfAsTraveler() async {
     final customer = _userC.userProfileData.value.customer;
     if (customer == null) return;
-    // Pass a dummy Traveler with just the name pre-filled.
-    // Since ID is null, the bottom sheet will treat it as "Add New" but pre-fill the name.
     final preFilled = Traveler(name: customer.name);
     await _showTravellerBottomSheet(traveller: preFilled);
   }
@@ -767,7 +762,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // PRIMARY USER HINT BANNER
             Container(
               width: double.infinity,
               padding: EdgeInsets.all(2.5.w),
@@ -1796,29 +1790,29 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
               onChanged: (bool? value) {
                 HapticFeedback.selectionClick();
                 setState(() {
+                  int currentCount =
+                      _trekC.calculateFareRequestModel.value.travelerCount;
                   if (value ?? false) {
                     if (!selectedTravellers.any((t) => t.id == traveler.id)) {
                       selectedTravellers.add(traveler);
                     }
+                    if (selectedTravellers.length > currentCount) {
+                      currentCount = selectedTravellers.length;
+                    }
                   } else {
                     selectedTravellers.removeWhere((t) => t.id == traveler.id);
+                    if (currentCount > 1) {
+                      currentCount--;
+                    }
                   }
+                  _trekC.calculateFareRequestModel.value = _trekC
+                      .calculateFareRequestModel
+                      .value
+                      .copyWith(travelerCount: currentCount);
                   _trekC.travellerDetailList.value = List.from(
                     selectedTravellers,
                   );
                   BookingDraftService.save(_trekC);
-                  _trekC.calculateFareRequestModel.value = _trekC
-                      .calculateFareRequestModel
-                      .value
-                      .copyWith(
-                        travelerCount: resolveRequiredTravelerCount(
-                          currentRequiredCount: _trekC
-                              .calculateFareRequestModel
-                              .value
-                              .travelerCount,
-                          selectedCount: selectedTravellers.length,
-                        ),
-                      );
                 });
               },
               shape: RoundedRectangleBorder(
@@ -2114,8 +2108,6 @@ class _TravellerFormSheetState extends State<_TravellerFormSheet> {
   String _gender = '';
   bool _isSubmitting = false;
 
-  // FIX: Only consider it an "edit" if the traveler actually has an ID.
-  // This allows passing a dummy Traveler with just a name to pre-fill the "Add" form.
   bool get _isEdit => widget.traveller?.id != null;
 
   @override

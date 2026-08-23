@@ -118,6 +118,11 @@ class _MyAccountScreenState extends State<MyAccountScreen>
 
     _logoutFade = CurvedAnimation(parent: _logoutCtrl, curve: Curves.easeOut);
 
+    // ✅ FIX: Fetch user profile so the name is always loaded from API
+    if (_userC.userProfileData.value.customer == null) {
+      _userC.getUserProfile();
+    }
+
     _runStaggeredEntrance();
   }
 
@@ -356,10 +361,7 @@ class _MyAccountScreenState extends State<MyAccountScreen>
           ),
         ],
       ),
-      actions: [
-        const _LanguageChip(),
-        SizedBox(width: 4.w),
-      ],
+      // ✅ Removed: actions with _LanguageChip
     );
   }
 
@@ -782,45 +784,6 @@ class _AnimatedLogoutButtonState extends State<_AnimatedLogoutButton>
                 color: _C.redText,
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────
-//  LANGUAGE CHIP
-// ─────────────────────────────────────────────
-class _LanguageChip extends StatelessWidget {
-  const _LanguageChip();
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {},
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 0.7.h),
-        decoration: BoxDecoration(
-          color: CommonColors.whiteColor,
-          borderRadius: BorderRadius.circular(2.5.w),
-          border: Border.all(color: CommonColors.cFFE5E7EB, width: 1),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.language_rounded, size: 14, color: _C.inkMid),
-            SizedBox(width: 1.w),
-            Text(
-              'ENG',
-              style: AppType.style(
-                FontSize.s9,
-                w: FontWeight.w500,
-                color: _C.ink,
-              ),
-            ),
-            SizedBox(width: 0.5.w),
-            Icon(Icons.keyboard_arrow_down_rounded, size: 14, color: _C.inkMid),
           ],
         ),
       ),

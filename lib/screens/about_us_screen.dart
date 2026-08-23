@@ -4,6 +4,7 @@ import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
 
@@ -11,17 +12,17 @@ import 'package:arobo_app/theme/app_typography.dart';
 //  DESIGN TOKENS
 // ─────────────────────────────────────────────
 class _C {
-  static const teal      = AppColors.teal;
+  static const teal = AppColors.teal;
   static const tealLight = AppColors.tealLight;
-  static const tealSoft  = AppColors.tealSoft;
-  static const ink       = Color(0xFF121212);
-  static const inkMid    = Color(0xFF444444);
-  static const inkLight  = Color(0xFF888888);
-  static const divider   = Color(0xFFEEEEEE);
-  static const cardBg    = Color(0xFFF9F9F7);
-  static const white     = AppColors.surface;
-  static const footerText= Color(0xFFD8D8D8);
-  static const red       = Color(0xFFB52424);
+  static const tealSoft = AppColors.tealSoft;
+  static const ink = Color(0xFF121212);
+  static const inkMid = Color(0xFF444444);
+  static const inkLight = Color(0xFF888888);
+  static const divider = Color(0xFFEEEEEE);
+  static const cardBg = Color(0xFFF9F9F7);
+  static const white = AppColors.surface;
+  static const footerText = Color(0xFFD8D8D8);
+  static const red = Color(0xFFB52424);
 }
 
 // ─────────────────────────────────────────────
@@ -36,14 +37,13 @@ class AboutUsScreen extends StatefulWidget {
 
 class _AboutUsScreenState extends State<AboutUsScreen>
     with TickerProviderStateMixin {
-
   late final ScrollController _scroll;
   late final AnimationController _heroAnim;
   late final AnimationController _fadeAnim;
   late final AnimationController _pulseAnim;
 
   double _heroParallax = 0;
-  bool _appBarSolid    = false;
+  bool _appBarSolid = false;
 
   // ─── LIFECYCLE ─────────────────────────────
 
@@ -52,31 +52,27 @@ class _AboutUsScreenState extends State<AboutUsScreen>
     super.initState();
     _scroll = ScrollController()..addListener(_onScroll);
 
-    // Hero elements slide in on load
     _heroAnim = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 900),
     )..forward();
 
-    // Body content fades in
     _fadeAnim = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 700),
     )..forward();
 
-    // Decorative circles pulse slowly
     _pulseAnim = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 3),
     )..repeat(reverse: true);
   }
 
-  // Called every time the user scrolls
   void _onScroll() {
     final offset = _scroll.offset;
     setState(() {
-      _heroParallax = offset * 0.35; // image moves slower than scroll = parallax
-      _appBarSolid  = offset > 260;  // appbar becomes solid after scrolling ~260px
+      _heroParallax = offset * 0.35;
+      _appBarSolid = offset > 260;
     });
   }
 
@@ -87,6 +83,17 @@ class _AboutUsScreenState extends State<AboutUsScreen>
     _fadeAnim.dispose();
     _pulseAnim.dispose();
     super.dispose();
+  }
+
+  // ─── URL LAUNCHER ──────────────────────────
+
+  Future<void> _launchAboutPage() async {
+    final uri = Uri.parse('https://www.aorbotreks.com/about');
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      debugPrint('Could not launch $uri');
+    }
   }
 
   // ─── BUILD ─────────────────────────────────
@@ -125,8 +132,6 @@ class _AboutUsScreenState extends State<AboutUsScreen>
 
   // ─────────────────────────────────────────────
   //  APP BAR
-  //  • Transparent over hero image
-  //  • Fades to solid white as user scrolls down
   // ─────────────────────────────────────────────
   PreferredSizeWidget _buildAppBar() {
     return PreferredSize(
@@ -149,12 +154,20 @@ class _AboutUsScreenState extends State<AboutUsScreen>
                     filled: _appBarSolid,
                   ),
                   const Spacer(),
-                  AnimatedOpacity(
-                    opacity: _appBarSolid ? 1 : 0,
-                    duration: const Duration(milliseconds: 200),
-                    child: Text(
-                      'About Us',
-                      style: AppType.style(FontSize.s13, w: FontWeight.w600, color: _C.ink),
+                  Flexible(
+                    child: AnimatedOpacity(
+                      opacity: _appBarSolid ? 1 : 0,
+                      duration: const Duration(milliseconds: 200),
+                      child: Text(
+                        'About Us',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppType.style(
+                          FontSize.s13,
+                          w: FontWeight.w600,
+                          color: _C.ink,
+                        ),
+                      ),
                     ),
                   ),
                   const Spacer(),
@@ -176,18 +189,17 @@ class _AboutUsScreenState extends State<AboutUsScreen>
       height: 40.h,
       child: Stack(
         fit: StackFit.expand,
+        clipBehavior: Clip.hardEdge,
         children: [
-
-          // ── Layer 1: Parallax image ──
           Transform.translate(
             offset: Offset(0, -_heroParallax),
             child: Image.asset(
               aboutUsData.imagePath,
               fit: BoxFit.cover,
+              width: double.infinity,
+              height: 40.h + _heroParallax,
             ),
           ),
-
-          // ── Layer 2: Multi-stop gradient ──
           const DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -203,8 +215,6 @@ class _AboutUsScreenState extends State<AboutUsScreen>
               ),
             ),
           ),
-
-          // ── Layer 3: Decorative pulsing circles ──
           Positioned(
             top: 7.5.h,
             right: -6.5.w,
@@ -224,37 +234,42 @@ class _AboutUsScreenState extends State<AboutUsScreen>
               phase: 0.5,
             ),
           ),
-
-          // ── Layer 4: ESTABLISHED badge (slides in from left) ──
           Positioned(
             top: 12.h,
             left: 5.5.w,
             child: SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(-0.6, 0),
-                end: Offset.zero,
-              ).animate(CurvedAnimation(
-                parent: _heroAnim,
-                curve: Curves.easeOutCubic,
-              )),
+              position:
+                  Tween<Offset>(
+                    begin: const Offset(-0.6, 0),
+                    end: Offset.zero,
+                  ).animate(
+                    CurvedAnimation(
+                      parent: _heroAnim,
+                      curve: Curves.easeOutCubic,
+                    ),
+                  ),
               child: const _EstablishedBadge(),
             ),
           ),
-
-          // ── Layer 5: Title block (slides up from bottom) ──
           Positioned(
-            left: 0, right: 0, bottom: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
             child: SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0, 0.4),
-                end: Offset.zero,
-              ).animate(CurvedAnimation(
-                parent: _heroAnim,
-                curve: Curves.easeOutCubic,
-              )),
+              position:
+                  Tween<Offset>(
+                    begin: const Offset(0, 0.4),
+                    end: Offset.zero,
+                  ).animate(
+                    CurvedAnimation(
+                      parent: _heroAnim,
+                      curve: Curves.easeOutCubic,
+                    ),
+                  ),
               child: Padding(
                 padding: EdgeInsets.fromLTRB(5.5.w, 0, 5.5.w, 3.h),
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
@@ -268,14 +283,21 @@ class _AboutUsScreenState extends State<AboutUsScreen>
                     SizedBox(height: 1.h),
                     Text(
                       aboutUsData.title,
-                      style: AppType.style(FontSize.s22, w: FontWeight.w700, color: _C.white, height: 1.25, letterSpacing: 0.3),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppType.style(
+                        FontSize.s22,
+                        w: FontWeight.w700,
+                        color: _C.white,
+                        height: 1.25,
+                        letterSpacing: 0.3,
+                      ),
                     ),
                   ],
                 ),
               ),
             ),
           ),
-
         ],
       ),
     );
@@ -291,17 +313,14 @@ class _AboutUsScreenState extends State<AboutUsScreen>
       decoration: BoxDecoration(
         color: _C.tealSoft,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: _C.teal.withValues(alpha: 0.12),
-          width: 1,
-        ),
+        border: Border.all(color: _C.teal.withValues(alpha: 0.12), width: 1),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             width: 4,
-            height: 6.5.h,
+            constraints: BoxConstraints(minHeight: 4.h),
             decoration: BoxDecoration(
               color: _C.teal,
               borderRadius: BorderRadius.circular(4),
@@ -311,7 +330,11 @@ class _AboutUsScreenState extends State<AboutUsScreen>
           Expanded(
             child: Text(
               aboutUsData.welcomeText,
-              style: AppType.style(FontSize.s12, color: _C.inkMid, height: 1.75),
+              style: AppType.style(
+                FontSize.s12,
+                color: _C.inkMid,
+                height: 1.75,
+              ),
             ),
           ),
         ],
@@ -327,10 +350,7 @@ class _AboutUsScreenState extends State<AboutUsScreen>
       padding: EdgeInsets.symmetric(horizontal: 4.5.w),
       child: Column(
         children: aboutUsData.sections.asMap().entries.map((entry) {
-          return _AnimatedSectionCard(
-            section: entry.value,
-            index: entry.key,
-          );
+          return _AnimatedSectionCard(section: entry.value, index: entry.key);
         }).toList(),
       ),
     );
@@ -344,20 +364,12 @@ class _AboutUsScreenState extends State<AboutUsScreen>
       padding: EdgeInsets.symmetric(horizontal: 4.5.w, vertical: 1.h),
       child: Row(
         children: [
-          const Expanded(
-            child: Divider(color: _C.divider, thickness: 1),
-          ),
+          const Expanded(child: Divider(color: _C.divider, thickness: 1)),
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 3.w),
-            child: const Icon(
-              Icons.more_horiz,
-              color: _C.inkLight,
-              size: 18,
-            ),
+            child: const Icon(Icons.more_horiz, color: _C.inkLight, size: 18),
           ),
-          const Expanded(
-            child: Divider(color: _C.divider, thickness: 1),
-          ),
+          const Expanded(child: Divider(color: _C.divider, thickness: 1)),
         ],
       ),
     );
@@ -381,118 +393,120 @@ class _AboutUsScreenState extends State<AboutUsScreen>
   //  FOOTER
   // ─────────────────────────────────────────────
   Widget _buildFooter() {
-    return Stack(
-      children: [
-        Positioned.fill(
-          child: CustomPaint(painter: _DotGridPainter()),
-        ),
-        Padding(
-          padding: EdgeInsets.fromLTRB(5.5.w, 5.h, 5.5.w, 2.h),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return Padding(
+      padding: EdgeInsets.fromLTRB(5.5.w, 5.h, 5.5.w, 2.h),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Go Beyond,\nExplore More!',
+            style: GoogleFonts.playfairDisplay(
+              fontSize: FontSize.s26,
+              fontWeight: FontWeight.w700,
+              color: _C.footerText,
+              height: 1.25,
+              letterSpacing: 1.2,
+            ),
+          ),
+          SizedBox(height: 2.h),
+          // Heart moved to the right, text in two lines
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text(
-                'Go Beyond,\nExplore More!',
-                style: GoogleFonts.playfairDisplay(
-                  fontSize: FontSize.s26,
-                  fontWeight: FontWeight.w700,
-                  color: _C.footerText,
-                  height: 1.25,
-                  letterSpacing: 1.2,
+              Expanded(
+                child: Text(
+                  'Crafted with passion,\nRooted in Hyderabad',
+                  style: AppType.style(
+                    FontSize.s11,
+                    color: _C.inkLight,
+                    letterSpacing: 0.5,
+                    height: 1.4,
+                  ),
                 ),
               ),
-              SizedBox(height: 2.h),
-              Row(
-                children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: _C.tealSoft,
-                    ),
-                    child: const Icon(
-                      Icons.favorite,
-                      color: _C.red,
-                      size: 13,
-                    ),
+              SizedBox(width: 2.w),
+              Container(
+                width: 32,
+                height: 32,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _C.tealSoft,
+                ),
+                child: const Icon(Icons.favorite, color: _C.red, size: 13),
+              ),
+            ],
+          ),
+          SizedBox(height: 3.h),
+          // Modified UI redirecting to official website
+          GestureDetector(
+            onTap: _launchAboutPage,
+            child: Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(vertical: 2.h, horizontal: 4.5.w),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [_C.teal, _C.tealLight],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: _C.teal.withValues(alpha: 0.35),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
                   ),
-                  SizedBox(width: 2.w),
-                  RichText(
-                    text: TextSpan(
-                      style: AppType.style(FontSize.s11, color: _C.inkLight, letterSpacing: 0.5),
-                      children: const [
-                        TextSpan(text: 'Crafted with passion  ·  '),
-                        TextSpan(
-                          text: 'Rooted in Hyderabad',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: _C.inkMid,
+                ],
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Visit Our Website',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppType.style(
+                            FontSize.s13,
+                            w: FontWeight.w600,
+                            color: _C.white,
+                          ),
+                        ),
+                        SizedBox(height: 0.3.h),
+                        Text(
+                          'Explore more about our journeys',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppType.style(
+                            FontSize.s11,
+                            color: const Color(0xBFFFFFFF),
                           ),
                         ),
                       ],
                     ),
                   ),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: const BoxDecoration(
+                      color: Color(0x33FFFFFF),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.open_in_new_rounded,
+                      color: _C.white,
+                      size: 18,
+                    ),
+                  ),
                 ],
               ),
-              SizedBox(height: 3.h),
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.symmetric(
-                  vertical: 2.h,
-                  horizontal: 4.5.w,
-                ),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [_C.teal, _C.tealLight],
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: _C.teal.withValues(alpha: 0.35),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Start your adventure',
-                            style: AppType.style(FontSize.s13, w: FontWeight.w600, color: _C.white),
-                          ),
-                          Text(
-                            'Discover trusted trekking partners',
-                            style: AppType.style(FontSize.s11, color: const Color(0xBFFFFFFF)),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: const BoxDecoration(
-                        color: Color(0x33FFFFFF),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.arrow_forward_rounded,
-                        color: _C.white,
-                        size: 18,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -504,10 +518,7 @@ class _AnimatedSectionCard extends StatefulWidget {
   final AboutUsSection section;
   final int index;
 
-  const _AnimatedSectionCard({
-    required this.section,
-    required this.index,
-  });
+  const _AnimatedSectionCard({required this.section, required this.index});
 
   @override
   State<_AnimatedSectionCard> createState() => _AnimatedSectionCardState();
@@ -515,7 +526,6 @@ class _AnimatedSectionCard extends StatefulWidget {
 
 class _AnimatedSectionCardState extends State<_AnimatedSectionCard>
     with SingleTickerProviderStateMixin {
-
   late final AnimationController _ctrl;
   late final Animation<double> _slide;
   bool _isCallToAction = false;
@@ -530,9 +540,10 @@ class _AnimatedSectionCardState extends State<_AnimatedSectionCard>
       duration: Duration(milliseconds: 500 + widget.index * 120),
     );
 
-    _slide = Tween<double>(begin: 40, end: 0).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic),
-    );
+    _slide = Tween<double>(
+      begin: 40,
+      end: 0,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
 
     Future.delayed(Duration(milliseconds: 200 + widget.index * 120), () {
       if (mounted) _ctrl.forward();
@@ -557,13 +568,16 @@ class _AnimatedSectionCardState extends State<_AnimatedSectionCard>
     );
   }
 
-  // Maps section title to a relevant icon
   IconData _iconForSection(String title) {
     switch (title) {
-      case 'Our Mission':   return Icons.flag_outlined;
-      case 'Our Story':     return Icons.auto_stories_outlined;
-      case 'Join Our Journey': return Icons.hiking;
-      default:              return Icons.info_outline;
+      case 'Our Mission':
+        return Icons.flag_outlined;
+      case 'Our Story':
+        return Icons.auto_stories_outlined;
+      case 'Join Our Journey':
+        return Icons.hiking;
+      default:
+        return Icons.info_outline;
     }
   }
 
@@ -599,9 +613,17 @@ class _AnimatedSectionCardState extends State<_AnimatedSectionCard>
                 ),
               ),
               SizedBox(width: 3.w),
-              Text(
-                widget.section.title,
-                style: AppType.style(FontSize.s13, w: FontWeight.w600, color: _C.ink),
+              Expanded(
+                child: Text(
+                  widget.section.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppType.style(
+                    FontSize.s13,
+                    w: FontWeight.w600,
+                    color: _C.ink,
+                  ),
+                ),
               ),
             ],
           ),
@@ -632,10 +654,7 @@ class _AnimatedSectionCardState extends State<_AnimatedSectionCard>
       decoration: BoxDecoration(
         color: _C.tealSoft,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: _C.teal.withValues(alpha: 0.2),
-          width: 1,
-        ),
+        border: Border.all(color: _C.teal.withValues(alpha: 0.2), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -644,9 +663,17 @@ class _AnimatedSectionCardState extends State<_AnimatedSectionCard>
             children: [
               const Icon(Icons.campaign_outlined, color: _C.teal, size: 16),
               SizedBox(width: 2.w),
-              Text(
-                widget.section.title,
-                style: AppType.style(FontSize.s13, w: FontWeight.w600, color: _C.teal),
+              Expanded(
+                child: Text(
+                  widget.section.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppType.style(
+                    FontSize.s13,
+                    w: FontWeight.w600,
+                    color: _C.teal,
+                  ),
+                ),
               ),
             ],
           ),
@@ -674,7 +701,6 @@ class _ExpandableLinkTile extends StatefulWidget {
 
 class _ExpandableLinkTileState extends State<_ExpandableLinkTile>
     with SingleTickerProviderStateMixin {
-
   bool _open = false;
   late final AnimationController _ctrl;
   late final Animation<double> _rotate;
@@ -687,9 +713,10 @@ class _ExpandableLinkTileState extends State<_ExpandableLinkTile>
       vsync: this,
       duration: const Duration(milliseconds: 280),
     );
-    _rotate = Tween<double>(begin: 0, end: 0.5).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
-    );
+    _rotate = Tween<double>(
+      begin: 0,
+      end: 0.5,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
     _expand = CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut);
   }
 
@@ -718,7 +745,13 @@ class _ExpandableLinkTileState extends State<_ExpandableLinkTile>
                 Expanded(
                   child: Text(
                     widget.link.title,
-                    style: AppType.style(FontSize.s13, w: FontWeight.w500, color: _C.ink),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppType.style(
+                      FontSize.s13,
+                      w: FontWeight.w500,
+                      color: _C.ink,
+                    ),
                   ),
                 ),
                 RotationTransition(
@@ -754,13 +787,15 @@ class _ExpandableLinkTileState extends State<_ExpandableLinkTile>
                 bottomRight: Radius.circular(12),
                 topRight: Radius.circular(12),
               ),
-              border: const Border(
-                left: BorderSide(color: _C.teal, width: 3),
-              ),
+              border: const Border(left: BorderSide(color: _C.teal, width: 3)),
             ),
             child: Text(
               widget.link.content,
-              style: AppType.style(FontSize.s12, color: _C.inkMid, height: 1.65),
+              style: AppType.style(
+                FontSize.s12,
+                color: _C.inkMid,
+                height: 1.65,
+              ),
             ),
           ),
         ),
@@ -801,11 +836,7 @@ class _AppBarBtn extends StatelessWidget {
             width: 1,
           ),
         ),
-        child: Icon(
-          icon,
-          size: 16,
-          color: filled ? _C.ink : _C.white,
-        ),
+        child: Icon(icon, size: 16, color: filled ? _C.ink : _C.white),
       ),
     );
   }
@@ -824,19 +855,25 @@ class _EstablishedBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0x73000000),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: const Color(0x4DFFFFFF),
-          width: 1,
-        ),
+        border: Border.all(color: const Color(0x4DFFFFFF), width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           const Icon(Icons.verified_outlined, color: _C.tealLight, size: 11),
           SizedBox(width: 1.w),
-          Text(
-            'ESTABLISHED  2021',
-            style: AppType.style(FontSize.s9, w: FontWeight.w600, color: _C.white, letterSpacing: 2),
+          Flexible(
+            child: Text(
+              'ESTABLISHED  2021',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppType.style(
+                FontSize.s9,
+                w: FontWeight.w600,
+                color: _C.white,
+                letterSpacing: 2,
+              ),
+            ),
           ),
         ],
       ),
@@ -880,28 +917,4 @@ class _AnimatedCircle extends StatelessWidget {
       },
     );
   }
-}
-
-// ─────────────────────────────────────────────
-//  DOT GRID PAINTER
-// ─────────────────────────────────────────────
-class _DotGridPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFFE8E8E8)
-      ..style = PaintingStyle.fill;
-
-    const spacing = 18.0;
-    const radius  = 1.5;
-
-    for (double x = 0; x < size.width; x += spacing) {
-      for (double y = 0; y < size.height; y += spacing) {
-        canvas.drawCircle(Offset(x, y), radius, paint);
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(_DotGridPainter oldDelegate) => false;
 }

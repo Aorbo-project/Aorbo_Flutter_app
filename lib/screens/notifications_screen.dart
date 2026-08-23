@@ -23,62 +23,49 @@ String _relativeTime(DateTime? dt) {
 
 bool _sameDay(DateTime a, DateTime b) =>
     a.year == b.year && a.month == b.month && a.day == b.day;
-
 bool _isToday(DateTime? dt) => dt != null && _sameDay(dt, DateTime.now());
-
 bool _isYesterday(DateTime? dt) =>
     dt != null &&
     _sameDay(dt, DateTime.now().subtract(const Duration(days: 1)));
 
 // ─────────────────────────────────────────────
-//  MODERN DESIGN TOKENS
+//  DESIGN TOKENS & META
 // ─────────────────────────────────────────────
 class _NT {
-  static const bg = Color(0xFFF8F9FA); // Light crisp gray
+  static const bg = Color(0xFFF8F9FA);
   static const card = AppColors.surface;
-  static const primary = Color(0xFF1A4D2E); // Deep forest green
+  static const primary = Color(0xFF1A4D2E);
   static const primaryLight = Color(0xFF2C5F2D);
-  static const accent = Color(0xFFF4A261); // Sunrise orange
-  static const departure = Color(0xFFE76F51); // Terracotta
-  static const reminder = Color(0xFFF4A261); // Amber
-  static const booking = Color(0xFF2A9D8F); // Teal
-  static const payment = Color(0xFF264653); // Dark Cyan
-  static const offer = Color(0xFFE9C46A); // Gold
-  static const general = Color(0xFF1A4D2E); // Forest
+  static const accent = Color(0xFFF4A261);
+  static const departure = Color(0xFFE76F51);
+  static const reminder = Color(0xFFF4A261);
+  static const booking = Color(0xFF2A9D8F);
+  static const payment = Color(0xFF264653);
+  static const offer = Color(0xFFE9C46A);
+  static const general = Color(0xFF1A4D2E);
   static const ink = Color(0xFF1E1E1E);
   static const inkMid = AppColors.inkMid;
   static const inkLight = AppColors.inkLight;
   static const divider = AppColors.border;
 }
 
-// ─────────────────────────────────────────────
-//  NOTIFICATION TYPE META
-// ─────────────────────────────────────────────
-enum _NoticeType { departure, reminder, booking, payment, offer, general }
-
 class _NoticeMeta {
   final IconData icon;
   final Color color;
-
   const _NoticeMeta(this.icon, this.color);
 
   static _NoticeMeta of(NotificationItem n) {
-    final t = '${n.title} ${n.message}'.toLowerCase();
-    if (t.contains('departure') || t.contains('departs')) {
+    final t = '${n.title ?? ''} ${n.message ?? ''}'.toLowerCase();
+    if (t.contains('departure') || t.contains('departs'))
       return const _NoticeMeta(Icons.hiking_rounded, _NT.departure);
-    }
-    if (t.contains('reminder') || t.contains('starts in')) {
+    if (t.contains('reminder') || t.contains('starts in'))
       return const _NoticeMeta(Icons.alarm_rounded, _NT.reminder);
-    }
-    if (t.contains('booking') || t.contains('confirmed')) {
+    if (t.contains('booking') || t.contains('confirmed'))
       return const _NoticeMeta(Icons.verified_rounded, _NT.booking);
-    }
-    if (t.contains('payment') || t.contains('refund') || t.contains('paid')) {
+    if (t.contains('payment') || t.contains('refund') || t.contains('paid'))
       return const _NoticeMeta(Icons.payments_rounded, _NT.payment);
-    }
-    if (t.contains('offer') || t.contains('discount') || t.contains('% off')) {
+    if (t.contains('offer') || t.contains('discount') || t.contains('% off'))
       return const _NoticeMeta(Icons.local_offer_rounded, _NT.offer);
-    }
     return const _NoticeMeta(Icons.terrain_rounded, _NT.general);
   }
 }
@@ -95,7 +82,7 @@ class NotificationScreen extends StatefulWidget {
 
 class _NotificationScreenState extends State<NotificationScreen>
     with TickerProviderStateMixin {
-  String _selectedFilter = 'Unread';
+  String _selectedFilter = 'All';
 
   late final AnimationController _fadeCtrl;
   late final Animation<double> _fade;
@@ -105,14 +92,43 @@ class _NotificationScreenState extends State<NotificationScreen>
 
   final List<String> _filters = ['All', 'Unread'];
 
+  // 🔽 FIXED: Bulletproof 7-day filter with fallbacks and debug prints
   List<NotificationItem> get _filtered {
+    final now = DateTime.now();
+    final recentNotifications = _controller.notifications.where((n) {
+      // Fallback: If the model failed to parse the date, show it anyway!
+      if (n.createdAt == null) {
+        print('⚠️ Notification ${n.id} missing date, showing by default');
+        return true;
+      }
+
+      final daysDifference = now.difference(n.createdAt!).inDays;
+
+      // Debug print: Check your terminal to see exactly what the dates are calculating
+      print(
+        '🔍 Date Check: Now=$now | Created=${n.createdAt} | Diff=$daysDifference days',
+      );
+
+      // Keep if within 7 days OR if it's in the future (device clock behind server)
+      return daysDifference <= 7 && daysDifference >= -1;
+    });
+
     if (_selectedFilter == 'Unread') {
-      return _controller.notifications.where((n) => !n.isRead).toList();
+      return recentNotifications.where((n) => !n.isRead).toList();
     }
-    return _controller.notifications.toList();
+    return recentNotifications.toList();
   }
 
-  int get _unreadCount => _controller.unreadCount.value;
+  // 🔽 FIXED: Unread count must match the exact same logic
+  int get _unreadCount {
+    final now = DateTime.now();
+    return _controller.notifications.where((n) {
+      if (n.isRead) return false;
+      if (n.createdAt == null) return true;
+      final daysDifference = now.difference(n.createdAt!).inDays;
+      return daysDifference <= 7 && daysDifference >= -1;
+    }).length;
+  }
 
   @override
   void initState() {
@@ -123,7 +139,6 @@ class _NotificationScreenState extends State<NotificationScreen>
     )..forward();
     _fade = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
 
-    // Pulse animation for unread dot
     _pulseCtrl = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
@@ -139,9 +154,6 @@ class _NotificationScreenState extends State<NotificationScreen>
     super.dispose();
   }
 
-  // ───────────────────────────────────────────
-  //  HEADER — Deep Forest Gradient
-  // ───────────────────────────────────────────
   Widget _buildHeader() {
     return Container(
       decoration: const BoxDecoration(
@@ -162,7 +174,6 @@ class _NotificationScreenState extends State<NotificationScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Top Row: Back Button + Title + Mark All Read
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -171,7 +182,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                       GestureDetector(
                         onTap: () => Get.back(),
                         child: Container(
-                          padding: const EdgeInsets.all(6),
+                          padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.15),
                             shape: BoxShape.circle,
@@ -201,7 +212,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                             child: Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 12,
-                                vertical: 6,
+                                vertical: 8,
                               ),
                               decoration: BoxDecoration(
                                 color: Colors.white.withOpacity(0.15),
@@ -244,14 +255,11 @@ class _NotificationScreenState extends State<NotificationScreen>
                 ),
               ),
               SizedBox(height: 2.h),
-
-              // Filter Chips
               Obx(
                 () => Row(
                   children: _filters.map((f) {
                     final isSelected = _selectedFilter == f;
                     final showBadge = f == 'Unread' && _unreadCount > 0;
-
                     return GestureDetector(
                       onTap: () => setState(() => _selectedFilter = f),
                       child: Container(
@@ -318,9 +326,6 @@ class _NotificationScreenState extends State<NotificationScreen>
     );
   }
 
-  // ───────────────────────────────────────────
-  //  SECTION LABEL
-  // ───────────────────────────────────────────
   Widget _buildSectionLabel(String label) {
     return Padding(
       padding: EdgeInsets.fromLTRB(2.w, 2.h, 2.w, 1.h),
@@ -336,9 +341,6 @@ class _NotificationScreenState extends State<NotificationScreen>
     );
   }
 
-  // ───────────────────────────────────────────
-  //  NOTIFICATION CARD
-  // ───────────────────────────────────────────
   Widget _buildNotificationCard(NotificationItem item, int index) {
     final meta = _NoticeMeta.of(item);
 
@@ -376,20 +378,16 @@ class _NotificationScreenState extends State<NotificationScreen>
             borderRadius: BorderRadius.circular(20),
             child: Row(
               children: [
-                // Left Accent Line
                 if (!item.isRead)
                   Container(width: 4, color: meta.color)
                 else
                   Container(width: 4, color: Colors.transparent),
-
-                // Content
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(12, 14, 14, 14),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Icon Container
                         Container(
                           width: 11.w,
                           height: 11.w,
@@ -400,8 +398,6 @@ class _NotificationScreenState extends State<NotificationScreen>
                           child: Icon(meta.icon, size: 20, color: meta.color),
                         ),
                         const SizedBox(width: 12),
-
-                        // Text Content
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -412,7 +408,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                                 children: [
                                   Flexible(
                                     child: Text(
-                                      item.title,
+                                      item.title ?? '',
                                       style: AppType.style(
                                         FontSize.s12,
                                         w: item.isRead
@@ -448,7 +444,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                item.message,
+                                item.message ?? '',
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 style: AppType.style(
@@ -491,9 +487,6 @@ class _NotificationScreenState extends State<NotificationScreen>
     );
   }
 
-  // ───────────────────────────────────────────
-  //  LIST BODY
-  // ───────────────────────────────────────────
   Widget _buildBody() {
     return Obx(() {
       if (_controller.isLoading.value && _controller.notifications.isEmpty) {
@@ -531,20 +524,21 @@ class _NotificationScreenState extends State<NotificationScreen>
       return RefreshIndicator(
         color: _NT.primary,
         onRefresh: _controller.fetchNotifications,
-        child: ListView(
+        child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(
             parent: BouncingScrollPhysics(),
           ),
-          padding: EdgeInsets.fromLTRB(4.w, 1.h, 4.w, 6.h),
-          children: children,
+          slivers: [
+            SliverPadding(
+              padding: EdgeInsets.fromLTRB(4.w, 1.h, 4.w, 6.h),
+              sliver: SliverList(delegate: SliverChildListDelegate(children)),
+            ),
+          ],
         ),
       );
     });
   }
 
-  // ───────────────────────────────────────────
-  //  EMPTY STATE
-  // ───────────────────────────────────────────
   Widget _buildEmptyState() {
     return Center(
       child: SingleChildScrollView(
@@ -627,9 +621,6 @@ class _NotificationScreenState extends State<NotificationScreen>
     );
   }
 
-  // ───────────────────────────────────────────
-  //  BUILD
-  // ───────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return Scaffold(

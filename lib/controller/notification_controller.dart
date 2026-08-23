@@ -20,12 +20,16 @@ class NotificationItem {
   });
 
   factory NotificationItem.fromJson(Map<String, dynamic> json) {
+    // 🔥 THE FIX: Check for both 'createdAt' (API) and 'created_at' (Standard)
+    final dateStr =
+        json['createdAt']?.toString() ?? json['created_at']?.toString() ?? '';
+
     return NotificationItem(
       id: json['id'] is int ? json['id'] : int.tryParse('${json['id']}') ?? 0,
       title: json['title']?.toString() ?? '',
       message: json['message']?.toString() ?? '',
-      createdAt: DateTime.tryParse(json['created_at']?.toString() ?? ''),
-      isRead: json['is_read'] == true,
+      createdAt: dateStr.isNotEmpty ? DateTime.tryParse(dateStr) : null,
+      isRead: json['is_read'] == true || json['isRead'] == true,
     );
   }
 }
@@ -48,24 +52,16 @@ class NotificationController extends GetxController {
         final data = response['data'];
         final List<dynamic> rows = data?['notifications'] ?? [];
 
-        // ✅ FIX 1: Auto-clear notifications older than 7 days
-        final now = DateTime.now();
-        final sevenDaysAgo = now.subtract(const Duration(days: 7));
+        // Best practice: use assignAll() instead of .value for RxList
+        notifications.assignAll(
+          rows
+              .map((e) => NotificationItem.fromJson(e as Map<String, dynamic>))
+              .toList(),
+        );
 
-        final parsedItems = rows
-            .map((e) => NotificationItem.fromJson(e as Map<String, dynamic>))
-            .where(
-              (item) =>
-                  item.createdAt != null &&
-                  item.createdAt!.isAfter(sevenDaysAgo),
-            )
-            .toList();
-
-        notifications.value = parsedItems;
-
-        // ✅ FIX 2: Recalculate unread count based ONLY on the filtered list
-        // This prevents the UI from showing unread badges for notifications that were auto-cleared
-        unreadCount.value = parsedItems.where((item) => !item.isRead).length;
+        unreadCount.value = data?['unread_count'] is int
+            ? data['unread_count']
+            : 0;
         error = null;
       } else {
         error = 'Failed to load notifications';

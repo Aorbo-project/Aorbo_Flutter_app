@@ -73,15 +73,22 @@ class Repository {
           FirebaseCrashlytics.instance.log(
             'API ✕ ${error.response?.statusCode} ${error.requestOptions.path}',
           );
-          FirebaseCrashlytics.instance.recordError(
-            error,
-            error.stackTrace,
-            reason:
-                'API error: ${error.requestOptions.method} ${error.requestOptions.path}',
-            fatal: false,
-          );
 
           final statusCode = error.response?.statusCode;
+
+          // ✅ Prevent business logic errors (400, 409) from spamming Crashlytics
+          final isBusinessError = statusCode == 400 || statusCode == 409;
+
+          if (!isBusinessError) {
+            FirebaseCrashlytics.instance.recordError(
+              error,
+              error.stackTrace,
+              reason:
+                  'API error: ${error.requestOptions.method} ${error.requestOptions.path}',
+              fatal: false,
+            );
+          }
+
           final errorCode = (error.response?.data is Map)
               ? (error.response?.data as Map)['code']
               : null;
@@ -183,7 +190,7 @@ class Repository {
         return response.data;
       } else {
         showToastMessage(msg: "Please check your internet connection and try.");
-        return null; // caller owns retry — a hidden retry here was discarded anyway
+        return null;
       }
     } on TimeoutException {
       throw Exception(
@@ -234,7 +241,7 @@ class Repository {
         return response.data;
       } else {
         showToastMessage(msg: "Please check your internet connection and try.");
-        return null; // caller owns retry — a hidden retry here was discarded anyway
+        return null;
       }
     } on TimeoutException {
       throw Exception(
@@ -264,7 +271,7 @@ class Repository {
         return response.data;
       } else {
         showToastMessage(msg: "Please check your internet connection and try.");
-        return null; // caller owns retry — a hidden retry here was discarded anyway
+        return null;
       }
     } on TimeoutException {
       throw Exception(
@@ -294,7 +301,7 @@ class Repository {
         return response.data;
       } else {
         showToastMessage(msg: "Please check your internet connection and try.");
-        return null; // caller owns retry — a hidden retry here was discarded anyway
+        return null;
       }
     } on TimeoutException {
       throw Exception(
@@ -310,6 +317,41 @@ class Repository {
       logger.w("Dio Exception Message ->> ${e.message.toString()}");
       logger.w("Dio Exception Data ->> ${e.response?.data?.toString()}");
       throw Exception(e.response?.data['message'] ?? e.message);
+    }
+  }
+
+  // Notify Me: Check Subscription Status
+  Future<Map<String, dynamic>?> checkNotifyStatus({
+    required int fromCityId,
+    required int toTrekId,
+  }) async {
+    try {
+      final response = await getApiCall(
+        url: NetworkUrl.notifyStatus(fromCityId, toTrekId),
+      );
+      return response;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Notify Me: Subscribe to Route
+  Future<Map<String, dynamic>?> subscribeToRoute({
+    required int fromCityId,
+    required int toTrekId,
+  }) async {
+    try {
+      final String body = json.encode({
+        "from_city_id": fromCityId,
+        "to_trek_id": toTrekId,
+      });
+      final response = await postApiCall(
+        url: NetworkUrl.notifySubscription,
+        body: body,
+      );
+      return response;
+    } catch (e) {
+      return null;
     }
   }
 }

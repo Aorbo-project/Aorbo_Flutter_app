@@ -30,7 +30,6 @@ import 'package:sizer/sizer.dart';
 import 'package:arobo_app/utils/custom_snackbar.dart';
 import 'package:ntp/ntp.dart';
 import 'package:table_calendar/table_calendar.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../freezed_models/treks/treks_model_data.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
@@ -97,10 +96,6 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
   final List<DateTime> _nearestWeekendDates = [];
   final Map<int, bool> _favoriteTreks = {};
 
-  // GetX Reactive Map to track routes the user has clicked "Notify Me" for.
-  // This survives screen navigations and syncs with SharedPreferences.
-  final RxMap<String, bool> _notifiedRoutes = <String, bool>{}.obs;
-
   // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------
@@ -131,7 +126,6 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
         : Get.put(HeaderThemeController());
 
     _initializeNTPTime();
-    _loadNotifiedRoutes();
 
     _animationController = AnimationController(
       vsync: this,
@@ -156,20 +150,6 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
       _dashboardC.fetchTopTreks();
       _dashboardC.fetchSeasonalPicks();
     });
-  }
-
-  /// Loads locally saved notification preferences so they persist across app restarts.
-  Future<void> _loadNotifiedRoutes() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final keys = prefs.getKeys();
-      for (var key in keys) {
-        if (key.startsWith('notify_')) {
-          final routeKey = key.substring(7);
-          _notifiedRoutes[routeKey] = prefs.getBool(key) ?? false;
-        }
-      }
-    } catch (_) {}
   }
 
   @override
@@ -344,25 +324,29 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
   // ---------------------------------------------------------------------------
 
   Future<void> _selectSourceLocation() async {
-    final City? selectedCity = await Navigator.push<City>(
+    final bool? completed = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(builder: (_) => SourceLocationScreen()),
+      MaterialPageRoute(builder: (_) => const SourceLocationScreen()),
     );
-    if (selectedCity != null && mounted) {
-      setState(() {
-        _dashboardC.fromController.value.text = selectedCity.name;
+
+    // If the user successfully completed the route selection,
+    // automatically open the calendar to show available dates!
+    if (completed == true && mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _selectDate(context);
       });
     }
   }
 
   Future<void> _selectDestinationTrek() async {
-    final dynamic selectedTrek = await Navigator.push(
+    final bool? completed = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(builder: (_) => SourceLocationScreen()),
+      MaterialPageRoute(builder: (_) => const SourceLocationScreen()),
     );
-    if (selectedTrek != null && mounted) {
-      setState(() {
-        _dashboardC.toController.value.text = selectedTrek.name;
+
+    if (completed == true && mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _selectDate(context);
       });
     }
   }
@@ -1332,7 +1316,8 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
 
         final String routeKey =
             '${_dashboardC.selectedCityId.value}_${_dashboardC.selectedTrekId.value}';
-        final bool isInitiallyNotified = _notifiedRoutes[routeKey] ?? false;
+        final bool isInitiallyNotified =
+            _dashboardC.notifiedRoutes[routeKey] ?? false;
 
         return _NoTreksOnRouteSection(
           accent: ht.accent,
@@ -1469,15 +1454,14 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
         from: from,
         to: to,
         onSuccess: () async {
-          // Simulate API Call
-          await Future.delayed(const Duration(milliseconds: 1200));
-
-          // Save to SharedPreferences for permanent persistence
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setBool('notify_$routeKey', true);
-
-          // Update the reactive map so Obx rebuilds the UI instantly
-          _notifiedRoutes[routeKey] = true;
+          // Don't wrap in if(!success) throw Exception('Failed to subscribe') —
+          // that masks the real server message. Let the controller throw with
+          // the actual message; _NotifyMeSheetState._extractServerMessage
+          // will surface it in the sheet UI.
+          await _dashboardC.subscribeToRouteNotification(
+            _dashboardC.selectedCityId.value,
+            _dashboardC.selectedTrekId.value,
+          );
         },
       ),
     );
@@ -2078,8 +2062,8 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                     color: _C.teal,
                                     letterSpacing: 0.4,
                                   ),
-                                ),
-                              ).withShimmerAi(loading: seasonalLoading),
+                                ).withShimmerAi(loading: seasonalLoading),
+                              ),
                             ],
                           ),
                         ),

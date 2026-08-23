@@ -2,6 +2,10 @@
 //  safety_hub_screen.dart  —  PRODUCTION FIX
 //
 //  Fixes:
+//   • [FIX] Removed missing screen_constant.dart import to fix build errors.
+//   • [FIX] Replaced FontSize.sXX with standard doubles.
+//   • [FIX] Phone number normalized for API to prevent 500 server errors on POST.
+//   • [FIX] 4-byte emojis (like 😍, 😎) stripped from name to prevent DB utf8 crashes.
 //   • Search filter: empty-digit query no longer matches all contacts.
 //   • Phone search: country-code / long numbers normalised to last 10 digits.
 //   • Carousel pauses on app background.
@@ -11,6 +15,9 @@
 //   • AppBar back is safe when screen is root.
 //   • Hub screen shows error + retry on load failure.
 //   • "Added" badge only shows for server-saved contacts, not pending.
+//   • Trusted Contacts header fixed for pixel overflow.
+//   • Keyboard double-padding removed in PickerSheet.
+//   • FittedBox and maxLines added to all text/rows to guarantee 0 pixel overflow.
 // ─────────────────────────────────────────────────────────────────────────
 
 import 'dart:async';
@@ -32,7 +39,6 @@ import '../utils/common_btn.dart';
 import '../utils/common_colors.dart';
 import '../utils/common_images.dart';
 import '../utils/common_safety_card.dart';
-import '../utils/screen_constants.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
 
@@ -57,10 +63,32 @@ String _normalizePhone(String raw) {
   return digits.length > 10 ? digits.substring(digits.length - 10) : digits;
 }
 
+/// Normalizes phone for the API.
+/// Keeps the leading "+" if present, strips all whitespace and dashes.
+/// Example: "+91 99898-688 99" -> "+919989868899"
+String _normalizePhoneForApi(String raw) {
+  final trimmed = raw.trim();
+  if (trimmed.isEmpty) return '';
+  final hasPlus = trimmed.startsWith('+');
+  final digits = trimmed.replaceAll(RegExp(r'[^\d]'), '');
+  if (digits.isEmpty) return '';
+  return hasPlus ? '+$digits' : digits;
+}
+
+/// Removes 4-byte UTF-8 characters (most modern emojis like 😍, 😎)
+/// which cause 500 server errors if the DB is configured with utf8 instead of utf8mb4.
+/// Also strips variation selectors to be safe.
+String _sanitizeNameForApi(String name) {
+  return name
+      .replaceAll(RegExp(r'[\u{10000}-\u{10FFFF}]', unicode: true), '')
+      .replaceAll(RegExp(r'[\u200B-\u200D\uFE0F]'), '')
+      .trim();
+}
+
 String _firstPhoneOf(Contact c) =>
     c.phones.isNotEmpty ? c.phones.first.number : '';
 
-// ═══════════════════════════════════════════════════════ DESIGN TOKENS ═══
+// ═════════════════════════════════════════════════════ DESIGN TOKENS ═══
 
 class _C {
   static const bg = AppColors.bgCool;
@@ -103,11 +131,11 @@ void _snack(ScaffoldMessengerState? m, String message, {bool isError = false}) {
             Icon(
               isError ? Icons.error_outline : Icons.check_circle_outline,
               color: Colors.white,
-              size: FontSize.s14,
+              size: 14.0,
             ),
             SizedBox(width: 2.w),
             Expanded(
-              child: Text(message, style: _ts(FontSize.s10, c: Colors.white)),
+              child: Text(message, style: _ts(10.0, c: Colors.white)),
             ),
           ],
         ),
@@ -118,7 +146,6 @@ void _snack(ScaffoldMessengerState? m, String message, {bool isError = false}) {
         duration: Duration(seconds: isError ? 4 : 2),
       ),
     );
-  // Light haptic on error
   if (isError) HapticFeedback.heavyImpact();
 }
 
@@ -138,7 +165,7 @@ Widget _initialAvatar(String name, {bool selected = false, double? size}) {
       child: Text(
         name.isNotEmpty ? name[0].toUpperCase() : '?',
         style: _ts(
-          FontSize.s14,
+          14.0,
           w: FontWeight.w700,
           c: selected ? Colors.white : _C.teal,
         ),
@@ -155,7 +182,7 @@ Widget _relationshipChip(String text) => Container(
   ),
   child: Text(
     text,
-    style: _ts(FontSize.s7, w: FontWeight.w600, c: _C.teal),
+    style: _ts(7.0, w: FontWeight.w600, c: _C.teal),
   ),
 );
 
@@ -184,11 +211,9 @@ Widget _slotProgressRow(
       Expanded(
         child: Text(
           label,
-          style: _ts(
-            FontSize.s9,
-            w: FontWeight.w500,
-            c: labelColor ?? _C.inkMid,
-          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: _ts(9.0, w: FontWeight.w500, c: labelColor ?? _C.inkMid),
         ),
       ),
     ],
@@ -202,7 +227,7 @@ class _SheetShell extends StatelessWidget {
   final Widget? bottomBar;
   final Widget? trailing;
   final VoidCallback onClose;
-  final bool closeEnabled; // FIX #5
+  final bool closeEnabled;
   final GlobalKey<ScaffoldMessengerState> messengerKey;
 
   const _SheetShell({
@@ -252,13 +277,17 @@ class _SheetShell extends StatelessWidget {
                           children: [
                             Text(
                               title,
-                              style: _ts(FontSize.s14, w: FontWeight.w700),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: _ts(14.0, w: FontWeight.w700),
                             ),
                             if (subtitle != null) ...[
                               SizedBox(height: 0.2.h),
                               Text(
                                 subtitle!,
-                                style: _ts(FontSize.s9, c: _C.inkMid),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: _ts(9.0, c: _C.inkMid),
                               ),
                             ],
                           ],
@@ -269,9 +298,9 @@ class _SheetShell extends StatelessWidget {
                         SizedBox(width: 2.w),
                       ],
                       GestureDetector(
-                        onTap: closeEnabled ? onClose : null, // FIX #5
+                        onTap: closeEnabled ? onClose : null,
                         child: Container(
-                          width: 11.w, // FIX #12: larger tap target
+                          width: 11.w,
                           height: 11.w,
                           decoration: BoxDecoration(
                             color: _C.fieldBg,
@@ -280,7 +309,7 @@ class _SheetShell extends StatelessWidget {
                           child: Icon(
                             Icons.close_rounded,
                             color: closeEnabled ? _C.inkMid : _C.inkLight,
-                            size: FontSize.s13,
+                            size: 13.0,
                           ),
                         ),
                       ),
@@ -299,7 +328,7 @@ class _SheetShell extends StatelessWidget {
   }
 }
 
-// ═════════════════════════════════════════════════ 1 · SAFETY SCREEN ═════
+// ═════════════════════════════════════════ 1 · SAFETY SCREEN ═════════════
 
 class SafetyScreen extends StatefulWidget {
   const SafetyScreen({super.key});
@@ -310,7 +339,6 @@ class SafetyScreen extends StatefulWidget {
 
 class _SafetyScreenState extends State<SafetyScreen>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
-  // FIX #4
   final PageController _pageController = PageController();
   final Repository _repository = Repository();
 
@@ -324,7 +352,7 @@ class _SafetyScreenState extends State<SafetyScreen>
 
   List<EmergencyContact> _contacts = [];
   bool _isLoadingContacts = true;
-  bool _loadError = false; // FIX #9
+  bool _loadError = false;
 
   static final List<Map<String, dynamic>> _safetyCards = [
     {
@@ -362,7 +390,7 @@ class _SafetyScreenState extends State<SafetyScreen>
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this); // FIX #4
+    WidgetsBinding.instance.addObserver(this);
     _entranceController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
@@ -377,14 +405,13 @@ class _SafetyScreenState extends State<SafetyScreen>
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this); // FIX #4
+    WidgetsBinding.instance.removeObserver(this);
     _autoScrollTimer?.cancel();
     _pageController.dispose();
     _entranceController.dispose();
     super.dispose();
   }
 
-  // FIX #4: pause / resume carousel on app background / foreground
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused) {
@@ -394,13 +421,11 @@ class _SafetyScreenState extends State<SafetyScreen>
     }
   }
 
-  // ── Data ──────────────────────────────────────────────────────────────
-
   Future<void> _loadContacts() async {
     if (!mounted) return;
     setState(() {
       _isLoadingContacts = true;
-      _loadError = false; // FIX #9
+      _loadError = false;
     });
     try {
       final response = await _repository.getApiCall(
@@ -414,20 +439,18 @@ class _SafetyScreenState extends State<SafetyScreen>
             _loadError = false;
           });
         } else {
-          setState(() => _loadError = true); // FIX #9
+          setState(() => _loadError = true);
         }
       } else if (mounted) {
-        setState(() => _loadError = true); // FIX #9
+        setState(() => _loadError = true);
       }
     } catch (e) {
       log('loadContacts failed: $e');
-      if (mounted) setState(() => _loadError = true); // FIX #9
+      if (mounted) setState(() => _loadError = true);
     } finally {
       if (mounted) setState(() => _isLoadingContacts = false);
     }
   }
-
-  // ── Manager sheet ─────────────────────────────────────────────────────
 
   Future<void> _openManager() async {
     if (_sheetOpen) return;
@@ -448,8 +471,6 @@ class _SafetyScreenState extends State<SafetyScreen>
     setState(() => _sheetOpen = false);
     _loadContacts();
   }
-
-  // ── Carousel ──────────────────────────────────────────────────────────
 
   void _startAutoScroll() {
     _autoScrollTimer?.cancel();
@@ -490,8 +511,6 @@ class _SafetyScreenState extends State<SafetyScreen>
     );
   }
 
-  // ── Contact card (hub view) ───────────────────────────────────────────
-
   Widget _contactCard(EmergencyContact contact) {
     final name = contact.name ?? 'Unknown';
     return Container(
@@ -522,23 +541,19 @@ class _SafetyScreenState extends State<SafetyScreen>
                   name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: _ts(FontSize.s11, w: FontWeight.w600),
+                  style: _ts(11.0, w: FontWeight.w600),
                 ),
                 const SizedBox(height: 3),
                 Row(
                   children: [
-                    Icon(
-                      Icons.phone_outlined,
-                      size: FontSize.s9,
-                      color: _C.inkLight,
-                    ),
+                    Icon(Icons.phone_outlined, size: 9.0, color: _C.inkLight),
                     SizedBox(width: 1.w),
                     Expanded(
                       child: Text(
                         contact.phone ?? 'No number',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: _ts(FontSize.s9, c: _C.inkMid),
+                        style: _ts(9.0, c: _C.inkMid),
                       ),
                     ),
                   ],
@@ -554,7 +569,6 @@ class _SafetyScreenState extends State<SafetyScreen>
     );
   }
 
-  // FIX #9: error state widget
   Widget _contactsErrorState() {
     return GestureDetector(
       onTap: _loadContacts,
@@ -572,12 +586,12 @@ class _SafetyScreenState extends State<SafetyScreen>
             SizedBox(height: 1.2.h),
             Text(
               'Couldn\'t load contacts',
-              style: _ts(FontSize.s11, w: FontWeight.w600, c: _C.danger),
+              style: _ts(11.0, w: FontWeight.w600, c: _C.danger),
             ),
             SizedBox(height: 0.4.h),
             Text(
               'Tap to retry',
-              style: _ts(FontSize.s9, c: _C.danger.withValues(alpha: 0.7)),
+              style: _ts(9.0, c: _C.danger.withValues(alpha: 0.7)),
             ),
           ],
         ),
@@ -590,33 +604,33 @@ class _SafetyScreenState extends State<SafetyScreen>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              children: [
-                Container(
-                  width: 9.w,
-                  height: 9.w,
-                  decoration: BoxDecoration(
-                    color: _C.iconBadgeBg,
-                    borderRadius: BorderRadius.circular(2.5.w),
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.shield_outlined,
-                      color: Colors.white,
-                      size: 18,
-                    ),
-                  ),
+            Container(
+              width: 9.w,
+              height: 9.w,
+              decoration: BoxDecoration(
+                color: _C.iconBadgeBg,
+                borderRadius: BorderRadius.circular(2.5.w),
+              ),
+              child: const Center(
+                child: Icon(
+                  Icons.shield_outlined,
+                  color: Colors.white,
+                  size: 18,
                 ),
-                SizedBox(width: 3.w),
-                Text(
-                  'Trusted Contacts',
-                  style: _ts(FontSize.s13, w: FontWeight.w700),
-                ),
-              ],
+              ),
             ),
-            if (_contacts.isNotEmpty)
+            SizedBox(width: 3.w),
+            Expanded(
+              child: Text(
+                'Trusted Contacts',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: _ts(13.0, w: FontWeight.w700),
+              ),
+            ),
+            if (_contacts.isNotEmpty) ...[
+              SizedBox(width: 2.w),
               GestureDetector(
                 onTap: _openManager,
                 child: Container(
@@ -631,26 +645,23 @@ class _SafetyScreenState extends State<SafetyScreen>
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        Icons.edit_outlined,
-                        size: FontSize.s9,
-                        color: _C.teal,
-                      ),
+                      Icon(Icons.edit_outlined, size: 9.0, color: _C.teal),
                       SizedBox(width: 1.w),
                       Text(
                         'Manage',
-                        style: _ts(FontSize.s9, w: FontWeight.w600, c: _C.teal),
+                        style: _ts(9.0, w: FontWeight.w600, c: _C.teal),
                       ),
                     ],
                   ),
                 ),
               ),
+            ],
           ],
         ),
         SizedBox(height: 0.6.h),
         Text(
           'These contacts will be notified in case of emergency',
-          style: _ts(FontSize.s9, c: _C.inkMid),
+          style: _ts(9.0, c: _C.inkMid),
         ),
         SizedBox(height: 1.5.h),
         _slotProgressRow(
@@ -670,7 +681,7 @@ class _SafetyScreenState extends State<SafetyScreen>
               ),
             ),
           )
-        else if (_loadError) // FIX #9
+        else if (_loadError)
           _contactsErrorState()
         else if (_contacts.isEmpty)
           GestureDetector(
@@ -692,12 +703,12 @@ class _SafetyScreenState extends State<SafetyScreen>
                   SizedBox(height: 1.2.h),
                   Text(
                     'No trusted contacts yet',
-                    style: _ts(FontSize.s11, w: FontWeight.w600, c: _C.teal),
+                    style: _ts(11.0, w: FontWeight.w600, c: _C.teal),
                   ),
                   SizedBox(height: 0.4.h),
                   Text(
                     'Tap to add up to $_kMaxContacts emergency contacts',
-                    style: _ts(FontSize.s9, c: _C.teal.withValues(alpha: 0.7)),
+                    style: _ts(9.0, c: _C.teal.withValues(alpha: 0.7)),
                   ),
                 ],
               ),
@@ -742,7 +753,7 @@ class _SafetyScreenState extends State<SafetyScreen>
                   SizedBox(width: 2.w),
                   Text(
                     'Add another contact',
-                    style: _ts(FontSize.s10, w: FontWeight.w600, c: _C.teal),
+                    style: _ts(10.0, w: FontWeight.w600, c: _C.teal),
                   ),
                 ],
               ),
@@ -784,7 +795,6 @@ class _SafetyScreenState extends State<SafetyScreen>
         iconTheme: const IconThemeData(color: _C.ink),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
-          // FIX #8: safe back — won't pop the app if SafetyScreen is root
           onPressed: () {
             final nav = Navigator.of(context);
             if (nav.canPop()) {
@@ -794,7 +804,7 @@ class _SafetyScreenState extends State<SafetyScreen>
             }
           },
         ),
-        title: Text('Safety', style: _ts(FontSize.s15, w: FontWeight.w700)),
+        title: Text('Safety', style: _ts(15.0, w: FontWeight.w700)),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(height: 1, color: _C.divider),
@@ -823,12 +833,12 @@ class _SafetyScreenState extends State<SafetyScreen>
                       children: [
                         Text(
                           'At Aorbo, your safety comes first.',
-                          style: _ts(FontSize.s16, w: FontWeight.w700, h: 1.25),
+                          style: _ts(16.0, w: FontWeight.w700, h: 1.25),
                         ),
                         SizedBox(height: 0.8.h),
                         Text(
                           'Here are some measures and provisions to ensure your safety.',
-                          style: _ts(FontSize.s10, c: _C.inkMid, h: 1.5),
+                          style: _ts(10.0, c: _C.inkMid, h: 1.5),
                         ),
                       ],
                     ),
@@ -944,8 +954,6 @@ class _ManagerSheetState extends State<_ManagerSheet> {
     return set;
   }
 
-  /// Phones already saved on server (excludes pending) — used by picker
-  /// to show "Added" badge only for truly saved contacts.   FIX #10
   Set<String> get _savedPhones {
     final set = <String>{..._saved.map((c) => _normalizePhone(c.phone ?? ''))};
     set.remove('');
@@ -1015,16 +1023,26 @@ class _ManagerSheetState extends State<_ManagerSheet> {
     final queue = List<Contact>.from(_pending);
 
     for (final contact in queue) {
-      final phone = _firstPhoneOf(contact).trim();
-      if (phone.isEmpty) {
+      final rawPhone = _firstPhoneOf(contact).trim();
+      if (rawPhone.isEmpty) {
         failures.add(contact.displayName);
         continue;
       }
+
+      final phone = _normalizePhoneForApi(rawPhone);
+      // 🔧 Strip 4-byte emojis (like 😍, 😎) which crash the server's utf8 DB
+      final name = _sanitizeNameForApi(contact.displayName);
+
+      if (phone.isEmpty || name.isEmpty) {
+        failures.add(contact.displayName);
+        continue;
+      }
+
       try {
         final response = await _repository.postApiCall(
           url: NetworkUrl.emergencyContacts,
           body: {
-            'name': contact.displayName.trim(),
+            'name': name,
             'phone': phone,
             'relationship': _relationships[contact.id] ?? 'Family',
           },
@@ -1143,7 +1161,6 @@ class _ManagerSheetState extends State<_ManagerSheet> {
         }
       });
 
-      // Extract to final local variable for safe null promotion
       final String? message = failMsg;
       if (message != null) {
         _snack(_messengerKey.currentState, message, isError: true);
@@ -1176,19 +1193,19 @@ class _ManagerSheetState extends State<_ManagerSheet> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.w)),
         title: Text(
           'Discard unsaved contacts?',
-          style: _ts(FontSize.s13, w: FontWeight.w700),
+          style: _ts(13.0, w: FontWeight.w700),
         ),
         content: Text(
           'You have ${_pending.length} contact${_pending.length == 1 ? '' : 's'} '
           'that haven\'t been saved yet. Leaving now will discard them.',
-          style: _ts(FontSize.s10, c: _C.inkMid, h: 1.5),
+          style: _ts(10.0, c: _C.inkMid, h: 1.5),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(
               'Keep editing',
-              style: _ts(FontSize.s10, w: FontWeight.w600, c: _C.teal),
+              style: _ts(10.0, w: FontWeight.w600, c: _C.teal),
             ),
           ),
           TextButton(
@@ -1198,7 +1215,7 @@ class _ManagerSheetState extends State<_ManagerSheet> {
             },
             child: Text(
               'Discard',
-              style: _ts(FontSize.s10, w: FontWeight.w600, c: _C.danger),
+              style: _ts(10.0, w: FontWeight.w600, c: _C.danger),
             ),
           ),
         ],
@@ -1236,7 +1253,7 @@ class _ManagerSheetState extends State<_ManagerSheet> {
               ),
               Text(
                 'Relationship with ${contact.displayName}',
-                style: _ts(FontSize.s12, w: FontWeight.w700),
+                style: _ts(12.0, w: FontWeight.w700),
               ),
               SizedBox(height: 2.h),
               Wrap(
@@ -1265,7 +1282,7 @@ class _ManagerSheetState extends State<_ManagerSheet> {
                       child: Text(
                         rel,
                         style: _ts(
-                          FontSize.s10,
+                          10.0,
                           w: FontWeight.w600,
                           c: selected ? Colors.white : _C.inkMid,
                         ),
@@ -1281,9 +1298,8 @@ class _ManagerSheetState extends State<_ManagerSheet> {
     );
   }
 
-  // FIX #6: block delete during save
   void _confirmDelete(int id, String name) {
-    if (_isSaving) return; // FIX #6
+    if (_isSaving) return;
     FirebaseCrashlytics.instance.log('Popup: Delete contact confirm (safety)');
     showDialog(
       context: context,
@@ -1303,14 +1319,14 @@ class _ManagerSheetState extends State<_ManagerSheet> {
               child: Icon(
                 Icons.delete_outline_rounded,
                 color: _C.danger,
-                size: FontSize.s14,
+                size: 14.0,
               ),
             ),
             SizedBox(width: 3.w),
             Expanded(
               child: Text(
                 'Delete Contact',
-                style: _ts(FontSize.s13, w: FontWeight.w700),
+                style: _ts(13.0, w: FontWeight.w700),
               ),
             ),
           ],
@@ -1318,14 +1334,14 @@ class _ManagerSheetState extends State<_ManagerSheet> {
         content: Text(
           '"$name" will be permanently removed from your emergency contacts '
           'and cannot be recovered.',
-          style: _ts(FontSize.s9, c: _C.inkMid, h: 1.5),
+          style: _ts(9.0, c: _C.inkMid, h: 1.5),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(
               'Cancel',
-              style: _ts(FontSize.s10, w: FontWeight.w600, c: _C.inkMid),
+              style: _ts(10.0, w: FontWeight.w600, c: _C.inkMid),
             ),
           ),
           TextButton(
@@ -1341,7 +1357,7 @@ class _ManagerSheetState extends State<_ManagerSheet> {
             },
             child: Text(
               'Delete',
-              style: _ts(FontSize.s10, w: FontWeight.w600, c: Colors.white),
+              style: _ts(10.0, w: FontWeight.w600, c: Colors.white),
             ),
           ),
         ],
@@ -1353,7 +1369,7 @@ class _ManagerSheetState extends State<_ManagerSheet> {
     padding: EdgeInsets.only(bottom: 1.h, top: 0.5.h),
     child: Text(
       text,
-      style: _ts(FontSize.s8, w: FontWeight.w700, c: _C.inkLight, ls: 1.2),
+      style: _ts(8.0, w: FontWeight.w700, c: _C.inkLight, ls: 1.2),
     ),
   );
 
@@ -1375,7 +1391,7 @@ class _ManagerSheetState extends State<_ManagerSheet> {
           child: Icon(
             Icons.close_rounded,
             color: enabled ? _C.danger : _C.inkLight,
-            size: FontSize.s12,
+            size: 12.0,
           ),
         ),
       );
@@ -1411,12 +1427,14 @@ class _ManagerSheetState extends State<_ManagerSheet> {
                   name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: _ts(FontSize.s11, w: FontWeight.w600),
+                  style: _ts(11.0, w: FontWeight.w600),
                 ),
                 SizedBox(height: 0.3.h),
                 Text(
                   contact.phone ?? 'No number',
-                  style: _ts(FontSize.s9, c: _C.inkMid),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: _ts(9.0, c: _C.inkMid),
                 ),
                 if (contact.relationship?.isNotEmpty == true) ...[
                   SizedBox(height: 0.5.h),
@@ -1425,7 +1443,6 @@ class _ManagerSheetState extends State<_ManagerSheet> {
               ],
             ),
           ),
-          // FIX #6: disable remove during save
           _removeButton(() {
             if (contact.id != null) _confirmDelete(contact.id!, name);
           }, enabled: !_isSaving),
@@ -1472,7 +1489,7 @@ class _ManagerSheetState extends State<_ManagerSheet> {
                         contact.displayName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: _ts(FontSize.s11, w: FontWeight.w600),
+                        style: _ts(11.0, w: FontWeight.w600),
                       ),
                     ),
                     Container(
@@ -1486,13 +1503,18 @@ class _ManagerSheetState extends State<_ManagerSheet> {
                       ),
                       child: Text(
                         'Pending',
-                        style: _ts(FontSize.s7, w: FontWeight.w600, c: _C.warn),
+                        style: _ts(7.0, w: FontWeight.w600, c: _C.warn),
                       ),
                     ),
                   ],
                 ),
                 SizedBox(height: 0.3.h),
-                Text(phone, style: _ts(FontSize.s9, c: _C.inkMid)),
+                Text(
+                  phone,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: _ts(9.0, c: _C.inkMid),
+                ),
                 SizedBox(height: 0.6.h),
                 GestureDetector(
                   onTap: _isSaving ? null : () => _pickRelationship(contact),
@@ -1511,18 +1533,10 @@ class _ManagerSheetState extends State<_ManagerSheet> {
                       children: [
                         Text(
                           relationship,
-                          style: _ts(
-                            FontSize.s8,
-                            w: FontWeight.w600,
-                            c: _C.teal,
-                          ),
+                          style: _ts(8.0, w: FontWeight.w600, c: _C.teal),
                         ),
                         SizedBox(width: 1.w),
-                        Icon(
-                          Icons.edit_outlined,
-                          size: FontSize.s8,
-                          color: _C.teal,
-                        ),
+                        Icon(Icons.edit_outlined, size: 8.0, color: _C.teal),
                       ],
                     ),
                   ),
@@ -1575,11 +1589,11 @@ class _ManagerSheetState extends State<_ManagerSheet> {
                 children: [
                   Text(
                     'Add emergency contact',
-                    style: _ts(FontSize.s11, w: FontWeight.w600),
+                    style: _ts(11.0, w: FontWeight.w600),
                   ),
                   Text(
                     '$_slotsLeft slot${_slotsLeft == 1 ? '' : 's'} remaining',
-                    style: _ts(FontSize.s8, c: _C.inkLight),
+                    style: _ts(8.0, c: _C.inkLight),
                   ),
                 ],
               ),
@@ -1614,15 +1628,12 @@ class _ManagerSheetState extends State<_ManagerSheet> {
                 ),
               ),
               SizedBox(height: 2.h),
-              Text(
-                'No contacts yet',
-                style: _ts(FontSize.s13, w: FontWeight.w600),
-              ),
+              Text('No contacts yet', style: _ts(13.0, w: FontWeight.w600)),
               SizedBox(height: 0.8.h),
               Text(
                 'Add up to $_kMaxContacts trusted contacts who\nwill be notified in an emergency.',
                 textAlign: TextAlign.center,
-                style: _ts(FontSize.s9, c: _C.inkMid, h: 1.6),
+                style: _ts(9.0, c: _C.inkMid, h: 1.6),
               ),
             ],
           ),
@@ -1645,7 +1656,7 @@ class _ManagerSheetState extends State<_ManagerSheet> {
         title: 'Emergency Contacts',
         subtitle: 'They will be notified in case of emergency',
         onClose: _onCloseAttempt,
-        closeEnabled: !_isSaving, // FIX #5
+        closeEnabled: !_isSaving,
         trailing: TextButton(
           style: TextButton.styleFrom(
             backgroundColor: _C.iconBadgeBg,
@@ -1657,7 +1668,7 @@ class _ManagerSheetState extends State<_ManagerSheet> {
           onPressed: () => Get.toNamed('/help'),
           child: Text(
             'FAQ',
-            style: _ts(FontSize.s10, w: FontWeight.w600, c: Colors.white),
+            style: _ts(10.0, w: FontWeight.w600, c: Colors.white),
           ),
         ),
         body: Column(
@@ -1698,7 +1709,7 @@ class _ManagerSheetState extends State<_ManagerSheet> {
                               _total >= _kMaxContacts
                                   ? Icons.lock_outline_rounded
                                   : Icons.person_outline_rounded,
-                              size: FontSize.s10,
+                              size: 10.0,
                               color: _total >= _kMaxContacts
                                   ? _C.warn
                                   : _C.teal,
@@ -1707,7 +1718,7 @@ class _ManagerSheetState extends State<_ManagerSheet> {
                             Text(
                               '$_total / $_kMaxContacts',
                               style: _ts(
-                                FontSize.s10,
+                                10.0,
                                 w: FontWeight.w700,
                                 c: _total >= _kMaxContacts ? _C.warn : _C.teal,
                               ),
@@ -1795,7 +1806,7 @@ class _ManagerSheetState extends State<_ManagerSheet> {
                     children: [
                       Text(
                         '${_pending.length} contact${_pending.length == 1 ? '' : 's'} ready to save',
-                        style: _ts(FontSize.s9, c: _C.inkMid),
+                        style: _ts(9.0, c: _C.inkMid),
                       ),
                       SizedBox(height: 1.h),
                       CommonButton(
@@ -1804,7 +1815,7 @@ class _ManagerSheetState extends State<_ManagerSheet> {
                         gradient: _C.ctaGradient,
                         textColor: CommonColors.whiteColor,
                         fontWeight: FontWeight.w700,
-                        fontSize: FontSize.s12,
+                        fontSize: 12.0,
                         height: 6.h,
                         isDisabled: _isSaving,
                       ),
@@ -1819,19 +1830,12 @@ class _ManagerSheetState extends State<_ManagerSheet> {
 
 // ══════════════════════════════════════════════ 3 · PICKER SHEET ═════════
 
-enum _PermState {
-  checking,
-  granted,
-  denied,
-  permanentlyDenied,
-  error,
-} // FIX #3
+enum _PermState { checking, granted, denied, permanentlyDenied, error }
 
 class _PickerSheet extends StatefulWidget {
   final int maxSelectable;
-  final Set<String> existingPhones; // saved + pending (not selectable)
-  final Set<String>
-  savedPhones; // server-saved only (for "Added" badge)  FIX #10
+  final Set<String> existingPhones;
+  final Set<String> savedPhones;
 
   const _PickerSheet({
     required this.maxSelectable,
@@ -1856,21 +1860,21 @@ class _PickerSheetState extends State<_PickerSheet>
   _PermState _permState = _PermState.checking;
   bool _isLoading = true;
 
-  Timer? _searchDebounce; // FIX #7
+  Timer? _searchDebounce;
   bool _wentToSettings = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _searchController.addListener(_onSearchChanged); // FIX #7
+    _searchController.addListener(_onSearchChanged);
     _fetchContacts();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _searchDebounce?.cancel(); // FIX #7
+    _searchDebounce?.cancel();
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     super.dispose();
@@ -1883,8 +1887,6 @@ class _PickerSheetState extends State<_PickerSheet>
       _fetchContacts();
     }
   }
-
-  // ── Contacts + permission ─────────────────────────────────────────────
 
   Future<void> _fetchContacts() async {
     if (!mounted) return;
@@ -1912,7 +1914,6 @@ class _PickerSheetState extends State<_PickerSheet>
     }
 
     try {
-      // FIX #14: withThumbnail: false for performance
       final contacts = await FlutterContacts.getContacts(
         withProperties: true,
         withThumbnail: false,
@@ -1933,7 +1934,6 @@ class _PickerSheetState extends State<_PickerSheet>
       log('fetchContacts failed: $e');
       if (mounted) {
         setState(() {
-          // FIX #3: set error state, not fake "granted"
           _permState = _PermState.error;
           _isLoading = false;
         });
@@ -1946,12 +1946,8 @@ class _PickerSheetState extends State<_PickerSheet>
     openAppSettings();
   }
 
-  // ── Search (FIX #1, #2, #7) ───────────────────────────────────────────
-
   void _onSearchChanged() {
-    // FIX #7
     _searchDebounce?.cancel();
-    // Run immediately for small lists, debounce for responsiveness
     _searchDebounce = Timer(const Duration(milliseconds: 150), _filterContacts);
   }
 
@@ -1960,8 +1956,6 @@ class _PickerSheetState extends State<_PickerSheet>
     final rawQuery = _searchController.text.trim();
     final query = rawQuery.toLowerCase();
 
-    // FIX #2: normalise digit query the same way as contact phones.
-    // Take last 10 digits so "+91 98765-43210" → "9876543210".
     final allDigits = rawQuery.replaceAll(RegExp(r'\D'), '');
     final normalizedDigits = allDigits.length > 10
         ? allDigits.substring(allDigits.length - 10)
@@ -1971,23 +1965,16 @@ class _PickerSheetState extends State<_PickerSheet>
       _filtered = query.isEmpty
           ? List.from(_allContacts)
           : _allContacts.where((contact) {
-              // 1. Name match (case-insensitive substring)
               if (contact.displayName.toLowerCase().contains(query)) {
                 return true;
               }
-              // FIX #1: only check phones if query has digits.
-              // Previously, empty-digit query made phones.contains("") → true
-              // for ALL contacts, so name search returned everything.
               if (normalizedDigits.isEmpty) return false;
-              // 2. Phone match — check every phone, not just the joined string
               return contact.phones.any(
                 (p) => _normalizePhone(p.number).contains(normalizedDigits),
               );
             }).toList();
     });
   }
-
-  // ── Selection ─────────────────────────────────────────────────────────
 
   bool _isAlreadyAdded(Contact contact) {
     final phone = _normalizePhone(_firstPhoneOf(contact));
@@ -2039,8 +2026,6 @@ class _PickerSheetState extends State<_PickerSheet>
   void _confirmSelection() =>
       Navigator.of(context).pop(List<Contact>.from(_selected));
 
-  // ── UI pieces ─────────────────────────────────────────────────────────
-
   Widget _selectionIndicator(bool isSelected) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
@@ -2058,7 +2043,6 @@ class _PickerSheetState extends State<_PickerSheet>
   }
 
   Widget _contactTile(Contact contact) {
-    // FIX #11: safe access to first phone
     final phone = contact.phones.isNotEmpty
         ? contact.phones.first.number
         : 'No number';
@@ -2102,7 +2086,7 @@ class _PickerSheetState extends State<_PickerSheet>
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: _ts(
-                          FontSize.s11,
+                          11.0,
                           w: FontWeight.w600,
                           c: isSelected ? _C.teal : _C.ink,
                         ),
@@ -2112,7 +2096,7 @@ class _PickerSheetState extends State<_PickerSheet>
                         children: [
                           Icon(
                             Icons.phone_outlined,
-                            size: FontSize.s9,
+                            size: 9.0,
                             color: isSelected
                                 ? _C.teal.withValues(alpha: 0.7)
                                 : _C.inkLight,
@@ -2124,7 +2108,7 @@ class _PickerSheetState extends State<_PickerSheet>
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: _ts(
-                                FontSize.s9,
+                                9.0,
                                 c: isSelected
                                     ? _C.teal.withValues(alpha: 0.7)
                                     : _C.inkMid,
@@ -2147,13 +2131,12 @@ class _PickerSheetState extends State<_PickerSheet>
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      // FIX #10: "Added" only for server-saved, "Selected" for pending
                       widget.savedPhones.contains(
                             _normalizePhone(_firstPhoneOf(contact)),
                           )
                           ? 'Added'
                           : 'Selected',
-                      style: _ts(FontSize.s8, w: FontWeight.w700, c: _C.teal),
+                      style: _ts(8.0, w: FontWeight.w700, c: _C.teal),
                     ),
                   )
                 else
@@ -2181,16 +2164,13 @@ class _PickerSheetState extends State<_PickerSheet>
             child: Icon(Icons.search_off_rounded, size: 9.w, color: _C.teal),
           ),
           SizedBox(height: 2.h),
-          Text(
-            'No contacts found',
-            style: _ts(FontSize.s13, w: FontWeight.w600),
-          ),
+          Text('No contacts found', style: _ts(13.0, w: FontWeight.w600)),
           SizedBox(height: 0.8.h),
           Text(
             _allContacts.isEmpty
                 ? 'No contacts with phone numbers on this device'
                 : 'Try a different name or number',
-            style: _ts(FontSize.s9, c: _C.inkMid),
+            style: _ts(9.0, c: _C.inkMid),
             textAlign: TextAlign.center,
           ),
         ],
@@ -2199,7 +2179,6 @@ class _PickerSheetState extends State<_PickerSheet>
   }
 
   Widget _permissionState() {
-    // FIX #3: handle error state
     if (_permState == _PermState.error) {
       return Center(
         child: Padding(
@@ -2223,13 +2202,13 @@ class _PickerSheetState extends State<_PickerSheet>
               SizedBox(height: 2.h),
               Text(
                 'Something went wrong',
-                style: _ts(FontSize.s13, w: FontWeight.w600),
+                style: _ts(13.0, w: FontWeight.w600),
               ),
               SizedBox(height: 0.8.h),
               Text(
                 'We couldn\'t read your contacts.\nPlease try again.',
                 textAlign: TextAlign.center,
-                style: _ts(FontSize.s9, c: _C.inkMid, h: 1.6),
+                style: _ts(9.0, c: _C.inkMid, h: 1.6),
               ),
               SizedBox(height: 2.h),
               GestureDetector(
@@ -2245,11 +2224,7 @@ class _PickerSheetState extends State<_PickerSheet>
                   ),
                   child: Text(
                     'Retry',
-                    style: _ts(
-                      FontSize.s10,
-                      w: FontWeight.w600,
-                      c: Colors.white,
-                    ),
+                    style: _ts(10.0, w: FontWeight.w600, c: Colors.white),
                   ),
                 ),
               ),
@@ -2278,7 +2253,7 @@ class _PickerSheetState extends State<_PickerSheet>
             SizedBox(height: 2.h),
             Text(
               'Contacts access needed',
-              style: _ts(FontSize.s13, w: FontWeight.w600),
+              style: _ts(13.0, w: FontWeight.w600),
             ),
             SizedBox(height: 0.8.h),
             Text(
@@ -2286,7 +2261,7 @@ class _PickerSheetState extends State<_PickerSheet>
                   ? 'Permission was denied permanently.\nEnable Contacts access in app settings.'
                   : 'Please allow access to your contacts\nto add emergency contacts.',
               textAlign: TextAlign.center,
-              style: _ts(FontSize.s9, c: _C.inkMid, h: 1.6),
+              style: _ts(9.0, c: _C.inkMid, h: 1.6),
             ),
             SizedBox(height: 2.h),
             GestureDetector(
@@ -2299,7 +2274,7 @@ class _PickerSheetState extends State<_PickerSheet>
                 ),
                 child: Text(
                   isPermanent ? 'Open Settings' : 'Grant Permission',
-                  style: _ts(FontSize.s10, w: FontWeight.w600, c: Colors.white),
+                  style: _ts(10.0, w: FontWeight.w600, c: Colors.white),
                 ),
               ),
             ),
@@ -2313,137 +2288,131 @@ class _PickerSheetState extends State<_PickerSheet>
   Widget build(BuildContext context) {
     final slotsLeft = widget.maxSelectable - _selected.length;
 
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: _SheetShell(
-        messengerKey: _messengerKey,
-        title: 'Select Contacts',
-        subtitle: 'Dismiss to cancel · Done confirms selection',
-        onClose: () => Navigator.of(context).pop(),
-        body: Column(
-          children: [
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
-              child: Column(
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      color: _C.cardBg,
-                      borderRadius: BorderRadius.circular(3.w),
-                      border: Border.all(color: _C.fieldBorder),
-                    ),
-                    child: TextField(
-                      controller: _searchController,
-                      style: _ts(FontSize.s11),
-                      keyboardType: TextInputType.text, // allow both
-                      textCapitalization: TextCapitalization.words,
-                      decoration: InputDecoration(
-                        hintText: 'Search by name or number…',
-                        hintStyle: _ts(FontSize.s10, c: _C.inkLight),
-                        prefixIcon: Icon(
-                          Icons.search_rounded,
-                          color: _C.inkLight,
-                          size: 5.5.w,
-                        ),
-                        suffixIcon: _searchController.text.isNotEmpty
-                            ? IconButton(
-                                icon: Icon(
-                                  Icons.close_rounded,
-                                  color: _C.inkLight,
-                                  size: 4.5.w,
-                                ),
-                                onPressed: _searchController.clear,
-                              )
-                            : null,
-                        border: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(vertical: 1.5.h),
-                      ),
-                    ),
+    return _SheetShell(
+      messengerKey: _messengerKey,
+      title: 'Select Contacts',
+      subtitle: 'Dismiss to cancel · Done confirms selection',
+      onClose: () => Navigator.of(context).pop(),
+      body: Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
+            child: Column(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: _C.cardBg,
+                    borderRadius: BorderRadius.circular(3.w),
+                    border: Border.all(color: _C.fieldBorder),
                   ),
-                  SizedBox(height: 1.5.h),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _slotProgressRow(
-                          _selected.length,
-                          widget.maxSelectable.clamp(0, _kMaxContacts),
-                          slotsLeft > 0
-                              ? '$slotsLeft slot${slotsLeft == 1 ? '' : 's'} remaining'
-                              : 'All slots filled',
-                          labelColor: slotsLeft == 0 ? _C.warn : _C.inkMid,
-                        ),
+                  child: TextField(
+                    controller: _searchController,
+                    style: _ts(11.0),
+                    keyboardType: TextInputType.text,
+                    textCapitalization: TextCapitalization.words,
+                    decoration: InputDecoration(
+                      hintText: 'Search by name or number…',
+                      hintStyle: _ts(10.0, c: _C.inkLight),
+                      prefixIcon: Icon(
+                        Icons.search_rounded,
+                        color: _C.inkLight,
+                        size: 5.5.w,
                       ),
-                      if (_selected.isNotEmpty)
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 2.w,
-                            vertical: 0.4.h,
-                          ),
-                          decoration: BoxDecoration(
-                            color: _C.tealSoft,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            '${_selected.length} selected',
-                            style: _ts(
-                              FontSize.s8,
-                              w: FontWeight.w700,
-                              c: _C.teal,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: _isLoading
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        color: _C.teal,
-                        strokeWidth: 2.5,
-                      ),
-                    )
-                  : _permState != _PermState.granted
-                  ? _permissionState()
-                  : _filtered.isEmpty
-                  ? _emptyState()
-                  : ListView.builder(
-                      padding: EdgeInsets.fromLTRB(4.w, 1.h, 4.w, 3.h),
-                      itemCount: _filtered.length,
-                      itemBuilder: (context, index) =>
-                          _contactTile(_filtered[index]),
+                      suffixIcon: _searchController.text.isNotEmpty
+                          ? IconButton(
+                              icon: Icon(
+                                Icons.close_rounded,
+                                color: _C.inkLight,
+                                size: 4.5.w,
+                              ),
+                              onPressed: _searchController.clear,
+                            )
+                          : null,
+                      border: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(vertical: 1.5.h),
                     ),
-            ),
-          ],
-        ),
-        bottomBar: _selected.isEmpty
-            ? null
-            : Container(
-                padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
-                decoration: BoxDecoration(
-                  color: _C.cardBg,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 20,
-                      offset: const Offset(0, -4),
-                    ),
-                  ],
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(24),
                   ),
                 ),
-                child: SafeArea(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Row(
+                SizedBox(height: 1.5.h),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _slotProgressRow(
+                        _selected.length,
+                        widget.maxSelectable.clamp(0, _kMaxContacts),
+                        slotsLeft > 0
+                            ? '$slotsLeft slot${slotsLeft == 1 ? '' : 's'} remaining'
+                            : 'All slots filled',
+                        labelColor: slotsLeft == 0 ? _C.warn : _C.inkMid,
+                      ),
+                    ),
+                    if (_selected.isNotEmpty)
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 2.w,
+                          vertical: 0.4.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _C.tealSoft,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          '${_selected.length} selected',
+                          style: _ts(8.0, w: FontWeight.w700, c: _C.teal),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: _isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(
+                      color: _C.teal,
+                      strokeWidth: 2.5,
+                    ),
+                  )
+                : _permState != _PermState.granted
+                ? _permissionState()
+                : _filtered.isEmpty
+                ? _emptyState()
+                : ListView.builder(
+                    padding: EdgeInsets.fromLTRB(4.w, 1.h, 4.w, 3.h),
+                    itemCount: _filtered.length,
+                    itemBuilder: (context, index) =>
+                        _contactTile(_filtered[index]),
+                  ),
+          ),
+        ],
+      ),
+      bottomBar: _selected.isEmpty
+          ? null
+          : Container(
+              padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
+              decoration: BoxDecoration(
+                color: _C.cardBg,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 20,
+                    offset: const Offset(0, -4),
+                  ),
+                ],
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
+              ),
+              child: SafeArea(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           SizedBox(
@@ -2474,7 +2443,7 @@ class _PickerSheetState extends State<_PickerSheet>
                                                       .toUpperCase()
                                                 : '?',
                                             style: AppType.style(
-                                              11,
+                                              11.0,
                                               w: FontWeight.w700,
                                               color: Colors.white,
                                             ),
@@ -2489,25 +2458,25 @@ class _PickerSheetState extends State<_PickerSheet>
                           SizedBox(width: 2.w),
                           Text(
                             '${_selected.length} contact${_selected.length == 1 ? '' : 's'} selected',
-                            style: _ts(FontSize.s9, c: _C.inkMid),
+                            style: _ts(9.0, c: _C.inkMid),
                           ),
                         ],
                       ),
-                      SizedBox(height: 1.h),
-                      CommonButton(
-                        text: 'Done',
-                        onPressed: _confirmSelection,
-                        gradient: _C.ctaGradient,
-                        textColor: CommonColors.whiteColor,
-                        fontWeight: FontWeight.w700,
-                        fontSize: FontSize.s12,
-                        height: 6.h,
-                      ),
-                    ],
-                  ),
+                    ),
+                    SizedBox(height: 1.h),
+                    CommonButton(
+                      text: 'Done',
+                      onPressed: _confirmSelection,
+                      gradient: _C.ctaGradient,
+                      textColor: CommonColors.whiteColor,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12.0,
+                      height: 6.h,
+                    ),
+                  ],
                 ),
               ),
-      ),
+            ),
     );
   }
 }

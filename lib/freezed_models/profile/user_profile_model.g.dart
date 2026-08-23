@@ -72,10 +72,10 @@ Map<String, dynamic> _$$CustomerImplToJson(_$CustomerImpl instance) =>
 
 _$TravelerImpl _$$TravelerImplFromJson(Map<String, dynamic> json) =>
     _$TravelerImpl(
-      id: json['id'] as int?,
-      customerId: json['customerId'] as int?,
+      id: _toInt(json['id']),
+      customerId: _toInt(json['customerId']),
       name: json['name'] as String?,
-      age: json['age'] as int?,
+      age: _toInt(json['age']),
       gender: json['gender'] as String?,
       phone: json['phone'] as String?,
       email: json['email'] as String?,

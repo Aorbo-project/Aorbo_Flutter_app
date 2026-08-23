@@ -163,7 +163,7 @@ class UserController extends GetxController {
     }
   }
 
-  Future<bool> deleteTraveler(int travelerId) async {
+  Future<String?> deleteTraveler(int travelerId) async {
     isLoading.value = true;
     try {
       final response = await repository.deleteApiCall(
@@ -171,15 +171,29 @@ class UserController extends GetxController {
       );
       if (response != null && response['success'] == true) {
         await getUserProfile();
-        return true;
+        return null; // ✅ Success
       }
-      _showError(
-        response?['message']?.toString() ?? 'Could not delete traveller.',
-      );
-      return false;
+      return response?['message']?.toString() ?? 'Could not delete traveller.';
     } catch (e) {
-      _showError(e.toString());
-      return false;
+      // Extract friendly message from Dio's response body if present
+      String errorMsg = 'Could not delete traveller.';
+      try {
+        final dynamic responseData = (e as dynamic).response?.data;
+        if (responseData is Map && responseData['message'] != null) {
+          errorMsg = responseData['message'].toString();
+        } else {
+          errorMsg = e.toString();
+          if (errorMsg.startsWith('Exception: ')) {
+            errorMsg = errorMsg.replaceFirst('Exception: ', '');
+          }
+        }
+      } catch (_) {
+        errorMsg = e.toString();
+        if (errorMsg.startsWith('Exception: ')) {
+          errorMsg = errorMsg.replaceFirst('Exception: ', '');
+        }
+      }
+      return errorMsg;
     } finally {
       isLoading.value = false;
     }

@@ -228,18 +228,86 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
     return true;
   }
 
-  void _showSnack(String message) {
+  /// Forest-green themed snackbar with an icon badge and dismiss affordance.
+  /// Uses [AppGradients.cta] (forest deep → forest) for the surface and the
+  /// brand's standard radius / shadow tokens so it matches the rest of the UI.
+  void _showSnack(String message, {bool isError = true}) {
     if (!mounted) return;
+
+    final IconData icon = isError
+        ? Icons.error_outline_rounded
+        : Icons.check_circle_outline_rounded;
+
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          content: Text(message, style: const TextStyle(fontFamily: 'Poppins')),
-          behavior: SnackBarBehavior.floating,
-          margin: EdgeInsets.all(4.w),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(2.w),
+          // Wrapper lets us paint a gradient on the SnackBar surface
+          content: Container(
+            padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.6.h),
+            decoration: BoxDecoration(
+              gradient: AppGradients.cta, // forest deep → forest
+              borderRadius: BorderRadius.circular(3.w),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.forestDeep.withValues(alpha: 0.30),
+                  blurRadius: 14,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Icon badge (frosted circle on top of the gradient)
+                Container(
+                  width: 9.w,
+                  height: 9.w,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.18),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: Colors.white, size: 4.8.w),
+                ),
+                SizedBox(width: 3.w),
+                // Message
+                Expanded(
+                  child: Text(
+                    message,
+                    textScaler: const TextScaler.linear(1.0),
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 10.sp,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white,
+                      height: 1.35,
+                    ),
+                  ),
+                ),
+                // Dismiss affordance
+                GestureDetector(
+                  onTap: () =>
+                      ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+                  behavior: HitTestBehavior.opaque,
+                  child: Padding(
+                    padding: EdgeInsets.only(left: 2.w),
+                    child: Icon(
+                      Icons.close_rounded,
+                      color: Colors.white.withValues(alpha: 0.85),
+                      size: 5.w,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
+          backgroundColor: Colors.transparent, // let the gradient show
+          behavior: SnackBarBehavior.floating,
+          elevation: 0,
+          padding: EdgeInsets.zero, // gradient handles its own padding
+          margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+          duration: const Duration(seconds: 3),
         ),
       );
   }
@@ -492,9 +560,17 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
         return;
       }
 
+      // null = success, non-null string = error message
       final deleted = await _userC.deleteTraveler(traveller.id!);
-      if (!deleted || !mounted) return;
+      if (!mounted) return;
 
+      if (deleted != null && deleted.isNotEmpty) {
+        // ❌ Failure — show the server's message
+        _showSnack(deleted);
+        return;
+      }
+
+      // ✅ Success — refresh UI
       if (_expandedTravellerIndex == index) {
         _expandedTravellerIndex = null;
         _resetTravellerForm();
@@ -504,8 +580,16 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
       }
       setState(() {});
     } catch (e) {
+      // Safety net — controller shouldn't normally throw, but just in case
+      String errorMsg = 'Could not delete traveller.';
+      try {
+        final dynamic responseData = (e as dynamic).response?.data;
+        if (responseData is Map && responseData['message'] != null) {
+          errorMsg = responseData['message'].toString();
+        }
+      } catch (_) {}
       log('deleteTraveler failed: $e');
-      _showSnack('Could not delete traveller. Please try again.');
+      if (mounted) _showSnack(errorMsg);
     } finally {
       if (mounted) setState(() => _deletingIndex = null);
     }

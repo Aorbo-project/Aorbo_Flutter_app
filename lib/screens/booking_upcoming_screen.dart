@@ -11,7 +11,6 @@ import 'package:share_plus/share_plus.dart';
 import 'package:sizer/sizer.dart';
 import 'package:shimmer_ai/shimmer_ai.dart';
 import 'package:dotted_line/dotted_line.dart';
-
 import '../freezed_models/booking/booking_history_model.dart';
 import '../models/dispute/dispute_detail_modal.dart';
 import '../models/refund/refund_status_model.dart';
@@ -20,7 +19,6 @@ import '../utils/common_colors.dart';
 import '../utils/custom_snackbar.dart';
 import '../services/invoice_pdf_service.dart';
 import '../utils/ist_date_utils.dart';
-
 import '../widgets/rate_trek_popup.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
@@ -44,7 +42,6 @@ class _TC {
   static const shadow = Color(0x0A000000);
   static const gold = AppColors.gold;
   static const goldDark = Color(0xFFE89B00);
-
   static const red = AppColors.danger;
   static const redLight = AppColors.dangerSoft;
   static const amber = AppColors.warning;
@@ -56,6 +53,7 @@ class _TC {
 // ─────────────────────────────────────────────
 class TicketClipper extends CustomClipper<Path> {
   final double cutoutOffset;
+
   TicketClipper(this.cutoutOffset);
 
   @override
@@ -115,8 +113,8 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
     with TickerProviderStateMixin {
   final DashboardController _dashboardC = Get.find<DashboardController>();
   final TrekController _trekC = Get.find<TrekController>();
-  late AnimationController _animationController;
 
+  late AnimationController _animationController;
   late AnimationController _ratingPanelController;
   late Animation<double> _ratingPanelAnim;
 
@@ -128,6 +126,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
 
   final GlobalKey _dottedKey = GlobalKey();
   final GlobalKey _cardKey = GlobalKey();
+
   double cutoutOffset = 0;
 
   bool _refundPollingStarted = false;
@@ -139,13 +138,85 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
   bool _isTrekCompleted(BookingHistoryData b) {
     final status = (b.status ?? '').toLowerCase();
     if (status == 'cancelled') return false;
+
     if (status == 'completed' ||
         (b.trekStatus ?? '').toLowerCase() == 'completed') {
       return true;
     }
+
     final end = ISTDateUtils.toIST(b.batch?.endDate);
     if (end == null) return false;
     return DateTime.now().isAfter(end);
+  }
+
+  /// A trek is "ongoing" when it has already started (departure date passed)
+  /// but hasn't ended yet (arrival date in the future), OR when the backend
+  /// explicitly marks it as ongoing. Cancelled / completed treks never count.
+  bool _isTrekOngoing(BookingHistoryData? b) {
+    if (b == null) return false;
+
+    final status = (b.status ?? '').toLowerCase();
+    final trekStatus = (b.trekStatus ?? '').toLowerCase();
+
+    if (status == 'cancelled' || status == 'completed') return false;
+    if (status == 'ongoing' || trekStatus == 'ongoing') return true;
+
+    final now = DateTime.now();
+    final start = ISTDateUtils.toIST(b.batch?.startDate);
+    final end = ISTDateUtils.toIST(b.batch?.endDate);
+
+    if (start == null || end == null) return false;
+
+    return now.isAfter(start) && now.isBefore(end);
+  }
+
+  double _ratingAsDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is double) return value;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value.toString()) ?? 0.0;
+  }
+
+  double _normalizeRating(double value) {
+    return value.clamp(0.0, 5.0).toDouble();
+  }
+
+  /// Gets the actual rating given by the user.
+  ///
+  /// The booking detail API sometimes does not return rating fields, so we
+  /// fall back to the booking history list, which is the same source used by
+  /// CommonBookedCard.
+  double _getRatingValue(BookingHistoryData? b) {
+    if (b == null) return 0.0;
+
+    final double detailRating = _ratingAsDouble(b.ratingValue);
+    if (detailRating > 0) {
+      return _normalizeRating(detailRating);
+    }
+
+    try {
+      final listBookings = _dashboardC.bookingHistoryObserver.value.data.value
+          .maybeWhen(
+            success: (m) => m?.data ?? <BookingHistoryData>[],
+            orElse: () => <BookingHistoryData>[],
+          );
+
+      for (final bk in listBookings) {
+        if (bk.id == b.id) {
+          final double listRating = _ratingAsDouble(bk.ratingValue);
+          if (listRating > 0) {
+            return _normalizeRating(listRating);
+          }
+        }
+      }
+    } catch (e) {
+      logger.w(
+        'BookingUpcomingScreen: rating value fallback lookup failed',
+        error: e,
+      );
+    }
+
+    return 0.0;
   }
 
   /// Delegates to the single shared, type-tolerant check so this screen,
@@ -154,23 +225,37 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
   bool _isRated(BookingHistoryData? b) {
     if (b == null) return false;
 
-    // 1. Check the detail object first
+    final double detailRating = _ratingAsDouble(b.ratingValue);
+
+    if (b.ratingGiven == true || detailRating > 0) {
+      return true;
+    }
+
     if (RateTrekPopup.isRated(b)) return true;
 
-    // 2. Fallback: Check the booking history list (which usually has rating fields)
     try {
       final listBookings = _dashboardC.bookingHistoryObserver.value.data.value
           .maybeWhen(
             success: (m) => m?.data ?? <BookingHistoryData>[],
             orElse: () => <BookingHistoryData>[],
           );
+
       for (final bk in listBookings) {
-        if (bk.id == b.id && RateTrekPopup.isRated(bk)) {
-          return true;
+        if (bk.id == b.id) {
+          final double listRating = _ratingAsDouble(bk.ratingValue);
+
+          if (bk.ratingGiven == true ||
+              listRating > 0 ||
+              RateTrekPopup.isRated(bk)) {
+            return true;
+          }
         }
       }
     } catch (e) {
-      logger.w('BookingUpcomingScreen: rating fallback lookup failed', error: e);
+      logger.w(
+        'BookingUpcomingScreen: rating fallback lookup failed',
+        error: e,
+      );
     }
 
     return false;
@@ -187,12 +272,17 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
       '/rate-review',
       arguments: {'booking': booking, 'preSelectedRating': rating},
     );
+
     if (!mounted) return;
+
     if (_ratingPanelVisible) _hideRatingPanel();
+
     _dashboardC.getBookingDetail(bookingId: widget.bookingId ?? '0');
+
     // Also refresh the list so the fallback check has the latest data
     _dashboardC.getBookingHistory(refresh: true);
   }
+
   // ──────────────────────────────────────────────────────────────────────────
 
   Future<void> _handleTicketDownload(BookingHistoryData? booking) async {
@@ -204,6 +294,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
     final policyType = booking.cancellationPolicyType?.toString();
 
     FirebaseCrashlytics.instance.log('Popup: Ticket download dialog');
+
     Get.dialog(
       Center(
         child: Container(
@@ -233,9 +324,11 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
         booking: booking,
         policyType: policyType,
       );
+
       if (Get.isDialogOpen ?? false) Get.back();
     } catch (e) {
       if (Get.isDialogOpen ?? false) Get.back();
+
       if (!mounted) return;
       CustomSnackBar.show(
         context,
@@ -252,6 +345,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
 
     final trek = booking.trek;
     final batch = booking.batch;
+
     final startDate = ISTDateUtils.toIST(batch?.startDate);
     final endDate = ISTDateUtils.toIST(batch?.endDate);
 
@@ -260,22 +354,26 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
         trek?.destinationName ?? trek?.title ?? 'N/A';
 
     final StringBuffer sb = StringBuffer();
+
     sb.writeln('🏔️  ${trek?.title ?? 'Trek Booking'}');
     sb.writeln('━━━━━━━━━━━━━━━━━━━');
     sb.writeln('Booking ID       : ${booking.bookingNumber ?? 'N/A'}');
     sb.writeln('TBR ID           : ${batch?.tbrId ?? 'N/A'}');
+
     if (startDate != null) {
       sb.writeln(
         'Departure        : ${DateFormat('E, dd MMM yyyy').format(startDate)}',
       );
       sb.writeln('Departure City   : $sourceCity');
     }
+
     if (endDate != null) {
       sb.writeln(
         'Arrival          : ${DateFormat('E, dd MMM yyyy').format(endDate)}',
       );
       sb.writeln('Arrival City     : $sourceCity');
     }
+
     sb.writeln('Duration         : ${trek?.duration ?? '-'}');
     sb.writeln('Travellers       : ${booking.totalTravelers ?? 1}');
     sb.writeln('Operator         : ${trek?.vendor?.businessName ?? 'N/A'}');
@@ -283,9 +381,11 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
     sb.writeln(
       'Boarding Point   : ${trek?.boardingPoint ?? 'To be announced'}',
     );
+
     if (trek?.boardingTime != null) {
       sb.writeln('Boarding Time    : ${trek!.boardingTime}');
     }
+
     sb.writeln('Destination      : $destinationName');
     sb.writeln('━━━━━━━━━━━━━━━━━━━');
     sb.writeln('Booking confirmed with Aorbo! 🎉');
@@ -308,7 +408,12 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
   @override
   void initState() {
     super.initState();
+
     _dashboardC.getBookingDetail(bookingId: widget.bookingId ?? '0');
+
+    // Ensures the rating fallback source is available even if this screen
+    // is opened directly from notification / card tap.
+    _dashboardC.getBookingHistory(refresh: false);
 
     _animationController = AnimationController(
       vsync: this,
@@ -320,6 +425,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
       vsync: this,
       duration: const Duration(milliseconds: 480),
     );
+
     _ratingPanelAnim = CurvedAnimation(
       parent: _ratingPanelController,
       curve: Curves.easeOutCubic,
@@ -346,6 +452,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
               _isTrekCompleted(booking) &&
               !_isRated(booking)) {
             _autoOpenedRating = true;
+
             WidgetsBinding.instance.addPostFrameCallback((_) {
               Future.delayed(const Duration(milliseconds: 450), () {
                 if (mounted && !_ratingPanelVisible) _showRatingPanel();
@@ -366,7 +473,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
   void dispose() {
     _trekC.stopRefundPolling();
     _bookingDetailWorker?.dispose();
-
     _animationController.dispose();
     _ratingPanelController.dispose();
     super.dispose();
@@ -378,10 +484,12 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
           _dottedKey.currentContext?.findRenderObject() as RenderBox?;
       final RenderBox? cardBox =
           _cardKey.currentContext?.findRenderObject() as RenderBox?;
+
       if (box != null && cardBox != null && mounted) {
         final position = box.localToGlobal(Offset.zero);
         final cardTop = cardBox.localToGlobal(Offset.zero).dy;
         final localOffset = position.dy - cardTop;
+
         setState(() => cutoutOffset = localOffset + box.size.height / 2);
       }
     });
@@ -395,6 +503,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
         openSections.add(index);
       }
     });
+
     Future.delayed(
       const Duration(milliseconds: 100),
       () => _updateCutoutOffset(),
@@ -453,6 +562,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
 
   Widget _sectionHeader(String title, int index) {
     final bool isOpen = openSections.contains(index);
+
     return InkWell(
       onTap: () => _toggleSection(index),
       borderRadius: BorderRadius.circular(10),
@@ -524,17 +634,18 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
         children: [
           Expanded(
             flex: 5,
-            child: Text(
-              title,
-              style: AppType.style(9.sp, color: _TC.inkMid),
-            ),
+            child: Text(title, style: AppType.style(9.sp, color: _TC.inkMid)),
           ),
           Expanded(
             flex: 5,
             child: Text(
               value,
               textAlign: TextAlign.end,
-              style: AppType.style(9.sp, w: isHighlight ? FontWeight.w700 : FontWeight.w500, color: isHighlight ? _TC.brand : _TC.ink),
+              style: AppType.style(
+                9.sp,
+                w: isHighlight ? FontWeight.w700 : FontWeight.w500,
+                color: isHighlight ? _TC.brand : _TC.ink,
+              ),
             ),
           ),
         ],
@@ -553,10 +664,12 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
 
   String _fmtCurrency(dynamic value) {
     if (value == null) return '₹0';
+
     if (value is num) {
       final hasDecimal = value != value.roundToDouble();
       return '₹${hasDecimal ? value.toStringAsFixed(2) : value.toInt().toString()}';
     }
+
     return '₹$value';
   }
 
@@ -577,7 +690,12 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
         ),
         child: Text(
           title,
-          style: AppType.style(8.sp, w: FontWeight.w700, color: _TC.accent, letterSpacing: 0.5),
+          style: AppType.style(
+            8.sp,
+            w: FontWeight.w700,
+            color: _TC.accent,
+            letterSpacing: 0.5,
+          ),
         ),
       ),
     );
@@ -588,6 +706,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
 
     final trek = booking.trek;
     final batch = booking.batch;
+
     final startDate = ISTDateUtils.toIST(batch?.startDate);
     final endDate = ISTDateUtils.toIST(batch?.endDate);
     final bookingDate = ISTDateUtils.toIST(booking.bookingDate);
@@ -633,7 +752,12 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                 Expanded(
                   child: Text(
                     trek?.title ?? 'Trek Details',
-                    style: AppType.style(18.sp, w: FontWeight.w800, color: Colors.white, height: 1.2),
+                    style: AppType.style(
+                      18.sp,
+                      w: FontWeight.w800,
+                      color: Colors.white,
+                      height: 1.2,
+                    ),
                   ),
                 ),
                 SizedBox(width: 2.w),
@@ -663,7 +787,12 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                       SizedBox(width: 1.5.w),
                       Text(
                         _getStatusText(booking.status).toUpperCase(),
-                        style: AppType.style(8.sp, w: FontWeight.w700, color: Colors.white, letterSpacing: 0.8),
+                        style: AppType.style(
+                          8.sp,
+                          w: FontWeight.w700,
+                          color: Colors.white,
+                          letterSpacing: 0.8,
+                        ),
                       ),
                     ],
                   ),
@@ -684,14 +813,23 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                     children: [
                       Text(
                         'DEPARTURE',
-                        style: AppType.style(7.sp, w: FontWeight.w600, color: _TC.inkLight, letterSpacing: 0.8),
+                        style: AppType.style(
+                          7.sp,
+                          w: FontWeight.w600,
+                          color: _TC.inkLight,
+                          letterSpacing: 0.8,
+                        ),
                       ),
                       SizedBox(height: 0.3.h),
                       Text(
                         startDate != null
                             ? DateFormat('E, dd MMM').format(startDate)
                             : '-',
-                        style: AppType.style(13.sp, w: FontWeight.w700, color: _TC.ink),
+                        style: AppType.style(
+                          13.sp,
+                          w: FontWeight.w700,
+                          color: _TC.ink,
+                        ),
                       ),
                       SizedBox(height: 0.2.h),
                       Text(
@@ -723,7 +861,11 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                                   ?.replaceAll('Days', 'D')
                                   .replaceAll('Nights', 'N') ??
                               '-',
-                          style: AppType.style(8.sp, w: FontWeight.w600, color: _TC.inkMid),
+                          style: AppType.style(
+                            8.sp,
+                            w: FontWeight.w600,
+                            color: _TC.inkMid,
+                          ),
                         ),
                       ),
                     ],
@@ -736,7 +878,12 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                     children: [
                       Text(
                         'ARRIVAL',
-                        style: AppType.style(7.sp, w: FontWeight.w600, color: _TC.inkLight, letterSpacing: 0.8),
+                        style: AppType.style(
+                          7.sp,
+                          w: FontWeight.w600,
+                          color: _TC.inkLight,
+                          letterSpacing: 0.8,
+                        ),
                       ),
                       SizedBox(height: 0.3.h),
                       Text(
@@ -744,7 +891,11 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                             ? DateFormat('E, dd MMM').format(endDate)
                             : '-',
                         textAlign: TextAlign.right,
-                        style: AppType.style(13.sp, w: FontWeight.w700, color: _TC.ink),
+                        style: AppType.style(
+                          13.sp,
+                          w: FontWeight.w700,
+                          color: _TC.ink,
+                        ),
                       ),
                       SizedBox(height: 0.2.h),
                       Text(
@@ -826,7 +977,11 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                           SizedBox(width: 2.w),
                           Text(
                             'Traveller Details',
-                            style: AppType.style(10.sp, w: FontWeight.w700, color: _TC.ink),
+                            style: AppType.style(
+                              10.sp,
+                              w: FontWeight.w700,
+                              color: _TC.ink,
+                            ),
                           ),
                         ],
                       ),
@@ -881,6 +1036,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                             final t = e.value;
                             final isLast =
                                 e.key == (booking.travelers!.length - 1);
+
                             return Container(
                               padding: EdgeInsets.symmetric(
                                 horizontal: 3.w,
@@ -901,21 +1057,31 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                                     flex: 5,
                                     child: Text(
                                       t.traveler?.name ?? '-',
-                                      style: AppType.style(9.sp, w: FontWeight.w600, color: _TC.ink),
+                                      style: AppType.style(
+                                        9.sp,
+                                        w: FontWeight.w600,
+                                        color: _TC.ink,
+                                      ),
                                     ),
                                   ),
                                   Expanded(
                                     flex: 2,
                                     child: Text(
                                       t.traveler?.age?.toString() ?? '-',
-                                      style: AppType.style(9.sp, color: _TC.inkMid),
+                                      style: AppType.style(
+                                        9.sp,
+                                        color: _TC.inkMid,
+                                      ),
                                     ),
                                   ),
                                   Expanded(
                                     flex: 3,
                                     child: Text(
                                       t.traveler?.gender ?? '-',
-                                      style: AppType.style(9.sp, color: _TC.inkMid),
+                                      style: AppType.style(
+                                        9.sp,
+                                        color: _TC.inkMid,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -1007,51 +1173,67 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                             snap?['traveler_count'] ??
                             booking.totalTravelers ??
                             1;
+
                         final origBaseFare =
                             snap?['original_base_fare'] ??
                             booking.totalBasicCost ??
                             '0';
+
                         final farePerPerson =
                             snap?['original_base_fare_per_person'];
+
                         final vendorDiscount =
                             snap?['vendor_discount'] ??
                             booking.vendorDiscount ??
                             '0';
+
                         final couponId = snap?['coupon_id'];
+
                         final couponDiscount =
                             snap?['coupon_discount'] ??
                             booking.couponDiscount ??
                             '0';
+
                         final finalBaseFare = snap?['final_base_fare'];
+
                         final gst5 =
                             snap?['gst_5_percent'] ?? booking.gstAmount ?? '0';
+
                         final platformFee =
                             snap?['platform_fee'] ??
                             booking.platformFees ??
                             '0';
+
                         final insuranceFee =
                             snap?['insurance_fee'] ??
                             booking.insuranceAmount ??
                             '0';
+
                         final cancelProtectFee =
                             snap?['cancellation_protection_fee'] ??
                             booking.freeCancellationAmount ??
                             '0';
+
                         final finalAmount =
                             snap?['final_amount'] ?? booking.finalAmount ?? '0';
+
                         final cancelPolicy =
                             snap?['cancellation_policy_type'] ??
                             booking.cancellationPolicyType ??
                             'standard';
+
                         final advanceAmt =
                             snap?['advance_amount'] ??
                             booking.advanceAmount ??
                             '0';
+
                         final remainingAmt =
                             snap?['remaining_amount'] ??
                             booking.remainingAmount ??
                             '0';
+
                         final amountPaidNow = snap?['amount_paid_now'];
+
                         final paymentMethod =
                             snap?['payment_method'] ??
                             booking.paymentMethod ??
@@ -1060,8 +1242,10 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                         final bool isFlexible =
                             cancelPolicy?.toString().toLowerCase() ==
                             'flexible';
+
                         final bool isFullPaid =
                             booking.paymentStatus == 'full_paid';
+
                         final bool showAdvanceAndRemaining =
                             !(isFlexible && isFullPaid) && !(!isFlexible);
 
@@ -1107,7 +1291,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                               _fmtCurrency(finalBaseFare),
                               isHighlight: true,
                             ),
-
                             _financeGroupHeader('Taxes & Fees'),
                             _ticketRow('GST (5%)', _fmtCurrency(gst5)),
                             _dividerLine(),
@@ -1136,7 +1319,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                                 _fmtCurrency(cancelProtectFee),
                               ),
                             ],
-
                             _financeGroupHeader('Payment Summary'),
                             _ticketRow(
                               'Final Amount',
@@ -1213,7 +1395,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
               children: [
                 Expanded(
                   child: Text(
-                    '"Not Insta-perfect.\nBut soul-perfect...!!"',
+                    '"Not Insta-perfect. But soul-perfect...!!"',
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontSize: 10.sp,
@@ -1271,7 +1453,12 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
     color: _TC.divider,
   );
 
-  TextStyle _tableHeaderStyle() => AppType.style(8.sp, w: FontWeight.w600, color: _TC.inkMid, letterSpacing: 0.4);
+  TextStyle _tableHeaderStyle() => AppType.style(
+    8.sp,
+    w: FontWeight.w600,
+    color: _TC.inkMid,
+    letterSpacing: 0.4,
+  );
 
   Widget _buildActionButton(
     IconData icon,
@@ -1320,8 +1507,10 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
   Widget _buildRefundTrackerCard(BookingHistoryData booking) {
     return Obx(() {
       final result = _trekC.refundStatusObserver.value;
+
       RefundStatusData? statusData;
       result.maybeWhen(success: (m) => statusData = m?.data, orElse: () {});
+
       final isPolling = result.maybeWhen(
         loading: (_) => true,
         orElse: () => false,
@@ -1419,7 +1608,11 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                 Expanded(
                   child: Text(
                     'Refund Tracker',
-                    style: AppType.style(13.sp, w: FontWeight.w700, color: _TC.ink),
+                    style: AppType.style(
+                      13.sp,
+                      w: FontWeight.w700,
+                      color: _TC.ink,
+                    ),
                   ),
                 ),
                 if (isPolling && !isProcessed && !isFailed)
@@ -1443,7 +1636,12 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                     ),
                     child: Text(
                       'COMPLETED',
-                      style: AppType.style(7.sp, w: FontWeight.w800, color: _TC.teal, letterSpacing: 0.5),
+                      style: AppType.style(
+                        7.sp,
+                        w: FontWeight.w800,
+                        color: _TC.teal,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                   ),
               ],
@@ -1473,12 +1671,20 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                       children: [
                         Text(
                           statusText,
-                          style: AppType.style(11.sp, w: FontWeight.w700, color: statusColor),
+                          style: AppType.style(
+                            11.sp,
+                            w: FontWeight.w700,
+                            color: statusColor,
+                          ),
                         ),
                         SizedBox(height: 0.3.h),
                         Text(
                           statusSubText,
-                          style: AppType.style(8.sp, color: _TC.inkMid, height: 1.4),
+                          style: AppType.style(
+                            8.sp,
+                            color: _TC.inkMid,
+                            height: 1.4,
+                          ),
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -1499,7 +1705,11 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                   ),
                   Text(
                     '₹ ${statusData?.refundAmount?.toStringAsFixed(2)}',
-                    style: AppType.style(12.sp, w: FontWeight.w700, color: _TC.ink),
+                    style: AppType.style(
+                      12.sp,
+                      w: FontWeight.w700,
+                      color: _TC.ink,
+                    ),
                   ),
                 ],
               ),
@@ -1535,9 +1745,13 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                         statusData?.refundSpeed == 'instant'
                             ? 'Instant refund — credited within minutes'
                             : 'Normal refund — 3 to 5 business days',
-                        style: AppType.style(8.sp, w: FontWeight.w500, color: statusData?.refundSpeed == 'instant'
+                        style: AppType.style(
+                          8.sp,
+                          w: FontWeight.w500,
+                          color: statusData?.refundSpeed == 'instant'
                               ? _TC.teal
-                              : _TC.amber),
+                              : _TC.amber,
+                        ),
                       ),
                     ),
                   ],
@@ -1556,7 +1770,11 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                   SizedBox(width: 2.w),
                   Text(
                     'Credited on ${_formatSettledAt(statusData?.refundProcessedAt)}',
-                    style: AppType.style(9.sp, w: FontWeight.w600, color: _TC.teal),
+                    style: AppType.style(
+                      9.sp,
+                      w: FontWeight.w600,
+                      color: _TC.teal,
+                    ),
                   ),
                 ],
               ),
@@ -1588,7 +1806,11 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                       SizedBox(width: 2.w),
                       Text(
                         'Contact Support',
-                        style: AppType.style(10.sp, w: FontWeight.w700, color: _TC.red),
+                        style: AppType.style(
+                          10.sp,
+                          w: FontWeight.w700,
+                          color: _TC.red,
+                        ),
                       ),
                     ],
                   ),
@@ -1618,7 +1840,11 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                     SizedBox(width: 2.w),
                     Text(
                       'Track Refund',
-                      style: AppType.style(11.sp, w: FontWeight.w700, color: _TC.brand),
+                      style: AppType.style(
+                        11.sp,
+                        w: FontWeight.w700,
+                        color: _TC.brand,
+                      ),
                     ),
                     SizedBox(width: 1.w),
                     Icon(
@@ -1640,6 +1866,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
     FirebaseCrashlytics.instance.log(
       'Popup: Refund status sheet (upcoming booking)',
     );
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1655,8 +1882,10 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
         padding: EdgeInsets.fromLTRB(5.w, 2.h, 5.w, 4.h),
         child: Obx(() {
           final result = _trekC.refundStatusObserver.value;
+
           RefundStatusData? statusData;
           result.maybeWhen(success: (m) => statusData = m?.data, orElse: () {});
+
           final isPolling = result.maybeWhen(
             loading: (_) => true,
             orElse: () => false,
@@ -1695,7 +1924,11 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                   SizedBox(width: 3.w),
                   Text(
                     'Refund Status',
-                    style: AppType.style(14.sp, w: FontWeight.w700, color: _TC.ink),
+                    style: AppType.style(
+                      14.sp,
+                      w: FontWeight.w700,
+                      color: _TC.ink,
+                    ),
                   ),
                   const Spacer(),
                   if (isPolling)
@@ -1813,11 +2046,15 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                           child: Text(
                             statusData?.statusMessage ??
                                 'Checking refund status...',
-                            style: AppType.style(9.sp, color: (statusData?.isFailed ?? false)
+                            style: AppType.style(
+                              9.sp,
+                              color: (statusData?.isFailed ?? false)
                                   ? _TC.red
                                   : (statusData?.isProcessed ?? false)
                                   ? _TC.teal
-                                  : _TC.inkMid, height: 1.4),
+                                  : _TC.inkMid,
+                              height: 1.4,
+                            ),
                           ),
                         ),
                       ],
@@ -1858,7 +2095,11 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                     ),
                     child: Text(
                       'Close',
-                      style: AppType.style(12.sp, w: FontWeight.w600, color: _TC.brand),
+                      style: AppType.style(
+                        12.sp,
+                        w: FontWeight.w600,
+                        color: _TC.brand,
+                      ),
                     ),
                   ),
                 ),
@@ -1901,11 +2142,15 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
         Expanded(
           child: Text(
             label,
-            style: AppType.style(11.sp, w: done ? FontWeight.w600 : FontWeight.w400, color: isFailed
+            style: AppType.style(
+              11.sp,
+              w: done ? FontWeight.w600 : FontWeight.w400,
+              color: isFailed
                   ? _TC.red
                   : done
                   ? _TC.ink
-                  : _TC.inkLight),
+                  : _TC.inkLight,
+            ),
           ),
         ),
       ],
@@ -1925,8 +2170,10 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
 
   String _formatSettledAt(String? iso) {
     if (iso == null || iso.isEmpty) return '';
+
     final ist = ISTDateUtils.toIST(iso);
     if (ist == null) return '';
+
     const months = [
       'Jan',
       'Feb',
@@ -1941,12 +2188,15 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
       'Nov',
       'Dec',
     ];
+
     return '${months[ist.month - 1]} ${ist.day}, ${ist.year}';
   }
 
   // ── STATIC REVIEWED CONTAINER ───────────────────────────────────────────
   Widget _buildReviewedContainer(BookingHistoryData booking) {
-    final double currentRating = RateTrekPopup.ratingValueOf(booking);
+    // ✅ FIXED: use actual rating from detail/history fallback.
+    final double currentRating = _getRatingValue(booking);
+
     return Container(
       width: double.infinity,
       margin: EdgeInsets.symmetric(horizontal: 4.w),
@@ -1981,7 +2231,11 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
               children: [
                 Text(
                   'You rated this trek',
-                  style: AppType.style(11.sp, w: FontWeight.w700, color: _TC.ink),
+                  style: AppType.style(
+                    11.sp,
+                    w: FontWeight.w700,
+                    color: _TC.ink,
+                  ),
                 ),
                 SizedBox(height: 0.2.h),
                 Text(
@@ -2021,7 +2275,9 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
     if (!_isTrekCompleted(bookingData)) return const SizedBox.shrink();
 
     final bool isReviewed = _isRated(bookingData);
-    final double currentRating = RateTrekPopup.ratingValueOf(bookingData);
+
+    // ✅ FIXED: use actual rating from detail/history fallback.
+    final double currentRating = _getRatingValue(bookingData);
 
     final Color primary = isReviewed
         ? const Color(0xFF0F766E)
@@ -2080,14 +2336,22 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                                 isReviewed
                                     ? 'You rated this trek'
                                     : 'Rate your trek',
-                                style: AppType.style(12.sp, w: FontWeight.w800, color: _TC.ink),
+                                style: AppType.style(
+                                  12.sp,
+                                  w: FontWeight.w800,
+                                  color: _TC.ink,
+                                ),
                               ),
                               SizedBox(height: 0.35.h),
                               Text(
                                 isReviewed
                                     ? 'Ratings cannot be changed once submitted'
                                     : 'Help other trekkers with your experience',
-                                style: AppType.style(8.sp, w: FontWeight.w500, color: _TC.inkMid),
+                                style: AppType.style(
+                                  8.sp,
+                                  w: FontWeight.w500,
+                                  color: _TC.inkMid,
+                                ),
                               ),
                             ],
                           ),
@@ -2134,7 +2398,11 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                                   isReviewed
                                       ? 'Your rating'
                                       : 'Tap a star to rate',
-                                  style: AppType.style(10.sp, w: FontWeight.w700, color: _TC.ink),
+                                  style: AppType.style(
+                                    10.sp,
+                                    w: FontWeight.w700,
+                                    color: _TC.ink,
+                                  ),
                                 ),
                                 SizedBox(height: 0.2.h),
                                 Text(
@@ -2252,14 +2520,22 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                       isReviewed
                           ? 'You Rated ${currentRating.toStringAsFixed(1)} ★'
                           : 'Rate Your Trek',
-                      style: AppType.style(11.sp, w: FontWeight.w800, color: _TC.ink),
+                      style: AppType.style(
+                        11.sp,
+                        w: FontWeight.w800,
+                        color: _TC.ink,
+                      ),
                     ),
                     SizedBox(height: 0.2.h),
                     Text(
                       isReviewed
                           ? 'Tap to view your rating'
                           : 'Help other trekkers discover',
-                      style: AppType.style(7.sp, w: FontWeight.w500, color: _TC.inkMid),
+                      style: AppType.style(
+                        7.sp,
+                        w: FontWeight.w500,
+                        color: _TC.inkMid,
+                      ),
                     ),
                   ],
                 ),
@@ -2371,7 +2647,12 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                   child: Text(
                     'Your dispute is being reviewed by our support team. We will update you soon.',
                     textAlign: TextAlign.center,
-                    style: AppType.style(8.sp, w: FontWeight.w500, color: CommonColors.appRedColor, height: 1.5),
+                    style: AppType.style(
+                      8.sp,
+                      w: FontWeight.w500,
+                      color: CommonColors.appRedColor,
+                      height: 1.5,
+                    ),
                   ),
                 ),
               ],
@@ -2388,10 +2669,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: AppType.style(9.sp, color: _TC.inkMid),
-          ),
+          Text(label, style: AppType.style(9.sp, color: _TC.inkMid)),
           Text(
             value,
             style: AppType.style(9.sp, w: FontWeight.w600, color: _TC.ink),
@@ -2453,17 +2731,35 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
           body: Obx(() {
             final isLoading = _dashboardC.bookingDetailsObserver.value
                 .maybeWhen(loading: (_) => true, orElse: () => false);
+
             final booking = _dashboardC.bookingDetailsObserver.value.maybeWhen(
               success: (r) => (r as BookingDetailsResponseModel).data,
               orElse: () => null,
             );
+
             final status = booking?.status;
 
             if (isLoading) return _buildShimmerLoading();
 
             final bool isRated = _isRated(booking);
+
             final bool showRatingFab =
                 booking != null && _isTrekCompleted(booking) && !isRated;
+
+            // ── Cancel eligibility ────────────────────────────────────────────
+            // Cancellation is allowed ONLY when:
+            //   • status is upcoming / confirmed / booked
+            //   • backend `canCancel` flag allows it
+            //   • the trek is NOT ongoing (currently in progress)
+            //   • the trek is NOT completed (arrival date passed)
+            final bool canCancelBooking =
+                booking != null &&
+                (status == 'upcoming' ||
+                    status == 'confirmed' ||
+                    status == 'booked') &&
+                (booking.canCancel ?? true) &&
+                !_isTrekOngoing(booking) &&
+                !_isTrekCompleted(booking);
 
             return Stack(
               children: [
@@ -2482,6 +2778,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                         SizedBox(height: 2.5.h),
                         _buildRefundTrackerCard(booking),
                       ],
+
                       // ── STATIC RATING CONTAINER ──
                       if (booking != null &&
                           isRated &&
@@ -2489,7 +2786,9 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                         SizedBox(height: 2.5.h),
                         _buildReviewedContainer(booking),
                       ],
+
                       SizedBox(height: 2.5.h),
+
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: 4.w),
                         child: Container(
@@ -2527,23 +2826,37 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                                   children: [
                                     Text(
                                       'Trek details via contact',
-                                      style: AppType.style(8.sp, color: _TC.inkMid),
+                                      style: AppType.style(
+                                        8.sp,
+                                        color: _TC.inkMid,
+                                      ),
                                     ),
                                     SizedBox(height: 0.2.h),
                                     if (booking?.trek?.captainName != null)
                                       Text(
                                         booking?.trek?.captainName ?? '',
-                                        style: AppType.style(11.sp, w: FontWeight.w600, color: _TC.ink),
+                                        style: AppType.style(
+                                          11.sp,
+                                          w: FontWeight.w600,
+                                          color: _TC.ink,
+                                        ),
                                       ),
                                     if (booking?.trek?.captainPhone != null)
                                       Text(
                                         booking?.trek?.captainPhone ?? '',
-                                        style: AppType.style(12.sp, w: FontWeight.w700, color: _TC.brand),
+                                        style: AppType.style(
+                                          12.sp,
+                                          w: FontWeight.w700,
+                                          color: _TC.brand,
+                                        ),
                                       )
                                     else
                                       Text(
                                         'Contact number not available',
-                                        style: AppType.style(9.sp, color: _TC.inkMid),
+                                        style: AppType.style(
+                                          9.sp,
+                                          color: _TC.inkMid,
+                                        ),
                                       ),
                                   ],
                                 ),
@@ -2552,7 +2865,9 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                           ),
                         ),
                       ),
+
                       SizedBox(height: 2.5.h),
+
                       // Action buttons
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: 4.w),
@@ -2560,15 +2875,12 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                           children: [
                             Expanded(
                               child: _buildActionButton(
-                                Icons.confirmation_num_outlined,
+                                Icons.confirmation_number_outlined,
                                 'Ticket',
                                 onTap: () => _handleTicketDownload(booking),
                               ),
                             ),
-                            if ((status == 'upcoming' ||
-                                    status == 'confirmed' ||
-                                    status == 'booked') &&
-                                (booking?.canCancel ?? true)) ...[
+                            if (canCancelBooking) ...[
                               SizedBox(width: 3.w),
                               Expanded(
                                 child: _buildActionButton(
@@ -2576,9 +2888,11 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                                   'Cancel',
                                   onTap: () async {
                                     String? bookingId = booking?.id?.toString();
+
                                     if (bookingId != null) {
                                       final message = await _trekC
                                           .fetchCancellationDetails(bookingId);
+
                                       if (message != null) {
                                         SchedulerBinding.instance
                                             .addPostFrameCallback((_) {
@@ -2587,9 +2901,11 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                                                 message: message,
                                               );
                                             });
+
                                         return;
                                       }
                                     }
+
                                     Get.toNamed(
                                       '/bookingscancel',
                                       arguments: booking,
@@ -2609,7 +2925,9 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                           ],
                         ),
                       ),
+
                       SizedBox(height: 2.5.h),
+
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: 4.w),
                         child: GestureDetector(
@@ -2653,7 +2971,11 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                                 Expanded(
                                   child: Text(
                                     'Frequently Asked Questions',
-                                    style: AppType.style(11.sp, w: FontWeight.w600, color: _TC.ink),
+                                    style: AppType.style(
+                                      11.sp,
+                                      w: FontWeight.w600,
+                                      color: _TC.ink,
+                                    ),
                                   ),
                                 ),
                                 Icon(
@@ -2666,6 +2988,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                           ),
                         ),
                       ),
+
                       if (_dashboardC.disputeDetailDataList.isNotEmpty)
                         Padding(
                           padding: EdgeInsets.fromLTRB(4.w, 2.5.h, 4.w, 0),
@@ -2675,7 +2998,9 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                             ),
                           ),
                         ),
+
                       SizedBox(height: 2.h),
+
                       Padding(
                         padding: EdgeInsets.fromLTRB(6.w, 2.h, 6.w, 5.h),
                         child: Column(
@@ -2693,7 +3018,10 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                             SizedBox(height: 1.h),
                             RichText(
                               text: TextSpan(
-                                style: AppType.style(10.sp, color: _TC.inkLight),
+                                style: AppType.style(
+                                  10.sp,
+                                  color: _TC.inkLight,
+                                ),
                                 children: [
                                   const TextSpan(text: 'Crafted with passion '),
                                   WidgetSpan(
@@ -2716,6 +3044,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                     ],
                   ),
                 ),
+
                 if (showRatingFab)
                   Positioned(
                     left: 4.w,
@@ -2723,6 +3052,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                     bottom: 3.h,
                     child: _buildFloatingRatingButton(bookingData: booking!),
                   ),
+
                 Obx(
                   () => _trekC.cancellationDetailsResponseObserver.value
                       .maybeWhen(

@@ -70,6 +70,9 @@ class DashboardController extends GetxController {
   RxString errorMessage = ''.obs;
   RxInt selectedScreen = 0.obs;
 
+  // Track routes the user has clicked "Notify Me" for.
+  RxMap<String, bool> notifiedRoutes = <String, bool>{}.obs;
+
   Timer? _calendarDebounceTimer;
   final bool _hasAttemptedInitialCalendarFetch = false;
 
@@ -121,6 +124,11 @@ class DashboardController extends GetxController {
       logger.d('Both city and trek selected, scheduling calendar fetch');
       _calendarDebounceTimer = Timer(const Duration(milliseconds: 500), () {
         _fetchCalendarDatesForSelection();
+        // Check notification status when route changes
+        checkRouteNotificationStatus(
+          selectedCityId.value,
+          selectedTrekId.value,
+        );
       });
     } else {
       logger.d('City or trek not selected, clearing available dates');
@@ -680,5 +688,94 @@ class DashboardController extends GetxController {
     disputeDetailDataList.clear();
 
     logger.d('DashboardController: Search and booking data cleared');
+  }
+
+  // --- Notify Me API Integration ---
+  Future<void> checkRouteNotificationStatus(
+    int fromCityId,
+    int toTrekId,
+  ) async {
+    if (fromCityId == 0 || toTrekId == 0) return;
+
+    final routeKey = '${fromCityId}_$toTrekId';
+
+    try {
+      final response = await _repository.checkNotifyStatus(
+        fromCityId: fromCityId,
+        toTrekId: toTrekId,
+      );
+
+      if (response != null && _isNotifySuccess(response)) {
+        final dynamic data = response['data'];
+        final bool subscribed =
+            data is Map &&
+            (data['is_subscribed'] == true || data['is_subscribed'] == 1);
+        notifiedRoutes[routeKey] = subscribed;
+      } else {
+        // Response shape unknown or failure — don't assume either way.
+        // Leave the existing value (if any) untouched so the UI doesn't
+        // flicker back to "Notify Me" on a transient error.
+        notifiedRoutes.putIfAbsent(routeKey, () => false);
+      }
+    } catch (e) {
+      logger.w('checkRouteNotificationStatus failed for $routeKey: $e');
+      // Fail soft — don't crash the dashboard over a status-check hiccup.
+      notifiedRoutes.putIfAbsent(routeKey, () => false);
+    }
+  }
+
+  Future<bool> subscribeToRouteNotification(
+    int fromCityId,
+    int toTrekId,
+  ) async {
+    final routeKey = '${fromCityId}_$toTrekId';
+
+    try {
+      final response = await _repository.subscribeToRoute(
+        fromCityId: fromCityId,
+        toTrekId: toTrekId,
+      );
+
+      // Accept both {success: true} and {status: "success"} shapes
+      final bool ok = _isNotifySuccess(response);
+      if (ok) {
+        notifiedRoutes[routeKey] = true;
+        return true;
+      }
+
+      // Server returned a non-2xx but repository swallowed it — surface the message
+      final String? msg = _extractNotifyMessage(response);
+      throw Exception(msg ?? 'Failed to save subscription.');
+    } on DioException catch (e) {
+      // Extract the friendly message from the response body if present
+      final dynamic responseData = e.response?.data;
+      final String msg =
+          (responseData is Map && responseData['message'] != null)
+          ? responseData['message'].toString()
+          : 'Failed to save subscription.';
+      // Re-throw as a plain Exception so the sheet's _extractServerMessage can
+      // pick it up cleanly without leaking Dio internals into the UI.
+      throw Exception(msg);
+    } catch (e) {
+      // Already an Exception with a clean message — pass through
+      rethrow;
+    }
+  }
+
+  /// True if the response body indicates success. Handles both the spec's
+  /// {status: "success"} shape and the actual {success: true} shape returned
+  /// by the live API.
+  bool _isNotifySuccess(dynamic response) {
+    if (response is! Map) return false;
+    if (response['success'] == true) return true;
+    if (response['status'] == 'success') return true;
+    return false;
+  }
+
+  String? _extractNotifyMessage(dynamic response) {
+    if (response is Map) {
+      return response['message']?.toString();
+    }
+    return null;
   }
 }
