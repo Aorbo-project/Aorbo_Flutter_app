@@ -1407,7 +1407,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                   ),
                 ),
                 Image.asset(
-                  'assets/images/img/aorbologo.png',
+                  'assets/images/img/aorbologo.webp',
                   width: 22.w,
                   height: 4.h,
                   fit: BoxFit.contain,

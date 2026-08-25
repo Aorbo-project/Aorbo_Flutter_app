@@ -2718,6 +2718,12 @@ class _NotifyMeSheetState extends State<_NotifyMeSheet>
     with SingleTickerProviderStateMixin {
   bool _isLoading = true;
   bool _hasError = false;
+  // The controller carefully re-throws the real server/network message (see
+  // subscribeToRouteNotification's doc comment) — this used to be discarded
+  // entirely in favor of a hardcoded "check your connection" string, which
+  // was actively misleading for non-network failures (e.g. a real 500 or
+  // validation error shown to a user on full wifi).
+  String? _errorMessage;
   Timer? _autoCloseTimer;
   late final AnimationController _slideController;
   late final Animation<double> _slideAnim;
@@ -2760,6 +2766,7 @@ class _NotifyMeSheetState extends State<_NotifyMeSheet>
       setState(() {
         _isLoading = false;
         _hasError = true;
+        _errorMessage = e.toString().replaceFirst('Exception: ', '');
       });
 
       // Close sheet after a short delay on error
@@ -2859,7 +2866,9 @@ class _NotifyMeSheetState extends State<_NotifyMeSheet>
               _isLoading
                   ? 'Setting up notifications for ${widget.from} → ${widget.to}…'
                   : _hasError
-                  ? 'Please check your connection and try again.'
+                  ? (_errorMessage?.isNotEmpty == true
+                        ? _errorMessage!
+                        : 'Please check your connection and try again.')
                   : 'We\'ll send you a push notification as soon as treks '
                         'become available from ${widget.from} to ${widget.to}.',
               textAlign: TextAlign.center,

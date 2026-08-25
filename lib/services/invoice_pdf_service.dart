@@ -218,7 +218,7 @@ class InvoicePdfService {
 
     try {
       final aorboBytes = await rootBundle.load(
-        'assets/images/img/aorbologo.png',
+        'assets/images/img/aorbologo.webp',
       );
       aorboLogo = pw.MemoryImage(aorboBytes.buffer.asUint8List());
     } catch (e) {

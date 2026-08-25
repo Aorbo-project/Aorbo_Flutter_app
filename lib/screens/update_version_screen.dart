@@ -41,7 +41,7 @@ class _UpdateVersionScreenState extends State<UpdateVersionScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Image.asset("assets/images/img/aorbologo.png",width: 150,height: 150,),
+                          Image.asset("assets/images/img/aorbologo.webp",width: 150,height: 150,),
                           const SizedBox(height: 10),
                           Text("An Update Required \n Please Update And Continue",textAlign: TextAlign.center,style: TextStyle(
                               fontSize: 16,

@@ -1,39 +1,39 @@
 class CommonImages {
   static const String basePath = "assets/images";
 
-  static const String splashBg = "$basePath/backgrounds/splashBg.png";
-  static const String logo = "$basePath/img/logo.png";
-  static const String logo1 = "$basePath/img/aorbologo.png";
-  static const String logo2 = "$basePath/img/aorbologo2.png";
-  static const String logo3 = "$basePath/img/aorbologo3.png";
-  static const String logo4 = "$basePath/img/logo4.png";
+  static const String splashBg = "$basePath/backgrounds/splashBg.webp";
+  static const String logo = "$basePath/img/logo.webp";
+  static const String logo1 = "$basePath/img/aorbologo.webp";
+  static const String logo2 = "$basePath/img/aorbologo2.webp";
+  static const String logo3 = "$basePath/img/aorbologo3.webp";
+  static const String logo4 = "$basePath/img/logo4.webp";
 
-  static const String bgLogin = "$basePath/backgrounds/bglogin.png";
-  static const String otpBg = "$basePath/backgrounds/otpbg.png";
+  static const String bgLogin = "$basePath/backgrounds/bglogin.webp";
+  static const String otpBg = "$basePath/backgrounds/otpbg.webp";
   static const String texture = "$basePath/cover/texture.png";
-  static const String knowmore1 = "$basePath/img/knowmore1.png";
-  static const String knowmore2 = "$basePath/img/knowmore2.png";
-  static const String knowmore3 = "$basePath/img/knowmore3.png";
-  static const String knowmore4 = "$basePath/img/knowmore4.png";
-  static const String knowmore5 = "$basePath/img/knowmore5.png";
+  static const String knowmore1 = "$basePath/img/knowmore1.webp";
+  static const String knowmore2 = "$basePath/img/knowmore2.webp";
+  static const String knowmore3 = "$basePath/img/knowmore3.webp";
+  static const String knowmore4 = "$basePath/img/knowmore4.webp";
+  static const String knowmore5 = "$basePath/img/knowmore5.webp";
   static const String coorg = "";
-  static const String manali = "$basePath/img/manali.png";
+  static const String manali = "$basePath/img/manali.webp";
 
   static const String referandearn =
       "$basePath/img/Manandwomanmarketingteam.png";
 
-  static const String chardham = "$basePath/img/chardham.png";
-  static const String discount2 = "$basePath/img/discount2.png";
-  static const String discount3 = "$basePath/img/discount3.png";
-  static const String discount4 = "$basePath/img/discount4.png";
-  static const String discount5 = "$basePath/img/discount5.png";
-  static const String firsttrek = "$basePath/img/firsttrek.png";
+  static const String chardham = "$basePath/img/chardham.webp";
+  static const String discount2 = "$basePath/img/discount2.webp";
+  static const String discount3 = "$basePath/img/discount3.webp";
+  static const String discount4 = "$basePath/img/discount4.webp";
+  static const String discount5 = "$basePath/img/discount5.webp";
+  static const String firsttrek = "$basePath/img/firsttrek.webp";
   static const String goa = "$basePath/img/goa.jpg";
   static const String gokarna = "$basePath/img/gokarna.jpg";
-  static const String himalayas = "$basePath/img/himalayas.png";
-  static const String ladhakh = "$basePath/img/ladhakh.png";
-  static const String munnar = "$basePath/img/munnar.png";
-  static const String ooty = "$basePath/img/ooty.png";
+  static const String himalayas = "$basePath/img/himalayas.webp";
+  static const String ladhakh = "$basePath/img/ladhakh.webp";
+  static const String munnar = "$basePath/img/munnar.webp";
+  static const String ooty = "$basePath/img/ooty.webp";
   static const String udupi = "$basePath/img/udupi.jpg";
   static const String shorts1 = "";
   static const String shorts2 = "";

@@ -101,9 +101,13 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/images/img/app_icon3.png"
+  # Lives outside assets/images/ (and outside any pubspec `assets:` entry) on
+  # purpose — this is a build-time input for icon generation only, never
+  # referenced by Dart code at runtime, so it must never be bundled into the
+  # shipped APK as a Flutter asset.
+  image_path: "assets/launcher_icon_source/app_icon3.png"
   adaptive_icon_background: "#FFF200"
-  adaptive_icon_foreground: "assets/images/img/app_icon3.png"
+  adaptive_icon_foreground: "assets/launcher_icon_source/app_icon3.png"
 
 flutter_native_splash:
   # No logo image here on purpose — the Android 12+ SplashScreen API forces
