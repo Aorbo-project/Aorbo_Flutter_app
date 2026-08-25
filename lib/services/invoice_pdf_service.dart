@@ -768,7 +768,7 @@ class InvoicePdfService {
 
           if (isFlexibleFull) ...[
             _policyNote(
-              'GST and taxes are non-refundable. The advance secures your slot and is non-refundable upon cancellation.',
+              'The advance secures your slot and, along with any cancellation charge, is non-refundable. GST is reversed/refunded if cancelled before the trek departs.',
               font,
             ),
             _policyNote(
@@ -784,7 +784,10 @@ class InvoicePdfService {
               font,
             ),
           ] else if (isFlexiblePartial) ...[
-            _policyNote('The advance payment is non-refundable.', font),
+            _policyNote(
+              'The advance payment is non-refundable. GST is reversed/refunded if cancelled before the trek departs.',
+              font,
+            ),
             _policyNote(
               'Since only the advance was paid, no additional cancellation charges apply.',
               font,
@@ -806,7 +809,10 @@ class InvoicePdfService {
               'Cancellation fees are applied on a per-slot basis. The cancellation charge mentioned above is calculated based on a total fare of ₹$finalAmount.',
               font,
             ),
-            _policyNote('GST and taxes are non-refundable.', font),
+            _policyNote(
+              'The cancellation charge itself is non-refundable; GST is reversed/refunded if cancelled before the trek departs.',
+              font,
+            ),
             _policyNote(
               'Refund will be processed within 5 to 7 working days.',
               font,

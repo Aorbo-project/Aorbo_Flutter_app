@@ -393,12 +393,20 @@ class _BookingCancellationSuccessScreenState
                 SizedBox(width: 2.5.w),
                 Expanded(
                   child: Text(
-                    _creditNoteEligible
-                        ? 'Your advance amount is non-refundable. A credit note will be issued for GST reversal.'
+                    // Ordering fixed 2026-08-25 — must check _hasRefund first,
+                    // mirroring the backend's own precedence
+                    // (newBookingController.js's refundNote:
+                    // totalRefundableAmount>0 checked before creditNoteEligible).
+                    // Previously _creditNoteEligible was checked first, so any
+                    // cancellation with a real refund AND a credit note (now the
+                    // common case for both policies before departure) wrongly
+                    // told the customer their payment was non-refundable.
+                    _hasRefund
+                        ? 'Your refund will be processed to your original payment method.'
+                        : _creditNoteEligible
+                        ? 'The amount paid is non-refundable. A credit note will be issued for GST reversal.'
                         : _isAdvanceOnly
                         ? 'Your advance amount, including GST, is non-refundable.'
-                        : _hasRefund
-                        ? 'Your refund will be processed to your original payment method.'
                         : 'No refund is applicable for this cancellation.',
                     style: AppType.style(
                       9.5.sp,
