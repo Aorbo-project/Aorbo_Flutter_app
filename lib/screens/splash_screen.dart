@@ -17,6 +17,7 @@ import 'package:pinput/pinput.dart';
 import 'dart:async';
 import 'package:sizer/sizer.dart';
 import 'package:arobo_app/theme/app_typography.dart';
+import 'package:arobo_app/widgets/otp_success_overlay.dart';
 
 class SplashWithLoginScreen extends StatefulWidget {
   const SplashWithLoginScreen({super.key});
@@ -67,6 +68,14 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
   // otherwise the fade blends two actively-moving screens together and
   // reads as a glitch instead of a smooth crossfade.
   bool _leavingToDashboard = false;
+
+  // Drives OtpSuccessOverlay (see widgets/otp_success_overlay.dart) for the
+  // inline OTP form below. Class-level (not local to _buildOtpContainer)
+  // because that method is rebuilt fresh on every setState — a local flag
+  // here would never survive the rebuild it's meant to trigger.
+  bool _showOtpSuccessOverlay = false;
+  String? _verifiedCustomerName;
+  bool _verifiedIsNewCustomer = false;
 
   Timer? _timer;
 
@@ -470,7 +479,6 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
 
   Widget _buildOtpContainer() {
     bool isError = false;
-    bool isSuccess = false;
     final defaultPinTheme = PinTheme(
       width: 25.sp,
       height: 40.sp,
@@ -501,7 +509,6 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
       try {
         if (pin.length == 6) {
           setState(() {
-            isSuccess = true;
             isError = false;
             errorMessage = null;
           });
@@ -513,11 +520,18 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
 
           if (verified) {
             _authC.phoneNumberLoginTextField.value.clear();
-            _goToDashboard();
+            final customer = _authC.verifyOtpModal.value.data?.customer;
+            setState(() {
+              _verifiedCustomerName = customer?.name;
+              _verifiedIsNewCustomer = customer?.isNewCustomer ?? false;
+              _showOtpSuccessOverlay = true;
+            });
+            // _goToDashboard() now runs from OtpSuccessOverlay's onFinished
+            // (see the build() method below) once the welcome-back beat
+            // plays out, instead of firing immediately here.
           } else {
             setState(() {
               isError = true;
-              isSuccess = false;
             });
             if (mounted) {
               _authC.otpTextField.value.clear();
@@ -540,7 +554,12 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
       }
     }
 
-    return SingleChildScrollView(
+    return OtpSuccessOverlay(
+      play: _showOtpSuccessOverlay,
+      customerName: _verifiedCustomerName,
+      isNewCustomer: _verifiedIsNewCustomer,
+      onFinished: _goToDashboard,
+      child: SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -588,37 +607,33 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                 offset: isError
                     ? Offset(_shakeAnimation?.value ?? 0, 0)
                     : Offset.zero,
-                child: Transform.scale(
-                  scale: isSuccess ? _scaleAnimation.value : 1.0,
-                  child: Pinput(
-                    length: 6,
-                    controller: _authC.otpTextField.value,
-                    focusNode: _pinFocusNode,
-                    defaultPinTheme: defaultPinTheme,
-                    submittedPinTheme: defaultPinTheme,
-                    focusedPinTheme: focusedPinTheme,
-                    separatorBuilder: (index) => SizedBox(width: 4.5.w),
-                    onCompleted: validateOTP,
-                    onChanged: (value) {
-                      if (isError || isSuccess) {
-                        setState(() {
-                          isError = false;
-                          isSuccess = false;
-                          errorMessage = null;
-                        });
-                      }
-                    },
-                    cursor: Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Container(
-                          margin: const EdgeInsets.only(bottom: 9),
-                          width: 22,
-                          height: 1,
-                          color: CommonColors.blackColor,
-                        ),
-                      ],
-                    ),
+                child: Pinput(
+                  length: 6,
+                  controller: _authC.otpTextField.value,
+                  focusNode: _pinFocusNode,
+                  defaultPinTheme: defaultPinTheme,
+                  submittedPinTheme: defaultPinTheme,
+                  focusedPinTheme: focusedPinTheme,
+                  separatorBuilder: (index) => SizedBox(width: 4.5.w),
+                  onCompleted: validateOTP,
+                  onChanged: (value) {
+                    if (isError) {
+                      setState(() {
+                        isError = false;
+                        errorMessage = null;
+                      });
+                    }
+                  },
+                  cursor: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 9),
+                        width: 22,
+                        height: 1,
+                        color: CommonColors.blackColor,
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -671,6 +686,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
             ),
           ),
         ],
+      ),
       ),
     );
   }

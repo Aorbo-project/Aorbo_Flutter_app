@@ -14,6 +14,7 @@ import 'dart:async';
 
 import '../controller/auth_controller.dart';
 import 'package:arobo_app/theme/app_typography.dart';
+import 'package:arobo_app/widgets/otp_success_overlay.dart';
 
 class OTPScreen extends StatefulWidget {
   // final String phoneNumber;
@@ -31,11 +32,16 @@ class _OTPScreenState extends State<OTPScreen>
   // Initialize with a value instead of using late
   AnimationController? _animationController;
   Animation<double>? _shakeAnimation;
-  Animation<double>? _scaleAnimation;
   bool _isError = false;
-  bool _isSuccess = false;
   String? _errorMessage;
   Timer? _errorTimer;
+
+  // Drives OtpSuccessOverlay (see widgets/otp_success_overlay.dart) — was
+  // previously an _isSuccess flag driving a _scaleAnimation that never
+  // actually played (forward() was never called on it).
+  bool _showSuccessOverlay = false;
+  String? _verifiedCustomerName;
+  bool _verifiedIsNewCustomer = false;
 
   @override
   void initState() {
@@ -55,14 +61,6 @@ class _OTPScreenState extends State<OTPScreen>
     )..addListener(() {
         setState(() {});
       });
-
-    // Scale animation for success
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.1).animate(
-      CurvedAnimation(
-        parent: _animationController!,
-        curve: Curves.easeInOutBack,
-      ),
-    );
   }
 
   void _showErrorMessage(String message) {
@@ -89,7 +87,6 @@ class _OTPScreenState extends State<OTPScreen>
     try {
       if (pin.length == 6) {
         setState(() {
-          _isSuccess = true;
           _isError = false;
           _errorMessage = null;
         });
@@ -101,11 +98,17 @@ class _OTPScreenState extends State<OTPScreen>
 
         if (verified) {
           _authC.phoneNumberLoginTextField.value.clear();
-          Get.offAllNamed('/dashboard');
+          final customer = _authC.verifyOtpModal.value.data?.customer;
+          setState(() {
+            _verifiedCustomerName = customer?.name;
+            _verifiedIsNewCustomer = customer?.isNewCustomer ?? false;
+            _showSuccessOverlay = true;
+          });
+          // Navigation happens in OtpSuccessOverlay's onFinished once the
+          // welcome-back beat plays out — see build() below.
         } else {
           setState(() {
             _isError = true;
-            _isSuccess = false;
           });
           if (mounted) {
             _authC.otpTextField.value.clear();
@@ -188,7 +191,12 @@ class _OTPScreenState extends State<OTPScreen>
               ),
               iconTheme: const IconThemeData(color: CommonColors.blackColor),
             ),
-            body: Container(
+            body: OtpSuccessOverlay(
+              play: _showSuccessOverlay,
+              customerName: _verifiedCustomerName,
+              isNewCustomer: _verifiedIsNewCustomer,
+              onFinished: () => Get.offAllNamed('/dashboard'),
+              child: Container(
               decoration: BoxDecoration(
                 image: DecorationImage(
                   image: AssetImage(CommonImages.otpBg),
@@ -252,33 +260,28 @@ class _OTPScreenState extends State<OTPScreen>
                                 offset: _isError
                                     ? Offset(_shakeAnimation?.value ?? 0, 0)
                                     : Offset.zero,
-                                child: Transform.scale(
-                                  scale: _isSuccess
-                                      ? _scaleAnimation?.value ?? 1.0
-                                      : 1.0,
-                                  child: Pinput(
-                                    length: 6,
-                                    controller: _authC.otpTextField.value,
-                                    focusNode: _pinFocusNode,
-                                    defaultPinTheme: defaultPinTheme,
-                                    submittedPinTheme: defaultPinTheme,
-                                    focusedPinTheme: focusedPinTheme,
-                                    separatorBuilder: (index) =>
-                                        SizedBox(width: 3.5.w),
-                                    onCompleted: validateOTP,
-                                    onChanged: (value) {
-                                      if (_isError || _isSuccess) {
-                                        setState(() {
-                                          _isError = false;
-                                          _isSuccess = false;
-                                          _errorMessage = null;
-                                        });
-                                      }
-                                    },
-                                    cursor: Column(
-                                      mainAxisAlignment: MainAxisAlignment.end,
-                                      children: [
-                                        Container(
+                                child: Pinput(
+                                  length: 6,
+                                  controller: _authC.otpTextField.value,
+                                  focusNode: _pinFocusNode,
+                                  defaultPinTheme: defaultPinTheme,
+                                  submittedPinTheme: defaultPinTheme,
+                                  focusedPinTheme: focusedPinTheme,
+                                  separatorBuilder: (index) =>
+                                      SizedBox(width: 3.5.w),
+                                  onCompleted: validateOTP,
+                                  onChanged: (value) {
+                                    if (_isError) {
+                                      setState(() {
+                                        _isError = false;
+                                        _errorMessage = null;
+                                      });
+                                    }
+                                  },
+                                  cursor: Column(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      Container(
                                           margin:
                                               const EdgeInsets.only(bottom: 9),
                                           width: 22,
@@ -290,7 +293,6 @@ class _OTPScreenState extends State<OTPScreen>
                                   ),
                                 ),
                               ),
-                            ),
                             SizedBox(height: 2.h),
                             if (_errorMessage != null)
                               Text(
@@ -350,6 +352,7 @@ class _OTPScreenState extends State<OTPScreen>
                   ),
                 ],
               ),
+            ),
             ),
           );
         });
