@@ -38,6 +38,18 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
   late AnimationController _entranceController;
   late Animation<double> _entranceOpacity;
   late Animation<double> _entranceScale;
+  // Fades the logo out over 160ms when leaving for /dashboard, replacing
+  // an instant SizedBox.shrink() cut (see _goToDashboard). Short enough to
+  // finish before the incoming dashboard's own header logo becomes visible
+  // through Get's Transition.fade (Flutter's FadeUpwardsPageTransitionsBuilder
+  // — the splash stays static underneath while dashboard slides up + fades
+  // in over it, so this can't just be left frozen-and-visible: confirmed via
+  // GetX 4.7.3 source, get_transition_mixin.dart — the dev's original
+  // "hiding it outright" note in _logoAlignmentAnimation's comment above was
+  // solving that exact double-logo clash), but the fade itself removes the
+  // jarring instant-pop that a WhatsApp screen recording caught on 2026-08-27.
+  late AnimationController _exitFadeController;
+  late Animation<double> _exitFadeOpacity;
   // Logo width/height are deliberately NOT Tweens built once in initState.
   // They used to be (via Sizer's .w/.h), but on a slower device initState()
   // can run before the platform delivers real window metrics — Sizer's
@@ -74,8 +86,6 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
   // because that method is rebuilt fresh on every setState — a local flag
   // here would never survive the rebuild it's meant to trigger.
   bool _showOtpSuccessOverlay = false;
-  String? _verifiedCustomerName;
-  bool _verifiedIsNewCustomer = false;
 
   Timer? _timer;
 
@@ -232,6 +242,16 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
     );
     _entranceScale = Tween<double>(begin: 0.55, end: 1.0).animate(
       CurvedAnimation(parent: _entranceController, curve: Curves.easeOutBack),
+    );
+
+    // Exit fade — see the field comment above for why this replaces an
+    // instant hide.
+    _exitFadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 160),
+    );
+    _exitFadeOpacity = Tween<double>(begin: 1.0, end: 0.0).animate(
+      CurvedAnimation(parent: _exitFadeController, curve: Curves.easeOut),
     );
 
     // Form Slide Animation — trimmed from 800ms as part of the
@@ -398,9 +418,11 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
     }
   }
 
-  // Freezes the logo's breathing/shimmer animation on a static frame, then
-  // navigates — so the (short, 150ms) fade into /dashboard blends two still
-  // frames instead of blending a moving splash into a moving dashboard.
+  // Freezes the logo's breathing/shimmer animation on a static frame and
+  // fades it out over 160ms (see _exitFadeController's field comment),
+  // then navigates — so the fade into /dashboard blends a settling splash
+  // into the incoming dashboard instead of either an instant pop or two
+  // actively-moving screens.
   void _goToDashboard() {
     if (!mounted) {
       Get.offAllNamed('/dashboard');
@@ -408,6 +430,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
     }
     _breathingController.stop();
     setState(() => _leavingToDashboard = true);
+    _exitFadeController.forward();
     Get.offAllNamed('/dashboard');
   }
 
@@ -432,6 +455,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
     if (_timer?.isActive == true) _timer?.cancel();
     _logoController.dispose();
     _entranceController.dispose();
+    _exitFadeController.dispose();
     _formController.dispose();
     _breathingController.dispose();
     _animationController.dispose();
@@ -520,14 +544,11 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
 
           if (verified) {
             _authC.phoneNumberLoginTextField.value.clear();
-            final customer = _authC.verifyOtpModal.value.data?.customer;
             setState(() {
-              _verifiedCustomerName = customer?.name;
-              _verifiedIsNewCustomer = customer?.isNewCustomer ?? false;
               _showOtpSuccessOverlay = true;
             });
             // _goToDashboard() now runs from OtpSuccessOverlay's onFinished
-            // (see the build() method below) once the welcome-back beat
+            // (see the build() method below) once the confirmation beat
             // plays out, instead of firing immediately here.
           } else {
             setState(() {
@@ -556,8 +577,6 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
 
     return OtpSuccessOverlay(
       play: _showOtpSuccessOverlay,
-      customerName: _verifiedCustomerName,
-      isNewCustomer: _verifiedIsNewCustomer,
       onFinished: _goToDashboard,
       child: SingleChildScrollView(
       child: Column(
@@ -908,6 +927,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
               _logoController,
               _breathingController,
               _entranceController,
+              _exitFadeController,
             ]),
             builder: (context, child) {
               // Computed fresh from MediaQuery every frame — see the field
@@ -928,13 +948,20 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                   (screenSize.height * 0.10 - screenSize.height * 0.50) * t;
               final align = _logoAlignmentAnimation.value;
 
-              if (_leavingToDashboard) return const SizedBox.shrink();
+              // Was: `if (_leavingToDashboard) return const SizedBox.shrink();`
+              // — an instant, single-frame disappearance, caught looking
+              // dead/broken in a screen recording (2026-08-27). Multiplied
+              // into the same Opacity as the entrance fade below instead,
+              // so leaving dissolves the logo over 160ms rather than
+              // popping it away.
+              final exitOpacity =
+                  _leavingToDashboard ? _exitFadeOpacity.value : 1.0;
 
               final baseLogo = SizedBox(
                 width: w,
                 height: h,
                 child: Opacity(
-                  opacity: _entranceOpacity.value,
+                  opacity: _entranceOpacity.value * exitOpacity,
                   child: Transform.scale(
                     scale: _entranceScale.value,
                     child: Image.asset(CommonImages.logo1, fit: BoxFit.contain),

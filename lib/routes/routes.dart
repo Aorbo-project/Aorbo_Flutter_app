@@ -42,16 +42,28 @@ final routes = [
   GetPage(name: '/', page: () => const SplashWithLoginScreen()),
   GetPage(name: '/login', page: () => const LoginScreen()),
   GetPage(name: '/otp', page: () => OTPScreen()),
-  // Fade: dashboard is always reached via offAllNamed right after splash's
-  // own logo animation (or OTP verify). splash_screen.dart freezes its
-  // breathing animation right before navigating (see _leavingToDashboard)
-  // so this fades between two STATIC frames — smooth, not glitchy. 150ms
-  // was too abrupt a cut; 250ms reads as a deliberate cross-dissolve
-  // without feeling slow.
+  // Dashboard is always reached via offAllNamed right after splash's own
+  // logo animation (or OTP verify). splash_screen.dart freezes its
+  // breathing animation and fades the logo out right before navigating
+  // (see _leavingToDashboard / _exitFadeController) so this blends a
+  // settling splash into the incoming dashboard.
+  //
+  // Transition.fadeIn, not Transition.fade: fade maps to Flutter's
+  // FadeUpwardsPageTransitionsBuilder, which slides the incoming page up
+  // from 25% off-screen AND fades its opacity in on Curves.easeIn — an
+  // ease-in curve stays low for most of its span (at 50% of this 250ms
+  // duration, opacity is only ~15-20%, verified against the Flutter SDK
+  // source). The outgoing route (splash's saturated yellow-orange
+  // gradient) is never faded by Flutter's own transition, so that long
+  // near-transparent stretch alpha-blends the dashboard's near-white
+  // background over the still-opaque gradient underneath — a visibly
+  // pale/washed look for a big chunk of the transition (caught on video,
+  // 2026-08-27). fadeIn is a plain linear FadeTransition — no slide, no
+  // easing — so it reaches 50% opacity at 50% of the duration instead.
   GetPage(
     name: '/dashboard',
     page: () => const DashboardMain(),
-    transition: Transition.fade,
+    transition: Transition.fadeIn,
     transitionDuration: const Duration(milliseconds: 250),
   ),
   GetPage(name: '/search', page: () => SearchSummaryScreen()),

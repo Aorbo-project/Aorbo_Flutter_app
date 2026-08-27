@@ -16,9 +16,25 @@ class IndianMobileNumberFormatter extends TextInputFormatter {
     TextEditingValue newValue,
   ) {
     final digits = newValue.text.replaceAll(RegExp(r'\D'), '');
-    final trimmed = digits.length > 10
-        ? digits.substring(digits.length - 10)
-        : digits;
+    final oldDigits = oldValue.text.replaceAll(RegExp(r'\D'), '');
+
+    String trimmed;
+    if (digits.length > 10) {
+      // "Keep the last 10" is right for a paste (many digits arrive in
+      // one edit) but wrong for someone just typing an 11th digit after
+      // an already-complete number — that used to silently shift the
+      // whole window and drop the first digit, which reads as the field
+      // corrupting what you already typed, not as "capped at 10". A
+      // paste jumps the digit count by more than one in a single edit;
+      // a keystroke adds exactly one. Only slide the window for the
+      // former — for the latter, just reject the extra keystroke and
+      // stay at the 10 digits already there.
+      final isPasteLikeJump = digits.length - oldDigits.length > 1;
+      trimmed = isPasteLikeJump ? digits.substring(digits.length - 10) : oldDigits;
+    } else {
+      trimmed = digits;
+    }
+
     if (trimmed == newValue.text) return newValue;
     return TextEditingValue(
       text: trimmed,

@@ -102,7 +102,7 @@ class _UpdateVersionScreenState extends State<UpdateVersionScreen> {
               ),
               GestureDetector(
                 onTap: launchEmail,
-                child: Text("Contact admin for support \n aorboSupport@gmail.com",textAlign: TextAlign.center,style: TextStyle(
+                child: Text("Contact admin for support \n care@aorbotreks.com",textAlign: TextAlign.center,style: TextStyle(
                     fontSize: 9,
                     color: CommonColors.blackColor,
                     fontWeight: FontWeight.w400,
@@ -134,7 +134,7 @@ class _UpdateVersionScreenState extends State<UpdateVersionScreen> {
   }
 
 
-  final String email = 'thurentSupport@gmail.com';
+  final String email = 'care@aorbotreks.com';
   final String subject = 'VersionUpdate';
   final String body = 'Body';
 

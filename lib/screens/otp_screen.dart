@@ -40,8 +40,6 @@ class _OTPScreenState extends State<OTPScreen>
   // previously an _isSuccess flag driving a _scaleAnimation that never
   // actually played (forward() was never called on it).
   bool _showSuccessOverlay = false;
-  String? _verifiedCustomerName;
-  bool _verifiedIsNewCustomer = false;
 
   @override
   void initState() {
@@ -98,14 +96,11 @@ class _OTPScreenState extends State<OTPScreen>
 
         if (verified) {
           _authC.phoneNumberLoginTextField.value.clear();
-          final customer = _authC.verifyOtpModal.value.data?.customer;
           setState(() {
-            _verifiedCustomerName = customer?.name;
-            _verifiedIsNewCustomer = customer?.isNewCustomer ?? false;
             _showSuccessOverlay = true;
           });
           // Navigation happens in OtpSuccessOverlay's onFinished once the
-          // welcome-back beat plays out — see build() below.
+          // confirmation beat plays out — see build() below.
         } else {
           setState(() {
             _isError = true;
@@ -193,8 +188,6 @@ class _OTPScreenState extends State<OTPScreen>
             ),
             body: OtpSuccessOverlay(
               play: _showSuccessOverlay,
-              customerName: _verifiedCustomerName,
-              isNewCustomer: _verifiedIsNewCustomer,
               onFinished: () => Get.offAllNamed('/dashboard'),
               child: Container(
               decoration: BoxDecoration(
