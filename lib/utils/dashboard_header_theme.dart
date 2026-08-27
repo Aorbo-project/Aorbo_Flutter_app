@@ -786,7 +786,11 @@ class DashboardHeaderTheme {
 class HeaderThemeController extends GetxController {
   final Rx<DashboardHeaderTheme> theme = DashboardHeaderTheme.classic.obs;
 
-  static const bool debugThemeSwitcherEnabled = true;
+  // The on-screen S/S/M/A/W season switcher is a dev-only tool for previewing
+  // scenes without touching the backend — it must never ship enabled, since
+  // the theme now comes from remote config (GET /api/v1/dashboard-header-theme)
+  // and admins control it from the Discovery Panel. Flip to true locally only.
+  static const bool debugThemeSwitcherEnabled = false;
 
   @override
   void onInit() {
