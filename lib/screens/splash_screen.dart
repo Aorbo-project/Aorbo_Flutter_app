@@ -18,6 +18,7 @@ import 'dart:async';
 import 'package:sizer/sizer.dart';
 import 'package:arobo_app/theme/app_typography.dart';
 import 'package:arobo_app/widgets/otp_success_overlay.dart';
+import 'package:arobo_app/widgets/dissolve_to_dashboard.dart';
 
 class SplashWithLoginScreen extends StatefulWidget {
   const SplashWithLoginScreen({super.key});
@@ -418,11 +419,17 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
     }
   }
 
-  // Freezes the logo's breathing/shimmer animation on a static frame and
-  // fades it out over 160ms (see _exitFadeController's field comment),
-  // then navigates — so the fade into /dashboard blends a settling splash
-  // into the incoming dashboard instead of either an instant pop or two
-  // actively-moving screens.
+  // Freezes the splash on a static frame, then hands off to /dashboard via
+  // dissolveToDashboard(): an opaque copy of this screen's yellow gradient
+  // is held on top while the dashboard mounts + paints + runs its content
+  // stagger hidden underneath, then that cover dissolves away (~300ms). No
+  // white/washed flash — the old fade-in-over-still-opaque-splash approach
+  // (Transition.fadeIn on the route) produced a measured ~60-90ms
+  // desaturated flash on device. The route transition is now noTransition.
+  //
+  // Runs for BOTH cold-start auto-login and OTP-success: by the time this
+  // is called the pin form has faded to nothing, so the visible background
+  // is the same yellow gradient in both cases.
   void _goToDashboard() {
     if (!mounted) {
       Get.offAllNamed('/dashboard');
@@ -431,7 +438,17 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
     _breathingController.stop();
     setState(() => _leavingToDashboard = true);
     _exitFadeController.forward();
-    Get.offAllNamed('/dashboard');
+    dissolveToDashboard(
+      cover: const DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFFEF200), Color(0xFFFFA000)],
+          ),
+        ),
+      ),
+    );
   }
 
   void _startFormAnimation() {

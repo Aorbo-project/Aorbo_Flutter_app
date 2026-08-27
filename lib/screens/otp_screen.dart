@@ -13,6 +13,7 @@ import 'package:pinput/pinput.dart';
 import 'dart:async';
 
 import '../controller/auth_controller.dart';
+import '../widgets/dissolve_to_dashboard.dart';
 import 'package:arobo_app/theme/app_typography.dart';
 import 'package:arobo_app/widgets/otp_success_overlay.dart';
 
@@ -188,7 +189,12 @@ class _OTPScreenState extends State<OTPScreen>
             ),
             body: OtpSuccessOverlay(
               play: _showSuccessOverlay,
-              onFinished: () => Get.offAllNamed('/dashboard'),
+              // Same dissolve handoff as the main splash flow — cover with
+              // the dashboard's own #F5F8FF so it fades straight in with no
+              // flash. (See widgets/dissolve_to_dashboard.dart.)
+              onFinished: () => dissolveToDashboard(
+                cover: const ColoredBox(color: Color(0xFFF5F8FF)),
+              ),
               child: Container(
               decoration: BoxDecoration(
                 image: DecorationImage(
