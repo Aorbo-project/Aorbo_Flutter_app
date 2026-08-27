@@ -556,30 +556,70 @@ class _ScenePainter extends CustomPainter {
 
       if (l.variant == 'snow' || l.variant == 'snowmountains') {
         final snowLine = base - amp * (0.22 + r * 0.08);
-        final snow = Path();
-        var started = false;
 
-        for (var i = 0; i <= steps; i++) {
-          final y = ys[i];
-          if (y < snowLine) {
-            final xf = i / steps;
-            if (!started) {
-              snow.moveTo(xf * s.width, y);
-              started = true;
-            } else {
-              snow.lineTo(xf * s.width, y);
-            }
-          }
+        // Collect each continuous stretch of ridge that pokes above the snow
+        // line as its own polyline. Enter/exit points are interpolated to the
+        // exact x where the ridge crosses `snowLine`, and each stretch stays a
+        // separate sub-path — so the cap never draws a straight streak across
+        // the valley between two peaks (old bug: `started` was never reset, so
+        // every gap got bridged), and its ends sit cleanly on the line instead
+        // of snapping to whichever 1/steps sample happened to be above.
+        double crossX(int i) {
+          final y0 = ys[i - 1];
+          final y1 = ys[i];
+          final d = y1 - y0;
+          final f =
+              d.abs() < 1e-6 ? 0.5 : ((snowLine - y0) / d).clamp(0.0, 1.0);
+          return ((i - 1) + f) / steps * s.width;
         }
 
-        if (started) {
+        final runs = <List<Offset>>[];
+        List<Offset>? run;
+        for (var i = 0; i <= steps; i++) {
+          if (ys[i] < snowLine) {
+            if (run == null) {
+              run = <Offset>[];
+              runs.add(run);
+              if (i != 0) run.add(Offset(crossX(i), snowLine));
+            }
+            run.add(Offset(i / steps * s.width, ys[i]));
+          } else if (run != null) {
+            run.add(Offset(crossX(i), snowLine));
+            run = null;
+          }
+        }
+        if (run != null) run.add(Offset(s.width, ys[steps]));
+
+        // Stitch the runs into one Path, smoothing each with quadratic béziers
+        // through segment midpoints so the cap curves along the ridge instead
+        // of showing straight facets between samples.
+        final snow = Path();
+        var hasLine = false;
+        for (final pts in runs) {
+          if (pts.length < 2) continue;
+          hasLine = true;
+          snow.moveTo(pts.first.dx, pts.first.dy);
+          if (pts.length == 2) {
+            snow.lineTo(pts[1].dx, pts[1].dy);
+            continue;
+          }
+          for (var k = 1; k < pts.length - 1; k++) {
+            final mx = (pts[k].dx + pts[k + 1].dx) / 2;
+            final my = (pts[k].dy + pts[k + 1].dy) / 2;
+            snow.quadraticBezierTo(pts[k].dx, pts[k].dy, mx, my);
+          }
+          snow.lineTo(pts.last.dx, pts.last.dy);
+        }
+
+        if (hasLine) {
           c.drawPath(
             snow,
             Paint()
               ..color = Colors.white.withValues(alpha: 0.82 * l.opacity)
               ..style = PaintingStyle.stroke
               ..strokeWidth = 2.8
-              ..strokeCap = StrokeCap.round,
+              ..strokeCap = StrokeCap.round
+              ..strokeJoin = StrokeJoin.round,
           );
 
           c.drawPath(
@@ -589,6 +629,7 @@ class _ScenePainter extends CustomPainter {
               ..style = PaintingStyle.stroke
               ..strokeWidth = 7
               ..strokeCap = StrokeCap.round
+              ..strokeJoin = StrokeJoin.round
               ..maskFilter = MaskFilter.blur(BlurStyle.normal, 5),
           );
         }
