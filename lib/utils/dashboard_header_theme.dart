@@ -1,8 +1,12 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
 
 import 'header_scene.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
+import '../repository/app_env.dart';
 
 class DashboardHeaderTheme {
   final String id;
@@ -792,8 +796,44 @@ class HeaderThemeController extends GetxController {
 
   void debugSetTheme(DashboardHeaderTheme t) => theme.value = t;
 
+  /// Renders the local seasonal theme immediately (never blocks/waits on
+  /// network for the dashboard's first paint), then makes one best-effort
+  /// attempt to fetch a currently-active remote theme (GET
+  /// /api/v1/dashboard-header-theme — see
+  /// controllers/v1/dashboardHeaderThemeController.js) and swaps it in if
+  /// one exists. Backs two use cases: pushing updated seasonal scene
+  /// content without an app release, and time-boxed brand-partner
+  /// collaboration takeovers (colors/logo/tagline).
   Future<void> loadTheme() async {
     theme.value = seasonalFallback(DateTime.now());
+    await _tryLoadRemoteTheme();
+  }
+
+  Future<void> _tryLoadRemoteTheme() async {
+    try {
+      final uri = Uri.parse(
+        '${AppEnv().apiBaseUrl}/api/v1/dashboard-header-theme',
+      );
+      final response = await http.get(uri).timeout(const Duration(seconds: 6));
+      if (response.statusCode != 200) return;
+
+      final body = jsonDecode(response.body);
+      final data = body is Map ? body['data'] : null;
+      // data is null whenever nothing's currently active on the backend —
+      // an expected, routine state, not a failure. Local seasonal fallback
+      // set above just keeps showing.
+      if (data is! Map) return;
+
+      theme.value = DashboardHeaderTheme.fromJson(
+        Map<String, dynamic>.from(data),
+      );
+    } catch (_) {
+      // Silent by design: this is a purely decorative, best-effort remote
+      // config fetch layered on top of a theme that's already rendering.
+      // Any failure (offline, timeout, malformed response) just leaves the
+      // local seasonalFallback() in place — never a toast/error UI for
+      // something this low-stakes.
+    }
   }
 
   DashboardHeaderTheme seasonalFallback(DateTime now) {
