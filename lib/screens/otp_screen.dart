@@ -193,6 +193,7 @@ class _OTPScreenState extends State<OTPScreen>
               // the dashboard's own #F5F8FF so it fades straight in with no
               // flash. (See widgets/dissolve_to_dashboard.dart.)
               onFinished: () => dissolveToDashboard(
+                context,
                 cover: const ColoredBox(color: Color(0xFFF5F8FF)),
               ),
               child: Container(

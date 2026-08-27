@@ -439,6 +439,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
     setState(() => _leavingToDashboard = true);
     _exitFadeController.forward();
     dissolveToDashboard(
+      context,
       cover: const DecoratedBox(
         decoration: BoxDecoration(
           gradient: LinearGradient(

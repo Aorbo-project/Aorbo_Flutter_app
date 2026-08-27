@@ -17,15 +17,23 @@ import 'package:get/get.dart';
 /// called — the yellow splash gradient from SplashWithLoginScreen, a plain
 /// `#F5F8FF` from the standalone OTP screen — so there is no jump before
 /// the dissolve begins.
-void dissolveToDashboard({required Widget cover}) {
-  final ctx = Get.overlayContext ?? Get.context;
-  if (ctx == null) {
-    // No navigator yet — nothing to dissolve over, just go.
+///
+/// [context] must be a context under the app navigator's Overlay (any
+/// screen's own `context` is). The overlay entry it inserts lives on the
+/// navigator's OverlayState, not the route, so `Get.offAllNamed` below
+/// can't tear it down.
+void dissolveToDashboard(BuildContext context, {required Widget cover}) {
+  // The nearest Overlay to any screen's context IS the app navigator's
+  // shared OverlayState (routes are entries in it). Our entry goes there
+  // too and outlives the route swap below.
+  final OverlayState? overlay = Overlay.maybeOf(context);
+  if (overlay == null) {
+    // Shouldn't happen from a real screen — but never hang the app over a
+    // cosmetic transition.
     Get.offAllNamed('/dashboard');
     return;
   }
 
-  final overlay = Overlay.of(ctx);
   late OverlayEntry entry;
   entry = OverlayEntry(
     builder: (_) => _DissolveCover(
