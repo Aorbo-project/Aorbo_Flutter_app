@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'header_scene.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
@@ -792,6 +793,20 @@ class HeaderThemeController extends GetxController {
   // and admins control it from the Discovery Panel. Flip to true locally only.
   static const bool debugThemeSwitcherEnabled = false;
 
+  // SharedPreferences key holding the last theme we actually resolved — either
+  // the raw remote JSON, or the sentinel below when the backend had nothing
+  // active and the month fallback is the correct answer. Bump the suffix if
+  // the cached shape ever changes.
+  static const String _cacheKey = 'dashboard_header_theme_cache_v1';
+  static const String _fallbackSentinel = '__seasonal_fallback__';
+
+  /// False until the first backend fetch of this app session has finished
+  /// (success, empty, or failure). The dashboard uses this to make the very
+  /// first theme swap instant instead of a 600ms cross-fade — otherwise a
+  /// brand-new install briefly cross-fades from the month fallback to the
+  /// real remote theme, which reads as a "glimpse" of the wrong season.
+  final RxBool hasResolvedRemote = false.obs;
+
   @override
   void onInit() {
     super.onInit();
@@ -800,17 +815,38 @@ class HeaderThemeController extends GetxController {
 
   void debugSetTheme(DashboardHeaderTheme t) => theme.value = t;
 
-  /// Renders the local seasonal theme immediately (never blocks/waits on
-  /// network for the dashboard's first paint), then makes one best-effort
-  /// attempt to fetch a currently-active remote theme (GET
-  /// /api/v1/dashboard-header-theme — see
-  /// controllers/v1/dashboardHeaderThemeController.js) and swaps it in if
-  /// one exists. Backs two use cases: pushing updated seasonal scene
-  /// content without an app release, and time-boxed brand-partner
-  /// collaboration takeovers (colors/logo/tagline).
+  /// Paints the **last theme we actually resolved** (persisted across launches)
+  /// immediately — so a returning user whose admin set "Classic" sees Classic
+  /// on first frame, never a flash of the month's seasonal scene. Only a
+  /// first-ever launch with no cache falls back to [seasonalFallback]. Then
+  /// one best-effort backend fetch (GET /api/v1/dashboard-header-theme — see
+  /// controllers/v1/dashboardHeaderThemeController.js) refreshes and re-caches.
+  /// Backs pushing updated seasonal scenes and brand-partner takeovers without
+  /// an app release.
   Future<void> loadTheme() async {
-    theme.value = seasonalFallback(DateTime.now());
+    theme.value = await _readCachedTheme() ?? seasonalFallback(DateTime.now());
     await _tryLoadRemoteTheme();
+  }
+
+  Future<DashboardHeaderTheme?> _readCachedTheme() async {
+    try {
+      final raw = (await SharedPreferences.getInstance()).getString(_cacheKey);
+      if (raw == null || raw.isEmpty) return null;
+      if (raw == _fallbackSentinel) return seasonalFallback(DateTime.now());
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map) return null;
+      return DashboardHeaderTheme.fromJson(Map<String, dynamic>.from(decoded));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _writeCache(String value) async {
+    try {
+      await (await SharedPreferences.getInstance()).setString(_cacheKey, value);
+    } catch (_) {
+      // Non-fatal — worst case the next launch re-guesses the same way.
+    }
   }
 
   Future<void> _tryLoadRemoteTheme() async {
@@ -823,20 +859,32 @@ class HeaderThemeController extends GetxController {
 
       final body = jsonDecode(response.body);
       final data = body is Map ? body['data'] : null;
-      // data is null whenever nothing's currently active on the backend —
-      // an expected, routine state, not a failure. Local seasonal fallback
-      // set above just keeps showing.
-      if (data is! Map) return;
 
-      theme.value = DashboardHeaderTheme.fromJson(
-        Map<String, dynamic>.from(data),
-      );
+      if (data is Map) {
+        theme.value = DashboardHeaderTheme.fromJson(
+          Map<String, dynamic>.from(data),
+        );
+        await _writeCache(jsonEncode(data));
+      } else {
+        // Nothing active on the backend — the month fallback IS the answer.
+        // Record that so the next launch doesn't have to guess (and doesn't
+        // flash a stale cached remote theme that's since been deactivated).
+        theme.value = seasonalFallback(DateTime.now());
+        await _writeCache(_fallbackSentinel);
+      }
     } catch (_) {
-      // Silent by design: this is a purely decorative, best-effort remote
-      // config fetch layered on top of a theme that's already rendering.
-      // Any failure (offline, timeout, malformed response) just leaves the
-      // local seasonalFallback() in place — never a toast/error UI for
-      // something this low-stakes.
+      // Silent by design: a purely decorative, best-effort remote-config
+      // fetch layered on top of a theme that's already rendering. Any failure
+      // (offline, timeout, malformed) just leaves the cached/fallback theme
+      // in place — never a toast/error UI for something this low-stakes.
+    } finally {
+      // Flip the flag only AFTER the frame that renders the just-resolved
+      // theme, so that first render still sees `false` and swaps instantly.
+      // Every swap after that (admin changes a theme while the app is open)
+      // gets the normal cross-fade.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        hasResolvedRemote.value = true;
+      });
     }
   }
 

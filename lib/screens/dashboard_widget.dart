@@ -1711,11 +1711,15 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
         controller: _scrollController,
         child: Column(
           children: [
-            // Dynamic themed header — cross-fades between themes
+            // Dynamic themed header — cross-fades between themes on live
+            // (admin-driven) changes, but the FIRST resolution of the session
+            // is instant so a new install never visibly cross-fades from the
+            // month fallback to the real remote theme.
             Obx(() {
               final ht = _themeC.theme.value;
+              final animate = _themeC.hasResolvedRemote.value;
               return AnimatedSwitcher(
-                duration: const Duration(milliseconds: 600),
+                duration: Duration(milliseconds: animate ? 600 : 0),
                 child: KeyedSubtree(
                   key: ValueKey('header_${ht.id}'),
                   child: _buildHeader(ht),
