@@ -29,6 +29,14 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
     with TickerProviderStateMixin {
   late AnimationController _logoController;
   late Animation<Alignment> _logoAlignmentAnimation;
+  // Plays once, before _logoController, so the logo grows into place from
+  // nothing instead of just appearing already at full "resting" size. Kept
+  // as its own controller (rather than folded into _logoController) so the
+  // grow-in and the shrink-to-top move stay two clearly sequenced beats
+  // instead of one animation doing double duty.
+  late AnimationController _entranceController;
+  late Animation<double> _entranceOpacity;
+  late Animation<double> _entranceScale;
   // Logo width/height are deliberately NOT Tweens built once in initState.
   // They used to be (via Sizer's .w/.h), but on a slower device initState()
   // can run before the platform delivers real window metrics — Sizer's
@@ -171,12 +179,16 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
 
     // Logo Animations — 700ms was overcorrecting on "don't make it feel
     // laggy": rapid-fire motion with no hold time reads as broken/glitchy
-    // to the eye even when every frame renders correctly. 950ms is the
-    // middle ground — still much snappier than the original 1200ms, but
-    // slow enough to read as a deliberate motion, not a blur.
+    // to the eye even when every frame renders correctly. 950ms was the
+    // middle ground back when this was the only beat in the sequence.
+    // Trimmed to 650ms as part of the full launch->login timing pass —
+    // total fixed time from launch to an interactive login form was 2.9s,
+    // past Android's ~2.5s "did it freeze?" threshold; still slow enough
+    // to read as deliberate motion once played alongside the shorter
+    // entrance/hold beats below.
     _logoController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 950),
+      duration: const Duration(milliseconds: 650),
     );
 
     // Moves to near the top — required so the logo stays visible ABOVE
@@ -194,10 +206,30 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
           CurvedAnimation(parent: _logoController, curve: Curves.easeInOut),
         );
 
-    // Form Slide Animation
+    // Entrance (grow-in) — plays first. Fades in while scaling up from
+    // small; easeOutBack gives it a slight overshoot past 1.0 before
+    // settling, so it reads as one landing motion rather than a static pop.
+    // Opacity finishes at 60% of the duration so the logo is already fully
+    // visible while the scale is still settling into place. Trimmed from
+    // 550ms as part of the launch->login timing pass — see the
+    // _logoController comment above for the total-time context.
+    _entranceController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _entranceOpacity = CurvedAnimation(
+      parent: _entranceController,
+      curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+    );
+    _entranceScale = Tween<double>(begin: 0.55, end: 1.0).animate(
+      CurvedAnimation(parent: _entranceController, curve: Curves.easeOutBack),
+    );
+
+    // Form Slide Animation — trimmed from 800ms as part of the
+    // launch->login timing pass (see _logoController comment above).
     _formController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 550),
     );
 
     _formOffsetAnimation = Tween<Offset>(
@@ -273,56 +305,24 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
           _breathingController.forward(); // Or .repeat(reverse: true)
         }
 
-        // Hold on the settled logo before doing anything else — 120ms was
-        // too brief to actually register as a "landed" moment, making the
-        // whole sequence feel like one uninterrupted blur rather than
-        // motion-then-pause-then-next-thing.
-        Future.delayed(const Duration(milliseconds: 400), () async {
-          if (!mounted) return;
+        // Was: Future.delayed(400ms) before starting the version/session
+        // check — dropped as part of the launch->login timing pass (see
+        // _logoController comment above). The shrink-to-top motion itself
+        // already gives the logo its "landed" beat; a further fixed hold
+        // here was pure added latency with no motion happening during it.
+        _proceedAfterLogoLanded();
+      }
+    });
 
-          // main.dart's Firebase/Preferences/Repository init now runs
-          // concurrently with this animation instead of blocking the first
-          // frame — wait for it here, right before `sp`/the network stack
-          // are actually needed. Normally already done by this point.
-          await appBootstrapFuture;
-          if (!mounted) return;
-
-          final validateResponse = await _authC.validateVersion();
-
-          // Hard block ONLY on update_required (below min_supported_version
-          // — an explicit admin-set minimum). update_available alone means
-          // "a newer version exists" and must never block anyone; that flag
-          // used to be wired to this same block, which would have force-
-          // blocked every user on every single release.
-          if (validateResponse?.updateRequired == true) {
-            Get.offAll(() => UpdateVersionScreen(dataModel: validateResponse));
-            return;
-          }
-
-          if (CommonLogics.checkUserLogin()) {
-            // Confirm the cached session is still accepted by the server
-            // BEFORE committing to /dashboard — see validateSession's doc
-            // comment for why (splash→dashboard→login flicker bug).
-            final sessionValid = await _authC.validateSession();
-            if (!mounted) return;
-
-            if (sessionValid) {
-              // Self-healing sync: catches a token that failed to register
-              // on a previous run (flaky network, brief backend outage)
-              // without waiting for this session's next login, which for a
-              // completed profile may never happen again.
-              _authC.registerFcmToken();
-              _goToDashboard();
-            } else {
-              // Explicit server rejection — the cached flag lied, clear it
-              // so the user lands cleanly on the login form instead of a
-              // dashboard that would immediately bounce them back out.
-              await sp!.clear();
-              _startFormAnimation();
-            }
-          } else {
-            _startFormAnimation(); // Defined below, handles form slide up
-          }
+    // Once the logo has grown into place, give it a brief beat to register
+    // as "landed" before it starts shrinking to the top — an instant cut
+    // from grow-in straight into shrink would read as one confused motion.
+    // Trimmed from 200ms as part of the launch->login timing pass.
+    _entranceController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        if (!mounted) return;
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (mounted) _logoController.forward();
         });
       }
     });
@@ -332,9 +332,61 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
     // motion (matches the native splash's icon, which was already visible).
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        _logoController.forward();
+        _entranceController.forward();
       }
     });
+  }
+
+  // Runs once the shrink-to-top motion has completed. Split out of
+  // initState's _logoController status listener so it can be called
+  // directly (no artificial delay in front of it) — see the timing-pass
+  // comment where it's invoked.
+  Future<void> _proceedAfterLogoLanded() async {
+    if (!mounted) return;
+
+    // main.dart's Firebase/Preferences/Repository init now runs
+    // concurrently with this animation instead of blocking the first
+    // frame — wait for it here, right before `sp`/the network stack
+    // are actually needed. Normally already done by this point.
+    await appBootstrapFuture;
+    if (!mounted) return;
+
+    final validateResponse = await _authC.validateVersion();
+
+    // Hard block ONLY on update_required (below min_supported_version
+    // — an explicit admin-set minimum). update_available alone means
+    // "a newer version exists" and must never block anyone; that flag
+    // used to be wired to this same block, which would have force-
+    // blocked every user on every single release.
+    if (validateResponse?.updateRequired == true) {
+      Get.offAll(() => UpdateVersionScreen(dataModel: validateResponse));
+      return;
+    }
+
+    if (CommonLogics.checkUserLogin()) {
+      // Confirm the cached session is still accepted by the server
+      // BEFORE committing to /dashboard — see validateSession's doc
+      // comment for why (splash→dashboard→login flicker bug).
+      final sessionValid = await _authC.validateSession();
+      if (!mounted) return;
+
+      if (sessionValid) {
+        // Self-healing sync: catches a token that failed to register
+        // on a previous run (flaky network, brief backend outage)
+        // without waiting for this session's next login, which for a
+        // completed profile may never happen again.
+        _authC.registerFcmToken();
+        _goToDashboard();
+      } else {
+        // Explicit server rejection — the cached flag lied, clear it
+        // so the user lands cleanly on the login form instead of a
+        // dashboard that would immediately bounce them back out.
+        await sp!.clear();
+        _startFormAnimation();
+      }
+    } else {
+      _startFormAnimation(); // Defined below, handles form slide up
+    }
   }
 
   // Freezes the logo's breathing/shimmer animation on a static frame, then
@@ -370,6 +422,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
     _otpController.dispose();
     if (_timer?.isActive == true) _timer?.cancel();
     _logoController.dispose();
+    _entranceController.dispose();
     _formController.dispose();
     _breathingController.dispose();
     _animationController.dispose();
@@ -838,6 +891,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
             animation: Listenable.merge([
               _logoController,
               _breathingController,
+              _entranceController,
             ]),
             builder: (context, child) {
               // Computed fresh from MediaQuery every frame — see the field
@@ -845,8 +899,15 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
               // initState.
               final screenSize = MediaQuery.of(context).size;
               final t = Curves.easeInOut.transform(_logoController.value);
+              // End width was 0.46 — at alignment (0, -0.88) that put the
+              // shrunk logo's bottom edge ~3px past the login form's top
+              // edge (form is 82% of screen height, so its top sits at 18%)
+              // on a reference 390x844 screen, i.e. straddling the seam
+              // instead of sitting cleanly on the gradient above it. 0.54
+              // reads as noticeably more legible while the form's height
+              // (see 82.h below) does the actual clearance work.
               final w = screenSize.width * 0.70 +
-                  (screenSize.width * 0.46 - screenSize.width * 0.70) * t;
+                  (screenSize.width * 0.54 - screenSize.width * 0.70) * t;
               final h = screenSize.height * 0.50 +
                   (screenSize.height * 0.10 - screenSize.height * 0.50) * t;
               final align = _logoAlignmentAnimation.value;
@@ -856,7 +917,13 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
               final baseLogo = SizedBox(
                 width: w,
                 height: h,
-                child: Image.asset(CommonImages.logo1, fit: BoxFit.contain),
+                child: Opacity(
+                  opacity: _entranceOpacity.value,
+                  child: Transform.scale(
+                    scale: _entranceScale.value,
+                    child: Image.asset(CommonImages.logo1, fit: BoxFit.contain),
+                  ),
+                ),
               );
 
               final logo = _splashDone
@@ -877,7 +944,13 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
               alignment: Alignment.bottomCenter,
               child: Container(
                 width: double.infinity,
-                height: 85.h,
+                // Was 85.h — that put this form's top edge right where the
+                // shrunk logo's bottom edge lands (see the `w` comment
+                // above), so the logo looked wedged into the seam instead
+                // of sitting clear of it on the gradient. 82.h opens a
+                // ~19px gap on a reference 390x844 screen without the
+                // alignment/height above needing to change.
+                height: 82.h,
                 padding: EdgeInsets.symmetric(horizontal: 6.w),
                 decoration: BoxDecoration(
                   color: Color(0xffFFFDF9),
