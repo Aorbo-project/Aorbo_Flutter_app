@@ -8,24 +8,26 @@ import 'package:get/get.dart';
 /// Fixes the splash→dashboard (and OTP-success→dashboard) white/washed
 /// flash: the old handoff faded the incoming dashboard in over the still-
 /// opaque splash gradient, and the dashboard's first 2-3 frames are just
-/// its blank `#F5F8FF` Scaffold background — so you got a ~60-90ms
-/// desaturated flash (measured on device). Here the dashboard mounts and
-/// runs its `_FadeSlideIn` content stagger entirely BEHIND [cover]; the
-/// reveal is then a clean fade of one opaque layer.
+/// its blank `#F5F8FF` Scaffold background — a measured ~60-90ms
+/// desaturated flash on device.
+///
+/// Sequence:
+///   1. insert the [cover] overlay entry (opaque)
+///   2. once it has actually painted (post-frame), THEN `Get.offAllNamed`
+///      — so the route swap + the dashboard's blank first frames happen
+///      entirely behind an already-opaque layer, no 1-frame race
+///   3. hold ~60ms so the dashboard lays out, then fade the cover over
+///      300ms (easeOut) and remove it
 ///
 /// [cover] should visually match whatever is on screen when this is
-/// called — the yellow splash gradient from SplashWithLoginScreen, a plain
+/// called — the yellow splash gradient from SplashWithLoginScreen, plain
 /// `#F5F8FF` from the standalone OTP screen — so there is no jump before
 /// the dissolve begins.
 ///
-/// [context] must be a context under the app navigator's Overlay (any
-/// screen's own `context` is). The overlay entry it inserts lives on the
-/// navigator's OverlayState, not the route, so `Get.offAllNamed` below
-/// can't tear it down.
+/// [context] must be under the app navigator's Overlay (any screen's own
+/// `context` is). The entry lives on that shared OverlayState, not the
+/// route, so `Get.offAllNamed` can't tear it down.
 void dissolveToDashboard(BuildContext context, {required Widget cover}) {
-  // The nearest Overlay to any screen's context IS the app navigator's
-  // shared OverlayState (routes are entries in it). Our entry goes there
-  // too and outlives the route swap below.
   final OverlayState? overlay = Overlay.maybeOf(context);
   if (overlay == null) {
     // Shouldn't happen from a real screen — but never hang the app over a
@@ -38,19 +40,28 @@ void dissolveToDashboard(BuildContext context, {required Widget cover}) {
   entry = OverlayEntry(
     builder: (_) => _DissolveCover(
       cover: cover,
+      onReady: () => Get.offAllNamed('/dashboard'),
       onDone: () {
         if (entry.mounted) entry.remove();
       },
     ),
   );
   overlay.insert(entry);
-  Get.offAllNamed('/dashboard');
 }
 
 class _DissolveCover extends StatefulWidget {
   final Widget cover;
+
+  /// Called on the first frame AFTER the cover has painted — the safe
+  /// moment to swap the route underneath it.
+  final VoidCallback onReady;
   final VoidCallback onDone;
-  const _DissolveCover({required this.cover, required this.onDone});
+
+  const _DissolveCover({
+    required this.cover,
+    required this.onReady,
+    required this.onDone,
+  });
 
   @override
   State<_DissolveCover> createState() => _DissolveCoverState();
@@ -77,9 +88,11 @@ class _DissolveCoverState extends State<_DissolveCover>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      // Give the dashboard under us a couple of layout/paint frames before
-      // we start clearing.
-      await Future<void>.delayed(const Duration(milliseconds: 40));
+      // Cover has painted (opaque) — now it's safe to swap routes behind it.
+      widget.onReady();
+      // Let the dashboard mount + get a few layout/paint frames in, still
+      // hidden, before we start clearing.
+      await Future<void>.delayed(const Duration(milliseconds: 60));
       if (!mounted) {
         _finish();
         return;
@@ -89,7 +102,7 @@ class _DissolveCoverState extends State<_DissolveCover>
     });
     // Safety net: `forward()`'s future never completes if the app is
     // backgrounded mid-animation — don't leave the cover stuck.
-    Future<void>.delayed(const Duration(milliseconds: 1200), _finish);
+    Future<void>.delayed(const Duration(milliseconds: 1400), _finish);
   }
 
   @override
