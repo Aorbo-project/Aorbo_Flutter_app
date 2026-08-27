@@ -441,9 +441,6 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
         double.tryParse(booking.finalAmount?.toString() ?? '0') ??
         0;
     final double refund = data?.refundCalculation?.refund ?? 0;
-    final double refundPercent = paid > 0
-        ? ((refund / paid) * 100).clamp(0, 100)
-        : 0;
     final loseItems = data?.refundCalculation?.loseItems ?? [];
     final refundItems = data?.refundCalculation?.refundItems ?? [];
     return Container(
@@ -540,8 +537,6 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
               ),
             ],
           ),
-          SizedBox(height: 2.h),
-          _refundProgressBar(refundPercent),
           SizedBox(height: 1.5.h),
           Container(
             padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.2.h),
@@ -597,59 +592,6 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
               style: AppType.style(10.sp, w: isBold ? FontWeight.w800 : FontWeight.w600, color: color),
             );
           },
-        ),
-      ],
-    );
-  }
-
-  Widget _refundProgressBar(double percent) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(10),
-          child: Stack(
-            children: [
-              Container(
-                height: 1.h,
-                width: double.infinity,
-                color: _TI.redSoft,
-              ),
-              TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0, end: percent / 100),
-                duration: const Duration(milliseconds: 1400),
-                curve: Curves.easeOutCubic,
-                builder: (_, value, __) {
-                  return FractionallySizedBox(
-                    widthFactor: value,
-                    child: Container(
-                      height: 1.h,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [_TI.teal, _TI.brand],
-                        ),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-        SizedBox(height: 0.6.h),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              '${(100 - percent).toStringAsFixed(0)}% Deducted',
-              style: AppType.style(8.sp, w: FontWeight.w600, color: _TI.red),
-            ),
-            Text(
-              '${percent.toStringAsFixed(0)}% Refunded',
-              style: AppType.style(8.sp, w: FontWeight.w600, color: _TI.teal),
-            ),
-          ],
         ),
       ],
     );
