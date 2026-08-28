@@ -109,7 +109,12 @@ class CommonBookedCard extends StatelessWidget {
       child: Text(
         text.toUpperCase(),
         textScaler: const TextScaler.linear(1),
-        style: AppType.style(FontSize.s8, w: FontWeight.w700, color: filled ? Colors.white : color, letterSpacing: 0.5),
+        style: AppType.style(
+          FontSize.s8,
+          w: FontWeight.w700,
+          color: filled ? Colors.white : color,
+          letterSpacing: 0.5,
+        ),
       ),
     );
   }
@@ -122,7 +127,13 @@ class CommonBookedCard extends StatelessWidget {
         Text(
           label.toUpperCase(),
           textScaler: const TextScaler.linear(1),
-          style: AppType.style(FontSize.s7, w: FontWeight.w600, color: _BC.inkLight, height: 1, letterSpacing: 0.8),
+          style: AppType.style(
+            FontSize.s7,
+            w: FontWeight.w600,
+            color: _BC.inkLight,
+            height: 1,
+            letterSpacing: 0.8,
+          ),
         ),
         SizedBox(height: _rh(0.3, 3.5)),
         Text(
@@ -130,7 +141,12 @@ class CommonBookedCard extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           textScaler: const TextScaler.linear(1),
-          style: AppType.style(FontSize.s11, w: FontWeight.w700, color: _BC.ink, height: 1.2),
+          style: AppType.style(
+            FontSize.s11,
+            w: FontWeight.w700,
+            color: _BC.ink,
+            height: 1.2,
+          ),
         ),
       ],
     );
@@ -146,7 +162,6 @@ class CommonBookedCard extends StatelessWidget {
     final bool isCompleted = trekStatusRaw.toLowerCase() == 'completed';
     final bool ratingGiven = booking.ratingGiven ?? false;
 
-    // ✅ FIXED: Safe parsing now handled by the Freezed model
     final double ratingValue = booking.ratingValue ?? 0.0;
 
     final bool showRateHint = isCompleted && !ratingGiven;
@@ -180,7 +195,9 @@ class CommonBookedCard extends StatelessWidget {
         paymentStatusRaw.toLowerCase().contains('advance');
     final double logoSize = _rw(9.5, 42);
     final double cornerRadius = _rw(4.5, 20);
+
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: onViewDetailsTap,
       child: Padding(
         padding: EdgeInsets.symmetric(
@@ -270,7 +287,11 @@ class CommonBookedCard extends StatelessWidget {
                                     : Center(
                                         child: Text(
                                           _initials(vendorName),
-                                          style: AppType.style(FontSize.s10, w: FontWeight.w700, color: Colors.white),
+                                          style: AppType.style(
+                                            FontSize.s10,
+                                            w: FontWeight.w700,
+                                            color: Colors.white,
+                                          ),
                                         ),
                                       ),
                               ),
@@ -282,14 +303,25 @@ class CommonBookedCard extends StatelessWidget {
                                     Text(
                                       'ORGANISED BY',
                                       textScaler: const TextScaler.linear(1),
-                                      style: AppType.style(FontSize.s7, w: FontWeight.w600, color: _BC.inkLight, height: 1, letterSpacing: 1),
+                                      style: AppType.style(
+                                        FontSize.s7,
+                                        w: FontWeight.w600,
+                                        color: _BC.inkLight,
+                                        height: 1,
+                                        letterSpacing: 1,
+                                      ),
                                     ),
                                     SizedBox(height: _rh(0.25, 3)),
                                     Text(
                                       vendorName,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: AppType.style(FontSize.s10, w: FontWeight.w600, color: _BC.ink, height: 1.25),
+                                      style: AppType.style(
+                                        FontSize.s10,
+                                        w: FontWeight.w600,
+                                        color: _BC.ink,
+                                        height: 1.25,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -318,7 +350,13 @@ class CommonBookedCard extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             textScaler: const TextScaler.linear(1),
-                            style: AppType.style(FontSize.s13, w: FontWeight.w800, color: _BC.ink, height: 1.15, letterSpacing: -0.2),
+                            style: AppType.style(
+                              FontSize.s13,
+                              w: FontWeight.w800,
+                              color: _BC.ink,
+                              height: 1.15,
+                              letterSpacing: -0.2,
+                            ),
                           ),
                           if (destinationName.isNotEmpty)
                             Padding(
@@ -336,7 +374,11 @@ class CommonBookedCard extends StatelessWidget {
                                       destinationName,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: AppType.style(FontSize.s9, color: _BC.inkMid, height: 1.25),
+                                      style: AppType.style(
+                                        FontSize.s9,
+                                        color: _BC.inkMid,
+                                        height: 1.25,
+                                      ),
                                     ),
                                   ),
                                   if (difficulty.isNotEmpty &&
@@ -404,10 +446,10 @@ class CommonBookedCard extends StatelessWidget {
                               ],
                             ),
                           ),
-                          // ── rate hint (completed, not yet rated) ──
                           if (showRateHint) ...[
                             SizedBox(height: _rh(1, 10)),
                             GestureDetector(
+                              behavior: HitTestBehavior.opaque,
                               onTap: onRateTrekTap,
                               child: Container(
                                 padding: EdgeInsets.symmetric(
@@ -434,7 +476,12 @@ class CommonBookedCard extends StatelessWidget {
                                         'How was your trek? Tap to rate',
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
-                                        style: AppType.style(FontSize.s9, w: FontWeight.w600, color: _BC.ink, height: 1.2),
+                                        style: AppType.style(
+                                          FontSize.s9,
+                                          w: FontWeight.w600,
+                                          color: _BC.ink,
+                                          height: 1.2,
+                                        ),
                                       ),
                                     ),
                                     Container(
@@ -450,7 +497,11 @@ class CommonBookedCard extends StatelessWidget {
                                       ),
                                       child: Text(
                                         'Rate',
-                                        style: AppType.style(FontSize.s8, w: FontWeight.w700, color: Colors.white),
+                                        style: AppType.style(
+                                          FontSize.s8,
+                                          w: FontWeight.w700,
+                                          color: Colors.white,
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -458,10 +509,10 @@ class CommonBookedCard extends StatelessWidget {
                               ),
                             ),
                           ],
-                          // ── rated strip (completed & rated) ──
                           if (showRatedStrip) ...[
                             SizedBox(height: _rh(1, 10)),
                             GestureDetector(
+                              behavior: HitTestBehavior.opaque,
                               onTap: onRateTrekTap,
                               child: Container(
                                 padding: EdgeInsets.symmetric(
@@ -492,7 +543,12 @@ class CommonBookedCard extends StatelessWidget {
                                         'You rated this trek',
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
-                                        style: AppType.style(FontSize.s9, w: FontWeight.w600, color: _BC.ink, height: 1.2),
+                                        style: AppType.style(
+                                          FontSize.s9,
+                                          w: FontWeight.w600,
+                                          color: _BC.ink,
+                                          height: 1.2,
+                                        ),
                                       ),
                                     ),
                                     Row(
@@ -510,7 +566,11 @@ class CommonBookedCard extends StatelessWidget {
                                     SizedBox(width: _rw(1.2, 6)),
                                     Text(
                                       ratingValue.toStringAsFixed(1),
-                                      style: AppType.style(FontSize.s9, w: FontWeight.w700, color: _BC.completed),
+                                      style: AppType.style(
+                                        FontSize.s9,
+                                        w: FontWeight.w700,
+                                        color: _BC.completed,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -520,7 +580,6 @@ class CommonBookedCard extends StatelessWidget {
                         ],
                       ),
                     ),
-                    // ── tear-off stub ──
                     SizedBox(
                       height: _stubHeight,
                       child: Column(
@@ -541,9 +600,6 @@ class CommonBookedCard extends StatelessWidget {
                               ),
                               child: Row(
                                 children: [
-                                  // Animated route badge — a winding trail
-                                  // that "flows" toward a pulsing destination
-                                  // pin, tinted with the booking status color.
                                   _RouteFlowBadge(
                                     color: statusColor,
                                     size: const Size(56, 24),
@@ -564,7 +620,13 @@ class CommonBookedCard extends StatelessWidget {
                                           textScaler: const TextScaler.linear(
                                             1,
                                           ),
-                                          style: AppType.style(FontSize.s10, w: FontWeight.w700, color: _BC.ink, height: 1.2, letterSpacing: 0.6),
+                                          style: AppType.style(
+                                            FontSize.s10,
+                                            w: FontWeight.w700,
+                                            color: _BC.ink,
+                                            height: 1.2,
+                                            letterSpacing: 0.6,
+                                          ),
                                         ),
                                         Text(
                                           'Booked $bookingDate',
@@ -573,7 +635,11 @@ class CommonBookedCard extends StatelessWidget {
                                           textScaler: const TextScaler.linear(
                                             1,
                                           ),
-                                          style: AppType.style(FontSize.s8, color: _BC.inkLight, height: 1.2),
+                                          style: AppType.style(
+                                            FontSize.s8,
+                                            color: _BC.inkLight,
+                                            height: 1.2,
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -584,7 +650,11 @@ class CommonBookedCard extends StatelessWidget {
                                       children: [
                                         Text(
                                           'Details',
-                                          style: AppType.style(FontSize.s9, w: FontWeight.w600, color: _BC.brand),
+                                          style: AppType.style(
+                                            FontSize.s9,
+                                            w: FontWeight.w600,
+                                            color: _BC.brand,
+                                          ),
                                         ),
                                         SizedBox(width: _rw(0.8, 4)),
                                         Container(
@@ -621,8 +691,6 @@ class CommonBookedCard extends StatelessWidget {
 
 // ─────────────────────────────────────────────
 // ANIMATED ROUTE-FLOW BADGE (replaces hiker scene)
-// A faint winding trail with dashes flowing along it toward a
-// pulsing destination pin — start dot on the left, pin on the right.
 // ─────────────────────────────────────────────
 class _RouteFlowBadge extends StatefulWidget {
   final Color color;
@@ -686,7 +754,6 @@ class _RouteFlowPainter extends CustomPainter {
     final ui.PathMetric metric = metrics.first;
     final double length = metric.length;
 
-    // 1. Faint underlay of the full route.
     canvas.drawPath(
       route,
       Paint()
@@ -696,7 +763,6 @@ class _RouteFlowPainter extends CustomPainter {
         ..strokeCap = StrokeCap.round,
     );
 
-    // 2. Flowing dashes ("marching ants") moving toward the destination.
     const double dash = 5.0;
     const double gap = 5.0;
     const double cycle = dash + gap;
@@ -714,7 +780,6 @@ class _RouteFlowPainter extends CustomPainter {
       canvas.drawPath(metric.extractPath(start, end), dashPaint);
     }
 
-    // 3. Start dot.
     final Offset startPos = metric.getTangentForOffset(0)!.position;
     canvas.drawCircle(
       startPos,
@@ -723,9 +788,8 @@ class _RouteFlowPainter extends CustomPainter {
     );
     canvas.drawCircle(startPos, 1.4, Paint()..color = color);
 
-    // 4. Destination pin with a soft expanding pulse ring.
     final Offset endPos = metric.getTangentForOffset(length)!.position;
-    final double pulse = 0.5 - 0.5 * math.cos(t * 2 * math.pi); // 0→1→0
+    final double pulse = 0.5 - 0.5 * math.cos(t * 2 * math.pi);
     canvas.drawCircle(
       endPos,
       3.0 + pulse * 3.0,
