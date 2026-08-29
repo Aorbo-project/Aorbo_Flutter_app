@@ -114,7 +114,7 @@ class _DissolveCoverState extends State<_DissolveCover>
     with SingleTickerProviderStateMixin {
   late final AnimationController _c = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 460),
+    duration: const Duration(milliseconds: 320),
   );
   late final Animation<double> _fade = Tween<double>(begin: 1, end: 0).animate(
     CurvedAnimation(parent: _c, curve: Curves.easeInOut),
@@ -142,9 +142,9 @@ class _DissolveCoverState extends State<_DissolveCover>
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       // Cover has painted (opaque) — now it's safe to swap routes behind it.
       widget.onReady();
-      // Let the dashboard mount + get a few layout/paint frames in, still
+      // Let the dashboard mount + get a couple layout/paint frames in, still
       // hidden, before we start clearing.
-      await Future<void>.delayed(const Duration(milliseconds: 80));
+      await Future<void>.delayed(const Duration(milliseconds: 40));
       if (!mounted) {
         _finish();
         return;
