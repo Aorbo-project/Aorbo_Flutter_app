@@ -1,6 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+// ── Dashboard-entrance gate ────────────────────────────────────────────────
+// While a dissolve cover is up, the dashboard is mounted but hidden. Its
+// staggered header entrance (_FadeSlideIn) must NOT run yet — if it does it
+// finishes behind the cover and the reveal shows content caught mid-motion.
+// The dashboard's entrance widgets call [whenDashboardVisible]; the cover
+// releases them once it's ~mostly faded. Any non-dissolve arrival (bottom-nav
+// tab switch, Get.until back to it) sees `_coverActive == false` and runs
+// immediately.
+
+bool _coverActive = false;
+final List<VoidCallback> _waiters = <VoidCallback>[];
+
+/// Runs [cb] now if no dissolve cover is up, otherwise once the current
+/// cover has mostly cleared.
+void whenDashboardVisible(VoidCallback cb) {
+  if (!_coverActive) {
+    cb();
+  } else {
+    _waiters.add(cb);
+  }
+}
+
+void _releaseWaiters() {
+  if (!_coverActive) return;
+  _coverActive = false;
+  final pending = List<VoidCallback>.of(_waiters);
+  _waiters.clear();
+  for (final cb in pending) {
+    cb();
+  }
+}
+
 /// Navigates to `/dashboard` while an opaque [cover] sits on top, then
 /// dissolves the cover away once the dashboard has had a couple of frames
 /// to lay out and paint.
@@ -36,12 +68,19 @@ void dissolveToDashboard(BuildContext context, {required Widget cover}) {
     return;
   }
 
+  _coverActive = true;
+
   late OverlayEntry entry;
   entry = OverlayEntry(
     builder: (_) => _DissolveCover(
       cover: cover,
       onReady: () => Get.offAllNamed('/dashboard'),
+      // Fired ~65% through the fade — the dashboard is visible enough that
+      // its entrance animation reading as "starting now" looks right, and
+      // the last of the fade overlaps the first stagger step.
+      onMostlyClear: _releaseWaiters,
       onDone: () {
+        _releaseWaiters(); // safety — in case onMostlyClear never fired
         if (entry.mounted) entry.remove();
       },
     ),
@@ -55,11 +94,15 @@ class _DissolveCover extends StatefulWidget {
   /// Called on the first frame AFTER the cover has painted — the safe
   /// moment to swap the route underneath it.
   final VoidCallback onReady;
+
+  /// Called once the fade is ~65% done (cover ~35% opacity).
+  final VoidCallback onMostlyClear;
   final VoidCallback onDone;
 
   const _DissolveCover({
     required this.cover,
     required this.onReady,
+    required this.onMostlyClear,
     required this.onDone,
   });
 
@@ -77,6 +120,7 @@ class _DissolveCoverState extends State<_DissolveCover>
     CurvedAnimation(parent: _c, curve: Curves.easeOut),
   );
   bool _done = false;
+  bool _mostlyClearFired = false;
 
   void _finish() {
     if (_done) return;
@@ -84,9 +128,17 @@ class _DissolveCoverState extends State<_DissolveCover>
     widget.onDone();
   }
 
+  void _onTick() {
+    if (!_mostlyClearFired && _c.value >= 0.65) {
+      _mostlyClearFired = true;
+      widget.onMostlyClear();
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    _c.addListener(_onTick);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       // Cover has painted (opaque) — now it's safe to swap routes behind it.
       widget.onReady();

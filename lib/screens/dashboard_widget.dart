@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/controller/trek_controller.dart';
+import 'package:arobo_app/widgets/dissolve_to_dashboard.dart' show whenDashboardVisible;
 import 'package:arobo_app/utils/app_theme.dart';
 import 'package:arobo_app/utils/common_btn.dart';
 import 'package:arobo_app/utils/common_colors.dart';
@@ -2389,8 +2390,14 @@ class _FadeSlideInState extends State<_FadeSlideIn>
   @override
   void initState() {
     super.initState();
-    Future.delayed(Duration(milliseconds: widget.delayMs), () {
-      if (mounted) _c.forward();
+    // Don't start while a splash→dashboard dissolve cover is still up — the
+    // stagger would finish hidden and the reveal would show content caught
+    // mid-motion. Runs immediately on any normal (non-dissolve) arrival.
+    whenDashboardVisible(() {
+      if (!mounted) return;
+      Future.delayed(Duration(milliseconds: widget.delayMs), () {
+        if (mounted) _c.forward();
+      });
     });
   }
 
