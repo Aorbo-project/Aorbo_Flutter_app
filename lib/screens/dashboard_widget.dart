@@ -1054,7 +1054,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                     SizedBox(height: 2.h),
 
                     _FadeSlideIn(
-                      delayMs: 120,
+                      delayMs: 150,
                       child: Center(
                         child: Column(
                           children: [
@@ -1108,11 +1108,11 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                     ),
                     SizedBox(height: ScreenConstant.size27),
 
-                    _FadeSlideIn(delayMs: 220, child: _buildSearchCard(ht)),
+                    _FadeSlideIn(delayMs: 290, child: _buildSearchCard(ht)),
                     SizedBox(height: ScreenConstant.size20),
 
                     _FadeSlideIn(
-                      delayMs: 340,
+                      delayMs: 440,
                       // The "no treks on this route" inline card already has
                       // its own Change Route / Notify Me buttons — showing
                       // this main CTA too would just duplicate them.
@@ -2380,7 +2380,7 @@ class _FadeSlideInState extends State<_FadeSlideIn>
     with SingleTickerProviderStateMixin {
   late final AnimationController _c = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 480),
+    duration: const Duration(milliseconds: 560),
   );
   late final Animation<double> _a = CurvedAnimation(
     parent: _c,

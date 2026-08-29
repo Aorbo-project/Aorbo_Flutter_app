@@ -95,7 +95,7 @@ class _DissolveCover extends StatefulWidget {
   /// moment to swap the route underneath it.
   final VoidCallback onReady;
 
-  /// Called once the fade is ~65% done (cover ~35% opacity).
+  /// Called once the fade is ~80% done (cover ~20% opacity).
   final VoidCallback onMostlyClear;
   final VoidCallback onDone;
 
@@ -114,10 +114,10 @@ class _DissolveCoverState extends State<_DissolveCover>
     with SingleTickerProviderStateMixin {
   late final AnimationController _c = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 300),
+    duration: const Duration(milliseconds: 460),
   );
   late final Animation<double> _fade = Tween<double>(begin: 1, end: 0).animate(
-    CurvedAnimation(parent: _c, curve: Curves.easeOut),
+    CurvedAnimation(parent: _c, curve: Curves.easeInOut),
   );
   bool _done = false;
   bool _mostlyClearFired = false;
@@ -129,7 +129,7 @@ class _DissolveCoverState extends State<_DissolveCover>
   }
 
   void _onTick() {
-    if (!_mostlyClearFired && _c.value >= 0.65) {
+    if (!_mostlyClearFired && _c.value >= 0.8) {
       _mostlyClearFired = true;
       widget.onMostlyClear();
     }
@@ -144,7 +144,7 @@ class _DissolveCoverState extends State<_DissolveCover>
       widget.onReady();
       // Let the dashboard mount + get a few layout/paint frames in, still
       // hidden, before we start clearing.
-      await Future<void>.delayed(const Duration(milliseconds: 60));
+      await Future<void>.delayed(const Duration(milliseconds: 80));
       if (!mounted) {
         _finish();
         return;
