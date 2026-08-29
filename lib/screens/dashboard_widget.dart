@@ -979,11 +979,16 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
         child: Stack(
           children: [
             Positioned.fill(
-              child: HeaderSceneBackground(
-                key: ValueKey('scene_${ht.id}'),
-                scene: ht.scene.layers.isEmpty
-                    ? DashboardHeaderTheme.classic.scene
-                    : ht.scene,
+              child: AnimatedSwitcher(
+                duration: Duration(
+                  milliseconds: _themeC.hasResolvedRemote.value ? 600 : 0,
+                ),
+                child: HeaderSceneBackground(
+                  key: ValueKey('scene_${ht.id}'),
+                  scene: ht.scene.layers.isEmpty
+                      ? DashboardHeaderTheme.classic.scene
+                      : ht.scene,
+                ),
               ),
             ),
             if (HeaderThemeController.debugThemeSwitcherEnabled)
@@ -1712,20 +1717,14 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
         controller: _scrollController,
         child: Column(
           children: [
-            // Dynamic themed header — cross-fades between themes on live
-            // (admin-driven) changes, but the FIRST resolution of the session
-            // is instant so a new install never visibly cross-fades from the
-            // month fallback to the real remote theme.
+            // Dynamic themed header. Only the background scene + gradient
+            // cross-fade when the theme changes — the foreground content
+            // (logo / tagline / search / CTA) stays mounted, so its staggered
+            // entrance runs exactly once and doesn't blink when the theme
+            // resolves from default → cache → remote a beat after open.
             Obx(() {
               final ht = _themeC.theme.value;
-              final animate = _themeC.hasResolvedRemote.value;
-              return AnimatedSwitcher(
-                duration: Duration(milliseconds: animate ? 600 : 0),
-                child: KeyedSubtree(
-                  key: ValueKey('header_${ht.id}'),
-                  child: _buildHeader(ht),
-                ),
-              );
+              return _buildHeader(ht);
             }),
 
             // ----------------------------------------------------------------
