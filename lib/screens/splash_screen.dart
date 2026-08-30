@@ -10,7 +10,6 @@ import 'package:arobo_app/models/auth/validate_version_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:pinput/pinput.dart';
 import 'dart:async';
 import 'package:sizer/sizer.dart';
@@ -26,17 +25,27 @@ class SplashWithLoginScreen extends StatefulWidget {
 }
 
 // ── Auth (login + OTP) design tokens ─────────────────────────────────────
+//
+// The brand identity is the black logo on the yellow→amber gradient. So the
+// login/OTP screen is exactly that: the gradient carries ALL the colour, and
+// every foreground element is one ink black at a few opacities. No second
+// accent. Type is Poppins via AppType (the app's real type factory).
 class _Auth {
-  static const ink = Color(0xFF17181C);
-  static const muted = Color(0xFF6B7280);
-  static const faint = Color(0xFF9AA1AC);
-  static const brand = Color(0xFFFF9500); // primary orange
-  static const brandDeep = Color(0xFFF57C00);
-  static const gold = Color(0xFFFFC400);
-  static const fieldBg = Color(0xFFF4F5F7);
-  static const fieldBorder = Color(0xFFE4E7EC);
-  static const danger = Color(0xFFE5484D);
-  static const card = Color(0xFFFFFFFF);
+  static const ink = Color(0xFF000000);
+  static const ink80 = Color(0xCC000000);
+  static const ink62 = Color(0x9E000000);
+  static const ink45 = Color(0x73000000);
+  static const ink28 = Color(0x47000000);
+  static const ink14 = Color(0x24000000);
+  static const field = Color(0xFFFFFFFF);
+
+  // The brand-gradient ground (kept in sync with the dashboard-dissolve cover
+  // and _goToDashboard so the hand-off doesn't flash).
+  static const grad = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [Color(0xFFFEF200), Color(0xFFFFC400), Color(0xFFFFA000)],
+  );
 
   static TextStyle t(
     double size, {
@@ -44,14 +53,15 @@ class _Auth {
     Color color = ink,
     double? height,
     double? spacing,
+    TextDecoration? decoration,
   }) =>
-      GoogleFonts.plusJakartaSans(
-        fontSize: AppType.clampFontSize(size),
-        fontWeight: w,
-        color: color,
-        height: height,
-        letterSpacing: spacing,
-      );
+      AppType.style(size,
+          w: w,
+          color: color,
+          height: height,
+          letterSpacing: spacing,
+          decoration: decoration,
+          decorationColor: decoration != null ? color : null);
 }
 
 class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
@@ -269,13 +279,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
     dissolveToDashboard(
       context,
       cover: const DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFFEF200), Color(0xFFFFA000)],
-          ),
-        ),
+        decoration: BoxDecoration(gradient: _Auth.grad),
       ),
     );
   }
@@ -333,41 +337,38 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
     bool isError = false;
 
     final defaultPinTheme = PinTheme(
-      width: 13.w,
-      height: 6.6.h,
-      textStyle: _Auth.t(19, w: FontWeight.w800),
+      width: 12.w,
+      height: 6.4.h,
+      textStyle: _Auth.t(18, w: FontWeight.w800),
       decoration: BoxDecoration(
-        color: _Auth.fieldBg,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _Auth.fieldBorder, width: 1.4),
+        color: _Auth.field,
+        borderRadius: BorderRadius.circular(11),
+        border: Border.all(color: _Auth.ink28, width: 1.5),
       ),
     );
 
     final focusedPinTheme = defaultPinTheme.copyWith(
       decoration: defaultPinTheme.decoration!.copyWith(
-        color: Colors.white,
-        border: Border.all(color: _Auth.brand, width: 1.8),
-        boxShadow: [
-          BoxShadow(
-            color: _Auth.brand.withValues(alpha: 0.18),
-            blurRadius: 14,
-            offset: const Offset(0, 4),
-          ),
+        color: _Auth.field,
+        border: Border.all(color: _Auth.ink, width: 2),
+        boxShadow: const [
+          BoxShadow(color: _Auth.ink14, blurRadius: 0, spreadRadius: 3),
         ],
       ),
     );
 
     final submittedPinTheme = defaultPinTheme.copyWith(
       decoration: defaultPinTheme.decoration!.copyWith(
-        color: Colors.white,
-        border: Border.all(color: _Auth.brandDeep, width: 1.6),
+        color: _Auth.field,
+        border: Border.all(color: _Auth.ink, width: 1.5),
       ),
     );
 
+    // Error is shown by a heavier black keyline + the shake — no red.
     final errorPinTheme = defaultPinTheme.copyWith(
       decoration: defaultPinTheme.decoration!.copyWith(
-        color: _Auth.danger.withValues(alpha: 0.06),
-        border: Border.all(color: _Auth.danger, width: 1.6),
+        color: _Auth.field,
+        border: Border.all(color: _Auth.ink, width: 2),
       ),
     );
 
@@ -421,44 +422,53 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(height: 5.h),
-            GestureDetector(
-              onTap: () {
-                _authC.otpTextField.value.clear();
-                setState(() => showOtp = false);
-              },
-              child: Container(
-                width: 10.w,
-                height: 10.w,
-                decoration: BoxDecoration(
-                  color: _Auth.fieldBg,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: _Auth.fieldBorder),
+            SizedBox(height: 4.h),
+            Row(
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    _authC.otpTextField.value.clear();
+                    setState(() => showOtp = false);
+                  },
+                  child: Container(
+                    width: 9.w,
+                    height: 9.w,
+                    decoration: BoxDecoration(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(11),
+                      border: Border.all(color: _Auth.ink, width: 1.5),
+                    ),
+                    child: const Icon(Icons.arrow_back_rounded,
+                        color: _Auth.ink, size: 17),
+                  ),
                 ),
-                child: const Icon(Icons.arrow_back_rounded,
-                    color: _Auth.ink, size: 19),
-              ),
+                SizedBox(width: 3.w),
+                Text('STEP 2 OF 2 · VERIFY',
+                    style: _Auth.t(8.5,
+                        w: FontWeight.w700, color: _Auth.ink45, spacing: 1)),
+              ],
             ),
-            SizedBox(height: 3.h),
+            SizedBox(height: 3.5.h),
 
-            Text('Verify your number',
-                style: _Auth.t(22, w: FontWeight.w800, spacing: -0.4)),
-            SizedBox(height: 0.8.h),
+            Text('Enter the code\nwe just sent',
+                style: _Auth.t(20, w: FontWeight.w800, spacing: -0.3, height: 1.2)),
+            SizedBox(height: 1.h),
             Text.rich(
               TextSpan(
-                text: 'Enter the 6-digit code sent to  ',
-                style: _Auth.t(12.5, color: _Auth.muted, height: 1.45),
+                text: 'Sent to ',
+                style: _Auth.t(11, color: _Auth.ink62, height: 1.45),
                 children: [
                   TextSpan(
                     text:
                         '+91 ${_authC.phoneNumberLoginTextField.value.text}',
-                    style: _Auth.t(12.5,
+                    style: _Auth.t(11,
                         w: FontWeight.w700, color: _Auth.ink),
                   ),
                   TextSpan(
                     text: '   Edit',
-                    style: _Auth.t(12.5,
-                        w: FontWeight.w700, color: _Auth.brand),
+                    style: _Auth.t(11,
+                        w: FontWeight.w700, color: _Auth.ink,
+                        spacing: 0.2),
                     recognizer: (TapGestureRecognizer()
                       ..onTap = () {
                         _authC.otpTextField.value.clear();
@@ -468,7 +478,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                 ],
               ),
             ),
-            SizedBox(height: 4.5.h),
+            SizedBox(height: 4.h),
 
             Center(
               child: Directionality(
@@ -487,62 +497,67 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                     submittedPinTheme: submittedPinTheme,
                     errorPinTheme: errorPinTheme,
                     forceErrorState: isError,
-                    separatorBuilder: (_) => SizedBox(width: 2.2.w),
+                    separatorBuilder: (_) => SizedBox(width: 2.w),
                     onCompleted: validateOTP,
                     onChanged: (_) {
                       if (isError) setState(() => isError = false);
                     },
                     cursor: Container(
                       margin: const EdgeInsets.only(bottom: 10),
-                      width: 18,
-                      height: 2.5,
-                      decoration: BoxDecoration(
-                        color: _Auth.brand,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
+                      width: 16,
+                      height: 2,
+                      decoration: const BoxDecoration(color: _Auth.ink),
                     ),
                   ),
                 ),
               ),
             ),
-            SizedBox(height: 4.h),
 
-            Center(
-              child: Obx(
-                () => _otpC.enableResend.value
-                    ? GestureDetector(
-                        onTap: () {
-                          _otpC.resendOTP();
-                          _authC.otpTextField.value.clear();
-                        },
-                        behavior: HitTestBehavior.opaque,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.refresh_rounded,
-                                size: 16, color: _Auth.brand),
-                            SizedBox(width: 1.5.w),
-                            Text('Resend code',
-                                style: _Auth.t(13,
-                                    w: FontWeight.w700, color: _Auth.brand)),
-                          ],
-                        ),
-                      )
-                    : Text.rich(
-                        TextSpan(
-                          text: 'Resend code in  ',
-                          style: _Auth.t(12.5, color: _Auth.faint),
-                          children: [
-                            TextSpan(
-                              text: _otpC.formatTime(),
-                              style: _Auth.t(12.5,
-                                  w: FontWeight.w700, color: _Auth.muted),
-                            ),
-                          ],
-                        ),
+            if (isError) ...[
+              SizedBox(height: 1.6.h),
+              Text("That code didn't match. Check the SMS and try again.",
+                  style: _Auth.t(10, w: FontWeight.w700, color: _Auth.ink)),
+            ],
+            SizedBox(height: 3.2.h),
+
+            Obx(
+              () => _otpC.enableResend.value
+                  ? GestureDetector(
+                      onTap: () {
+                        _otpC.resendOTP();
+                        _authC.otpTextField.value.clear();
+                      },
+                      behavior: HitTestBehavior.opaque,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.refresh_rounded,
+                              size: 15, color: _Auth.ink),
+                          SizedBox(width: 1.5.w),
+                          Text('Resend code via SMS',
+                              style: _Auth.t(12,
+                                  w: FontWeight.w600, color: _Auth.ink,
+                                  decoration: TextDecoration.underline)),
+                        ],
                       ),
-              ),
+                    )
+                  : Text.rich(
+                      TextSpan(
+                        text: 'Resend code in  ',
+                        style: _Auth.t(12, color: _Auth.ink45),
+                        children: [
+                          TextSpan(
+                            text: _otpC.formatTime(),
+                            style: _Auth.t(12,
+                                w: FontWeight.w700, color: _Auth.ink),
+                          ),
+                        ],
+                      ),
+                    ),
             ),
+            SizedBox(height: 1.6.h),
+            Text('Fills in automatically from your SMS.',
+                style: _Auth.t(9, color: _Auth.ink45)),
           ],
         ),
       ),
@@ -552,60 +567,75 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
   Widget _buildLoginContainer() {
     final phoneOk = isValidPhoneNumber;
     return SingleChildScrollView(
-      padding: EdgeInsets.only(top: 5.h, bottom: 6.h),
+      padding: EdgeInsets.only(top: 2.h, bottom: 6.h),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── grabber
-          Center(
-            child: Container(
-              width: 12.w,
-              height: 4,
-              decoration: BoxDecoration(
-                color: _Auth.fieldBorder,
-                borderRadius: BorderRadius.circular(4),
-              ),
+          SizedBox(height: 2.h),
+
+          // ── tagline lockup — weight + opacity carry it, no colour
+          Text.rich(
+            TextSpan(
+              text: 'Your Trek',
+              style: _Auth.t(22, w: FontWeight.w800, spacing: -0.3, height: 1.02),
+              children: [
+                TextSpan(
+                  text: ' ...',
+                  style: _Auth.t(22,
+                      w: FontWeight.w400, color: _Auth.ink45, spacing: 1.5),
+                ),
+              ],
             ),
           ),
-          SizedBox(height: 4.h),
-
-          Text('Sign in to Aorbo',
-              style: _Auth.t(22, w: FontWeight.w800, spacing: -0.4)),
-          SizedBox(height: 0.8.h),
-          Text(
-            "Enter your mobile number — we'll text you a\n6-digit code to verify it.",
-            style: _Auth.t(12.5, color: _Auth.muted, height: 1.45),
+          Text('Just',
+              style: _Auth.t(15,
+                  w: FontWeight.w300, color: _Auth.ink62, height: 1.15)),
+          Text('A',
+              style: _Auth.t(15,
+                  w: FontWeight.w300, color: _Auth.ink62, height: 1.15)),
+          Text.rich(
+            TextSpan(
+              text: 'Click Away',
+              style: _Auth.t(22, w: FontWeight.w800, spacing: -0.3, height: 1.05),
+              children: [
+                TextSpan(
+                    text: ' !!', style: _Auth.t(22, w: FontWeight.w800, spacing: 0.5)),
+              ],
+            ),
           ),
-          SizedBox(height: 4.h),
 
-          Text('MOBILE NUMBER',
-              style: _Auth.t(9.5,
-                  w: FontWeight.w700, color: _Auth.faint, spacing: 1.2)),
-          SizedBox(height: 1.h),
+          SizedBox(height: 5.h),
+          Container(height: 1, color: _Auth.ink14),
+          SizedBox(height: 1.8.h),
+          Text('SIGN IN',
+              style: _Auth.t(8.5,
+                  w: FontWeight.w700, color: _Auth.ink45, spacing: 1)),
+          SizedBox(height: 1.2.h),
 
-          // ── phone field
+          // ── phone field — white paper, black keyline
           AnimatedContainer(
             duration: const Duration(milliseconds: 160),
-            height: 7.2.h,
+            height: 6.6.h,
             padding: EdgeInsets.symmetric(horizontal: 4.w),
             decoration: BoxDecoration(
-              color: _Auth.fieldBg,
-              borderRadius: BorderRadius.circular(16),
+              color: _Auth.field,
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: _phoneFocusNode.hasFocus
-                    ? _Auth.brand
-                    : _Auth.fieldBorder,
-                width: _phoneFocusNode.hasFocus ? 1.6 : 1,
+                color: _Auth.ink,
+                width: _phoneFocusNode.hasFocus ? 2 : 1.5,
               ),
+              boxShadow: _phoneFocusNode.hasFocus
+                  ? const [
+                      BoxShadow(
+                          color: _Auth.ink14, blurRadius: 0, spreadRadius: 3),
+                    ]
+                  : null,
             ),
             child: Row(
               children: [
-                Text('🇮🇳',
-                    style: TextStyle(fontSize: AppType.clampFontSize(15.sp))),
-                SizedBox(width: 2.5.w),
-                Text('+91', style: _Auth.t(15, w: FontWeight.w700)),
+                Text('+91', style: _Auth.t(14, w: FontWeight.w700)),
                 SizedBox(width: 3.w),
-                Container(width: 1, height: 3.2.h, color: _Auth.fieldBorder),
+                Container(width: 1.5, height: 2.6.h, color: _Auth.ink28),
                 SizedBox(width: 3.w),
                 Expanded(
                   child: TextField(
@@ -615,37 +645,25 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                     keyboardType: TextInputType.phone,
                     onChanged: (_) => setState(() {}),
                     inputFormatters: [IndianMobileNumberFormatter()],
-                    style: _Auth.t(16, w: FontWeight.w700, spacing: 0.5),
-                    cursorColor: _Auth.brand,
+                    style: _Auth.t(15, w: FontWeight.w600, spacing: 0.5),
+                    cursorColor: _Auth.ink,
                     decoration: InputDecoration(
-                      hintText: '00000 00000',
+                      hintText: 'Mobile number',
                       hintStyle:
-                          _Auth.t(15, w: FontWeight.w500, color: _Auth.faint),
+                          _Auth.t(13, w: FontWeight.w400, color: _Auth.ink45),
                       border: InputBorder.none,
                       isDense: true,
                     ),
                   ),
                 ),
                 if (phoneOk)
-                  const Icon(Icons.check_circle_rounded,
-                      color: _Auth.brand, size: 20),
+                  const Icon(Icons.check_rounded, color: _Auth.ink, size: 18),
               ],
             ),
           ),
-          SizedBox(height: 1.4.h),
+          SizedBox(height: 1.6.h),
 
-          Row(
-            children: [
-              const Icon(Icons.lock_outline_rounded,
-                  size: 13, color: _Auth.faint),
-              SizedBox(width: 1.5.w),
-              Text('Your number stays private. No spam, ever.',
-                  style: _Auth.t(10.5, color: _Auth.faint)),
-            ],
-          ),
-          SizedBox(height: 3.5.h),
-
-          // ── continue button
+          // ── continue button — solid black
           Obx(() {
             final loading = _authC.isLoading.value;
             final enabled = phoneOk && !loading;
@@ -668,31 +686,18 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
               child: ScaleTransition(
                 scale: _scaleAnimation,
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 220),
+                  duration: const Duration(milliseconds: 200),
                   width: double.infinity,
-                  height: 7.2.h,
+                  height: 6.6.h,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    gradient: phoneOk
-                        ? const LinearGradient(
-                            colors: [_Auth.gold, _Auth.brand])
-                        : null,
-                    color: phoneOk ? null : _Auth.fieldBorder,
-                    boxShadow: phoneOk
-                        ? [
-                            BoxShadow(
-                              color: _Auth.brand.withValues(alpha: 0.34),
-                              blurRadius: 18,
-                              offset: const Offset(0, 10),
-                            ),
-                          ]
-                        : null,
+                    borderRadius: BorderRadius.circular(12),
+                    color: phoneOk ? _Auth.ink : _Auth.ink14,
                   ),
                   child: Center(
                     child: loading
                         ? const SizedBox(
-                            width: 22,
-                            height: 22,
+                            width: 20,
+                            height: 20,
                             child: CircularProgressIndicator(
                                 color: Colors.white, strokeWidth: 2.5),
                           )
@@ -700,17 +705,16 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text('Continue',
-                                  style: _Auth.t(15.5,
-                                      w: FontWeight.w800,
+                                  style: _Auth.t(14,
+                                      w: FontWeight.w700,
                                       color: phoneOk
                                           ? Colors.white
-                                          : _Auth.faint,
-                                      spacing: 0.3)),
-                              SizedBox(width: 2.w),
-                              Icon(Icons.arrow_forward_rounded,
-                                  size: 18,
-                                  color:
-                                      phoneOk ? Colors.white : _Auth.faint),
+                                          : _Auth.ink45)),
+                              if (phoneOk) ...[
+                                SizedBox(width: 2.w),
+                                const Icon(Icons.arrow_forward_rounded,
+                                    size: 16, color: Colors.white),
+                              ],
                             ],
                           ),
                   ),
@@ -729,17 +733,11 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
       resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
-          // Base Gradient
+          // Base gradient — the brand ground, carries all the colour
           Container(
             width: double.infinity,
             height: double.infinity,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0xFFFEF200), Color(0xFFFFA000)],
-              ),
-            ),
+            decoration: const BoxDecoration(gradient: _Auth.grad),
           ),
 
           // Premium Background Decorative Elements (Subtle Depth)
@@ -820,6 +818,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
             },
           ),
 
+          // The form sits directly on the gradient — no white sheet.
           SlideTransition(
             position: _formOffsetAnimation,
             child: Align(
@@ -827,20 +826,8 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
               child: Container(
                 width: double.infinity,
                 height: 82.h,
-                padding: EdgeInsets.symmetric(horizontal: 6.5.w),
-                decoration: BoxDecoration(
-                  color: _Auth.card,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(30),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.10),
-                      blurRadius: 34,
-                      offset: const Offset(0, -12),
-                    ),
-                  ],
-                ),
+                padding: EdgeInsets.symmetric(horizontal: 7.w),
+                color: Colors.transparent,
                 child: showOtp ? _buildOtpContainer() : _buildLoginContainer(),
               ),
             ),
@@ -854,18 +841,23 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
               child: Text.rich(
                 TextSpan(
                   text: 'By continuing you agree to our ',
-                  style: _Auth.t(10.5, color: _Auth.faint, height: 1.4),
+                  style: _Auth.t(9.5, color: _Auth.ink62, height: 1.4),
                   children: [
                     TextSpan(
-                      text: 'Terms',
-                      style: _Auth.t(10.5,
-                          w: FontWeight.w700, color: _Auth.brand),
+                      text: 'Terms of Use',
+                      style: _Auth.t(9.5,
+                          w: FontWeight.w700,
+                          color: _Auth.ink,
+                          decoration: TextDecoration.underline),
                     ),
-                    TextSpan(text: ' & ', style: _Auth.t(10.5, color: _Auth.faint)),
+                    TextSpan(
+                        text: ' & ', style: _Auth.t(9.5, color: _Auth.ink62)),
                     TextSpan(
                       text: 'Privacy Policy',
-                      style: _Auth.t(10.5,
-                          w: FontWeight.w700, color: _Auth.brand),
+                      style: _Auth.t(9.5,
+                          w: FontWeight.w700,
+                          color: _Auth.ink,
+                          decoration: TextDecoration.underline),
                     ),
                   ],
                 ),
