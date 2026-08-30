@@ -890,12 +890,16 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Adults (18+ years)',
-                  style: TextStyle(
-                    fontSize: AppType.clampFontSize(11.sp),
-                    fontWeight: FontWeight.w600,
-                    color: _TI.ink,
+                Flexible(
+                  child: Text(
+                    'Adults (18+ years)',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: AppType.clampFontSize(11.sp),
+                      fontWeight: FontWeight.w600,
+                      color: _TI.ink,
+                    ),
                   ),
                 ),
                 Builder(
@@ -1471,13 +1475,18 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
-                              'Total Payable',
-                              style: TextStyle(
-                                fontSize: AppType.clampFontSize(9.sp),
-                                color: _TI.inkMid,
-                                fontWeight: FontWeight.w500,
+                            Flexible(
+                              child: Text(
+                                'Total Payable',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: AppType.clampFontSize(9.sp),
+                                  color: _TI.inkMid,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ),
                             const Icon(

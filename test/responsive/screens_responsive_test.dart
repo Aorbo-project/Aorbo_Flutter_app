@@ -7,12 +7,14 @@
 // Row/Column + its ancestor chain.
 //
 // ── KNOWN-FAILING SCREENS ────────────────────────────────────────────────
-// The harness surfaced 11 screens that already overflow at 1.0x on a normal
-// phone — i.e. pre-existing bugs in production today, NOT regressions from
-// the responsive pass. They're listed in `_knownOverflowing` with the
-// culprit, and marked `skip` so the suite stays green while they're worked
-// down one at a time. Remove a name from that map as its screen is fixed.
-// Full notes: memory `project-flutter-responsive-audit-2026-08-30`.
+// The harness surfaced screens that already overflow on a normal phone —
+// i.e. pre-existing bugs in production today, NOT regressions from the
+// responsive pass. `_knownOverflowing` lists them with the culprit and
+// `skip`s them so the suite stays green while they're worked down one at a
+// time. MyAccount was fixed; TravellerInformation's two real overflows were
+// fixed (2 sub-2px hairlines remain). PaymentScreen was found to be dead
+// code and dropped. Full notes: memory
+// `project-flutter-responsive-audit-2026-08-30`.
 
 import 'package:arobo_app/screens/about_us_screen.dart';
 import 'package:arobo_app/screens/bookings_history_screen.dart';
@@ -27,7 +29,6 @@ import 'package:arobo_app/screens/know_more_screen.dart';
 import 'package:arobo_app/screens/logout_screen.dart';
 import 'package:arobo_app/screens/my_account_screen.dart';
 import 'package:arobo_app/screens/notifications_screen.dart';
-import 'package:arobo_app/screens/payment_screen.dart';
 import 'package:arobo_app/screens/payment_success_screen.dart';
 import 'package:arobo_app/screens/popular_treks_screen.dart';
 import 'package:arobo_app/screens/rate_review_screen.dart';
@@ -64,17 +65,15 @@ const Map<String, String> _knownOverflowing = {
           'the banner — needs Wrap / FittedBox',
   'PaymentSuccessPage':
       'several Row([icon, gap, RichText]) with no Flexible on the text',
-  'PaymentScreen':
-      'a secondary AppBar title Row([backIcon, gap, Column(title+subtitle)]) '
-          '— Column needs Expanded',
   'ChatScreen':
       'default/bot message bubble Row([RichText, Row(quick-replies)]) — '
           'text needs Flexible',
   'SearchSummaryScreen':
-      'table_calendar header: month-year RichText + nav-chevron Row exceed '
-          'the calendar width on a narrow phone — needs headerStyle tuning',
+      'table_calendar header + fires an error snackbar on empty data (flaky)',
   'TravellerInformationScreen':
-      'traveller/fare summary rows — Row([label, value]) without Expanded',
+      'the two real overflows are FIXED (Adults row, Total Payable row); '
+          'down to 2x sub-2px hairline overflows in a tappable info chip '
+          '(~264px ConstrainedBox, content ~1-2px over) — negligible',
 };
 
 void main() {
@@ -97,7 +96,9 @@ void main() {
     'IssueReportScreen': () => const IssueReportScreen(),
     'RateReviewScreen': () => const RateReviewScreen(),
     'PaymentSuccessPage': () => const PaymentSuccessPage(),
-    'PaymentScreen': () => const PaymentScreen(),
+    // NOTE: PaymentScreen (/payment route) is orphaned — nothing navigates
+    // to it. The live flow is traveller_information -> PaymentProcessingScreen
+    // -> Razorpay's own native checkout UI. Not worth testing/fixing.
     'MyAccountScreen': () => const MyAccountScreen(),
     'BookingsHistoryScreen': () => const BookingsScreen(),
     'EmergencyContactsScreen': () => EmergencyContactsScreen(),
