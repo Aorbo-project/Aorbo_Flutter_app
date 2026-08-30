@@ -2009,6 +2009,8 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                           right: ScreenConstant.size6,
                                         ),
                                         child: TopTreksCard(
+                                          onTap: () =>
+                                              Get.toNamed('/popular-treks'),
                                           imagePath: getFullImageUrl(
                                             trekData.imagePath,
                                           ),
@@ -2167,6 +2169,8 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                       return Padding(
                                         padding: EdgeInsets.only(right: 3.w),
                                         child: SeasonalGradientCard(
+                                          onTap: () =>
+                                              Get.toNamed('/seasonal-forecast'),
                                           trekName: pick.trekName ?? '',
                                           reason: pick.reason ?? '',
                                           imagePath: displayImagePath,
