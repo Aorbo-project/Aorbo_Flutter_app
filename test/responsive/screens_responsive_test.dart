@@ -6,15 +6,13 @@
 // A failure names the (device @scale) combos that striped and the offending
 // Row/Column + its ancestor chain.
 //
-// ── KNOWN-FAILING SCREENS ────────────────────────────────────────────────
-// The harness surfaced screens that already overflow on a normal phone —
-// i.e. pre-existing bugs in production today, NOT regressions from the
-// responsive pass. `_knownOverflowing` lists them with the culprit and
-// `skip`s them so the suite stays green while they're worked down one at a
-// time. MyAccount was fixed; TravellerInformation's two real overflows were
-// fixed (2 sub-2px hairlines remain). PaymentScreen was found to be dead
-// code and dropped. Full notes: memory
-// `project-flutter-responsive-audit-2026-08-30`.
+// History: the first run flagged ~11 screens with pre-existing overflow.
+// All the consistent ones are now fixed (MyAccount, TravellerInformation,
+// ReferAndEarn, ChatScreen, ClaimsScreen, IssueReportScreen, SafetyScreen).
+// PaymentScreen was dropped — orphaned dead code (live payment flow is
+// traveller_information -> PaymentProcessingScreen -> Razorpay native UI).
+// `_knownOverflowing` now holds only genuinely-deferred edge cases.
+// Full notes: memory `project-flutter-responsive-audit-2026-08-30`.
 
 import 'package:arobo_app/screens/about_us_screen.dart';
 import 'package:arobo_app/screens/bookings_history_screen.dart';
@@ -46,34 +44,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'responsive_harness.dart';
 import 'screen_responsive_harness.dart';
 
-/// name -> reason. Present here => test is `skip`ped (pre-existing overflow).
+/// name -> reason. Present here => test is `skip`ped.
 const Map<String, String> _knownOverflowing = {
-  'ClaimsScreen':
-      'placeholder screen — raw-int fontSizes + several Row([Text, Text]) '
-          'with no Flexible ("Powered by (Insurance company name)" etc.)',
-  'ReferAndEarnScreen':
-      'referral card Row([Column(text), DecoratedBox(badge)]) — text Column '
-          'needs Expanded',
-  'SafetyScreen':
-      'fixed-height (128px) safety card: title+subtitle Column taller than '
-          'the card on a narrow width — needs FittedBox / flexible height',
-  'CouponCodeScreen':
-      'header disclaimer Row([RichText(long), RichText(short)]) — long text '
-          'needs Flexible (overflows 200px+)',
-  'IssueReportScreen':
-      '_TrekkingIconBanner: Row of 3+ fixed-size animated icons wider than '
-          'the banner — needs Wrap / FittedBox',
-  'PaymentSuccessPage':
-      'several Row([icon, gap, RichText]) with no Flexible on the text',
-  'ChatScreen':
-      'default/bot message bubble Row([RichText, Row(quick-replies)]) — '
-          'text needs Flexible',
   'SearchSummaryScreen':
-      'table_calendar header + fires an error snackbar on empty data (flaky)',
-  'TravellerInformationScreen':
-      'the two real overflows are FIXED (Adults row, Total Payable row); '
-          'down to 2x sub-2px hairline overflows in a tappable info chip '
-          '(~264px ConstrainedBox, content ~1-2px over) — negligible',
+      'table_calendar month-header can exceed the calendar width on a very '
+          'narrow phone in some month/locale combos; also fires an error '
+          'snackbar on the empty-data path in the test env — flaky. Verify '
+          'on a real device.',
+  'CouponCodeScreen':
+      'NOT a layout issue — its initState throws "Trek ID not found" when '
+          'rendered standalone (it is only reached from a trek context). '
+          'Needs a seeded trek id to test; deferred.',
 };
 
 void main() {
@@ -96,9 +77,8 @@ void main() {
     'IssueReportScreen': () => const IssueReportScreen(),
     'RateReviewScreen': () => const RateReviewScreen(),
     'PaymentSuccessPage': () => const PaymentSuccessPage(),
-    // NOTE: PaymentScreen (/payment route) is orphaned — nothing navigates
-    // to it. The live flow is traveller_information -> PaymentProcessingScreen
-    // -> Razorpay's own native checkout UI. Not worth testing/fixing.
+    // PaymentScreen (/payment) is orphaned dead code — the live flow is
+    // traveller_information -> PaymentProcessingScreen -> Razorpay native UI.
     'MyAccountScreen': () => const MyAccountScreen(),
     'BookingsHistoryScreen': () => const BookingsScreen(),
     'EmergencyContactsScreen': () => EmergencyContactsScreen(),

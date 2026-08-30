@@ -109,9 +109,13 @@ class _claims extends State<claims> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              "Claim Procedure",
-                              style: TextStyle(fontSize: 9),
+                            Flexible(
+                              child: Text(
+                                "Claim Procedure",
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(fontSize: 9),
+                              ),
                             ),
                             GestureDetector(
                               onTap: () {},
@@ -130,9 +134,13 @@ class _claims extends State<claims> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              "Terms and Conditions",
-                              style: TextStyle(fontSize: 9),
+                            Flexible(
+                              child: Text(
+                                "Terms and Conditions",
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(fontSize: 9),
+                              ),
                             ),
                             GestureDetector(
                               onTap: () {},
@@ -183,9 +191,13 @@ class _claims extends State<claims> {
                             ),
                           ),
                           SizedBox(width: 4.w),
-                          Text(
-                            "Powered by (Insurance company name)",
-                            style: TextStyle(fontSize: 9),
+                          Flexible(
+                            child: Text(
+                              "Powered by (Insurance company name)",
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(fontSize: 9),
+                            ),
                           ),
                         ],
                       ),

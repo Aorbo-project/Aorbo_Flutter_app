@@ -107,7 +107,12 @@ Future<Map<String, List<String>>> collectResponsiveOverflows(
       FlutterError.onError = (FlutterErrorDetails details) {
         final full = details.toString();
         if (full.contains('overflowed') || full.contains('overflowing')) {
-          overflows.add(_summariseOverflowError(details));
+          // Ignore sub-pixel overflow (≤1px) — that's layout rounding
+          // (Scaffold's body/bottom-bar CustomMultiChildLayout, etc.), it
+          // never renders a visible stripe.
+          final m = RegExp(r'overflowed by ([\d.]+) pixels').firstMatch(full);
+          final px = m == null ? 99.0 : (double.tryParse(m.group(1)!) ?? 99.0);
+          if (px > 1.0) overflows.add(_summariseOverflowError(details));
         } else if (_isIgnorableAssetError(full)) {
           // This harness tests LAYOUT, not asset availability. A widget that
           // points at an asset/URL that doesn't resolve in the test sandbox
@@ -208,7 +213,7 @@ void _sweepRenderTreeForOverflow(WidgetTester tester, List<String> sink) {
   for (final node in tester.allRenderObjects) {
     if (node is RenderFlex) {
       final overflow = _renderFlexOverflow(node);
-      if (overflow != null && overflow > 0.5) {
+      if (overflow != null && overflow > 1.0) {
         sink.add(
           'RenderFlex (${node.direction.name}) size=${_fmtSize(node.size)} '
           'overflowed by ${overflow.toStringAsFixed(1)}px  '

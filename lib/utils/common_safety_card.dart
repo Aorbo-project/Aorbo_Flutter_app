@@ -72,14 +72,15 @@
                       top: 8.w,
                       // bottom: 2.w,
                     ), // 3% of screen width
+                    // Flexible (no competing Spacer) lets the maxLines-capped
+                    // text block yield within a short fixed-height card /
+                    // large font instead of striping it; footer stays pinned
+                    // to the bottom via spaceBetween.
                     child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        _buildTextContent(),
-                        // Top Right (empty)
-                        SizedBox(width: 30.w),
+                        Flexible(child: _buildTextContent()),
                         _buildLogoFooter(),
-                        // Bottom Right (empty)
-                        SizedBox(width: 35.w),
                       ],
                     ),
                   ),
@@ -105,33 +106,40 @@
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            title,
-            style: AppType.style(
-              FontSize.s12, // Responsive font size
-              w: FontWeight.w800,
-              shadows: [
-                Shadow(
-                  offset: Offset(1, 1),
-                  blurRadius: 1,
-                  color: Colors.pink,
-                ),
-              ],
-              color: Colors.white,
-              height: 1.2,
+          Flexible(
+            child: Text(
+              title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppType.style(
+                FontSize.s12, // Responsive font size
+                w: FontWeight.w800,
+                shadows: [
+                  Shadow(
+                    offset: Offset(1, 1),
+                    blurRadius: 1,
+                    color: Colors.pink,
+                  ),
+                ],
+                color: Colors.white,
+                height: 1.2,
+              ),
             ),
           ),
           SizedBox(height: 0.6.h),
-          Text(
-            subtitle,
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            style: AppType.style(
-              FontSize.s10, // Responsive font size
-              w: FontWeight.w500,
-              color: Colors.white.withValues(alpha: 0.9),
-              height: 1.5,
+          Flexible(
+            child: Text(
+              subtitle,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppType.style(
+                FontSize.s10, // Responsive font size
+                w: FontWeight.w500,
+                color: Colors.white.withValues(alpha: 0.9),
+                height: 1.5,
+              ),
             ),
           ),
         ],

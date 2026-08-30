@@ -721,11 +721,15 @@ class _IssueReportScreenState extends State<IssueReportScreen> {
       children: [
         Row(
           children: [
-            Text(
-              'Description (optional, max 2000 chars)',
-              style: AppType.style(FontSize.s11, w: FontWeight.w500, color: CommonColors.blackColor),
+            Flexible(
+              child: Text(
+                'Description (optional, max 2000 chars)',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: AppType.style(FontSize.s11, w: FontWeight.w500, color: CommonColors.blackColor),
+              ),
             ),
-            Spacer(),
+            SizedBox(width: 2.w),
             Text(
               '${descriptionController.text.length}/2000',
               style: AppType.style(FontSize.s8, color: descriptionController.text.length > 2000

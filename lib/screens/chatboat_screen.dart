@@ -495,9 +495,13 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                             size: 18,
                           ),
                           SizedBox(width: 2.w),
-                          Text(
-                            'Browse FAQs',
-                            style: AppType.style(FontSize.s10, w: FontWeight.w600, color: CommonColors.appBgColor),
+                          Flexible(
+                            child: Text(
+                              'Browse FAQs',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppType.style(FontSize.s10, w: FontWeight.w600, color: CommonColors.appBgColor),
+                            ),
                           ),
                         ],
                       ),
@@ -530,9 +534,13 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                             size: 18,
                           ),
                           SizedBox(width: 2.w),
-                          Text(
-                            'Live Support',
-                            style: AppType.style(FontSize.s10, w: FontWeight.w600, color: Colors.white),
+                          Flexible(
+                            child: Text(
+                              'Live Support',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppType.style(FontSize.s10, w: FontWeight.w600, color: Colors.white),
+                            ),
                           ),
                         ],
                       ),

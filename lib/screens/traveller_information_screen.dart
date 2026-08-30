@@ -1013,12 +1013,16 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                       ),
                     ),
                     SizedBox(width: 2.5.w),
-                    Text(
-                      'Add New Traveller',
-                      style: AppType.style(
-                        11.sp,
-                        w: FontWeight.w600,
-                        color: _TI.brand,
+                    Flexible(
+                      child: Text(
+                        'Add New Traveller',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppType.style(
+                          11.sp,
+                          w: FontWeight.w600,
+                          color: _TI.brand,
+                        ),
                       ),
                     ),
                   ],

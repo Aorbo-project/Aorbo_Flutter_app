@@ -252,22 +252,27 @@ class _TrekkingIconBannerState extends State<_TrekkingIconBanner>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: List.generate(_icons.length, (i) {
               final item = _icons[i];
-              return FadeTransition(
-                opacity: _fadeAnims[i],
-                child: SlideTransition(
-                  position: _slideAnims[i],
-                  child: AnimatedBuilder(
-                    animation: _floatCtl,
-                    builder: (context, child) {
-                      return Transform.translate(
-                        offset: Offset(0, _floatAnims[i].value),
-                        child: child,
-                      );
-                    },
-                    child: _IconPill(
-                      icon: item.icon,
-                      label: item.label,
-                      color: item.color,
+              // Flexible: N pills sharing the row width — without it the
+              // fixed pill widths sum past the row on a large phone/tablet
+              // (and worse at a larger font).
+              return Flexible(
+                child: FadeTransition(
+                  opacity: _fadeAnims[i],
+                  child: SlideTransition(
+                    position: _slideAnims[i],
+                    child: AnimatedBuilder(
+                      animation: _floatCtl,
+                      builder: (context, child) {
+                        return Transform.translate(
+                          offset: Offset(0, _floatAnims[i].value),
+                          child: child,
+                        );
+                      },
+                      child: _IconPill(
+                        icon: item.icon,
+                        label: item.label,
+                        color: item.color,
+                      ),
                     ),
                   ),
                 ),
@@ -355,6 +360,9 @@ class _IconPill extends StatelessWidget {
         SizedBox(height: 0.8.h),
         Text(
           label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
           style: AppType.style(FontSize.s7, w: FontWeight.w600, color: _TC.inkMid),
         ),
       ],
