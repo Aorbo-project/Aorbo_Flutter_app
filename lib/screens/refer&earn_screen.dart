@@ -453,7 +453,7 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(emoji, style: TextStyle(fontSize: FontSize.s10)),
+        Text(emoji, style: TextStyle(fontSize: AppType.clampFontSize(FontSize.s10))),
         SizedBox(width: 2.w),
         Expanded(
           child: Text(
@@ -492,21 +492,28 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '₹1,000 Milestone',
-                    style: AppType.style(FontSize.s12, w: FontWeight.w600, color: CommonColors.blackColor),
-                  ),
-                  Text(
-                    remaining > 0
-                        ? '$remaining more referrals to go!'
-                        : '🎉 Milestone reached!',
-                    style: AppType.style(FontSize.s9, color: Colors.grey.shade600),
-                  ),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '₹1,000 Milestone',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppType.style(FontSize.s12, w: FontWeight.w600, color: CommonColors.blackColor),
+                    ),
+                    Text(
+                      remaining > 0
+                          ? '$remaining more referrals to go!'
+                          : '🎉 Milestone reached!',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppType.style(FontSize.s9, color: Colors.grey.shade600),
+                    ),
+                  ],
+                ),
               ),
+              SizedBox(width: 2.w),
               Container(
                 padding:
                     EdgeInsets.symmetric(horizontal: 3.w, vertical: 0.7.h),
@@ -572,8 +579,11 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Code pill
-                  Container(
+                  // Code pill — Flexible + scaleDown so a long code (or a
+                  // large sizer font on a narrow phone) shrinks to fit
+                  // instead of pushing the copy button off the ticket.
+                  Flexible(
+                    child: Container(
                     padding: EdgeInsets.symmetric(
                         horizontal: 5.w, vertical: 0.8.h),
                     decoration: BoxDecoration(
@@ -583,11 +593,17 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
                         color: const Color(0xFF0004FF).withValues(alpha: 0.15),
                       ),
                     ),
+                    child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
                     child: Text(
                       _referralCode,
                       style: AppType.style(FontSize.s14, w: FontWeight.w700, color: const Color(0xFF2D2D8E), letterSpacing: 3),
                     ),
+                    ),
+                    ),
                   ),
+                  SizedBox(width: 2.w),
 
                   // Copy button
                   GestureDetector(
@@ -879,9 +895,13 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
               Icon(Icons.ios_share_rounded,
                   color: Colors.white, size: 5.5.w),
               SizedBox(width: 3.w),
-              Text(
-                'Refer Now & Earn ₹50',
-                style: AppType.style(FontSize.s13, w: FontWeight.w700, color: Colors.white, letterSpacing: 0.3),
+              Flexible(
+                child: Text(
+                  'Refer Now & Earn ₹50',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppType.style(FontSize.s13, w: FontWeight.w700, color: Colors.white, letterSpacing: 0.3),
+                ),
               ),
             ],
           ),

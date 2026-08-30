@@ -402,7 +402,7 @@ class _AboutUsScreenState extends State<AboutUsScreen>
           Text(
             'Go Beyond,\nExplore More!',
             style: GoogleFonts.playfairDisplay(
-              fontSize: FontSize.s26,
+              fontSize: AppType.clampFontSize(FontSize.s26),
               fontWeight: FontWeight.w700,
               color: _C.footerText,
               height: 1.25,

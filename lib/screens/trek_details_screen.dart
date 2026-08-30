@@ -523,49 +523,55 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
   }
 
   Widget _buildBottomBar() {
-    return Container(
-      padding: EdgeInsets.fromLTRB(10.w, 1.5.h, 10.w, 2.5.h),
-      decoration: BoxDecoration(
-        color: _C.cardBg,
-        boxShadow: [
-          BoxShadow(
-            color: _C.shadow,
-            blurRadius: 12,
-            offset: const Offset(0, -3),
-          ),
-        ],
-      ),
-      child: CommonButton(
-        text: 'Continue',
-        onPressed: () async {
-          final boardingCities = boardingCitiesFor(
-            _trekC.trekDetailData.value.trekStages,
-          );
-          if (boardingCities.length > 1 &&
-              _trekC.selectedBoardingCityId.value == null) {
-            Get.snackbar(
-              'Select Boarding Point',
-              'Please select your boarding city in the Route section before continuing.',
-              snackPosition: SnackPosition.BOTTOM,
-              backgroundColor: Colors.black87,
-              colorText: Colors.white,
-              margin: const EdgeInsets.all(10),
-              borderRadius: 8,
-              duration: const Duration(seconds: 3),
+    // Scaffold does NOT safe-area its bottomNavigationBar — without this the
+    // "Continue" button sits under the gesture pill / 3-button nav on
+    // Android, and fully under the system bar on Android 15+ edge-to-edge.
+    return SafeArea(
+      top: false,
+      child: Container(
+        padding: EdgeInsets.fromLTRB(10.w, 1.5.h, 10.w, 1.5.h),
+        decoration: BoxDecoration(
+          color: _C.cardBg,
+          boxShadow: [
+            BoxShadow(
+              color: _C.shadow,
+              blurRadius: 12,
+              offset: const Offset(0, -3),
+            ),
+          ],
+        ),
+        child: CommonButton(
+          text: 'Continue',
+          onPressed: () async {
+            final boardingCities = boardingCitiesFor(
+              _trekC.trekDetailData.value.trekStages,
             );
-            return;
-          }
-          await _userC.getUserProfile();
-          if (!mounted) return;
-          _trekC.trekBatchId.value = _trekC.trekDetailData.value.batchId ?? 0;
-          Get.toNamed('/traveller-information');
-        },
-        gradient: _C.ctaGradient,
-        textColor: CommonColors.whiteColor,
-        height: 6.h,
-        isFullWidth: true,
-        borderRadius: 14,
-        fontSize: 14.0.sp,
+            if (boardingCities.length > 1 &&
+                _trekC.selectedBoardingCityId.value == null) {
+              Get.snackbar(
+                'Select Boarding Point',
+                'Please select your boarding city in the Route section before continuing.',
+                snackPosition: SnackPosition.BOTTOM,
+                backgroundColor: Colors.black87,
+                colorText: Colors.white,
+                margin: const EdgeInsets.all(10),
+                borderRadius: 8,
+                duration: const Duration(seconds: 3),
+              );
+              return;
+            }
+            await _userC.getUserProfile();
+            if (!mounted) return;
+            _trekC.trekBatchId.value = _trekC.trekDetailData.value.batchId ?? 0;
+            Get.toNamed('/traveller-information');
+          },
+          gradient: _C.ctaGradient,
+          textColor: CommonColors.whiteColor,
+          height: 6.h,
+          isFullWidth: true,
+          borderRadius: 14,
+          fontSize: 14.0.sp,
+        ),
       ),
     );
   }

@@ -280,7 +280,7 @@ class _LogoutScreenState extends State<LogoutScreen>
           Text(
             "Leaving",
             style: GoogleFonts.sairaStencilOne(
-              fontSize: 24.sp,
+              fontSize: AppType.clampFontSize(24.sp),
               fontWeight: FontWeight.w600,
               color: Colors.black,
             ),
@@ -288,7 +288,7 @@ class _LogoutScreenState extends State<LogoutScreen>
           Text(
             "so",
             style: GoogleFonts.sairaStencilOne(
-              fontSize: 24.sp,
+              fontSize: AppType.clampFontSize(24.sp),
               fontWeight: FontWeight.w600,
               color: Colors.black,
             ),
@@ -296,7 +296,7 @@ class _LogoutScreenState extends State<LogoutScreen>
           Text(
             "soon ?",
             style: GoogleFonts.sairaStencilOne(
-              fontSize: 24.sp,
+              fontSize: AppType.clampFontSize(24.sp),
               fontWeight: FontWeight.w600,
               color: Colors.black,
             ),

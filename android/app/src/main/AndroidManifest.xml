@@ -7,11 +7,19 @@
         android:icon="@mipmap/ic_launcher"
         android:label="Aorbo Treks"
         android:usesCleartextTraffic="true">
+        <!-- resizeableActivity=false: the UI is fixed-layout (sizer %s, no
+             reflow); a narrow split-screen pane on a phone squeezes rows
+             past their content and stripes them, so opt out of
+             freeform/split-screen. NOTE: Android 16+ (targetSdk 36) ignores
+             this on large screens >600dp (tablets/foldables) — those are
+             covered by the app-side font-scale clamp in app_typography.dart.
+             This still takes effect for phone split-screen. -->
         <activity
             android:name=".MainActivity"
             android:enableOnBackInvokedCallback="true"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:exported="true"
+            android:resizeableActivity="false"
             android:hardwareAccelerated="true"
             android:launchMode="singleTop"
             android:taskAffinity=""

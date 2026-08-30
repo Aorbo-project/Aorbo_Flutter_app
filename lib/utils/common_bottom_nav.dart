@@ -2,7 +2,6 @@ import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
 import 'package:arobo_app/theme/app_typography.dart';
 
@@ -29,37 +28,48 @@ class _CommonBottomNavState extends State<CommonBottomNav> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.only(
-        left: 4.w,
-        right: 4.w,
-        bottom: 2.h,
-      ),
-      padding: EdgeInsets.symmetric(vertical: 1.2.h),
-      decoration: BoxDecoration(
-        color: CommonColors.whiteColor,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 20,
-            spreadRadius: 2,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Obx(() {
-        int currentIndex = _dashboardC.selectedScreen.value;
-
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _buildItem(Icons.home_rounded, "Home", 0, currentIndex),
-            _buildItem(Icons.event_available_rounded, "Bookings", 1, currentIndex),
-            _buildItem(Icons.person_rounded, "Account", 2, currentIndex),
+    // Scaffold doesn't safe-area its bottomNavigationBar — without this the
+    // floating pill sits under the Android gesture bar / 3-button nav, and
+    // fully under the system bar on Android 15+ edge-to-edge.
+    return SafeArea(
+      top: false,
+      child: Container(
+        margin: EdgeInsets.only(
+          left: 4.w,
+          right: 4.w,
+          bottom: 2.h,
+        ),
+        padding: EdgeInsets.symmetric(vertical: 1.2.h),
+        decoration: BoxDecoration(
+          color: CommonColors.whiteColor,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 20,
+              spreadRadius: 2,
+              offset: const Offset(0, 10),
+            ),
           ],
-        );
-      }),
+        ),
+        child: Obx(() {
+          int currentIndex = _dashboardC.selectedScreen.value;
+
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildItem(Icons.home_rounded, "Home", 0, currentIndex),
+              _buildItem(
+                Icons.event_available_rounded,
+                "Bookings",
+                1,
+                currentIndex,
+              ),
+              _buildItem(Icons.person_rounded, "Account", 2, currentIndex),
+            ],
+          );
+        }),
+      ),
     );
   }
 

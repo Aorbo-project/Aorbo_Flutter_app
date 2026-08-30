@@ -1,6 +1,5 @@
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'dart:math';
 
 import '../widgets/custom_network_image.dart';
@@ -319,7 +318,6 @@ class _TopTreksCardState extends State<TopTreksCard>
                     if (widget.meta != null && widget.meta!.isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Row(
-                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
                             widget.metaIcon,
@@ -329,12 +327,21 @@ class _TopTreksCardState extends State<TopTreksCard>
                             ),
                           ),
                           const SizedBox(width: 4),
-                          Text(
-                            widget.meta!,
-                            textScaler: const TextScaler.linear(1.0),
-                            style: AppType.style(10, w: FontWeight.w500, color: CommonColors.whiteColor.withValues(
-                                alpha: 0.85,
-                              )),
+                          // Flexible + ellipsis: the meta line ("5D / 4N ·
+                          // Moderate") sits in a Positioned row only ~190px
+                          // wide on a small phone and overflowed without it —
+                          // matches the kicker/title/description siblings,
+                          // which already truncate.
+                          Flexible(
+                            child: Text(
+                              widget.meta!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textScaler: const TextScaler.linear(1.0),
+                              style: AppType.style(10, w: FontWeight.w500, color: CommonColors.whiteColor.withValues(
+                                  alpha: 0.85,
+                                )),
+                            ),
                           ),
                         ],
                       ),

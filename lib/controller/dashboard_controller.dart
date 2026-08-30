@@ -98,6 +98,16 @@ class DashboardController extends GetxController {
     super.onInit();
     _initializeControllers();
     _setupObservers();
+  }
+
+  @override
+  void onReady() {
+    super.onReady();
+    // onReady fires in a post-first-frame callback — the dashboard's initial
+    // frame has already painted by the time these three network calls kick
+    // off, so they no longer compete with the (heavy) first build for the
+    // main isolate. Previously in onInit(), which runs BEFORE the first
+    // build and made the splash→dashboard reveal jank.
     Future.wait([fetchCitiesList(), fetchTrekList(), fetchStateList()]);
   }
 

@@ -180,7 +180,7 @@ class _OTPScreenState extends State<OTPScreen>
                 'Verify OTP',
                 // textScaler: const TextScaler.linear(1.0),
                 style: TextStyle(
-                  fontSize: 14.sp,
+                  fontSize: AppType.clampFontSize(14.sp),
                   fontWeight: FontWeight.w600,
                   color: CommonColors.blackColor,
                 ),
@@ -232,7 +232,10 @@ class _OTPScreenState extends State<OTPScreen>
                   ),
                   SafeArea(
                     child: Center(
-                      child: Padding(
+                      // Scrollable so the fixed .h gaps + pin field + resend
+                      // block don't overflow the shrunken body when the
+                      // keyboard is open on a shorter device.
+                      child: SingleChildScrollView(
                         padding: EdgeInsets.symmetric(horizontal: 6.w),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
@@ -337,7 +340,7 @@ class _OTPScreenState extends State<OTPScreen>
                                           decoration: TextDecoration.underline,
                                           decorationColor:
                                               CommonColors.whiteColor,
-                                          fontSize: FontSize.s9,
+                                          fontSize: AppType.clampFontSize(FontSize.s9),
                                         ),
                                       ),
                                   ],

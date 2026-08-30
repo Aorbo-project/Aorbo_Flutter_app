@@ -36,8 +36,10 @@ class _DashboardMainState extends State<DashboardMain> {
     final trekC = Get.put(TrekController(), permanent: true);
     Get.put(CouponController(), permanent: true);
     final userC = Get.put(UserController(), permanent: true);
-    trekC.checkPendingOrderOnResume();
+    // Everything network-bound is deferred to after the first frame so the
+    // splash→dashboard reveal isn't competing with these calls.
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      trekC.checkPendingOrderOnResume();
       _maybeShowRateTrekPopup();
       final resumed = await BookingDraftService.checkAndResume(trekC, userC);
       if (resumed && mounted) {
