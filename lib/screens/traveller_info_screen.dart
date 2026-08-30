@@ -278,7 +278,7 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
                     textScaler: const TextScaler.linear(1.0),
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: 10.sp,
+                      fontSize: AppType.clampFontSize(10.sp),
                       fontWeight: FontWeight.w500,
                       color: Colors.white,
                       height: 1.35,

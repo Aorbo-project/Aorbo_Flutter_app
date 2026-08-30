@@ -523,10 +523,19 @@ class _CommonTrekCardState extends State<CommonTrekCard>
                 ),
                 SizedBox(width: _rw(0.7, 3.5)),
               ],
-              Text(
-                hasTotal ? '$available/$total slots left' : '$available slots',
-                textScaler: const TextScaler.linear(1),
-                style: AppType.style(FontSize.s8, w: FontWeight.w700, color: accent),
+              // Flexible + ellipsis: on a narrow phone this column is only
+              // ~130px wide and "N/NN slots left" alone renders wider than
+              // that, striping the card. Truncate instead of overflowing.
+              Flexible(
+                child: Text(
+                  hasTotal
+                      ? '$available/$total slots left'
+                      : '$available slots',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textScaler: const TextScaler.linear(1),
+                  style: AppType.style(FontSize.s8, w: FontWeight.w700, color: accent),
+                ),
               ),
             ],
           ),
@@ -570,7 +579,7 @@ class _CommonTrekCardState extends State<CommonTrekCard>
                 textScaler: const TextScaler.linear(1),
                 style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: FontSize.s8,
+                  fontSize: AppType.clampFontSize(FontSize.s8),
                   color: _TC.inkLight,
                   decoration: TextDecoration.lineThrough,
                   decorationColor: _TC.inkLight,

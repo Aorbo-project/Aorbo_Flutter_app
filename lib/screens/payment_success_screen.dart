@@ -870,7 +870,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                                           backgroundColor: _avatarColor(e.key),
                                           child: Text(
                                             (t.traveler?.name ?? '-').substring(0, 1).toUpperCase(),
-                                            style: TextStyle(color: Colors.white, fontSize: 8.sp, fontWeight: FontWeight.w600),
+                                            style: TextStyle(color: Colors.white, fontSize: AppType.clampFontSize(8.sp), fontWeight: FontWeight.w600),
                                           ),
                                         ),
                                         SizedBox(width: 2.w),
@@ -1039,7 +1039,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                   child: Text(
                     '"Not Insta-perfect.\nBut soul-perfect...!!"',
                     style: TextStyle(
-                      fontFamily: 'Poppins', fontSize: FontSize.s10,
+                      fontFamily: 'Poppins', fontSize: AppType.clampFontSize(FontSize.s10),
                       fontWeight: FontWeight.w500, fontStyle: FontStyle.italic,
                       color: _TC.inkLight, height: 1.5,
                     ),
@@ -1184,7 +1184,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
           Text(
             'Go Beyond,\nExplore More!',
             style: GoogleFonts.sourceSerif4(
-              fontSize: FontSize.s28, fontWeight: FontWeight.bold,
+              fontSize: AppType.clampFontSize(FontSize.s28), fontWeight: FontWeight.bold,
               color: AppColors.divider, height: 1.2,
             ),
           ),

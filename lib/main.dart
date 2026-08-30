@@ -226,6 +226,15 @@ void _deferredInit() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
+  // The layout is dense and built on fixed `sizer` sizes with no reflow, so
+  // an unbounded OS "Font size" setting (Android goes to ~1.3–2.0x) tears
+  // screens apart — and ~150 Text widgets already pin TextScaler.linear(1.0)
+  // individually, which just makes a large-font device look half-scaled.
+  // Clamp app-wide to a small band instead: a little accessibility headroom,
+  // no blow-out. Raise the ceiling once per-screen layouts are reflow-safe.
+  static const double _minTextScale = 1.0;
+  static const double _maxTextScale = 1.15;
+
   @override
   Widget build(BuildContext context) {
     return Sizer(
@@ -235,6 +244,18 @@ class MyApp extends StatelessWidget {
           theme: AppTheme.lightTheme,
           initialRoute: '/',
           getPages: routes,
+          builder: (context, child) {
+            final mq = MediaQuery.of(context);
+            return MediaQuery(
+              data: mq.copyWith(
+                textScaler: mq.textScaler.clamp(
+                  minScaleFactor: _minTextScale,
+                  maxScaleFactor: _maxTextScale,
+                ),
+              ),
+              child: child ?? const SizedBox.shrink(),
+            );
+          },
           routingCallback: (routing) {
             final screen = routing?.current;
             if (screen == null || screen.isEmpty) return;

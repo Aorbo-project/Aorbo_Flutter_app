@@ -2201,7 +2201,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                           'Go Beyond,\nExplore More!',
                           textAlign: TextAlign.start,
                           style: GoogleFonts.sourceSerif4(
-                            fontSize: FontSize.s28,
+                            fontSize: AppType.clampFontSize(FontSize.s28),
                             fontWeight: FontWeight.bold,
                             color: CommonColors.greyColorf7f7f7.withValues(
                               alpha: 0.5,
@@ -2215,7 +2215,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                           textAlign: TextAlign.start,
                           text: TextSpan(
                             style: TextStyle(
-                              fontSize: FontSize.s14,
+                              fontSize: AppType.clampFontSize(FontSize.s14),
                               color: CommonColors.greyColorf7f7f7,
                               letterSpacing: 1.8,
                               fontWeight: FontWeight.w400,

@@ -826,7 +826,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                         Text(
                           isCompleted ? 'Edit' : 'Add',
                           style: TextStyle(
-                            fontSize: 9.sp,
+                            fontSize: AppType.clampFontSize(9.sp),
                             fontWeight: FontWeight.w600,
                             color: _TI.brand,
                           ),
@@ -841,7 +841,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
             Text(
               'Ticket details will be sent to this contact information',
               style: TextStyle(
-                fontSize: 8.sp,
+                fontSize: AppType.clampFontSize(8.sp),
                 color: _TI.inkMid,
                 fontStyle: FontStyle.italic,
               ),
@@ -850,7 +850,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
             if (!isCompleted)
               Text(
                 'Tap "Add" to enter your phone, email and state.',
-                style: TextStyle(fontSize: 9.sp, color: _TI.inkMid),
+                style: TextStyle(fontSize: AppType.clampFontSize(9.sp), color: _TI.inkMid),
               )
             else ...[
               _infoRow(CommonImages.phone, customer?.phone ?? '-'),
@@ -893,7 +893,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                 Text(
                   'Adults (18+ years)',
                   style: TextStyle(
-                    fontSize: 11.sp,
+                    fontSize: AppType.clampFontSize(11.sp),
                     fontWeight: FontWeight.w600,
                     color: _TI.ink,
                   ),
@@ -928,7 +928,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                           child: Text(
                             '$adultCountReq',
                             style: TextStyle(
-                              fontSize: 16.sp,
+                              fontSize: AppType.clampFontSize(16.sp),
                               fontWeight: FontWeight.w700,
                               color: _TI.ink,
                             ),
@@ -956,7 +956,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                 child: Text(
                   '⚠️ Maximum capacity ($maxSlots slots) reached for this batch.',
                   style: TextStyle(
-                    fontSize: 8.sp,
+                    fontSize: AppType.clampFontSize(8.sp),
                     color: CommonColors.orangeColor,
                     fontWeight: FontWeight.w600,
                   ),
@@ -1255,7 +1255,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                   child: Text(
                     'Coupon Code',
                     style: TextStyle(
-                      fontSize: 14.sp,
+                      fontSize: AppType.clampFontSize(14.sp),
                       fontWeight: FontWeight.w700,
                       color: _TI.ink,
                     ),
@@ -1321,7 +1321,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                                 Text(
                                   appliedCode,
                                   style: TextStyle(
-                                    fontSize: 12.sp,
+                                    fontSize: AppType.clampFontSize(12.sp),
                                     fontWeight: FontWeight.w700,
                                     color: isCouponApplied
                                         ? _TI.teal
@@ -1332,7 +1332,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                                   Text(
                                     'You save ₹$discountText',
                                     style: TextStyle(
-                                      fontSize: 9.sp,
+                                      fontSize: AppType.clampFontSize(9.sp),
                                       color: _TI.teal,
                                     ),
                                   ),
@@ -1349,7 +1349,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                             child: Text(
                               'Remove',
                               style: TextStyle(
-                                fontSize: 9.sp,
+                                fontSize: AppType.clampFontSize(9.sp),
                                 fontWeight: FontWeight.w600,
                                 color: CommonColors.appRedColor,
                               ),
@@ -1387,7 +1387,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                               child: Text(
                                 'Browse & apply coupon codes',
                                 style: TextStyle(
-                                  fontSize: 11.sp,
+                                  fontSize: AppType.clampFontSize(11.sp),
                                   color: _TI.brand,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -1475,7 +1475,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                             Text(
                               'Total Payable',
                               style: TextStyle(
-                                fontSize: 9.sp,
+                                fontSize: AppType.clampFontSize(9.sp),
                                 color: _TI.inkMid,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -1513,7 +1513,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                           Text(
                             'Advance Payment',
                             style: TextStyle(
-                              fontSize: 8.sp,
+                              fontSize: AppType.clampFontSize(8.sp),
                               color: CommonColors.orangeColor,
                               fontWeight: FontWeight.w600,
                             ),
@@ -1772,7 +1772,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                   Text(
                     'Edit',
                     style: TextStyle(
-                      fontSize: 9.sp,
+                      fontSize: AppType.clampFontSize(9.sp),
                       fontWeight: FontWeight.w600,
                       color: _TI.inkMid,
                     ),

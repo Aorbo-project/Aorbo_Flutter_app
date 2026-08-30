@@ -341,23 +341,29 @@ class _MyAccountScreenState extends State<MyAccountScreen>
             ),
           ),
           SizedBox(width: 2.w),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Profile',
-                style: AppType.style(
-                  FontSize.s13,
-                  w: FontWeight.w700,
-                  color: _C.ink,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Profile',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppType.style(
+                    FontSize.s13,
+                    w: FontWeight.w700,
+                    color: _C.ink,
+                  ),
                 ),
-              ),
-              Text(
-                'Manage account & preferences',
-                style: AppType.style(FontSize.s9, color: _C.inkMid),
-              ),
-            ],
+                Text(
+                  'Manage account & preferences',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppType.style(FontSize.s9, color: _C.inkMid),
+                ),
+              ],
+            ),
           ),
         ],
       ),

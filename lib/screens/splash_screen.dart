@@ -269,7 +269,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
       width: 13.w,
       height: 7.h,
       textStyle: GoogleFonts.plusJakartaSans(
-        fontSize: 18.sp,
+        fontSize: AppType.clampFontSize(18.sp),
         fontWeight: FontWeight.w700,
         color: Colors.black87,
       ),
@@ -373,7 +373,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                 Text(
                   "Verify OTP",
                   style: GoogleFonts.plusJakartaSans(
-                    fontSize: 18.sp,
+                    fontSize: AppType.clampFontSize(18.sp),
                     fontWeight: FontWeight.w700,
                     color: Colors.black87,
                   ),
@@ -384,7 +384,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
             Text(
               "Enter Verification Code",
               style: GoogleFonts.plusJakartaSans(
-                fontSize: 24.sp,
+                fontSize: AppType.clampFontSize(24.sp),
                 fontWeight: FontWeight.w700,
                 color: Colors.black87,
                 letterSpacing: -0.5,
@@ -395,7 +395,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
               TextSpan(
                 text: "We sent a 6-digit code to ",
                 style: GoogleFonts.plusJakartaSans(
-                  fontSize: 13.sp,
+                  fontSize: AppType.clampFontSize(13.sp),
                   fontWeight: FontWeight.w400,
                   color: Colors.black54,
                 ),
@@ -403,7 +403,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                   TextSpan(
                     text: "+91 ${_authC.phoneNumberLoginTextField.value.text}",
                     style: GoogleFonts.plusJakartaSans(
-                      fontSize: 13.sp,
+                      fontSize: AppType.clampFontSize(13.sp),
                       fontWeight: FontWeight.w600,
                       color: Colors.black87,
                     ),
@@ -472,7 +472,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                           child: Text(
                             'Resend Code via SMS',
                             style: GoogleFonts.plusJakartaSans(
-                              fontSize: 13.sp,
+                              fontSize: AppType.clampFontSize(13.sp),
                               fontWeight: FontWeight.w600,
                               color: const Color(0xFFFFA500),
                             ),
@@ -482,7 +482,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                     : Text(
                         _otpC.formatTime(),
                         style: GoogleFonts.plusJakartaSans(
-                          fontSize: 14.sp,
+                          fontSize: AppType.clampFontSize(14.sp),
                           fontWeight: FontWeight.w500,
                           color: Colors.black45,
                           letterSpacing: 0.5,
@@ -505,7 +505,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
           Text(
             "Your Trek,",
             style: GoogleFonts.sairaStencilOne(
-              fontSize: 26.sp,
+              fontSize: AppType.clampFontSize(26.sp),
               fontWeight: FontWeight.w600,
               color: Colors.black87,
               height: 1.1,
@@ -514,7 +514,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
           Text(
             "just a",
             style: GoogleFonts.sairaStencilOne(
-              fontSize: 26.sp,
+              fontSize: AppType.clampFontSize(26.sp),
               fontWeight: FontWeight.w600,
               color: Colors.black87,
               height: 1.1,
@@ -523,7 +523,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
           Text(
             "Click Away !",
             style: GoogleFonts.sairaStencilOne(
-              fontSize: 26.sp,
+              fontSize: AppType.clampFontSize(26.sp),
               fontWeight: FontWeight.w600,
               color: const Color(0xFFFFA500), // Rich brand highlight
               height: 1.1,
@@ -533,7 +533,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
           Text(
             "Enter your mobile number to get started with a seamless experience.",
             style: GoogleFonts.plusJakartaSans(
-              fontSize: 13.sp,
+              fontSize: AppType.clampFontSize(13.sp),
               fontWeight: FontWeight.w400,
               color: Colors.black54,
               height: 1.4,
@@ -570,12 +570,12 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text("🇮🇳", style: TextStyle(fontSize: 16.sp)),
+                      Text("🇮🇳", style: TextStyle(fontSize: AppType.clampFontSize(16.sp))),
                       SizedBox(width: 2.w),
                       Text(
                         '+91',
                         style: GoogleFonts.plusJakartaSans(
-                          fontSize: 14.sp,
+                          fontSize: AppType.clampFontSize(14.sp),
                           fontWeight: FontWeight.w600,
                           color: Colors.black87,
                         ),
@@ -593,14 +593,14 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                     onChanged: (value) => setState(() {}),
                     inputFormatters: [IndianMobileNumberFormatter()],
                     style: GoogleFonts.plusJakartaSans(
-                      fontSize: 16.sp,
+                      fontSize: AppType.clampFontSize(16.sp),
                       fontWeight: FontWeight.w600,
                       color: Colors.black87,
                     ),
                     decoration: InputDecoration(
                       hintText: 'Enter Mobile Number',
                       hintStyle: GoogleFonts.plusJakartaSans(
-                        fontSize: 14.sp,
+                        fontSize: AppType.clampFontSize(14.sp),
                         fontWeight: FontWeight.w400,
                         color: Colors.black38,
                       ),
@@ -677,7 +677,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                         : Text(
                             'Continue',
                             style: GoogleFonts.plusJakartaSans(
-                              fontSize: 16.sp,
+                              fontSize: AppType.clampFontSize(16.sp),
                               fontWeight: FontWeight.w700,
                               color: isValidPhoneNumber
                                   ? Colors.black
@@ -837,7 +837,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                     "By continuing, you agree to our",
                     textAlign: TextAlign.center,
                     style: GoogleFonts.plusJakartaSans(
-                      fontSize: 11.sp,
+                      fontSize: AppType.clampFontSize(11.sp),
                       fontWeight: FontWeight.w400,
                       color: Colors.black54,
                     ),
@@ -849,7 +849,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                       Text(
                         "T&C",
                         style: GoogleFonts.plusJakartaSans(
-                          fontSize: 11.sp,
+                          fontSize: AppType.clampFontSize(11.sp),
                           fontWeight: FontWeight.w600,
                           color: const Color(0xFFFFA500),
                         ),
@@ -857,7 +857,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                       Text(
                         "  &  ",
                         style: GoogleFonts.plusJakartaSans(
-                          fontSize: 11.sp,
+                          fontSize: AppType.clampFontSize(11.sp),
                           fontWeight: FontWeight.w400,
                           color: Colors.black54,
                         ),
@@ -865,7 +865,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                       Text(
                         "Privacy Policy",
                         style: GoogleFonts.plusJakartaSans(
-                          fontSize: 11.sp,
+                          fontSize: AppType.clampFontSize(11.sp),
                           fontWeight: FontWeight.w600,
                           color: const Color(0xFFFFA500),
                         ),

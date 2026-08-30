@@ -89,24 +89,42 @@ class CommonButton extends StatelessWidget {
                 splashColor: Colors.white.withValues(alpha: 0.15),
                 highlightColor: Colors.transparent,
                 child: Center(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (prefixIcon != null) ...[
-                        prefixIcon!,
-                        SizedBox(width: 1.w),
+                  child: Padding(
+                    // Keep the label off the pill's rounded edges even when
+                    // it's long enough to need truncating.
+                    padding: EdgeInsets.symmetric(horizontal: 3.w),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (prefixIcon != null) ...[
+                          prefixIcon!,
+                          SizedBox(width: 1.w),
+                        ],
+                        // Flexible + ellipsis: a long label (or a huge
+                        // sizer-scaled font on a tablet) now truncates
+                        // inside the button instead of overflowing off its
+                        // right edge.
+                        Flexible(
+                          child: Text(
+                            text,
+                            textScaler: const TextScaler.linear(1.0),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: AppType.style(
+                              fontSize ?? FontSize.s14,
+                              w: fontWeight ?? FontWeight.w800,
+                              color: textColor ?? CommonColors.searchbtntext,
+                            ),
+                          ),
+                        ),
+                        if (suffixIcon != null) ...[
+                          SizedBox(width: 1.w),
+                          suffixIcon!,
+                        ],
                       ],
-                      Text(
-                        text,
-                        textScaler: const TextScaler.linear(1.0),
-                        style: AppType.style(fontSize ?? FontSize.s14, w: fontWeight ?? FontWeight.w800, color: textColor ?? CommonColors.searchbtntext),
-                      ),
-                      if (suffixIcon != null) ...[
-                        SizedBox(width: 1.w),
-                        suffixIcon!,
-                      ],
-                    ],
+                    ),
                   ),
                 ),
               ),

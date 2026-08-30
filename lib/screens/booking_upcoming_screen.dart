@@ -1398,7 +1398,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                     '"Not Insta-perfect. But soul-perfect...!!"',
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: 10.sp,
+                      fontSize: AppType.clampFontSize(10.sp),
                       fontWeight: FontWeight.w500,
                       fontStyle: FontStyle.italic,
                       color: _TC.inkLight,
@@ -3009,7 +3009,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                             Text(
                               'Go Beyond,\nExplore More!',
                               style: GoogleFonts.sourceSerif4(
-                                fontSize: 28.sp,
+                                fontSize: AppType.clampFontSize(28.sp),
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.divider,
                                 height: 1.2,

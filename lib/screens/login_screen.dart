@@ -153,7 +153,7 @@ import 'package:arobo_app/theme/app_typography.dart';
                                     '+91',
                                     textScaler: const TextScaler.linear(1.0),
                                     style: TextStyle(
-                                      fontSize: FontSize.s12,
+                                      fontSize: AppType.clampFontSize(FontSize.s12),
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
@@ -178,7 +178,7 @@ import 'package:arobo_app/theme/app_typography.dart';
                                         inputFormatters: [
                                           IndianMobileNumberFormatter(),
                                         ],
-                                        style: TextStyle(fontSize: FontSize.s10),
+                                        style: TextStyle(fontSize: AppType.clampFontSize(FontSize.s10)),
                                         decoration: InputDecoration(
                                           hintText: 'Enter your Mobile Number',
                                           hintStyle: TextStyle(
@@ -271,7 +271,7 @@ import 'package:arobo_app/theme/app_typography.dart';
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                       color: CommonColors.whiteColor,
-                                      fontSize: FontSize.s9,
+                                      fontSize: AppType.clampFontSize(FontSize.s9),
                                       fontWeight: FontWeight.w500),
                                 ),
                                 Text(
@@ -279,7 +279,7 @@ import 'package:arobo_app/theme/app_typography.dart';
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                       color: CommonColors.appYellowColor,
-                                      fontSize: FontSize.s9,
+                                      fontSize: AppType.clampFontSize(FontSize.s9),
                                       fontWeight: FontWeight.w800),
                                 ),
                               ],

@@ -453,7 +453,7 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(emoji, style: TextStyle(fontSize: FontSize.s10)),
+        Text(emoji, style: TextStyle(fontSize: AppType.clampFontSize(FontSize.s10))),
         SizedBox(width: 2.w),
         Expanded(
           child: Text(
