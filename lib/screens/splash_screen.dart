@@ -7,6 +7,7 @@ import 'package:arobo_app/utils/common_logics.dart';
 import 'package:arobo_app/utils/custom_snackbar.dart';
 import 'package:arobo_app/utils/phone_input_formatter.dart';
 import 'package:arobo_app/screens/update_version_screen.dart';
+import 'package:arobo_app/models/auth/validate_version_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -53,6 +54,14 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
   bool _leavingToDashboard = false;
   bool _showOtpSuccessOverlay = false;
 
+  // Bootstrap (Firebase/prefs/repo) + version + session checks, kicked off in
+  // initState so they run IN PARALLEL with the logo animation instead of
+  // starting only after the logo has finished landing (~1.1s wasted before).
+  Future<void>? _entryPrep;
+  ValidateDataModel? _validateResponse;
+  bool _prepLoggedIn = false;
+  bool _prepSessionValid = false;
+
   Timer? _timer;
   late TextEditingController _otpController;
 
@@ -63,7 +72,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
 
     _logoController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 650),
+      duration: const Duration(milliseconds: 460),
     );
 
     _logoAlignmentAnimation =
@@ -76,13 +85,18 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
 
     _entranceController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 400),
+      duration: const Duration(milliseconds: 300),
+      // Start a touch in so frame 1 already shows a faint logo — no more
+      // "blank yellow for ~1s" before anything appears.
+      value: 0.12,
     );
-    _entranceOpacity = CurvedAnimation(
-      parent: _entranceController,
-      curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+    _entranceOpacity = Tween<double>(begin: 0.28, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _entranceController,
+        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+      ),
     );
-    _entranceScale = Tween<double>(begin: 0.55, end: 1.0).animate(
+    _entranceScale = Tween<double>(begin: 0.72, end: 1.0).animate(
       CurvedAnimation(parent: _entranceController, curve: Curves.easeOutBack),
     );
 
@@ -150,11 +164,12 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
     _entranceController.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
         if (!mounted) return;
-        Future.delayed(const Duration(milliseconds: 100), () {
-          if (mounted) _logoController.forward();
-        });
+        _logoController.forward();
       }
     });
+
+    // Boot + version/session checks run NOW, in parallel with the animation.
+    _entryPrep = _runEntryPrep();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -163,23 +178,41 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
     });
   }
 
+  /// Firebase/prefs/repo bootstrap, then the version check, then (if logged
+  /// in) the session check. Kept in the SAME ORDER as the original flow —
+  /// `validateVersion` primes Repository/Dio state that `validateSession`
+  /// relies on, so these must not be parallelised. The win here is that the
+  /// whole chain runs alongside the logo animation instead of only after it.
+  /// Result is stashed in fields, consumed by [_proceedAfterLogoLanded].
+  Future<void> _runEntryPrep() async {
+    try {
+      await appBootstrapFuture;
+      _validateResponse = await _authC.validateVersion();
+      _prepLoggedIn = CommonLogics.checkUserLogin();
+      if (_prepLoggedIn) {
+        _prepSessionValid = await _authC.validateSession();
+      }
+    } catch (_) {
+      // Never let a failed check strand the user on the splash — the
+      // decision logic falls through to the login form.
+      _prepSessionValid = false;
+    }
+  }
+
   Future<void> _proceedAfterLogoLanded() async {
     if (!mounted) return;
-    await appBootstrapFuture;
+    // The checks were kicked off in initState — by now they're usually
+    // already done; await only covers a slow network.
+    await (_entryPrep ?? Future.value());
     if (!mounted) return;
 
-    final validateResponse = await _authC.validateVersion();
-
-    if (validateResponse?.updateRequired == true) {
-      Get.offAll(() => UpdateVersionScreen(dataModel: validateResponse));
+    if (_validateResponse?.updateRequired == true) {
+      Get.offAll(() => UpdateVersionScreen(dataModel: _validateResponse));
       return;
     }
 
-    if (CommonLogics.checkUserLogin()) {
-      final sessionValid = await _authC.validateSession();
-      if (!mounted) return;
-
-      if (sessionValid) {
+    if (_prepLoggedIn) {
+      if (_prepSessionValid) {
         _authC.registerFcmToken();
         _goToDashboard();
       } else {
