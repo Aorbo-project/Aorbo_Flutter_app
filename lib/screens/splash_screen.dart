@@ -1,15 +1,18 @@
 import 'package:arobo_app/controller/auth_controller.dart';
 import 'package:arobo_app/controller/otp_controller.dart';
 import 'package:arobo_app/main.dart';
+import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/common_images.dart';
 import 'package:arobo_app/utils/common_logics.dart';
 import 'package:arobo_app/utils/custom_snackbar.dart';
+import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:arobo_app/utils/phone_input_formatter.dart';
 import 'package:arobo_app/screens/update_version_screen.dart';
-import 'package:arobo_app/models/auth/validate_version_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:pinput/pinput.dart';
 import 'dart:async';
 import 'package:sizer/sizer.dart';
@@ -24,55 +27,37 @@ class SplashWithLoginScreen extends StatefulWidget {
   State<SplashWithLoginScreen> createState() => _SplashWithLoginScreenState();
 }
 
-// ── Auth (login + OTP) design tokens ─────────────────────────────────────
-//
-// The brand identity is the black logo on the yellow→amber gradient. So the
-// login/OTP screen is exactly that: the gradient carries ALL the colour, and
-// every foreground element is one ink black at a few opacities. No second
-// accent. Type is Poppins via AppType (the app's real type factory).
-class _Auth {
-  static const ink = Color(0xFF000000);
-  static const ink80 = Color(0xCC000000);
-  static const ink62 = Color(0x9E000000);
-  static const ink45 = Color(0x73000000);
-  static const ink28 = Color(0x47000000);
-  static const ink14 = Color(0x24000000);
-  static const field = Color(0xFFFFFFFF);
-
-  // The brand-gradient ground (kept in sync with the dashboard-dissolve cover
-  // and _goToDashboard so the hand-off doesn't flash).
-  static const grad = LinearGradient(
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
-    colors: [Color(0xFFFEF200), Color(0xFFFFC400), Color(0xFFFFA000)],
-  );
-
-  static TextStyle t(
-    double size, {
-    FontWeight w = FontWeight.w400,
-    Color color = ink,
-    double? height,
-    double? spacing,
-    TextDecoration? decoration,
-  }) =>
-      AppType.style(size,
-          w: w,
-          color: color,
-          height: height,
-          letterSpacing: spacing,
-          decoration: decoration,
-          decorationColor: decoration != null ? color : null);
-}
-
 class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
     with TickerProviderStateMixin {
   late AnimationController _logoController;
   late Animation<Alignment> _logoAlignmentAnimation;
+  // Plays once, before _logoController, so the logo grows into place from
+  // nothing instead of just appearing already at full "resting" size. Kept
+  // as its own controller (rather than folded into _logoController) so the
+  // grow-in and the shrink-to-top move stay two clearly sequenced beats
+  // instead of one animation doing double duty.
   late AnimationController _entranceController;
   late Animation<double> _entranceOpacity;
   late Animation<double> _entranceScale;
+  // Fades the logo out over 160ms when leaving for /dashboard, replacing
+  // an instant SizedBox.shrink() cut (see _goToDashboard). Short enough to
+  // finish before the incoming dashboard's own header logo becomes visible
+  // through Get's Transition.fade (Flutter's FadeUpwardsPageTransitionsBuilder
+  // — the splash stays static underneath while dashboard slides up + fades
+  // in over it, so this can't just be left frozen-and-visible: confirmed via
+  // GetX 4.7.3 source, get_transition_mixin.dart — the dev's original
+  // "hiding it outright" note in _logoAlignmentAnimation's comment above was
+  // solving that exact double-logo clash), but the fade itself removes the
+  // jarring instant-pop that a WhatsApp screen recording caught on 2026-08-27.
   late AnimationController _exitFadeController;
   late Animation<double> _exitFadeOpacity;
+  // Logo width/height are deliberately NOT Tweens built once in initState.
+  // They used to be (via Sizer's .w/.h), but on a slower device initState()
+  // can run before the platform delivers real window metrics — Sizer's
+  // global state was still zero at that exact moment, so the Tween baked in
+  // 0.0 forever (confirmed via on-device debug logging: w=0.0 h=0.0). Now
+  // computed fresh every frame from MediaQuery in the builder below, so
+  // it's always correct regardless of that timing.
   late AnimationController _formController;
   late Animation<Offset> _formOffsetAnimation;
   late AnimationController _breathingController;
@@ -86,34 +71,153 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
 
   final AuthController _authC = Get.put(AuthController(), permanent: true);
 
+  // final TextEditingController _phoneController = TextEditingController();
   bool isValid = false;
   bool showOtp = false;
   bool _splashDone = false;
   bool _formSlideDone = false;
+  // Set right before navigating to /dashboard so the shimmer/breathing
+  // animations freeze on a static frame before the fade transition starts —
+  // otherwise the fade blends two actively-moving screens together and
+  // reads as a glitch instead of a smooth crossfade.
   bool _leavingToDashboard = false;
+
+  // Drives OtpSuccessOverlay (see widgets/otp_success_overlay.dart) for the
+  // inline OTP form below. Class-level (not local to _buildOtpContainer)
+  // because that method is rebuilt fresh on every setState — a local flag
+  // here would never survive the rebuild it's meant to trigger.
   bool _showOtpSuccessOverlay = false;
 
-  // Bootstrap (Firebase/prefs/repo) + version + session checks, kicked off in
-  // initState so they run IN PARALLEL with the logo animation instead of
-  // starting only after the logo has finished landing (~1.1s wasted before).
-  Future<void>? _entryPrep;
-  ValidateDataModel? _validateResponse;
-  bool _prepLoggedIn = false;
-  bool _prepSessionValid = false;
-
   Timer? _timer;
+
+  // int _start = 45;
   late TextEditingController _otpController;
 
+  @override
+  // void initState() {
+  //   super.initState();
+  //
+  //   _animationController = AnimationController(
+  //     vsync: this,
+  //     duration: const Duration(milliseconds: 300),
+  //   );
+  //   _shakeAnimation = Tween<double>(begin: 0.0, end: 24.0).animate(
+  //     CurvedAnimation(
+  //       parent: _animationController,
+  //       curve: Curves.elasticIn,
+  //     ),
+  //   )..addListener(() {
+  //       setState(() {});
+  //     });
+  //   _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+  //     CurvedAnimation(
+  //       parent: _animationController,
+  //       curve: Curves.easeInOut,
+  //     ),
+  //   );
+  //   // _phoneController.addListener(() {
+  //   //   final value = _phoneController.text;
+  //   //   final valid = RegExp(r'^\d{10}$').hasMatch(value);
+  //   //   if (valid != isValid) {
+  //   //     setState(() {
+  //   //       isValid = valid;
+  //   //     });
+  //   //   }
+  //   //   if (value.length == 10) {
+  //   //     FocusScope.of(context).unfocus();
+  //   //   }
+  //   // });
+  //
+  //   _logoController = AnimationController(
+  //     vsync: this,
+  //     duration: const Duration(milliseconds: 1200),
+  //   );
+  //
+  //   _logoAlignmentAnimation = AlignmentTween(
+  //     begin: Alignment.center,
+  //     end: const Alignment(0.0, -0.88),
+  //   ).animate(CurvedAnimation(
+  //     parent: _logoController,
+  //     curve: Curves.easeInOut,
+  //   ));
+  //
+  //   _logoWidthAnimation = Tween<double>(
+  //     begin: 70.w,
+  //     end: 46.w,
+  //   ).animate(CurvedAnimation(
+  //     parent: _logoController,
+  //     curve: Curves.easeInOut,
+  //   ));
+  //
+  //   _logoHeightAnimation = Tween<double>(
+  //     begin: 50.h,
+  //     end: 10.h,
+  //   ).animate(CurvedAnimation(
+  //     parent: _logoController,
+  //     curve: Curves.easeInOut,
+  //   ));
+  //
+  //   _formController = AnimationController(
+  //     vsync: this,
+  //     duration: const Duration(milliseconds: 800),
+  //   );
+  //
+  //   _formOffsetAnimation = Tween<Offset>(
+  //     begin: const Offset(0, 1),
+  //     end: Offset.zero,
+  //   ).animate(CurvedAnimation(
+  //     parent: _formController,
+  //     curve: Curves.easeOut,
+  //   ));
+  //
+  //   _breathingController = AnimationController(
+  //     vsync: this,
+  //     duration: const Duration(milliseconds: 3000),
+  //   )..repeat(reverse: true);
+  //
+  //   _breathingAnimation = Tween<double>(begin: 0.98, end: 1.02).animate(
+  //     CurvedAnimation(
+  //       parent: _breathingController,
+  //       curve: Curves.easeInOut,
+  //     ),
+  //   );
+  //
+  //   Future.delayed(const Duration(milliseconds: 1800), () async {
+  //     await _logoController.forward();
+  //     setState(() => _splashDone = true);
+  //
+  //     _formController.forward().then((_) {
+  //       setState(() => _formSlideDone = true);
+  //     });
+  //   });
+  //
+  // }
   @override
   void initState() {
     super.initState();
     _otpC = Get.put(OTPController());
 
+    // Logo Animations — 700ms was overcorrecting on "don't make it feel
+    // laggy": rapid-fire motion with no hold time reads as broken/glitchy
+    // to the eye even when every frame renders correctly. 950ms was the
+    // middle ground back when this was the only beat in the sequence.
+    // Trimmed to 650ms as part of the full launch->login timing pass —
+    // total fixed time from launch to an interactive login form was 2.9s,
+    // past Android's ~2.5s "did it freeze?" threshold; still slow enough
+    // to read as deliberate motion once played alongside the shorter
+    // entrance/hold beats below.
     _logoController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 460),
+      duration: const Duration(milliseconds: 650),
     );
 
+    // Moves to near the top — required so the logo stays visible ABOVE
+    // the login form, which slides up and covers the bottom 85% of the
+    // screen. (Briefly tried keeping this centered to avoid overlapping
+    // dashboard's header logo during the fade, but that hid the logo
+    // behind the login form entirely — much worse. The fade-overlap is
+    // instead solved by hiding the logo outright right before navigating;
+    // see _leavingToDashboard in the builder below.)
     _logoAlignmentAnimation =
         AlignmentTween(
           begin: Alignment.center,
@@ -122,23 +226,27 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
           CurvedAnimation(parent: _logoController, curve: Curves.easeInOut),
         );
 
+    // Entrance (grow-in) — plays first. Fades in while scaling up from
+    // small; easeOutBack gives it a slight overshoot past 1.0 before
+    // settling, so it reads as one landing motion rather than a static pop.
+    // Opacity finishes at 60% of the duration so the logo is already fully
+    // visible while the scale is still settling into place. Trimmed from
+    // 550ms as part of the launch->login timing pass — see the
+    // _logoController comment above for the total-time context.
     _entranceController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 300),
-      // Start a touch in so frame 1 already shows a faint logo — no more
-      // "blank yellow for ~1s" before anything appears.
-      value: 0.12,
+      duration: const Duration(milliseconds: 400),
     );
-    _entranceOpacity = Tween<double>(begin: 0.28, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _entranceController,
-        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
-      ),
+    _entranceOpacity = CurvedAnimation(
+      parent: _entranceController,
+      curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
     );
-    _entranceScale = Tween<double>(begin: 0.72, end: 1.0).animate(
+    _entranceScale = Tween<double>(begin: 0.55, end: 1.0).animate(
       CurvedAnimation(parent: _entranceController, curve: Curves.easeOutBack),
     );
 
+    // Exit fade — see the field comment above for why this replaces an
+    // instant hide.
     _exitFadeController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 160),
@@ -147,25 +255,29 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
       CurvedAnimation(parent: _exitFadeController, curve: Curves.easeOut),
     );
 
+    // Form Slide Animation — trimmed from 800ms as part of the
+    // launch->login timing pass (see _logoController comment above).
     _formController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 550),
     );
 
-    _formOffsetAnimation =
-        Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero).animate(
-          CurvedAnimation(parent: _formController, curve: Curves.easeOutCubic),
-        );
+    _formOffsetAnimation = Tween<Offset>(
+      begin: const Offset(0, 1), // Slide from bottom
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _formController, curve: Curves.easeOut));
 
+    // Breathing Animation
     _breathingController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 3000),
-    )..repeat(reverse: true);
+    )..repeat(reverse: true); // Starts repeating immediately
 
     _breathingAnimation = Tween<double>(begin: 0.98, end: 1.02).animate(
       CurvedAnimation(parent: _breathingController, curve: Curves.easeInOut),
     );
 
+    // Button Tap/Shake Animation Controller
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
@@ -178,43 +290,81 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
             curve: Curves.elasticIn,
           ),
         )..addListener(() {
-          if (mounted) setState(() {});
+          if (mounted) {
+            // Good practice to check mounted in listeners
+            setState(() {});
+          }
         });
 
     _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
 
-    _otpController = TextEditingController();
+    // Repaint the phone field so its border reflects the focus state.
+    _phoneFocusNode.addListener(() {
+      if (mounted) setState(() {});
+    });
 
+    // OTP Text Field Controller
+    _otpController =
+        TextEditingController(); // Assuming this was for your Pinput
+
+    // Phone Number Validation Listener (from your original commented code)
+    // If you are managing phone number text in AuthController, this might look like:
+    // _authC.phoneNumberLoginTextField.value.addListener(() {
+    //   final value = _authC.phoneNumberLoginTextField.value.text;
+    //   final valid = RegExp(r'^\d{10}$').hasMatch(value);
+    //   if (valid != isValid) {
+    //     if (mounted) {
+    //       setState(() {
+    //         isValid = valid;
+    //       });
+    //     }
+    //   }
+    //   if (value.length == 10 && _phoneFocusNode.hasFocus) { // Check focus
+    //      _phoneFocusNode.unfocus(); // Or FocusScope.of(context).unfocus();
+    //   }
+    // });
+
+    // --- Core Splash Logic & Login Check ---
     _logoController.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
         if (!mounted) return;
         setState(() {
           _splashDone = true;
         });
+
+        // Ensure breathing animation continues or starts as intended
+        // (it's already set to repeat, but a forward() ensures it's active if somehow paused)
         if (!_breathingController.isAnimating) {
-          _breathingController.forward();
+          _breathingController.forward(); // Or .repeat(reverse: true)
         }
+
+        // Was: Future.delayed(400ms) before starting the version/session
+        // check — dropped as part of the launch->login timing pass (see
+        // _logoController comment above). The shrink-to-top motion itself
+        // already gives the logo its "landed" beat; a further fixed hold
+        // here was pure added latency with no motion happening during it.
         _proceedAfterLogoLanded();
       }
     });
 
+    // Once the logo has grown into place, give it a brief beat to register
+    // as "landed" before it starts shrinking to the top — an instant cut
+    // from grow-in straight into shrink would read as one confused motion.
+    // Trimmed from 200ms as part of the launch->login timing pass.
     _entranceController.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
         if (!mounted) return;
-        _logoController.forward();
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (mounted) _logoController.forward();
+        });
       }
     });
 
-    // Repaint the phone field so its border reflects focus state.
-    _phoneFocusNode.addListener(() {
-      if (mounted) setState(() {});
-    });
-
-    // Boot + version/session checks run NOW, in parallel with the animation.
-    _entryPrep = _runEntryPrep();
-
+    // Start the logo animation on the very next frame — no artificial delay
+    // before motion begins, so the first thing the user sees is already in
+    // motion (matches the native splash's icon, which was already visible).
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _entranceController.forward();
@@ -222,52 +372,69 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
     });
   }
 
-  /// Firebase/prefs/repo bootstrap, then the version check, then (if logged
-  /// in) the session check. Kept in the SAME ORDER as the original flow —
-  /// `validateVersion` primes Repository/Dio state that `validateSession`
-  /// relies on, so these must not be parallelised. The win here is that the
-  /// whole chain runs alongside the logo animation instead of only after it.
-  /// Result is stashed in fields, consumed by [_proceedAfterLogoLanded].
-  Future<void> _runEntryPrep() async {
-    try {
-      await appBootstrapFuture;
-      _validateResponse = await _authC.validateVersion();
-      _prepLoggedIn = CommonLogics.checkUserLogin();
-      if (_prepLoggedIn) {
-        _prepSessionValid = await _authC.validateSession();
-      }
-    } catch (_) {
-      // Never let a failed check strand the user on the splash — the
-      // decision logic falls through to the login form.
-      _prepSessionValid = false;
-    }
-  }
-
+  // Runs once the shrink-to-top motion has completed. Split out of
+  // initState's _logoController status listener so it can be called
+  // directly (no artificial delay in front of it) — see the timing-pass
+  // comment where it's invoked.
   Future<void> _proceedAfterLogoLanded() async {
     if (!mounted) return;
-    // The checks were kicked off in initState — by now they're usually
-    // already done; await only covers a slow network.
-    await (_entryPrep ?? Future.value());
+
+    // main.dart's Firebase/Preferences/Repository init now runs
+    // concurrently with this animation instead of blocking the first
+    // frame — wait for it here, right before `sp`/the network stack
+    // are actually needed. Normally already done by this point.
+    await appBootstrapFuture;
     if (!mounted) return;
 
-    if (_validateResponse?.updateRequired == true) {
-      Get.offAll(() => UpdateVersionScreen(dataModel: _validateResponse));
+    final validateResponse = await _authC.validateVersion();
+
+    // Hard block ONLY on update_required (below min_supported_version
+    // — an explicit admin-set minimum). update_available alone means
+    // "a newer version exists" and must never block anyone; that flag
+    // used to be wired to this same block, which would have force-
+    // blocked every user on every single release.
+    if (validateResponse?.updateRequired == true) {
+      Get.offAll(() => UpdateVersionScreen(dataModel: validateResponse));
       return;
     }
 
-    if (_prepLoggedIn) {
-      if (_prepSessionValid) {
+    if (CommonLogics.checkUserLogin()) {
+      // Confirm the cached session is still accepted by the server
+      // BEFORE committing to /dashboard — see validateSession's doc
+      // comment for why (splash→dashboard→login flicker bug).
+      final sessionValid = await _authC.validateSession();
+      if (!mounted) return;
+
+      if (sessionValid) {
+        // Self-healing sync: catches a token that failed to register
+        // on a previous run (flaky network, brief backend outage)
+        // without waiting for this session's next login, which for a
+        // completed profile may never happen again.
         _authC.registerFcmToken();
         _goToDashboard();
       } else {
+        // Explicit server rejection — the cached flag lied, clear it
+        // so the user lands cleanly on the login form instead of a
+        // dashboard that would immediately bounce them back out.
         await sp!.clear();
         _startFormAnimation();
       }
     } else {
-      _startFormAnimation();
+      _startFormAnimation(); // Defined below, handles form slide up
     }
   }
 
+  // Freezes the splash on a static frame, then hands off to /dashboard via
+  // dissolveToDashboard(): an opaque copy of this screen's yellow gradient
+  // is held on top while the dashboard mounts + paints + runs its content
+  // stagger hidden underneath, then that cover dissolves away (~300ms). No
+  // white/washed flash — the old fade-in-over-still-opaque-splash approach
+  // (Transition.fadeIn on the route) produced a measured ~60-90ms
+  // desaturated flash on device. The route transition is now noTransition.
+  //
+  // Runs for BOTH cold-start auto-login and OTP-success: by the time this
+  // is called the pin form has faded to nothing, so the visible background
+  // is the same yellow gradient in both cases.
   void _goToDashboard() {
     if (!mounted) {
       Get.offAllNamed('/dashboard');
@@ -279,15 +446,23 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
     dissolveToDashboard(
       context,
       cover: const DecoratedBox(
-        decoration: BoxDecoration(gradient: _Auth.grad),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFFEF200), Color(0xFFFFA000)],
+          ),
+        ),
       ),
     );
   }
 
   void _startFormAnimation() {
     if (!mounted) return;
-    _formController.forward();
+    // Ensure _formController is initialized (should be in initState)
+    _formController.forward(); // Use _formController
     _formController.addStatusListener((status) {
+      // Listen to _formController
       if (!mounted) return;
       if (status == AnimationStatus.completed) {
         setState(() {
@@ -333,51 +508,84 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
   bool get isValidPhoneNumber =>
       _authC.phoneNumberLoginTextField.value.text.length == 10;
 
+  // void _onContinue() {
+  //   if (isValid) {
+  //     FocusScope.of(context).unfocus();
+  //     setState(() {
+  //       showOtp = true;
+  //       _start = 45;
+  //     });
+  //     _startTimer();
+  //   }
+  // }
+  //
+  // void _resendOtp() {
+  //   setState(() => _start = 45);
+  //   _startTimer();
+  // }
+
   Widget _buildOtpContainer() {
     bool isError = false;
 
+    // ── OTP cells — white keyline at rest, yellow glow when active, warm
+    //    tint once filled, red on error.
     final defaultPinTheme = PinTheme(
-      width: 12.w,
-      height: 6.4.h,
-      textStyle: _Auth.t(18, w: FontWeight.w800),
+      width: 12.5.w,
+      height: 6.2.h,
+      textStyle: AppType.style(FontSize.s18,
+          w: FontWeight.w800, color: CommonColors.blackColor),
       decoration: BoxDecoration(
-        color: _Auth.field,
-        borderRadius: BorderRadius.circular(11),
-        border: Border.all(color: _Auth.ink28, width: 1.5),
-      ),
-    );
-
-    final focusedPinTheme = defaultPinTheme.copyWith(
-      decoration: defaultPinTheme.decoration!.copyWith(
-        color: _Auth.field,
-        border: Border.all(color: _Auth.ink, width: 2),
-        boxShadow: const [
-          BoxShadow(color: _Auth.ink14, blurRadius: 0, spreadRadius: 3),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.black.withValues(alpha: 0.12),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
     );
-
+    final focusedPinTheme = defaultPinTheme.copyWith(
+      decoration: defaultPinTheme.decoration!.copyWith(
+        border: Border.all(color: Colors.black, width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFFC400).withValues(alpha: 0.55),
+            blurRadius: 0,
+            spreadRadius: 3,
+          ),
+        ],
+      ),
+    );
     final submittedPinTheme = defaultPinTheme.copyWith(
       decoration: defaultPinTheme.decoration!.copyWith(
-        color: _Auth.field,
-        border: Border.all(color: _Auth.ink, width: 1.5),
+        color: const Color(0xFFFFFBEA),
+        border: Border.all(color: Colors.black, width: 1.6),
       ),
     );
-
-    // Error is shown by a heavier black keyline + the shake — no red.
     final errorPinTheme = defaultPinTheme.copyWith(
+      textStyle: AppType.style(FontSize.s18,
+          w: FontWeight.w800, color: const Color(0xFFE5484D)),
       decoration: defaultPinTheme.decoration!.copyWith(
-        color: _Auth.field,
-        border: Border.all(color: _Auth.ink, width: 2),
+        color: const Color(0xFFFDECEC),
+        border: Border.all(color: const Color(0xFFE5484D), width: 2),
       ),
     );
+    String? errorMessage;
 
     void validateOTP(String pin) async {
       if (!mounted) return;
+
       try {
         if (pin.length == 6) {
           setState(() {
             isError = false;
+            errorMessage = null;
           });
 
           final phone = _authC.phoneNumberLoginTextField.value.text;
@@ -390,9 +598,14 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
             setState(() {
               _showOtpSuccessOverlay = true;
             });
+            // _goToDashboard() now runs from OtpSuccessOverlay's onFinished
+            // (see the build() method below) once the confirmation beat
+            // plays out, instead of firing immediately here.
           } else {
             setState(() {
               isError = true;
+              errorMessage =
+                  "That code didn't match. Check the SMS and try again.";
             });
             if (mounted) {
               _authC.otpTextField.value.clear();
@@ -419,270 +632,373 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
       play: _showOtpSuccessOverlay,
       onFinished: _goToDashboard,
       child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(height: 4.h),
-            Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(height: 5.h),
+          Row(
+            children: [
+              GestureDetector(
+                onTap: () => setState(() => showOtp = false),
+                child: Container(
+                  width: 10.w,
+                  height: 10.w,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(3.w),
+                    border: Border.all(
+                        color: Colors.black.withValues(alpha: 0.12),
+                        width: 1.4),
+                  ),
+                  child: const Icon(Icons.arrow_back_rounded,
+                      color: Colors.black, size: 20),
+                ),
+              ),
+              SizedBox(width: 4.w),
+              Text(
+                "STEP 2 OF 2",
+                style: TextStyle(
+                  fontSize: FontSize.s9,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.4,
+                  color: Colors.black.withValues(alpha: 0.45),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 4.h),
+          Padding(
+            padding: EdgeInsets.only(left: 1.w),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                GestureDetector(
-                  onTap: () {
-                    _authC.otpTextField.value.clear();
-                    setState(() => showOtp = false);
-                  },
-                  child: Container(
-                    width: 9.w,
-                    height: 9.w,
-                    decoration: BoxDecoration(
-                      color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(11),
-                      border: Border.all(color: _Auth.ink, width: 1.5),
-                    ),
-                    child: const Icon(Icons.arrow_back_rounded,
-                        color: _Auth.ink, size: 17),
+                Text(
+                  "Verify your number",
+                  style: GoogleFonts.sairaStencilOne(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black,
                   ),
                 ),
-                SizedBox(width: 3.w),
-                Text('STEP 2 OF 2 · VERIFY',
-                    style: _Auth.t(8.5,
-                        w: FontWeight.w700, color: _Auth.ink45, spacing: 1)),
+                SizedBox(height: 1.2.h),
+                Text.rich(
+                  TextSpan(
+                    text: 'Enter the 6-digit code sent to  ',
+                    style: AppType.style(FontSize.s11,
+                        w: FontWeight.w400, color: Colors.black54, height: 1.4),
+                    children: [
+                      TextSpan(
+                        text:
+                            '+91 ${_authC.phoneNumberLoginTextField.value.text}',
+                        style: AppType.style(FontSize.s11,
+                            w: FontWeight.w700, color: Colors.black),
+                      ),
+                      TextSpan(
+                        text: '   Edit',
+                        style: AppType.style(FontSize.s11,
+                            w: FontWeight.w700,
+                            color: Colors.black,
+                            decoration: TextDecoration.underline),
+                        recognizer: TapGestureRecognizer()
+                          ..onTap = () {
+                            _authC.otpTextField.value.clear();
+                            setState(() => showOtp = false);
+                          },
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
-            SizedBox(height: 3.5.h),
-
-            Text('Enter the code\nwe just sent',
-                style: _Auth.t(20, w: FontWeight.w800, spacing: -0.3, height: 1.2)),
-            SizedBox(height: 1.h),
-            Text.rich(
-              TextSpan(
-                text: 'Sent to ',
-                style: _Auth.t(11, color: _Auth.ink62, height: 1.45),
-                children: [
-                  TextSpan(
-                    text:
-                        '+91 ${_authC.phoneNumberLoginTextField.value.text}',
-                    style: _Auth.t(11,
-                        w: FontWeight.w700, color: _Auth.ink),
-                  ),
-                  TextSpan(
-                    text: '   Edit',
-                    style: _Auth.t(11,
-                        w: FontWeight.w700, color: _Auth.ink,
-                        spacing: 0.2),
-                    recognizer: (TapGestureRecognizer()
-                      ..onTap = () {
-                        _authC.otpTextField.value.clear();
-                        setState(() => showOtp = false);
-                      }),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 4.h),
-
-            Center(
-              child: Directionality(
-                textDirection: TextDirection.ltr,
-                child: Transform.translate(
-                  offset: isError
-                      ? Offset(_shakeAnimation?.value ?? 0, 0)
-                      : Offset.zero,
-                  child: Pinput(
-                    length: 6,
-                    controller: _authC.otpTextField.value,
-                    focusNode: _pinFocusNode,
-                    autofocus: true,
-                    defaultPinTheme: defaultPinTheme,
-                    focusedPinTheme: focusedPinTheme,
-                    submittedPinTheme: submittedPinTheme,
-                    errorPinTheme: errorPinTheme,
-                    forceErrorState: isError,
-                    separatorBuilder: (_) => SizedBox(width: 2.w),
-                    onCompleted: validateOTP,
-                    onChanged: (_) {
-                      if (isError) setState(() => isError = false);
-                    },
-                    cursor: Container(
-                      margin: const EdgeInsets.only(bottom: 10),
-                      width: 16,
-                      height: 2,
-                      decoration: const BoxDecoration(color: _Auth.ink),
-                    ),
+          ),
+          SizedBox(height: 4.h),
+          Align(
+            alignment: Alignment.center,
+            child: Directionality(
+              textDirection: TextDirection.ltr,
+              child: Transform.translate(
+                offset: isError
+                    ? Offset(_shakeAnimation?.value ?? 0, 0)
+                    : Offset.zero,
+                child: Pinput(
+                  length: 6,
+                  controller: _authC.otpTextField.value,
+                  focusNode: _pinFocusNode,
+                  defaultPinTheme: defaultPinTheme,
+                  submittedPinTheme: submittedPinTheme,
+                  focusedPinTheme: focusedPinTheme,
+                  errorPinTheme: errorPinTheme,
+                  forceErrorState: isError,
+                  separatorBuilder: (index) => SizedBox(width: 3.5.w),
+                  onCompleted: validateOTP,
+                  onChanged: (value) {
+                    if (isError) {
+                      setState(() {
+                        isError = false;
+                        errorMessage = null;
+                      });
+                    }
+                  },
+                  cursor: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 9),
+                        width: 22,
+                        height: 1,
+                        color: CommonColors.blackColor,
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
-
-            if (isError) ...[
-              SizedBox(height: 1.6.h),
-              Text("That code didn't match. Check the SMS and try again.",
-                  style: _Auth.t(10, w: FontWeight.w700, color: _Auth.ink)),
-            ],
-            SizedBox(height: 3.2.h),
-
-            Obx(
-              () => _otpC.enableResend.value
-                  ? GestureDetector(
-                      onTap: () {
-                        _otpC.resendOTP();
-                        _authC.otpTextField.value.clear();
-                      },
-                      behavior: HitTestBehavior.opaque,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.refresh_rounded,
-                              size: 15, color: _Auth.ink),
-                          SizedBox(width: 1.5.w),
-                          Text('Resend code via SMS',
-                              style: _Auth.t(12,
-                                  w: FontWeight.w600, color: _Auth.ink,
-                                  decoration: TextDecoration.underline)),
-                        ],
-                      ),
-                    )
-                  : Text.rich(
-                      TextSpan(
-                        text: 'Resend code in  ',
-                        style: _Auth.t(12, color: _Auth.ink45),
-                        children: [
-                          TextSpan(
-                            text: _otpC.formatTime(),
-                            style: _Auth.t(12,
-                                w: FontWeight.w700, color: _Auth.ink),
-                          ),
-                        ],
-                      ),
-                    ),
-            ),
+          ),
+          if (isError && errorMessage != null) ...[
             SizedBox(height: 1.6.h),
-            Text('Fills in automatically from your SMS.',
-                style: _Auth.t(9, color: _Auth.ink45)),
+            Align(
+              alignment: Alignment.center,
+              child: Text(
+                errorMessage!,
+                textAlign: TextAlign.center,
+                style: AppType.style(FontSize.s11,
+                    w: FontWeight.w600, color: const Color(0xFFE5484D)),
+              ),
+            ),
           ],
-        ),
+          SizedBox(height: 4.h),
+          Obx(
+            () => !_otpC.enableResend.value
+                ? Align(
+                    alignment: Alignment.center,
+                    child: Text(
+                      _otpC.formatTime(),
+                      // textScaler: const TextScaler.linear(1.0),
+                      style: AppType.style(FontSize.s14, w: FontWeight.w500, color: CommonColors.blackColor, letterSpacing: 0.5.w),
+                    ),
+                  )
+                : Container(),
+          ),
+          // SizedBox(height: 3.h),
+          Obx(
+            () => Align(
+              alignment: Alignment.center,
+              child: TextButton(
+                onPressed: _otpC.enableResend.value
+                    ? () => _otpC.resendOTP()
+                    : null,
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.symmetric(vertical: 0.5.h),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: Text.rich(
+                  TextSpan(
+                    children: [
+                      if (_otpC.enableResend.value)
+                        TextSpan(
+                          text: 'Resend code via SMS',
+                          style: TextStyle(
+                            color: CommonColors.bluebac,
+                            fontWeight: FontWeight.w500,
+                            decoration: TextDecoration.underline,
+                            decorationColor: CommonColors.whiteColor,
+                            fontSize: FontSize.s9,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
       ),
     );
   }
 
   Widget _buildLoginContainer() {
-    final phoneOk = isValidPhoneNumber;
     return SingleChildScrollView(
-      padding: EdgeInsets.only(top: 2.h, bottom: 6.h),
+      padding: EdgeInsets.only(top: 5.h, bottom: 12.h),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(height: 2.h),
+          Text(
+            "Your Trek,",
+            style: GoogleFonts.sairaStencilOne(
+              fontSize: 24.sp,
+              fontWeight: FontWeight.w600,
+              color: Colors.black,
+            ),
+          ),
+          Text(
+            "just a",
+            style: GoogleFonts.sairaStencilOne(
+              fontSize: 24.sp,
+              fontWeight: FontWeight.w600,
+              color: Colors.black,
+            ),
+          ),
+          Text(
+            "Click",
+            style: GoogleFonts.sairaStencilOne(
+              fontSize: 24.sp,
+              fontWeight: FontWeight.w600,
+              color: Colors.black,
+            ),
+          ),
+          Text(
+            "Away !",
+            style: GoogleFonts.sairaStencilOne(
+              fontSize: 24.sp,
+              fontWeight: FontWeight.w600,
+              color: Colors.black,
+            ),
+          ),
+          SizedBox(height: 4.h),
 
-          // ── tagline lockup — weight + opacity carry it, no colour
-          Text.rich(
-            TextSpan(
-              text: 'Your Trek',
-              style: _Auth.t(22, w: FontWeight.w800, spacing: -0.3, height: 1.02),
-              children: [
-                TextSpan(
-                  text: ' ...',
-                  style: _Auth.t(22,
-                      w: FontWeight.w400, color: _Auth.ink45, spacing: 1.5),
+          Padding(
+            padding: EdgeInsets.only(left: 1.w, bottom: 1.h),
+            child: Text(
+              'MOBILE NUMBER',
+              style: TextStyle(
+                fontSize: FontSize.s9,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.4,
+                color: Colors.black.withValues(alpha: 0.45),
+              ),
+            ),
+          ),
+
+          // ── Phone field — clean pill, focus glow, valid tick
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 170),
+            height: 6.6.h,
+            padding: EdgeInsets.symmetric(horizontal: 5.w),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(3.6.h),
+              border: Border.all(
+                color: _phoneFocusNode.hasFocus
+                    ? Colors.black
+                    : Colors.black.withValues(alpha: 0.10),
+                width: _phoneFocusNode.hasFocus ? 1.7 : 1.2,
+              ),
+              boxShadow: [
+                if (_phoneFocusNode.hasFocus)
+                  BoxShadow(
+                    color: const Color(0xFFFFC400).withValues(alpha: 0.35),
+                    blurRadius: 0,
+                    spreadRadius: 3,
+                  ),
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.06),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
                 ),
               ],
-            ),
-          ),
-          Text('Just',
-              style: _Auth.t(15,
-                  w: FontWeight.w300, color: _Auth.ink62, height: 1.15)),
-          Text('A',
-              style: _Auth.t(15,
-                  w: FontWeight.w300, color: _Auth.ink62, height: 1.15)),
-          Text.rich(
-            TextSpan(
-              text: 'Click Away',
-              style: _Auth.t(22, w: FontWeight.w800, spacing: -0.3, height: 1.05),
-              children: [
-                TextSpan(
-                    text: ' !!', style: _Auth.t(22, w: FontWeight.w800, spacing: 0.5)),
-              ],
-            ),
-          ),
-
-          SizedBox(height: 5.h),
-          Container(height: 1, color: _Auth.ink14),
-          SizedBox(height: 1.8.h),
-          Text('SIGN IN',
-              style: _Auth.t(8.5,
-                  w: FontWeight.w700, color: _Auth.ink45, spacing: 1)),
-          SizedBox(height: 1.2.h),
-
-          // ── phone field — white paper, black keyline
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 160),
-            height: 6.6.h,
-            padding: EdgeInsets.symmetric(horizontal: 4.w),
-            decoration: BoxDecoration(
-              color: _Auth.field,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: _Auth.ink,
-                width: _phoneFocusNode.hasFocus ? 2 : 1.5,
-              ),
-              boxShadow: _phoneFocusNode.hasFocus
-                  ? const [
-                      BoxShadow(
-                          color: _Auth.ink14, blurRadius: 0, spreadRadius: 3),
-                    ]
-                  : null,
             ),
             child: Row(
               children: [
-                Text('+91', style: _Auth.t(14, w: FontWeight.w700)),
+                Text(
+                  '+91',
+                  textScaler: const TextScaler.linear(1.0),
+                  style: TextStyle(
+                    fontSize: FontSize.s13,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.black,
+                  ),
+                ),
                 SizedBox(width: 3.w),
-                Container(width: 1.5, height: 2.6.h, color: _Auth.ink28),
-                SizedBox(width: 3.w),
+                Container(
+                  width: 1.4,
+                  height: 2.6.h,
+                  color: Colors.black.withValues(alpha: 0.14),
+                ),
+                SizedBox(width: 3.5.w),
                 Expanded(
-                  child: TextField(
-                    focusNode: _phoneFocusNode,
-                    onTapOutside: (_) => FocusScope.of(context).unfocus(),
-                    controller: _authC.phoneNumberLoginTextField.value,
-                    keyboardType: TextInputType.phone,
-                    onChanged: (_) => setState(() {}),
-                    inputFormatters: [IndianMobileNumberFormatter()],
-                    style: _Auth.t(15, w: FontWeight.w600, spacing: 0.5),
-                    cursorColor: _Auth.ink,
-                    decoration: InputDecoration(
-                      hintText: 'Mobile number',
-                      hintStyle:
-                          _Auth.t(13, w: FontWeight.w400, color: _Auth.ink45),
-                      border: InputBorder.none,
-                      isDense: true,
+                  child: MediaQuery(
+                    data: MediaQuery.of(context).copyWith(
+                      textScaler: const TextScaler.linear(1.0),
+                    ),
+                    child: TextField(
+                      focusNode: _phoneFocusNode,
+                      onTapOutside: (event) {
+                        FocusScope.of(context).unfocus();
+                      },
+                      controller: _authC.phoneNumberLoginTextField.value,
+                      keyboardType: TextInputType.phone,
+                      onChanged: (value) {
+                        setState(() {});
+                      },
+                      inputFormatters: [IndianMobileNumberFormatter()],
+                      style: TextStyle(
+                        fontSize: FontSize.s13,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black,
+                        letterSpacing: 1.0,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: 'Mobile number',
+                        hintStyle: TextStyle(
+                          fontSize: FontSize.s12,
+                          fontWeight: FontWeight.w400,
+                          letterSpacing: 0,
+                          color: CommonColors.greyColor,
+                        ),
+                        border: InputBorder.none,
+                        isCollapsed: true,
+                      ),
                     ),
                   ),
                 ),
-                if (phoneOk)
-                  const Icon(Icons.check_rounded, color: _Auth.ink, size: 18),
+                AnimatedScale(
+                  scale: isValidPhoneNumber ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOutBack,
+                  child: Container(
+                    width: 22,
+                    height: 22,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFFC400),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.check_rounded,
+                        color: Colors.black, size: 15),
+                  ),
+                ),
               ],
             ),
           ),
-          SizedBox(height: 1.6.h),
+          SizedBox(height: 3.h),
 
-          // ── continue button — solid black
+          // ── Continue button — gradient + sheen + arrow chip when ready,
+          //    clean black outline when not
           Obx(() {
+            final ready = isValidPhoneNumber && !_authC.isLoading.value;
             final loading = _authC.isLoading.value;
-            final enabled = phoneOk && !loading;
             return GestureDetector(
-              onTapDown: enabled ? _onTapDown : null,
-              onTapUp: enabled ? _onTapUp : null,
-              onTapCancel: enabled ? _onTapCancel : null,
-              onTap: enabled
-                  ? () async {
-                      FocusScope.of(context).unfocus();
-                      final phone =
-                          _authC.phoneNumberLoginTextField.value.text;
-                      final success = await _authC.requestOtp(phone);
-                      if (success && mounted) {
-                        setState(() => showOtp = true);
-                        _otpC.startTimer();
-                      }
-                    }
-                  : null,
+              onTapDown: ready ? _onTapDown : null,
+              onTapUp: ready ? _onTapUp : null,
+              onTapCancel: ready ? _onTapCancel : null,
+              onTap: () async {
+                if (isValidPhoneNumber) {
+                  final phone = _authC.phoneNumberLoginTextField.value.text;
+                  final success = await _authC.requestOtp(phone);
+                  if (success && mounted) {
+                    setState(() {
+                      showOtp = true;
+                    });
+                    _otpC.startTimer();
+                  }
+                } else {
+                  CustomSnackBar.show(
+                    context,
+                    message: "Please enter a valid 10-digit mobile number",
+                  );
+                }
+              },
               child: ScaleTransition(
                 scale: _scaleAnimation,
                 child: AnimatedContainer(
@@ -690,33 +1006,96 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                   width: double.infinity,
                   height: 6.6.h,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    color: phoneOk ? _Auth.ink : _Auth.ink14,
-                  ),
-                  child: Center(
-                    child: loading
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                                color: Colors.white, strokeWidth: 2.5),
+                    borderRadius: BorderRadius.circular(3.6.h),
+                    color: ready ? null : Colors.transparent,
+                    border: ready
+                        ? null
+                        : Border.all(color: Colors.black, width: 1.5),
+                    gradient: ready
+                        ? const LinearGradient(
+                            colors: [Color(0xFFFFEE58), Color(0xFFFFC400)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                           )
-                        : Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text('Continue',
-                                  style: _Auth.t(14,
-                                      w: FontWeight.w700,
-                                      color: phoneOk
-                                          ? Colors.white
-                                          : _Auth.ink45)),
-                              if (phoneOk) ...[
-                                SizedBox(width: 2.w),
-                                const Icon(Icons.arrow_forward_rounded,
-                                    size: 16, color: Colors.white),
-                              ],
-                            ],
+                        : null,
+                    boxShadow: ready
+                        ? [
+                            BoxShadow(
+                              color: const Color(0xFFFFC400)
+                                  .withValues(alpha: 0.45),
+                              blurRadius: 22,
+                              offset: const Offset(0, 10),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Stack(
+                    children: [
+                      // top sheen on the gradient
+                      if (ready)
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          top: 0,
+                          height: 3.h,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.vertical(
+                                  top: Radius.circular(3.6.h)),
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.white.withValues(alpha: 0.45),
+                                  Colors.white.withValues(alpha: 0.0),
+                                ],
+                              ),
+                            ),
                           ),
+                        ),
+                      Center(
+                        child: loading
+                            ? SizedBox(
+                                width: 2.6.h,
+                                height: 2.6.h,
+                                child: const CircularProgressIndicator(
+                                    color: Colors.black, strokeWidth: 2.4),
+                              )
+                            : Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    'Continue',
+                                    textScaler: const TextScaler.linear(1.0),
+                                    style: AppType.style(
+                                      FontSize.s14,
+                                      w: FontWeight.w800,
+                                      color: ready
+                                          ? Colors.black
+                                          : Colors.black
+                                              .withValues(alpha: 0.55),
+                                    ),
+                                  ),
+                                  if (ready) ...[
+                                    SizedBox(width: 3.w),
+                                    Container(
+                                      width: 3.4.h,
+                                      height: 3.4.h,
+                                      decoration: const BoxDecoration(
+                                        color: Colors.black,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.arrow_forward_rounded,
+                                        color: Colors.white,
+                                        size: 16,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -733,49 +1112,17 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
       resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
-          // Base gradient — the brand ground, carries all the colour
           Container(
             width: double.infinity,
             height: double.infinity,
-            decoration: const BoxDecoration(gradient: _Auth.grad),
-          ),
-
-          // Premium Background Decorative Elements (Subtle Depth)
-          Positioned(
-            top: -10.h,
-            right: -10.w,
-            child: Container(
-              width: 40.h,
-              height: 40.h,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    Colors.white.withValues(alpha: 0.25),
-                    Colors.white.withValues(alpha: 0.0),
-                  ],
-                ),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0xFFFEF200), Color(0xFFFFA000)],
               ),
             ),
           ),
-          Positioned(
-            bottom: 10.h,
-            left: -15.w,
-            child: Container(
-              width: 35.h,
-              height: 35.h,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    Colors.white.withValues(alpha: 0.15),
-                    Colors.white.withValues(alpha: 0.0),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
           AnimatedBuilder(
             animation: Listenable.merge([
               _logoController,
@@ -784,19 +1131,32 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
               _exitFadeController,
             ]),
             builder: (context, child) {
+              // Computed fresh from MediaQuery every frame — see the field
+              // comment above for why this can't be a Tween built once in
+              // initState.
               final screenSize = MediaQuery.of(context).size;
               final t = Curves.easeInOut.transform(_logoController.value);
-              final w =
-                  screenSize.width * 0.70 +
+              // End width was 0.46 — at alignment (0, -0.88) that put the
+              // shrunk logo's bottom edge ~3px past the login form's top
+              // edge (form is 82% of screen height, so its top sits at 18%)
+              // on a reference 390x844 screen, i.e. straddling the seam
+              // instead of sitting cleanly on the gradient above it. 0.54
+              // reads as noticeably more legible while the form's height
+              // (see 82.h below) does the actual clearance work.
+              final w = screenSize.width * 0.70 +
                   (screenSize.width * 0.54 - screenSize.width * 0.70) * t;
-              final h =
-                  screenSize.height * 0.50 +
+              final h = screenSize.height * 0.50 +
                   (screenSize.height * 0.10 - screenSize.height * 0.50) * t;
               final align = _logoAlignmentAnimation.value;
 
-              final exitOpacity = _leavingToDashboard
-                  ? _exitFadeOpacity.value
-                  : 1.0;
+              // Was: `if (_leavingToDashboard) return const SizedBox.shrink();`
+              // — an instant, single-frame disappearance, caught looking
+              // dead/broken in a screen recording (2026-08-27). Multiplied
+              // into the same Opacity as the entrance fade below instead,
+              // so leaving dissolves the logo over 160ms rather than
+              // popping it away.
+              final exitOpacity =
+                  _leavingToDashboard ? _exitFadeOpacity.value : 1.0;
 
               final baseLogo = SizedBox(
                 width: w,
@@ -817,55 +1177,148 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
               return Align(alignment: align, child: logo);
             },
           ),
-
-          // The form sits directly on the gradient — no white sheet.
+          //       if (CommonLogics.checkUserLogin()) {
+          //         Get.offNamed('/dashboard');
+          //       } else {
+          //         Get.offNamed('/login');
+          //       }
           SlideTransition(
             position: _formOffsetAnimation,
             child: Align(
               alignment: Alignment.bottomCenter,
               child: Container(
                 width: double.infinity,
+                // Was 85.h — that put this form's top edge right where the
+                // shrunk logo's bottom edge lands (see the `w` comment
+                // above), so the logo looked wedged into the seam instead
+                // of sitting clear of it on the gradient. 82.h opens a
+                // ~19px gap on a reference 390x844 screen without the
+                // alignment/height above needing to change.
                 height: 82.h,
-                padding: EdgeInsets.symmetric(horizontal: 7.w),
-                color: Colors.transparent,
+                padding: EdgeInsets.symmetric(horizontal: 6.w),
+                decoration: BoxDecoration(
+                  color: Color(0xffFFFDF9),
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(8.w),
+                  ),
+                ),
                 child: showOtp ? _buildOtpContainer() : _buildLoginContainer(),
               ),
             ),
           ),
-
           if (_formSlideDone && !showOtp)
             Positioned(
-              bottom: 3.2.h,
-              left: 8.w,
-              right: 8.w,
-              child: Text.rich(
-                TextSpan(
-                  text: 'By continuing you agree to our ',
-                  style: _Auth.t(9.5, color: _Auth.ink62, height: 1.4),
-                  children: [
-                    TextSpan(
-                      text: 'Terms of Use',
-                      style: _Auth.t(9.5,
-                          w: FontWeight.w700,
-                          color: _Auth.ink,
-                          decoration: TextDecoration.underline),
-                    ),
-                    TextSpan(
-                        text: ' & ', style: _Auth.t(9.5, color: _Auth.ink62)),
-                    TextSpan(
-                      text: 'Privacy Policy',
-                      style: _Auth.t(9.5,
-                          w: FontWeight.w700,
-                          color: _Auth.ink,
-                          decoration: TextDecoration.underline),
-                    ),
-                  ],
-                ),
-                textAlign: TextAlign.center,
+              bottom: 4.h,
+              left: 0,
+              right: 0,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    "By continuing, you agree to our",
+                    textAlign: TextAlign.center,
+                    style: AppType.style(FontSize.s10, w: FontWeight.w400, color: Colors.black),
+                  ),
+                  SizedBox(height: 0.5.h),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        "T&C",
+                        style: AppType.style(FontSize.s9, w: FontWeight.w400, color: Colors.lightBlue),
+                      ),
+                      Text(
+                        "  &  ",
+                        style: AppType.style(FontSize.s9, w: FontWeight.w400, color: Colors.black),
+                      ),
+                      Text(
+                        "Privacy Policy",
+                        style: AppType.style(FontSize.s9, w: FontWeight.w400, color: Colors.lightBlue),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
         ],
       ),
+    );
+  }
+}
+
+class CustomOtpInput extends StatefulWidget {
+  final Function(String) onChanged;
+
+  const CustomOtpInput({super.key, required this.onChanged});
+
+  @override
+  State<CustomOtpInput> createState() => _CustomOtpInputState();
+}
+
+class _CustomOtpInputState extends State<CustomOtpInput> {
+  final List<TextEditingController> _controllers = List.generate(
+    6,
+    (_) => TextEditingController(),
+  );
+  final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
+
+  @override
+  void dispose() {
+    for (var controller in _controllers) {
+      controller.dispose();
+    }
+    for (var node in _focusNodes) {
+      node.dispose();
+    }
+    super.dispose();
+  }
+
+  void _onChanged(int index, String value) {
+    if (value.isNotEmpty && index < 5) {
+      _focusNodes[index + 1].requestFocus();
+    } else if (value.isEmpty && index > 0) {
+      _focusNodes[index - 1].requestFocus();
+    }
+
+    final otp = _controllers.map((c) => c.text).join();
+    widget.onChanged(otp);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: List.generate(6, (index) {
+        return Container(
+          width: 12.w,
+          height: 7.h,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(3.w),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.3),
+                blurRadius: 4,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          child: TextField(
+            controller: _controllers[index],
+            focusNode: _focusNodes[index],
+            keyboardType: TextInputType.number,
+            textAlign: TextAlign.center,
+            maxLength: 1,
+            style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
+            decoration: const InputDecoration(
+              counterText: '',
+              border: InputBorder.none,
+            ),
+            onChanged: (value) => _onChanged(index, value),
+          ),
+        );
+      }),
     );
   }
 }
