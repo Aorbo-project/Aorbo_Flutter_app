@@ -1,7 +1,6 @@
 import 'package:arobo_app/controller/auth_controller.dart';
 import 'package:arobo_app/controller/otp_controller.dart';
 import 'package:arobo_app/main.dart';
-import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/common_images.dart';
 import 'package:arobo_app/utils/common_logics.dart';
 import 'package:arobo_app/utils/custom_snackbar.dart';
@@ -9,6 +8,7 @@ import 'package:arobo_app/utils/phone_input_formatter.dart';
 import 'package:arobo_app/screens/update_version_screen.dart';
 import 'package:arobo_app/models/auth/validate_version_model.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:pinput/pinput.dart';
@@ -23,6 +23,35 @@ class SplashWithLoginScreen extends StatefulWidget {
 
   @override
   State<SplashWithLoginScreen> createState() => _SplashWithLoginScreenState();
+}
+
+// ── Auth (login + OTP) design tokens ─────────────────────────────────────
+class _Auth {
+  static const ink = Color(0xFF17181C);
+  static const muted = Color(0xFF6B7280);
+  static const faint = Color(0xFF9AA1AC);
+  static const brand = Color(0xFFFF9500); // primary orange
+  static const brandDeep = Color(0xFFF57C00);
+  static const gold = Color(0xFFFFC400);
+  static const fieldBg = Color(0xFFF4F5F7);
+  static const fieldBorder = Color(0xFFE4E7EC);
+  static const danger = Color(0xFFE5484D);
+  static const card = Color(0xFFFFFFFF);
+
+  static TextStyle t(
+    double size, {
+    FontWeight w = FontWeight.w400,
+    Color color = ink,
+    double? height,
+    double? spacing,
+  }) =>
+      GoogleFonts.plusJakartaSans(
+        fontSize: AppType.clampFontSize(size),
+        fontWeight: w,
+        color: color,
+        height: height,
+        letterSpacing: spacing,
+      );
 }
 
 class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
@@ -168,6 +197,11 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
       }
     });
 
+    // Repaint the phone field so its border reflects focus state.
+    _phoneFocusNode.addListener(() {
+      if (mounted) setState(() {});
+    });
+
     // Boot + version/session checks run NOW, in parallel with the animation.
     _entryPrep = _runEntryPrep();
 
@@ -300,27 +334,23 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
 
     final defaultPinTheme = PinTheme(
       width: 13.w,
-      height: 7.h,
-      textStyle: GoogleFonts.plusJakartaSans(
-        fontSize: AppType.clampFontSize(18.sp),
-        fontWeight: FontWeight.w700,
-        color: Colors.black87,
-      ),
+      height: 6.6.h,
+      textStyle: _Auth.t(19, w: FontWeight.w800),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(3.w),
-        border: Border.all(color: Colors.black12, width: 1.5),
+        color: _Auth.fieldBg,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _Auth.fieldBorder, width: 1.4),
       ),
     );
 
     final focusedPinTheme = defaultPinTheme.copyWith(
       decoration: defaultPinTheme.decoration!.copyWith(
         color: Colors.white,
-        border: Border.all(color: const Color(0xFFFFA500), width: 2),
+        border: Border.all(color: _Auth.brand, width: 1.8),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFFFA500).withValues(alpha: 0.15),
-            blurRadius: 12,
+            color: _Auth.brand.withValues(alpha: 0.18),
+            blurRadius: 14,
             offset: const Offset(0, 4),
           ),
         ],
@@ -330,7 +360,14 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
     final submittedPinTheme = defaultPinTheme.copyWith(
       decoration: defaultPinTheme.decoration!.copyWith(
         color: Colors.white,
-        border: Border.all(color: Colors.green.shade400, width: 2),
+        border: Border.all(color: _Auth.brandDeep, width: 1.6),
+      ),
+    );
+
+    final errorPinTheme = defaultPinTheme.copyWith(
+      decoration: defaultPinTheme.decoration!.copyWith(
+        color: _Auth.danger.withValues(alpha: 0.06),
+        border: Border.all(color: _Auth.danger, width: 1.6),
       ),
     );
 
@@ -384,69 +421,56 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(height: 4.h),
-            Row(
-              children: [
-                GestureDetector(
-                  onTap: () => setState(() => showOtp = false),
-                  child: Container(
-                    padding: EdgeInsets.all(2.5.w),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.05),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.arrow_back_ios_new_rounded,
-                      color: Colors.black87,
-                      size: 18,
-                    ),
-                  ),
-                ),
-                SizedBox(width: 4.w),
-                Text(
-                  "Verify OTP",
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: AppType.clampFontSize(18.sp),
-                    fontWeight: FontWeight.w700,
-                    color: Colors.black87,
-                  ),
-                ),
-              ],
-            ),
             SizedBox(height: 5.h),
-            Text(
-              "Enter Verification Code",
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: AppType.clampFontSize(24.sp),
-                fontWeight: FontWeight.w700,
-                color: Colors.black87,
-                letterSpacing: -0.5,
+            GestureDetector(
+              onTap: () {
+                _authC.otpTextField.value.clear();
+                setState(() => showOtp = false);
+              },
+              child: Container(
+                width: 10.w,
+                height: 10.w,
+                decoration: BoxDecoration(
+                  color: _Auth.fieldBg,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: _Auth.fieldBorder),
+                ),
+                child: const Icon(Icons.arrow_back_rounded,
+                    color: _Auth.ink, size: 19),
               ),
             ),
-            SizedBox(height: 1.h),
+            SizedBox(height: 3.h),
+
+            Text('Verify your number',
+                style: _Auth.t(22, w: FontWeight.w800, spacing: -0.4)),
+            SizedBox(height: 0.8.h),
             Text.rich(
               TextSpan(
-                text: "We sent a 6-digit code to ",
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: AppType.clampFontSize(13.sp),
-                  fontWeight: FontWeight.w400,
-                  color: Colors.black54,
-                ),
+                text: 'Enter the 6-digit code sent to  ',
+                style: _Auth.t(12.5, color: _Auth.muted, height: 1.45),
                 children: [
                   TextSpan(
-                    text: "+91 ${_authC.phoneNumberLoginTextField.value.text}",
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: AppType.clampFontSize(13.sp),
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
+                    text:
+                        '+91 ${_authC.phoneNumberLoginTextField.value.text}',
+                    style: _Auth.t(12.5,
+                        w: FontWeight.w700, color: _Auth.ink),
+                  ),
+                  TextSpan(
+                    text: '   Edit',
+                    style: _Auth.t(12.5,
+                        w: FontWeight.w700, color: _Auth.brand),
+                    recognizer: (TapGestureRecognizer()
+                      ..onTap = () {
+                        _authC.otpTextField.value.clear();
+                        setState(() => showOtp = false);
+                      }),
                   ),
                 ],
               ),
             ),
-            SizedBox(height: 5.h),
-            Align(
-              alignment: Alignment.center,
+            SizedBox(height: 4.5.h),
+
+            Center(
               child: Directionality(
                 textDirection: TextDirection.ltr,
                 child: Transform.translate(
@@ -457,68 +481,64 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                     length: 6,
                     controller: _authC.otpTextField.value,
                     focusNode: _pinFocusNode,
+                    autofocus: true,
                     defaultPinTheme: defaultPinTheme,
                     focusedPinTheme: focusedPinTheme,
                     submittedPinTheme: submittedPinTheme,
-                    separatorBuilder: (index) => SizedBox(width: 3.w),
+                    errorPinTheme: errorPinTheme,
+                    forceErrorState: isError,
+                    separatorBuilder: (_) => SizedBox(width: 2.2.w),
                     onCompleted: validateOTP,
-                    onChanged: (value) {
-                      if (isError) {
-                        setState(() {
-                          isError = false;
-                        });
-                      }
+                    onChanged: (_) {
+                      if (isError) setState(() => isError = false);
                     },
-                    cursor: Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Container(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          width: 16,
-                          height: 2,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFFA500),
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                      ],
+                    cursor: Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      width: 18,
+                      height: 2.5,
+                      decoration: BoxDecoration(
+                        color: _Auth.brand,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-            SizedBox(height: 5.h),
-            Obx(
-              () => Center(
-                child: _otpC.enableResend.value
+            SizedBox(height: 4.h),
+
+            Center(
+              child: Obx(
+                () => _otpC.enableResend.value
                     ? GestureDetector(
-                        onTap: () => _otpC.resendOTP(),
-                        child: Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 6.w,
-                            vertical: 1.5.h,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.04),
-                            borderRadius: BorderRadius.circular(3.w),
-                          ),
-                          child: Text(
-                            'Resend Code via SMS',
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: AppType.clampFontSize(13.sp),
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFFFFA500),
-                            ),
-                          ),
+                        onTap: () {
+                          _otpC.resendOTP();
+                          _authC.otpTextField.value.clear();
+                        },
+                        behavior: HitTestBehavior.opaque,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.refresh_rounded,
+                                size: 16, color: _Auth.brand),
+                            SizedBox(width: 1.5.w),
+                            Text('Resend code',
+                                style: _Auth.t(13,
+                                    w: FontWeight.w700, color: _Auth.brand)),
+                          ],
                         ),
                       )
-                    : Text(
-                        _otpC.formatTime(),
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: AppType.clampFontSize(14.sp),
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black45,
-                          letterSpacing: 0.5,
+                    : Text.rich(
+                        TextSpan(
+                          text: 'Resend code in  ',
+                          style: _Auth.t(12.5, color: _Auth.faint),
+                          children: [
+                            TextSpan(
+                              text: _otpC.formatTime(),
+                              style: _Auth.t(12.5,
+                                  w: FontWeight.w700, color: _Auth.muted),
+                            ),
+                          ],
                         ),
                       ),
               ),
@@ -530,199 +550,174 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
   }
 
   Widget _buildLoginContainer() {
+    final phoneOk = isValidPhoneNumber;
     return SingleChildScrollView(
-      padding: EdgeInsets.only(top: 6.h, bottom: 8.h),
+      padding: EdgeInsets.only(top: 5.h, bottom: 6.h),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            "Your Trek,",
-            style: GoogleFonts.sairaStencilOne(
-              fontSize: AppType.clampFontSize(26.sp),
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
-              height: 1.1,
+          // ── grabber
+          Center(
+            child: Container(
+              width: 12.w,
+              height: 4,
+              decoration: BoxDecoration(
+                color: _Auth.fieldBorder,
+                borderRadius: BorderRadius.circular(4),
+              ),
             ),
           ),
-          Text(
-            "just a",
-            style: GoogleFonts.sairaStencilOne(
-              fontSize: AppType.clampFontSize(26.sp),
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
-              height: 1.1,
-            ),
-          ),
-          Text(
-            "Click Away !",
-            style: GoogleFonts.sairaStencilOne(
-              fontSize: AppType.clampFontSize(26.sp),
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFFFFA500), // Rich brand highlight
-              height: 1.1,
-            ),
-          ),
-          SizedBox(height: 1.h),
-          Text(
-            "Enter your mobile number to get started with a seamless experience.",
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: AppType.clampFontSize(13.sp),
-              fontWeight: FontWeight.w400,
-              color: Colors.black54,
-              height: 1.4,
-            ),
-          ),
-          SizedBox(height: 5.h),
+          SizedBox(height: 4.h),
 
-          // Premium Phone Input
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 0.5.h),
+          Text('Sign in to Aorbo',
+              style: _Auth.t(22, w: FontWeight.w800, spacing: -0.4)),
+          SizedBox(height: 0.8.h),
+          Text(
+            "Enter your mobile number — we'll text you a\n6-digit code to verify it.",
+            style: _Auth.t(12.5, color: _Auth.muted, height: 1.45),
+          ),
+          SizedBox(height: 4.h),
+
+          Text('MOBILE NUMBER',
+              style: _Auth.t(9.5,
+                  w: FontWeight.w700, color: _Auth.faint, spacing: 1.2)),
+          SizedBox(height: 1.h),
+
+          // ── phone field
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 160),
+            height: 7.2.h,
+            padding: EdgeInsets.symmetric(horizontal: 4.w),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(4.w),
-              border: Border.all(color: Colors.black12, width: 1),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.03),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
+              color: _Auth.fieldBg,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: _phoneFocusNode.hasFocus
+                    ? _Auth.brand
+                    : _Auth.fieldBorder,
+                width: _phoneFocusNode.hasFocus ? 1.6 : 1,
+              ),
             ),
             child: Row(
               children: [
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 3.w,
-                    vertical: 1.2.h,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(2.5.w),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text("🇮🇳", style: TextStyle(fontSize: AppType.clampFontSize(16.sp))),
-                      SizedBox(width: 2.w),
-                      Text(
-                        '+91',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: AppType.clampFontSize(14.sp),
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(width: 4.w),
+                Text('🇮🇳',
+                    style: TextStyle(fontSize: AppType.clampFontSize(15.sp))),
+                SizedBox(width: 2.5.w),
+                Text('+91', style: _Auth.t(15, w: FontWeight.w700)),
+                SizedBox(width: 3.w),
+                Container(width: 1, height: 3.2.h, color: _Auth.fieldBorder),
+                SizedBox(width: 3.w),
                 Expanded(
                   child: TextField(
                     focusNode: _phoneFocusNode,
-                    onTapOutside: (event) => FocusScope.of(context).unfocus(),
+                    onTapOutside: (_) => FocusScope.of(context).unfocus(),
                     controller: _authC.phoneNumberLoginTextField.value,
                     keyboardType: TextInputType.phone,
-                    onChanged: (value) => setState(() {}),
+                    onChanged: (_) => setState(() {}),
                     inputFormatters: [IndianMobileNumberFormatter()],
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: AppType.clampFontSize(16.sp),
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
+                    style: _Auth.t(16, w: FontWeight.w700, spacing: 0.5),
+                    cursorColor: _Auth.brand,
                     decoration: InputDecoration(
-                      hintText: 'Enter Mobile Number',
-                      hintStyle: GoogleFonts.plusJakartaSans(
-                        fontSize: AppType.clampFontSize(14.sp),
-                        fontWeight: FontWeight.w400,
-                        color: Colors.black38,
-                      ),
+                      hintText: '00000 00000',
+                      hintStyle:
+                          _Auth.t(15, w: FontWeight.w500, color: _Auth.faint),
                       border: InputBorder.none,
                       isDense: true,
                     ),
                   ),
                 ),
+                if (phoneOk)
+                  const Icon(Icons.check_circle_rounded,
+                      color: _Auth.brand, size: 20),
               ],
             ),
           ),
-          SizedBox(height: 4.h),
+          SizedBox(height: 1.4.h),
 
-          // Premium Continue Button
-          Obx(
-            () => AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              width: double.infinity,
-              height: 6.5.h,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(4.w),
-                gradient: isValidPhoneNumber
-                    ? const LinearGradient(
-                        colors: [
-                          Color(0xFFFFD700),
-                          Color(0xFFFFA500),
-                        ], // Richer gold/orange
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                      )
-                    : LinearGradient(
-                        colors: [Colors.grey.shade300, Colors.grey.shade300],
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                      ),
-                boxShadow: isValidPhoneNumber
-                    ? [
-                        BoxShadow(
-                          color: const Color(0xFFFFA500).withValues(alpha: 0.3),
-                          blurRadius: 15,
-                          offset: const Offset(0, 8),
-                        ),
-                      ]
-                    : null,
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(4.w),
-                  onTapDown: isValidPhoneNumber ? _onTapDown : null,
-                  onTapUp: isValidPhoneNumber ? _onTapUp : null,
-                  onTapCancel: isValidPhoneNumber ? _onTapCancel : null,
-                  onTap: isValidPhoneNumber && !_authC.isLoading.value
-                      ? () async {
-                          final phone =
-                              _authC.phoneNumberLoginTextField.value.text;
-                          final success = await _authC.requestOtp(phone);
-                          if (success && mounted) {
-                            setState(() => showOtp = true);
-                            _otpC.startTimer();
-                          }
-                        }
-                      : null,
+          Row(
+            children: [
+              const Icon(Icons.lock_outline_rounded,
+                  size: 13, color: _Auth.faint),
+              SizedBox(width: 1.5.w),
+              Text('Your number stays private. No spam, ever.',
+                  style: _Auth.t(10.5, color: _Auth.faint)),
+            ],
+          ),
+          SizedBox(height: 3.5.h),
+
+          // ── continue button
+          Obx(() {
+            final loading = _authC.isLoading.value;
+            final enabled = phoneOk && !loading;
+            return GestureDetector(
+              onTapDown: enabled ? _onTapDown : null,
+              onTapUp: enabled ? _onTapUp : null,
+              onTapCancel: enabled ? _onTapCancel : null,
+              onTap: enabled
+                  ? () async {
+                      FocusScope.of(context).unfocus();
+                      final phone =
+                          _authC.phoneNumberLoginTextField.value.text;
+                      final success = await _authC.requestOtp(phone);
+                      if (success && mounted) {
+                        setState(() => showOtp = true);
+                        _otpC.startTimer();
+                      }
+                    }
+                  : null,
+              child: ScaleTransition(
+                scale: _scaleAnimation,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 220),
+                  width: double.infinity,
+                  height: 7.2.h,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    gradient: phoneOk
+                        ? const LinearGradient(
+                            colors: [_Auth.gold, _Auth.brand])
+                        : null,
+                    color: phoneOk ? null : _Auth.fieldBorder,
+                    boxShadow: phoneOk
+                        ? [
+                            BoxShadow(
+                              color: _Auth.brand.withValues(alpha: 0.34),
+                              blurRadius: 18,
+                              offset: const Offset(0, 10),
+                            ),
+                          ]
+                        : null,
+                  ),
                   child: Center(
-                    child: _authC.isLoading.value
+                    child: loading
                         ? const SizedBox(
-                            width: 24,
-                            height: 24,
+                            width: 22,
+                            height: 22,
                             child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2.5,
-                            ),
+                                color: Colors.white, strokeWidth: 2.5),
                           )
-                        : Text(
-                            'Continue',
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: AppType.clampFontSize(16.sp),
-                              fontWeight: FontWeight.w700,
-                              color: isValidPhoneNumber
-                                  ? Colors.black
-                                  : Colors.black54,
-                              letterSpacing: 0.5,
-                            ),
+                        : Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text('Continue',
+                                  style: _Auth.t(15.5,
+                                      w: FontWeight.w800,
+                                      color: phoneOk
+                                          ? Colors.white
+                                          : _Auth.faint,
+                                      spacing: 0.3)),
+                              SizedBox(width: 2.w),
+                              Icon(Icons.arrow_forward_rounded,
+                                  size: 18,
+                                  color:
+                                      phoneOk ? Colors.white : _Auth.faint),
+                            ],
                           ),
                   ),
                 ),
               ),
-            ),
-          ),
+            );
+          }),
         ],
       ),
     );
@@ -832,24 +827,17 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
               child: Container(
                 width: double.infinity,
                 height: 82.h,
-                padding: EdgeInsets.symmetric(horizontal: 6.w),
+                padding: EdgeInsets.symmetric(horizontal: 6.5.w),
                 decoration: BoxDecoration(
-                  color: const Color(0xffFFFDF9),
-                  borderRadius: BorderRadius.vertical(
-                    top: Radius.circular(8.w),
-                  ),
-                  // Premium top border highlight
-                  border: Border(
-                    top: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.8),
-                      width: 1.5,
-                    ),
+                  color: _Auth.card,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(30),
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 30,
-                      offset: const Offset(0, -10),
+                      color: Colors.black.withValues(alpha: 0.10),
+                      blurRadius: 34,
+                      offset: const Offset(0, -12),
                     ),
                   ],
                 ),
@@ -860,52 +848,28 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
 
           if (_formSlideDone && !showOtp)
             Positioned(
-              bottom: 4.h,
-              left: 0,
-              right: 0,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    "By continuing, you agree to our",
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: AppType.clampFontSize(11.sp),
-                      fontWeight: FontWeight.w400,
-                      color: Colors.black54,
+              bottom: 3.2.h,
+              left: 8.w,
+              right: 8.w,
+              child: Text.rich(
+                TextSpan(
+                  text: 'By continuing you agree to our ',
+                  style: _Auth.t(10.5, color: _Auth.faint, height: 1.4),
+                  children: [
+                    TextSpan(
+                      text: 'Terms',
+                      style: _Auth.t(10.5,
+                          w: FontWeight.w700, color: _Auth.brand),
                     ),
-                  ),
-                  SizedBox(height: 0.5.h),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "T&C",
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: AppType.clampFontSize(11.sp),
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFFFFA500),
-                        ),
-                      ),
-                      Text(
-                        "  &  ",
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: AppType.clampFontSize(11.sp),
-                          fontWeight: FontWeight.w400,
-                          color: Colors.black54,
-                        ),
-                      ),
-                      Text(
-                        "Privacy Policy",
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: AppType.clampFontSize(11.sp),
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFFFFA500),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                    TextSpan(text: ' & ', style: _Auth.t(10.5, color: _Auth.faint)),
+                    TextSpan(
+                      text: 'Privacy Policy',
+                      style: _Auth.t(10.5,
+                          w: FontWeight.w700, color: _Auth.brand),
+                    ),
+                  ],
+                ),
+                textAlign: TextAlign.center,
               ),
             ),
         ],
