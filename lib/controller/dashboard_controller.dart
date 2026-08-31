@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:arobo_app/models/know_more_data.dart';
 import 'package:arobo_app/models/seasonal_forecast_data.dart';
 import 'package:arobo_app/models/seasonal_picks_data.dart';
+import 'package:arobo_app/models/sponsored_slot_data.dart';
 import 'package:arobo_app/models/top_treks_data.dart';
 import 'package:arobo_app/widgets/logger.dart';
 import 'package:flutter/material.dart';
@@ -38,6 +39,14 @@ class DashboardController extends GetxController {
       const ApiResult<SeasonalForecastDataResponseModel>.init().obs;
   final seasonalPicksObserver =
       const ApiResult<SeasonalPicksDataResponseModel>.init().obs;
+
+  // In-feed sponsored ad cards. One creative per row per session (server
+  // picks); null = no eligible ad → the row shows no sponsored card.
+  final Rxn<SponsoredSlot> whatsNewSlot = Rxn<SponsoredSlot>();
+  final Rxn<SponsoredSlot> topTreksSlot = Rxn<SponsoredSlot>();
+  final Rxn<SponsoredSlot> seasonalForecastSlot = Rxn<SponsoredSlot>();
+  // Impressions are logged at most once per slot per app session.
+  final Set<int> _loggedSponsoredImpressions = {};
 
   final bookingHistoryObserver = PaginationModel(
     data: const ApiResult<BookingHistoryModel>.init().obs,
@@ -377,6 +386,55 @@ class DashboardController extends GetxController {
       logger.e('Error fetching top treks: $e');
       topTreksObserver.value = ApiResult.error(e.toString());
     }
+  }
+
+  Future<void> fetchSponsoredSlots() async {
+    try {
+      final response = await _repository.getApiCall(
+        url: NetworkUrl.fetchSponsoredSlots,
+      );
+      if (response is Map<String, dynamic>) {
+        final r = SponsoredSlotsResponse.fromJson(response);
+        whatsNewSlot.value =
+            r.whatsNew?.isBrandVideo == true ? r.whatsNew : null;
+        topTreksSlot.value =
+            r.topTreks?.isSponsoredTrek == true ? r.topTreks : null;
+        seasonalForecastSlot.value =
+            r.seasonalForecast?.isBrandVideo == true ? r.seasonalForecast : null;
+      }
+    } catch (e) {
+      // An ad failure must never affect the dashboard — just leave the
+      // slots null so the rows render with organic content only.
+      logger.e('Error fetching sponsored slots: $e');
+      whatsNewSlot.value = null;
+      topTreksSlot.value = null;
+      seasonalForecastSlot.value = null;
+    }
+  }
+
+  /// Fired by SponsoredVideoCard once the card has been ≥50% visible for ≥2s
+  /// (IAB viewability). Deduped per slot per session. Fire-and-forget.
+  void logSponsoredImpression(int slotId) {
+    if (_loggedSponsoredImpressions.contains(slotId)) {
+      return;
+    }
+    _loggedSponsoredImpressions.add(slotId);
+    _repository
+        .postApiCall(
+          url: NetworkUrl.sponsoredSlotImpression(slotId),
+          body: const {},
+        )
+        .catchError((_) => null);
+  }
+
+  /// Fired when the customer taps "Know more". Fire-and-forget.
+  void logSponsoredClick(int slotId) {
+    _repository
+        .postApiCall(
+          url: NetworkUrl.sponsoredSlotClick(slotId),
+          body: const {},
+        )
+        .catchError((_) => null);
   }
 
   Future<void> fetchSeasonalPicks({String? season}) async {

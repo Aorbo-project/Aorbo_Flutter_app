@@ -12,7 +12,10 @@ import 'package:arobo_app/utils/dashboard_header_theme.dart';
 import 'package:arobo_app/utils/header_scene.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:arobo_app/utils/know_more_card.dart';
+import 'package:arobo_app/utils/sponsored_video_card.dart';
+import 'package:arobo_app/models/sponsored_slot_data.dart';
 import 'package:arobo_app/utils/seasonal_forecast_mock_data.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:arobo_app/utils/seasonal_gradient_card.dart';
 import 'package:arobo_app/utils/top_treks_card.dart';
 import 'package:arobo_app/models/know_more_data.dart';
@@ -151,6 +154,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
       _dashboardC.fetchWhatsNew();
       _dashboardC.fetchTopTreks();
       _dashboardC.fetchSeasonalPicks();
+      _dashboardC.fetchSponsoredSlots();
     });
   }
 
@@ -385,6 +389,18 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
       refresh: true,
     );
     Get.toNamed('/search');
+  }
+
+  /// Open a sponsored ad's click-through URL in the external browser.
+  Future<void> _openSponsoredUrl(String? url) async {
+    if (url == null || url.isEmpty) return;
+    final uri = Uri.tryParse(url);
+    if (uri == null) return;
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      // A dead ad URL must never surface an error to the user.
+    }
   }
 
   void _handleSearchPress() async {
@@ -1769,6 +1785,22 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                       return const SizedBox();
                     }
 
+                    // One in-feed sponsored video card (server-chosen this
+                    // session), dropped at its configured position — never
+                    // first or last, and only when there are enough real
+                    // cards for it not to dominate the row.
+                    final List<Object> whatsNewFeed =
+                        List<Object>.from(whatsNewCardsData);
+                    final SponsoredSlot? adSlot =
+                        _dashboardC.whatsNewSlot.value;
+                    if (adSlot != null &&
+                        (adSlot.videoUrl ?? '').isNotEmpty &&
+                        whatsNewCardsData.length >= 2) {
+                      final insertAt = adSlot.position
+                          .clamp(1, whatsNewCardsData.length);
+                      whatsNewFeed.insert(insertAt, adSlot);
+                    }
+
                     return Column(
                       children: [
                         Padding(
@@ -1876,14 +1908,29 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                   controller: _pageController,
                                   itemCount: null, // infinite scroll
                                   onPageChanged: (page) {
-                                    _currentPage =
-                                        page % whatsNewCardsData.length;
+                                    _currentPage = page % whatsNewFeed.length;
                                   },
                                   physics: const BouncingScrollPhysics(),
                                   itemBuilder: (context, index) {
-                                    final cardData =
-                                        whatsNewCardsData[index %
-                                            whatsNewCardsData.length];
+                                    final item =
+                                        whatsNewFeed[index % whatsNewFeed.length];
+
+                                    if (item is SponsoredSlot) {
+                                      return SponsoredVideoCard(
+                                        videoUrl: item.videoUrl ?? '',
+                                        advertiser: item.advertiser,
+                                        headline: item.headline ?? '',
+                                        onImpression: () => _dashboardC
+                                            .logSponsoredImpression(item.id),
+                                        onCtaTap: () {
+                                          _dashboardC
+                                              .logSponsoredClick(item.id);
+                                          _openSponsoredUrl(item.ctaUrl);
+                                        },
+                                      );
+                                    }
+
+                                    final cardData = item as KnowMoreData;
                                     return KnowMoreCard(
                                       gradientColors: cardData.gradient ?? [],
                                       imagePath: cardData.imagePath ?? '',
@@ -1994,9 +2041,63 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                 : PageView.builder(
                                     controller: _topTreksPageController,
                                     padEnds: false,
-                                    itemCount: topTreksResponse.length,
+                                    // +1 for one server-chosen vendor-promoted
+                                    // ("Sponsored") trek at its configured
+                                    // position — never first or last.
+                                    itemCount: (_dashboardC.topTreksSlot.value !=
+                                                null &&
+                                            topTreksResponse.length >= 2)
+                                        ? topTreksResponse.length + 1
+                                        : topTreksResponse.length,
                                     itemBuilder: (context, index) {
-                                      final trekData = topTreksResponse[index];
+                                      final SponsoredSlot? trekSlot =
+                                          _dashboardC.topTreksSlot.value;
+                                      final hasSponsored = trekSlot != null &&
+                                          topTreksResponse.length >= 2;
+                                      final sponsoredAt = hasSponsored
+                                          ? trekSlot.position
+                                              .clamp(1, topTreksResponse.length)
+                                          : -1;
+
+                                      if (hasSponsored &&
+                                          index == sponsoredAt) {
+                                        _dashboardC.logSponsoredImpression(
+                                          trekSlot.id,
+                                        );
+                                        return Padding(
+                                          padding: EdgeInsets.only(
+                                            left: ScreenConstant.size12,
+                                            right: ScreenConstant.size6,
+                                          ),
+                                          child: TopTreksCard(
+                                            isSponsored: true,
+                                            onTap: () {
+                                              _dashboardC.logSponsoredClick(
+                                                trekSlot.id,
+                                              );
+                                              Get.toNamed('/popular-treks');
+                                            },
+                                            imagePath: getFullImageUrl(
+                                              trekSlot.imagePath,
+                                            ),
+                                            title: trekSlot.title ??
+                                                trekSlot.advertiser,
+                                            description:
+                                                'By ${trekSlot.advertiser}',
+                                            kicker: trekSlot.kicker,
+                                            meta: trekSlot.meta,
+                                            width: topTreksCardWidth,
+                                            height: topTreksCardHeight,
+                                          ),
+                                        );
+                                      }
+
+                                      final dataIndex =
+                                          hasSponsored && index > sponsoredAt
+                                          ? index - 1
+                                          : index;
+                                      final trekData =
+                                          topTreksResponse[dataIndex];
                                       final isTrending =
                                           trekData.badgeType == 'trending';
                                       final trekId = trekData.id;
@@ -2150,38 +2251,90 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                     70.w,
                                     24.h,
                                   )
-                                : Row(
-                                    children: previewPicks.map((pick) {
-                                      final pickImageType =
-                                          parseSeasonalPickImageType(
-                                            pick.imageType,
-                                          );
-                                      final resolvedImagePath = getFullImageUrl(
-                                        pick.imagePath,
-                                      );
-                                      final displayImagePath =
-                                          pickImageType ==
-                                              SeasonalPickImageType.illustration
-                                          ? resolvedImagePath
-                                          : (resolvedImagePath.isEmpty
+                                : Builder(
+                                    builder: (context) {
+                                      final List<Widget> seasonalCards =
+                                          previewPicks.map<Widget>((pick) {
+                                        final pickImageType =
+                                            parseSeasonalPickImageType(
+                                          pick.imageType,
+                                        );
+                                        final resolvedImagePath =
+                                            getFullImageUrl(pick.imagePath);
+                                        final displayImagePath = pickImageType ==
+                                                SeasonalPickImageType
+                                                    .illustration
+                                            ? resolvedImagePath
+                                            : (resolvedImagePath.isEmpty
                                                 ? CommonImages.himalayas
                                                 : resolvedImagePath);
-                                      return Padding(
-                                        padding: EdgeInsets.only(right: 3.w),
-                                        child: SeasonalGradientCard(
-                                          onTap: () =>
-                                              Get.toNamed('/seasonal-forecast'),
-                                          trekName: pick.trekName ?? '',
-                                          reason: pick.reason ?? '',
-                                          imagePath: displayImagePath,
-                                          imageType: pickImageType,
-                                          isAvoid: pick.isAvoid ?? false,
-                                          season: season,
-                                          width: 70.w,
-                                          height: 24.h,
-                                        ),
-                                      );
-                                    }).toList(),
+                                        return Padding(
+                                          padding:
+                                              EdgeInsets.only(right: 3.w),
+                                          child: SeasonalGradientCard(
+                                            onTap: () => Get.toNamed(
+                                                '/seasonal-forecast'),
+                                            trekName: pick.trekName ?? '',
+                                            reason: pick.reason ?? '',
+                                            imagePath: displayImagePath,
+                                            imageType: pickImageType,
+                                            isAvoid: pick.isAvoid ?? false,
+                                            season: season,
+                                            width: 70.w,
+                                            height: 24.h,
+                                          ),
+                                        );
+                                      }).toList();
+
+                                      // One in-feed sponsored video card
+                                      // (server-chosen this session), dropped
+                                      // at its configured position — never
+                                      // first or last, and only with enough
+                                      // real cards around it.
+                                      final SponsoredSlot? seasonalAd =
+                                          _dashboardC
+                                              .seasonalForecastSlot.value;
+                                      if (seasonalAd != null &&
+                                          (seasonalAd.videoUrl ?? '')
+                                              .isNotEmpty &&
+                                          seasonalCards.length >= 2) {
+                                        final insertAt = seasonalAd.position
+                                            .clamp(1, seasonalCards.length);
+                                        seasonalCards.insert(
+                                          insertAt,
+                                          Padding(
+                                            padding:
+                                                EdgeInsets.only(right: 3.w),
+                                            child: SizedBox(
+                                              width: 70.w,
+                                              height: 24.h,
+                                              child: SponsoredVideoCard(
+                                                videoUrl:
+                                                    seasonalAd.videoUrl ?? '',
+                                                advertiser:
+                                                    seasonalAd.advertiser,
+                                                headline:
+                                                    seasonalAd.headline ?? '',
+                                                widthFraction: 70,
+                                                trailingMargin: 0,
+                                                onImpression: () => _dashboardC
+                                                    .logSponsoredImpression(
+                                                        seasonalAd.id),
+                                                onCtaTap: () {
+                                                  _dashboardC
+                                                      .logSponsoredClick(
+                                                          seasonalAd.id);
+                                                  _openSponsoredUrl(
+                                                      seasonalAd.ctaUrl);
+                                                },
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      }
+
+                                      return Row(children: seasonalCards);
+                                    },
                                   ),
                           ),
                         ),

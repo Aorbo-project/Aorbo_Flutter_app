@@ -49,6 +49,11 @@ class NetworkUrl {
   static String fetchSeasonalForcasts = 'discovery/seasonal-forecast';
   static String fetchSeasonalPicks = 'discovery/seasonal-picks';
   static String topTrekFavorite(int id) => 'discovery/top-treks/$id/favorite';
+  static String fetchSponsoredSlots = 'discovery/sponsored-slots';
+  static String sponsoredSlotImpression(int id) =>
+      'discovery/sponsored-slots/$id/impression';
+  static String sponsoredSlotClick(int id) =>
+      'discovery/sponsored-slots/$id/click';
 
   // Coupons
   static const String fetchPlatformCoupons = 'coupons/platform';
