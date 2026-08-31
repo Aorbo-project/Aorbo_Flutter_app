@@ -13,6 +13,7 @@ import 'package:arobo_app/utils/coupon_display_helper.dart';
 import 'package:arobo_app/utils/coupon_gradient_card.dart';
 import 'package:arobo_app/utils/common_filter_bar.dart';
 import 'package:arobo_app/utils/common_trek_card.dart';
+import 'package:arobo_app/utils/sponsored_banner_card.dart';
 import 'package:arobo_app/utils/statefullwrapper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -1236,10 +1237,41 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
           );
       }
 
+      // ── DUMMY (design pass): sponsored + featured listings ──────────
+      // Real results stay in rank order and on top. On the first real
+      // result we drop an editorial "Featured by Aorbo" ribbon; right
+      // after it, one labelled "Sponsored" listing (a vendor paying to
+      // surface a trek — never above the top organic match); and after
+      // ALL results, one brand ad banner. Everything here is static and
+      // gets replaced once the backend slots are wired.
+      final entries = <({String kind, TrekData? trek, String? tag})>[];
+      for (var i = 0; i < ranked.length; i++) {
+        entries.add((
+          kind: 'trek',
+          trek: ranked[i],
+          tag: i == 0 ? 'featured' : null,
+        ));
+        if (i == 0) {
+          entries.add((kind: 'trek', trek: ranked[0], tag: 'sponsored'));
+        }
+      }
+      if (ranked.isNotEmpty) entries.add((kind: 'ad', trek: null, tag: null));
+      entries.add((kind: 'spacer', trek: null, tag: null));
+
       return SliverList(
         delegate: SliverChildBuilderDelegate((context, index) {
-          if (index == ranked.length) return const SizedBox(height: 40);
-          final trek = ranked[index];
+          final entry = entries[index];
+
+          if (entry.kind == 'spacer') return const SizedBox(height: 40);
+
+          if (entry.kind == 'ad') {
+            return const SponsoredBannerCard(
+              advertiser: 'Decathlon India',
+              headline: 'Trek-ready gear, delivered before you leave',
+            );
+          }
+
+          final trek = entry.trek!;
           final animDelay = 300 + ((index.clamp(0, 5).toInt()) * 80);
 
           return TweenAnimationBuilder<double>(
@@ -1257,6 +1289,7 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
               margin: EdgeInsets.only(top: 0.5.h, left: 0, right: 0),
               child: CommonTrekCard(
                 trek: trek,
+                listingTag: entry.tag,
                 fromLocation: _dashboardC.fromController.value.text,
                 toLocation: _dashboardC.toController.value.text,
                 onTap: () async {
@@ -1268,7 +1301,7 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
               ).withShimmerAi(loading: isLoading),
             ),
           );
-        }, childCount: ranked.isEmpty ? 0 : ranked.length + 1),
+        }, childCount: ranked.isEmpty ? 0 : entries.length),
       );
     });
   }

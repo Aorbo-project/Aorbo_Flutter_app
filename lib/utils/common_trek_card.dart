@@ -40,6 +40,13 @@ class CommonTrekCard extends StatefulWidget {
   /// search summary screen, so the card no longer renders it.
   final String? fromLocation;
   final String? toLocation;
+
+  /// Search-results listing tag shown as a slim ribbon above the card:
+  ///  • `'sponsored'` — a vendor paid to surface this trek (labelled, capped)
+  ///  • `'featured'`  — Aorbo's own editorial pick (not paid)
+  ///  • `null`        — a normal organic result
+  final String? listingTag;
+
   const CommonTrekCard({
     super.key,
     required this.trek,
@@ -49,6 +56,7 @@ class CommonTrekCard extends StatefulWidget {
     this.onViewItineraryTap,
     this.fromLocation,
     this.toLocation,
+    this.listingTag,
   });
   @override
   State<CommonTrekCard> createState() => _CommonTrekCardState();
@@ -207,6 +215,10 @@ class _CommonTrekCardState extends State<CommonTrekCard>
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        // paid / editorial listing ribbon (search results)
+                        if (widget.listingTag == 'sponsored' ||
+                            widget.listingTag == 'featured')
+                          _listingRibbon(widget.listingTag!),
                         // "trail marker" accent strip
                         Container(
                           height: 3,
@@ -379,6 +391,46 @@ class _CommonTrekCardState extends State<CommonTrekCard>
               : Icons.verified_user_outlined,
         ),
       ],
+    );
+  }
+
+  /// Slim full-width ribbon at the very top of the card. `sponsored` reads
+  /// as a neutral paid label; `featured` as an Aorbo editorial pick.
+  Widget _listingRibbon(String tag) {
+    final bool sponsored = tag == 'sponsored';
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(
+        horizontal: _rw(4.2, 19),
+        vertical: _rh(0.5, 5),
+      ),
+      decoration: BoxDecoration(
+        gradient: sponsored
+            ? null
+            : const LinearGradient(colors: [_TC.forestDeep, _TC.forest]),
+        color: sponsored ? _TC.inkMid : null,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            sponsored ? Icons.campaign_rounded : Icons.star_rounded,
+            size: _rw(2.9, 13),
+            color: Colors.white,
+          ),
+          SizedBox(width: _rw(1.2, 6)),
+          Text(
+            sponsored ? 'SPONSORED' : 'FEATURED BY AORBO',
+            textScaler: const TextScaler.linear(1),
+            style: AppType.style(
+              FontSize.s7,
+              w: FontWeight.w700,
+              color: Colors.white,
+              letterSpacing: 0.8,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
