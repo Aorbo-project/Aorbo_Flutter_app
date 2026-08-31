@@ -43,26 +43,53 @@ class SponsoredSlotsResponse {
 
 /// GET `/api/v1/discovery/search-sponsored?destination_id=`
 ///
-/// The two search-results ad slots for a search:
-///   { "data": { "listing": {...}|null, "banner": {...}|null } }
-/// `listing` is a paid sponsored trek; `banner` is a brand ad shown after
-/// every real result.
+///   `data.listing` = `{ slotId, advertiser, trek }` where `trek` matches
+///   one entry of `/treks` `data[]`; `data.banner` = a brand-ad slot.
+///
+/// `listing.trek` is a raw JSON map — the caller parses it with
+/// `TrekData.fromJson` so the sponsored trek renders in the exact same
+/// card as an organic result. `banner` is a brand ad.
 class SearchSponsoredResponse {
   final bool success;
-  final SponsoredSlot? listing;
+  final SponsoredListing? listing;
   final SponsoredSlot? banner;
 
   SearchSponsoredResponse({required this.success, this.listing, this.banner});
 
   factory SearchSponsoredResponse.fromJson(Map<String, dynamic> json) {
     final data = (json['data'] as Map<String, dynamic>?) ?? const {};
-    SponsoredSlot? one(dynamic raw) => raw is Map<String, dynamic>
-        ? SponsoredSlot.fromJson(raw)
-        : null;
     return SearchSponsoredResponse(
       success: json['success'] == true,
-      listing: one(data['listing']),
-      banner: one(data['banner']),
+      listing: data['listing'] is Map<String, dynamic>
+          ? SponsoredListing.fromJson(data['listing'] as Map<String, dynamic>)
+          : null,
+      banner: data['banner'] is Map<String, dynamic>
+          ? SponsoredSlot.fromJson(data['banner'] as Map<String, dynamic>)
+          : null,
+    );
+  }
+}
+
+/// A paid "Sponsored" trek in the search results. `trekJson` is the raw
+/// `/treks`-shaped map — parse with `TrekData.fromJson`.
+class SponsoredListing {
+  final int slotId;
+  final String advertiser;
+  final Map<String, dynamic> trekJson;
+
+  SponsoredListing({
+    required this.slotId,
+    required this.advertiser,
+    required this.trekJson,
+  });
+
+  int? get trekId => (trekJson['id'] as num?)?.toInt();
+
+  factory SponsoredListing.fromJson(Map<String, dynamic> json) {
+    return SponsoredListing(
+      slotId: (json['slotId'] as num?)?.toInt() ?? 0,
+      advertiser: json['advertiser']?.toString() ?? '',
+      trekJson: (json['trek'] as Map<String, dynamic>?) ?? const {},
     );
   }
 }
@@ -80,22 +107,13 @@ class SponsoredSlot {
   final String? posterUrl;
   final String? ctaUrl;
 
-  // sponsored_trek
+  // sponsored_trek (dashboard "Top Treks")
   final int? trekId;
   final String? title;
   final String? kicker;
   final String? meta;
   final String? imagePath;
   final String? detailUrl;
-
-  // search_listing only — enough to render a full result card
-  final String? vendorName;
-  final String? duration;
-  final String? price;
-  final bool? hasDiscount;
-  final double? rating;
-  final String? batchStartDate;
-  final int? batchId;
 
   SponsoredSlot({
     required this.id,
@@ -113,13 +131,6 @@ class SponsoredSlot {
     this.meta,
     this.imagePath,
     this.detailUrl,
-    this.vendorName,
-    this.duration,
-    this.price,
-    this.hasDiscount,
-    this.rating,
-    this.batchStartDate,
-    this.batchId,
   });
 
   bool get isBrandVideo => slotType == 'brand_video';
@@ -142,13 +153,6 @@ class SponsoredSlot {
       meta: json['meta']?.toString(),
       imagePath: json['imagePath']?.toString(),
       detailUrl: json['detailUrl']?.toString(),
-      vendorName: json['vendorName']?.toString(),
-      duration: json['duration']?.toString(),
-      price: json['price']?.toString(),
-      hasDiscount: json['hasDiscount'] as bool?,
-      rating: (json['rating'] as num?)?.toDouble(),
-      batchStartDate: json['batchStartDate']?.toString(),
-      batchId: (json['batchId'] as num?)?.toInt(),
     );
   }
 }
