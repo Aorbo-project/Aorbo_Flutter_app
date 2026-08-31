@@ -36,6 +36,7 @@ class _NativeFeedAdCardState extends State<NativeFeedAdCard> {
   bool _loaded = false;
   bool _failed = false;
   bool _impressionFired = false;
+  int _consentWaits = 0;
 
   @override
   void initState() {
@@ -45,7 +46,16 @@ class _NativeFeedAdCardState extends State<NativeFeedAdCard> {
 
   void _load() {
     if (!AdConsentService.instance.canRequestAds) {
-      _failed = true;
+      // Consent may still be resolving at first frame — poll a few times
+      // before giving up.
+      if (_consentWaits < 5) {
+        _consentWaits++;
+        Future.delayed(const Duration(seconds: 1), () {
+          if (mounted && !_loaded) _load();
+        });
+        return;
+      }
+      if (mounted) setState(() => _failed = true);
       return;
     }
     _ad = NativeAd(

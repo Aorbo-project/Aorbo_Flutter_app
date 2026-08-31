@@ -2168,6 +2168,13 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                       ...avoidPicks.take(1),
                     ];
 
+                    // These feed the ad injection inside a nested Builder,
+                    // whose reads this Obx can't see — track them here so the
+                    // row rebuilds when a slot or the AdMob toggle changes.
+                    final seasonalAdSlots =
+                        _dashboardC.seasonalForecastSlots.toList();
+                    final admobOn = _dashboardC.admobFallbackEnabled.value;
+
                     return Column(
                       children: [
                         Padding(
@@ -2247,12 +2254,10 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                         injectSponsoredSlots(
                                           organic:
                                               previewPicks.cast<Object>(),
-                                          slots: _dashboardC
-                                              .seasonalForecastSlots,
+                                          slots: seasonalAdSlots,
                                         ),
                                         organicCount: previewPicks.length,
-                                        enabled: _dashboardC
-                                            .admobFallbackEnabled.value,
+                                        enabled: admobOn,
                                       );
 
                                       final seasonalCards =
