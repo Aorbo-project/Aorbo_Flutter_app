@@ -1,35 +1,42 @@
 /// GET /api/v1/discovery/sponsored-slots
 ///
-/// One creative per dashboard row, chosen server-side by weighted rotation:
-///   { "data": { "whats_new": {...}|null, "top_treks": {...}|null,
-///               "seasonal_forecast": {...}|null } }
+/// Up to two creatives per dashboard row, chosen server-side by weighted
+/// rotation and ordered by `position`:
+///   { "data": { "whats_new": [ {...} ], "top_treks": [ {...} ],
+///               "seasonal_forecast": [ {...} ] } }
 class SponsoredSlotsResponse {
   final bool success;
-  final SponsoredSlot? whatsNew;
-  final SponsoredSlot? topTreks;
-  final SponsoredSlot? seasonalForecast;
+  final List<SponsoredSlot> whatsNew;
+  final List<SponsoredSlot> topTreks;
+  final List<SponsoredSlot> seasonalForecast;
 
   SponsoredSlotsResponse({
     required this.success,
-    this.whatsNew,
-    this.topTreks,
-    this.seasonalForecast,
+    this.whatsNew = const [],
+    this.topTreks = const [],
+    this.seasonalForecast = const [],
   });
 
   factory SponsoredSlotsResponse.fromJson(Map<String, dynamic> json) {
     final data = (json['data'] as Map<String, dynamic>?) ?? const {};
+
+    List<SponsoredSlot> parseRow(dynamic raw) {
+      if (raw is List) {
+        return raw
+            .whereType<Map<String, dynamic>>()
+            .map(SponsoredSlot.fromJson)
+            .toList();
+      }
+      // tolerate the earlier single-object shape
+      if (raw is Map<String, dynamic>) return [SponsoredSlot.fromJson(raw)];
+      return const [];
+    }
+
     return SponsoredSlotsResponse(
       success: json['success'] == true,
-      whatsNew: data['whats_new'] is Map<String, dynamic>
-          ? SponsoredSlot.fromJson(data['whats_new'] as Map<String, dynamic>)
-          : null,
-      topTreks: data['top_treks'] is Map<String, dynamic>
-          ? SponsoredSlot.fromJson(data['top_treks'] as Map<String, dynamic>)
-          : null,
-      seasonalForecast: data['seasonal_forecast'] is Map<String, dynamic>
-          ? SponsoredSlot.fromJson(
-              data['seasonal_forecast'] as Map<String, dynamic>)
-          : null,
+      whatsNew: parseRow(data['whats_new']),
+      topTreks: parseRow(data['top_treks']),
+      seasonalForecast: parseRow(data['seasonal_forecast']),
     );
   }
 }

@@ -21,6 +21,9 @@ import 'package:visibility_detector/visibility_detector.dart';
 ///
 /// Same footprint as [KnowMoreCard] so it reads as one more card in the row.
 class SponsoredVideoCard extends StatefulWidget {
+  /// Slot id — makes the visibility-detector key unique when two ad cards
+  /// in the same feed happen to share a video URL.
+  final int slotId;
   final String videoUrl;
   final String advertiser;
   final String headline;
@@ -35,6 +38,7 @@ class SponsoredVideoCard extends StatefulWidget {
 
   const SponsoredVideoCard({
     super.key,
+    required this.slotId,
     required this.videoUrl,
     required this.advertiser,
     required this.headline,
@@ -118,7 +122,7 @@ class _SponsoredVideoCardState extends State<SponsoredVideoCard> {
     const radius = 20.0;
 
     return VisibilityDetector(
-      key: Key('sponsored-video-${widget.videoUrl}'),
+      key: Key('sponsored-video-${widget.slotId}'),
       onVisibilityChanged: _onVisibilityChanged,
       child: GestureDetector(
         onTap: widget.onCtaTap,

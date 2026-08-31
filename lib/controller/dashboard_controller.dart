@@ -40,11 +40,12 @@ class DashboardController extends GetxController {
   final seasonalPicksObserver =
       const ApiResult<SeasonalPicksDataResponseModel>.init().obs;
 
-  // In-feed sponsored ad cards. One creative per row per session (server
-  // picks); null = no eligible ad → the row shows no sponsored card.
-  final Rxn<SponsoredSlot> whatsNewSlot = Rxn<SponsoredSlot>();
-  final Rxn<SponsoredSlot> topTreksSlot = Rxn<SponsoredSlot>();
-  final Rxn<SponsoredSlot> seasonalForecastSlot = Rxn<SponsoredSlot>();
+  // In-feed sponsored ad cards. Up to two creatives per row per session
+  // (server picks + orders by position); empty = no eligible ad. The
+  // dashboard auto-gates the 2nd one until the row has enough real cards.
+  final RxList<SponsoredSlot> whatsNewSlots = <SponsoredSlot>[].obs;
+  final RxList<SponsoredSlot> topTreksSlots = <SponsoredSlot>[].obs;
+  final RxList<SponsoredSlot> seasonalForecastSlots = <SponsoredSlot>[].obs;
   // Impressions are logged at most once per slot per app session.
   final Set<int> _loggedSponsoredImpressions = {};
 
@@ -395,20 +396,22 @@ class DashboardController extends GetxController {
       );
       if (response is Map<String, dynamic>) {
         final r = SponsoredSlotsResponse.fromJson(response);
-        whatsNewSlot.value =
-            r.whatsNew?.isBrandVideo == true ? r.whatsNew : null;
-        topTreksSlot.value =
-            r.topTreks?.isSponsoredTrek == true ? r.topTreks : null;
-        seasonalForecastSlot.value =
-            r.seasonalForecast?.isBrandVideo == true ? r.seasonalForecast : null;
+        whatsNewSlots.assignAll(
+          r.whatsNew.where((s) => s.isBrandVideo && (s.videoUrl ?? '').isNotEmpty),
+        );
+        topTreksSlots.assignAll(r.topTreks.where((s) => s.isSponsoredTrek));
+        seasonalForecastSlots.assignAll(
+          r.seasonalForecast
+              .where((s) => s.isBrandVideo && (s.videoUrl ?? '').isNotEmpty),
+        );
       }
     } catch (e) {
       // An ad failure must never affect the dashboard — just leave the
-      // slots null so the rows render with organic content only.
+      // slot lists empty so the rows render with organic content only.
       logger.e('Error fetching sponsored slots: $e');
-      whatsNewSlot.value = null;
-      topTreksSlot.value = null;
-      seasonalForecastSlot.value = null;
+      whatsNewSlots.clear();
+      topTreksSlots.clear();
+      seasonalForecastSlots.clear();
     }
   }
 
