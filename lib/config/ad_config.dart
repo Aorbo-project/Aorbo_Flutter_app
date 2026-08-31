@@ -38,9 +38,12 @@ class AdConfig {
   static const _realNativeAndroid = '';
   static const _realNativeIos = '';
 
-  /// Test-device ids so real ads (once live) never count our own taps.
-  /// Add each dev/QA device's id (printed in logcat on first ad request).
-  static const List<String> testDeviceIds = <String>[];
+  /// Test-device ids so real ads (once live) never count our own taps, and
+  /// so the UMP consent form can be forced for QA. Each device's id is
+  /// printed in logcat on first ad request ("Use ... addTestDeviceHashedId").
+  static const List<String> testDeviceIds = <String>[
+    'B5ED45CBAF02C4155865CC9C2B16B280', // Galaxy A03 (SM-A035F) — dev device
+  ];
 
   static bool get isDebug => kDebugMode;
 }
