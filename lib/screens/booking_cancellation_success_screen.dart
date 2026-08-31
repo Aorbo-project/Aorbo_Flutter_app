@@ -11,6 +11,7 @@ import '../models/refund/refund_status_model.dart';
 import '../models/treaks/booking_cancelled_modal.dart';
 import '../utils/common_colors.dart';
 import '../utils/common_booked_card.dart';
+import '../utils/inline_sponsored_card.dart';
 import '../utils/ist_date_utils.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
@@ -156,9 +157,15 @@ class _BookingCancellationSuccessScreenState
                       children: [
                         _staggered(0, _buildCancellationStatusCard()),
                         SizedBox(height: 1.5.h),
-                        _staggered(1, _buildBookingDetailsCard()),
+                        _staggered(1, _adCard(0)),
                         SizedBox(height: 1.5.h),
-                        _staggered(2, _buildNextStepsCard()),
+                        _staggered(2, _buildBookingDetailsCard()),
+                        SizedBox(height: 1.5.h),
+                        _staggered(3, _adCard(1)),
+                        SizedBox(height: 1.5.h),
+                        _staggered(4, _buildNextStepsCard()),
+                        SizedBox(height: 1.5.h),
+                        _staggered(5, _adCard(2)),
                         SizedBox(height: 3.h),
                       ],
                     ),
@@ -525,6 +532,48 @@ class _BookingCancellationSuccessScreenState
   Widget _buildBookingDetailsCard() {
     if (widget.booking == null) return const SizedBox.shrink();
     return CommonBookedCard(booking: widget.booking!);
+  }
+
+  // ─────────────────────────────────────────────
+  //  IN-CONTENT AD CARD  (design pass — dummy brand ads)
+  // ─────────────────────────────────────────────
+  static const _dummyAds = [
+    {
+      'advertiser': 'Decathlon India',
+      'headline': 'Trek gear, up to 40% off',
+      'subline': 'Boots, backpacks, rain shells',
+      'cta': 'Shop now',
+      'image':
+          'https://images.unsplash.com/photo-1533240332313-0db49b459ad6?w=400',
+    },
+    {
+      'advertiser': 'boAt Lifestyle',
+      'headline': 'Trail-ready audio',
+      'subline': 'Sweat & dust proof, 40h battery',
+      'cta': 'Explore',
+      'image':
+          'https://images.unsplash.com/photo-1484704849700-f032a568e944?w=400',
+    },
+    {
+      'advertiser': 'MakeMyTrip',
+      'headline': 'Stays near your basecamp',
+      'subline': 'Homestays from ₹899/night',
+      'cta': 'Browse',
+      'image':
+          'https://images.unsplash.com/photo-1445019980597-93fa8acb246c?w=400',
+    },
+  ];
+
+  Widget _adCard(int i) {
+    final a = _dummyAds[i % _dummyAds.length];
+    return InlineSponsoredCard(
+      advertiser: a['advertiser']!,
+      headline: a['headline']!,
+      subline: a['subline']!,
+      ctaLabel: a['cta']!,
+      imageUrl: a['image']!,
+      onTap: () {},
+    );
   }
 
   // ─────────────────────────────────────────────

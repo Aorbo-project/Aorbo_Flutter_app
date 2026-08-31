@@ -17,6 +17,7 @@ import '../models/refund/refund_status_model.dart';
 import '../controller/dashboard_controller.dart';
 import '../utils/common_colors.dart';
 import '../utils/custom_snackbar.dart';
+import '../utils/inline_sponsored_card.dart';
 import '../services/invoice_pdf_service.dart';
 import '../utils/ist_date_utils.dart';
 import '../widgets/rate_trek_popup.dart';
@@ -1447,6 +1448,46 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
     );
   }
 
+  // ── IN-CONTENT AD CARD (design pass — dummy brand ads) ────────────
+  static const _dummyAds = [
+    {
+      'advertiser': 'Decathlon India',
+      'headline': 'Trek gear, up to 40% off',
+      'subline': 'Quechua boots · Forclaz backpacks',
+      'cta': 'Shop now',
+      'image':
+          'https://images.unsplash.com/photo-1533240332313-0db49b459ad6?w=400',
+    },
+    {
+      'advertiser': 'boAt Lifestyle',
+      'headline': 'Trail-ready audio',
+      'subline': 'Sweat & dust proof, 40h battery',
+      'cta': 'Explore',
+      'image':
+          'https://images.unsplash.com/photo-1484704849700-f032a568e944?w=400',
+    },
+    {
+      'advertiser': 'Wildcraft',
+      'headline': 'Monsoon shells for the Ghats',
+      'subline': 'Rain jackets from ₹1,299',
+      'cta': 'Shop now',
+      'image':
+          'https://images.unsplash.com/photo-1547949003-9792a18a2601?w=400',
+    },
+  ];
+
+  Widget _adCard(int i) {
+    final a = _dummyAds[i % _dummyAds.length];
+    return InlineSponsoredCard(
+      advertiser: a['advertiser']!,
+      headline: a['headline']!,
+      subline: a['subline']!,
+      ctaLabel: a['cta']!,
+      imageUrl: a['image']!,
+      onTap: () {},
+    );
+  }
+
   Widget _dividerLine() => Container(
     height: 1,
     margin: EdgeInsets.symmetric(vertical: 0.3.h),
@@ -2779,6 +2820,12 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                         _buildRefundTrackerCard(booking),
                       ],
 
+                      SizedBox(height: 2.5.h),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 4.w),
+                        child: _adCard(0),
+                      ),
+
                       // ── STATIC RATING CONTAINER ──
                       if (booking != null &&
                           isRated &&
@@ -2864,6 +2911,12 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                             ],
                           ),
                         ),
+                      ),
+
+                      SizedBox(height: 2.5.h),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 4.w),
+                        child: _adCard(1),
                       ),
 
                       SizedBox(height: 2.5.h),
@@ -2998,6 +3051,12 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                             ),
                           ),
                         ),
+
+                      SizedBox(height: 2.5.h),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 4.w),
+                        child: _adCard(2),
+                      ),
 
                       SizedBox(height: 2.h),
 
