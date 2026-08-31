@@ -2240,18 +2240,35 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                   )
                                 : Builder(
                                     builder: (context) {
-                                      // Up to two in-feed sponsored video
-                                      // cards, spaced apart, 2nd auto-gated on
-                                      // a fuller row.
-                                      final feed = injectSponsoredSlots(
-                                        organic:
-                                            previewPicks.cast<Object>(),
-                                        slots: _dashboardC
-                                            .seasonalForecastSlots,
+                                      // Waterfall: direct-sold video slots
+                                      // first (spaced, 2nd auto-gated); if
+                                      // none sold, one AdMob native fill.
+                                      final feed = withAdmobFallback(
+                                        injectSponsoredSlots(
+                                          organic:
+                                              previewPicks.cast<Object>(),
+                                          slots: _dashboardC
+                                              .seasonalForecastSlots,
+                                        ),
+                                        organicCount: previewPicks.length,
                                       );
 
                                       final seasonalCards =
                                           feed.map<Widget>((item) {
+                                        if (item is AdmobFeedSlot) {
+                                          return Padding(
+                                            padding:
+                                                EdgeInsets.only(right: 3.w),
+                                            child: SizedBox(
+                                              width: 70.w,
+                                              height: 24.h,
+                                              child: const NativeFeedAdCard(
+                                                widthFraction: 70,
+                                                trailingMargin: 0,
+                                              ),
+                                            ),
+                                          );
+                                        }
                                         if (item is SponsoredSlot) {
                                           return Padding(
                                             padding:
@@ -2317,27 +2334,6 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                           ),
                                         );
                                       }).toList();
-
-                                      // AdMob native fill — renders only if
-                                      // an ad actually loads, else takes no
-                                      // space (Step 4 turns this into a
-                                      // proper waterfall across rows).
-                                      if (seasonalCards.length >= 2) {
-                                        seasonalCards.add(
-                                          Padding(
-                                            padding:
-                                                EdgeInsets.only(right: 3.w),
-                                            child: SizedBox(
-                                              width: 70.w,
-                                              height: 24.h,
-                                              child: const NativeFeedAdCard(
-                                                widthFraction: 70,
-                                                trailingMargin: 0,
-                                              ),
-                                            ),
-                                          ),
-                                        );
-                                      }
 
                                       return Row(children: seasonalCards);
                                     },

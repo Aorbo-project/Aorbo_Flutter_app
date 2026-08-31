@@ -14,6 +14,7 @@ import 'package:arobo_app/utils/coupon_gradient_card.dart';
 import 'package:arobo_app/utils/common_filter_bar.dart';
 import 'package:arobo_app/utils/common_trek_card.dart';
 import 'package:arobo_app/utils/sponsored_banner_card.dart';
+import 'package:arobo_app/utils/native_feed_ad_card.dart';
 import 'package:arobo_app/utils/statefullwrapper.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -1209,8 +1210,12 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
           ));
         }
       }
+      // Waterfall after the results: a direct-sold brand banner if one was
+      // booked, otherwise an AdMob native fill (renders nothing on no-fill).
       if (ranked.isNotEmpty && bannerSlot != null) {
         entries.add((kind: 'ad', trek: null, slotId: bannerSlot.id));
+      } else if (ranked.length >= 2) {
+        entries.add((kind: 'admob', trek: null, slotId: null));
       }
       entries.add((kind: 'spacer', trek: null, slotId: null));
 
@@ -1219,6 +1224,17 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
           final entry = entries[index];
 
           if (entry.kind == 'spacer') return const SizedBox(height: 40);
+
+          if (entry.kind == 'admob') {
+            return Padding(
+              padding: EdgeInsets.fromLTRB(4.w, 1.h, 4.w, 1.h),
+              child: SizedBox(
+                width: 92.w,
+                height: 22.h,
+                child: const NativeFeedAdCard(widthFraction: 92, trailingMargin: 0),
+              ),
+            );
+          }
 
           if (entry.kind == 'ad') {
             final s = bannerSlot!;

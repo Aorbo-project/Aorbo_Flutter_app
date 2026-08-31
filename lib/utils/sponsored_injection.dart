@@ -42,3 +42,28 @@ List<Object> injectSponsoredSlots({
   }
   return result;
 }
+
+/// Marker item: this position should try to fill with an AdMob native ad.
+/// The widget renders nothing if the ad doesn't fill, so a marker is safe
+/// to insert unconditionally.
+class AdmobFeedSlot {
+  const AdmobFeedSlot();
+}
+
+/// Waterfall: house / direct-sold inventory wins; AdMob only mops up what
+/// wasn't sold. If [feed] already carries a [SponsoredSlot] (a paid slot
+/// filled this row), it's returned untouched. Otherwise — and only when
+/// the row has enough organic cards — one [AdmobFeedSlot] marker is
+/// dropped in at [position].
+List<Object> withAdmobFallback(
+  List<Object> feed, {
+  required int organicCount,
+  int minOrganic = 2,
+  int position = 2,
+}) {
+  final hasDirectSold = feed.any((e) => e is SponsoredSlot);
+  if (hasDirectSold || organicCount < minOrganic) return feed;
+  final out = List<Object>.from(feed);
+  out.insert(position.clamp(1, out.length), const AdmobFeedSlot());
+  return out;
+}
