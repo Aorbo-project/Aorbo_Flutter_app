@@ -41,6 +41,32 @@ class SponsoredSlotsResponse {
   }
 }
 
+/// GET `/api/v1/discovery/search-sponsored?destination_id=`
+///
+/// The two search-results ad slots for a search:
+///   { "data": { "listing": {...}|null, "banner": {...}|null } }
+/// `listing` is a paid sponsored trek; `banner` is a brand ad shown after
+/// every real result.
+class SearchSponsoredResponse {
+  final bool success;
+  final SponsoredSlot? listing;
+  final SponsoredSlot? banner;
+
+  SearchSponsoredResponse({required this.success, this.listing, this.banner});
+
+  factory SearchSponsoredResponse.fromJson(Map<String, dynamic> json) {
+    final data = (json['data'] as Map<String, dynamic>?) ?? const {};
+    SponsoredSlot? one(dynamic raw) => raw is Map<String, dynamic>
+        ? SponsoredSlot.fromJson(raw)
+        : null;
+    return SearchSponsoredResponse(
+      success: json['success'] == true,
+      listing: one(data['listing']),
+      banner: one(data['banner']),
+    );
+  }
+}
+
 class SponsoredSlot {
   final int id;
   final String row; // 'whats_new' | 'top_treks' | 'seasonal_forecast'
@@ -62,6 +88,15 @@ class SponsoredSlot {
   final String? imagePath;
   final String? detailUrl;
 
+  // search_listing only — enough to render a full result card
+  final String? vendorName;
+  final String? duration;
+  final String? price;
+  final bool? hasDiscount;
+  final double? rating;
+  final String? batchStartDate;
+  final int? batchId;
+
   SponsoredSlot({
     required this.id,
     required this.row,
@@ -78,6 +113,13 @@ class SponsoredSlot {
     this.meta,
     this.imagePath,
     this.detailUrl,
+    this.vendorName,
+    this.duration,
+    this.price,
+    this.hasDiscount,
+    this.rating,
+    this.batchStartDate,
+    this.batchId,
   });
 
   bool get isBrandVideo => slotType == 'brand_video';
@@ -100,6 +142,13 @@ class SponsoredSlot {
       meta: json['meta']?.toString(),
       imagePath: json['imagePath']?.toString(),
       detailUrl: json['detailUrl']?.toString(),
+      vendorName: json['vendorName']?.toString(),
+      duration: json['duration']?.toString(),
+      price: json['price']?.toString(),
+      hasDiscount: json['hasDiscount'] as bool?,
+      rating: (json['rating'] as num?)?.toDouble(),
+      batchStartDate: json['batchStartDate']?.toString(),
+      batchId: (json['batchId'] as num?)?.toInt(),
     );
   }
 }

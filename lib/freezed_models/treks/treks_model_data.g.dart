@@ -129,6 +129,8 @@ _$TrekDataImpl _$$TrekDataImplFromJson(Map<String, dynamic> json) =>
       badge: json['badge'] == null
           ? null
           : Badge.fromJson(json['badge'] as Map<String, dynamic>),
+      featured: json['featured'] as bool?,
+      featuredRank: json['featured_rank'] as int?,
       imageUrl: json['imageUrl'] as String?,
       cancellationPolicy: json['cancellation_policy'] == null
           ? null
@@ -153,6 +155,8 @@ Map<String, dynamic> _$$TrekDataImplToJson(_$TrekDataImpl instance) =>
       'duration': instance.duration,
       'batchInfo': instance.batchInfo,
       'badge': instance.badge,
+      'featured': instance.featured,
+      'featured_rank': instance.featuredRank,
       'imageUrl': instance.imageUrl,
       'cancellation_policy': instance.cancellationPolicy,
     };

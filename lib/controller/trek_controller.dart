@@ -9,6 +9,7 @@ import 'package:arobo_app/models/treaks/verify_order_modal.dart';
 import 'package:arobo_app/models/coupon_code/coupon_code_model.dart';
 import 'package:arobo_app/models/dispute/submit_issue_modal.dart';
 import 'package:arobo_app/models/refund/refund_status_model.dart';
+import 'package:arobo_app/models/sponsored_slot_data.dart';
 import 'package:arobo_app/services/socket_service.dart';
 import 'package:arobo_app/utils/custom_snackbar.dart';
 import 'package:arobo_app/utils/loader_dialog.dart';
@@ -31,6 +32,12 @@ class TrekController extends GetxController {
   final DashboardController _dashboardC = Get.find<DashboardController>();
 
   int _searchGeneration = 0;
+
+  // Search-results ad slots (server-chosen per search). `listing` is a paid
+  // sponsored trek rendered as a normal result card with a "Sponsored"
+  // ribbon; `banner` is a brand ad shown after every real result.
+  final Rxn<SponsoredSlot> searchListingSlot = Rxn<SponsoredSlot>();
+  final Rxn<SponsoredSlot> searchBannerSlot = Rxn<SponsoredSlot>();
 
   final treksResponseObserver = PaginationModel(
     data: const ApiResult<FetchTreksResponseModel>.init().obs,
@@ -482,6 +489,27 @@ class TrekController extends GetxController {
       observer.value.data.value = ApiResult.error(e.toString());
       observer.value.isLoading = false;
       observer.refresh();
+    }
+  }
+
+  /// Fetch the two search-results ad slots for this search. Fails soft —
+  /// on any error the slots stay null and the list renders organic-only.
+  Future<void> fetchSearchSponsored({int? destinationId}) async {
+    try {
+      final response = await repository.getApiCall(
+        url: NetworkUrl.searchSponsored(destinationId),
+      );
+      if (response is Map<String, dynamic>) {
+        final r = SearchSponsoredResponse.fromJson(response);
+        searchListingSlot.value =
+            r.listing?.isSponsoredTrek == true ? r.listing : null;
+        searchBannerSlot.value =
+            r.banner?.isBrandVideo == true ? r.banner : null;
+      }
+    } catch (e) {
+      logger.e('Error fetching search-sponsored slots: $e');
+      searchListingSlot.value = null;
+      searchBannerSlot.value = null;
     }
   }
 
