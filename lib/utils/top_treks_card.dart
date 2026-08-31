@@ -21,6 +21,10 @@ class TopTreksCard extends StatefulWidget {
   final VoidCallback? onFavoriteTap;
   final VoidCallback? onTap;
   final bool isFavorite;
+
+  /// A vendor-promoted ("Sponsored") trek — swaps the "Top Pick" badge for a
+  /// clear Sponsored label. Design pass; the promote flow comes with backend.
+  final bool isSponsored;
   final double width;
   final double height;
 
@@ -37,6 +41,7 @@ class TopTreksCard extends StatefulWidget {
     this.onFavoriteTap,
     this.onTap,
     this.isFavorite = false,
+    this.isSponsored = false,
     required this.width,
     required this.height,
   });
@@ -214,43 +219,67 @@ class _TopTreksCardState extends State<TopTreksCard>
                 ),
               ),
 
-              // "Top Pick" badge
+              // "Top Pick" badge — or a "Sponsored" label for a promoted trek
               Positioned(
                 top: 12,
                 left: 12,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: CommonColors.whiteColor.withValues(alpha: 0.92),
-                    borderRadius: BorderRadius.circular(999),
-                    boxShadow: [
-                      BoxShadow(
-                        color: CommonColors.blackColor.withValues(alpha: 0.08),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
+                child: widget.isSponsored
+                    ? Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 9,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: CommonColors.blackColor.withValues(alpha: 0.45),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          'SPONSORED',
+                          textScaler: const TextScaler.linear(1.0),
+                          style: AppType.style(9,
+                              w: FontWeight.w700,
+                              color: CommonColors.whiteColor,
+                              letterSpacing: 0.8),
+                        ),
+                      )
+                    : Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color:
+                              CommonColors.whiteColor.withValues(alpha: 0.92),
+                          borderRadius: BorderRadius.circular(999),
+                          boxShadow: [
+                            BoxShadow(
+                              color: CommonColors.blackColor
+                                  .withValues(alpha: 0.08),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              widget.badgeIcon,
+                              size: 13,
+                              color: CommonColors.appRedColor,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              widget.badgeText,
+                              textScaler: const TextScaler.linear(1.0),
+                              style: AppType.style(10,
+                                  w: FontWeight.w700,
+                                  color: CommonColors.blackColor,
+                                  letterSpacing: 0.1),
+                            ),
+                          ],
+                        ),
                       ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        widget.badgeIcon,
-                        size: 13,
-                        color: CommonColors.appRedColor,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        widget.badgeText,
-                        textScaler: const TextScaler.linear(1.0),
-                        style: AppType.style(10, w: FontWeight.w700, color: CommonColors.blackColor, letterSpacing: 0.1),
-                      ),
-                    ],
-                  ),
-                ),
               ),
 
               // Heart save
