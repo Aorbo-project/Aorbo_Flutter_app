@@ -16,6 +16,7 @@ import 'package:arobo_app/utils/common_trek_card.dart';
 import 'package:arobo_app/utils/sponsored_banner_card.dart';
 import 'package:arobo_app/utils/statefullwrapper.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -25,6 +26,8 @@ import 'package:sizer/sizer.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import '../freezed_models/treks/treks_model_data.dart';
+import '../freezed_models/treks/trek_detail_model.dart' show BatchInfo;
+import 'package:arobo_app/models/sponsored_slot_data.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
 
@@ -85,6 +88,12 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
 
     _fadeCtrl.forward();
     _headerSlideCtrl.forward();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _trekC.fetchSearchSponsored(
+        destinationId: _dashboardC.selectedTrekId.value,
+      );
+    });
   }
 
   @override
@@ -162,6 +171,17 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
     return DateFormat('EEE').format(d);
   }
 
+  Future<void> _openExternal(String? url) async {
+    if (url == null || url.isEmpty) return;
+    final uri = Uri.tryParse(url);
+    if (uri == null) return;
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      // A dead ad URL must never surface an error to the user.
+    }
+  }
+
   Future<void> _onRefresh() async {
     HapticFeedback.lightImpact();
     await _couponC.fetchPlatformCoupons();
@@ -170,6 +190,9 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
       trekId: _dashboardC.selectedTrekId.value,
       date: _dashboardC.dateController.value.text,
       refresh: true,
+    );
+    _trekC.fetchSearchSponsored(
+      destinationId: _dashboardC.selectedTrekId.value,
     );
   }
 
@@ -1237,26 +1260,34 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
           );
       }
 
-      // ── DUMMY (design pass): sponsored + featured listings ──────────
-      // Real results stay in rank order and on top. On the first real
-      // result we drop an editorial "Featured by Aorbo" ribbon; right
-      // after it, one labelled "Sponsored" listing (a vendor paying to
-      // surface a trek — never above the top organic match); and after
-      // ALL results, one brand ad banner. Everything here is static and
-      // gets replaced once the backend slots are wired.
-      final entries = <({String kind, TrekData? trek, String? tag})>[];
+      // ── Sponsored + featured listings (server-chosen per search) ────
+      // Real results stay in rank order and on top. The first real result
+      // that Aorbo has featured gets an editorial "Featured by Aorbo
+      // Treks" ribbon. If a paid "Sponsored" listing came back it slots
+      // in right after the top result — never above it. A brand banner,
+      // if any, sits after every real result.
+      final listingSlot = _trekC.searchListingSlot.value;
+      final bannerSlot = _trekC.searchBannerSlot.value;
+
+      final entries = <({String kind, TrekData? trek, SponsoredSlot? slot})>[];
+      var featuredUsed = false;
       for (var i = 0; i < ranked.length; i++) {
+        final t = ranked[i];
+        final showFeatured = !featuredUsed && t.featured == true;
+        if (showFeatured) featuredUsed = true;
         entries.add((
-          kind: 'trek',
-          trek: ranked[i],
-          tag: i == 0 ? 'featured' : null,
+          kind: showFeatured ? 'featured' : 'trek',
+          trek: t,
+          slot: null,
         ));
-        if (i == 0) {
-          entries.add((kind: 'trek', trek: ranked[0], tag: 'sponsored'));
+        if (i == 0 && listingSlot != null && listingSlot.trekId != null) {
+          entries.add((kind: 'sponsored', trek: null, slot: listingSlot));
         }
       }
-      if (ranked.isNotEmpty) entries.add((kind: 'ad', trek: null, tag: null));
-      entries.add((kind: 'spacer', trek: null, tag: null));
+      if (ranked.isNotEmpty && bannerSlot != null) {
+        entries.add((kind: 'ad', trek: null, slot: bannerSlot));
+      }
+      entries.add((kind: 'spacer', trek: null, slot: null));
 
       return SliverList(
         delegate: SliverChildBuilderDelegate((context, index) {
@@ -1265,14 +1296,45 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
           if (entry.kind == 'spacer') return const SizedBox(height: 40);
 
           if (entry.kind == 'ad') {
-            return const SponsoredBannerCard(
-              advertiser: 'Decathlon India',
-              headline: 'Trek-ready gear, delivered before you leave',
+            final s = entry.slot!;
+            _dashboardC.logSponsoredImpression(s.id);
+            return SponsoredBannerCard(
+              advertiser: s.advertiser,
+              headline: s.headline ?? '',
+              onTap: () {
+                _dashboardC.logSponsoredClick(s.id);
+                _openExternal(s.ctaUrl);
+              },
             );
           }
 
-          final trek = entry.trek!;
           final animDelay = 300 + ((index.clamp(0, 5).toInt()) * 80);
+
+          TrekData trek;
+          String? tag;
+          if (entry.kind == 'sponsored') {
+            final s = entry.slot!;
+            _dashboardC.logSponsoredImpression(s.id);
+            trek = TrekData(
+              id: s.trekId,
+              name: s.title,
+              companyName: s.vendorName ?? s.advertiser,
+              vendorName: s.vendorName ?? s.advertiser,
+              price: s.price,
+              hasDiscount: s.hasDiscount ?? false,
+              rating: s.rating ?? 0,
+              duration: s.duration,
+              imageUrl: s.imagePath,
+              badge: null,
+              batchInfo: s.batchId != null
+                  ? BatchInfo(id: s.batchId, startDate: s.batchStartDate)
+                  : null,
+            );
+            tag = 'sponsored';
+          } else {
+            trek = entry.trek!;
+            tag = entry.kind == 'featured' ? 'featured' : null;
+          }
 
           return TweenAnimationBuilder<double>(
             tween: Tween(begin: 0, end: 1),
@@ -1289,10 +1351,13 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
               margin: EdgeInsets.only(top: 0.5.h, left: 0, right: 0),
               child: CommonTrekCard(
                 trek: trek,
-                listingTag: entry.tag,
+                listingTag: tag,
                 fromLocation: _dashboardC.fromController.value.text,
                 toLocation: _dashboardC.toController.value.text,
                 onTap: () async {
+                  if (entry.kind == 'sponsored') {
+                    _dashboardC.logSponsoredClick(entry.slot!.id);
+                  }
                   AroboPersonalization.instance.pushRecent(trek.id?.toString());
                   _trekC.trekDetailId.value = trek.id ?? 0;
                   await _trekC.trekDetail(batchId: trek.batchInfo?.id ?? 0);

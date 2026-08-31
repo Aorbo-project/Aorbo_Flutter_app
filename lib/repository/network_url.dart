@@ -50,6 +50,10 @@ class NetworkUrl {
   static String fetchSeasonalPicks = 'discovery/seasonal-picks';
   static String topTrekFavorite(int id) => 'discovery/top-treks/$id/favorite';
   static String fetchSponsoredSlots = 'discovery/sponsored-slots';
+  static String searchSponsored(int? destinationId) =>
+      (destinationId != null && destinationId > 0)
+          ? 'discovery/search-sponsored?destination_id=$destinationId'
+          : 'discovery/search-sponsored';
   static String sponsoredSlotImpression(int id) =>
       'discovery/sponsored-slots/$id/impression';
   static String sponsoredSlotClick(int id) =>

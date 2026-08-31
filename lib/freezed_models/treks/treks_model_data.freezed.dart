@@ -1181,6 +1181,12 @@ mixin _$TrekData {
   String? get duration => throw _privateConstructorUsedError;
   BatchInfo? get batchInfo => throw _privateConstructorUsedError;
   Badge? get badge => throw _privateConstructorUsedError;
+
+  /// Aorbo's own non-paid editorial pick — drives the
+  /// "Featured by Aorbo Treks" ribbon in search results.
+  bool? get featured => throw _privateConstructorUsedError;
+  @JsonKey(name: 'featured_rank')
+  int? get featuredRank => throw _privateConstructorUsedError;
   @JsonKey(name: 'imageUrl')
   String? get imageUrl => throw _privateConstructorUsedError;
   @JsonKey(name: 'cancellation_policy')
@@ -1214,6 +1220,8 @@ abstract class $TrekDataCopyWith<$Res> {
       String? duration,
       BatchInfo? batchInfo,
       Badge? badge,
+      bool? featured,
+      @JsonKey(name: 'featured_rank') int? featuredRank,
       @JsonKey(name: 'imageUrl') String? imageUrl,
       @JsonKey(name: 'cancellation_policy')
       CancellationPolicy? cancellationPolicy});
@@ -1251,6 +1259,8 @@ class _$TrekDataCopyWithImpl<$Res, $Val extends TrekData>
     Object? duration = freezed,
     Object? batchInfo = freezed,
     Object? badge = freezed,
+    Object? featured = freezed,
+    Object? featuredRank = freezed,
     Object? imageUrl = freezed,
     Object? cancellationPolicy = freezed,
   }) {
@@ -1315,6 +1325,14 @@ class _$TrekDataCopyWithImpl<$Res, $Val extends TrekData>
           ? _value.badge
           : badge // ignore: cast_nullable_to_non_nullable
               as Badge?,
+      featured: freezed == featured
+          ? _value.featured
+          : featured // ignore: cast_nullable_to_non_nullable
+              as bool?,
+      featuredRank: freezed == featuredRank
+          ? _value.featuredRank
+          : featuredRank // ignore: cast_nullable_to_non_nullable
+              as int?,
       imageUrl: freezed == imageUrl
           ? _value.imageUrl
           : imageUrl // ignore: cast_nullable_to_non_nullable
@@ -1388,6 +1406,8 @@ abstract class _$$TrekDataImplCopyWith<$Res>
       String? duration,
       BatchInfo? batchInfo,
       Badge? badge,
+      bool? featured,
+      @JsonKey(name: 'featured_rank') int? featuredRank,
       @JsonKey(name: 'imageUrl') String? imageUrl,
       @JsonKey(name: 'cancellation_policy')
       CancellationPolicy? cancellationPolicy});
@@ -1426,6 +1446,8 @@ class __$$TrekDataImplCopyWithImpl<$Res>
     Object? duration = freezed,
     Object? batchInfo = freezed,
     Object? badge = freezed,
+    Object? featured = freezed,
+    Object? featuredRank = freezed,
     Object? imageUrl = freezed,
     Object? cancellationPolicy = freezed,
   }) {
@@ -1490,6 +1512,14 @@ class __$$TrekDataImplCopyWithImpl<$Res>
           ? _value.badge
           : badge // ignore: cast_nullable_to_non_nullable
               as Badge?,
+      featured: freezed == featured
+          ? _value.featured
+          : featured // ignore: cast_nullable_to_non_nullable
+              as bool?,
+      featuredRank: freezed == featuredRank
+          ? _value.featuredRank
+          : featuredRank // ignore: cast_nullable_to_non_nullable
+              as int?,
       imageUrl: freezed == imageUrl
           ? _value.imageUrl
           : imageUrl // ignore: cast_nullable_to_non_nullable
@@ -1521,6 +1551,8 @@ class _$TrekDataImpl implements _TrekData {
       this.duration,
       this.batchInfo,
       this.badge,
+      this.featured,
+      @JsonKey(name: 'featured_rank') this.featuredRank,
       @JsonKey(name: 'imageUrl') this.imageUrl,
       @JsonKey(name: 'cancellation_policy') this.cancellationPolicy});
 
@@ -1569,6 +1601,14 @@ class _$TrekDataImpl implements _TrekData {
   final BatchInfo? batchInfo;
   @override
   final Badge? badge;
+
+  /// Aorbo's own non-paid editorial pick — drives the
+  /// "Featured by Aorbo Treks" ribbon in search results.
+  @override
+  final bool? featured;
+  @override
+  @JsonKey(name: 'featured_rank')
+  final int? featuredRank;
   @override
   @JsonKey(name: 'imageUrl')
   final String? imageUrl;
@@ -1578,7 +1618,7 @@ class _$TrekDataImpl implements _TrekData {
 
   @override
   String toString() {
-    return 'TrekData(id: $id, name: $name, destination: $destination, vendor: $vendor, vendorName: $vendorName, companyName: $companyName, businessName: $businessName, vendorLogo: $vendorLogo, hasDiscount: $hasDiscount, discountText: $discountText, rating: $rating, price: $price, duration: $duration, batchInfo: $batchInfo, badge: $badge, imageUrl: $imageUrl, cancellationPolicy: $cancellationPolicy)';
+    return 'TrekData(id: $id, name: $name, destination: $destination, vendor: $vendor, vendorName: $vendorName, companyName: $companyName, businessName: $businessName, vendorLogo: $vendorLogo, hasDiscount: $hasDiscount, discountText: $discountText, rating: $rating, price: $price, duration: $duration, batchInfo: $batchInfo, badge: $badge, featured: $featured, featuredRank: $featuredRank, imageUrl: $imageUrl, cancellationPolicy: $cancellationPolicy)';
   }
 
   @override
@@ -1610,6 +1650,10 @@ class _$TrekDataImpl implements _TrekData {
             (identical(other.batchInfo, batchInfo) ||
                 other.batchInfo == batchInfo) &&
             (identical(other.badge, badge) || other.badge == badge) &&
+            (identical(other.featured, featured) ||
+                other.featured == featured) &&
+            (identical(other.featuredRank, featuredRank) ||
+                other.featuredRank == featuredRank) &&
             (identical(other.imageUrl, imageUrl) ||
                 other.imageUrl == imageUrl) &&
             (identical(other.cancellationPolicy, cancellationPolicy) ||
@@ -1618,25 +1662,28 @@ class _$TrekDataImpl implements _TrekData {
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(
-      runtimeType,
-      id,
-      name,
-      destination,
-      vendor,
-      vendorName,
-      companyName,
-      businessName,
-      vendorLogo,
-      hasDiscount,
-      discountText,
-      rating,
-      price,
-      duration,
-      batchInfo,
-      badge,
-      imageUrl,
-      cancellationPolicy);
+  int get hashCode => Object.hashAll([
+        runtimeType,
+        id,
+        name,
+        destination,
+        vendor,
+        vendorName,
+        companyName,
+        businessName,
+        vendorLogo,
+        hasDiscount,
+        discountText,
+        rating,
+        price,
+        duration,
+        batchInfo,
+        badge,
+        featured,
+        featuredRank,
+        imageUrl,
+        cancellationPolicy
+      ]);
 
   @JsonKey(ignore: true)
   @override
@@ -1669,6 +1716,8 @@ abstract class _TrekData implements TrekData {
       final String? duration,
       final BatchInfo? batchInfo,
       final Badge? badge,
+      final bool? featured,
+      @JsonKey(name: 'featured_rank') final int? featuredRank,
       @JsonKey(name: 'imageUrl') final String? imageUrl,
       @JsonKey(name: 'cancellation_policy')
       final CancellationPolicy? cancellationPolicy}) = _$TrekDataImpl;
@@ -1713,6 +1762,14 @@ abstract class _TrekData implements TrekData {
   BatchInfo? get batchInfo;
   @override
   Badge? get badge;
+  @override
+
+  /// Aorbo's own non-paid editorial pick — drives the
+  /// "Featured by Aorbo Treks" ribbon in search results.
+  bool? get featured;
+  @override
+  @JsonKey(name: 'featured_rank')
+  int? get featuredRank;
   @override
   @JsonKey(name: 'imageUrl')
   String? get imageUrl;

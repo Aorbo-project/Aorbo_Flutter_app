@@ -108,6 +108,12 @@ class TrekData with _$TrekData {
 
     Badge? badge,
 
+    /// Aorbo's own non-paid editorial pick — drives the
+    /// "Featured by Aorbo Treks" ribbon in search results.
+    bool? featured,
+
+    @JsonKey(name: 'featured_rank') int? featuredRank,
+
     @JsonKey(name: 'imageUrl') String? imageUrl,
 
     @JsonKey(name: 'cancellation_policy')
