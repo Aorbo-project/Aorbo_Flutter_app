@@ -2251,38 +2251,90 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                     70.w,
                                     24.h,
                                   )
-                                : Row(
-                                    children: previewPicks.map((pick) {
-                                      final pickImageType =
-                                          parseSeasonalPickImageType(
-                                            pick.imageType,
-                                          );
-                                      final resolvedImagePath = getFullImageUrl(
-                                        pick.imagePath,
-                                      );
-                                      final displayImagePath =
-                                          pickImageType ==
-                                              SeasonalPickImageType.illustration
-                                          ? resolvedImagePath
-                                          : (resolvedImagePath.isEmpty
+                                : Builder(
+                                    builder: (context) {
+                                      final List<Widget> seasonalCards =
+                                          previewPicks.map<Widget>((pick) {
+                                        final pickImageType =
+                                            parseSeasonalPickImageType(
+                                          pick.imageType,
+                                        );
+                                        final resolvedImagePath =
+                                            getFullImageUrl(pick.imagePath);
+                                        final displayImagePath = pickImageType ==
+                                                SeasonalPickImageType
+                                                    .illustration
+                                            ? resolvedImagePath
+                                            : (resolvedImagePath.isEmpty
                                                 ? CommonImages.himalayas
                                                 : resolvedImagePath);
-                                      return Padding(
-                                        padding: EdgeInsets.only(right: 3.w),
-                                        child: SeasonalGradientCard(
-                                          onTap: () =>
-                                              Get.toNamed('/seasonal-forecast'),
-                                          trekName: pick.trekName ?? '',
-                                          reason: pick.reason ?? '',
-                                          imagePath: displayImagePath,
-                                          imageType: pickImageType,
-                                          isAvoid: pick.isAvoid ?? false,
-                                          season: season,
-                                          width: 70.w,
-                                          height: 24.h,
-                                        ),
-                                      );
-                                    }).toList(),
+                                        return Padding(
+                                          padding:
+                                              EdgeInsets.only(right: 3.w),
+                                          child: SeasonalGradientCard(
+                                            onTap: () => Get.toNamed(
+                                                '/seasonal-forecast'),
+                                            trekName: pick.trekName ?? '',
+                                            reason: pick.reason ?? '',
+                                            imagePath: displayImagePath,
+                                            imageType: pickImageType,
+                                            isAvoid: pick.isAvoid ?? false,
+                                            season: season,
+                                            width: 70.w,
+                                            height: 24.h,
+                                          ),
+                                        );
+                                      }).toList();
+
+                                      // One in-feed sponsored video card
+                                      // (server-chosen this session), dropped
+                                      // at its configured position — never
+                                      // first or last, and only with enough
+                                      // real cards around it.
+                                      final SponsoredSlot? seasonalAd =
+                                          _dashboardC
+                                              .seasonalForecastSlot.value;
+                                      if (seasonalAd != null &&
+                                          (seasonalAd.videoUrl ?? '')
+                                              .isNotEmpty &&
+                                          seasonalCards.length >= 2) {
+                                        final insertAt = seasonalAd.position
+                                            .clamp(1, seasonalCards.length);
+                                        seasonalCards.insert(
+                                          insertAt,
+                                          Padding(
+                                            padding:
+                                                EdgeInsets.only(right: 3.w),
+                                            child: SizedBox(
+                                              width: 70.w,
+                                              height: 24.h,
+                                              child: SponsoredVideoCard(
+                                                videoUrl:
+                                                    seasonalAd.videoUrl ?? '',
+                                                advertiser:
+                                                    seasonalAd.advertiser,
+                                                headline:
+                                                    seasonalAd.headline ?? '',
+                                                widthFraction: 70,
+                                                trailingMargin: 0,
+                                                onImpression: () => _dashboardC
+                                                    .logSponsoredImpression(
+                                                        seasonalAd.id),
+                                                onCtaTap: () {
+                                                  _dashboardC
+                                                      .logSponsoredClick(
+                                                          seasonalAd.id);
+                                                  _openSponsoredUrl(
+                                                      seasonalAd.ctaUrl);
+                                                },
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      }
+
+                                      return Row(children: seasonalCards);
+                                    },
                                   ),
                           ),
                         ),

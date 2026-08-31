@@ -1,16 +1,19 @@
 /// GET /api/v1/discovery/sponsored-slots
 ///
 /// One creative per dashboard row, chosen server-side by weighted rotation:
-///   { "data": { "whats_new": {...}|null, "top_treks": {...}|null } }
+///   { "data": { "whats_new": {...}|null, "top_treks": {...}|null,
+///               "seasonal_forecast": {...}|null } }
 class SponsoredSlotsResponse {
   final bool success;
   final SponsoredSlot? whatsNew;
   final SponsoredSlot? topTreks;
+  final SponsoredSlot? seasonalForecast;
 
   SponsoredSlotsResponse({
     required this.success,
     this.whatsNew,
     this.topTreks,
+    this.seasonalForecast,
   });
 
   factory SponsoredSlotsResponse.fromJson(Map<String, dynamic> json) {
@@ -23,13 +26,17 @@ class SponsoredSlotsResponse {
       topTreks: data['top_treks'] is Map<String, dynamic>
           ? SponsoredSlot.fromJson(data['top_treks'] as Map<String, dynamic>)
           : null,
+      seasonalForecast: data['seasonal_forecast'] is Map<String, dynamic>
+          ? SponsoredSlot.fromJson(
+              data['seasonal_forecast'] as Map<String, dynamic>)
+          : null,
     );
   }
 }
 
 class SponsoredSlot {
   final int id;
-  final String row; // 'whats_new' | 'top_treks'
+  final String row; // 'whats_new' | 'top_treks' | 'seasonal_forecast'
   final String slotType; // 'brand_video' | 'sponsored_trek'
   final int position;
   final String advertiser;

@@ -44,6 +44,7 @@ class DashboardController extends GetxController {
   // picks); null = no eligible ad → the row shows no sponsored card.
   final Rxn<SponsoredSlot> whatsNewSlot = Rxn<SponsoredSlot>();
   final Rxn<SponsoredSlot> topTreksSlot = Rxn<SponsoredSlot>();
+  final Rxn<SponsoredSlot> seasonalForecastSlot = Rxn<SponsoredSlot>();
   // Impressions are logged at most once per slot per app session.
   final Set<int> _loggedSponsoredImpressions = {};
 
@@ -398,6 +399,8 @@ class DashboardController extends GetxController {
             r.whatsNew?.isBrandVideo == true ? r.whatsNew : null;
         topTreksSlot.value =
             r.topTreks?.isSponsoredTrek == true ? r.topTreks : null;
+        seasonalForecastSlot.value =
+            r.seasonalForecast?.isBrandVideo == true ? r.seasonalForecast : null;
       }
     } catch (e) {
       // An ad failure must never affect the dashboard — just leave the
@@ -405,6 +408,7 @@ class DashboardController extends GetxController {
       logger.e('Error fetching sponsored slots: $e');
       whatsNewSlot.value = null;
       topTreksSlot.value = null;
+      seasonalForecastSlot.value = null;
     }
   }
 
