@@ -76,19 +76,19 @@ class NetworkUrl {
     String startDate,
     bool? weekEndTreks,
     int page,
-    int limit,
-  ) => weekEndTreks != null
-      ? 'treks?city_id=$cityId'
-            '&destination_id=$destinationId'
-            '&start_date=$startDate'
-            '&weekend_mode=true'
-            '&page=$page'
-            '&limit=$limit'
-      : 'treks?city_id=$cityId'
-            '&destination_id=$destinationId'
-            '&start_date=$startDate'
-            '&page=$page'
-            '&limit=$limit';
+    int limit, {
+    String filterQuery = '',
+  }) {
+    final filters = filterQuery.isNotEmpty ? '&$filterQuery' : '';
+    final weekend = weekEndTreks != null ? '&weekend_mode=true' : '';
+    return 'treks?city_id=$cityId'
+        '&destination_id=$destinationId'
+        '&start_date=$startDate'
+        '$weekend'
+        '&page=$page'
+        '&limit=$limit'
+        '$filters';
+  }
 
   static String searchCalenderTrekDates(
     String cityId,

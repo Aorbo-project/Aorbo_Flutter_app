@@ -403,13 +403,20 @@ class TrekController extends GetxController {
     }
   }
 
+  /// Filter/sort query string for the active search (built by
+  /// `buildFilterQueryString`). Kept so a load-more re-uses the same
+  /// filters; reset on a plain (dashboard) search.
+  String _searchFilterQuery = '';
+
   Future<void> searchTreks({
     required int cityId,
     required int trekId,
     required String date,
     required bool refresh,
+    String? filterQuery,
   }) async {
     final observer = treksResponseObserver;
+    if (filterQuery != null) _searchFilterQuery = filterQuery;
 
     if (refresh == true) {
       _searchGeneration++;
@@ -447,6 +454,7 @@ class TrekController extends GetxController {
           null,
           observer.value.page,
           20,
+          filterQuery: _searchFilterQuery,
         ),
       );
 

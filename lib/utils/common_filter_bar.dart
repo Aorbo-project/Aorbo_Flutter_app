@@ -33,9 +33,10 @@ class _FT {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Only "Offers" is truly multi-select.
+// Every category is single-select (one Sort, one Duration, one Policy, one
+// Rating floor). Different categories still combine (AND).
 // ─────────────────────────────────────────────────────────────────────────────
-const _multiSelectCategories = {'Offers'};
+const _multiSelectCategories = <String>{};
 bool _isMultiSelect(String categoryTitle) =>
     _multiSelectCategories.contains(categoryTitle);
 final List<FilterCategory> _appFilterCategories = [
@@ -83,24 +84,8 @@ final List<FilterCategory> _appFilterCategories = [
       FilterOptionModel(title: 'Strict', query: 'policy=strict'),
     ],
   ),
-  FilterCategory(
-    title: 'Offers',
-    svgPath: CommonImages.discount,
-    options: [
-      FilterOptionModel(title: 'Special Offers', query: 'offer=special'),
-      FilterOptionModel(title: 'Early Bird', query: 'offer=early_bird'),
-      FilterOptionModel(title: 'Last Minute', query: 'offer=last_minute'),
-      FilterOptionModel(title: 'Exclusive Deals', query: 'offer=exclusive'),
-    ],
-  ),
-  FilterCategory(
-    title: 'Solo',
-    svgPath: CommonImages.solo,
-    options: [
-      FilterOptionModel(title: 'Solo Traveller', query: 'solo=true'),
-      FilterOptionModel(title: 'Female Solo', query: 'solo=true&gender=female'),
-    ],
-  ),
+  // 'Offers' and 'Solo' removed — no backing data in the system yet.
+  // Re-add once treks carry an offer-type / solo-friendly field.
   FilterCategory(
     title: 'Rating',
     svgPath: CommonImages.stars,
