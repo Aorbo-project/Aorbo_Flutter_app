@@ -36,7 +36,7 @@ class TrekController extends GetxController {
   // Search-results ad slots (server-chosen per search). `listing` is a paid
   // sponsored trek rendered as a normal result card with a "Sponsored"
   // ribbon; `banner` is a brand ad shown after every real result.
-  final Rxn<SponsoredSlot> searchListingSlot = Rxn<SponsoredSlot>();
+  final Rxn<SponsoredListing> searchListingSlot = Rxn<SponsoredListing>();
   final Rxn<SponsoredSlot> searchBannerSlot = Rxn<SponsoredSlot>();
 
   final treksResponseObserver = PaginationModel(
@@ -502,7 +502,7 @@ class TrekController extends GetxController {
       if (response is Map<String, dynamic>) {
         final r = SearchSponsoredResponse.fromJson(response);
         searchListingSlot.value =
-            r.listing?.isSponsoredTrek == true ? r.listing : null;
+            (r.listing?.trekId ?? 0) > 0 ? r.listing : null;
         searchBannerSlot.value =
             r.banner?.isBrandVideo == true ? r.banner : null;
       }

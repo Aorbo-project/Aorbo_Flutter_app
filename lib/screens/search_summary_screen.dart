@@ -26,8 +26,6 @@ import 'package:sizer/sizer.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import '../freezed_models/treks/treks_model_data.dart';
-import '../freezed_models/treks/trek_detail_model.dart' show BatchInfo;
-import 'package:arobo_app/models/sponsored_slot_data.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
 
@@ -1269,7 +1267,7 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
       final listingSlot = _trekC.searchListingSlot.value;
       final bannerSlot = _trekC.searchBannerSlot.value;
 
-      final entries = <({String kind, TrekData? trek, SponsoredSlot? slot})>[];
+      final entries = <({String kind, TrekData? trek, int? slotId})>[];
       var featuredUsed = false;
       for (var i = 0; i < ranked.length; i++) {
         final t = ranked[i];
@@ -1278,16 +1276,20 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
         entries.add((
           kind: showFeatured ? 'featured' : 'trek',
           trek: t,
-          slot: null,
+          slotId: null,
         ));
-        if (i == 0 && listingSlot != null && listingSlot.trekId != null) {
-          entries.add((kind: 'sponsored', trek: null, slot: listingSlot));
+        if (i == 0 && listingSlot != null && (listingSlot.trekId ?? 0) > 0) {
+          entries.add((
+            kind: 'sponsored',
+            trek: TrekData.fromJson(listingSlot.trekJson),
+            slotId: listingSlot.slotId,
+          ));
         }
       }
       if (ranked.isNotEmpty && bannerSlot != null) {
-        entries.add((kind: 'ad', trek: null, slot: bannerSlot));
+        entries.add((kind: 'ad', trek: null, slotId: bannerSlot.id));
       }
-      entries.add((kind: 'spacer', trek: null, slot: null));
+      entries.add((kind: 'spacer', trek: null, slotId: null));
 
       return SliverList(
         delegate: SliverChildBuilderDelegate((context, index) {
@@ -1296,7 +1298,7 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
           if (entry.kind == 'spacer') return const SizedBox(height: 40);
 
           if (entry.kind == 'ad') {
-            final s = entry.slot!;
+            final s = bannerSlot!;
             _dashboardC.logSponsoredImpression(s.id);
             return SponsoredBannerCard(
               advertiser: s.advertiser,
@@ -1310,30 +1312,12 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
 
           final animDelay = 300 + ((index.clamp(0, 5).toInt()) * 80);
 
-          TrekData trek;
-          String? tag;
-          if (entry.kind == 'sponsored') {
-            final s = entry.slot!;
-            _dashboardC.logSponsoredImpression(s.id);
-            trek = TrekData(
-              id: s.trekId,
-              name: s.title,
-              companyName: s.vendorName ?? s.advertiser,
-              vendorName: s.vendorName ?? s.advertiser,
-              price: s.price,
-              hasDiscount: s.hasDiscount ?? false,
-              rating: s.rating ?? 0,
-              duration: s.duration,
-              imageUrl: s.imagePath,
-              badge: null,
-              batchInfo: s.batchId != null
-                  ? BatchInfo(id: s.batchId, startDate: s.batchStartDate)
-                  : null,
-            );
-            tag = 'sponsored';
-          } else {
-            trek = entry.trek!;
-            tag = entry.kind == 'featured' ? 'featured' : null;
+          final TrekData trek = entry.trek!;
+          final String? tag = entry.kind == 'sponsored'
+              ? 'sponsored'
+              : (entry.kind == 'featured' ? 'featured' : null);
+          if (entry.kind == 'sponsored' && entry.slotId != null) {
+            _dashboardC.logSponsoredImpression(entry.slotId!);
           }
 
           return TweenAnimationBuilder<double>(
@@ -1355,8 +1339,8 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
                 fromLocation: _dashboardC.fromController.value.text,
                 toLocation: _dashboardC.toController.value.text,
                 onTap: () async {
-                  if (entry.kind == 'sponsored') {
-                    _dashboardC.logSponsoredClick(entry.slot!.id);
+                  if (entry.kind == 'sponsored' && entry.slotId != null) {
+                    _dashboardC.logSponsoredClick(entry.slotId!);
                   }
                   AroboPersonalization.instance.pushRecent(trek.id?.toString());
                   _trekC.trekDetailId.value = trek.id ?? 0;
