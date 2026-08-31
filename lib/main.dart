@@ -16,8 +16,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:sizer/sizer.dart';
 
+import 'config/ad_config.dart';
 import 'utils/shared_preferences.dart';
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -103,6 +105,17 @@ void _deferredInit() {
       );
     } catch (e) {
       debugPrint('AppCheck activation failed: $e');
+    }
+
+    // AdMob — off the critical path. Test ads only until AdConfig.useRealAds.
+    try {
+      MobileAds.instance.updateRequestConfiguration(
+        RequestConfiguration(testDeviceIds: AdConfig.testDeviceIds),
+      );
+      await MobileAds.instance.initialize();
+      debugPrint('AdMob initialised');
+    } catch (e) {
+      debugPrint('AdMob init failed: $e');
     }
 
     try {
