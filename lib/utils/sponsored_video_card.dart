@@ -36,6 +36,12 @@ class SponsoredVideoCard extends StatefulWidget {
   /// Trailing margin to the next card.
   final double? trailingMargin;
 
+  /// Corner radius — 20 for an inset carousel card.
+  final double borderRadius;
+
+  /// Optional visible border (used by the detail-screen billboard).
+  final BoxBorder? border;
+
   const SponsoredVideoCard({
     super.key,
     required this.slotId,
@@ -46,6 +52,8 @@ class SponsoredVideoCard extends StatefulWidget {
     this.onImpression,
     this.widthFraction = 88,
     this.trailingMargin,
+    this.borderRadius = 20,
+    this.border,
   });
 
   @override
@@ -119,7 +127,7 @@ class _SponsoredVideoCardState extends State<SponsoredVideoCard> {
   @override
   Widget build(BuildContext context) {
     ScreenConstant.setScreenAwareConstant(context);
-    const radius = 20.0;
+    final radius = widget.borderRadius;
 
     return VisibilityDetector(
       key: Key('sponsored-video-${widget.slotId}'),
@@ -133,6 +141,7 @@ class _SponsoredVideoCardState extends State<SponsoredVideoCard> {
           ),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(radius),
+            border: widget.border,
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.22),

@@ -1,6 +1,6 @@
 import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/models/sponsored_slot_data.dart';
-import 'package:arobo_app/utils/inline_sponsored_card.dart';
+import 'package:arobo_app/utils/billboard_ad_card.dart';
 import 'package:arobo_app/utils/native_feed_ad_card.dart';
 import 'package:arobo_app/utils/sponsored_video_card.dart';
 import 'package:flutter/material.dart';
@@ -11,13 +11,15 @@ import 'package:url_launcher/url_launcher.dart';
 /// One in-content ad position on a post-booking detail screen
 /// (`booking_details` / `cancellation_status`), at [index].
 ///
+/// Compact landscape billboard — an inset card (4.w side margin, rounded,
+/// visible border) whose creative image or video fills the frame, with the
+/// "SPONSORED" tag, headline, subline and "Know more" overlaid on a bottom
+/// gradient — the same visual language as the What's New video card.
+///
 /// Waterfall per position:
-///   1. a direct-sold slot at data index [index]  → image or video card
+///   1. a direct-sold slot at data index [index]  → image or video billboard
 ///   2. else, if the AdMob toggle is on            → AdMob native card
 ///   3. else                                       → nothing (0 height)
-///
-/// The screen inserts a few of these at fixed points; the controller
-/// fetches the slot list once via `fetchDetailScreenAds(screen)`.
 ///
 /// When there is nothing to show, this collapses to a true zero-size box —
 /// including the leading gap — so an unsold position leaves no dead space.
@@ -25,18 +27,20 @@ class DetailScreenAdSlot extends StatelessWidget {
   final String screen;
   final int index;
 
-  /// Horizontal inset. Default matches the other section cards; pass 0 when
-  /// the parent already applies side padding.
-  final double? horizontalPadding;
-
   const DetailScreenAdSlot({
     super.key,
     required this.screen,
     required this.index,
-    this.horizontalPadding,
   });
 
   DashboardController get _c => Get.find<DashboardController>();
+
+  /// Card footprint.
+  static const double _heightFraction = 24;
+  static const double _widthFraction = 92;
+  static const _border = Border.fromBorderSide(
+    BorderSide(color: Color(0xFFE1E6EC), width: 1),
+  );
 
   Future<void> _openCta(String? url) async {
     if (url == null || url.isEmpty) return;
@@ -54,14 +58,8 @@ class DetailScreenAdSlot extends StatelessWidget {
       final Widget? card = _resolveCard(ads);
       if (card == null) return const SizedBox.shrink();
 
-      final double hPad = horizontalPadding ?? 4.w;
       return Padding(
-        padding: EdgeInsets.only(
-          top: 1.5.h,
-          bottom: 1.5.h,
-          left: hPad,
-          right: hPad,
-        ),
+        padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
         child: card,
       );
     });
@@ -75,16 +73,18 @@ class DetailScreenAdSlot extends StatelessWidget {
 
       if (slot.isBrandVideo) {
         return SizedBox(
-          width: 92.w,
-          height: 22.h,
+          width: _widthFraction.w,
+          height: _heightFraction.h,
           child: SponsoredVideoCard(
             key: ValueKey('ds-ad-${slot.id}'),
             slotId: slot.id,
             videoUrl: slot.videoUrl ?? '',
             advertiser: slot.advertiser,
             headline: slot.headline ?? '',
-            widthFraction: 92,
+            widthFraction: _widthFraction,
             trailingMargin: 0,
+            borderRadius: 18,
+            border: _border,
             onImpression: () => _c.logSponsoredImpression(slot.id),
             onCtaTap: () {
               _c.logSponsoredClick(slot.id);
@@ -95,12 +95,15 @@ class DetailScreenAdSlot extends StatelessWidget {
       }
 
       // brand_banner
-      return InlineSponsoredCard(
+      return BillboardAdCard(
+        slotId: slot.id,
         advertiser: slot.advertiser,
         headline: slot.headline ?? '',
         subline: slot.subline ?? '',
-        ctaLabel: 'Know more',
         imageUrl: slot.imageUrl ?? '',
+        heightFraction: _heightFraction,
+        widthFraction: _widthFraction,
+        onImpression: () => _c.logSponsoredImpression(slot.id),
         onTap: () {
           _c.logSponsoredClick(slot.id);
           _openCta(slot.ctaUrl);
@@ -111,10 +114,10 @@ class DetailScreenAdSlot extends StatelessWidget {
     // Waterfall → AdMob fill (only when the toggle is on).
     if (_c.admobFallbackEnabled.value) {
       return SizedBox(
-        width: 92.w,
-        height: 20.h,
+        width: _widthFraction.w,
+        height: 30.h,
         child: const NativeFeedAdCard(
-          widthFraction: 92,
+          widthFraction: _widthFraction,
           trailingMargin: 0,
         ),
       );
