@@ -10,11 +10,15 @@ class SponsoredSlotsResponse {
   final List<SponsoredSlot> topTreks;
   final List<SponsoredSlot> seasonalForecast;
 
+  /// Server switch: may an AdMob native ad fill an unsold in-feed slot?
+  final bool admobFallback;
+
   SponsoredSlotsResponse({
     required this.success,
     this.whatsNew = const [],
     this.topTreks = const [],
     this.seasonalForecast = const [],
+    this.admobFallback = false,
   });
 
   factory SponsoredSlotsResponse.fromJson(Map<String, dynamic> json) {
@@ -37,6 +41,7 @@ class SponsoredSlotsResponse {
       whatsNew: parseRow(data['whats_new']),
       topTreks: parseRow(data['top_treks']),
       seasonalForecast: parseRow(data['seasonal_forecast']),
+      admobFallback: json['admobFallback'] == true,
     );
   }
 }
@@ -53,8 +58,14 @@ class SearchSponsoredResponse {
   final bool success;
   final SponsoredListing? listing;
   final SponsoredSlot? banner;
+  final bool admobFallback;
 
-  SearchSponsoredResponse({required this.success, this.listing, this.banner});
+  SearchSponsoredResponse({
+    required this.success,
+    this.listing,
+    this.banner,
+    this.admobFallback = false,
+  });
 
   factory SearchSponsoredResponse.fromJson(Map<String, dynamic> json) {
     final data = (json['data'] as Map<String, dynamic>?) ?? const {};
@@ -66,6 +77,7 @@ class SearchSponsoredResponse {
       banner: data['banner'] is Map<String, dynamic>
           ? SponsoredSlot.fromJson(data['banner'] as Map<String, dynamic>)
           : null,
+      admobFallback: json['admobFallback'] == true,
     );
   }
 }
@@ -96,14 +108,16 @@ class SponsoredListing {
 
 class SponsoredSlot {
   final int id;
-  final String row; // 'whats_new' | 'top_treks' | 'seasonal_forecast'
-  final String slotType; // 'brand_video' | 'sponsored_trek'
+  final String row;
+  final String slotType; // 'brand_video' | 'sponsored_trek' | 'brand_banner'
   final int position;
   final String advertiser;
 
-  // brand_video
+  // brand_video / brand_banner
   final String? headline;
+  final String? subline;
   final String? videoUrl;
+  final String? imageUrl;
   final String? posterUrl;
   final String? ctaUrl;
 
@@ -122,7 +136,9 @@ class SponsoredSlot {
     required this.position,
     required this.advertiser,
     this.headline,
+    this.subline,
     this.videoUrl,
+    this.imageUrl,
     this.posterUrl,
     this.ctaUrl,
     this.trekId,
@@ -134,6 +150,7 @@ class SponsoredSlot {
   });
 
   bool get isBrandVideo => slotType == 'brand_video';
+  bool get isBrandBanner => slotType == 'brand_banner';
   bool get isSponsoredTrek => slotType == 'sponsored_trek';
 
   factory SponsoredSlot.fromJson(Map<String, dynamic> json) {
@@ -144,7 +161,9 @@ class SponsoredSlot {
       position: (json['position'] as num?)?.toInt() ?? 2,
       advertiser: json['advertiser']?.toString() ?? '',
       headline: json['headline']?.toString(),
+      subline: json['subline']?.toString(),
       videoUrl: json['videoUrl']?.toString(),
+      imageUrl: json['imageUrl']?.toString(),
       posterUrl: json['posterUrl']?.toString(),
       ctaUrl: json['ctaUrl']?.toString(),
       trekId: (json['trekId'] as num?)?.toInt(),
@@ -153,6 +172,28 @@ class SponsoredSlot {
       meta: json['meta']?.toString(),
       imagePath: json['imagePath']?.toString(),
       detailUrl: json['detailUrl']?.toString(),
+    );
+  }
+}
+
+/// GET `/api/v1/discovery/detail-screen-ads?screen=`
+///   { "data": [ SponsoredSlot ], "admobFallback": bool }
+class DetailScreenAdsResponse {
+  final List<SponsoredSlot> ads;
+  final bool admobFallback;
+
+  DetailScreenAdsResponse({this.ads = const [], this.admobFallback = false});
+
+  factory DetailScreenAdsResponse.fromJson(Map<String, dynamic> json) {
+    final raw = json['data'];
+    return DetailScreenAdsResponse(
+      ads: raw is List
+          ? raw
+              .whereType<Map<String, dynamic>>()
+              .map(SponsoredSlot.fromJson)
+              .toList()
+          : const [],
+      admobFallback: json['admobFallback'] == true,
     );
   }
 }

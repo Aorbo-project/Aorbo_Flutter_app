@@ -17,6 +17,7 @@ import '../models/refund/refund_status_model.dart';
 import '../controller/dashboard_controller.dart';
 import '../utils/common_colors.dart';
 import '../utils/custom_snackbar.dart';
+import '../utils/detail_screen_ad_slot.dart';
 import '../services/invoice_pdf_service.dart';
 import '../utils/ist_date_utils.dart';
 import '../widgets/rate_trek_popup.dart';
@@ -410,6 +411,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
     super.initState();
 
     _dashboardC.getBookingDetail(bookingId: widget.bookingId ?? '0');
+    _dashboardC.fetchDetailScreenAds('booking_details');
 
     // Ensures the rating fallback source is available even if this screen
     // is opened directly from notification / card tap.
@@ -1446,6 +1448,9 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
       ),
     );
   }
+
+  Widget _adCard(int i) =>
+      DetailScreenAdSlot(screen: 'booking_details', index: i);
 
   Widget _dividerLine() => Container(
     height: 1,
@@ -2779,6 +2784,8 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                         _buildRefundTrackerCard(booking),
                       ],
 
+                      _adCard(0),
+
                       // ── STATIC RATING CONTAINER ──
                       if (booking != null &&
                           isRated &&
@@ -2865,6 +2872,8 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                           ),
                         ),
                       ),
+
+                      _adCard(1),
 
                       SizedBox(height: 2.5.h),
 
@@ -2998,6 +3007,8 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                             ),
                           ),
                         ),
+
+                      _adCard(2),
 
                       SizedBox(height: 2.h),
 

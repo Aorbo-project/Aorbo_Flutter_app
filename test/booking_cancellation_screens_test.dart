@@ -54,6 +54,12 @@ class _CancelFlowStubDashboardController extends DashboardController {
 
   @override
   Future<void> getBookingDetail({required dynamic bookingId}) async {}
+
+  // Both post-booking detail screens now fetch their in-content ad slots in
+  // initState — a real Dio call whose FakeAsync timer would leak like the
+  // rest. Same class of unrelated side effect as the stubs above.
+  @override
+  Future<void> fetchDetailScreenAds(String screen) async {}
 }
 
 Future<TrekController> setUpCancelScreenDeps(WidgetTester tester) async {

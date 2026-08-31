@@ -11,6 +11,7 @@ import '../models/refund/refund_status_model.dart';
 import '../models/treaks/booking_cancelled_modal.dart';
 import '../utils/common_colors.dart';
 import '../utils/common_booked_card.dart';
+import '../utils/detail_screen_ad_slot.dart';
 import '../utils/ist_date_utils.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
@@ -91,6 +92,8 @@ class _BookingCancellationSuccessScreenState
 
     _simulateLoading();
 
+    dashboardC.fetchDetailScreenAds('cancellation_status');
+
     if (_hasRefund && widget.cancelledData?.bookingId != null) {
       _trekC.startRefundPolling(widget.cancelledData!.bookingId!.toString());
     }
@@ -147,18 +150,20 @@ class _BookingCancellationSuccessScreenState
                 children: [
                   _buildSuccessHero(),
                   Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 4.w,
-                      vertical: 2.h,
-                    ),
+                    padding: EdgeInsets.symmetric(vertical: 2.h),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _staggered(0, _buildCancellationStatusCard()),
+                        // Ad slots run full-bleed; the section cards keep the
+                        // 4.w side inset.
+                        _sidePad(_staggered(0, _buildCancellationStatusCard())),
+                        _staggered(1, _adCard(0)),
                         SizedBox(height: 1.5.h),
-                        _staggered(1, _buildBookingDetailsCard()),
+                        _sidePad(_staggered(2, _buildBookingDetailsCard())),
+                        _staggered(3, _adCard(1)),
                         SizedBox(height: 1.5.h),
-                        _staggered(2, _buildNextStepsCard()),
+                        _sidePad(_staggered(4, _buildNextStepsCard())),
+                        _staggered(5, _adCard(2)),
                         SizedBox(height: 3.h),
                       ],
                     ),
@@ -526,6 +531,16 @@ class _BookingCancellationSuccessScreenState
     if (widget.booking == null) return const SizedBox.shrink();
     return CommonBookedCard(booking: widget.booking!);
   }
+
+  // ─────────────────────────────────────────────
+  //  IN-CONTENT AD SLOT  (direct-sold → AdMob fill → nothing)
+  //  Full-bleed billboard — no side inset.
+  // ─────────────────────────────────────────────
+  Widget _adCard(int i) =>
+      DetailScreenAdSlot(screen: 'cancellation_status', index: i);
+
+  Widget _sidePad(Widget child) =>
+      Padding(padding: EdgeInsets.symmetric(horizontal: 4.w), child: child);
 
   // ─────────────────────────────────────────────
   //  WHAT HAPPENS NEXT TIMELINE

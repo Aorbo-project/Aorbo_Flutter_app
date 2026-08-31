@@ -42,6 +42,22 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <!-- AdMob App ID. Currently Google's TEST app id — swap for the real
+             one (must match lib/config/ad_config.dart) when the AdMob
+             account exists. Omitting this crashes the app on start. -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-3940256099942544~3347511713" />
+        <!-- Delay ad SDK init to our own MobileAds.instance.initialize()
+             call (in _deferredInit) so it never competes with the first
+             frame / cold start. -->
+        <meta-data
+            android:name="com.google.android.gms.ads.flag.OPTIMIZE_INITIALIZATION"
+            android:value="true" />
+        <meta-data
+            android:name="com.google.android.gms.ads.flag.OPTIMIZE_AD_LOADING"
+            android:value="true" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

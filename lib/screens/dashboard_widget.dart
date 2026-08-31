@@ -13,6 +13,7 @@ import 'package:arobo_app/utils/header_scene.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:arobo_app/utils/know_more_card.dart';
 import 'package:arobo_app/utils/sponsored_video_card.dart';
+import 'package:arobo_app/utils/native_feed_ad_card.dart';
 import 'package:arobo_app/utils/sponsored_injection.dart';
 import 'package:arobo_app/models/sponsored_slot_data.dart';
 import 'package:arobo_app/models/top_treks_data.dart';
@@ -1791,10 +1792,15 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                     // Up to two in-feed sponsored video cards (server-chosen
                     // this session), dropped at their configured positions —
                     // never first, spaced apart, and the 2nd auto-gated until
-                    // the row has enough real cards.
-                    final List<Object> whatsNewFeed = injectSponsoredSlots(
-                      organic: whatsNewCardsData,
-                      slots: _dashboardC.whatsNewSlots,
+                    // the row has enough real cards. If none sold and the
+                    // AdMob toggle is on, one AdMob/house card fills the gap.
+                    final List<Object> whatsNewFeed = withAdmobFallback(
+                      injectSponsoredSlots(
+                        organic: whatsNewCardsData,
+                        slots: _dashboardC.whatsNewSlots,
+                      ),
+                      organicCount: whatsNewCardsData.length,
+                      enabled: _dashboardC.admobFallbackEnabled.value,
                     );
 
                     return Column(
@@ -1911,6 +1917,17 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                     final item =
                                         whatsNewFeed[index % whatsNewFeed.length];
 
+                                    if (item is AdmobFeedSlot) {
+                                      return const Padding(
+                                        padding: EdgeInsets.only(right: 8),
+                                        child: NativeFeedAdCard(
+                                          widthFraction: 88,
+                                          trailingMargin: 0,
+                                          allowHouseAd: true,
+                                        ),
+                                      );
+                                    }
+
                                     if (item is SponsoredSlot) {
                                       return SponsoredVideoCard(
                                         key: ValueKey('wn-ad-${item.id}'),
@@ -1979,10 +1996,15 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
 
                     // Up to two server-chosen "Sponsored" treks dropped in at
                     // their configured positions (never first, spaced apart,
-                    // 2nd auto-gated on a fuller row).
-                    final List<Object> topTreksFeed = injectSponsoredSlots(
-                      organic: topTreksResponse.cast<Object>(),
-                      slots: _dashboardC.topTreksSlots,
+                    // 2nd auto-gated on a fuller row). If none sold and the
+                    // AdMob toggle is on, one AdMob/house card fills the gap.
+                    final List<Object> topTreksFeed = withAdmobFallback(
+                      injectSponsoredSlots(
+                        organic: topTreksResponse.cast<Object>(),
+                        slots: _dashboardC.topTreksSlots,
+                      ),
+                      organicCount: topTreksResponse.length,
+                      enabled: _dashboardC.admobFallbackEnabled.value,
                     );
 
                     return Column(
@@ -2051,15 +2073,67 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                     itemBuilder: (context, index) {
                                       final item = topTreksFeed[index];
 
-                                      if (item is SponsoredSlot) {
-                                        _dashboardC.logSponsoredImpression(
-                                          item.id,
-                                        );
+                                      if (item is AdmobFeedSlot) {
                                         return Padding(
                                           padding: EdgeInsets.only(
                                             left: ScreenConstant.size12,
                                             right: ScreenConstant.size6,
                                           ),
+                                          child: SizedBox(
+                                            width: topTreksCardWidth,
+                                            height: topTreksCardHeight,
+                                            child: const NativeFeedAdCard(
+                                              widthFraction: 68,
+                                              trailingMargin: 0,
+                                              allowHouseAd: true,
+                                            ),
+                                          ),
+                                        );
+                                      }
+
+                                      if (item is SponsoredSlot) {
+                                        final adPad = EdgeInsets.only(
+                                          left: ScreenConstant.size12,
+                                          right: ScreenConstant.size6,
+                                        );
+                                        // A brand-video Top Treks slot plays
+                                        // the video in the card footprint;
+                                        // a promoted-trek slot is the image
+                                        // card with a "Sponsored" pill.
+                                        if (item.isBrandVideo) {
+                                          return Padding(
+                                            padding: adPad,
+                                            child: SizedBox(
+                                              width: topTreksCardWidth,
+                                              height: topTreksCardHeight,
+                                              child: SponsoredVideoCard(
+                                                key: ValueKey(
+                                                    'tt-ad-${item.id}'),
+                                                slotId: item.id,
+                                                videoUrl: item.videoUrl ?? '',
+                                                advertiser: item.advertiser,
+                                                headline: item.headline ?? '',
+                                                widthFraction: 68,
+                                                trailingMargin: 0,
+                                                onImpression: () => _dashboardC
+                                                    .logSponsoredImpression(
+                                                        item.id),
+                                                onCtaTap: () {
+                                                  _dashboardC
+                                                      .logSponsoredClick(
+                                                          item.id);
+                                                  _openSponsoredUrl(
+                                                      item.ctaUrl);
+                                                },
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                        _dashboardC.logSponsoredImpression(
+                                          item.id,
+                                        );
+                                        return Padding(
+                                          padding: adPad,
                                           child: TopTreksCard(
                                             isSponsored: true,
                                             onTap: () {
@@ -2167,6 +2241,13 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                       ...avoidPicks.take(1),
                     ];
 
+                    // These feed the ad injection inside a nested Builder,
+                    // whose reads this Obx can't see — track them here so the
+                    // row rebuilds when a slot or the AdMob toggle changes.
+                    final seasonalAdSlots =
+                        _dashboardC.seasonalForecastSlots.toList();
+                    final admobOn = _dashboardC.admobFallbackEnabled.value;
+
                     return Column(
                       children: [
                         Padding(
@@ -2239,18 +2320,35 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                   )
                                 : Builder(
                                     builder: (context) {
-                                      // Up to two in-feed sponsored video
-                                      // cards, spaced apart, 2nd auto-gated on
-                                      // a fuller row.
-                                      final feed = injectSponsoredSlots(
-                                        organic:
-                                            previewPicks.cast<Object>(),
-                                        slots: _dashboardC
-                                            .seasonalForecastSlots,
+                                      // Waterfall: direct-sold video slots
+                                      // first (spaced, 2nd auto-gated); if
+                                      // none sold, one AdMob native fill.
+                                      final feed = withAdmobFallback(
+                                        injectSponsoredSlots(
+                                          organic:
+                                              previewPicks.cast<Object>(),
+                                          slots: seasonalAdSlots,
+                                        ),
+                                        organicCount: previewPicks.length,
+                                        enabled: admobOn,
                                       );
 
                                       final seasonalCards =
                                           feed.map<Widget>((item) {
+                                        if (item is AdmobFeedSlot) {
+                                          return Padding(
+                                            padding:
+                                                EdgeInsets.only(right: 3.w),
+                                            child: SizedBox(
+                                              width: 70.w,
+                                              height: 24.h,
+                                              child: const NativeFeedAdCard(
+                                                widthFraction: 70,
+                                                trailingMargin: 0,
+                                              ),
+                                            ),
+                                          );
+                                        }
                                         if (item is SponsoredSlot) {
                                           return Padding(
                                             padding:
