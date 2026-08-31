@@ -53,6 +53,11 @@ class DashboardController extends GetxController {
   // Impressions are logged at most once per slot per app session.
   final Set<int> _loggedSponsoredImpressions = {};
 
+  /// In-content brand ad cards for the post-booking detail screens, keyed
+  /// by screen ('booking_details' | 'cancellation_status').
+  final RxMap<String, List<SponsoredSlot>> detailScreenAds =
+      <String, List<SponsoredSlot>>{}.obs;
+
   final bookingHistoryObserver = PaginationModel(
     data: const ApiResult<BookingHistoryModel>.init().obs,
     isLoading: false,
@@ -421,6 +426,28 @@ class DashboardController extends GetxController {
       whatsNewSlots.clear();
       topTreksSlots.clear();
       seasonalForecastSlots.clear();
+    }
+  }
+
+  /// In-content ad cards for a post-booking detail screen. Fails soft to an
+  /// empty list. `screen` = 'booking_details' | 'cancellation_status'.
+  Future<void> fetchDetailScreenAds(String screen) async {
+    try {
+      final response = await _repository.getApiCall(
+        url: NetworkUrl.detailScreenAds(screen),
+      );
+      if (response is Map<String, dynamic>) {
+        final r = DetailScreenAdsResponse.fromJson(response);
+        detailScreenAds[screen] = r.ads.where((s) {
+          if (s.isBrandBanner) return (s.imageUrl ?? '').isNotEmpty;
+          if (s.isBrandVideo) return (s.videoUrl ?? '').isNotEmpty;
+          return false;
+        }).toList();
+        admobFallbackEnabled.value = r.admobFallback;
+      }
+    } catch (e) {
+      logger.e('Error fetching detail-screen ads ($screen): $e');
+      detailScreenAds[screen] = const [];
     }
   }
 

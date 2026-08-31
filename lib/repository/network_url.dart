@@ -54,6 +54,8 @@ class NetworkUrl {
       (destinationId != null && destinationId > 0)
           ? 'discovery/search-sponsored?destination_id=$destinationId'
           : 'discovery/search-sponsored';
+  static String detailScreenAds(String screen) =>
+      'discovery/detail-screen-ads?screen=$screen';
   static String sponsoredSlotImpression(int id) =>
       'discovery/sponsored-slots/$id/impression';
   static String sponsoredSlotClick(int id) =>

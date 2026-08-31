@@ -133,11 +133,14 @@ class _PaymentScreenStubDashboardController extends DashboardController {
   Future<void> generateAndUploadInvoice(int bookingId) async {}
 
   // _resolveSucceeded's 900ms-delayed navigation pushes BookingsUpcomingScreen,
-  // whose own initState calls this for real — same class of unrelated
+  // whose own initState calls these for real — same class of unrelated
   // real-network side effect as the two stubs above, just reached via
   // navigation instead of a direct call.
   @override
   Future<void> getBookingDetail({required dynamic bookingId}) async {}
+
+  @override
+  Future<void> fetchDetailScreenAds(String screen) async {}
 }
 
 // PaymentProcessingScreen renders through Sizer's .w/.sp extensions, which
