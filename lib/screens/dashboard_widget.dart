@@ -2053,14 +2053,48 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                       final item = topTreksFeed[index];
 
                                       if (item is SponsoredSlot) {
+                                        final adPad = EdgeInsets.only(
+                                          left: ScreenConstant.size12,
+                                          right: ScreenConstant.size6,
+                                        );
+                                        // A brand-video Top Treks slot plays
+                                        // the video in the card footprint;
+                                        // a promoted-trek slot is the image
+                                        // card with a "Sponsored" pill.
+                                        if (item.isBrandVideo) {
+                                          return Padding(
+                                            padding: adPad,
+                                            child: SizedBox(
+                                              width: topTreksCardWidth,
+                                              height: topTreksCardHeight,
+                                              child: SponsoredVideoCard(
+                                                key: ValueKey(
+                                                    'tt-ad-${item.id}'),
+                                                slotId: item.id,
+                                                videoUrl: item.videoUrl ?? '',
+                                                advertiser: item.advertiser,
+                                                headline: item.headline ?? '',
+                                                widthFraction: 68,
+                                                trailingMargin: 0,
+                                                onImpression: () => _dashboardC
+                                                    .logSponsoredImpression(
+                                                        item.id),
+                                                onCtaTap: () {
+                                                  _dashboardC
+                                                      .logSponsoredClick(
+                                                          item.id);
+                                                  _openSponsoredUrl(
+                                                      item.ctaUrl);
+                                                },
+                                              ),
+                                            ),
+                                          );
+                                        }
                                         _dashboardC.logSponsoredImpression(
                                           item.id,
                                         );
                                         return Padding(
-                                          padding: EdgeInsets.only(
-                                            left: ScreenConstant.size12,
-                                            right: ScreenConstant.size6,
-                                          ),
+                                          padding: adPad,
                                           child: TopTreksCard(
                                             isSponsored: true,
                                             onTap: () {

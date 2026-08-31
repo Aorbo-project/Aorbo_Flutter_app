@@ -403,7 +403,11 @@ class DashboardController extends GetxController {
         whatsNewSlots.assignAll(
           r.whatsNew.where((s) => s.isBrandVideo && (s.videoUrl ?? '').isNotEmpty),
         );
-        topTreksSlots.assignAll(r.topTreks.where((s) => s.isSponsoredTrek));
+        topTreksSlots.assignAll(
+          r.topTreks.where((s) =>
+              s.isSponsoredTrek ||
+              (s.isBrandVideo && (s.videoUrl ?? '').isNotEmpty)),
+        );
         seasonalForecastSlots.assignAll(
           r.seasonalForecast
               .where((s) => s.isBrandVideo && (s.videoUrl ?? '').isNotEmpty),
