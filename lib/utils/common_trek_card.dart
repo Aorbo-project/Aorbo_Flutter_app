@@ -419,14 +419,18 @@ class _CommonTrekCardState extends State<CommonTrekCard>
             color: Colors.white,
           ),
           SizedBox(width: _rw(1.2, 6)),
-          Text(
-            sponsored ? 'SPONSORED' : 'FEATURED BY AORBO',
-            textScaler: const TextScaler.linear(1),
-            style: AppType.style(
-              FontSize.s7,
-              w: FontWeight.w700,
-              color: Colors.white,
-              letterSpacing: 0.8,
+          Flexible(
+            child: Text(
+              sponsored ? 'SPONSORED' : 'FEATURED BY AORBO TREKS',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textScaler: const TextScaler.linear(1),
+              style: AppType.style(
+                FontSize.s7,
+                w: FontWeight.w700,
+                color: Colors.white,
+                letterSpacing: 0.8,
+              ),
             ),
           ),
         ],
