@@ -513,6 +513,7 @@ class TrekController extends GetxController {
             (r.listing?.trekId ?? 0) > 0 ? r.listing : null;
         searchBannerSlot.value =
             r.banner?.isBrandVideo == true ? r.banner : null;
+        _dashboardC.admobFallbackEnabled.value = r.admobFallback;
       }
     } catch (e) {
       logger.e('Error fetching search-sponsored slots: $e');

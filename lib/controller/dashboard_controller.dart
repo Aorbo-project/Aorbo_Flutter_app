@@ -46,6 +46,10 @@ class DashboardController extends GetxController {
   final RxList<SponsoredSlot> whatsNewSlots = <SponsoredSlot>[].obs;
   final RxList<SponsoredSlot> topTreksSlots = <SponsoredSlot>[].obs;
   final RxList<SponsoredSlot> seasonalForecastSlots = <SponsoredSlot>[].obs;
+
+  /// Server switch — may an AdMob native ad fill an unsold in-feed slot?
+  /// Off by default; also shared with the search screen.
+  final RxBool admobFallbackEnabled = false.obs;
   // Impressions are logged at most once per slot per app session.
   final Set<int> _loggedSponsoredImpressions = {};
 
@@ -404,6 +408,7 @@ class DashboardController extends GetxController {
           r.seasonalForecast
               .where((s) => s.isBrandVideo && (s.videoUrl ?? '').isNotEmpty),
         );
+        admobFallbackEnabled.value = r.admobFallback;
       }
     } catch (e) {
       // An ad failure must never affect the dashboard — just leave the

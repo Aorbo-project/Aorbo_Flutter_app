@@ -2251,6 +2251,8 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                               .seasonalForecastSlots,
                                         ),
                                         organicCount: previewPicks.length,
+                                        enabled: _dashboardC
+                                            .admobFallbackEnabled.value,
                                       );
 
                                       final seasonalCards =

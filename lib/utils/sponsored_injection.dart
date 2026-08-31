@@ -58,9 +58,11 @@ class AdmobFeedSlot {
 List<Object> withAdmobFallback(
   List<Object> feed, {
   required int organicCount,
+  required bool enabled,
   int minOrganic = 2,
   int position = 2,
 }) {
+  if (!enabled) return feed;
   final hasDirectSold = feed.any((e) => e is SponsoredSlot);
   if (hasDirectSold || organicCount < minOrganic) return feed;
   final out = List<Object>.from(feed);

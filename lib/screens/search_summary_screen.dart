@@ -1214,7 +1214,8 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
       // booked, otherwise an AdMob native fill (renders nothing on no-fill).
       if (ranked.isNotEmpty && bannerSlot != null) {
         entries.add((kind: 'ad', trek: null, slotId: bannerSlot.id));
-      } else if (ranked.length >= 2) {
+      } else if (ranked.length >= 2 &&
+          _dashboardC.admobFallbackEnabled.value) {
         entries.add((kind: 'admob', trek: null, slotId: null));
       }
       entries.add((kind: 'spacer', trek: null, slotId: null));

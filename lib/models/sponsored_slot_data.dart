@@ -10,11 +10,15 @@ class SponsoredSlotsResponse {
   final List<SponsoredSlot> topTreks;
   final List<SponsoredSlot> seasonalForecast;
 
+  /// Server switch: may an AdMob native ad fill an unsold in-feed slot?
+  final bool admobFallback;
+
   SponsoredSlotsResponse({
     required this.success,
     this.whatsNew = const [],
     this.topTreks = const [],
     this.seasonalForecast = const [],
+    this.admobFallback = false,
   });
 
   factory SponsoredSlotsResponse.fromJson(Map<String, dynamic> json) {
@@ -37,6 +41,7 @@ class SponsoredSlotsResponse {
       whatsNew: parseRow(data['whats_new']),
       topTreks: parseRow(data['top_treks']),
       seasonalForecast: parseRow(data['seasonal_forecast']),
+      admobFallback: json['admobFallback'] == true,
     );
   }
 }
@@ -53,8 +58,14 @@ class SearchSponsoredResponse {
   final bool success;
   final SponsoredListing? listing;
   final SponsoredSlot? banner;
+  final bool admobFallback;
 
-  SearchSponsoredResponse({required this.success, this.listing, this.banner});
+  SearchSponsoredResponse({
+    required this.success,
+    this.listing,
+    this.banner,
+    this.admobFallback = false,
+  });
 
   factory SearchSponsoredResponse.fromJson(Map<String, dynamic> json) {
     final data = (json['data'] as Map<String, dynamic>?) ?? const {};
@@ -66,6 +77,7 @@ class SearchSponsoredResponse {
       banner: data['banner'] is Map<String, dynamic>
           ? SponsoredSlot.fromJson(data['banner'] as Map<String, dynamic>)
           : null,
+      admobFallback: json['admobFallback'] == true,
     );
   }
 }
