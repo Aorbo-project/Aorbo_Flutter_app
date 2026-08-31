@@ -389,6 +389,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
       trekId: _dashboardC.selectedTrekId.value,
       date: _dashboardC.dateController.value.text,
       refresh: true,
+      filterQuery: '', // fresh search — clear any filters from a prior one
     );
     Get.toNamed('/search');
   }

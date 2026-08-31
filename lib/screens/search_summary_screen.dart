@@ -180,18 +180,35 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
     }
   }
 
-  Future<void> _onRefresh() async {
-    HapticFeedback.lightImpact();
-    await _couponC.fetchPlatformCoupons();
+  /// Server-side filtering/sorting — the whole result set is re-queried
+  /// with the active filters, so it stays correct across pagination
+  /// (unlike client-side filtering of one already-loaded page).
+  Future<void> _runSearch() async {
     await _trekC.searchTreks(
       cityId: _dashboardC.selectedCityId.value,
       trekId: _dashboardC.selectedTrekId.value,
       date: _dashboardC.dateController.value.text,
       refresh: true,
+      filterQuery: buildFilterQueryString(
+        activeFilters,
+        groupBooking: _isGroupBooking,
+      ),
     );
     _trekC.fetchSearchSponsored(
       destinationId: _dashboardC.selectedTrekId.value,
     );
+  }
+
+  Future<void> _applyFilters() async {
+    HapticFeedback.selectionClick();
+    if (_scrollController.hasClients) _scrollController.jumpTo(0);
+    await _runSearch();
+  }
+
+  Future<void> _onRefresh() async {
+    HapticFeedback.lightImpact();
+    await _couponC.fetchPlatformCoupons();
+    await _runSearch();
   }
 
   Future<void> _openLocationSearch() async {
@@ -749,6 +766,7 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
               activeFilters = List.from(result.selectedTitles);
               _isGroupBooking = result.groupBookingEnabled;
             });
+            _applyFilters();
           },
         ),
         body: FadeTransition(
@@ -1144,118 +1162,23 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
         orElse: () => false,
       );
 
-      final treks = _trekC.treksResponseObserver.value.data.value.maybeWhen(
-        success: (data) {
-          if (data is FetchTreksResponseModel) {
-            List<TrekData> filteredTreks = List<TrekData>.from(data.data ?? []);
+      // Filtering + sorting is done server-side (see _runSearch /
+      // buildFilterQueryString) so the whole result set is covered, not
+      // just the loaded page. The list arrives in final order.
+      final List<TrekData> ranked = _trekC.treksResponseObserver.value.data.value
+          .maybeWhen(
+            success: (data) => data is FetchTreksResponseModel
+                ? List<TrekData>.from(data.data ?? const [])
+                : <TrekData>[],
+            error: (_) => <TrekData>[],
+            orElse: () => List.generate(4, (_) => const TrekData()),
+          );
 
-            if (activeFilters.contains('Flexible')) {
-              filteredTreks = filteredTreks
-                  .where(
-                    (trek) =>
-                        trek.cancellationPolicy?.title?.toLowerCase().contains(
-                          'flexible',
-                        ) ==
-                        true,
-                  )
-                  .toList();
-            }
-            if (activeFilters.contains('Standard')) {
-              filteredTreks = filteredTreks
-                  .where(
-                    (trek) =>
-                        trek.cancellationPolicy?.title?.toLowerCase().contains(
-                          'standard',
-                        ) ==
-                        true,
-                  )
-                  .toList();
-            }
-            if (activeFilters.contains('Strict')) {
-              filteredTreks = filteredTreks
-                  .where(
-                    (trek) =>
-                        trek.cancellationPolicy?.title?.toLowerCase().contains(
-                          'strict',
-                        ) ==
-                        true,
-                  )
-                  .toList();
-            }
-            if (activeFilters.contains('4.5+ Stars')) {
-              filteredTreks = filteredTreks
-                  .where((t) => (t.rating ?? 0) >= 4.5)
-                  .toList();
-            }
-            if (activeFilters.contains('4+ Stars')) {
-              filteredTreks = filteredTreks
-                  .where((t) => (t.rating ?? 0) >= 4)
-                  .toList();
-            }
-            if (activeFilters.contains('3.5+ Stars')) {
-              filteredTreks = filteredTreks
-                  .where((t) => (t.rating ?? 0) >= 3.5)
-                  .toList();
-            }
-
-            if (activeFilters.contains('Price: Low → High')) {
-              filteredTreks.sort((a, b) {
-                final aPrice = double.tryParse(a.price ?? '0') ?? 0;
-                final bPrice = double.tryParse(b.price ?? '0') ?? 0;
-                return aPrice.compareTo(bPrice);
-              });
-            }
-            if (activeFilters.contains('Price: High → Low')) {
-              filteredTreks.sort((a, b) {
-                final aPrice = double.tryParse(a.price ?? '0') ?? 0;
-                final bPrice = double.tryParse(b.price ?? '0') ?? 0;
-                return bPrice.compareTo(aPrice);
-              });
-            }
-            if (activeFilters.contains('Top Rated')) {
-              filteredTreks.sort(
-                (a, b) => (b.rating ?? 0).compareTo(a.rating ?? 0),
-              );
-            }
-
-            return filteredTreks;
-          }
-          return <TrekData>[];
-        },
-        error: (_) => <TrekData>[],
-        orElse: () => List.generate(4, (_) => const TrekData()),
-      );
-
-      if (!isLoading && treks.isEmpty) {
+      if (!isLoading && ranked.isEmpty) {
         return SliverFillRemaining(
           hasScrollBody: false,
           child: _buildEmptyState(dateText),
         );
-      }
-
-      final hasExplicitSort = activeFilters.any(
-        (f) => f.contains('Price') || f.contains('Top Rated'),
-      );
-
-      // FIX: cascade previously applied to the whole conditional, so the
-      // personalization sort was overriding explicit sorts.
-      final List<TrekData> ranked;
-      if (hasExplicitSort) {
-        ranked = treks;
-      } else {
-        ranked = List<TrekData>.from(treks)
-          ..sort(
-            (a, b) => AroboPersonalization.instance
-                .scoreFor(b.id, b.rating, b.price, b.hasDiscount)
-                .compareTo(
-                  AroboPersonalization.instance.scoreFor(
-                    a.id,
-                    a.rating,
-                    a.price,
-                    a.hasDiscount,
-                  ),
-                ),
-          );
       }
 
       // ── Sponsored + featured listings (server-chosen per search) ────
