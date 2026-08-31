@@ -13,6 +13,7 @@ import 'package:arobo_app/utils/header_scene.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:arobo_app/utils/know_more_card.dart';
 import 'package:arobo_app/utils/sponsored_video_card.dart';
+import 'package:arobo_app/utils/native_feed_ad_card.dart';
 import 'package:arobo_app/utils/sponsored_injection.dart';
 import 'package:arobo_app/models/sponsored_slot_data.dart';
 import 'package:arobo_app/models/top_treks_data.dart';
@@ -2316,6 +2317,27 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                           ),
                                         );
                                       }).toList();
+
+                                      // AdMob native fill — renders only if
+                                      // an ad actually loads, else takes no
+                                      // space (Step 4 turns this into a
+                                      // proper waterfall across rows).
+                                      if (seasonalCards.length >= 2) {
+                                        seasonalCards.add(
+                                          Padding(
+                                            padding:
+                                                EdgeInsets.only(right: 3.w),
+                                            child: SizedBox(
+                                              width: 70.w,
+                                              height: 24.h,
+                                              child: const NativeFeedAdCard(
+                                                widthFraction: 70,
+                                                trailingMargin: 0,
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      }
 
                                       return Row(children: seasonalCards);
                                     },
