@@ -7,6 +7,11 @@ class SpUtil {
   static const String userID           = 'user_id';
   static const String userEmail        = 'user_email';
   static const String accessToken      = 'access_token';
+  // Rotating refresh token — exchanged at customer/auth/refresh for a new
+  // access token when the old one expires (401 + code TOKEN_EXPIRED), so the
+  // user is not bounced to the login screen mid-session. Absent when the
+  // backend predates refresh-token support.
+  static const String refreshToken     = 'refresh_token';
   static const String profileCompleted = 'profile_completed';
   static const String isNewCustomer    = 'is_new_customer';
   static const String deviceId         = 'device_id';

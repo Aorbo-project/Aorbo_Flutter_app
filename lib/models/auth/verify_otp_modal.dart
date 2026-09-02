@@ -28,17 +28,21 @@ class VerifyOtpModal {
 
 class Data {
   String? token;
+  // null when the backend predates refresh-token support
+  String? refreshToken;
   Customer? customer;
   String? expiresIn;
 
   Data({
     this.token,
+    this.refreshToken,
     this.customer,
     this.expiresIn,
   });
 
   Data.fromJson(Map<String, dynamic> json) {
     token = json['token'];
+    refreshToken = json['refreshToken'] ?? json['refresh_token'];
     customer =
         json['customer'] != null ? Customer.fromJson(json['customer']) : null;
     expiresIn = json['expiresIn'];
@@ -47,6 +51,7 @@ class Data {
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['token'] = token;
+    data['refreshToken'] = refreshToken;
     if (customer != null) {
       data['customer'] = customer!.toJson();
     }

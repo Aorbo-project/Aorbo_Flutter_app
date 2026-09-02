@@ -156,6 +156,13 @@ class AuthController extends GetxController {
           }
           final customer = verifyOtpModal.value.data?.customer;
           await sp!.putString(SpUtil.accessToken, token);
+          final refreshToken = verifyOtpModal.value.data?.refreshToken;
+          if (refreshToken != null && refreshToken.isNotEmpty) {
+            await sp!.putString(SpUtil.refreshToken, refreshToken);
+          } else {
+            // backend without refresh support — make sure no stale one lingers
+            await sp!.remove(SpUtil.refreshToken);
+          }
           await sp!.putBool(SpUtil.isLoggedIn, true);
           await sp!.putInt(SpUtil.userID, customer?.id ?? 0);
           // Store profile completion state so the app can prompt new/incomplete users

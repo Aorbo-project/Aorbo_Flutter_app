@@ -40,6 +40,63 @@ class Repository {
     ),
   );
 
+  // A second Dio with NO interceptors — used to call /auth/refresh and to
+  // replay the original request after a refresh, so neither can recurse back
+  // into the 401 handler below.
+  final Dio _bareDio = Dio(
+    BaseOptions(
+      baseUrl: NetworkUrl.baseUrl,
+      connectTimeout: const Duration(seconds: 40),
+      receiveTimeout: const Duration(seconds: 40),
+      headers: {'Accept': '*/*', 'Content-Type': 'application/json'},
+    ),
+  );
+
+  // Single-flight guard: many requests can 401 at once; only one /refresh call
+  // should fire and the rest await its result.
+  Completer<bool>? _refreshInFlight;
+
+  /// Exchange the stored refresh token for a fresh access+refresh pair.
+  /// Returns true on success (new tokens persisted), false otherwise.
+  Future<bool> _refreshAccessToken() async {
+    if (_refreshInFlight != null) return _refreshInFlight!.future;
+    final completer = Completer<bool>();
+    _refreshInFlight = completer;
+    try {
+      final refresh = await sp!.getString(SpUtil.refreshToken);
+      if (refresh == null || refresh.isEmpty) {
+        completer.complete(false);
+        return false;
+      }
+      final resp = await _bareDio.post(
+        NetworkUrl.refreshTokenPath,
+        data: {'refreshToken': refresh},
+      );
+      final data = resp.data is Map ? (resp.data as Map)['data'] ?? resp.data : null;
+      final newAccess = data is Map ? data['token'] as String? : null;
+      final newRefresh = data is Map
+          ? (data['refreshToken'] ?? data['refresh_token']) as String?
+          : null;
+      if (newAccess == null || newAccess.isEmpty) {
+        completer.complete(false);
+        return false;
+      }
+      await sp!.putString(SpUtil.accessToken, newAccess);
+      token = newAccess;
+      if (newRefresh != null && newRefresh.isNotEmpty) {
+        await sp!.putString(SpUtil.refreshToken, newRefresh);
+      }
+      completer.complete(true);
+      return true;
+    } catch (e) {
+      logger.w('Token refresh failed: $e');
+      completer.complete(false);
+      return false;
+    } finally {
+      _refreshInFlight = null;
+    }
+  }
+
   initRepo() async {
     dio.interceptors.add(
       InterceptorsWrapper(
@@ -92,6 +149,35 @@ class Repository {
           final errorCode = (error.response?.data is Map)
               ? (error.response?.data as Map)['code']
               : null;
+
+          // ── Access token expired → try a silent refresh, then replay ──────
+          // Only for a genuine expiry (code TOKEN_EXPIRED). Any other 401
+          // (revoked, session superseded, bad token) is a real logout.
+          final alreadyRetried = error.requestOptions.extra['__retried'] == true;
+          final isRefreshCall =
+              error.requestOptions.path.contains(NetworkUrl.refreshTokenPath);
+          if (statusCode == 401 &&
+              errorCode == 'TOKEN_EXPIRED' &&
+              !alreadyRetried &&
+              !isRefreshCall) {
+            final refreshed = await _refreshAccessToken();
+            if (refreshed) {
+              final ro = error.requestOptions;
+              ro.extra['__retried'] = true;
+              ro.headers['Authorization'] = 'Bearer $token';
+              try {
+                final replay = await _bareDio.fetch(ro);
+                return handler.resolve(replay);
+              } catch (e) {
+                logger.w('Replay after refresh failed: $e');
+                // fall through to logout
+              }
+            }
+            await sp!.clear();
+            Get.offAllNamed('/');
+            return handler.next(error);
+          }
+
           final isSessionInvalid =
               statusCode == 401 ||
               (statusCode == 403 &&
