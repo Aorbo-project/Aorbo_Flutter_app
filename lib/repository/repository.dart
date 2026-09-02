@@ -163,6 +163,15 @@ class Repository {
             final refreshed = await _refreshAccessToken();
             if (refreshed) {
               final ro = error.requestOptions;
+              // A FormData body is a single-use stream — it cannot be replayed.
+              // The refresh still succeeded, so surface the original error
+              // (no logout) and let the caller retry with a fresh body; the
+              // stored token is now valid for that retry.
+              if (ro.data is FormData) {
+                logger.w('Refreshed on TOKEN_EXPIRED; not replaying a FormData '
+                    'upload — caller should retry.');
+                return handler.next(error);
+              }
               ro.extra['__retried'] = true;
               ro.headers['Authorization'] = 'Bearer $token';
               try {
