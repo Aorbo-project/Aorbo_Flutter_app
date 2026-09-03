@@ -2,6 +2,7 @@ import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/controller/trek_controller.dart';
 import 'package:arobo_app/controller/user_controller.dart';
 import 'package:arobo_app/repository/repository.dart';
+import 'package:arobo_app/services/analytics_service.dart';
 import 'package:arobo_app/widgets/custom_network_image.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
@@ -117,6 +118,10 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
   @override
   void initState() {
     super.initState();
+
+    // Performance-Insights funnel: this vendor's trek detail was opened.
+    AnalyticsService.instance
+        .logTrekDetailView(int.tryParse('${widget.trek?.id ?? ''}'));
 
     final visibility = _sectionVisibilityFlags();
     final firstVisible = visibility.indexWhere((v) => v);
@@ -563,6 +568,11 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
             await _userC.getUserProfile();
             if (!mounted) return;
             _trekC.trekBatchId.value = _trekC.trekDetailData.value.batchId ?? 0;
+            // Performance-Insights funnel: booking flow entered.
+            AnalyticsService.instance.logBookingStarted(
+              int.tryParse('${widget.trek?.id ?? ''}'),
+              batchId: _trekC.trekBatchId.value,
+            );
             Get.toNamed('/traveller-information');
           },
           gradient: _C.ctaGradient,

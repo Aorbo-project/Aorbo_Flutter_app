@@ -21,6 +21,7 @@ import 'package:sizer/sizer.dart';
 
 import 'config/ad_config.dart';
 import 'services/ad_consent_service.dart';
+import 'services/analytics_service.dart';
 import 'utils/shared_preferences.dart';
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -79,6 +80,13 @@ void main() async {
   };
 
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+
+  // Flush buffered Performance-Insights analytics events when the app is
+  // hidden / paused, so nothing is lost between the 12s auto-flushes.
+  AppLifecycleListener(
+    onHide: AnalyticsService.instance.flush,
+    onPause: AnalyticsService.instance.flush,
+  );
 
   appBootstrapFuture = _bootstrap();
 

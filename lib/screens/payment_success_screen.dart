@@ -1,5 +1,6 @@
 import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/controller/trek_controller.dart';
+import 'package:arobo_app/services/analytics_service.dart';
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/common_images.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
@@ -414,6 +415,14 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
     if (bookingId != null) {
       _dashboardC.generateAndUploadInvoice(bookingId);
     }
+
+    // Performance-Insights funnel: booking paid. (The backend also derives
+    // this from the bookings table — logging it keeps the funnel self-consistent.)
+    AnalyticsService.instance.logBookingPaid(
+      _trekC.trekDetailData.value.id,
+      batchId: _trekC.trekBatchId.value,
+    );
+    AnalyticsService.instance.flush();
 
     _cardAnimCtrl = AnimationController(
       vsync: this,
