@@ -70,7 +70,7 @@ class _ContactSupportScreenState extends State<ContactSupportScreen>
   late final List<Animation<double>> _cardFades;
   late final List<Animation<Offset>> _cardSlides;
 
-  static const String _supportEmail = 'support@aorbotreks.com';
+  static const String _supportEmail = 'care@aorbotreks.com';
 
   @override
   void initState() {
