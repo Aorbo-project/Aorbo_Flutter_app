@@ -45,9 +45,6 @@ _$CustomerImpl _$$CustomerImplFromJson(Map<String, dynamic> json) =>
       dateOfBirth: json['dateOfBirth'] as String?,
       emergencyContact: json['emergencyContact'] as String?,
       profileCompleted: json['profileCompleted'] as bool?,
-      city: json['city'] == null
-          ? null
-          : UserState.fromJson(json['city'] as Map<String, dynamic>),
       state: json['state'] == null
           ? null
           : UserState.fromJson(json['state'] as Map<String, dynamic>),
@@ -65,7 +62,6 @@ Map<String, dynamic> _$$CustomerImplToJson(_$CustomerImpl instance) =>
       'dateOfBirth': instance.dateOfBirth,
       'emergencyContact': instance.emergencyContact,
       'profileCompleted': instance.profileCompleted,
-      'city': instance.city,
       'state': instance.state,
       'travelers': instance.travelers,
     };

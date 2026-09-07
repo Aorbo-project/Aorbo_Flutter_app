@@ -355,7 +355,6 @@ mixin _$Customer {
   String? get dateOfBirth => throw _privateConstructorUsedError;
   String? get emergencyContact => throw _privateConstructorUsedError;
   bool? get profileCompleted => throw _privateConstructorUsedError;
-  UserState? get city => throw _privateConstructorUsedError;
   UserState? get state => throw _privateConstructorUsedError;
   List<Traveler>? get travelers => throw _privateConstructorUsedError;
 
@@ -378,11 +377,9 @@ abstract class $CustomerCopyWith<$Res> {
       String? dateOfBirth,
       String? emergencyContact,
       bool? profileCompleted,
-      UserState? city,
       UserState? state,
       List<Traveler>? travelers});
 
-  $UserStateCopyWith<$Res>? get city;
   $UserStateCopyWith<$Res>? get state;
 }
 
@@ -406,7 +403,6 @@ class _$CustomerCopyWithImpl<$Res, $Val extends Customer>
     Object? dateOfBirth = freezed,
     Object? emergencyContact = freezed,
     Object? profileCompleted = freezed,
-    Object? city = freezed,
     Object? state = freezed,
     Object? travelers = freezed,
   }) {
@@ -439,10 +435,6 @@ class _$CustomerCopyWithImpl<$Res, $Val extends Customer>
           ? _value.profileCompleted
           : profileCompleted // ignore: cast_nullable_to_non_nullable
               as bool?,
-      city: freezed == city
-          ? _value.city
-          : city // ignore: cast_nullable_to_non_nullable
-              as UserState?,
       state: freezed == state
           ? _value.state
           : state // ignore: cast_nullable_to_non_nullable
@@ -452,18 +444,6 @@ class _$CustomerCopyWithImpl<$Res, $Val extends Customer>
           : travelers // ignore: cast_nullable_to_non_nullable
               as List<Traveler>?,
     ) as $Val);
-  }
-
-  @override
-  @pragma('vm:prefer-inline')
-  $UserStateCopyWith<$Res>? get city {
-    if (_value.city == null) {
-      return null;
-    }
-
-    return $UserStateCopyWith<$Res>(_value.city!, (value) {
-      return _then(_value.copyWith(city: value) as $Val);
-    });
   }
 
   @override
@@ -495,12 +475,9 @@ abstract class _$$CustomerImplCopyWith<$Res>
       String? dateOfBirth,
       String? emergencyContact,
       bool? profileCompleted,
-      UserState? city,
       UserState? state,
       List<Traveler>? travelers});
 
-  @override
-  $UserStateCopyWith<$Res>? get city;
   @override
   $UserStateCopyWith<$Res>? get state;
 }
@@ -523,7 +500,6 @@ class __$$CustomerImplCopyWithImpl<$Res>
     Object? dateOfBirth = freezed,
     Object? emergencyContact = freezed,
     Object? profileCompleted = freezed,
-    Object? city = freezed,
     Object? state = freezed,
     Object? travelers = freezed,
   }) {
@@ -556,10 +532,6 @@ class __$$CustomerImplCopyWithImpl<$Res>
           ? _value.profileCompleted
           : profileCompleted // ignore: cast_nullable_to_non_nullable
               as bool?,
-      city: freezed == city
-          ? _value.city
-          : city // ignore: cast_nullable_to_non_nullable
-              as UserState?,
       state: freezed == state
           ? _value.state
           : state // ignore: cast_nullable_to_non_nullable
@@ -583,7 +555,6 @@ class _$CustomerImpl implements _Customer {
       this.dateOfBirth,
       this.emergencyContact,
       this.profileCompleted,
-      this.city,
       this.state,
       final List<Traveler>? travelers})
       : _travelers = travelers;
@@ -606,8 +577,6 @@ class _$CustomerImpl implements _Customer {
   @override
   final bool? profileCompleted;
   @override
-  final UserState? city;
-  @override
   final UserState? state;
   final List<Traveler>? _travelers;
   @override
@@ -621,7 +590,7 @@ class _$CustomerImpl implements _Customer {
 
   @override
   String toString() {
-    return 'Customer(id: $id, phone: $phone, name: $name, email: $email, dateOfBirth: $dateOfBirth, emergencyContact: $emergencyContact, profileCompleted: $profileCompleted, city: $city, state: $state, travelers: $travelers)';
+    return 'Customer(id: $id, phone: $phone, name: $name, email: $email, dateOfBirth: $dateOfBirth, emergencyContact: $emergencyContact, profileCompleted: $profileCompleted, state: $state, travelers: $travelers)';
   }
 
   @override
@@ -639,7 +608,6 @@ class _$CustomerImpl implements _Customer {
                 other.emergencyContact == emergencyContact) &&
             (identical(other.profileCompleted, profileCompleted) ||
                 other.profileCompleted == profileCompleted) &&
-            (identical(other.city, city) || other.city == city) &&
             (identical(other.state, state) || other.state == state) &&
             const DeepCollectionEquality()
                 .equals(other._travelers, _travelers));
@@ -656,7 +624,6 @@ class _$CustomerImpl implements _Customer {
       dateOfBirth,
       emergencyContact,
       profileCompleted,
-      city,
       state,
       const DeepCollectionEquality().hash(_travelers));
 
@@ -683,7 +650,6 @@ abstract class _Customer implements Customer {
       final String? dateOfBirth,
       final String? emergencyContact,
       final bool? profileCompleted,
-      final UserState? city,
       final UserState? state,
       final List<Traveler>? travelers}) = _$CustomerImpl;
 
@@ -704,8 +670,6 @@ abstract class _Customer implements Customer {
   String? get emergencyContact;
   @override
   bool? get profileCompleted;
-  @override
-  UserState? get city;
   @override
   UserState? get state;
   @override

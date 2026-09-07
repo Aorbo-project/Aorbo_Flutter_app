@@ -46,7 +46,6 @@ class Customer with _$Customer {
     String? dateOfBirth,
     String? emergencyContact,
     bool? profileCompleted,
-    UserState? city,
     UserState? state,
     List<Traveler>? travelers,
   }) = _Customer;
