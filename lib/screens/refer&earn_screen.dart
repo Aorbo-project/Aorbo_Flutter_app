@@ -213,10 +213,8 @@ class _ReferState extends State<refer> with TickerProviderStateMixin {
                       SizedBox(height: 2.h),
                       _buildHeroBanner(info),
                       SizedBox(height: 3.h),
-                      if (c.canApplyCode) ...[
-                        _buildApplyCodeCard(info),
-                        SizedBox(height: 3.h),
-                      ],
+                      // A friend's referral code is entered on the login
+                      // screen only — not here.
                       if (info.milestone?.enabled == true) ...[
                         _buildMilestoneTracker(info.milestone!),
                         SizedBox(height: 3.h),
@@ -442,12 +440,6 @@ class _ReferState extends State<refer> with TickerProviderStateMixin {
         ),
       ],
     );
-  }
-
-  // ── Apply a friend's code ─────────────────────────────────────────────────
-
-  Widget _buildApplyCodeCard(ReferralInfo info) {
-    return _ApplyCodeCard(controller: c);
   }
 
   // ── Milestone tracker ─────────────────────────────────────────────────────
@@ -1112,175 +1104,6 @@ class _ReferState extends State<refer> with TickerProviderStateMixin {
             style: AppType.style(FontSize.s10, color: Colors.grey.shade400)),
         SizedBox(height: 6.h),
       ],
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// APPLY-A-CODE CARD  (only shown when the backend says canApplyCode == true)
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _ApplyCodeCard extends StatefulWidget {
-  final ReferralController controller;
-  const _ApplyCodeCard({required this.controller});
-
-  @override
-  State<_ApplyCodeCard> createState() => _ApplyCodeCardState();
-}
-
-class _ApplyCodeCardState extends State<_ApplyCodeCard> {
-  final TextEditingController _field = TextEditingController();
-  bool _submitting = false;
-
-  @override
-  void dispose() {
-    _field.dispose();
-    super.dispose();
-  }
-
-  Future<void> _submit() async {
-    final code = _field.text.trim();
-    if (code.length < 4) return;
-    setState(() => _submitting = true);
-    final ok = await widget.controller.applyCode(code);
-    if (!mounted) return;
-    setState(() => _submitting = false);
-
-    final st = widget.controller.applyState.value;
-    final msg = st?.maybeWhen(
-          success: (r) => r?.message ?? 'Referral code applied!',
-          error: (e) => e,
-          orElse: () => null,
-        ) ??
-        '';
-    if (msg.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(msg, style: AppType.style(11)),
-          backgroundColor:
-              ok ? const Color(0xFF52C4A0) : const Color(0xFFEF4444),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
-    widget.controller.clearApplyState();
-    if (ok) _field.clear();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(4.w),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(4.w),
-        border: Border.all(color: const Color(0xFF4BB7DE).withValues(alpha: 0.25)),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 10,
-              offset: const Offset(0, 2)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Have a friend’s code?',
-              style: AppType.style(FontSize.s11,
-                  w: FontWeight.w600, color: CommonColors.blackColor)),
-          SizedBox(height: 0.4.h),
-          Text('Enter it before your first booking to get your discount.',
-              style: AppType.style(FontSize.s9, color: Colors.grey.shade600)),
-          SizedBox(height: 1.5.h),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _field,
-                  textCapitalization: TextCapitalization.characters,
-                  onChanged: (v) => widget.controller.validateCode(v),
-                  decoration: InputDecoration(
-                    hintText: 'AORBO••••',
-                    isDense: true,
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.2.h),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(2.5.w),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(2.5.w),
-                      borderSide:
-                          const BorderSide(color: Color(0xFF4BB7DE), width: 1.4),
-                    ),
-                  ),
-                  style: AppType.style(FontSize.s12,
-                      w: FontWeight.w600, letterSpacing: 1.5),
-                ),
-              ),
-              SizedBox(width: 2.w),
-              GestureDetector(
-                onTap: _submitting ? null : _submit,
-                child: Container(
-                  padding:
-                      EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
-                  decoration: BoxDecoration(
-                    color: _submitting
-                        ? Colors.grey.shade300
-                        : const Color(0xFF4BB7DE),
-                    borderRadius: BorderRadius.circular(2.5.w),
-                  ),
-                  child: _submitting
-                      ? SizedBox(
-                          width: 3.5.w,
-                          height: 3.5.w,
-                          child: const CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white),
-                        )
-                      : Text('Apply',
-                          style: AppType.style(FontSize.s10,
-                              w: FontWeight.w700, color: Colors.white)),
-                ),
-              ),
-            ],
-          ),
-          Obx(() {
-            final v = widget.controller.validateResult.value;
-            if (widget.controller.validating.value) {
-              return Padding(
-                padding: EdgeInsets.only(top: 1.h),
-                child: Text('Checking…',
-                    style: AppType.style(FontSize.s8, color: Colors.grey.shade500)),
-              );
-            }
-            if (v == null) return const SizedBox.shrink();
-            final ok = v.valid;
-            final line = ok
-                ? (v.message?.isNotEmpty == true
-                    ? v.message!
-                    : 'Valid code${(v.referrerName ?? '').isNotEmpty ? ' from ${v.referrerName}' : ''}')
-                : (v.message?.isNotEmpty == true ? v.message! : 'This code is not valid');
-            return Padding(
-              padding: EdgeInsets.only(top: 1.h),
-              child: Row(
-                children: [
-                  Icon(ok ? Icons.check_circle_rounded : Icons.error_outline_rounded,
-                      size: 3.5.w,
-                      color: ok ? const Color(0xFF2EAF7D) : const Color(0xFFEF4444)),
-                  SizedBox(width: 1.5.w),
-                  Expanded(
-                    child: Text(line,
-                        style: AppType.style(FontSize.s8,
-                            color: ok
-                                ? const Color(0xFF1E7D57)
-                                : const Color(0xFFB91C1C))),
-                  ),
-                ],
-              ),
-            );
-          }),
-        ],
-      ),
     );
   }
 }

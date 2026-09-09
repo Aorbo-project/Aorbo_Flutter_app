@@ -65,6 +65,8 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
   late final OTPController _otpC;
   final FocusNode _phoneFocusNode = FocusNode();
   final FocusNode _pinFocusNode = FocusNode();
+  final FocusNode _referralFocusNode = FocusNode();
+  bool _showReferralField = false;
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
   Animation<double>? _shakeAnimation;
@@ -300,8 +302,11 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
 
-    // Repaint the phone field so its border reflects the focus state.
+    // Repaint the phone / referral fields so their borders reflect focus.
     _phoneFocusNode.addListener(() {
+      if (mounted) setState(() {});
+    });
+    _referralFocusNode.addListener(() {
       if (mounted) setState(() {});
     });
 
@@ -483,6 +488,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
     _breathingController.dispose();
     _animationController.dispose();
     _phoneFocusNode.dispose();
+    _referralFocusNode.dispose();
     _pinFocusNode.dispose();
     super.dispose();
   }
@@ -1101,6 +1107,85 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
               ),
             );
           }),
+
+          SizedBox(height: 2.h),
+
+          // ── Optional referral code — behind a link so it never competes
+          //    with the phone entry. Auto-applied right after a NEW customer
+          //    verifies OTP (AuthController._maybeApplyReferralCode).
+          if (!_showReferralField)
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                setState(() => _showReferralField = true);
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  FocusScope.of(context).requestFocus(_referralFocusNode);
+                });
+              },
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 1.h),
+                child: Text(
+                  'Have a referral code?',
+                  style: AppType.style(
+                    FontSize.s11,
+                    w: FontWeight.w700,
+                    color: Colors.black,
+                  ).copyWith(decoration: TextDecoration.underline),
+                ),
+              ),
+            )
+          else
+            Container(
+              height: 6.6.h,
+              padding: EdgeInsets.symmetric(horizontal: 5.w),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(3.6.h),
+                border: Border.all(
+                  color: _referralFocusNode.hasFocus
+                      ? Colors.black
+                      : Colors.black.withValues(alpha: 0.10),
+                  width: _referralFocusNode.hasFocus ? 1.7 : 1.2,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: MediaQuery(
+                data: MediaQuery.of(context)
+                    .copyWith(textScaler: const TextScaler.linear(1.0)),
+                child: TextField(
+                  focusNode: _referralFocusNode,
+                  controller: _authC.referralCodeTextField.value,
+                  textCapitalization: TextCapitalization.characters,
+                  onTapOutside: (event) => FocusScope.of(context).unfocus(),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9]')),
+                    LengthLimitingTextInputFormatter(16),
+                  ],
+                  style: TextStyle(
+                    fontSize: FontSize.s13,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black,
+                    letterSpacing: 1.0,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'Referral code (optional)',
+                    hintStyle: TextStyle(
+                      fontSize: FontSize.s12,
+                      fontWeight: FontWeight.w400,
+                      color: CommonColors.greyColor,
+                    ),
+                    border: InputBorder.none,
+                    isCollapsed: true,
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
