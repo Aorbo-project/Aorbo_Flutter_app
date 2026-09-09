@@ -43,6 +43,9 @@ class AuthController extends GetxController {
   // The applied:true/false outcome from the last verifyOtp, shown as a
   // persistent banner that survives into the dashboard.
   final Rxn<ReferralResult> lastReferralResult = Rxn<ReferralResult>();
+  // Exact backend message from the last failed verifyOtp — so the OTP screen
+  // can show "OTP has expired…" vs "Incorrect OTP…" instead of a generic line.
+  final RxString otpErrorMessage = ''.obs;
   RxBool isLoading = false.obs;
   RxBool isProfileLoading = false.obs;
   RxBool isPhoneValid = false.obs;
@@ -168,6 +171,7 @@ class AuthController extends GetxController {
       final res = await repository.postApiCall(url: NetworkUrl.verifyOtpPath, body: body);
       isLoading.value = false;
       if (res != null && res['success'] == true) {
+        otpErrorMessage.value = '';
         try {
           verifyOtpModal.value = VerifyOtpModal.fromJson(res);
           final token = verifyOtpModal.value.data?.token;
@@ -204,19 +208,25 @@ class AuthController extends GetxController {
           return false;
         }
       }
-      // Surface backend error message (includes "X attempts remaining" and 429 messages)
-      CustomSnackBar.show(Get.context!,
-          message: res?['message'] ?? 'OTP verification failed');
+      // Surface backend error message (includes "X attempts remaining",
+      // "OTP has expired. Please request a new one." and 429 messages)
+      final backendMsg = (res?['message'] ?? '').toString();
+      otpErrorMessage.value =
+          backendMsg.isNotEmpty ? backendMsg : 'OTP verification failed';
+      CustomSnackBar.show(Get.context!, message: otpErrorMessage.value);
       return false;
     } on RateLimitException catch (e) {
       isLoading.value = false;
+      otpErrorMessage.value = e.message;
       CustomSnackBar.show(Get.context!, message: e.message);
       return false;
     } catch (e) {
       isLoading.value = false;
       logger.e('verifyOtp error: $e');
       final msg = e.toString().replaceFirst('Exception: ', '');
-      CustomSnackBar.show(Get.context!, message: msg.isNotEmpty ? msg : 'Verification failed. Please try again.');
+      otpErrorMessage.value =
+          msg.isNotEmpty ? msg : 'Verification failed. Please try again.';
+      CustomSnackBar.show(Get.context!, message: otpErrorMessage.value);
       return false;
     }
   }

@@ -641,10 +641,12 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
             // (see the build() method below) once the confirmation beat
             // plays out, instead of firing immediately here.
           } else {
+            final backendMsg = _authC.otpErrorMessage.value.trim();
             setState(() {
               isError = true;
-              errorMessage =
-                  "That code didn't match. Check the SMS and try again.";
+              errorMessage = backendMsg.isNotEmpty
+                  ? backendMsg
+                  : "That code didn't match. Check the SMS and try again.";
             });
             if (mounted) {
               _authC.otpTextField.value.clear();
