@@ -27,11 +27,17 @@ class AuthController extends GetxController {
   Rx<VerifyOtpModal> verifyOtpModal = VerifyOtpModal().obs;
   Rx<TextEditingController> phoneNumberLoginTextField = TextEditingController().obs;
   Rx<TextEditingController> otpTextField = TextEditingController().obs;
-  // Optional referral code typed on the login screen. Redeemed automatically
-  // right after a NEW customer verifies OTP (see _maybeApplyReferralCode) —
-  // the backend only accepts a code before the first booking and within the
-  // signup window, so signup is the one moment it can be applied.
+  // Optional referral code typed on the login screen. The user taps "Apply"
+  // to check it against the server (validateReferralCode) — nothing is applied
+  // silently. Only a code that checked out (referralValidatedCode) is redeemed
+  // right after a NEW customer verifies OTP (_maybeApplyReferralCode); the
+  // backend only accepts a code before the first booking, so signup is the one
+  // moment it can actually be applied.
   Rx<TextEditingController> referralCodeTextField = TextEditingController().obs;
+  final RxString referralValidatedCode = ''.obs; // locked-in, checked OK
+  final RxString referralMessage = ''.obs; // "You'll get ₹50 off…" / error text
+  final RxBool referralIsValid = false.obs; // result of the last check
+  final RxBool referralChecking = false.obs; // Apply request in flight
   RxBool isLoading = false.obs;
   RxBool isProfileLoading = false.obs;
   RxBool isPhoneValid = false.obs;
@@ -297,8 +303,8 @@ class AuthController extends GetxController {
   // surfaces the outcome as a snackbar. If it can't run now the user can still
   // enter the code in Refer & Earn while eligible.
   Future<void> _maybeApplyReferralCode(bool isNewCustomer) async {
-    final code = referralCodeTextField.value.text.trim();
-    referralCodeTextField.value.clear();
+    final code = referralValidatedCode.value.trim();
+    clearReferralCode();
     if (code.isEmpty || !isNewCustomer) return;
     try {
       final res = await ReferralRepository().applyCode(code);
@@ -307,13 +313,54 @@ class AuthController extends GetxController {
           Get.context!,
           message: res.message ??
               (res.success == true
-                  ? 'Referral code applied!'
+                  ? 'Referral code applied — ₹50 off your first trek!'
                   : "Couldn't apply that referral code"),
         );
       }
     } catch (e) {
       logger.e('referral apply on signup failed: $e');
     }
+  }
+
+  /// Login-screen "Apply" action. Checks the typed code against the server and
+  /// records the outcome for the UI. Never blocks anything — a failed check
+  /// just means the field stays open for a retry.
+  Future<void> validateReferralCode() async {
+    final code = referralCodeTextField.value.text.trim().toUpperCase();
+    referralIsValid.value = false;
+    referralValidatedCode.value = '';
+    if (code.isEmpty) {
+      referralMessage.value = '';
+      return;
+    }
+    if (code.length < 4) {
+      referralMessage.value = 'Enter a valid code (4–16 letters or numbers)';
+      return;
+    }
+    referralChecking.value = true;
+    referralMessage.value = '';
+    try {
+      final res = await ReferralRepository().validateCode(code);
+      referralIsValid.value = res.valid;
+      referralMessage.value = res.message?.isNotEmpty == true
+          ? res.message!
+          : (res.valid ? 'Code applied' : "This code isn't valid");
+      if (res.valid) referralValidatedCode.value = code;
+    } catch (e) {
+      logger.e('referral validate failed: $e');
+      referralMessage.value = "Couldn't check the code — try again";
+    } finally {
+      referralChecking.value = false;
+    }
+  }
+
+  /// Clear everything about the referral field (used on remove + after redeem).
+  void clearReferralCode() {
+    referralCodeTextField.value.clear();
+    referralValidatedCode.value = '';
+    referralMessage.value = '';
+    referralIsValid.value = false;
+    referralChecking.value = false;
   }
 
   @override

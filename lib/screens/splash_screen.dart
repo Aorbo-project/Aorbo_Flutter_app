@@ -1108,53 +1108,139 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
             );
           }),
 
-          SizedBox(height: 2.h),
+          SizedBox(height: 3.h),
 
-          // ── Optional referral code — behind a link so it never competes
-          //    with the phone entry. Auto-applied right after a NEW customer
-          //    verifies OTP (AuthController._maybeApplyReferralCode).
-          if (!_showReferralField)
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () {
-                setState(() => _showReferralField = true);
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  FocusScope.of(context).requestFocus(_referralFocusNode);
-                });
-              },
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 1.h),
-                child: Text(
-                  'Have a referral code?',
-                  style: AppType.style(
-                    FontSize.s11,
-                    w: FontWeight.w700,
-                    color: Colors.black,
-                  ).copyWith(decoration: TextDecoration.underline),
-                ),
+          _buildReferralSection(),
+        ],
+      ),
+    );
+  }
+
+  // ── Optional referral code ──────────────────────────────────────────────
+  // Collapsed behind a link so it never competes with the phone entry.
+  // The user types a code and taps "Apply" — that calls the server
+  // (AuthController.validateReferralCode) and shows whether the code is real
+  // right here. Nothing is applied silently; only a code that checked out is
+  // redeemed after a NEW customer verifies OTP (_maybeApplyReferralCode).
+  static const _kReferralGreen = Color(0xFF1E8E3E);
+  static const _kReferralRed = Color(0xFFD93025);
+
+  Widget _buildReferralSection() {
+    if (!_showReferralField) {
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          setState(() => _showReferralField = true);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            FocusScope.of(context).requestFocus(_referralFocusNode);
+          });
+        },
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 0.6.h),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.card_giftcard_rounded,
+                  size: FontSize.s14, color: Colors.black),
+              SizedBox(width: 2.w),
+              Text(
+                'Have a referral code?',
+                textScaler: const TextScaler.linear(1.0),
+                style: AppType.style(
+                  FontSize.s11,
+                  w: FontWeight.w700,
+                  color: Colors.black,
+                ).copyWith(decoration: TextDecoration.underline),
               ),
-            )
-          else
-            Container(
-              height: 6.6.h,
-              padding: EdgeInsets.symmetric(horizontal: 5.w),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(3.6.h),
-                border: Border.all(
-                  color: _referralFocusNode.hasFocus
-                      ? Colors.black
-                      : Colors.black.withValues(alpha: 0.10),
-                  width: _referralFocusNode.hasFocus ? 1.7 : 1.2,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.06),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.only(left: 1.w, bottom: 1.h),
+          child: Text(
+            'REFERRAL CODE',
+            textScaler: const TextScaler.linear(1.0),
+            style: TextStyle(
+              fontSize: FontSize.s9,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.4,
+              color: Colors.black.withValues(alpha: 0.45),
+            ),
+          ),
+        ),
+        Obx(() {
+          final applied = _authC.referralIsValid.value &&
+              _authC.referralValidatedCode.value.isNotEmpty;
+          return applied
+              ? _referralAppliedChip()
+              : _referralInputRow();
+        }),
+        Obx(() {
+          final msg = _authC.referralMessage.value;
+          final applied = _authC.referralIsValid.value &&
+              _authC.referralValidatedCode.value.isNotEmpty;
+          if (msg.isEmpty || applied) return const SizedBox.shrink();
+          return Padding(
+            padding: EdgeInsets.only(top: 1.h, left: 1.w),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.error_outline_rounded,
+                    size: FontSize.s13, color: _kReferralRed),
+                SizedBox(width: 1.5.w),
+                Expanded(
+                  child: Text(
+                    msg,
+                    textScaler: const TextScaler.linear(1.0),
+                    style: TextStyle(
+                      fontSize: FontSize.s11,
+                      fontWeight: FontWeight.w600,
+                      color: _kReferralRed,
+                      height: 1.3,
+                    ),
                   ),
-                ],
+                ),
+              ],
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
+  Widget _referralInputRow() {
+    final focused = _referralFocusNode.hasFocus;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          child: Container(
+            height: 6.6.h,
+            padding: EdgeInsets.symmetric(horizontal: 5.w),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(3.6.h),
+              border: Border.all(
+                color: focused
+                    ? Colors.black
+                    : Colors.black.withValues(alpha: 0.10),
+                width: focused ? 1.7 : 1.2,
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.06),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Center(
               child: MediaQuery(
                 data: MediaQuery.of(context)
                     .copyWith(textScaler: const TextScaler.linear(1.0)),
@@ -1162,22 +1248,32 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                   focusNode: _referralFocusNode,
                   controller: _authC.referralCodeTextField.value,
                   textCapitalization: TextCapitalization.characters,
-                  onTapOutside: (event) => FocusScope.of(context).unfocus(),
+                  textInputAction: TextInputAction.done,
+                  onChanged: (_) {
+                    if (_authC.referralMessage.value.isNotEmpty) {
+                      _authC.referralMessage.value = '';
+                    }
+                  },
+                  onSubmitted: (_) => _authC.validateReferralCode(),
+                  onTapOutside: (event) =>
+                      FocusScope.of(context).unfocus(),
                   inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9]')),
+                    FilteringTextInputFormatter.allow(
+                        RegExp(r'[A-Za-z0-9]')),
                     LengthLimitingTextInputFormatter(16),
                   ],
                   style: TextStyle(
                     fontSize: FontSize.s13,
                     fontWeight: FontWeight.w700,
                     color: Colors.black,
-                    letterSpacing: 1.0,
+                    letterSpacing: 1.2,
                   ),
                   decoration: InputDecoration(
-                    hintText: 'Referral code (optional)',
+                    hintText: 'Enter code',
                     hintStyle: TextStyle(
                       fontSize: FontSize.s12,
                       fontWeight: FontWeight.w400,
+                      letterSpacing: 0,
                       color: CommonColors.greyColor,
                     ),
                     border: InputBorder.none,
@@ -1186,6 +1282,111 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                 ),
               ),
             ),
+          ),
+        ),
+        SizedBox(width: 3.w),
+        Obx(() {
+          final checking = _authC.referralChecking.value;
+          return GestureDetector(
+            onTap: checking
+                ? null
+                : () {
+                    FocusScope.of(context).unfocus();
+                    _authC.validateReferralCode();
+                  },
+            child: Container(
+              height: 6.6.h,
+              padding: EdgeInsets.symmetric(horizontal: 6.w),
+              decoration: BoxDecoration(
+                color: Colors.black,
+                borderRadius: BorderRadius.circular(3.6.h),
+              ),
+              alignment: Alignment.center,
+              child: checking
+                  ? SizedBox(
+                      width: 2.2.h,
+                      height: 2.2.h,
+                      child: const CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2.2,
+                      ),
+                    )
+                  : Text(
+                      'Apply',
+                      textScaler: const TextScaler.linear(1.0),
+                      style: AppType.style(
+                        FontSize.s13,
+                        w: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
+  Widget _referralAppliedChip() {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.6.h),
+      decoration: BoxDecoration(
+        color: _kReferralGreen.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(3.2.h),
+        border: Border.all(
+          color: _kReferralGreen.withValues(alpha: 0.40),
+          width: 1.2,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.verified_rounded,
+              size: FontSize.s16, color: _kReferralGreen),
+          SizedBox(width: 2.5.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _authC.referralValidatedCode.value,
+                  textScaler: const TextScaler.linear(1.0),
+                  style: TextStyle(
+                    fontSize: FontSize.s13,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.black,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                if (_authC.referralMessage.value.isNotEmpty) ...[
+                  SizedBox(height: 0.3.h),
+                  Text(
+                    _authC.referralMessage.value,
+                    textScaler: const TextScaler.linear(1.0),
+                    style: TextStyle(
+                      fontSize: FontSize.s10,
+                      fontWeight: FontWeight.w600,
+                      color: _kReferralGreen,
+                      height: 1.3,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              _authC.clearReferralCode();
+              FocusScope.of(context)
+                  .requestFocus(_referralFocusNode);
+            },
+            child: Padding(
+              padding: EdgeInsets.all(1.w),
+              child: Icon(Icons.close_rounded,
+                  size: FontSize.s16,
+                  color: Colors.black.withValues(alpha: 0.55)),
+            ),
+          ),
         ],
       ),
     );
