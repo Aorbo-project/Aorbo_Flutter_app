@@ -14,6 +14,7 @@ import '../models/auth/validate_version_model.dart';
 import '../models/auth/verify_otp_modal.dart';
 import '../repository/api_result.dart';
 import '../repository/network_url.dart';
+import '../repository/referral_repository.dart';
 import '../repository/repository.dart';
 // RateLimitException is defined in repository.dart — no separate import needed
 import '../utils/auth_utils.dart';
@@ -26,6 +27,11 @@ class AuthController extends GetxController {
   Rx<VerifyOtpModal> verifyOtpModal = VerifyOtpModal().obs;
   Rx<TextEditingController> phoneNumberLoginTextField = TextEditingController().obs;
   Rx<TextEditingController> otpTextField = TextEditingController().obs;
+  // Optional referral code typed on the login screen. Redeemed automatically
+  // right after a NEW customer verifies OTP (see _maybeApplyReferralCode) —
+  // the backend only accepts a code before the first booking and within the
+  // signup window, so signup is the one moment it can be applied.
+  Rx<TextEditingController> referralCodeTextField = TextEditingController().obs;
   RxBool isLoading = false.obs;
   RxBool isProfileLoading = false.obs;
   RxBool isPhoneValid = false.obs;
@@ -172,6 +178,7 @@ class AuthController extends GetxController {
             customer?.id?.toString() ?? '',
           );
           registerFcmToken();
+          _maybeApplyReferralCode(customer?.isNewCustomer ?? false);
           return true;
         } catch (parseError) {
           logger.e('Error parsing auth response: $parseError');
@@ -284,10 +291,36 @@ class AuthController extends GetxController {
     }
   }
 
+  // Fire-and-forget: redeem a referral code typed on the login screen. Runs
+  // only for a brand-new customer (the backend rejects it after the first
+  // booking / outside the signup window anyway). Never blocks or fails login;
+  // surfaces the outcome as a snackbar. If it can't run now the user can still
+  // enter the code in Refer & Earn while eligible.
+  Future<void> _maybeApplyReferralCode(bool isNewCustomer) async {
+    final code = referralCodeTextField.value.text.trim();
+    referralCodeTextField.value.clear();
+    if (code.isEmpty || !isNewCustomer) return;
+    try {
+      final res = await ReferralRepository().applyCode(code);
+      if (Get.context != null) {
+        CustomSnackBar.show(
+          Get.context!,
+          message: res.message ??
+              (res.success == true
+                  ? 'Referral code applied!'
+                  : "Couldn't apply that referral code"),
+        );
+      }
+    } catch (e) {
+      logger.e('referral apply on signup failed: $e');
+    }
+  }
+
   @override
   void onClose() {
     phoneNumberLoginTextField.value.dispose();
     otpTextField.value.dispose();
+    referralCodeTextField.value.dispose();
     super.onClose();
   }
 }
