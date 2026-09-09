@@ -31,6 +31,8 @@ import 'package:arobo_app/theme/app_typography.dart';
         : Get.put(AuthController(), permanent: true);
 
     final FocusNode _phoneFocusNode = FocusNode();
+    final FocusNode _referralFocusNode = FocusNode();
+    bool _showReferralField = false;
     late AnimationController _animationController;
     late Animation<double> _scaleAnimation;
 
@@ -73,6 +75,7 @@ import 'package:arobo_app/theme/app_typography.dart';
     void dispose() {
       _animationController.dispose();
       _phoneFocusNode.dispose();
+      _referralFocusNode.dispose();
       super.dispose();
     }
 
@@ -213,6 +216,77 @@ import 'package:arobo_app/theme/app_typography.dart';
                             ),
                           ],
                         ),
+                        SizedBox(height: 2.h),
+                        // Optional referral code — hidden behind a link so it
+                        // never competes with the primary phone-entry action.
+                        // Redeemed automatically after OTP for a new customer
+                        // (see AuthController._maybeApplyReferralCode).
+                        if (!_showReferralField)
+                          GestureDetector(
+                            onTap: () {
+                              setState(() => _showReferralField = true);
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                FocusScope.of(context)
+                                    .requestFocus(_referralFocusNode);
+                              });
+                            },
+                            behavior: HitTestBehavior.opaque,
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(vertical: 1.h),
+                              child: Text(
+                                'Have a referral code?',
+                                style: AppType.style(FontSize.s10,
+                                    w: FontWeight.w600,
+                                    color: CommonColors.appYellowColor),
+                              ),
+                            ),
+                          )
+                        else
+                          Container(
+                            decoration: BoxDecoration(
+                              color: CommonColors.whiteColor,
+                              borderRadius: BorderRadius.circular(4.h),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: CommonColors.blackColor
+                                      .withValues(alpha: 0.1),
+                                  blurRadius: 1.h,
+                                  offset: Offset(0, 0.5.h),
+                                ),
+                              ],
+                            ),
+                            padding: EdgeInsets.symmetric(horizontal: 4.w),
+                            child: MediaQuery(
+                              data: MediaQuery.of(context).copyWith(
+                                textScaler: const TextScaler.linear(1.0),
+                              ),
+                              child: TextField(
+                                focusNode: _referralFocusNode,
+                                controller:
+                                    _authC.referralCodeTextField.value,
+                                textCapitalization:
+                                    TextCapitalization.characters,
+                                onTapOutside: (event) {
+                                  FocusScope.of(context).unfocus();
+                                },
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.allow(
+                                      RegExp(r'[A-Za-z0-9]')),
+                                  LengthLimitingTextInputFormatter(16),
+                                ],
+                                style: TextStyle(
+                                    fontSize:
+                                        AppType.clampFontSize(FontSize.s10)),
+                                decoration: InputDecoration(
+                                  hintText: 'Referral code (optional)',
+                                  hintStyle: TextStyle(
+                                    color: CommonColors.greyColor,
+                                  ),
+                                  border: InputBorder.none,
+                                ),
+                              ),
+                            ),
+                          ),
                         SizedBox(height: 3.h),
                         Obx(() => GestureDetector(
                               onTapDown: _onTapDown,
