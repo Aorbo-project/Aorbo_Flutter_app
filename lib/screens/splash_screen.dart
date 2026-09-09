@@ -448,6 +448,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
     _breathingController.stop();
     setState(() => _leavingToDashboard = true);
     _exitFadeController.forward();
+    _maybeShowReferralOutcome();
     dissolveToDashboard(
       context,
       cover: const DecoratedBox(
@@ -460,6 +461,34 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
         ),
       ),
     );
+  }
+
+  // Persistent confirmation of the referral outcome the backend returned in
+  // verify-otp. Fired as the dashboard mounts so it lands there, not on the
+  // splash — the user never has to wonder whether the code "took". One-shot.
+  void _maybeShowReferralOutcome() {
+    final r = _authC.lastReferralResult.value;
+    if (r == null) return;
+    _authC.lastReferralResult.value = null;
+    final ok = r.applied;
+    Future.delayed(const Duration(milliseconds: 800), () {
+      Get.snackbar(
+        ok ? 'Referral applied 🎉' : 'Referral code',
+        r.message,
+        snackPosition: SnackPosition.TOP,
+        backgroundColor:
+            ok ? const Color(0xFF1E8E3E) : const Color(0xFF4A3B00),
+        colorText: Colors.white,
+        margin: EdgeInsets.all(3.w),
+        borderRadius: 14,
+        duration: const Duration(seconds: 5),
+        icon: Icon(
+          ok ? Icons.verified_rounded : Icons.info_outline_rounded,
+          color: Colors.white,
+        ),
+        shouldIconPulse: false,
+      );
+    });
   }
 
   void _startFormAnimation() {
@@ -595,7 +624,11 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
           });
 
           final phone = _authC.phoneNumberLoginTextField.value.text;
-          final bool verified = await _authC.verifyOtp(phone, pin);
+          final referral = _authC.lastNumberIsExisting.value
+              ? null
+              : _authC.referralCodeTextField.value.text;
+          final bool verified =
+              await _authC.verifyOtp(phone, pin, referralCode: referral);
 
           if (!mounted) return;
 
@@ -645,7 +678,13 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
           Row(
             children: [
               GestureDetector(
-                onTap: () => setState(() => showOtp = false),
+                onTap: () {
+                  _authC.clearReferralCode();
+                  setState(() {
+                    showOtp = false;
+                    _showReferralField = false;
+                  });
+                },
                 child: Container(
                   width: 10.w,
                   height: 10.w,
@@ -708,7 +747,11 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                         recognizer: TapGestureRecognizer()
                           ..onTap = () {
                             _authC.otpTextField.value.clear();
-                            setState(() => showOtp = false);
+                            _authC.clearReferralCode();
+                            setState(() {
+                              showOtp = false;
+                              _showReferralField = false;
+                            });
                           },
                       ),
                     ],
@@ -717,6 +760,14 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
               ],
             ),
           ),
+
+          // Referral code — new signups only, above the OTP boxes so the
+          // text keyboard never fights the OTP numeric keypad.
+          Padding(
+            padding: EdgeInsets.only(left: 1.w, right: 1.w),
+            child: _buildReferralSection(),
+          ),
+
           SizedBox(height: 4.h),
           Align(
             alignment: Alignment.center,
@@ -1107,64 +1158,71 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
               ),
             );
           }),
-
-          SizedBox(height: 3.h),
-
-          _buildReferralSection(),
         ],
       ),
     );
   }
 
-  // ── Optional referral code ──────────────────────────────────────────────
-  // Collapsed behind a link so it never competes with the phone entry.
-  // The user types a code and taps "Apply" — that calls the server
-  // (AuthController.validateReferralCode) and shows whether the code is real
-  // right here. Nothing is applied silently; only a code that checked out is
-  // redeemed after a NEW customer verifies OTP (_maybeApplyReferralCode).
+  // ── Optional referral code (OTP screen only) ────────────────────────────
+  // Shown only for a NEW number (AuthController.lastNumberIsExisting == false)
+  // — a referral code is signup-only. Collapsed behind a link. As the user
+  // types + taps Apply, validateReferralCode() checks it live so a typo is
+  // caught before the OTP completes; the code then rides with verifyOtp() and
+  // the backend applies it in the same request, with the real outcome shown
+  // as a banner on the dashboard.
   static const _kReferralGreen = Color(0xFF1E8E3E);
   static const _kReferralRed = Color(0xFFD93025);
 
   Widget _buildReferralSection() {
-    if (!_showReferralField) {
-      return GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () {
-          setState(() => _showReferralField = true);
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            FocusScope.of(context).requestFocus(_referralFocusNode);
-          });
-        },
-        child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 0.6.h),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.card_giftcard_rounded,
-                  size: FontSize.s14, color: Colors.black),
-              SizedBox(width: 2.w),
-              Text(
-                'Have a referral code?',
-                textScaler: const TextScaler.linear(1.0),
-                style: AppType.style(
-                  FontSize.s11,
-                  w: FontWeight.w700,
-                  color: Colors.black,
-                ).copyWith(decoration: TextDecoration.underline),
-              ),
-            ],
-          ),
-        ),
+    return Obx(() {
+      if (_authC.lastNumberIsExisting.value) return const SizedBox.shrink();
+      return Padding(
+        padding: EdgeInsets.only(top: 3.h),
+        child: !_showReferralField ? _referralLink() : _referralField(),
       );
-    }
+    });
+  }
 
+  Widget _referralLink() {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        setState(() => _showReferralField = true);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          FocusScope.of(context).requestFocus(_referralFocusNode);
+        });
+      },
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: 0.6.h),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.card_giftcard_rounded,
+                size: FontSize.s14, color: Colors.black),
+            SizedBox(width: 2.w),
+            Text(
+              'Have a referral code?',
+              textScaler: const TextScaler.linear(1.0),
+              style: AppType.style(
+                FontSize.s11,
+                w: FontWeight.w700,
+                color: Colors.black,
+              ).copyWith(decoration: TextDecoration.underline),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _referralField() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: EdgeInsets.only(left: 1.w, bottom: 1.h),
           child: Text(
-            'REFERRAL CODE',
+            'REFERRAL CODE (OPTIONAL)',
             textScaler: const TextScaler.linear(1.0),
             style: TextStyle(
               fontSize: FontSize.s9,
@@ -1174,25 +1232,21 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
             ),
           ),
         ),
-        Obx(() {
-          final applied = _authC.referralIsValid.value &&
-              _authC.referralValidatedCode.value.isNotEmpty;
-          return applied
-              ? _referralAppliedChip()
-              : _referralInputRow();
-        }),
+        _referralInputRow(),
         Obx(() {
           final msg = _authC.referralMessage.value;
-          final applied = _authC.referralIsValid.value &&
-              _authC.referralValidatedCode.value.isNotEmpty;
-          if (msg.isEmpty || applied) return const SizedBox.shrink();
+          if (msg.isEmpty) return const SizedBox.shrink();
+          final ok = _authC.referralIsValid.value;
           return Padding(
             padding: EdgeInsets.only(top: 1.h, left: 1.w),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.error_outline_rounded,
-                    size: FontSize.s13, color: _kReferralRed),
+                Icon(
+                  ok ? Icons.check_circle_rounded : Icons.error_outline_rounded,
+                  size: FontSize.s13,
+                  color: ok ? _kReferralGreen : _kReferralRed,
+                ),
                 SizedBox(width: 1.5.w),
                 Expanded(
                   child: Text(
@@ -1201,7 +1255,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                     style: TextStyle(
                       fontSize: FontSize.s11,
                       fontWeight: FontWeight.w600,
-                      color: _kReferralRed,
+                      color: ok ? _kReferralGreen : _kReferralRed,
                       height: 1.3,
                     ),
                   ),
@@ -1252,6 +1306,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                   onChanged: (_) {
                     if (_authC.referralMessage.value.isNotEmpty) {
                       _authC.referralMessage.value = '';
+                      _authC.referralIsValid.value = false;
                     }
                   },
                   onSubmitted: (_) => _authC.validateReferralCode(),
@@ -1324,71 +1379,6 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
           );
         }),
       ],
-    );
-  }
-
-  Widget _referralAppliedChip() {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.6.h),
-      decoration: BoxDecoration(
-        color: _kReferralGreen.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(3.2.h),
-        border: Border.all(
-          color: _kReferralGreen.withValues(alpha: 0.40),
-          width: 1.2,
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.verified_rounded,
-              size: FontSize.s16, color: _kReferralGreen),
-          SizedBox(width: 2.5.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _authC.referralValidatedCode.value,
-                  textScaler: const TextScaler.linear(1.0),
-                  style: TextStyle(
-                    fontSize: FontSize.s13,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.black,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-                if (_authC.referralMessage.value.isNotEmpty) ...[
-                  SizedBox(height: 0.3.h),
-                  Text(
-                    _authC.referralMessage.value,
-                    textScaler: const TextScaler.linear(1.0),
-                    style: TextStyle(
-                      fontSize: FontSize.s10,
-                      fontWeight: FontWeight.w600,
-                      color: _kReferralGreen,
-                      height: 1.3,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () {
-              _authC.clearReferralCode();
-              FocusScope.of(context)
-                  .requestFocus(_referralFocusNode);
-            },
-            child: Padding(
-              padding: EdgeInsets.all(1.w),
-              child: Icon(Icons.close_rounded,
-                  size: FontSize.s16,
-                  color: Colors.black.withValues(alpha: 0.55)),
-            ),
-          ),
-        ],
-      ),
     );
   }
 

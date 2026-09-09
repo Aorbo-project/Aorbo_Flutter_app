@@ -31,12 +31,15 @@ class Data {
   // null when the backend predates refresh-token support
   String? refreshToken;
   Customer? customer;
+  // null when no referral code was sent / the backend predates this
+  ReferralResult? referral;
   String? expiresIn;
 
   Data({
     this.token,
     this.refreshToken,
     this.customer,
+    this.referral,
     this.expiresIn,
   });
 
@@ -45,6 +48,9 @@ class Data {
     refreshToken = json['refreshToken'] ?? json['refresh_token'];
     customer =
         json['customer'] != null ? Customer.fromJson(json['customer']) : null;
+    referral = json['referral'] != null
+        ? ReferralResult.fromJson(Map<String, dynamic>.from(json['referral']))
+        : null;
     expiresIn = json['expiresIn'];
   }
 
@@ -55,9 +61,49 @@ class Data {
     if (customer != null) {
       data['customer'] = customer!.toJson();
     }
+    if (referral != null) {
+      data['referral'] = referral!.toJson();
+    }
     data['expiresIn'] = expiresIn;
     return data;
   }
+}
+
+/// Outcome of redeeming a friend's referral code during verify-otp.
+class ReferralResult {
+  final bool applied;
+  final String message;
+  final String? couponCode;
+  final num? value;
+  final bool isPercent;
+  final String? expiresAt;
+
+  ReferralResult({
+    required this.applied,
+    required this.message,
+    this.couponCode,
+    this.value,
+    this.isPercent = false,
+    this.expiresAt,
+  });
+
+  factory ReferralResult.fromJson(Map<String, dynamic> json) => ReferralResult(
+        applied: json['applied'] == true,
+        message: (json['message'] ?? '').toString(),
+        couponCode: json['couponCode']?.toString(),
+        value: json['value'] is num ? json['value'] as num : null,
+        isPercent: json['isPercent'] == true,
+        expiresAt: json['expiresAt']?.toString(),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'applied': applied,
+        'message': message,
+        'couponCode': couponCode,
+        'value': value,
+        'isPercent': isPercent,
+        'expiresAt': expiresAt,
+      };
 }
 
 class Customer {
