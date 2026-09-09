@@ -169,4 +169,15 @@ class NetworkUrl {
       'customer/chats/$chatId/messages';
   static String markMessagesAsRead(int chatId) => 'customer/chats/$chatId/read';
   //#endregion
+
+  //#region Referral
+  // GET  → my code, share text, live reward config, stats, milestone, history.
+  //        The backend generates the customer's code lazily on this call.
+  static const String referralInfo = 'customer/referral';
+  // POST { code } → applies a referrer's code to my account (pre-first-booking only).
+  static const String referralApply = 'customer/referral/apply';
+  // GET ?code= → lightweight pre-check for the signup / apply field.
+  static String referralValidate(String code) =>
+      'customer/referral/validate?code=${Uri.encodeComponent(code)}';
+  //#endregion
 }

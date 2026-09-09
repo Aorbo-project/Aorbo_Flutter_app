@@ -1,10 +1,12 @@
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:get/get.dart';
 import 'package:sizer/sizer.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../controller/referral_controller.dart';
+import '../models/referral/referral_models.dart';
 import '../utils/common_colors.dart';
 import '../utils/common_images.dart';
 import '../utils/screen_constants.dart';
@@ -12,29 +14,7 @@ import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// DATA MODEL
-// ─────────────────────────────────────────────────────────────────────────────
-
-enum ReferralStatus { pending, completed, expired }
-
-class ReferralEntry {
-  final String name;
-  final String initials;
-  final String date;
-  final double reward;
-  final ReferralStatus status;
-
-  const ReferralEntry({
-    required this.name,
-    required this.initials,
-    required this.date,
-    required this.reward,
-    required this.status,
-  });
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// CUSTOM PAINTERS
+// CUSTOM PAINTERS  (unchanged — pure visuals)
 // ─────────────────────────────────────────────────────────────────────────────
 
 class TicketPainter extends CustomPainter {
@@ -43,7 +23,6 @@ class TicketPainter extends CustomPainter {
     final shadowPaint = Paint()
       ..color = Colors.black.withValues(alpha: 0.10)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
-
     final mainPaint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.fill;
@@ -82,12 +61,10 @@ class TicketPainter extends CustomPainter {
     canvas.drawPath(buildPath().shift(const Offset(0, 3)), shadowPaint);
     canvas.drawPath(buildPath(), mainPaint);
 
-    // Dashed centre divider
     final dashedPaint = Paint()
       ..color = Colors.grey.shade300
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2;
-
     const double dashW = 5.0;
     const double dashGap = 4.0;
     double startX = 6.w.toDouble();
@@ -105,7 +82,6 @@ class TicketPainter extends CustomPainter {
 
 class MilestonePainter extends CustomPainter {
   final double progress;
-
   const MilestonePainter({required this.progress});
 
   @override
@@ -139,7 +115,10 @@ class MilestonePainter extends CustomPainter {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MAIN SCREEN  ← class name kept as `refer` to match existing routes
+// MAIN SCREEN  — class name kept `refer` to match route '/refers'
+// Fully dynamic: every number, label, reward line and the share message
+// come from ReferralController.info (the backend's live config). Nothing
+// about the economics is hardcoded here.
 // ─────────────────────────────────────────────────────────────────────────────
 
 class refer extends StatefulWidget {
@@ -150,84 +129,35 @@ class refer extends StatefulWidget {
 }
 
 class _ReferState extends State<refer> with TickerProviderStateMixin {
+  final ReferralController c = Get.put(ReferralController());
+
   int _selectedTabIndex = 0;
   bool _copied = false;
 
-  // ── Config ────────────────────────────────────────────────────────────────
-  static const String _referralCode = "AO12345";
-  static const String _downloadLink =
-      "https://adventureoutdoors.app/download";
-  static const int _totalMilestone = 20;
+  // Created eagerly in initState (NOT lazy `late` initialisers) — the screen
+  // can unmount from the loading/error branch before build ever touches an
+  // animation, and a lazy field would then be force-created inside dispose().
+  late final AnimationController _heroCtrl;
+  late final AnimationController _pulseCtrl;
+  late final Animation<double> _heroFade;
+  late final Animation<Offset> _heroSlide;
+  late final Animation<double> _pulse;
 
-  String get _shareMessage => '''🏔️ Join thousands of trekkers on AdventureOutdoors!
-
-🎁 Get ₹50 off on your FIRST trek booking — no conditions!
-Use my referral code *$_referralCode* & get cashback when you complete your first trek TODAY.
-
-Experience breathtaking trails, expert guides & unforgettable Himalayan adventures anytime!
-
-📲 Download the app here: $_downloadLink''';
-
-  // ── Animations ────────────────────────────────────────────────────────────
-  late final AnimationController _heroCtrl = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 700),
-  )..forward();
-
-  late final AnimationController _pulseCtrl = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 1400),
-  )..repeat(reverse: true);
-
-  late final Animation<double> _heroFade =
-      CurvedAnimation(parent: _heroCtrl, curve: Curves.easeOut);
-  late final Animation<Offset> _heroSlide = Tween<Offset>(
-    begin: const Offset(0, 0.12),
-    end: Offset.zero,
-  ).animate(CurvedAnimation(parent: _heroCtrl, curve: Curves.easeOut));
-  late final Animation<double> _pulse =
-      Tween<double>(begin: 0.97, end: 1.03).animate(
-    CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut),
-  );
-
-  // ── Mock referral data ────────────────────────────────────────────────────
-  final List<ReferralEntry> _referrals = const [
-    ReferralEntry(
-      name: "Priya Sharma",
-      initials: "PS",
-      date: "14 Apr 2025",
-      reward: 50,
-      status: ReferralStatus.completed,
-    ),
-    ReferralEntry(
-      name: "Rahul Verma",
-      initials: "RV",
-      date: "10 Apr 2025",
-      reward: 50,
-      status: ReferralStatus.completed,
-    ),
-    ReferralEntry(
-      name: "Ananya Singh",
-      initials: "AS",
-      date: "7 Apr 2025",
-      reward: 50,
-      status: ReferralStatus.pending,
-    ),
-    ReferralEntry(
-      name: "Kiran Patel",
-      initials: "KP",
-      date: "2 Apr 2025",
-      reward: 50,
-      status: ReferralStatus.expired,
-    ),
-  ];
-
-  int get _completedCount =>
-      _referrals.where((r) => r.status == ReferralStatus.completed).length;
-
-  double get _totalRewards => _referrals
-      .where((r) => r.status == ReferralStatus.completed)
-      .fold(0.0, (s, r) => s + r.reward);
+  @override
+  void initState() {
+    super.initState();
+    _heroCtrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 700))
+      ..forward();
+    _pulseCtrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 1400))
+      ..repeat(reverse: true);
+    _heroFade = CurvedAnimation(parent: _heroCtrl, curve: Curves.easeOut);
+    _heroSlide = Tween<Offset>(begin: const Offset(0, 0.12), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _heroCtrl, curve: Curves.easeOut));
+    _pulse = Tween<double>(begin: 0.97, end: 1.03).animate(
+        CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut));
+  }
 
   @override
   void dispose() {
@@ -236,114 +166,187 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
     super.dispose();
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // SHARE  — uses url_launcher deep links; falls back to clipboard
-  // ─────────────────────────────────────────────────────────────────────────
+  // ── Share ─────────────────────────────────────────────────────────────────
 
   void _openShareSheet() {
+    final info = c.info;
+    if (info == null || (info.shareMessage ?? '').isEmpty) return;
     FirebaseCrashlytics.instance.log('Popup: Refer & earn share sheet');
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (_) => _ShareBottomSheet(
-        message: _shareMessage,
-        referralCode: _referralCode,
+        message: info.shareMessage!,
+        code: info.code ?? '',
       ),
     );
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // BUILD
-  // ─────────────────────────────────────────────────────────────────────────
+  // ── Build ─────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F9FC),
       appBar: _buildAppBar(),
-      body: FadeTransition(
-        opacity: _heroFade,
-        child: SlideTransition(
-          position: _heroSlide,
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 4.5.w),
-              child: Column(
-                children: [
-                  SizedBox(height: 2.h),
-                  _buildHeroBanner(),
-                  SizedBox(height: 3.h),
-                  _buildMilestoneTracker(),
-                  SizedBox(height: 3.h),
-                  _buildReferralCodeTicket(),
-                  SizedBox(height: 3.h),
-                  _buildTabBar(),
-                  SizedBox(height: 2.h),
-                  _selectedTabIndex == 0
-                      ? _buildHowItWorksTab()
-                      : _buildHistoryTab(),
-                  SizedBox(height: 4.h),
-                ],
+      body: Obx(() {
+        if (c.isLoading) return _loadingState();
+        if (c.hasError) return _errorState(c.errorMessage);
+        if (!c.programEnabled) return _programPausedState();
+
+        final info = c.info;
+        if (info == null) return _errorState(null);
+
+        return RefreshIndicator(
+          onRefresh: c.reload,
+          child: FadeTransition(
+            opacity: _heroFade,
+            child: SlideTransition(
+              position: _heroSlide,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(
+                    parent: BouncingScrollPhysics()),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 4.5.w),
+                  child: Column(
+                    children: [
+                      SizedBox(height: 2.h),
+                      _buildHeroBanner(info),
+                      SizedBox(height: 3.h),
+                      if (c.canApplyCode) ...[
+                        _buildApplyCodeCard(info),
+                        SizedBox(height: 3.h),
+                      ],
+                      if (info.milestone?.enabled == true) ...[
+                        _buildMilestoneTracker(info.milestone!),
+                        SizedBox(height: 3.h),
+                      ],
+                      _buildReferralCodeTicket(info.code),
+                      SizedBox(height: 3.h),
+                      _buildTabBar(),
+                      SizedBox(height: 2.h),
+                      _selectedTabIndex == 0
+                          ? _buildHowItWorksTab(info)
+                          : _buildHistoryTab(info),
+                      SizedBox(height: 4.h),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      }),
     );
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // APP BAR
-  // ─────────────────────────────────────────────────────────────────────────
+  // ── Non-data states ───────────────────────────────────────────────────────
+
+  Widget _loadingState() => const Center(child: CircularProgressIndicator());
+
+  Widget _errorState(String? message) => Center(
+        child: Padding(
+          padding: EdgeInsets.all(8.w),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.wifi_off_rounded,
+                  size: 16.w, color: Colors.grey.shade300),
+              SizedBox(height: 2.h),
+              Text(
+                message?.isNotEmpty == true
+                    ? message!
+                    : "Couldn't load Refer & Earn",
+                textAlign: TextAlign.center,
+                style: AppType.style(FontSize.s12, color: Colors.grey.shade600),
+              ),
+              SizedBox(height: 2.5.h),
+              OutlinedButton.icon(
+                onPressed: c.load,
+                icon: const Icon(Icons.refresh_rounded, size: 18),
+                label: Text('Retry', style: AppType.style(FontSize.s11)),
+              ),
+            ],
+          ),
+        ),
+      );
+
+  Widget _programPausedState() => Center(
+        child: Padding(
+          padding: EdgeInsets.all(8.w),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.pause_circle_outline_rounded,
+                  size: 16.w, color: Colors.grey.shade300),
+              SizedBox(height: 2.h),
+              Text('Referrals are paused right now',
+                  style: AppType.style(FontSize.s14,
+                      w: FontWeight.w600, color: Colors.grey.shade600)),
+              SizedBox(height: 0.5.h),
+              Text('Check back soon — we’ll bring this back.',
+                  textAlign: TextAlign.center,
+                  style: AppType.style(FontSize.s10, color: Colors.grey.shade400)),
+            ],
+          ),
+        ),
+      );
+
+  // ── App bar ───────────────────────────────────────────────────────────────
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
       backgroundColor: const Color(0xFFF7F9FC),
       scrolledUnderElevation: 0,
       elevation: 0,
-      automaticallyImplyLeading: true,
       centerTitle: false,
       iconTheme: IconThemeData(color: CommonColors.blackColor),
-      title: Text(
-        'Refer & Earn',
-        style: AppType.style(FontSize.s16, w: FontWeight.w600, color: CommonColors.blackColor),
-      ),
+      title: Text('Refer & Earn',
+          style: AppType.style(FontSize.s16,
+              w: FontWeight.w600, color: CommonColors.blackColor)),
       actions: [
-        Padding(
-          padding: EdgeInsets.only(right: 4.w),
-          child: GestureDetector(
-            onTap: _openShareSheet,
-            child: Container(
-              padding: EdgeInsets.all(2.2.w),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Icon(
-                Icons.ios_share_rounded,
-                color: const Color(0xFF4BB7DE),
-                size: 5.5.w,
+        Obx(() {
+          final ready = c.info?.shareMessage?.isNotEmpty == true;
+          return Padding(
+            padding: EdgeInsets.only(right: 4.w),
+            child: GestureDetector(
+              onTap: ready ? _openShareSheet : null,
+              child: Container(
+                padding: EdgeInsets.all(2.2.w),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2)),
+                  ],
+                ),
+                child: Icon(Icons.ios_share_rounded,
+                    color: ready
+                        ? const Color(0xFF4BB7DE)
+                        : Colors.grey.shade300,
+                    size: 5.5.w),
               ),
             ),
-          ),
-        ),
+          );
+        }),
       ],
     );
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // HERO BANNER
-  // ─────────────────────────────────────────────────────────────────────────
+  // ── Hero banner ───────────────────────────────────────────────────────────
 
-  Widget _buildHeroBanner() {
+  Widget _buildHeroBanner(ReferralInfo info) {
+    final reward = info.reward;
+    final referrerLine = (reward?.referrerText ?? '').isNotEmpty
+        ? reward!.referrerText!
+        : 'Earn a reward for every friend who treks';
+    final refereeLine = (reward?.refereeText ?? '').isNotEmpty
+        ? reward!.refereeText!
+        : 'Your friend gets a discount on their first trek';
+
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(5.w),
@@ -357,15 +360,13 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
         borderRadius: BorderRadius.circular(5.w),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF38A8D8).withValues(alpha: 0.40),
-            offset: const Offset(0, 8),
-            blurRadius: 20,
-          ),
+              color: const Color(0xFF38A8D8).withValues(alpha: 0.40),
+              offset: const Offset(0, 8),
+              blurRadius: 20),
         ],
       ),
       child: Stack(
         children: [
-          // Decorative circles
           Positioned(
             top: -4.w,
             right: -4.w,
@@ -373,28 +374,13 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
               width: 20.w,
               height: 20.w,
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.08),
-              ),
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.08)),
             ),
           ),
-          Positioned(
-            bottom: -5.w,
-            right: 18.w,
-            child: Container(
-              width: 13.w,
-              height: 13.w,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.06),
-              ),
-            ),
-          ),
-
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Badge
               Container(
                 padding:
                     EdgeInsets.symmetric(horizontal: 3.w, vertical: 0.5.h),
@@ -402,13 +388,11 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
                   color: Colors.white.withValues(alpha: 0.22),
                   borderRadius: BorderRadius.circular(10.w),
                 ),
-                child: Text(
-                  '🎁  Limited Offer',
-                  style: AppType.style(FontSize.s9, w: FontWeight.w500, color: Colors.white),
-                ),
+                child: Text('🎁  Invite & Earn',
+                    style: AppType.style(FontSize.s9,
+                        w: FontWeight.w500, color: Colors.white)),
               ),
               SizedBox(height: 1.5.h),
-
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -416,30 +400,25 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Refer & Earn',
-                          style: AppType.style(FontSize.s13, w: FontWeight.w500, color: Colors.white.withValues(alpha: 0.85)),
-                        ),
-                        Text(
-                          'Up to ₹1,000!',
-                          style: AppType.style(FontSize.s22, w: FontWeight.w700, color: Colors.white, height: 1.1),
-                        ),
-                        SizedBox(height: 2.h),
-                        _benefitRow('💰', 'You earn ₹50 per referral'),
+                        Text('Refer a friend to AORBO Treks',
+                            style: AppType.style(FontSize.s13,
+                                w: FontWeight.w500,
+                                color: Colors.white.withValues(alpha: 0.9))),
+                        SizedBox(height: 1.5.h),
+                        _benefitRow('💰', referrerLine),
                         SizedBox(height: 1.h),
-                        _benefitRow('🤝', 'Friend gets ₹50 off first trek'),
-                        SizedBox(height: 1.h),
-                        _benefitRow('🏆', '₹1,000 bonus after 20 referrals'),
+                        _benefitRow('🤝', refereeLine),
+                        if (info.milestone?.enabled == true &&
+                            (info.milestone?.bonusText ?? '').isNotEmpty) ...[
+                          SizedBox(height: 1.h),
+                          _benefitRow('🏆', info.milestone!.bonusText!),
+                        ],
                       ],
                     ),
                   ),
                   SizedBox(width: 2.w),
-                  Image.asset(
-                    CommonImages.referandearn,
-                    width: 26.w,
-                    height: 14.h,
-                    fit: BoxFit.contain,
-                  ),
+                  Image.asset(CommonImages.referandearn,
+                      width: 26.w, height: 14.h, fit: BoxFit.contain),
                 ],
               ),
             ],
@@ -453,25 +432,30 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(emoji, style: TextStyle(fontSize: AppType.clampFontSize(FontSize.s10))),
+        Text(emoji,
+            style: TextStyle(fontSize: AppType.clampFontSize(FontSize.s10))),
         SizedBox(width: 2.w),
         Expanded(
-          child: Text(
-            text,
-            style: AppType.style(FontSize.s9, color: Colors.white.withValues(alpha: 0.9), height: 1.3),
-          ),
+          child: Text(text,
+              style: AppType.style(FontSize.s9,
+                  color: Colors.white.withValues(alpha: 0.9), height: 1.3)),
         ),
       ],
     );
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // MILESTONE TRACKER
-  // ─────────────────────────────────────────────────────────────────────────
+  // ── Apply a friend's code ─────────────────────────────────────────────────
 
-  Widget _buildMilestoneTracker() {
-    final double progress = _completedCount / _totalMilestone;
-    final int remaining = _totalMilestone - _completedCount;
+  Widget _buildApplyCodeCard(ReferralInfo info) {
+    return _ApplyCodeCard(controller: c);
+  }
+
+  // ── Milestone tracker ─────────────────────────────────────────────────────
+
+  Widget _buildMilestoneTracker(ReferralMilestone m) {
+    final int target = m.target <= 0 ? 1 : m.target;
+    final double progress = (m.current / target).clamp(0.0, 1.0);
+    final int remaining = (target - m.current).clamp(0, target);
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 3.h),
@@ -480,10 +464,9 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
         borderRadius: BorderRadius.circular(4.w),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 3),
-          ),
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 12,
+              offset: const Offset(0, 3)),
         ],
       ),
       child: Column(
@@ -497,18 +480,20 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '₹1,000 Milestone',
+                      (m.bonusText ?? 'Bonus milestone'),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: AppType.style(FontSize.s12, w: FontWeight.w600, color: CommonColors.blackColor),
+                      style: AppType.style(FontSize.s12,
+                          w: FontWeight.w600, color: CommonColors.blackColor),
                     ),
                     Text(
                       remaining > 0
-                          ? '$remaining more referrals to go!'
+                          ? '$remaining more to go!'
                           : '🎉 Milestone reached!',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: AppType.style(FontSize.s9, color: Colors.grey.shade600),
+                      style: AppType.style(FontSize.s9,
+                          color: Colors.grey.shade600),
                     ),
                   ],
                 ),
@@ -519,14 +504,12 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
                     EdgeInsets.symmetric(horizontal: 3.w, vertical: 0.7.h),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF7ECBA1), Color(0xFF4BB7DE)],
-                  ),
+                      colors: [Color(0xFF7ECBA1), Color(0xFF4BB7DE)]),
                   borderRadius: BorderRadius.circular(10.w),
                 ),
-                child: Text(
-                  '$_completedCount / $_totalMilestone',
-                  style: AppType.style(FontSize.s10, w: FontWeight.w600, color: Colors.white),
-                ),
+                child: Text('${m.current} / $target',
+                    style: AppType.style(FontSize.s10,
+                        w: FontWeight.w600, color: Colors.white)),
               ),
             ],
           ),
@@ -535,26 +518,15 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
             size: Size(double.infinity, 1.2.h),
             painter: MilestonePainter(progress: progress),
           ),
-          SizedBox(height: 1.h),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('0',
-                  style: AppType.style(FontSize.s8, color: Colors.grey.shade500)),
-              Text('20',
-                  style: AppType.style(FontSize.s8, color: Colors.grey.shade500)),
-            ],
-          ),
         ],
       ),
     );
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // REFERRAL CODE TICKET
-  // ─────────────────────────────────────────────────────────────────────────
+  // ── Referral code ticket ──────────────────────────────────────────────────
 
-  Widget _buildReferralCodeTicket() {
+  Widget _buildReferralCodeTicket(String? code) {
+    final hasCode = (code ?? '').isNotEmpty;
     return SizedBox(
       height: 14.h,
       child: CustomPaint(
@@ -569,106 +541,90 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
                   Icon(Icons.confirmation_number_outlined,
                       color: const Color(0xFF4BB7DE), size: 5.w),
                   SizedBox(width: 2.w),
-                  Text(
-                    'Your Referral Code',
-                    style: AppType.style(FontSize.s10, color: Colors.grey.shade600),
-                  ),
+                  Text('Your Referral Code',
+                      style: AppType.style(FontSize.s10,
+                          color: Colors.grey.shade600)),
                 ],
               ),
               SizedBox(height: 1.2.h),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Code pill — Flexible + scaleDown so a long code (or a
-                  // large sizer font on a narrow phone) shrinks to fit
-                  // instead of pushing the copy button off the ticket.
                   Flexible(
                     child: Container(
-                    padding: EdgeInsets.symmetric(
-                        horizontal: 5.w, vertical: 0.8.h),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0004FF).withValues(alpha: 0.07),
-                      borderRadius: BorderRadius.circular(2.5.w),
-                      border: Border.all(
-                        color: const Color(0xFF0004FF).withValues(alpha: 0.15),
+                      padding: EdgeInsets.symmetric(
+                          horizontal: 5.w, vertical: 0.8.h),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0004FF).withValues(alpha: 0.07),
+                        borderRadius: BorderRadius.circular(2.5.w),
+                        border: Border.all(
+                            color:
+                                const Color(0xFF0004FF).withValues(alpha: 0.15)),
                       ),
-                    ),
-                    child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      _referralCode,
-                      style: AppType.style(FontSize.s14, w: FontWeight.w700, color: const Color(0xFF2D2D8E), letterSpacing: 3),
-                    ),
-                    ),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          hasCode ? code! : 'Setting up…',
+                          style: AppType.style(FontSize.s14,
+                              w: FontWeight.w700,
+                              color: const Color(0xFF2D2D8E),
+                              letterSpacing: hasCode ? 3 : 0),
+                        ),
+                      ),
                     ),
                   ),
                   SizedBox(width: 2.w),
-
-                  // Copy button
                   GestureDetector(
-                    onTap: () async {
-                      await Clipboard.setData(
-                          const ClipboardData(text: _referralCode));
-                      HapticFeedback.lightImpact();
-                      setState(() => _copied = true);
-                      await Future.delayed(
-                          const Duration(milliseconds: 1500));
-                      if (mounted) setState(() => _copied = false);
-                    },
+                    onTap: hasCode
+                        ? () async {
+                            await Clipboard.setData(
+                                ClipboardData(text: code!));
+                            HapticFeedback.lightImpact();
+                            setState(() => _copied = true);
+                            await Future.delayed(
+                                const Duration(milliseconds: 1500));
+                            if (mounted) setState(() => _copied = false);
+                          }
+                        : null,
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 250),
                       padding: EdgeInsets.symmetric(
                           horizontal: 4.w, vertical: 1.h),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: _copied
-                              ? [
-                                  const Color(0xFF52C4A0),
-                                  const Color(0xFF3DAD8A)
-                                ]
-                              : [
-                                  const Color(0xFF9CB0FF),
-                                  const Color(0xFF6B8EFF)
-                                ],
+                          colors: !hasCode
+                              ? [Colors.grey.shade300, Colors.grey.shade300]
+                              : _copied
+                                  ? [
+                                      const Color(0xFF52C4A0),
+                                      const Color(0xFF3DAD8A)
+                                    ]
+                                  : [
+                                      const Color(0xFF9CB0FF),
+                                      const Color(0xFF6B8EFF)
+                                    ],
                         ),
                         borderRadius: BorderRadius.circular(8.w),
-                        boxShadow: [
-                          BoxShadow(
-                            color: (_copied
-                                    ? const Color(0xFF52C4A0)
-                                    : const Color(0xFF6B8EFF))
-                                .withValues(alpha: 0.4),
-                            blurRadius: 8,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
                       ),
                       child: AnimatedSwitcher(
                         duration: const Duration(milliseconds: 200),
-                        child: _copied
-                            ? Row(
-                                key: const ValueKey('check'),
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.check_rounded,
-                                      color: Colors.white, size: 4.w),
-                                  SizedBox(width: 1.5.w),
-                                  Text('Copied!',
-                                      style: AppType.style(FontSize.s10, w: FontWeight.w600, color: Colors.white)),
-                                ],
-                              )
-                            : Row(
-                                key: const ValueKey('copy'),
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.copy_rounded,
-                                      color: Colors.white, size: 4.w),
-                                  SizedBox(width: 1.5.w),
-                                  Text('Copy',
-                                      style: AppType.style(FontSize.s10, w: FontWeight.w600, color: Colors.white)),
-                                ],
-                              ),
+                        child: Row(
+                          key: ValueKey(_copied),
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                                _copied
+                                    ? Icons.check_rounded
+                                    : Icons.copy_rounded,
+                                color: Colors.white,
+                                size: 4.w),
+                            SizedBox(width: 1.5.w),
+                            Text(_copied ? 'Copied!' : 'Copy',
+                                style: AppType.style(FontSize.s10,
+                                    w: FontWeight.w600, color: Colors.white)),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -681,9 +637,7 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
     );
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // TAB BAR
-  // ─────────────────────────────────────────────────────────────────────────
+  // ── Tab bar ───────────────────────────────────────────────────────────────
 
   Widget _buildTabBar() {
     return Container(
@@ -696,7 +650,7 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
       child: Row(
         children: [
           _tabPill('How it Works', 0),
-          _tabPill('Referral History', 1),
+          _tabPill('History', 1),
         ],
       ),
     );
@@ -716,29 +670,28 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
             boxShadow: sel
                 ? [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    )
+                        color: Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2))
                   ]
                 : [],
           ),
           child: Center(
-            child: Text(
-              title,
-              style: AppType.style(FontSize.s10, w: sel ? FontWeight.w600 : FontWeight.w500, color: sel ? CommonColors.blackColor : Colors.grey.shade500),
-            ),
+            child: Text(title,
+                style: AppType.style(FontSize.s10,
+                    w: sel ? FontWeight.w600 : FontWeight.w500,
+                    color:
+                        sel ? CommonColors.blackColor : Colors.grey.shade500)),
           ),
         ),
       ),
     );
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // HOW IT WORKS TAB
-  // ─────────────────────────────────────────────────────────────────────────
+  // ── How it works ──────────────────────────────────────────────────────────
 
-  Widget _buildHowItWorksTab() {
+  Widget _buildHowItWorksTab(ReferralInfo info) {
+    final r = info.reward;
     return Column(
       children: [
         _stepCard(
@@ -746,28 +699,40 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
           icon: Icons.share_rounded,
           title: 'Share Your Code',
           description:
-              'Share your referral link via WhatsApp, SMS, email, or any platform you love.',
+              'Send your code to a friend over WhatsApp, SMS or anywhere.',
           gradientColors: [const Color(0xFF7ECBA1), const Color(0xFF52C4A0)],
         ),
         SizedBox(height: 2.h),
         _stepCard(
           stepNum: 2,
           icon: Icons.person_add_rounded,
-          title: 'Friend Signs Up',
-          description:
-              'Your friend downloads the app, registers, and books their first trek.',
+          title: 'Friend Signs Up & Treks',
+          description: (r?.refereeText ?? '').isNotEmpty
+              ? '${r!.refereeText!} when they enter your code, then they book and complete their first trek.'
+              : 'They enter your code, book, and complete their first trek.',
           gradientColors: [const Color(0xFF5FC3E4), const Color(0xFF38A8D8)],
         ),
         SizedBox(height: 2.h),
         _stepCard(
           stepNum: 3,
-          icon: Icons.currency_rupee_rounded,
-          title: 'Both Earn Rewards',
-          description:
-              'You get ₹50 cashback and your friend gets ₹50 off — everyone wins!',
+          icon: Icons.card_giftcard_rounded,
+          title: 'You Get Rewarded',
+          description: (r?.referrerText ?? '').isNotEmpty
+              ? r!.referrerText!
+              : 'Your reward coupon lands once their trek is done.',
           gradientColors: [const Color(0xFF7B8EFF), const Color(0xFF5B6BFF)],
         ),
-        SizedBox(height: 4.h),
+        SizedBox(height: 3.h),
+        if ((info.program?.termsUrl ?? '').isNotEmpty)
+          GestureDetector(
+            onTap: () => launchUrl(Uri.parse(info.program!.termsUrl!),
+                mode: LaunchMode.externalApplication),
+            child: Text('Terms & conditions apply',
+                style: AppType.style(FontSize.s9,
+                    color: const Color(0xFF4BB7DE),
+                    w: FontWeight.w500)),
+          ),
+        SizedBox(height: 3.h),
         _referNowButton(),
         SizedBox(height: 2.h),
       ],
@@ -788,15 +753,13 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
         borderRadius: BorderRadius.circular(4.w),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 3),
-          ),
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 12,
+              offset: const Offset(0, 3)),
         ],
       ),
       child: Row(
         children: [
-          // Icon tile with step badge
           Stack(
             clipBehavior: Clip.none,
             children: [
@@ -812,8 +775,7 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
                   borderRadius: BorderRadius.circular(3.5.w),
                 ),
                 child: Center(
-                  child: Icon(icon, color: Colors.white, size: 6.w),
-                ),
+                    child: Icon(icon, color: Colors.white, size: 6.w)),
               ),
               Positioned(
                 top: -1.w,
@@ -822,14 +784,11 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
                   width: 4.5.w,
                   height: 4.5.w,
                   decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
+                      color: Colors.white, shape: BoxShape.circle),
                   child: Center(
-                    child: Text(
-                      '$stepNum',
-                      style: AppType.style(FontSize.s8, w: FontWeight.w700, color: gradientColors.last),
-                    ),
+                    child: Text('$stepNum',
+                        style: AppType.style(FontSize.s8,
+                            w: FontWeight.w700, color: gradientColors.last)),
                   ),
                 ),
               ),
@@ -840,15 +799,13 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: AppType.style(FontSize.s12, w: FontWeight.w600, color: CommonColors.blackColor),
-                ),
+                Text(title,
+                    style: AppType.style(FontSize.s12,
+                        w: FontWeight.w600, color: CommonColors.blackColor)),
                 SizedBox(height: 0.4.h),
-                Text(
-                  description,
-                  style: AppType.style(FontSize.s9, color: Colors.grey.shade600, height: 1.4),
-                ),
+                Text(description,
+                    style: AppType.style(FontSize.s9,
+                        color: Colors.grey.shade600, height: 1.4)),
               ],
             ),
           ),
@@ -856,10 +813,6 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
       ),
     );
   }
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // REFER NOW BUTTON  ← single button, opens share bottom sheet
-  // ─────────────────────────────────────────────────────────────────────────
 
   Widget _referNowButton() {
     return ScaleTransition(
@@ -873,35 +826,30 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF52C4A0),
-                Color(0xFF38A8D8),
-                Color(0xFF2D86D4)
-              ],
+              colors: [Color(0xFF52C4A0), Color(0xFF38A8D8), Color(0xFF2D86D4)],
               stops: [0.0, 0.55, 1.0],
             ),
             borderRadius: BorderRadius.circular(4.w),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF38A8D8).withValues(alpha: 0.45),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
-              ),
+                  color: const Color(0xFF38A8D8).withValues(alpha: 0.45),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6)),
             ],
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.ios_share_rounded,
-                  color: Colors.white, size: 5.5.w),
+              Icon(Icons.ios_share_rounded, color: Colors.white, size: 5.5.w),
               SizedBox(width: 3.w),
               Flexible(
-                child: Text(
-                  'Refer Now & Earn ₹50',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppType.style(FontSize.s13, w: FontWeight.w700, color: Colors.white, letterSpacing: 0.3),
-                ),
+                child: Text('Invite a Friend',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppType.style(FontSize.s13,
+                        w: FontWeight.w700,
+                        color: Colors.white,
+                        letterSpacing: 0.3)),
               ),
             ],
           ),
@@ -910,11 +858,12 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
     );
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // REFERRAL HISTORY TAB
-  // ─────────────────────────────────────────────────────────────────────────
+  // ── History ───────────────────────────────────────────────────────────────
 
-  Widget _buildHistoryTab() {
+  Widget _buildHistoryTab(ReferralInfo info) {
+    final stats = info.stats ?? const ReferralStats();
+    final history = info.history ?? const <ReferralEntry>[];
+
     return Column(
       children: [
         Row(
@@ -922,7 +871,7 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
             Expanded(
               child: _summaryCard(
                 label: 'Total Earned',
-                value: '₹${_totalRewards.toStringAsFixed(0)}',
+                value: '₹${stats.totalEarned.toStringAsFixed(0)}',
                 icon: Icons.account_balance_wallet_rounded,
                 colors: [const Color(0xFF52C4A0), const Color(0xFF38A8D8)],
               ),
@@ -931,23 +880,39 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
             Expanded(
               child: _summaryCard(
                 label: 'Successful',
-                value: '$_completedCount',
+                value: '${stats.rewarded}',
                 icon: Icons.people_alt_rounded,
                 colors: [const Color(0xFF7B8EFF), const Color(0xFF5B6BFF)],
               ),
             ),
           ],
         ),
+        if (stats.pending > 0) ...[
+          SizedBox(height: 2.h),
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.4.h),
+            decoration: BoxDecoration(
+              color: AppColors.warning.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(3.w),
+            ),
+            child: Text(
+              '${stats.pending} friend${stats.pending == 1 ? '' : 's'} yet to complete a trek — your reward unlocks when they do.',
+              style: AppType.style(FontSize.s9,
+                  color: const Color(0xFFB45309), height: 1.3),
+            ),
+          ),
+        ],
         SizedBox(height: 3.h),
-        if (_referrals.isEmpty)
+        if (history.isEmpty)
           _emptyState()
         else
           ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: _referrals.length,
+            itemCount: history.length,
             separatorBuilder: (_, __) => SizedBox(height: 2.h),
-            itemBuilder: (_, i) => _referralTile(_referrals[i]),
+            itemBuilder: (_, i) => _referralTile(history[i]),
           ),
         SizedBox(height: 3.h),
         _referNowButton(),
@@ -972,10 +937,9 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
         borderRadius: BorderRadius.circular(4.w),
         boxShadow: [
           BoxShadow(
-            color: colors.last.withValues(alpha: 0.30),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
+              color: colors.last.withValues(alpha: 0.30),
+              blurRadius: 12,
+              offset: const Offset(0, 4)),
         ],
       ),
       child: Column(
@@ -983,22 +947,33 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
         children: [
           Icon(icon, color: Colors.white.withValues(alpha: 0.8), size: 6.w),
           SizedBox(height: 1.h),
-          Text(
-            value,
-            style: AppType.style(FontSize.s18, w: FontWeight.w700, color: Colors.white, height: 1),
-          ),
+          Text(value,
+              style: AppType.style(FontSize.s18,
+                  w: FontWeight.w700, color: Colors.white, height: 1)),
           SizedBox(height: 0.3.h),
-          Text(
-            label,
-            style: AppType.style(FontSize.s9, color: Colors.white.withValues(alpha: 0.8)),
-          ),
+          Text(label,
+              style: AppType.style(FontSize.s9,
+                  color: Colors.white.withValues(alpha: 0.8))),
         ],
       ),
     );
   }
 
   Widget _referralTile(ReferralEntry entry) {
-    final cfg = _statusConfig(entry.status);
+    final cfg = _statusConfig(entry.parsedStatus);
+    final name = (entry.friendName ?? '').isNotEmpty ? entry.friendName! : 'A friend';
+    final initials = name.trim().isNotEmpty
+        ? name.trim().split(RegExp(r'\s+')).take(2).map((w) => w[0]).join().toUpperCase()
+        : '•';
+    final d = entry.parsedDate;
+    final dateStr = d == null
+        ? ''
+        : '${d.day.toString().padLeft(2, '0')} ${_month(d.month)} ${d.year}';
+    final rewardVal = (entry.rewardValue ?? 0);
+    final rewardStr = (entry.rewardIsPercent ?? false)
+        ? '${rewardVal.toStringAsFixed(0)}%'
+        : '₹${rewardVal.toStringAsFixed(0)}';
+
     return Container(
       padding: EdgeInsets.all(4.w),
       decoration: BoxDecoration(
@@ -1006,10 +981,9 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
         borderRadius: BorderRadius.circular(4.w),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2)),
         ],
       ),
       child: Row(
@@ -1019,26 +993,34 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
             height: 11.w,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF7ECBA1), Color(0xFF4BB7DE)],
-              ),
+                  colors: [Color(0xFF7ECBA1), Color(0xFF4BB7DE)]),
               shape: BoxShape.circle,
             ),
             child: Center(
-              child: Text(
-                entry.initials,
-                style: AppType.style(FontSize.s11, w: FontWeight.w700, color: Colors.white),
-              ),
-            ),
+                child: Text(initials,
+                    style: AppType.style(FontSize.s11,
+                        w: FontWeight.w700, color: Colors.white))),
           ),
           SizedBox(width: 3.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(entry.name,
-                    style: AppType.style(FontSize.s11, w: FontWeight.w600, color: CommonColors.blackColor)),
-                Text(entry.date,
-                    style: AppType.style(FontSize.s9, color: Colors.grey.shade500)),
+                Text(name,
+                    style: AppType.style(FontSize.s11,
+                        w: FontWeight.w600, color: CommonColors.blackColor)),
+                if (dateStr.isNotEmpty)
+                  Text(dateStr,
+                      style: AppType.style(FontSize.s9,
+                          color: Colors.grey.shade500)),
+                if ((entry.note ?? '').isNotEmpty)
+                  Padding(
+                    padding: EdgeInsets.only(top: 0.3.h),
+                    child: Text(entry.note!,
+                        style: AppType.style(FontSize.s8,
+                            color: Colors.grey.shade500,
+                            fontStyle: FontStyle.italic)),
+                  ),
               ],
             ),
           ),
@@ -1046,12 +1028,14 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                entry.status == ReferralStatus.completed
-                    ? '+₹${entry.reward.toStringAsFixed(0)}'
-                    : '₹${entry.reward.toStringAsFixed(0)}',
-                style: AppType.style(FontSize.s12, w: FontWeight.w700, color: entry.status == ReferralStatus.completed
-                      ? const Color(0xFF2EAF7D)
-                      : Colors.grey.shade500),
+                entry.parsedStatus == ReferralStatus.rewarded
+                    ? '+$rewardStr'
+                    : rewardStr,
+                style: AppType.style(FontSize.s12,
+                    w: FontWeight.w700,
+                    color: entry.parsedStatus == ReferralStatus.rewarded
+                        ? const Color(0xFF2EAF7D)
+                        : Colors.grey.shade500),
               ),
               SizedBox(height: 0.4.h),
               Container(
@@ -1062,8 +1046,9 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
                   borderRadius: BorderRadius.circular(10.w),
                 ),
                 child: Text(
-                  cfg['label'] as String,
-                  style: AppType.style(FontSize.s8, w: FontWeight.w600, color: cfg['text'] as Color),
+                  (entry.statusLabel ?? cfg['label'] as String),
+                  style: AppType.style(FontSize.s8,
+                      w: FontWeight.w600, color: cfg['text'] as Color),
                 ),
               ),
             ],
@@ -1075,7 +1060,7 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
 
   Map<String, dynamic> _statusConfig(ReferralStatus s) {
     switch (s) {
-      case ReferralStatus.completed:
+      case ReferralStatus.rewarded:
         return {
           'label': 'Completed',
           'bg': const Color(0xFF2EAF7D).withValues(alpha: 0.12),
@@ -1087,6 +1072,18 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
           'bg': AppColors.warning.withValues(alpha: 0.12),
           'text': const Color(0xFFB45309),
         };
+      case ReferralStatus.reversed:
+        return {
+          'label': 'Reversed',
+          'bg': const Color(0xFFEF4444).withValues(alpha: 0.12),
+          'text': const Color(0xFFB91C1C),
+        };
+      case ReferralStatus.rejected:
+        return {
+          'label': 'Not eligible',
+          'bg': Colors.grey.shade200,
+          'text': Colors.grey.shade600,
+        };
       case ReferralStatus.expired:
         return {
           'label': 'Expired',
@@ -1096,6 +1093,11 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
     }
   }
 
+  String _month(int m) => const [
+        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      ][(m - 1).clamp(0, 11)];
+
   Widget _emptyState() {
     return Column(
       children: [
@@ -1103,9 +1105,10 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
         Icon(Icons.group_add_rounded, size: 18.w, color: Colors.grey.shade300),
         SizedBox(height: 2.h),
         Text('No referrals yet',
-            style: AppType.style(FontSize.s14, w: FontWeight.w600, color: Colors.grey.shade500)),
+            style: AppType.style(FontSize.s14,
+                w: FontWeight.w600, color: Colors.grey.shade500)),
         SizedBox(height: 0.5.h),
-        Text('Invite your friends and start earning!',
+        Text('Invite a friend and start earning!',
             style: AppType.style(FontSize.s10, color: Colors.grey.shade400)),
         SizedBox(height: 6.h),
       ],
@@ -1114,60 +1117,208 @@ Experience breathtaking trails, expert guides & unforgettable Himalayan adventur
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SHARE BOTTOM SHEET
-// Uses url_launcher deep links — no share_plus needed.
-// Add to pubspec if not present:  url_launcher: ^6.3.0
+// APPLY-A-CODE CARD  (only shown when the backend says canApplyCode == true)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _ApplyCodeCard extends StatefulWidget {
+  final ReferralController controller;
+  const _ApplyCodeCard({required this.controller});
+
+  @override
+  State<_ApplyCodeCard> createState() => _ApplyCodeCardState();
+}
+
+class _ApplyCodeCardState extends State<_ApplyCodeCard> {
+  final TextEditingController _field = TextEditingController();
+  bool _submitting = false;
+
+  @override
+  void dispose() {
+    _field.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final code = _field.text.trim();
+    if (code.length < 4) return;
+    setState(() => _submitting = true);
+    final ok = await widget.controller.applyCode(code);
+    if (!mounted) return;
+    setState(() => _submitting = false);
+
+    final st = widget.controller.applyState.value;
+    final msg = st?.maybeWhen(
+          success: (r) => r?.message ?? 'Referral code applied!',
+          error: (e) => e,
+          orElse: () => null,
+        ) ??
+        '';
+    if (msg.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(msg, style: AppType.style(11)),
+          backgroundColor:
+              ok ? const Color(0xFF52C4A0) : const Color(0xFFEF4444),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+    widget.controller.clearApplyState();
+    if (ok) _field.clear();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(4.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(4.w),
+        border: Border.all(color: const Color(0xFF4BB7DE).withValues(alpha: 0.25)),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 2)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Have a friend’s code?',
+              style: AppType.style(FontSize.s11,
+                  w: FontWeight.w600, color: CommonColors.blackColor)),
+          SizedBox(height: 0.4.h),
+          Text('Enter it before your first booking to get your discount.',
+              style: AppType.style(FontSize.s9, color: Colors.grey.shade600)),
+          SizedBox(height: 1.5.h),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _field,
+                  textCapitalization: TextCapitalization.characters,
+                  onChanged: (v) => widget.controller.validateCode(v),
+                  decoration: InputDecoration(
+                    hintText: 'AORBO••••',
+                    isDense: true,
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.2.h),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(2.5.w),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(2.5.w),
+                      borderSide:
+                          const BorderSide(color: Color(0xFF4BB7DE), width: 1.4),
+                    ),
+                  ),
+                  style: AppType.style(FontSize.s12,
+                      w: FontWeight.w600, letterSpacing: 1.5),
+                ),
+              ),
+              SizedBox(width: 2.w),
+              GestureDetector(
+                onTap: _submitting ? null : _submit,
+                child: Container(
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
+                  decoration: BoxDecoration(
+                    color: _submitting
+                        ? Colors.grey.shade300
+                        : const Color(0xFF4BB7DE),
+                    borderRadius: BorderRadius.circular(2.5.w),
+                  ),
+                  child: _submitting
+                      ? SizedBox(
+                          width: 3.5.w,
+                          height: 3.5.w,
+                          child: const CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
+                        )
+                      : Text('Apply',
+                          style: AppType.style(FontSize.s10,
+                              w: FontWeight.w700, color: Colors.white)),
+                ),
+              ),
+            ],
+          ),
+          Obx(() {
+            final v = widget.controller.validateResult.value;
+            if (widget.controller.validating.value) {
+              return Padding(
+                padding: EdgeInsets.only(top: 1.h),
+                child: Text('Checking…',
+                    style: AppType.style(FontSize.s8, color: Colors.grey.shade500)),
+              );
+            }
+            if (v == null) return const SizedBox.shrink();
+            final ok = v.valid;
+            final line = ok
+                ? (v.message?.isNotEmpty == true
+                    ? v.message!
+                    : 'Valid code${(v.referrerName ?? '').isNotEmpty ? ' from ${v.referrerName}' : ''}')
+                : (v.message?.isNotEmpty == true ? v.message! : 'This code is not valid');
+            return Padding(
+              padding: EdgeInsets.only(top: 1.h),
+              child: Row(
+                children: [
+                  Icon(ok ? Icons.check_circle_rounded : Icons.error_outline_rounded,
+                      size: 3.5.w,
+                      color: ok ? const Color(0xFF2EAF7D) : const Color(0xFFEF4444)),
+                  SizedBox(width: 1.5.w),
+                  Expanded(
+                    child: Text(line,
+                        style: AppType.style(FontSize.s8,
+                            color: ok
+                                ? const Color(0xFF1E7D57)
+                                : const Color(0xFFB91C1C))),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SHARE BOTTOM SHEET  — message is fully backend-composed; the sheet only routes
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _ShareBottomSheet extends StatelessWidget {
   final String message;
-  final String referralCode;
+  final String code;
 
-  const _ShareBottomSheet({
-    required this.message,
-    required this.referralCode,
-  });
+  const _ShareBottomSheet({required this.message, required this.code});
 
-  Future<void> _launchWhatsApp() async {
+  Future<void> _launch(String scheme) async {
     final encoded = Uri.encodeComponent(message);
-    final uri = Uri.parse('whatsapp://send?text=$encoded');
+    final Uri uri = switch (scheme) {
+      'whatsapp' => Uri.parse('whatsapp://send?text=$encoded'),
+      'sms' => Uri.parse('sms:?body=$encoded'),
+      'email' => Uri.parse(
+          'mailto:?subject=${Uri.encodeComponent("Join me on AORBO Treks")}&body=$encoded'),
+      _ => Uri.parse('https://wa.me/?text=$encoded'),
+    };
     if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
 
-  Future<void> _launchSMS() async {
-    final encoded = Uri.encodeComponent(message);
-    final uri = Uri.parse('sms:?body=$encoded');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    }
-  }
-
-  Future<void> _launchEmail() async {
-    final encoded = Uri.encodeComponent(message);
-    final uri = Uri.parse(
-        'mailto:?subject=${Uri.encodeComponent("Join AdventureOutdoors & get ₹50 off!")}&body=$encoded');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    }
-  }
-
-  Future<void> _copyLink(BuildContext context) async {
+  Future<void> _copy(BuildContext context) async {
     await Clipboard.setData(ClipboardData(text: message));
     HapticFeedback.lightImpact();
     if (context.mounted) {
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Referral message copied!',
-            style: AppType.style(12),
-          ),
+          content: Text('Invite message copied!', style: AppType.style(12)),
           backgroundColor: const Color(0xFF52C4A0),
           behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           margin: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
           duration: const Duration(seconds: 2),
         ),
@@ -1186,62 +1337,45 @@ class _ShareBottomSheet extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Handle
           Container(
             width: 10.w,
             height: 0.5.h,
             decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(10),
-            ),
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(10)),
           ),
           SizedBox(height: 2.5.h),
-
-          Text(
-            'Share via',
-            style: AppType.style(FontSize.s14, w: FontWeight.w600),
-          ),
+          Text('Share via', style: AppType.style(FontSize.s14, w: FontWeight.w600)),
           SizedBox(height: 0.5.h),
-          Text(
-            'Invite friends using your favourite app',
-            style: AppType.style(FontSize.s9, color: Colors.grey.shade500),
-          ),
+          Text('Invite a friend using your favourite app',
+              style: AppType.style(FontSize.s9, color: Colors.grey.shade500)),
           SizedBox(height: 3.h),
-
-          // Share options grid
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _ShareOption(
-                label: 'WhatsApp',
-                icon: Icons.chat_rounded,
-                color: const Color(0xFF25D366),
-                onTap: _launchWhatsApp,
-              ),
+                  label: 'WhatsApp',
+                  icon: Icons.chat_rounded,
+                  color: const Color(0xFF25D366),
+                  onTap: () => _launch('whatsapp')),
               _ShareOption(
-                label: 'SMS',
-                icon: Icons.sms_rounded,
-                color: const Color(0xFF3B82F6),
-                onTap: _launchSMS,
-              ),
+                  label: 'SMS',
+                  icon: Icons.sms_rounded,
+                  color: const Color(0xFF3B82F6),
+                  onTap: () => _launch('sms')),
               _ShareOption(
-                label: 'Email',
-                icon: Icons.email_rounded,
-                color: const Color(0xFFEA4335),
-                onTap: _launchEmail,
-              ),
+                  label: 'Email',
+                  icon: Icons.email_rounded,
+                  color: const Color(0xFFEA4335),
+                  onTap: () => _launch('email')),
               _ShareOption(
-                label: 'Copy Link',
-                icon: Icons.copy_rounded,
-                color: AppColors.inkMid,
-                onTap: () => _copyLink(context),
-              ),
+                  label: 'Copy',
+                  icon: Icons.copy_rounded,
+                  color: AppColors.inkMid,
+                  onTap: () => _copy(context)),
             ],
           ),
-
           SizedBox(height: 3.h),
-
-          // Preview of share message
           Container(
             width: double.infinity,
             padding: EdgeInsets.all(4.w),
@@ -1253,17 +1387,15 @@ class _ShareBottomSheet extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Message Preview',
-                  style: AppType.style(FontSize.s9, w: FontWeight.w600, color: Colors.grey.shade500),
-                ),
+                Text('Message Preview',
+                    style: AppType.style(FontSize.s9,
+                        w: FontWeight.w600, color: Colors.grey.shade500)),
                 SizedBox(height: 0.8.h),
-                Text(
-                  message,
-                  style: AppType.style(FontSize.s9, color: Colors.grey.shade700, height: 1.5),
-                  maxLines: 5,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                Text(message,
+                    style: AppType.style(FontSize.s9,
+                        color: Colors.grey.shade700, height: 1.5),
+                    maxLines: 6,
+                    overflow: TextOverflow.ellipsis),
               ],
             ),
           ),
@@ -1296,16 +1428,13 @@ class _ShareOption extends StatelessWidget {
             width: 14.w,
             height: 14.w,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
-            ),
+                color: color.withValues(alpha: 0.12), shape: BoxShape.circle),
             child: Icon(icon, color: color, size: 6.5.w),
           ),
           SizedBox(height: 0.8.h),
-          Text(
-            label,
-            style: AppType.style(FontSize.s8, w: FontWeight.w500, color: Colors.grey.shade700),
-          ),
+          Text(label,
+              style: AppType.style(FontSize.s8,
+                  w: FontWeight.w500, color: Colors.grey.shade700)),
         ],
       ),
     );
