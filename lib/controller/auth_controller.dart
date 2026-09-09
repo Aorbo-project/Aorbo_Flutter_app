@@ -340,7 +340,11 @@ class AuthController extends GetxController {
     referralChecking.value = true;
     referralMessage.value = '';
     try {
-      final res = await ReferralRepository().validateCode(code);
+      final phone = phoneNumberLoginTextField.value.text.trim();
+      final res = await ReferralRepository().validateCode(
+        code,
+        phone: phone.isEmpty ? null : phone,
+      );
       referralIsValid.value = res.valid;
       referralMessage.value = res.message?.isNotEmpty == true
           ? res.message!

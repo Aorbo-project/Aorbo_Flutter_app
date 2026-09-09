@@ -176,8 +176,16 @@ class NetworkUrl {
   static const String referralInfo = 'customer/referral';
   // POST { code } → applies a referrer's code to my account (pre-first-booking only).
   static const String referralApply = 'customer/referral/apply';
-  // GET ?code= → lightweight pre-check for the signup / apply field.
-  static String referralValidate(String code) =>
-      'customer/referral/validate?code=${Uri.encodeComponent(code)}';
+  // GET ?code=&phone= → pre-check for the login-screen field. Passing the
+  // typed phone lets the backend say "new accounts only" for an existing user
+  // instead of a false "you'll get ₹50 off".
+  static String referralValidate(String code, {String? phone}) {
+    final q = StringBuffer('customer/referral/validate?code=')
+      ..write(Uri.encodeComponent(code));
+    if (phone != null && phone.trim().isNotEmpty) {
+      q.write('&phone=${Uri.encodeComponent(phone.trim())}');
+    }
+    return q.toString();
+  }
   //#endregion
 }

@@ -56,10 +56,10 @@ class ReferralRepository {
 
   /// GET /api/v1/customer/referral/validate?code=
   /// Never throws — a failed validate just means "can't confirm right now".
-  Future<ReferralValidateResponse> validateCode(String code) async {
+  Future<ReferralValidateResponse> validateCode(String code, {String? phone}) async {
     try {
       final response = await _repository.getApiCall(
-        url: NetworkUrl.referralValidate(code),
+        url: NetworkUrl.referralValidate(code, phone: phone),
       );
       if (response == null) {
         return const ReferralValidateResponse(valid: false, message: '');
