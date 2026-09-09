@@ -20,7 +20,6 @@ import 'package:arobo_app/screens/chatboat_screen.dart';
 import 'package:arobo_app/screens/claims_screen.dart';
 import 'package:arobo_app/screens/contact_support_screen.dart';
 import 'package:arobo_app/screens/coupon_code_screen.dart';
-import 'package:arobo_app/screens/emergency_contacts.dart';
 import 'package:arobo_app/screens/help_screen.dart';
 import 'package:arobo_app/screens/issue_report_screen.dart';
 import 'package:arobo_app/screens/know_more_screen.dart';
@@ -34,7 +33,6 @@ import 'package:arobo_app/screens/refer&earn_screen.dart';
 import 'package:arobo_app/screens/safety_screen.dart';
 import 'package:arobo_app/screens/search_summary_screen.dart';
 import 'package:arobo_app/screens/seasonal_forecast_screen.dart';
-import 'package:arobo_app/screens/selected_emergency_contacts.dart';
 import 'package:arobo_app/screens/traveller_information_screen.dart';
 import 'package:arobo_app/screens/traveller_info_screen.dart';
 import 'package:arobo_app/screens/trek_details_screen.dart';
@@ -81,9 +79,6 @@ void main() {
     // traveller_information -> PaymentProcessingScreen -> Razorpay native UI.
     'MyAccountScreen': () => const MyAccountScreen(),
     'BookingsHistoryScreen': () => const BookingsScreen(),
-    'EmergencyContactsScreen': () => EmergencyContactsScreen(),
-    'SelectedEmergencyContactsScreen': () =>
-        const SelectedEmergencyContactsScreen(),
     'ChatScreen': () => const ChatScreen(),
     'SearchSummaryScreen': () => SearchSummaryScreen(),
     'TrekDetailsScreen': () => TrekDetailsScreen(trek: null),

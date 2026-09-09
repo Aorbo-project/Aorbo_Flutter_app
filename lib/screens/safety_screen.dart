@@ -25,9 +25,7 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:get/get.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:sizer/sizer.dart';
 
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -36,6 +34,7 @@ import '../models/emergency_contact_model.dart';
 import '../repository/network_url.dart';
 import '../repository/repository.dart';
 import '../utils/common_btn.dart';
+import '../utils/phone_input_formatter.dart';
 import '../utils/common_colors.dart';
 import '../utils/common_images.dart';
 import '../utils/common_safety_card.dart';
@@ -85,8 +84,14 @@ String _sanitizeNameForApi(String name) {
       .trim();
 }
 
-String _firstPhoneOf(Contact c) =>
-    c.phones.isNotEmpty ? c.phones.first.number : '';
+/// A contact the user typed in but hasn't saved to the server yet.
+/// (Replaced the device-contact picker — no READ_CONTACTS permission.)
+class _PendingContact {
+  final String id;
+  final String name;
+  final String phone;
+  const _PendingContact({required this.id, required this.name, required this.phone});
+}
 
 // ═════════════════════════════════════════════════════ DESIGN TOKENS ═══
 
@@ -936,7 +941,7 @@ class _ManagerSheetState extends State<_ManagerSheet> {
   final _messengerKey = GlobalKey<ScaffoldMessengerState>();
 
   late List<EmergencyContact> _saved;
-  final List<Contact> _pending = [];
+  final List<_PendingContact> _pending = [];
   final Map<String, String> _relationships = {};
 
   bool _isLoading = false;
@@ -948,7 +953,7 @@ class _ManagerSheetState extends State<_ManagerSheet> {
   Set<String> get _usedPhones {
     final set = <String>{
       ..._saved.map((c) => _normalizePhone(c.phone ?? '')),
-      ..._pending.map((c) => _normalizePhone(_firstPhoneOf(c))),
+      ..._pending.map((c) => _normalizePhone(c.phone)),
     };
     set.remove('');
     return set;
@@ -967,8 +972,8 @@ class _ManagerSheetState extends State<_ManagerSheet> {
     _refresh(silent: _saved.isNotEmpty);
   }
 
-  bool _tryAddPending(Contact c) {
-    final phone = _normalizePhone(_firstPhoneOf(c));
+  bool _tryAddPending(_PendingContact c) {
+    final phone = _normalizePhone(c.phone);
     if (phone.isEmpty) return false;
     if (_usedPhones.contains(phone)) return false;
     if (_total >= _kMaxContacts) return false;
@@ -992,7 +997,7 @@ class _ManagerSheetState extends State<_ManagerSheet> {
               .map((c) => _normalizePhone(c.phone ?? ''))
               .toSet();
           _pending.removeWhere(
-            (c) => savedPhones.contains(_normalizePhone(_firstPhoneOf(c))),
+            (c) => savedPhones.contains(_normalizePhone(c.phone)),
           );
           while (_total > _kMaxContacts && _pending.isNotEmpty) {
             final removed = _pending.removeLast();
@@ -1020,21 +1025,21 @@ class _ManagerSheetState extends State<_ManagerSheet> {
 
     int savedCount = 0;
     final failures = <String>[];
-    final queue = List<Contact>.from(_pending);
+    final queue = List<_PendingContact>.from(_pending);
 
     for (final contact in queue) {
-      final rawPhone = _firstPhoneOf(contact).trim();
+      final rawPhone = contact.phone.trim();
       if (rawPhone.isEmpty) {
-        failures.add(contact.displayName);
+        failures.add(contact.name);
         continue;
       }
 
       final phone = _normalizePhoneForApi(rawPhone);
       // 🔧 Strip 4-byte emojis (like 😍, 😎) which crash the server's utf8 DB
-      final name = _sanitizeNameForApi(contact.displayName);
+      final name = _sanitizeNameForApi(contact.name);
 
       if (phone.isEmpty || name.isEmpty) {
-        failures.add(contact.displayName);
+        failures.add(contact.name);
         continue;
       }
 
@@ -1056,11 +1061,11 @@ class _ManagerSheetState extends State<_ManagerSheet> {
           _relationships.remove(contact.id);
           if (mounted) setState(() {});
         } else {
-          failures.add(contact.displayName);
+          failures.add(contact.name);
         }
       } catch (e) {
-        log('save failed for ${contact.displayName}: $e');
-        failures.add(contact.displayName);
+        log('save failed for ${contact.name}: $e');
+        failures.add(contact.name);
       }
     }
 
@@ -1136,34 +1141,24 @@ class _ManagerSheetState extends State<_ManagerSheet> {
       );
       return;
     }
-    final result = await showModalBottomSheet<List<Contact>>(
+    final result = await showModalBottomSheet<_PendingContact>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _PickerSheet(
-        maxSelectable: _slotsLeft,
+      builder: (_) => _AddContactSheet(
         existingPhones: _usedPhones,
         savedPhones: _savedPhones,
       ),
     );
     if (result != null && mounted) {
-      int added = 0;
-      String? failMsg;
-
-      setState(() {
-        for (final c in result) {
-          if (!_tryAddPending(c)) {
-            failMsg =
-                'Some contacts were already added or had no valid number.';
-          } else {
-            added++;
-          }
-        }
-      });
-
-      final String? message = failMsg;
-      if (message != null) {
-        _snack(_messengerKey.currentState, message, isError: true);
+      final ok = _tryAddPending(result);
+      setState(() {});
+      if (!ok) {
+        _snack(
+          _messengerKey.currentState,
+          'That number is already a contact or the slots are full.',
+          isError: true,
+        );
       }
     }
   }
@@ -1223,7 +1218,7 @@ class _ManagerSheetState extends State<_ManagerSheet> {
     );
   }
 
-  void _pickRelationship(Contact contact) {
+  void _pickRelationship(_PendingContact contact) {
     FirebaseCrashlytics.instance.log(
       'Popup: Relationship picker sheet (safety)',
     );
@@ -1252,7 +1247,7 @@ class _ManagerSheetState extends State<_ManagerSheet> {
                 ),
               ),
               Text(
-                'Relationship with ${contact.displayName}',
+                'Relationship with ${contact.name}',
                 style: _ts(12.0, w: FontWeight.w700),
               ),
               SizedBox(height: 2.h),
@@ -1451,10 +1446,8 @@ class _ManagerSheetState extends State<_ManagerSheet> {
     );
   }
 
-  Widget _pendingCard(Contact contact) {
-    final phone = contact.phones.isNotEmpty
-        ? contact.phones.first.number
-        : 'No number';
+  Widget _pendingCard(_PendingContact contact) {
+    final phone = contact.phone.isNotEmpty ? contact.phone : 'No number';
     final relationship = _relationships[contact.id] ?? 'Family';
 
     return Container(
@@ -1476,7 +1469,7 @@ class _ManagerSheetState extends State<_ManagerSheet> {
       ),
       child: Row(
         children: [
-          _initialAvatar(contact.displayName),
+          _initialAvatar(contact.name),
           SizedBox(width: 3.w),
           Expanded(
             child: Column(
@@ -1486,7 +1479,7 @@ class _ManagerSheetState extends State<_ManagerSheet> {
                   children: [
                     Expanded(
                       child: Text(
-                        contact.displayName,
+                        contact.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: _ts(11.0, w: FontWeight.w600),
@@ -1828,655 +1821,158 @@ class _ManagerSheetState extends State<_ManagerSheet> {
   }
 }
 
-// ══════════════════════════════════════════════ 3 · PICKER SHEET ═════════
 
-enum _PermState { checking, granted, denied, permanentlyDenied, error }
+// ═══════════════════════════════════════════ 3 · ADD-CONTACT SHEET ═══════
+// Manual entry only — the app no longer reads the device address book, so
+// there's no READ_CONTACTS permission and no Play permissions declaration.
 
-class _PickerSheet extends StatefulWidget {
-  final int maxSelectable;
+class _AddContactSheet extends StatefulWidget {
   final Set<String> existingPhones;
   final Set<String> savedPhones;
 
-  const _PickerSheet({
-    required this.maxSelectable,
+  const _AddContactSheet({
     required this.existingPhones,
     required this.savedPhones,
   });
 
   @override
-  State<_PickerSheet> createState() => _PickerSheetState();
+  State<_AddContactSheet> createState() => _AddContactSheetState();
 }
 
-class _PickerSheetState extends State<_PickerSheet>
-    with WidgetsBindingObserver {
-  final TextEditingController _searchController = TextEditingController();
+class _AddContactSheetState extends State<_AddContactSheet> {
   final _messengerKey = GlobalKey<ScaffoldMessengerState>();
-
-  List<Contact> _allContacts = [];
-  List<Contact> _filtered = [];
-  final List<Contact> _selected = [];
-  final Set<String> _selectedIds = {};
-
-  _PermState _permState = _PermState.checking;
-  bool _isLoading = true;
-
-  Timer? _searchDebounce;
-  bool _wentToSettings = false;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    _searchController.addListener(_onSearchChanged);
-    _fetchContacts();
-  }
+  final _nameCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
+  String? _nameError;
+  String? _phoneError;
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    _searchDebounce?.cancel();
-    _searchController.removeListener(_onSearchChanged);
-    _searchController.dispose();
+    _nameCtrl.dispose();
+    _phoneCtrl.dispose();
     super.dispose();
   }
 
+  void _submit() {
+    final name = _sanitizeNameForApi(_nameCtrl.text);
+    final phoneRaw = _phoneCtrl.text.trim();
+    final phone10 = _normalizePhone(phoneRaw);
+
+    String? nameErr;
+    String? phoneErr;
+    if (name.isEmpty) {
+      nameErr = 'Enter a name';
+    } else if (name.length < 2) {
+      nameErr = 'Name is too short';
+    }
+    if (phone10.length != 10) {
+      phoneErr = 'Enter a valid 10-digit mobile number';
+    } else if (widget.savedPhones.contains(phone10)) {
+      phoneErr = 'This number is already an emergency contact';
+    } else if (widget.existingPhones.contains(phone10)) {
+      phoneErr = 'You already added this number';
+    }
+
+    if (nameErr != null || phoneErr != null) {
+      setState(() {
+        _nameError = nameErr;
+        _phoneError = phoneErr;
+      });
+      return;
+    }
+
+    Navigator.of(context).pop(
+      _PendingContact(
+        id: 'm-${DateTime.now().microsecondsSinceEpoch}',
+        name: name,
+        phone: phone10,
+      ),
+    );
+  }
+
+  InputDecoration _dec(String hint, String? error) => InputDecoration(
+        hintText: hint,
+        hintStyle: _ts(10.0, c: _C.inkMid),
+        errorText: error,
+        errorStyle: _ts(8.0, c: _C.danger),
+        filled: true,
+        fillColor: _C.fieldBg,
+        contentPadding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.6.h),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(3.w),
+          borderSide: BorderSide(color: _C.fieldBorder),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(3.w),
+          borderSide: const BorderSide(color: _C.teal, width: 1.4),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(3.w),
+          borderSide: const BorderSide(color: _C.danger),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(3.w),
+          borderSide: const BorderSide(color: _C.danger, width: 1.4),
+        ),
+      );
+
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && _wentToSettings) {
-      _wentToSettings = false;
-      _fetchContacts();
-    }
-  }
-
-  Future<void> _fetchContacts() async {
-    if (!mounted) return;
-    setState(() {
-      _isLoading = true;
-      _permState = _PermState.checking;
-    });
-
-    final status = await Permission.contacts.request();
-
-    if (!mounted) return;
-    if (status.isPermanentlyDenied) {
-      setState(() {
-        _permState = _PermState.permanentlyDenied;
-        _isLoading = false;
-      });
-      return;
-    }
-    if (!status.isGranted) {
-      setState(() {
-        _permState = _PermState.denied;
-        _isLoading = false;
-      });
-      return;
-    }
-
-    try {
-      final contacts = await FlutterContacts.getContacts(
-        withProperties: true,
-        withThumbnail: false,
-      );
-      if (!mounted) return;
-      setState(() {
-        _permState = _PermState.granted;
-        _allContacts = contacts.where((c) => c.phones.isNotEmpty).toList()
-          ..sort(
-            (a, b) => a.displayName.toLowerCase().compareTo(
-              b.displayName.toLowerCase(),
-            ),
-          );
-        _isLoading = false;
-      });
-      _filterContacts();
-    } catch (e) {
-      log('fetchContacts failed: $e');
-      if (mounted) {
-        setState(() {
-          _permState = _PermState.error;
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  void _openSettings() {
-    _wentToSettings = true;
-    openAppSettings();
-  }
-
-  void _onSearchChanged() {
-    _searchDebounce?.cancel();
-    _searchDebounce = Timer(const Duration(milliseconds: 150), _filterContacts);
-  }
-
-  void _filterContacts() {
-    if (!mounted) return;
-    final rawQuery = _searchController.text.trim();
-    final query = rawQuery.toLowerCase();
-
-    final allDigits = rawQuery.replaceAll(RegExp(r'\D'), '');
-    final normalizedDigits = allDigits.length > 10
-        ? allDigits.substring(allDigits.length - 10)
-        : allDigits;
-
-    setState(() {
-      _filtered = query.isEmpty
-          ? List.from(_allContacts)
-          : _allContacts.where((contact) {
-              if (contact.displayName.toLowerCase().contains(query)) {
-                return true;
-              }
-              if (normalizedDigits.isEmpty) return false;
-              return contact.phones.any(
-                (p) => _normalizePhone(p.number).contains(normalizedDigits),
-              );
-            }).toList();
-    });
-  }
-
-  bool _isAlreadyAdded(Contact contact) {
-    final phone = _normalizePhone(_firstPhoneOf(contact));
-    return phone.isNotEmpty && widget.existingPhones.contains(phone);
-  }
-
-  void _toggleSelection(Contact contact) {
-    if (_isAlreadyAdded(contact)) {
-      _snack(
-        _messengerKey.currentState,
-        'This number is already an emergency contact.',
-        isError: true,
-      );
-      return;
-    }
-    setState(() {
-      if (_selectedIds.contains(contact.id)) {
-        _selectedIds.remove(contact.id);
-        _selected.removeWhere((c) => c.id == contact.id);
-        HapticFeedback.selectionClick();
-        return;
-      }
-      if (_selected.length >= widget.maxSelectable) {
-        _snack(
-          _messengerKey.currentState,
-          'You can add ${widget.maxSelectable} more contact${widget.maxSelectable == 1 ? '' : 's'} only.',
-          isError: true,
-        );
-        return;
-      }
-      final phone = _normalizePhone(_firstPhoneOf(contact));
-      final alreadyPicked = _selected.any(
-        (c) => _normalizePhone(_firstPhoneOf(c)) == phone,
-      );
-      if (alreadyPicked) {
-        _snack(
-          _messengerKey.currentState,
-          'A contact with this number is already selected.',
-          isError: true,
-        );
-        return;
-      }
-      _selectedIds.add(contact.id);
-      _selected.add(contact);
-      HapticFeedback.selectionClick();
-    });
-  }
-
-  void _confirmSelection() =>
-      Navigator.of(context).pop(List<Contact>.from(_selected));
-
-  Widget _selectionIndicator(bool isSelected) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      width: 6.w,
-      height: 6.w,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: isSelected ? _C.teal : Colors.transparent,
-        border: Border.all(color: isSelected ? _C.teal : _C.inkLight, width: 2),
-      ),
-      child: isSelected
-          ? Icon(Icons.check_rounded, color: Colors.white, size: 3.5.w)
-          : null,
-    );
-  }
-
-  Widget _contactTile(Contact contact) {
-    final phone = contact.phones.isNotEmpty
-        ? contact.phones.first.number
-        : 'No number';
-    final isSelected = _selectedIds.contains(contact.id);
-    final alreadyAdded = _isAlreadyAdded(contact);
-
-    return AnimatedContainer(
-      key: ValueKey(contact.id),
-      duration: const Duration(milliseconds: 200),
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        color: alreadyAdded
-            ? _C.cardBg.withValues(alpha: 0.6)
-            : isSelected
-            ? _C.tealSoft
-            : _C.cardBg,
-        borderRadius: BorderRadius.circular(3.w),
-        border: Border.all(
-          color: isSelected ? _C.teal.withValues(alpha: 0.4) : _C.fieldBorder,
-          width: isSelected ? 1.5 : 1,
-        ),
-      ),
-      child: InkWell(
-        onTap: alreadyAdded ? null : () => _toggleSelection(contact),
-        borderRadius: BorderRadius.circular(3.w),
-        splashColor: _C.teal.withValues(alpha: 0.08),
-        child: Opacity(
-          opacity: alreadyAdded ? 0.55 : 1,
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.4.h),
-            child: Row(
-              children: [
-                _initialAvatar(contact.displayName, selected: isSelected),
-                SizedBox(width: 3.w),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        contact.displayName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: _ts(
-                          11.0,
-                          w: FontWeight.w600,
-                          c: isSelected ? _C.teal : _C.ink,
-                        ),
-                      ),
-                      SizedBox(height: 0.3.h),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.phone_outlined,
-                            size: 9.0,
-                            color: isSelected
-                                ? _C.teal.withValues(alpha: 0.7)
-                                : _C.inkLight,
-                          ),
-                          SizedBox(width: 1.w),
-                          Expanded(
-                            child: Text(
-                              phone,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: _ts(
-                                9.0,
-                                c: isSelected
-                                    ? _C.teal.withValues(alpha: 0.7)
-                                    : _C.inkMid,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                if (alreadyAdded)
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 2.w,
-                      vertical: 0.4.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _C.tealSoft,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      widget.savedPhones.contains(
-                            _normalizePhone(_firstPhoneOf(contact)),
-                          )
-                          ? 'Added'
-                          : 'Selected',
-                      style: _ts(8.0, w: FontWeight.w700, c: _C.teal),
-                    ),
-                  )
-                else
-                  _selectionIndicator(isSelected),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _emptyState() {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 18.w,
-            height: 18.w,
-            decoration: const BoxDecoration(
-              color: _C.tealSoft,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(Icons.search_off_rounded, size: 9.w, color: _C.teal),
-          ),
-          SizedBox(height: 2.h),
-          Text('No contacts found', style: _ts(13.0, w: FontWeight.w600)),
-          SizedBox(height: 0.8.h),
-          Text(
-            _allContacts.isEmpty
-                ? 'No contacts with phone numbers on this device'
-                : 'Try a different name or number',
-            style: _ts(9.0, c: _C.inkMid),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _permissionState() {
-    if (_permState == _PermState.error) {
-      return Center(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 8.w),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 18.w,
-                height: 18.w,
-                decoration: BoxDecoration(
-                  color: _C.danger.withValues(alpha: 0.08),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.error_outline_rounded,
-                  size: 9.w,
-                  color: _C.danger,
-                ),
-              ),
-              SizedBox(height: 2.h),
-              Text(
-                'Something went wrong',
-                style: _ts(13.0, w: FontWeight.w600),
-              ),
-              SizedBox(height: 0.8.h),
-              Text(
-                'We couldn\'t read your contacts.\nPlease try again.',
-                textAlign: TextAlign.center,
-                style: _ts(9.0, c: _C.inkMid, h: 1.6),
-              ),
-              SizedBox(height: 2.h),
-              GestureDetector(
-                onTap: _fetchContacts,
-                child: Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 6.w,
-                    vertical: 1.4.h,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _C.teal,
-                    borderRadius: BorderRadius.circular(2.w),
-                  ),
-                  child: Text(
-                    'Retry',
-                    style: _ts(10.0, w: FontWeight.w600, c: Colors.white),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    final isPermanent = _permState == _PermState.permanentlyDenied;
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 8.w),
+  Widget build(BuildContext context) {
+    return _SheetShell(
+      title: 'Add emergency contact',
+      subtitle: 'They will be notified if you raise an alert',
+      onClose: () => Navigator.of(context).maybePop(),
+      messengerKey: _messengerKey,
+      body: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(5.w, 2.h, 5.w, 3.h),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 18.w,
-              height: 18.w,
-              decoration: BoxDecoration(
-                color: _C.danger.withValues(alpha: 0.08),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.contacts_outlined, size: 9.w, color: _C.danger),
-            ),
-            SizedBox(height: 2.h),
-            Text(
-              'Contacts access needed',
-              style: _ts(13.0, w: FontWeight.w600),
-            ),
+            Text('Name', style: _ts(10.0, w: FontWeight.w600)),
             SizedBox(height: 0.8.h),
-            Text(
-              isPermanent
-                  ? 'Permission was denied permanently.\nEnable Contacts access in app settings.'
-                  : 'Please allow access to your contacts\nto add emergency contacts.',
-              textAlign: TextAlign.center,
-              style: _ts(9.0, c: _C.inkMid, h: 1.6),
+            TextField(
+              controller: _nameCtrl,
+              textCapitalization: TextCapitalization.words,
+              style: _ts(11.0),
+              onChanged: (_) {
+                if (_nameError != null) setState(() => _nameError = null);
+              },
+              decoration: _dec('e.g. Amma', _nameError),
             ),
             SizedBox(height: 2.h),
-            GestureDetector(
-              onTap: isPermanent ? _openSettings : _fetchContacts,
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 1.4.h),
-                decoration: BoxDecoration(
-                  color: _C.teal,
-                  borderRadius: BorderRadius.circular(2.w),
-                ),
-                child: Text(
-                  isPermanent ? 'Open Settings' : 'Grant Permission',
-                  style: _ts(10.0, w: FontWeight.w600, c: Colors.white),
-                ),
-              ),
+            Text('Mobile number', style: _ts(10.0, w: FontWeight.w600)),
+            SizedBox(height: 0.8.h),
+            TextField(
+              controller: _phoneCtrl,
+              keyboardType: TextInputType.phone,
+              inputFormatters: [IndianMobileNumberFormatter()],
+              style: _ts(11.0),
+              onChanged: (_) {
+                if (_phoneError != null) setState(() => _phoneError = null);
+              },
+              decoration: _dec('10-digit number', _phoneError),
             ),
           ],
         ),
       ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final slotsLeft = widget.maxSelectable - _selected.length;
-
-    return _SheetShell(
-      messengerKey: _messengerKey,
-      title: 'Select Contacts',
-      subtitle: 'Dismiss to cancel · Done confirms selection',
-      onClose: () => Navigator.of(context).pop(),
-      body: Column(
-        children: [
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
-            child: Column(
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    color: _C.cardBg,
-                    borderRadius: BorderRadius.circular(3.w),
-                    border: Border.all(color: _C.fieldBorder),
-                  ),
-                  child: TextField(
-                    controller: _searchController,
-                    style: _ts(11.0),
-                    keyboardType: TextInputType.text,
-                    textCapitalization: TextCapitalization.words,
-                    decoration: InputDecoration(
-                      hintText: 'Search by name or number…',
-                      hintStyle: _ts(10.0, c: _C.inkLight),
-                      prefixIcon: Icon(
-                        Icons.search_rounded,
-                        color: _C.inkLight,
-                        size: 5.5.w,
-                      ),
-                      suffixIcon: _searchController.text.isNotEmpty
-                          ? IconButton(
-                              icon: Icon(
-                                Icons.close_rounded,
-                                color: _C.inkLight,
-                                size: 4.5.w,
-                              ),
-                              onPressed: _searchController.clear,
-                            )
-                          : null,
-                      border: InputBorder.none,
-                      focusedBorder: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(vertical: 1.5.h),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 1.5.h),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _slotProgressRow(
-                        _selected.length,
-                        widget.maxSelectable.clamp(0, _kMaxContacts),
-                        slotsLeft > 0
-                            ? '$slotsLeft slot${slotsLeft == 1 ? '' : 's'} remaining'
-                            : 'All slots filled',
-                        labelColor: slotsLeft == 0 ? _C.warn : _C.inkMid,
-                      ),
-                    ),
-                    if (_selected.isNotEmpty)
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 2.w,
-                          vertical: 0.4.h,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _C.tealSoft,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          '${_selected.length} selected',
-                          style: _ts(8.0, w: FontWeight.w700, c: _C.teal),
-                        ),
-                      ),
-                  ],
-                ),
-              ],
-            ),
+      bottomBar: Container(
+        padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
+        decoration: const BoxDecoration(
+          color: _C.cardBg,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SafeArea(
+          child: CommonButton(
+            text: 'Add contact',
+            onPressed: _submit,
+            gradient: _C.ctaGradient,
+            textColor: CommonColors.whiteColor,
+            fontWeight: FontWeight.w700,
+            fontSize: 12.0,
+            height: 6.h,
           ),
-          Expanded(
-            child: _isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(
-                      color: _C.teal,
-                      strokeWidth: 2.5,
-                    ),
-                  )
-                : _permState != _PermState.granted
-                ? _permissionState()
-                : _filtered.isEmpty
-                ? _emptyState()
-                : ListView.builder(
-                    padding: EdgeInsets.fromLTRB(4.w, 1.h, 4.w, 3.h),
-                    itemCount: _filtered.length,
-                    itemBuilder: (context, index) =>
-                        _contactTile(_filtered[index]),
-                  ),
-          ),
-        ],
+        ),
       ),
-      bottomBar: _selected.isEmpty
-          ? null
-          : Container(
-              padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
-              decoration: BoxDecoration(
-                color: _C.cardBg,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 20,
-                    offset: const Offset(0, -4),
-                  ),
-                ],
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(24),
-                ),
-              ),
-              child: SafeArea(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          SizedBox(
-                            width: (_selected.length * 18.0) + 14,
-                            height: 30,
-                            child: Stack(
-                              children: _selected
-                                  .asMap()
-                                  .entries
-                                  .map(
-                                    (e) => Positioned(
-                                      left: e.key * 18.0,
-                                      child: Container(
-                                        width: 30,
-                                        height: 30,
-                                        decoration: BoxDecoration(
-                                          color: _C.teal,
-                                          shape: BoxShape.circle,
-                                          border: Border.all(
-                                            color: _C.cardBg,
-                                            width: 2,
-                                          ),
-                                        ),
-                                        child: Center(
-                                          child: Text(
-                                            e.value.displayName.isNotEmpty
-                                                ? e.value.displayName[0]
-                                                      .toUpperCase()
-                                                : '?',
-                                            style: AppType.style(
-                                              11.0,
-                                              w: FontWeight.w700,
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  )
-                                  .toList(),
-                            ),
-                          ),
-                          SizedBox(width: 2.w),
-                          Text(
-                            '${_selected.length} contact${_selected.length == 1 ? '' : 's'} selected',
-                            style: _ts(9.0, c: _C.inkMid),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 1.h),
-                    CommonButton(
-                      text: 'Done',
-                      onPressed: _confirmSelection,
-                      gradient: _C.ctaGradient,
-                      textColor: CommonColors.whiteColor,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 12.0,
-                      height: 6.h,
-                    ),
-                  ],
-                ),
-              ),
-            ),
     );
   }
 }

@@ -17,8 +17,6 @@ import 'package:arobo_app/screens/traveller_information_screen.dart';
 import 'package:arobo_app/screens/my_account_screen.dart';
 import 'package:arobo_app/screens/bookings_history_screen.dart';
 import 'package:arobo_app/screens/safety_screen.dart';
-import 'package:arobo_app/screens/emergency_contacts.dart';
-import 'package:arobo_app/screens/selected_emergency_contacts.dart';
 import 'package:arobo_app/screens/discount_card_details_screen.dart';
 import 'package:arobo_app/screens/know_more_details_screen.dart';
 import 'package:arobo_app/screens/about_us_screen.dart';
@@ -69,11 +67,6 @@ final routes = [
 
   GetPage(name: '/bookingscancel', page: () => const BookingsCancelScreen()),
   GetPage(name: '/safety', page: () => const SafetyScreen()),
-  GetPage(name: '/emergency-contacts', page: () => EmergencyContactsScreen()),
-  GetPage(
-    name: '/selected-emergency-contacts',
-    page: () => const SelectedEmergencyContactsScreen(),
-  ),
   GetPage(
     name: '/discount-details',
     page: () {
