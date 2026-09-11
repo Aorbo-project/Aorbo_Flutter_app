@@ -16,6 +16,11 @@ analyzer:
     constant_identifier_names: ignore
     file_names: ignore
     camel_case_types: ignore
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
 
 linter:
   rules:
