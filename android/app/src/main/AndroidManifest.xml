@@ -42,12 +42,15 @@
             android:name="flutterEmbedding"
             android:value="2" />
 
-        <!-- AdMob App ID. Currently Google's TEST app id — swap for the real
-             one (must match lib/config/ad_config.dart) when the AdMob
-             account exists. Omitting this crashes the app on start. -->
+        <!-- AdMob App ID. Real Android app id (must match
+             lib/config/ad_config.dart's _realAppIdAndroid). Ad *unit*
+             requests still use Google's test unit id until
+             AdConfig.useRealAds is flipped — the manifest App ID and the
+             ad unit id are independent; Google's test unit ids work under
+             any App ID. Omitting this meta-data crashes the app on start. -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713" />
+            android:value="ca-app-pub-1409410183966075~2943255858" />
         <!-- Delay ad SDK init to our own MobileAds.instance.initialize()
              call (in _deferredInit) so it never competes with the first
              frame / cold start. -->
