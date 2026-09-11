@@ -9,6 +9,8 @@ import 'package:arobo_app/models/top_treks_data.dart';
 import 'package:arobo_app/widgets/logger.dart';
 import 'package:flutter/material.dart';
 
+import 'package:flutter/foundation.dart' show kDebugMode;
+
 import 'package:arobo_app/models/dashboard/trek_modal.dart';
 import 'package:arobo_app/models/user_profile/state_list_model.dart';
 import 'package:arobo_app/models/dispute/dispute_detail_modal.dart';
@@ -80,6 +82,11 @@ class DashboardController extends GetxController {
   Rx<TextEditingController> dateController = TextEditingController().obs;
   Rx<DateTime?> selectedDate = Rx<DateTime?>(null);
 
+  /// Route pair the current calendar data belongs to. Any change away from
+  /// it invalidates the picked date (the old date may not exist on the new
+  /// route and must never ride along into a search).
+  String? _lastCalendarRouteKey;
+
   RxBool isLoadingCities = false.obs;
   Rx<GetCities> citiesData = GetCities().obs;
   Rx<TrekModal> trekData = TrekModal().obs;
@@ -125,14 +132,11 @@ class DashboardController extends GetxController {
     // onReady fires in a post-first-frame callback — the dashboard's initial
     // frame has already painted by the time these three network calls kick
     // off, so they no longer compete with the (heavy) first build for the
-    // main isolate. Previously in onInit(), which runs BEFORE the first
-    // build and made the splash→dashboard reveal jank.
+    // main isolate.
     Future.wait([fetchCitiesList(), fetchTrekList(), fetchStateList()]);
   }
 
-  void _initializeControllers() {
-    // Field initializers already construct them; no action needed here.
-  }
+  void _initializeControllers() {}
 
   void _setupObservers() {
     ever(selectedCityId, (cityId) {
@@ -150,6 +154,15 @@ class DashboardController extends GetxController {
     _calendarDebounceTimer?.cancel();
 
     if (selectedCityId.value != 0 && selectedTrekId.value != 0) {
+      final routeKey = '${selectedCityId.value}_${selectedTrekId.value}';
+      // The route actually changed → the previously picked date belonged to
+      // the OLD pair and may not exist on the new one. Clear it up front so
+      // a stale date can never ride along into a search.
+      if (routeKey != _lastCalendarRouteKey) {
+        selectedDate.value = null;
+        dateController.value.clear();
+        dateController.refresh();
+      }
       logger.d('Both city and trek selected, scheduling calendar fetch');
       _calendarDebounceTimer = Timer(const Duration(milliseconds: 500), () {
         _fetchCalendarDatesForSelection();
@@ -172,6 +185,7 @@ class DashboardController extends GetxController {
     selectedDate.value = null;
     dateController.value.clear();
     dateController.refresh();
+    _lastCalendarRouteKey = null;
   }
 
   Future<void> _fetchCalendarDatesForSelection() async {
@@ -248,6 +262,7 @@ class DashboardController extends GetxController {
     required String statDate,
     required String endDate,
   }) async {
+    _lastCalendarRouteKey = '${cityId}_$trekId';
     try {
       availableDates.clear();
       calenderTrekDatesObserver.value = ApiResult.loading(
@@ -406,16 +421,21 @@ class DashboardController extends GetxController {
       if (response is Map<String, dynamic>) {
         final r = SponsoredSlotsResponse.fromJson(response);
         whatsNewSlots.assignAll(
-          r.whatsNew.where((s) => s.isBrandVideo && (s.videoUrl ?? '').isNotEmpty),
+          r.whatsNew.where(
+            (s) => s.isBrandVideo && (s.videoUrl ?? '').isNotEmpty,
+          ),
         );
         topTreksSlots.assignAll(
-          r.topTreks.where((s) =>
-              s.isSponsoredTrek ||
-              (s.isBrandVideo && (s.videoUrl ?? '').isNotEmpty)),
+          r.topTreks.where(
+            (s) =>
+                s.isSponsoredTrek ||
+                (s.isBrandVideo && (s.videoUrl ?? '').isNotEmpty),
+          ),
         );
         seasonalForecastSlots.assignAll(
-          r.seasonalForecast
-              .where((s) => s.isBrandVideo && (s.videoUrl ?? '').isNotEmpty),
+          r.seasonalForecast.where(
+            (s) => s.isBrandVideo && (s.videoUrl ?? '').isNotEmpty,
+          ),
         );
         admobFallbackEnabled.value = r.admobFallback;
       }
@@ -469,10 +489,7 @@ class DashboardController extends GetxController {
   /// Fired when the customer taps "Know more". Fire-and-forget.
   void logSponsoredClick(int slotId) {
     _repository
-        .postApiCall(
-          url: NetworkUrl.sponsoredSlotClick(slotId),
-          body: const {},
-        )
+        .postApiCall(url: NetworkUrl.sponsoredSlotClick(slotId), body: const {})
         .catchError((_) => null);
   }
 
@@ -602,41 +619,102 @@ class DashboardController extends GetxController {
     }
   }
 
+  // ── BOOKING HISTORY ─────────────────────────────────────────────────────
+
   int _historyGeneration = 0;
+  int? _activeHistoryFetch;
+
+  /// True while a kept-list refresh is in flight: the next successful
+  /// page-1 response REPLACES the list instead of merging into it.
+  bool _replaceAllOnNextSuccess = false;
+
+  /// Filter the data currently inside `bookingHistoryObserver` was fetched
+  /// with. Prevents a filter switch from showing the previous filter's
+  /// items "stale-while-revalidate".
+  String? _currentHistoryFilter;
+
+  /// When the last full background walk finished, and for which filter.
+  /// Makes re-entering the screen instant (no refetch storm).
+  DateTime? _bookingHistoryLoadedAt;
+  String? _bookingHistoryLoadedFilter;
+
+  static const Duration _historyFreshFor = Duration(minutes: 3);
+
+  bool _isBookingHistoryFresh() {
+    final at = _bookingHistoryLoadedAt;
+    if (at == null) return false;
+    if (_bookingHistoryLoadedFilter != selectedFilter.value) return false;
+    if (DateTime.now().difference(at) > _historyFreshFor) return false;
+    final m = bookingHistoryObserver.value;
+    if (!m.isPaginationCompleted) return false;
+    return m.data.value.maybeWhen(success: (_) => true, orElse: () => false);
+  }
+
+  void _markHistoryFreshIfComplete() {
+    final m = bookingHistoryObserver.value;
+    final ok = m.data.value.maybeWhen(
+      success: (_) => true,
+      orElse: () => false,
+    );
+    if (ok && m.isPaginationCompleted) {
+      _bookingHistoryLoadedAt = DateTime.now();
+      _bookingHistoryLoadedFilter = selectedFilter.value;
+    }
+  }
+
   Future<void> getBookingHistory({required bool refresh}) async {
     final observer = bookingHistoryObserver;
 
     if (refresh == true) {
       _historyGeneration++;
+
+      // Keep the already-loaded list on screen while page 1 reloads — no
+      // full-screen shimmer flash on pull-to-refresh or re-entry. The list
+      // is REPLACED when page 1 lands; if that fetch fails, the old data
+      // simply stays.
+      final bool canKeepList =
+          _currentHistoryFilter == selectedFilter.value &&
+          observer.value.data.value.maybeWhen(
+            success: (_) => true,
+            orElse: () => false,
+          );
+      _replaceAllOnNextSuccess = canKeepList;
+
       observer.value = PaginationModel(
-        data: const ApiResult<BookingHistoryModel>.init().obs,
+        data: observer.value.data, // reuse the inner Rx → live subscription
         isLoading: false,
         isPaginationCompleted: false,
         page: 1,
         error: "",
       );
+      if (!canKeepList) {
+        observer.value.data.value = const ApiResult.loading("");
+      }
     }
     final myGeneration = _historyGeneration;
 
-    try {
-      if (observer.value.isPaginationCompleted ||
-          observer.value.isLoading == true) {
-        return;
-      }
+    if (observer.value.isPaginationCompleted) return;
+    if (_activeHistoryFetch == myGeneration) return;
+    _activeHistoryFetch = myGeneration;
 
-      if (observer.value.page == 1) {
-        observer.value.data.value = const ApiResult.loading("");
+    final requestedPage = observer.value.page;
+
+    try {
+      if (requestedPage == 1) {
+        // Only show the loading state when we did NOT keep the old list.
+        if (!_replaceAllOnNextSuccess) {
+          observer.value.data.value = const ApiResult.loading("");
+        }
       } else {
         observer.value.isLoading = true;
-        observer.refresh();
       }
+      observer.refresh();
 
       const maxListApiReturns = 20;
-      observer.refresh();
 
       final response = await _repository.getApiCall(
         url: NetworkUrl.bookingHistoryWithStatus(
-          page: observer.value.page,
+          page: requestedPage,
           trekStatus: selectedFilter.value == 'All Bookings'
               ? null
               : selectedFilter.value,
@@ -647,42 +725,174 @@ class DashboardController extends GetxController {
 
       final body = response;
       if (body != null) {
-        debugPrint("========== BOOKING HISTORY RESPONSE ==========");
-        debugPrint(const JsonEncoder.withIndent('  ').convert(body));
-        debugPrint("==============================================");
+        if (kDebugMode) {
+          debugPrint(
+            "========== BOOKING HISTORY (page $requestedPage) ==========",
+          );
+          debugPrint(const JsonEncoder.withIndent('  ').convert(body));
+          debugPrint(
+            "==========================================================",
+          );
+        }
+
         final responseData = BookingHistoryModel.fromJson(body);
         if (responseData.success == true) {
-          observer.value.data.value.maybeWhen(
-            success: (data) {
-              final oldList = (data as BookingHistoryModel?)?.data?.toList();
-              oldList?.addAll(responseData.data ?? List.empty());
-              observer.value.data.value = ApiResult.success(
-                responseData.copyWith(data: oldList),
-              );
-            },
-            orElse: () {
-              observer.value.data.value = ApiResult.success(responseData);
-            },
-          );
+          final newItems = responseData.data ?? const <BookingHistoryData>[];
 
-          observer.value.page = observer.value.page + 1;
-          if ((responseData.data?.length ?? 0) < maxListApiReturns) {
+          // A kept-list refresh REPLACES on page 1; every later page MERGES
+          // into the accumulated list, deduplicating by booking id.
+          final bool replaceList =
+              _replaceAllOnNextSuccess && requestedPage == 1;
+          if (replaceList) _replaceAllOnNextSuccess = false;
+
+          final existing = replaceList
+              ? const <BookingHistoryData>[]
+              : observer.value.data.value.maybeWhen(
+                  success: (data) =>
+                      (data as BookingHistoryModel?)?.data ??
+                      const <BookingHistoryData>[],
+                  orElse: () => const <BookingHistoryData>[],
+                );
+          final merged = existing.toList();
+          final seen = <Object>{};
+          for (final b in merged) {
+            seen.add(b.id ?? b);
+          }
+          int added = 0;
+          for (final b in newItems) {
+            if (seen.add(b.id ?? b)) {
+              merged.add(b);
+              added++;
+            }
+          }
+
+          observer.value.data.value = ApiResult.success(
+            responseData.copyWith(data: merged),
+          );
+          if (requestedPage == 1) {
+            _currentHistoryFilter = selectedFilter.value;
+          }
+
+          observer.value.page = requestedPage + 1;
+
+          if (newItems.length < maxListApiReturns || added == 0) {
             observer.value.isPaginationCompleted = true;
           }
-          observer.value.isLoading = false;
-          observer.refresh();
           return;
         }
-        throw "${responseData.message}";
+        throw responseData.message ?? 'Failed to load booking history';
       }
       throw "Response Body Null";
     } catch (e) {
       if (myGeneration != _historyGeneration) return;
-      errorMessage.value = 'Failed to search treks: ${e.toString()}';
-      CustomSnackBar.show(Get.context!, message: errorMessage.value);
-      observer.value.data.value = ApiResult.error(e.toString());
-      observer.value.isLoading = false;
-      observer.refresh();
+      if (requestedPage == 1) {
+        if (_replaceAllOnNextSuccess) {
+          // The refresh failed but the old list is on screen and still
+          // good — keep it, settle the sync UI, surface a snackbar only.
+          _replaceAllOnNextSuccess = false;
+          observer.value.isPaginationCompleted = true;
+          observer.refresh();
+          errorMessage.value = 'Could not refresh bookings: ${e.toString()}';
+          final ctx = Get.context;
+          if (ctx != null) {
+            CustomSnackBar.show(ctx, message: errorMessage.value);
+          }
+        } else {
+          observer.value.data.value = ApiResult.error(e.toString());
+          errorMessage.value = 'Failed to load bookings: ${e.toString()}';
+          final ctx = Get.context;
+          if (ctx != null) {
+            CustomSnackBar.show(ctx, message: errorMessage.value);
+          }
+        }
+      } else {
+        // Pagination failure — fail soft: keep the loaded list, log it.
+        logger.e('Booking history pagination failed (page $requestedPage): $e');
+      }
+    } finally {
+      if (_activeHistoryFetch == myGeneration) {
+        _activeHistoryFetch = null;
+      }
+      if (myGeneration == _historyGeneration) {
+        observer.value.isLoading = false;
+        observer.refresh();
+      }
+    }
+  }
+
+  /// Loads the user's ENTIRE booking history in the background.
+  ///
+  /// • Freshness-guarded: if the same filter's full history was walked
+  ///   successfully moments ago, re-entering the screen is instant — no
+  ///   refetch storm (a 200-booking history is 10+ API calls).
+  /// • `waitForCompletion: false` resolves after page 1 (pull-to-refresh
+  ///   spinner only covers the first page) while the rest syncs quietly.
+  /// • A newer call supersedes an older walk; a few consecutive page
+  ///   failures stop the walk quietly, keeping the loaded list.
+  Future<void> loadAllBookingHistory({
+    bool force = false,
+    bool waitForCompletion = true,
+  }) async {
+    if (!force && _isBookingHistoryFresh()) return;
+
+    final generationBefore = _historyGeneration;
+    await getBookingHistory(refresh: true);
+
+    // Superseded by a newer load while page 1 was in flight.
+    if (_historyGeneration != generationBefore + 1) return;
+
+    final walk = _walkRemainingHistoryPages(generationBefore + 1);
+    if (waitForCompletion) {
+      await walk;
+      _markHistoryFreshIfComplete();
+    } else {
+      unawaited(walk.then((_) => _markHistoryFreshIfComplete()));
+    }
+  }
+
+  Future<void> _walkRemainingHistoryPages(int generation) async {
+    const maxConsecutivePageFailures = 3;
+    var consecutiveFailures = 0;
+
+    while (true) {
+      if (_historyGeneration != generation) return;
+
+      final model = bookingHistoryObserver.value;
+      if (model.isPaginationCompleted) return;
+
+      // Page 1 failed — the error state is already rendered; don't walk.
+      final page1Failed = model.data.value.maybeWhen(
+        error: (_) => true,
+        orElse: () => false,
+      );
+      if (page1Failed) return;
+
+      // Another fetch is in flight (e.g. a superseding page-1 load) —
+      // wait for it instead of busy-looping.
+      if (_activeHistoryFetch != null) {
+        await Future<void>.delayed(const Duration(milliseconds: 250));
+        continue;
+      }
+
+      final pageBefore = model.page;
+      await getBookingHistory(refresh: false);
+
+      if (_historyGeneration != generation) return;
+
+      if (bookingHistoryObserver.value.page != pageBefore) {
+        consecutiveFailures = 0;
+        continue;
+      }
+
+      // No advance: the page failed (fail-soft keeps the list). Back off
+      // and retry a couple of times before giving up quietly.
+      consecutiveFailures++;
+      if (consecutiveFailures >= maxConsecutivePageFailures) {
+        bookingHistoryObserver.value.isPaginationCompleted = true;
+        bookingHistoryObserver.refresh();
+        return;
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 500));
     }
   }
 
@@ -706,7 +916,16 @@ class DashboardController extends GetxController {
     return [];
   }
 
-  Future<void> getFailedBookingAttempts() async {
+  DateTime? _failedAttemptsLoadedAt;
+  static const Duration _failedAttemptsFreshFor = Duration(minutes: 2);
+
+  Future<void> getFailedBookingAttempts({bool force = false}) async {
+    if (!force &&
+        _failedAttemptsLoadedAt != null &&
+        DateTime.now().difference(_failedAttemptsLoadedAt!) <
+            _failedAttemptsFreshFor) {
+      return; // cached — pull-to-refresh passes force: true
+    }
     try {
       isLoadingFailedAttempts.value = true;
       final response = await _repository.getApiCall(
@@ -717,6 +936,7 @@ class DashboardController extends GetxController {
         failedBookingAttempts.value = list
             .whereType<Map<String, dynamic>>()
             .toList();
+        _failedAttemptsLoadedAt = DateTime.now();
       } else {
         failedBookingAttempts.value = [];
       }

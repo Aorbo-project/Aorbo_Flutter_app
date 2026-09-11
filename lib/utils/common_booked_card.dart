@@ -157,7 +157,6 @@ class CommonBookedCard extends StatelessWidget {
     ScreenConstant.setScreenAwareConstant(context);
     final String bookingId = booking.bookingNumber ?? '#${booking.id ?? '-'}';
     final String trekStatusRaw = booking.trekStatus ?? '';
-    final String paymentStatusRaw = booking.paymentStatus ?? '';
     final String bookingDate = _formatDate(booking.bookingDate);
     final bool isCompleted = trekStatusRaw.toLowerCase() == 'completed';
     final bool ratingGiven = booking.ratingGiven ?? false;
@@ -190,9 +189,6 @@ class CommonBookedCard extends StatelessWidget {
     final String statusLabel = trekStatusRaw.isNotEmpty
         ? trekStatusRaw[0].toUpperCase() + trekStatusRaw.substring(1)
         : '';
-    final bool isPartial =
-        paymentStatusRaw.toLowerCase().contains('partial') ||
-        paymentStatusRaw.toLowerCase().contains('advance');
     final double logoSize = _rw(9.5, 42);
     final double cornerRadius = _rw(4.5, 20);
 
@@ -220,287 +216,173 @@ class CommonBookedCard extends StatelessWidget {
               notchFromBottom: _stubHeight,
               color: _BC.cardBorder,
             ),
-            child: Stack(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Positioned(
-                  top: 0,
-                  right: 0,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.only(
-                      topRight: Radius.circular(cornerRadius),
-                    ),
-                    child: Transform.rotate(
-                      angle: -0.12,
-                      alignment: Alignment.topRight,
-                      child: Icon(
-                        Icons.terrain_rounded,
-                        size: 110,
-                        color: statusColor.withValues(alpha: 0.035),
-                      ),
-                    ),
+                Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    _rw(4.2, 20),
+                    _rh(1.5, 16),
+                    _rw(4.2, 20),
+                    _rh(1, 11),
                   ),
-                ),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Padding(
-                      padding: EdgeInsets.fromLTRB(
-                        _rw(4.2, 20),
-                        _rh(1.5, 16),
-                        _rw(4.2, 20),
-                        _rh(1, 11),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Container(
-                                width: logoSize,
-                                height: logoSize,
-                                decoration: BoxDecoration(
-                                  color: _BC.iconBadge,
-                                  borderRadius: BorderRadius.circular(
-                                    _rw(2.6, 12),
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: _BC.iconBadge.withValues(
-                                        alpha: 0.15,
-                                      ),
-                                      blurRadius: 6,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
+                          Container(
+                            width: logoSize,
+                            height: logoSize,
+                            decoration: BoxDecoration(
+                              color: _BC.iconBadge,
+                              borderRadius: BorderRadius.circular(_rw(2.6, 12)),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: _BC.iconBadge.withValues(alpha: 0.15),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
                                 ),
-                                clipBehavior: Clip.antiAlias,
-                                child: vendorLogo.isNotEmpty
-                                    ? CustomNetworkImage(
-                                        accessToken: Repository.token,
-                                        imageUrl: vendorLogo,
-                                        width: logoSize,
-                                        height: logoSize,
-                                        fit: BoxFit.cover,
-                                      )
-                                    : Center(
-                                        child: Text(
-                                          _initials(vendorName),
-                                          style: AppType.style(
-                                            FontSize.s10,
-                                            w: FontWeight.w700,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      ),
-                              ),
-                              SizedBox(width: _rw(2.8, 13)),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'ORGANISED BY',
-                                      textScaler: const TextScaler.linear(1),
-                                      style: AppType.style(
-                                        FontSize.s7,
-                                        w: FontWeight.w600,
-                                        color: _BC.inkLight,
-                                        height: 1,
-                                        letterSpacing: 1,
-                                      ),
-                                    ),
-                                    SizedBox(height: _rh(0.25, 3)),
-                                    Text(
-                                      vendorName,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                              ],
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: vendorLogo.isNotEmpty
+                                ? CustomNetworkImage(
+                                    accessToken: Repository.token,
+                                    imageUrl: vendorLogo,
+                                    width: logoSize,
+                                    height: logoSize,
+                                    fit: BoxFit.cover,
+                                  )
+                                : Center(
+                                    child: Text(
+                                      _initials(vendorName),
                                       style: AppType.style(
                                         FontSize.s10,
-                                        w: FontWeight.w600,
-                                        color: _BC.ink,
-                                        height: 1.25,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  if (isPartial) ...[
-                                    _badge('Partial', _BC.warning),
-                                    SizedBox(height: _rh(0.35, 4)),
-                                  ],
-                                  if (statusLabel.isNotEmpty)
-                                    _badge(
-                                      statusLabel,
-                                      statusColor,
-                                      filled: true,
-                                    ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: _rh(1.1, 12)),
-                          Text(
-                            title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            textScaler: const TextScaler.linear(1),
-                            style: AppType.style(
-                              FontSize.s13,
-                              w: FontWeight.w800,
-                              color: _BC.ink,
-                              height: 1.15,
-                              letterSpacing: -0.2,
-                            ),
-                          ),
-                          if (destinationName.isNotEmpty)
-                            Padding(
-                              padding: EdgeInsets.only(top: _rh(0.35, 4.5)),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.location_on_rounded,
-                                    size: _rw(3.1, 14),
-                                    color: _BC.brand,
-                                  ),
-                                  SizedBox(width: _rw(0.9, 4.5)),
-                                  Expanded(
-                                    child: Text(
-                                      destinationName,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: AppType.style(
-                                        FontSize.s9,
-                                        color: _BC.inkMid,
-                                        height: 1.25,
+                                        w: FontWeight.w700,
+                                        color: Colors.white,
                                       ),
                                     ),
                                   ),
-                                  if (difficulty.isNotEmpty &&
-                                      difficulty != '-')
-                                    _badge(difficulty, _BC.brand, small: true),
-                                ],
-                              ),
-                            ),
-                          SizedBox(height: _rh(1.2, 13)),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              vertical: _rh(0.85, 9),
-                              horizontal: _rw(2.4, 12),
-                            ),
-                            decoration: BoxDecoration(
-                              color: _BC.divider.withValues(alpha: 0.3),
-                              borderRadius: BorderRadius.circular(_rw(2.7, 12)),
-                            ),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
+                          ),
+                          SizedBox(width: _rw(2.8, 13)),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                _endpoint(
-                                  'Starts',
-                                  startDateTime,
-                                  CrossAxisAlignment.start,
-                                ),
-                                Expanded(
-                                  child: Padding(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: _rw(2.5, 12),
-                                    ),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          Icons.terrain_rounded,
-                                          size: _rw(4.4, 19),
-                                          color: statusColor.withValues(
-                                            alpha: 0.6,
-                                          ),
-                                        ),
-                                        SizedBox(
-                                          height: 7,
-                                          child: CustomPaint(
-                                            size: const Size(
-                                              double.infinity,
-                                              7,
-                                            ),
-                                            painter: _DottedTrailPainter(
-                                              color: statusColor.withValues(
-                                                alpha: 0.35,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                                Text(
+                                  'ORGANISED BY',
+                                  textScaler: const TextScaler.linear(1),
+                                  style: AppType.style(
+                                    FontSize.s7,
+                                    w: FontWeight.w600,
+                                    color: _BC.inkLight,
+                                    height: 1,
+                                    letterSpacing: 1,
                                   ),
                                 ),
-                                _endpoint(
-                                  'Duration',
-                                  durationStr,
-                                  CrossAxisAlignment.end,
+                                SizedBox(height: _rh(0.25, 3)),
+                                Text(
+                                  vendorName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppType.style(
+                                    FontSize.s10,
+                                    w: FontWeight.w600,
+                                    color: _BC.ink,
+                                    height: 1.25,
+                                  ),
                                 ),
                               ],
                             ),
                           ),
-                          if (showRateHint) ...[
-                            SizedBox(height: _rh(1, 10)),
-                            GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: onRateTrekTap,
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: _rw(3.2, 15),
-                                  vertical: _rh(0.75, 8),
-                                ),
-                                decoration: BoxDecoration(
-                                  color: _BC.ratingBg,
-                                  borderRadius: BorderRadius.circular(
-                                    _rw(2.4, 11),
+                          if (statusLabel.isNotEmpty)
+                            _badge(statusLabel, statusColor, filled: true),
+                        ],
+                      ),
+                      SizedBox(height: _rh(1.1, 12)),
+                      Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textScaler: const TextScaler.linear(1),
+                        style: AppType.style(
+                          FontSize.s13,
+                          w: FontWeight.w800,
+                          color: _BC.ink,
+                          height: 1.15,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                      if (destinationName.isNotEmpty)
+                        Padding(
+                          padding: EdgeInsets.only(top: _rh(0.35, 4.5)),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.location_on_rounded,
+                                size: _rw(3.1, 14),
+                                color: _BC.brand,
+                              ),
+                              SizedBox(width: _rw(0.9, 4.5)),
+                              Expanded(
+                                child: Text(
+                                  destinationName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppType.style(
+                                    FontSize.s9,
+                                    color: _BC.inkMid,
+                                    height: 1.25,
                                   ),
-                                  border: Border.all(color: _BC.ratingBorder),
                                 ),
-                                child: Row(
+                              ),
+                              if (difficulty.isNotEmpty && difficulty != '-')
+                                _badge(difficulty, _BC.brand, small: true),
+                            ],
+                          ),
+                        ),
+                      SizedBox(height: _rh(1.2, 13)),
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          vertical: _rh(0.85, 9),
+                          horizontal: _rw(2.4, 12),
+                        ),
+                        decoration: BoxDecoration(
+                          color: _BC.divider.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(_rw(2.7, 12)),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            _endpoint(
+                              'Starts',
+                              startDateTime,
+                              CrossAxisAlignment.start,
+                            ),
+                            Expanded(
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: _rw(2.5, 12),
+                                ),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Icon(
-                                      Icons.star_rounded,
-                                      color: _BC.warning,
-                                      size: _rw(4.4, 20),
+                                      Icons.terrain_rounded,
+                                      size: _rw(4.4, 19),
+                                      color: statusColor.withValues(alpha: 0.6),
                                     ),
-                                    SizedBox(width: _rw(2.2, 10)),
-                                    Expanded(
-                                      child: Text(
-                                        'How was your trek? Tap to rate',
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: AppType.style(
-                                          FontSize.s9,
-                                          w: FontWeight.w600,
-                                          color: _BC.ink,
-                                          height: 1.2,
-                                        ),
-                                      ),
-                                    ),
-                                    Container(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: _rw(2.8, 13),
-                                        vertical: _rh(0.45, 5.5),
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: _BC.warning,
-                                        borderRadius: BorderRadius.circular(
-                                          100,
-                                        ),
-                                      ),
-                                      child: Text(
-                                        'Rate',
-                                        style: AppType.style(
-                                          FontSize.s8,
-                                          w: FontWeight.w700,
-                                          color: Colors.white,
+                                    SizedBox(
+                                      height: 7,
+                                      child: CustomPaint(
+                                        size: const Size(double.infinity, 7),
+                                        painter: _DottedTrailPainter(
+                                          color: statusColor.withValues(
+                                            alpha: 0.35,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -508,177 +390,229 @@ class CommonBookedCard extends StatelessWidget {
                                 ),
                               ),
                             ),
+                            _endpoint(
+                              'Duration',
+                              durationStr,
+                              CrossAxisAlignment.end,
+                            ),
                           ],
-                          if (showRatedStrip) ...[
-                            SizedBox(height: _rh(1, 10)),
-                            GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: onRateTrekTap,
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: _rw(3.2, 15),
-                                  vertical: _rh(0.75, 8),
+                        ),
+                      ),
+                      if (showRateHint) ...[
+                        SizedBox(height: _rh(1, 10)),
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: onRateTrekTap,
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: _rw(3.2, 15),
+                              vertical: _rh(0.75, 8),
+                            ),
+                            decoration: BoxDecoration(
+                              color: _BC.ratingBg,
+                              borderRadius: BorderRadius.circular(_rw(2.4, 11)),
+                              border: Border.all(color: _BC.ratingBorder),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.star_rounded,
+                                  color: _BC.warning,
+                                  size: _rw(4.4, 20),
                                 ),
-                                decoration: BoxDecoration(
-                                  color: _BC.completed.withValues(alpha: 0.06),
-                                  borderRadius: BorderRadius.circular(
-                                    _rw(2.4, 11),
-                                  ),
-                                  border: Border.all(
-                                    color: _BC.completed.withValues(
-                                      alpha: 0.22,
+                                SizedBox(width: _rw(2.2, 10)),
+                                Expanded(
+                                  child: Text(
+                                    'How was your trek? Tap to rate',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: AppType.style(
+                                      FontSize.s9,
+                                      w: FontWeight.w600,
+                                      color: _BC.ink,
+                                      height: 1.2,
                                     ),
                                   ),
                                 ),
-                                child: Row(
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: _rw(2.8, 13),
+                                    vertical: _rh(0.45, 5.5),
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: _BC.warning,
+                                    borderRadius: BorderRadius.circular(100),
+                                  ),
+                                  child: Text(
+                                    'Rate',
+                                    style: AppType.style(
+                                      FontSize.s8,
+                                      w: FontWeight.w700,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                      if (showRatedStrip) ...[
+                        SizedBox(height: _rh(1, 10)),
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: onRateTrekTap,
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: _rw(3.2, 15),
+                              vertical: _rh(0.75, 8),
+                            ),
+                            decoration: BoxDecoration(
+                              color: _BC.completed.withValues(alpha: 0.06),
+                              borderRadius: BorderRadius.circular(_rw(2.4, 11)),
+                              border: Border.all(
+                                color: _BC.completed.withValues(alpha: 0.22),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.verified_rounded,
+                                  color: _BC.completed,
+                                  size: _rw(4.2, 19),
+                                ),
+                                SizedBox(width: _rw(2.2, 10)),
+                                Expanded(
+                                  child: Text(
+                                    'You rated this trek',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: AppType.style(
+                                      FontSize.s9,
+                                      w: FontWeight.w600,
+                                      color: _BC.ink,
+                                      height: 1.2,
+                                    ),
+                                  ),
+                                ),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: List.generate(5, (i) {
+                                    return Icon(
+                                      i < ratingValue.round()
+                                          ? Icons.star_rounded
+                                          : Icons.star_border_rounded,
+                                      size: _rw(3.6, 16),
+                                      color: _BC.warning,
+                                    );
+                                  }),
+                                ),
+                                SizedBox(width: _rw(1.2, 6)),
+                                Text(
+                                  ratingValue.toStringAsFixed(1),
+                                  style: AppType.style(
+                                    FontSize.s9,
+                                    w: FontWeight.w700,
+                                    color: _BC.completed,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                SizedBox(
+                  height: _stubHeight,
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: _rw(4, 20)),
+                        child: CustomPaint(
+                          size: const Size(double.infinity, 1),
+                          painter: _DashedLinePainter(color: _BC.divider),
+                        ),
+                      ),
+                      Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: _rw(4.2, 20),
+                          ),
+                          child: Row(
+                            children: [
+                              _RouteFlowBadge(
+                                color: statusColor,
+                                size: const Size(56, 24),
+                              ),
+                              SizedBox(width: _rw(2.2, 11)),
+                              Expanded(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(
-                                      Icons.verified_rounded,
-                                      color: _BC.completed,
-                                      size: _rw(4.2, 19),
-                                    ),
-                                    SizedBox(width: _rw(2.2, 10)),
-                                    Expanded(
-                                      child: Text(
-                                        'You rated this trek',
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: AppType.style(
-                                          FontSize.s9,
-                                          w: FontWeight.w600,
-                                          color: _BC.ink,
-                                          height: 1.2,
-                                        ),
+                                    Text(
+                                      bookingId,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      textScaler: const TextScaler.linear(1),
+                                      style: AppType.style(
+                                        FontSize.s10,
+                                        w: FontWeight.w700,
+                                        color: _BC.ink,
+                                        height: 1.2,
+                                        letterSpacing: 0.6,
                                       ),
                                     ),
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: List.generate(5, (i) {
-                                        return Icon(
-                                          i < ratingValue.round()
-                                              ? Icons.star_rounded
-                                              : Icons.star_border_rounded,
-                                          size: _rw(3.6, 16),
-                                          color: _BC.warning,
-                                        );
-                                      }),
-                                    ),
-                                    SizedBox(width: _rw(1.2, 6)),
                                     Text(
-                                      ratingValue.toStringAsFixed(1),
+                                      'Booked $bookingDate',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      textScaler: const TextScaler.linear(1),
+                                      style: AppType.style(
+                                        FontSize.s8,
+                                        color: _BC.inkLight,
+                                        height: 1.2,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (onViewDetailsTap != null)
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      'Details',
                                       style: AppType.style(
                                         FontSize.s9,
-                                        w: FontWeight.w700,
-                                        color: _BC.completed,
+                                        w: FontWeight.w600,
+                                        color: _BC.brand,
+                                      ),
+                                    ),
+                                    SizedBox(width: _rw(0.8, 4)),
+                                    Container(
+                                      padding: EdgeInsets.all(_rw(0.8, 4)),
+                                      decoration: const BoxDecoration(
+                                        color: _BC.brandSoft,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        Icons.arrow_forward_rounded,
+                                        size: _rw(3.2, 14),
+                                        color: _BC.brand,
                                       ),
                                     ),
                                   ],
                                 ),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                    SizedBox(
-                      height: _stubHeight,
-                      child: Column(
-                        children: [
-                          Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: _rw(4, 20),
-                            ),
-                            child: CustomPaint(
-                              size: const Size(double.infinity, 1),
-                              painter: _DashedLinePainter(color: _BC.divider),
-                            ),
+                            ],
                           ),
-                          Expanded(
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: _rw(4.2, 20),
-                              ),
-                              child: Row(
-                                children: [
-                                  _RouteFlowBadge(
-                                    color: statusColor,
-                                    size: const Size(56, 24),
-                                  ),
-                                  SizedBox(width: _rw(2.2, 11)),
-                                  Expanded(
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          bookingId,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          textScaler: const TextScaler.linear(
-                                            1,
-                                          ),
-                                          style: AppType.style(
-                                            FontSize.s10,
-                                            w: FontWeight.w700,
-                                            color: _BC.ink,
-                                            height: 1.2,
-                                            letterSpacing: 0.6,
-                                          ),
-                                        ),
-                                        Text(
-                                          'Booked $bookingDate',
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          textScaler: const TextScaler.linear(
-                                            1,
-                                          ),
-                                          style: AppType.style(
-                                            FontSize.s8,
-                                            color: _BC.inkLight,
-                                            height: 1.2,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  if (onViewDetailsTap != null)
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          'Details',
-                                          style: AppType.style(
-                                            FontSize.s9,
-                                            w: FontWeight.w600,
-                                            color: _BC.brand,
-                                          ),
-                                        ),
-                                        SizedBox(width: _rw(0.8, 4)),
-                                        Container(
-                                          padding: EdgeInsets.all(_rw(0.8, 4)),
-                                          decoration: const BoxDecoration(
-                                            color: _BC.brandSoft,
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: Icon(
-                                            Icons.arrow_forward_rounded,
-                                            size: _rw(3.2, 14),
-                                            color: _BC.brand,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),

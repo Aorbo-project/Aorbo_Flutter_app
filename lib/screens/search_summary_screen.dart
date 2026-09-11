@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:arobo_app/controller/coupon_controller.dart';
 import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/controller/trek_controller.dart';
-import 'package:arobo_app/models/city_model.dart';
 import 'package:arobo_app/models/coupon_code/coupon_code_model.dart';
 import 'package:arobo_app/models/discount_card_model.dart';
 import 'package:arobo_app/screens/source_location_screen.dart';
@@ -44,6 +43,12 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
   final CouponController _couponC = Get.find<CouponController>();
 
   bool _isUserInteractingCoupons = false;
+
+  /// Count the autoplay timer was last armed for — the Obx rebuilds on
+  /// every coupon-state change, and re-arming inside it used to restart the
+  /// timer (resetting the 5s cadence) over and over.
+  int _couponAutoplayCount = -1;
+
   bool _isGroupBooking = false;
 
   final ScrollController _scrollController = ScrollController();
@@ -64,6 +69,9 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   DateTime? _ntpTime;
+
+  /// The live bottom toast (one at a time; a newer one replaces the older).
+  OverlayEntry? _toastEntry;
 
   @override
   void initState() {
@@ -98,6 +106,7 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
   @override
   void deactivate() {
     _couponTimer?.cancel();
+    _couponAutoplayCount = -1; // re-arm when the screen becomes active again
     super.deactivate();
   }
 
@@ -108,7 +117,44 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
     _scrollController.dispose();
     _fadeCtrl.dispose();
     _headerSlideCtrl.dispose();
+    // Drop any live toast before the state goes away.
+    final old = _toastEntry;
+    _toastEntry = null;
+    old?.remove();
     super.dispose();
+  }
+
+  // ── BOTTOM TOAST — every user-visible change announces itself, sliding
+  //    up from the bottom, with its own visual identity.
+  void _feedback(String message, {bool error = false}) {
+    if (!mounted) return;
+    // Replace any live toast.
+    final old = _toastEntry;
+    _toastEntry = null;
+    old?.remove();
+
+    final double bottom = MediaQuery.of(context).padding.bottom + 20;
+
+    late final OverlayEntry entry;
+    entry = OverlayEntry(
+      builder: (context) => Positioned(
+        bottom: bottom,
+        left: 16,
+        right: 16,
+        child: _AppToast(
+          message: message,
+          error: error,
+          onDone: () {
+            if (_toastEntry == entry) {
+              _toastEntry = null;
+              entry.remove();
+            }
+          },
+        ),
+      ),
+    );
+    _toastEntry = entry;
+    Overlay.of(context).insert(entry);
   }
 
   Future<void> _initializeNTPTime() async {
@@ -181,9 +227,22 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
     }
   }
 
+  /// True when the search FAILED (network etc.) — must not be shown as
+  /// "no treks available".
+  bool _searchHasError() => _trekC.treksResponseObserver.value.data.value
+      .maybeWhen(error: (_) => true, orElse: () => false);
+
+  /// True only when a search COMPLETED with zero results.
+  bool _searchIsEmpty() =>
+      _trekC.treksResponseObserver.value.data.value.maybeWhen(
+        success: (data) => data is FetchTreksResponseModel
+            ? (data.data ?? const []).isEmpty
+            : true,
+        orElse: () => false, // loading / initial → placeholders, not empty
+      );
+
   /// Server-side filtering/sorting — the whole result set is re-queried
-  /// with the active filters, so it stays correct across pagination
-  /// (unlike client-side filtering of one already-loaded page).
+  /// with the active filters, so it stays correct across pagination.
   Future<void> _runSearch() async {
     await _trekC.searchTreks(
       cityId: _dashboardC.selectedCityId.value,
@@ -198,6 +257,9 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
     _trekC.fetchSearchSponsored(
       destinationId: _dashboardC.selectedTrekId.value,
     );
+    // Results land asynchronously — force a rebuild so every non-Obx
+    // layout decision (nothing depends on it now, but cheap insurance).
+    if (mounted) setState(() {});
   }
 
   Future<void> _applyFilters() async {
@@ -213,18 +275,70 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
   }
 
   Future<void> _openLocationSearch() async {
-    await Navigator.push<City>(
+    final int oldCityId = _dashboardC.selectedCityId.value;
+    final int oldTrekId = _dashboardC.selectedTrekId.value;
+    final String oldFrom = _dashboardC.fromController.value.text;
+    final String oldTo = _dashboardC.toController.value.text;
+
+    final bool? completed = await Navigator.push<bool>(
       context,
       MaterialPageRoute(builder: (_) => const SourceLocationScreen()),
     );
+    if (!mounted || completed != true) return;
 
+    // The route changed — availability for the NEW pair must be fetched
+    // here (the dashboard's auto-fetch only runs when the route screen was
+    // opened from the dashboard itself).
+    await _dashboardC.fetchCalendarDatesNow();
     if (!mounted) return;
     setState(() {});
 
-    if (_dashboardC.fromController.value.text.isNotEmpty &&
-        _dashboardC.toController.value.text.isNotEmpty &&
-        _dashboardC.dateController.value.text.isNotEmpty) {
-      _onRefresh();
+    final routeChanged =
+        oldCityId != _dashboardC.selectedCityId.value ||
+        oldTrekId != _dashboardC.selectedTrekId.value;
+
+    if (routeChanged) {
+      final from = _dashboardC.fromController.value.text.trim();
+      final to = _dashboardC.toController.value.text.trim();
+      final old = (oldFrom.isEmpty || oldTo.isEmpty)
+          ? 'your previous route'
+          : '$oldFrom → $oldTo';
+      _feedback('Route updated: $old → $from → $to');
+    }
+
+    if (_dashboardC.availableDates.isEmpty) {
+      _feedback('No departures on this route yet', error: true);
+      await _runSearch();
+      return;
+    }
+
+    if (_dashboardC.dateController.value.text.isEmpty) {
+      await _selectDate(context);
+      if (!mounted) return;
+      if (_dashboardC.dateController.value.text.isEmpty) {
+        await _runSearch();
+      }
+      return;
+    }
+
+    await _onRefresh();
+  }
+
+  // ── NOTIFY ME — subscribe to alerts for the current route ───────────────
+  Future<void> _subscribeNotify() async {
+    HapticFeedback.selectionClick();
+    final int cityId = _dashboardC.selectedCityId.value;
+    final int trekId = _dashboardC.selectedTrekId.value;
+    if (cityId == 0 || trekId == 0) return;
+    try {
+      await _dashboardC.subscribeToRouteNotification(cityId, trekId);
+      _feedback("We'll notify you when dates open on this route");
+    } catch (e) {
+      final msg = e.toString().replaceFirst('Exception: ', '').trim();
+      _feedback(
+        msg.isEmpty ? 'Could not set up alerts — try again' : msg,
+        error: true,
+      );
     }
   }
 
@@ -234,17 +348,17 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
         _dashboardC.selectedTrekId.value != 0;
 
     if (!isCityTrekSelected) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select source and destination first'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      _feedback('Pick a departure city and trek first', error: true);
       return;
     }
 
     if (_ntpTime == null) await _initializeNTPTime();
     if (!context.mounted) return;
+
+    // Fresh availability for the CURRENT route — the observer may still
+    // hold the previous route's dates. Fire-and-forget: the sheet renders
+    // its own loading state from the observer while it lands.
+    unawaited(_dashboardC.fetchCalendarDatesNow());
 
     final DateTime currentTime = _ntpTime ?? DateTime.now();
     final DateTime normalizedCurrent = DateTime(
@@ -265,7 +379,21 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
     DateTime lastDate,
   ) async {
     DateTime tempSelectedDate = _dashboardC.selectedDate.value ?? firstDate;
-    DateTime tempFocusedDay = _focusedDay;
+    // A persisted date that isn't available on the current route (or has
+    // already passed) must not render as "Selected".
+    if (tempSelectedDate.isBefore(firstDate) ||
+        !_dashboardC.isDateAvailable(tempSelectedDate)) {
+      tempSelectedDate = firstDate;
+    }
+    // Open on the month of the SELECTION — but table_calendar asserts
+    // focusedDay >= firstDay, and the 1st of the CURRENT month is before
+    // today, so clamp.
+    DateTime tempFocusedDay = DateTime(
+      tempSelectedDate.year,
+      tempSelectedDate.month,
+      1,
+    );
+    if (tempFocusedDay.isBefore(firstDate)) tempFocusedDay = firstDate;
     CalendarFormat tempCalendarFormat = _calendarFormat;
 
     await showModalBottomSheet<void>(
@@ -325,7 +453,7 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
                             ),
                           ),
                           Padding(
-                            padding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
+                            padding: const EdgeInsets.fromLTRB(18, 12, 18, 10),
                             child: Row(
                               children: [
                                 TweenAnimationBuilder<double>(
@@ -360,13 +488,27 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
                                     children: [
                                       Text(
                                         'Select Departure Date',
-                                        style: AppType.style(15.5, w: FontWeight.w700, color: AroboTheme.ink, letterSpacing: -0.3),
+                                        style: AppType.style(
+                                          15.5,
+                                          w: FontWeight.w700,
+                                          color: AroboTheme.ink,
+                                          letterSpacing: -0.3,
+                                        ),
                                       ),
-                                      SizedBox(height: 2),
-                                      Text(
-                                        'Tap an available date to continue',
-                                        style: AppType.style(10.5, color: AroboTheme.inkMid),
-                                      ),
+                                      const SizedBox(height: 2),
+                                      Obx(() {
+                                        final count =
+                                            _dashboardC.availableDates.length;
+                                        return Text(
+                                          count > 0
+                                              ? '$count departures available in the next 3 months'
+                                              : 'Tap an available date to continue',
+                                          style: AppType.style(
+                                            10.5,
+                                            color: AroboTheme.inkMid,
+                                          ),
+                                        );
+                                      }),
                                     ],
                                   ),
                                 ),
@@ -391,6 +533,10 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
                                 ),
                               ],
                             ),
+                          ),
+                          _buildQuickDateChips(
+                            firstDate,
+                            (d) => setSheet(() => tempSelectedDate = d),
                           ),
                           Padding(
                             padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
@@ -430,13 +576,16 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
                           ),
                           padding: const EdgeInsets.fromLTRB(4, 4, 4, 10),
                           child: Obx(() {
-                            final isLoading = _dashboardC
-                                .calenderTrekDatesObserver
-                                .value
-                                .maybeWhen(
-                                  loading: (_) => true,
-                                  orElse: () => false,
-                                );
+                            final state =
+                                _dashboardC.calenderTrekDatesObserver.value;
+                            final bool isLoading = state.maybeWhen(
+                              loading: (_) => true,
+                              orElse: () => false,
+                            );
+                            final bool isError = state.maybeWhen(
+                              error: (_) => true,
+                              orElse: () => false,
+                            );
 
                             if (isLoading) {
                               return SizedBox(
@@ -456,7 +605,70 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
                                       const SizedBox(height: 12),
                                       Text(
                                         'Loading available dates…',
-                                        style: AppType.style(11.5, color: AroboTheme.inkMid),
+                                        style: AppType.style(
+                                          11.5,
+                                          color: AroboTheme.inkMid,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }
+
+                            if (isError) {
+                              return SizedBox(
+                                height: 280,
+                                child: Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(
+                                        Icons.cloud_off_rounded,
+                                        size: 40,
+                                        color: AroboTheme.inkLight,
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        "Couldn't load departure dates",
+                                        style: AppType.style(
+                                          12,
+                                          w: FontWeight.w700,
+                                          color: AroboTheme.ink,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Check your connection and try again',
+                                        style: AppType.style(
+                                          10.5,
+                                          color: AroboTheme.inkMid,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 14),
+                                      GestureDetector(
+                                        onTap: () =>
+                                            _dashboardC.fetchCalendarDatesNow(),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 22,
+                                            vertical: 9,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: AroboTheme.primary,
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            'Retry',
+                                            style: AppType.style(
+                                              11,
+                                              w: FontWeight.w700,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -496,13 +708,11 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
                                       .isDateAvailable(sel);
 
                                   if (!isAvailable) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'No treks available on this date',
-                                        ),
-                                        behavior: SnackBarBehavior.floating,
-                                      ),
+                                    _feedback(
+                                      'No treks on '
+                                      '${DateFormat('d MMM').format(sel)} — '
+                                      'try a highlighted date',
+                                      error: true,
                                     );
                                     return;
                                   }
@@ -515,8 +725,14 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
                                     _focusedDay = foc;
                                     _calendarFormat = tempCalendarFormat;
                                   });
+                                  // Notify the app-bar date chip's Obx.
+                                  _dashboardC.dateController.refresh();
 
                                   Get.back();
+                                  _feedback(
+                                    'Departure set to '
+                                    '${DateFormat('EEE, d MMM').format(sel)}',
+                                  );
                                   _onRefresh();
                                 },
                                 calendarStyle: const CalendarStyle(
@@ -558,7 +774,12 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
                                 headerStyle: HeaderStyle(
                                   formatButtonVisible: false,
                                   titleCentered: true,
-                                  titleTextStyle: AppType.style(14.5, w: FontWeight.w700, color: AroboTheme.ink, letterSpacing: -0.2),
+                                  titleTextStyle: AppType.style(
+                                    14.5,
+                                    w: FontWeight.w700,
+                                    color: AroboTheme.ink,
+                                    letterSpacing: -0.2,
+                                  ),
                                   leftChevronIcon: _chevron(
                                     Icons.chevron_left_rounded,
                                     AroboTheme.teal,
@@ -572,10 +793,20 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
                                   ),
                                 ),
                                 daysOfWeekStyle: DaysOfWeekStyle(
-                                  weekdayStyle: AppType.style(10.5, w: FontWeight.w700, color: AroboTheme.inkMid, letterSpacing: 0.4),
-                                  weekendStyle: AppType.style(10.5, w: FontWeight.w700, color: AroboTheme.danger.withValues(
+                                  weekdayStyle: AppType.style(
+                                    10.5,
+                                    w: FontWeight.w700,
+                                    color: AroboTheme.inkMid,
+                                    letterSpacing: 0.4,
+                                  ),
+                                  weekendStyle: AppType.style(
+                                    10.5,
+                                    w: FontWeight.w700,
+                                    color: AroboTheme.danger.withValues(
                                       alpha: 0.7,
-                                    ), letterSpacing: 0.4),
+                                    ),
+                                    letterSpacing: 0.4,
+                                  ),
                                   dowTextFormatter: (date, locale) =>
                                       DateFormat.E(locale)
                                           .format(date)
@@ -595,6 +826,97 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
           },
         );
       },
+    );
+  }
+
+  /// Quick date chips: Today / First available / Next weekend — all computed
+  /// from real availability, so a chip never appears if it can't be picked.
+  Widget _buildQuickDateChips(
+    DateTime firstDate,
+    ValueChanged<DateTime> onPick,
+  ) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final avail =
+        _dashboardC.availableDates.keys
+            .map(DateTime.parse)
+            .where((d) => !d.isBefore(today))
+            .toList()
+          ..sort();
+
+    DateTime? firstAvail;
+    DateTime? nextWeekend;
+    for (final d in avail) {
+      firstAvail ??= d;
+      if (nextWeekend == null &&
+          (d.weekday >= DateTime.thursday && d.weekday <= DateTime.saturday)) {
+        nextWeekend = d;
+      }
+      if (firstAvail != null && nextWeekend != null) break;
+    }
+
+    final chips = <({String label, DateTime day})>[];
+    if (_dashboardC.isDateAvailable(today)) {
+      chips.add((label: 'Today', day: today));
+    }
+    if (firstAvail != null && !isSameDay(firstAvail, today)) {
+      chips.add((
+        label: 'First available · ${DateFormat('d MMM').format(firstAvail)}',
+        day: firstAvail,
+      ));
+    }
+    if (nextWeekend != null &&
+        !chips.any((c) => isSameDay(c.day, nextWeekend))) {
+      chips.add((
+        label: 'Weekend · ${DateFormat('d MMM').format(nextWeekend)}',
+        day: nextWeekend,
+      ));
+    }
+    if (chips.isEmpty) return const SizedBox.shrink();
+
+    return SizedBox(
+      height: 34,
+      child: ListView.separated(
+        padding: const EdgeInsets.symmetric(horizontal: 18),
+        scrollDirection: Axis.horizontal,
+        itemCount: chips.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (ctx, i) => GestureDetector(
+          onTap: () {
+            HapticFeedback.selectionClick();
+            onPick(chips[i].day);
+            _dashboardC.selectedDate.value = chips[i].day;
+            _dashboardC.dateController.value.text = DateFormat(
+              'dd/MM/yyyy',
+            ).format(chips[i].day);
+            // Notify the app-bar date chip's Obx.
+            _dashboardC.dateController.refresh();
+            Get.back();
+            _feedback(
+              'Departure set to '
+              '${DateFormat('EEE, d MMM').format(chips[i].day)}',
+            );
+            _onRefresh();
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AroboTheme.tealSoft,
+              borderRadius: BorderRadius.circular(100),
+              border: Border.all(color: AroboTheme.teal.withValues(alpha: 0.3)),
+            ),
+            child: Text(
+              chips[i].label,
+              style: AppType.style(
+                9.5,
+                w: FontWeight.w700,
+                color: AroboTheme.primary,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -641,7 +963,11 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
         const SizedBox(width: 5),
         Text(
           label,
-          style: AppType.style(9.5, w: FontWeight.w500, color: AroboTheme.inkMid),
+          style: AppType.style(
+            9.5,
+            w: FontWeight.w500,
+            color: AroboTheme.inkMid,
+          ),
         ),
       ],
     );
@@ -716,23 +1042,33 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
           children: [
             Text(
               '${day.day}',
-              style: AppType.style(12.5, w: isSelected || isAvailable
+              style: AppType.style(
+                12.5,
+                w: isSelected || isAvailable
                     ? FontWeight.w700
-                    : FontWeight.w500, color: isSelected
+                    : FontWeight.w500,
+                color: isSelected
                     ? Colors.white
                     : isAvailable
                     ? AroboTheme.teal
                     : isWeekend
                     ? AroboTheme.danger.withValues(alpha: 0.7)
-                    : AroboTheme.ink, height: 1.0),
+                    : AroboTheme.ink,
+                height: 1.0,
+              ),
             ),
             const SizedBox(height: 2),
             if (isAvailable)
               Text(
                 isSelected ? '✓' : '$trekCount',
-                style: AppType.style(9, w: FontWeight.w800, color: isSelected
+                style: AppType.style(
+                  9,
+                  w: FontWeight.w800,
+                  color: isSelected
                       ? Colors.white.withValues(alpha: 0.95)
-                      : AroboTheme.teal, height: 1.0),
+                      : AroboTheme.teal,
+                  height: 1.0,
+                ),
               )
             else
               const SizedBox(height: 9),
@@ -744,8 +1080,6 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
 
   @override
   Widget build(BuildContext context) {
-    final dateText = _dashboardC.dateController.value.text;
-
     return StatefulWrapper(
       onInit: () async {
         await _couponC.fetchPlatformCoupons();
@@ -754,22 +1088,38 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
         });
       },
       child: Scaffold(
-        // Was AroboTheme.bg (0xFFF8FAFC, cool slate) — matched to the
-        // app-wide standard background (0xFFFAFAFA) used on Trek Details,
-        // Checkout, My Account, Plan Your Trek, etc.
         backgroundColor: AppColors.bg,
         appBar: _buildAppBar(),
-        floatingActionButton: AroboFilterFab(
-          activeFilters: activeFilters,
-          groupBookingEnabled: _isGroupBooking,
-          onResult: (result) {
-            setState(() {
-              activeFilters = List.from(result.selectedTitles);
-              _isGroupBooking = result.groupBookingEnabled;
-            });
-            _applyFilters();
-          },
-        ),
+        // FAB visibility is reactive: with zero results (or a failed
+        // search) there is nothing to filter — hide it until results
+        // return. Reads the search observer INSIDE the Obx so it flips
+        // live when async results land (this was the stale-state bug).
+        floatingActionButton: Obx(() {
+          if (_searchIsEmpty() || _searchHasError()) {
+            return const SizedBox.shrink();
+          }
+          return AroboFilterFab(
+            activeFilters: activeFilters,
+            groupBookingEnabled: _isGroupBooking,
+            onResult: (result) {
+              final before = activeFilters.length;
+              setState(() {
+                activeFilters = List.from(result.selectedTitles);
+                _isGroupBooking = result.groupBookingEnabled;
+              });
+              if (activeFilters.isEmpty && !_isGroupBooking && before > 0) {
+                _feedback('Filters cleared — showing all treks');
+              } else if (activeFilters.length > before ||
+                  result.groupBookingEnabled) {
+                _feedback(
+                  '${activeFilters.length} filter'
+                  '${activeFilters.length == 1 ? '' : 's'} applied',
+                );
+              }
+              _applyFilters();
+            },
+          );
+        }),
         body: FadeTransition(
           opacity: _fadeAnim,
           child: RefreshIndicator(
@@ -780,19 +1130,29 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
               controller: _scrollController,
               physics: const BouncingScrollPhysics(),
               slivers: [
+                // Top section visibility is REACTIVE: with zero results
+                // (or a failed search) the route strip, coupons and filter
+                // pills all collapse — and come back the instant results
+                // return. Computed inside the Obx watching the search
+                // observer, so async result landings flip it immediately.
                 SliverToBoxAdapter(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildJourneyCard(),
-                      const SizedBox(height: 8),
-                      _buildCouponCarousel(),
-                      const SizedBox(height: 8),
-                    ],
-                  ),
+                  child: Obx(() {
+                    if (_searchIsEmpty() || _searchHasError()) {
+                      return const SizedBox.shrink();
+                    }
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildRouteStrip(),
+                        const SizedBox(height: 8),
+                        _buildCouponCarousel(),
+                        const SizedBox(height: 8),
+                        _buildActiveFilterPills(),
+                      ],
+                    );
+                  }),
                 ),
-                _buildTrekList(dateText),
-                // extra bottom padding so the FAB never covers the last card
+                _buildTrekList(),
                 const SliverToBoxAdapter(child: SizedBox(height: 110)),
               ],
             ),
@@ -831,10 +1191,300 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
               ),
             ),
             const SizedBox(height: 2),
+            // Live result count + filter context.
+            Obx(() {
+              final isLoading = _trekC.treksResponseObserver.value.data.value
+                  .maybeWhen(loading: (_) => true, orElse: () => false);
+              final count = _trekC.treksResponseObserver.value.data.value
+                  .maybeWhen(
+                    success: (data) => data is FetchTreksResponseModel
+                        ? (data.data ?? const []).length
+                        : 0,
+                    orElse: () => 0,
+                  );
+              final filterLabel = activeFilters.isNotEmpty
+                  ? ' · ${activeFilters.length} filter'
+                        '${activeFilters.length == 1 ? '' : 's'}'
+                  : '';
+              final groupLabel = _isGroupBooking ? ' · group' : '';
+              return Text(
+                isLoading
+                    ? 'Finding treks…'
+                    : '$count trek${count == 1 ? '' : 's'}'
+                          '$filterLabel$groupLabel',
+                textScaler: const TextScaler.linear(1.0),
+                style: AroboTheme.label(size: 10, color: AroboTheme.ink400),
+              );
+            }),
+          ],
+        ),
+      ),
+      // ── DATE LIVES HERE — one compact chip, always reachable ──
+      actions: [
+        Obx(() {
+          final dateText = _dashboardC.dateController.value.text;
+          final parsed = _parseDate(dateText);
+          return GestureDetector(
+            onTap: () => _selectDate(context),
+            child: Container(
+              margin: const EdgeInsets.only(right: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              decoration: BoxDecoration(
+                color: AroboTheme.tealSoft,
+                borderRadius: BorderRadius.circular(100),
+                border: Border.all(
+                  color: AroboTheme.primary.withValues(alpha: 0.25),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.calendar_month_rounded,
+                    size: 14,
+                    color: AroboTheme.primary,
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    parsed != null
+                        ? DateFormat('d MMM').format(parsed)
+                        : 'Date',
+                    textScaler: const TextScaler.linear(1.0),
+                    style: AroboTheme.label(
+                      size: 11,
+                      weight: FontWeight.w800,
+                      color: AroboTheme.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 2),
+                  const Icon(
+                    Icons.expand_more_rounded,
+                    size: 14,
+                    color: AroboTheme.primary,
+                  ),
+                ],
+              ),
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  // ROUTE CARD — two full-width slots (From / To),
+  // stacked so long city & trek names never truncate.
+  // ─────────────────────────────────────────────
+  Widget _buildRouteStrip() {
+    final from = _dashboardC.fromController.value.text.trim();
+    final to = _dashboardC.toController.value.text.trim();
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(14, 12, 14, 0),
+      decoration: BoxDecoration(
+        color: AroboTheme.cardBg,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AroboTheme.border, width: 0.9),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x1F1B4332),
+            blurRadius: 24,
+            offset: Offset(0, 10),
+          ),
+          BoxShadow(
+            color: Color(0x121B4332),
+            blurRadius: 6,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _openLocationSearch,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+            child: Column(
+              children: [
+                // ── SLOT 1: Departure city — full-width row ──
+                _routeRow(
+                  icon: Icons.location_city_rounded,
+                  value: from,
+                  hint: 'Departure city',
+                  valueColor: AroboTheme.ink,
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Divider(height: 1, color: AroboTheme.border),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 8),
+                        child: Icon(
+                          Icons.hiking_rounded,
+                          size: 14,
+                          color: AroboTheme.primary,
+                        ),
+                      ),
+                      Expanded(
+                        child: Divider(height: 1, color: AroboTheme.border),
+                      ),
+                    ],
+                  ),
+                ),
+                // ── SLOT 2: Destination trek — full row + edit button ──
+                Row(
+                  children: [
+                    Expanded(
+                      child: _routeRow(
+                        icon: Icons.location_on_rounded,
+                        value: to,
+                        hint: 'Destination trek',
+                        valueColor: AroboTheme.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: AroboTheme.ink,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AroboTheme.ink.withValues(alpha: 0.2),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.search_rounded,
+                        size: 15,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// A single full-width route slot — icon + generous text.
+  Widget _routeRow({
+    required IconData icon,
+    required String value,
+    required String hint,
+    required Color valueColor,
+  }) {
+    final bool filled = value.isNotEmpty;
+    return Row(
+      children: [
+        Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            color: AroboTheme.elevated,
+            borderRadius: BorderRadius.circular(11),
+            border: Border.all(color: AroboTheme.border),
+          ),
+          child: Icon(
+            icon,
+            size: 16,
+            color: filled ? AroboTheme.primary : AroboTheme.ink400,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            filled ? value : hint,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textScaler: const TextScaler.linear(1.0),
+            style: AroboTheme.label(
+              size: 13,
+              weight: FontWeight.w800,
+              color: filled ? valueColor : AroboTheme.ink400,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── ACTIVE FILTER PILLS ──────────────────────────────────────────────────
+  Widget _buildActiveFilterPills() {
+    if (activeFilters.isEmpty && !_isGroupBooking) {
+      return const SizedBox.shrink();
+    }
+    final pills = <Widget>[
+      for (final f in activeFilters)
+        _filterPill(f, () {
+          HapticFeedback.selectionClick();
+          setState(() => activeFilters.remove(f));
+          _feedback('Filter removed: $f');
+          _applyFilters();
+        }),
+      if (_isGroupBooking)
+        _filterPill('Group booking', () {
+          HapticFeedback.selectionClick();
+          setState(() => _isGroupBooking = false);
+          _feedback('Group booking turned off');
+          _applyFilters();
+        }, icon: Icons.groups_rounded),
+    ];
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 4, 14, 0),
+      child: SizedBox(
+        height: 32,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: pills.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 6),
+          itemBuilder: (_, i) => pills[i],
+        ),
+      ),
+    );
+  }
+
+  Widget _filterPill(String label, VoidCallback onRemove, {IconData? icon}) {
+    return GestureDetector(
+      onTap: onRemove,
+      child: Container(
+        padding: const EdgeInsets.only(left: 10, right: 6),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: AroboTheme.tealSoft,
+          borderRadius: BorderRadius.circular(100),
+          border: Border.all(color: AroboTheme.teal.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 12, color: AroboTheme.primary),
+              const SizedBox(width: 4),
+            ],
             Text(
-              'Pick a departure that suits you',
-              textScaler: const TextScaler.linear(1.0),
-              style: AroboTheme.label(size: 10, color: AroboTheme.ink400),
+              label,
+              style: AppType.style(
+                9.5,
+                w: FontWeight.w700,
+                color: AroboTheme.primary,
+              ),
+            ),
+            const SizedBox(width: 3),
+            const Icon(
+              Icons.close_rounded,
+              size: 13,
+              color: AroboTheme.primary,
             ),
           ],
         ),
@@ -842,224 +1492,8 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
     );
   }
 
-  // ─────────────────────────────────────────────
-  // JOURNEY CARD — compact single-line route
-  // + slim date strip (half the old height)
-  // ─────────────────────────────────────────────
-  Widget _buildJourneyCard() {
-    final from = _dashboardC.fromController.value.text.trim();
-    final to = _dashboardC.toController.value.text.trim();
-    final dateText = _dashboardC.dateController.value.text;
-    final hasDate = dateText.isNotEmpty;
-    return Container(
-      margin: const EdgeInsets.fromLTRB(14, 12, 14, 0),
-      decoration: BoxDecoration(
-        color: AroboTheme.cardBg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AroboTheme.border, width: 0.9),
-        // Forest-tinted, scoped to this card only — AroboTheme.softShadow()
-        // is shared with the Filter Bar, so not touched globally.
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x211B4332),
-            blurRadius: 20,
-            offset: Offset(0, 8),
-          ),
-          BoxShadow(
-            color: Color(0x121B4332),
-            blurRadius: 5,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        children: [
-          // ── route row: From —🥾— To · search ──
-          GestureDetector(
-            onTap: _openLocationSearch,
-            behavior: HitTestBehavior.opaque,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(14, 11, 10, 11),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: AroboTheme.primary,
-                              width: 1.8,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text(
-                            from.isEmpty ? '—' : from,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            textScaler: const TextScaler.linear(1.0),
-                            style: AroboTheme.label(
-                              size: 12.5,
-                              weight: FontWeight.w800,
-                              color: AroboTheme.ink,
-                            ),
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 7),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 8,
-                                height: 1.2,
-                                color: AroboTheme.ink400.withValues(alpha: 0.4),
-                              ),
-                              const SizedBox(width: 3),
-                              const Icon(
-                                Icons.hiking_rounded,
-                                size: 13,
-                                color: AroboTheme.primary,
-                              ),
-                              const SizedBox(width: 3),
-                              Container(
-                                width: 8,
-                                height: 1.2,
-                                color: AroboTheme.ink400.withValues(alpha: 0.4),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const Icon(
-                          Icons.location_on_rounded,
-                          size: 13,
-                          color: AroboTheme.primary,
-                        ),
-                        const SizedBox(width: 4),
-                        Flexible(
-                          child: Text(
-                            to.isEmpty ? '—' : to,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            textScaler: const TextScaler.linear(1.0),
-                            style: AroboTheme.label(
-                              size: 12.5,
-                              weight: FontWeight.w800,
-                              color: AroboTheme.primary,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: AroboTheme.elevated,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AroboTheme.border),
-                    ),
-                    child: const Icon(
-                      Icons.search_rounded,
-                      size: 16,
-                      color: AroboTheme.primary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Container(height: 1, color: AroboTheme.border),
-          // ── slim date strip ──
-          Material(
-            color: AroboTheme.elevated,
-            child: InkWell(
-              onTap: () => _selectDate(context),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 7,
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.calendar_month_rounded,
-                      size: 14,
-                      color: AroboTheme.primary,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: hasDate
-                          ? Text.rich(
-                              TextSpan(
-                                children: [
-                                  TextSpan(
-                                    text: _formattedDate(dateText),
-                                    style: AroboTheme.label(
-                                      size: 11.5,
-                                      weight: FontWeight.w800,
-                                      color: AroboTheme.ink,
-                                    ),
-                                  ),
-                                  TextSpan(
-                                    text: '  ·  ${_formattedWeekday(dateText)}',
-                                    style: AroboTheme.label(
-                                      size: 10.5,
-                                      weight: FontWeight.w600,
-                                      color: AroboTheme.ink400,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              maxLines: 1,
-                              textScaler: const TextScaler.linear(1.0),
-                            )
-                          : Text(
-                              'Select a departure date',
-                              textScaler: const TextScaler.linear(1.0),
-                              style: AroboTheme.label(
-                                size: 11,
-                                weight: FontWeight.w600,
-                                color: AroboTheme.ink400,
-                              ),
-                            ),
-                    ),
-                    Text(
-                      hasDate ? 'Change' : 'Select',
-                      textScaler: const TextScaler.linear(1.0),
-                      style: AroboTheme.label(
-                        size: 10,
-                        weight: FontWeight.w700,
-                        color: AroboTheme.primary,
-                      ),
-                    ),
-                    const SizedBox(width: 2),
-                    const Icon(
-                      Icons.chevron_right_rounded,
-                      size: 15,
-                      color: AroboTheme.primary,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   // Fallback gradient per discount_type — only used when the admin hasn't
-  // set a custom `styling.gradient` on the coupon, so real PLATFORM coupons
-  // still read as visually distinct types instead of all sharing one color.
+  // set a custom `styling.gradient` on the coupon.
   static const Map<String, List<String>> _fallbackGradients = {
     'fixed': ['#D97B4F', '#B24A25'],
     'seasonal': ['#0F7B6C', '#1AA090'],
@@ -1073,7 +1507,8 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
     if (coupon.gradient != null && coupon.gradient!.length >= 2) {
       return coupon.gradient!;
     }
-    return _fallbackGradients[coupon.discountType] ?? _fallbackGradients['percentage']!;
+    return _fallbackGradients[coupon.discountType] ??
+        _fallbackGradients['percentage']!;
   }
 
   Widget _buildCouponCarousel() {
@@ -1085,9 +1520,14 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
 
       if (coupons.isEmpty) return const SizedBox.shrink();
 
-      WidgetsBinding.instance.addPostFrameCallback(
-        (_) => _startCouponAutoScroll(coupons.length),
-      );
+      // Arm autoplay only when the SET actually changed — not on every
+      // unrelated Obx rebuild.
+      if (coupons.length != _couponAutoplayCount) {
+        _couponAutoplayCount = coupons.length;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _startCouponAutoScroll(coupons.length);
+        });
+      }
 
       return SizedBox(
         height: 20.h,
@@ -1141,8 +1581,6 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
           gradient: colors,
           textColour: coupon.textColour ?? '#FFFFFF',
           code: coupon.code ?? '',
-          // Same convention as CouponGradientCard.headline — a complete
-          // pre-composed string, not a template the details screen fills in.
           offerAmount: CouponDisplayHelper.headline(coupon),
           imagePath: coupon.imagePath ?? '',
           detailedDescription: coupon.detailedDescription ?? '',
@@ -1156,17 +1594,24 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
     );
   }
 
-  Widget _buildTrekList(String dateText) {
+  Widget _buildTrekList() {
+    // Read fresh so the empty-state label never shows a stale date.
+    final String dateText = _dashboardC.dateController.value.text;
+
     return Obx(() {
       final isLoading = _trekC.treksResponseObserver.value.data.value.maybeWhen(
         loading: (_) => true,
         orElse: () => false,
       );
 
-      // Filtering + sorting is done server-side (see _runSearch /
-      // buildFilterQueryString) so the whole result set is covered, not
-      // just the loaded page. The list arrives in final order.
-      final List<TrekData> ranked = _trekC.treksResponseObserver.value.data.value
+      // A FAILED search must never read as "no treks available".
+      final bool failed = _searchHasError();
+
+      final List<TrekData> ranked = _trekC
+          .treksResponseObserver
+          .value
+          .data
+          .value
           .maybeWhen(
             success: (data) => data is FetchTreksResponseModel
                 ? List<TrekData>.from(data.data ?? const [])
@@ -1174,6 +1619,13 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
             error: (_) => <TrekData>[],
             orElse: () => List.generate(4, (_) => const TrekData()),
           );
+
+      if (!isLoading && failed) {
+        return SliverFillRemaining(
+          hasScrollBody: false,
+          child: _buildSearchError(),
+        );
+      }
 
       if (!isLoading && ranked.isEmpty) {
         return SliverFillRemaining(
@@ -1183,11 +1635,6 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
       }
 
       // ── Sponsored + featured listings (server-chosen per search) ────
-      // Real results stay in rank order and on top. The first real result
-      // that Aorbo has featured gets an editorial "Featured by Aorbo
-      // Treks" ribbon. If a paid "Sponsored" listing came back it slots
-      // in right after the top result — never above it. A brand banner,
-      // if any, sits after every real result.
       final listingSlot = _trekC.searchListingSlot.value;
       final bannerSlot = _trekC.searchBannerSlot.value;
 
@@ -1210,12 +1657,9 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
           ));
         }
       }
-      // Waterfall after the results: a direct-sold brand banner if one was
-      // booked, otherwise an AdMob native fill (renders nothing on no-fill).
       if (ranked.isNotEmpty && bannerSlot != null) {
         entries.add((kind: 'ad', trek: null, slotId: bannerSlot.id));
-      } else if (ranked.length >= 2 &&
-          _dashboardC.admobFallbackEnabled.value) {
+      } else if (ranked.length >= 2 && _dashboardC.admobFallbackEnabled.value) {
         entries.add((kind: 'admob', trek: null, slotId: null));
       }
       entries.add((kind: 'spacer', trek: null, slotId: null));
@@ -1232,7 +1676,10 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
               child: SizedBox(
                 width: 92.w,
                 height: 22.h,
-                child: const NativeFeedAdCard(widthFraction: 92, trailingMargin: 0),
+                child: const NativeFeedAdCard(
+                  widthFraction: 92,
+                  trailingMargin: 0,
+                ),
               ),
             );
           }
@@ -1295,7 +1742,108 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
     });
   }
 
+  /// Search-failure state — distinct from "no treks", with a retry.
+  Widget _buildSearchError() {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 8.w),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 20.w,
+              height: 20.w,
+              decoration: BoxDecoration(
+                color: AroboTheme.elevated,
+                shape: BoxShape.circle,
+                border: Border.all(color: AroboTheme.border, width: 1.5),
+              ),
+              child: Icon(
+                Icons.cloud_off_rounded,
+                size: 9.w,
+                color: AroboTheme.inkLight,
+              ),
+            ),
+            SizedBox(height: 2.2.h),
+            Text(
+              "Couldn't load treks",
+              textScaler: const TextScaler.linear(1.0),
+              style: AroboTheme.label(
+                size: 15,
+                weight: FontWeight.w800,
+                color: AroboTheme.ink,
+              ),
+            ),
+            SizedBox(height: 0.5.h),
+            Text(
+              'Check your connection and try again',
+              textScaler: const TextScaler.linear(1.0),
+              style: AroboTheme.label(size: 10.5, color: AroboTheme.inkMid),
+            ),
+            SizedBox(height: 3.h),
+            GestureDetector(
+              onTap: () {
+                HapticFeedback.selectionClick();
+                _feedback('Retrying…');
+                _onRefresh();
+              },
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 1.4.h),
+                decoration: BoxDecoration(
+                  color: AroboTheme.primary,
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AroboTheme.primary.withValues(alpha: 0.3),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Text(
+                  'Retry',
+                  textScaler: const TextScaler.linear(1.0),
+                  style: AroboTheme.label(
+                    size: 12,
+                    weight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// The first available departure strictly AFTER the selected date — used
+  /// by the empty state as a one-tap rescue.
+  DateTime? _nextAvailableAfter(DateTime? selected) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final dates =
+        _dashboardC.availableDates.keys
+            .map(DateTime.parse)
+            .where((d) => !d.isBefore(today))
+            .where((d) => selected == null || d.isAfter(selected))
+            .toList()
+          ..sort();
+    return dates.isEmpty ? null : dates.first;
+  }
+
+  // ─────────────────────────────────────────────
+  // EMPTY STATE — full screen (no coupons/route strip above), with
+  // Notify Me, a next-departure rescue chip, and route/date actions.
+  // The DATE chip in the app bar stays reachable in this state too.
+  // ─────────────────────────────────────────────
   Widget _buildEmptyState(String dateText) {
+    final bool filtersActive = activeFilters.isNotEmpty || _isGroupBooking;
+    final String routeKey =
+        '${_dashboardC.selectedCityId.value}_${_dashboardC.selectedTrekId.value}';
+    final next = _nextAvailableAfter(_dashboardC.selectedDate.value);
+
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: const Duration(milliseconds: 600),
@@ -1321,27 +1869,30 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
                   border: Border.all(color: AroboTheme.border, width: 1.5),
                 ),
                 child: Icon(
-                  Icons.hiking_rounded,
+                  filtersActive ? Icons.tune_rounded : Icons.hiking_rounded,
                   size: 11.w,
                   color: AroboTheme.primary,
                 ),
               ),
               SizedBox(height: 2.5.h),
               Text(
-                'No treks available',
+                filtersActive
+                    ? 'No treks match your filters'
+                    : 'No treks available',
                 textScaler: const TextScaler.linear(1.0),
                 style: AroboTheme.label(
                   size: 16,
                   weight: FontWeight.w800,
                   color: AroboTheme.ink,
-                  letterSpacing: -0.2,
                 ),
               ),
               SizedBox(height: 0.8.h),
               Text(
-                dateText.isNotEmpty
-                    ? 'for ${_formattedDate(dateText)}'
-                    : 'for this route',
+                filtersActive
+                    ? 'Try removing a filter or changing the date'
+                    : (dateText.isNotEmpty
+                          ? 'for ${_formattedDate(dateText)} on this route'
+                          : 'for this route yet'),
                 textScaler: const TextScaler.linear(1.0),
                 style: AroboTheme.label(
                   size: 12,
@@ -1349,30 +1900,184 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
                   color: AroboTheme.ink400,
                 ),
               ),
-              SizedBox(height: 0.5.h),
-              Text(
-                'Try selecting a different date or route',
-                textScaler: const TextScaler.linear(1.0),
-                style: AroboTheme.label(size: 10, color: AroboTheme.inkMid),
-              ),
-              SizedBox(height: 3.5.h),
+
+              // ── FILTERS caused the empty result → clear them ──
+              if (filtersActive) ...[
+                SizedBox(height: 3.h),
+                GestureDetector(
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    setState(() {
+                      activeFilters.clear();
+                      _isGroupBooking = false;
+                    });
+                    _feedback('Filters cleared — showing all treks');
+                    _applyFilters();
+                  },
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 7.w,
+                      vertical: 1.4.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AroboTheme.primary,
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AroboTheme.primary.withValues(alpha: 0.3),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      'Clear filters',
+                      textScaler: const TextScaler.linear(1.0),
+                      style: AroboTheme.label(
+                        size: 12,
+                        weight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ] else ...[
+                // ── One-tap rescue: the next date that HAS departures ──
+                if (next != null) ...[
+                  SizedBox(height: 1.6.h),
+                  GestureDetector(
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      _dashboardC.selectedDate.value = next;
+                      _dashboardC.dateController.value.text = DateFormat(
+                        'dd/MM/yyyy',
+                      ).format(next);
+                      _dashboardC.dateController.refresh();
+                      setState(() {});
+                      _feedback(
+                        'Departure moved to '
+                        '${DateFormat('EEE, d MMM').format(next)}',
+                      );
+                      _onRefresh();
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 5.w,
+                        vertical: 1.1.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AroboTheme.tealSoft,
+                        borderRadius: BorderRadius.circular(100),
+                        border: Border.all(
+                          color: AroboTheme.primary.withValues(alpha: 0.35),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.arrow_forward_rounded,
+                            size: 14,
+                            color: AroboTheme.primary,
+                          ),
+                          SizedBox(width: 2.w),
+                          Text(
+                            'Next departure · '
+                            '${DateFormat('EEE, d MMM').format(next)}',
+                            textScaler: const TextScaler.linear(1.0),
+                            style: AroboTheme.label(
+                              size: 11,
+                              weight: FontWeight.w700,
+                              color: AroboTheme.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+
+                // ── NOTIFY ME — alerts when dates open on this route ──
+                SizedBox(height: 2.2.h),
+                Obx(() {
+                  final subscribed =
+                      _dashboardC.notifiedRoutes[routeKey] ?? false;
+                  return GestureDetector(
+                    onTap: subscribed ? null : _subscribeNotify,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 6.w,
+                        vertical: 1.4.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: subscribed
+                            ? AroboTheme.tealSoft
+                            : AroboTheme.primary,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: AroboTheme.primary.withValues(
+                            alpha: subscribed ? 0.35 : 1,
+                          ),
+                        ),
+                        boxShadow: subscribed
+                            ? null
+                            : [
+                                BoxShadow(
+                                  color: AroboTheme.primary.withValues(
+                                    alpha: 0.3,
+                                  ),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 6),
+                                ),
+                              ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            subscribed
+                                ? Icons.notifications_active_rounded
+                                : Icons.notifications_none_rounded,
+                            size: 16,
+                            color: subscribed
+                                ? AroboTheme.primary
+                                : Colors.white,
+                          ),
+                          SizedBox(width: 2.5.w),
+                          Text(
+                            subscribed
+                                ? "You'll be notified"
+                                : 'Notify me when dates open',
+                            textScaler: const TextScaler.linear(1.0),
+                            style: AroboTheme.label(
+                              size: 12,
+                              weight: FontWeight.w700,
+                              color: subscribed
+                                  ? AroboTheme.primary
+                                  : Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+              ],
+
+              // ── Change search → the route screen ──
+              SizedBox(height: 1.6.h),
               GestureDetector(
-                onTap: () => Get.back(),
+                onTap: _openLocationSearch,
                 child: Container(
                   padding: EdgeInsets.symmetric(
                     horizontal: 7.w,
                     vertical: 1.4.h,
                   ),
                   decoration: BoxDecoration(
-                    color: AroboTheme.primary,
+                    color: Colors.transparent,
                     borderRadius: BorderRadius.circular(14),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AroboTheme.primary.withValues(alpha: 0.3),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
+                    border: Border.all(color: AroboTheme.primary),
                   ),
                   child: Text(
                     'Change search',
@@ -1380,12 +2085,142 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
                     style: AroboTheme.label(
                       size: 12,
                       weight: FontWeight.w700,
-                      color: Colors.white,
+                      color: AroboTheme.primary,
                     ),
                   ),
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+//  BOTTOM TOAST — slides up from the bottom,
+//  holds, fades out; removes itself.
+// ─────────────────────────────────────────────
+class _AppToast extends StatefulWidget {
+  final String message;
+  final bool error;
+  final VoidCallback onDone;
+  const _AppToast({
+    required this.message,
+    required this.error,
+    required this.onDone,
+  });
+
+  @override
+  State<_AppToast> createState() => _AppToastState();
+}
+
+class _AppToastState extends State<_AppToast>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c;
+  late final Animation<double> _slideIn;
+  late final Animation<double> _fadeOut;
+
+  @override
+  void initState() {
+    super.initState();
+    _c = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: widget.error ? 2900 : 2100),
+    )..forward().whenComplete(widget.onDone);
+    _slideIn = CurvedAnimation(
+      parent: _c,
+      curve: const Interval(0.0, 0.09, curve: Curves.easeOutCubic),
+    );
+    _fadeOut = CurvedAnimation(
+      parent: _c,
+      curve: const Interval(0.88, 1.0, curve: Curves.easeIn),
+    );
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final Color accent = widget.error ? AroboTheme.danger : AroboTheme.primary;
+
+    return IgnorePointer(
+      child: AnimatedBuilder(
+        animation: _c,
+        builder: (context, child) {
+          final double opacity = (_slideIn.value * (1 - _fadeOut.value)).clamp(
+            0.0,
+            1.0,
+          );
+          // Slide up from below on entry; sink slightly on exit.
+          final double dy = (36 * (1 - _slideIn.value)) + (14 * _fadeOut.value);
+          return Opacity(
+            opacity: opacity,
+            child: Transform.translate(offset: Offset(0, dy), child: child),
+          );
+        },
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(12, 10, 14, 10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AroboTheme.border),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.12),
+                  blurRadius: 24,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 4,
+                  height: 26,
+                  decoration: BoxDecoration(
+                    color: accent,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Container(
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.10),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    widget.error
+                        ? Icons.error_outline_rounded
+                        : Icons.check_circle_rounded,
+                    size: 16,
+                    color: accent,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    widget.message,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppType.style(
+                      11,
+                      w: FontWeight.w700,
+                      color: AroboTheme.ink,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
