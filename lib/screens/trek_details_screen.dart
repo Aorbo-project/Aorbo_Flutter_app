@@ -120,8 +120,9 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
     super.initState();
 
     // Performance-Insights funnel: this vendor's trek detail was opened.
-    AnalyticsService.instance
-        .logTrekDetailView(int.tryParse('${widget.trek?.id ?? ''}'));
+    AnalyticsService.instance.logTrekDetailView(
+      int.tryParse('${widget.trek?.id ?? ''}'),
+    );
 
     final visibility = _sectionVisibilityFlags();
     final firstVisible = visibility.indexWhere((v) => v);
@@ -409,6 +410,19 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
   Widget _buildSliverAppBar() {
     final trek = widget.trek;
 
+    // CHANGED: destination name replaces the trek name in the app bar.
+    // TrekData.destination is a plain String, and the detail response
+    // exposes the destination as destinationData.name — prefer whichever
+    // is set, falling back to the trek name so the bar is never blank.
+    final String detailDestination =
+        _trekC.trekDetailData.value.destinationData?.name ?? '';
+    final String listDestination = trek?.destination ?? '';
+    final String destinationName = detailDestination.isNotEmpty
+        ? detailDestination
+        : listDestination.isNotEmpty
+        ? listDestination
+        : (trek?.name ?? '-');
+
     return SliverAppBar(
       backgroundColor: _C.cardBg,
       elevation: 0,
@@ -461,8 +475,9 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // CHANGED: destination name (was: trek name)
                   Text(
-                    trek?.name ?? '-',
+                    destinationName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     textScaler: const TextScaler.linear(1.0),

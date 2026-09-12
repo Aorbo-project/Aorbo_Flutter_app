@@ -216,7 +216,17 @@ class _BookingsScreenState extends State<BookingsScreen>
   }
 
   // ── ACTIONS ──────────────────────────────────────────────────────────────
-  void _goBack() => _dashboardC.selectedScreen.value = 0;
+  void _goBack() {
+    final route = ModalRoute.of(context);
+    if (route?.settings.name == '/my-bookings') {
+      // Opened as a pushed route (Profile → My Bookings): just pop,
+      // the Profile screen is still underneath.
+      Get.back();
+      return;
+    }
+    // Embedded inside the dashboard shell: switch to Home tab.
+    _dashboardC.selectedScreen.value = 0;
+  }
 
   void _enterFailedMode() {
     FirebaseCrashlytics.instance.log('Bookings: failed payments opened');
