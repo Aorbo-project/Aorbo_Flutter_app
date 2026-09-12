@@ -161,10 +161,19 @@ class _CommonTrekCardState extends State<CommonTrekCard>
       onTap: widget.onTap,
       child: AnimatedBuilder(
         animation: _pressCtrl,
-        builder: (context, _) {
+        // Static card content passed as `child` (built once) instead of
+        // constructed inline in `builder` — the old inline version rebuilt
+        // this entire subtree, including the nested share/itinerary
+        // button's own GestureDetector, on every frame of the press-scale
+        // animation, which is wasted work happening exactly while that
+        // button's tap is still being resolved by the gesture arena.
+        builder: (context, child) {
           return Transform.scale(
             scale: _scaleAnim.value,
-            child: Padding(
+            child: child,
+          );
+        },
+        child: Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: _rw(1, 16),
                 vertical: _rh(0.6, 7),
@@ -312,8 +321,6 @@ class _CommonTrekCardState extends State<CommonTrekCard>
                 ),
               ),
             ),
-          );
-        },
       ),
     );
   }

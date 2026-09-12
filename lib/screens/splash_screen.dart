@@ -62,6 +62,22 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
   late Animation<Offset> _formOffsetAnimation;
   late AnimationController _breathingController;
   late Animation<double> _breathingAnimation;
+  // Drives the short staggered fade+slide-in for each step's inner
+  // content (heading, field(s), button) once that step is showing — kept
+  // separate from _formController (which only slides the whole panel) so
+  // panel-slide and content-choreography can be reasoned about
+  // independently. One controller PER step (not shared) — AnimatedSwitcher
+  // keeps the outgoing step's subtree mounted for the crossfade duration,
+  // and a shared controller reset via forward(from: 0) for the incoming
+  // step would also re-trigger the outgoing step's still-listening
+  // _staggerItem widgets.
+  late AnimationController _loginStaggerController;
+  late AnimationController _otpStaggerController;
+  // Dedicated controller for the OTP-error shake — kept separate from
+  // _animationController (button tap-scale) so a wrong-OTP shake can
+  // never also nudge the Continue button's scale via a shared controller.
+  late AnimationController _otpShakeController;
+  late Animation<double> _otpShakeAnimation;
   late final OTPController _otpC;
   final FocusNode _phoneFocusNode = FocusNode();
   final FocusNode _pinFocusNode = FocusNode();
@@ -69,7 +85,6 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
   bool _showReferralField = false;
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
-  Animation<double>? _shakeAnimation;
 
   final AuthController _authC = Get.put(AuthController(), permanent: true);
 
@@ -90,7 +105,18 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
   // here would never survive the rebuild it's meant to trigger.
   bool _showOtpSuccessOverlay = false;
 
+  // Same rebuild-survival requirement as _showOtpSuccessOverlay above —
+  // these used to be local variables inside _buildOtpContainer() and were
+  // silently discarded every rebuild, so a wrong OTP never actually
+  // reached the screen as a red/shake error state.
+  bool _otpIsError = false;
+  String? _otpErrorMessage;
+
   Timer? _timer;
+  // Shown only if the post-landing bootstrap/version/session checks are
+  // still pending after a short grace period — see _proceedAfterLogoLanded.
+  Timer? _bootHintTimer;
+  bool _showBootHint = false;
 
   // int _start = 45;
   late TextEditingController _otpController;
@@ -269,38 +295,75 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _formController, curve: Curves.easeOut));
 
-    // Breathing Animation
+    // Breathing Animation — started later, once the logo has landed (see
+    // the _logoController status listener below), so the cycle begins
+    // fresh at the moment it first becomes visible in build() (gated on
+    // _splashDone) instead of ticking silently underneath the entrance
+    // and already being mid-cycle when it appears.
     _breathingController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 3000),
-    )..repeat(reverse: true); // Starts repeating immediately
+    );
 
     _breathingAnimation = Tween<double>(begin: 0.98, end: 1.02).animate(
       CurvedAnimation(parent: _breathingController, curve: Curves.easeInOut),
     );
 
-    // Button Tap/Shake Animation Controller
+    // Button Tap Animation Controller — scale-down feedback on the
+    // Continue button only. The OTP-error shake has its own dedicated
+    // controller (_otpShakeController, below) so the two never share
+    // state.
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
 
-    _shakeAnimation =
-        Tween<double>(begin: 0.0, end: 24.0).animate(
-          CurvedAnimation(
-            parent: _animationController,
-            curve: Curves.elasticIn,
-          ),
-        )..addListener(() {
-          if (mounted) {
-            // Good practice to check mounted in listeners
-            setState(() {});
-          }
-        });
-
     _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
+
+    // Content stagger — short fade+translate-in for each step's inner
+    // elements. Separate controllers (see field comment above) so the
+    // Login and OTP steps never share animation state during the
+    // AnimatedSwitcher crossfade.
+    _loginStaggerController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 340),
+    );
+    _otpStaggerController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 340),
+    );
+
+    // OTP error shake — a short, controlled, decaying shake (replacing
+    // the old elastic-bounce curve). Amplitude decays 0 → -8 → 8 → -4 → 0
+    // over the same 300ms window the old animation used.
+    _otpShakeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _otpShakeAnimation = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween(begin: 0.0, end: -8.0)
+            .chain(CurveTween(curve: Curves.easeOut)),
+        weight: 1,
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: -8.0, end: 8.0)
+            .chain(CurveTween(curve: Curves.easeInOut)),
+        weight: 1,
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: 8.0, end: -4.0)
+            .chain(CurveTween(curve: Curves.easeInOut)),
+        weight: 1,
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: -4.0, end: 0.0)
+            .chain(CurveTween(curve: Curves.easeOut)),
+        weight: 1,
+      ),
+    ]).animate(_otpShakeController);
 
     // Repaint the phone / referral fields so their borders reflect focus.
     _phoneFocusNode.addListener(() {
@@ -339,11 +402,10 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
           _splashDone = true;
         });
 
-        // Ensure breathing animation continues or starts as intended
-        // (it's already set to repeat, but a forward() ensures it's active if somehow paused)
-        if (!_breathingController.isAnimating) {
-          _breathingController.forward(); // Or .repeat(reverse: true)
-        }
+        // Started here (not in initState) so the breathing cycle begins
+        // fresh, in phase with the moment it first becomes visible in
+        // build() — see the field comment above.
+        _breathingController.repeat(reverse: true);
 
         // Was: Future.delayed(400ms) before starting the version/session
         // check — dropped as part of the launch->login timing pass (see
@@ -367,6 +429,38 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
       }
     });
 
+    // repository.dart's 401 interceptor routes back to '/' with this flag
+    // on a mid-session forced logout (session invalidated elsewhere, or a
+    // dead refresh token) — as opposed to a real cold app start. Replaying
+    // the full ~1s+ logo grow-in/shrink/breathing wind-up in that case
+    // reads as the app hanging (the user was already past this moment
+    // seconds ago); jump straight to the landed state and go to the login
+    // form instead.
+    final args = Get.arguments;
+    final isForcedLogout = args is Map && args['forcedLogout'] == true;
+
+    if (isForcedLogout) {
+      _entranceController.value = 1.0;
+      _logoController.value = 1.0;
+      _splashDone = true;
+      _breathingController.repeat(reverse: true);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        Get.snackbar(
+          'Signed out',
+          'You were signed out — please log in again.',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: const Color(0xFF4A3B00),
+          colorText: Colors.white,
+          margin: EdgeInsets.all(3.w),
+          borderRadius: 14,
+          duration: const Duration(seconds: 4),
+        );
+        _proceedAfterLogoLanded();
+      });
+      return;
+    }
+
     // Start the logo animation on the very next frame — no artificial delay
     // before motion begins, so the first thing the user sees is already in
     // motion (matches the native splash's icon, which was already visible).
@@ -384,6 +478,15 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
   Future<void> _proceedAfterLogoLanded() async {
     if (!mounted) return;
 
+    // If the checks below take a moment (slow network, cold backend),
+    // don't leave the screen looking finished with no response — fade in
+    // a small status line after a short grace period. Cancelled the
+    // instant any branch resolves (_goToDashboard / _startFormAnimation),
+    // so the fast path never sees it.
+    _bootHintTimer = Timer(const Duration(milliseconds: 500), () {
+      if (mounted) setState(() => _showBootHint = true);
+    });
+
     // main.dart's Firebase/Preferences/Repository init now runs
     // concurrently with this animation instead of blocking the first
     // frame — wait for it here, right before `sp`/the network stack
@@ -399,6 +502,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
     // used to be wired to this same block, which would have force-
     // blocked every user on every single release.
     if (validateResponse?.updateRequired == true) {
+      _bootHintTimer?.cancel();
       Get.offAll(() => UpdateVersionScreen(dataModel: validateResponse));
       return;
     }
@@ -441,6 +545,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
   // is called the pin form has faded to nothing, so the visible background
   // is the same yellow gradient in both cases.
   void _goToDashboard() {
+    _bootHintTimer?.cancel();
     if (!mounted) {
       Get.offAllNamed('/dashboard');
       return;
@@ -493,6 +598,8 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
 
   void _startFormAnimation() {
     if (!mounted) return;
+    _bootHintTimer?.cancel();
+    if (_showBootHint) setState(() => _showBootHint = false);
     // Ensure _formController is initialized (should be in initState)
     _formController.forward(); // Use _formController
     _formController.addStatusListener((status) {
@@ -502,6 +609,8 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
         setState(() {
           _formSlideDone = true;
         });
+        // Panel has settled — now choreograph its inner content in.
+        _loginStaggerController.forward(from: 0);
       }
     });
   }
@@ -510,12 +619,16 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
   void dispose() {
     _otpController.dispose();
     if (_timer?.isActive == true) _timer?.cancel();
+    _bootHintTimer?.cancel();
     _logoController.dispose();
     _entranceController.dispose();
     _exitFadeController.dispose();
     _formController.dispose();
     _breathingController.dispose();
     _animationController.dispose();
+    _loginStaggerController.dispose();
+    _otpStaggerController.dispose();
+    _otpShakeController.dispose();
     _phoneFocusNode.dispose();
     _referralFocusNode.dispose();
     _pinFocusNode.dispose();
@@ -559,9 +672,40 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
   //   _startTimer();
   // }
 
-  Widget _buildOtpContainer() {
-    bool isError = false;
+  // One shared fade+translateY-in helper for the login/OTP panels' inner
+  // content. `controller` is the calling step's own stagger controller
+  // (_loginStaggerController / _otpStaggerController) — never shared
+  // across steps, see the field comment above. `start`/`end` carve out
+  // this item's slice of that controller's 0..1 timeline (Interval clamps
+  // outside that slice), so a handful of these with staggered, overlapping
+  // windows reads as one coordinated entrance rather than separate
+  // animations. `dy: 0` for elements (like the OTP pin row) that must stay
+  // put and only fade.
+  Widget _staggerItem({
+    required AnimationController controller,
+    required double start,
+    required double end,
+    required Widget child,
+    double dy = 8,
+  }) {
+    return AnimatedBuilder(
+      animation: controller,
+      child: child,
+      builder: (context, child) {
+        final t = Interval(start, end, curve: Curves.easeOut)
+            .transform(controller.value.clamp(0.0, 1.0));
+        return Opacity(
+          opacity: t,
+          child: Transform.translate(
+            offset: Offset(0, (1 - t) * dy),
+            child: child,
+          ),
+        );
+      },
+    );
+  }
 
+  Widget _buildOtpContainer() {
     // ── OTP cells — white keyline at rest, yellow glow when active, warm
     //    tint once filled, red on error.
     final defaultPinTheme = PinTheme(
@@ -611,7 +755,6 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
         border: Border.all(color: const Color(0xFFE5484D), width: 2),
       ),
     );
-    String? errorMessage;
 
     void validateOTP(String pin) async {
       if (!mounted) return;
@@ -619,8 +762,8 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
       try {
         if (pin.length == 6) {
           setState(() {
-            isError = false;
-            errorMessage = null;
+            _otpIsError = false;
+            _otpErrorMessage = null;
           });
 
           final phone = _authC.phoneNumberLoginTextField.value.text;
@@ -643,11 +786,12 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
           } else {
             final backendMsg = _authC.otpErrorMessage.value.trim();
             setState(() {
-              isError = true;
-              errorMessage = backendMsg.isNotEmpty
+              _otpIsError = true;
+              _otpErrorMessage = backendMsg.isNotEmpty
                   ? backendMsg
                   : "That code didn't match. Check the SMS and try again.";
             });
+            _otpShakeController.forward(from: 0);
             if (mounted) {
               _authC.otpTextField.value.clear();
               _pinFocusNode.requestFocus();
@@ -676,149 +820,178 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(height: 5.h),
-          Row(
-            children: [
-              GestureDetector(
-                onTap: () {
-                  _authC.clearReferralCode();
-                  setState(() {
-                    showOtp = false;
-                    _showReferralField = false;
-                  });
-                },
-                child: Container(
-                  width: 10.w,
-                  height: 10.w,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(3.w),
-                    border: Border.all(
-                        color: Colors.black.withValues(alpha: 0.12),
-                        width: 1.4),
-                  ),
-                  child: const Icon(Icons.arrow_back_rounded,
-                      color: Colors.black, size: 20),
-                ),
-              ),
-              SizedBox(width: 4.w),
-              Text(
-                "STEP 2 OF 2",
-                style: TextStyle(
-                  fontSize: FontSize.s9,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.4,
-                  color: Colors.black.withValues(alpha: 0.45),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 4.h),
-          Padding(
-            padding: EdgeInsets.only(left: 1.w),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          SizedBox(height: 2.h),
+          _staggerItem(
+            controller: _otpStaggerController,
+            start: 0.0,
+            end: 0.5,
+            child: Row(
               children: [
-                Text(
-                  "Verify your number",
-                  style: GoogleFonts.sairaStencilOne(
-                    fontSize: 18.sp,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black,
+                GestureDetector(
+                  onTap: () {
+                    _authC.clearReferralCode();
+                    setState(() {
+                      showOtp = false;
+                      _showReferralField = false;
+                    });
+                    // Back to Login — replay its stagger so the step
+                    // change is symmetric in both directions.
+                    _loginStaggerController.forward(from: 0);
+                  },
+                  child: Container(
+                    width: 10.w,
+                    height: 10.w,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(3.w),
+                      border: Border.all(
+                          color: Colors.black.withValues(alpha: 0.12),
+                          width: 1.4),
+                    ),
+                    child: const Icon(Icons.arrow_back_rounded,
+                        color: Colors.black, size: 20),
                   ),
                 ),
-                SizedBox(height: 1.2.h),
-                Text.rich(
-                  TextSpan(
-                    text: 'Enter the 6-digit code sent to  ',
-                    style: AppType.style(FontSize.s11,
-                        w: FontWeight.w400, color: Colors.black54, height: 1.4),
-                    children: [
-                      TextSpan(
-                        text:
-                            '+91 ${_authC.phoneNumberLoginTextField.value.text}',
-                        style: AppType.style(FontSize.s11,
-                            w: FontWeight.w700, color: Colors.black),
-                      ),
-                      TextSpan(
-                        text: '   Edit',
-                        style: AppType.style(FontSize.s11,
-                            w: FontWeight.w700,
-                            color: Colors.black,
-                            decoration: TextDecoration.underline),
-                        recognizer: TapGestureRecognizer()
-                          ..onTap = () {
-                            _authC.otpTextField.value.clear();
-                            _authC.clearReferralCode();
-                            setState(() {
-                              showOtp = false;
-                              _showReferralField = false;
-                            });
-                          },
-                      ),
-                    ],
+                SizedBox(width: 4.w),
+                Text(
+                  "STEP 2 OF 2",
+                  style: TextStyle(
+                    fontSize: FontSize.s9,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.4,
+                    color: Colors.black.withValues(alpha: 0.45),
                   ),
                 ),
               ],
             ),
           ),
+          SizedBox(height: 4.h),
+          _staggerItem(
+            controller: _otpStaggerController,
+            start: 0.1,
+            end: 0.6,
+            child: Padding(
+              padding: EdgeInsets.only(left: 1.w),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Verify your number",
+                    style: GoogleFonts.sairaStencilOne(
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black,
+                    ),
+                  ),
+                  SizedBox(height: 1.2.h),
+                  Text.rich(
+                    TextSpan(
+                      text: 'Enter the 6-digit code sent to  ',
+                      style: AppType.style(FontSize.s11,
+                          w: FontWeight.w400, color: Colors.black54, height: 1.4),
+                      children: [
+                        TextSpan(
+                          text:
+                              '+91 ${_authC.phoneNumberLoginTextField.value.text}',
+                          style: AppType.style(FontSize.s11,
+                              w: FontWeight.w700, color: Colors.black),
+                        ),
+                        TextSpan(
+                          text: '   Edit',
+                          style: AppType.style(FontSize.s11,
+                              w: FontWeight.w700,
+                              color: Colors.black,
+                              decoration: TextDecoration.underline),
+                          recognizer: TapGestureRecognizer()
+                            ..onTap = () {
+                              _authC.otpTextField.value.clear();
+                              _authC.clearReferralCode();
+                              setState(() {
+                                showOtp = false;
+                                _showReferralField = false;
+                              });
+                              // Back to Login — replay its stagger so the
+                              // step change is symmetric in both directions.
+                              _loginStaggerController.forward(from: 0);
+                            },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
 
           // Referral code — new signups only, above the OTP boxes so the
           // text keyboard never fights the OTP numeric keypad.
-          Padding(
-            padding: EdgeInsets.only(left: 1.w, right: 1.w),
-            child: _buildReferralSection(),
+          _staggerItem(
+            controller: _otpStaggerController,
+            start: 0.2,
+            end: 0.65,
+            child: Padding(
+              padding: EdgeInsets.only(left: 1.w, right: 1.w),
+              child: _buildReferralSection(),
+            ),
           ),
 
           SizedBox(height: 4.h),
-          Align(
-            alignment: Alignment.center,
-            child: Directionality(
-              textDirection: TextDirection.ltr,
-              child: Transform.translate(
-                offset: isError
-                    ? Offset(_shakeAnimation?.value ?? 0, 0)
-                    : Offset.zero,
-                child: Pinput(
-                  length: 6,
-                  controller: _authC.otpTextField.value,
-                  focusNode: _pinFocusNode,
-                  defaultPinTheme: defaultPinTheme,
-                  submittedPinTheme: submittedPinTheme,
-                  focusedPinTheme: focusedPinTheme,
-                  errorPinTheme: errorPinTheme,
-                  forceErrorState: isError,
-                  separatorBuilder: (index) => SizedBox(width: 3.5.w),
-                  onCompleted: validateOTP,
-                  onChanged: (value) {
-                    if (isError) {
-                      setState(() {
-                        isError = false;
-                        errorMessage = null;
-                      });
-                    }
-                  },
-                  cursor: Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Container(
-                        margin: const EdgeInsets.only(bottom: 9),
-                        width: 22,
-                        height: 1,
-                        color: CommonColors.blackColor,
-                      ),
-                    ],
+          _staggerItem(
+            controller: _otpStaggerController,
+            start: 0.3,
+            end: 0.75,
+            dy: 0,
+            child: Align(
+              alignment: Alignment.center,
+              child: Directionality(
+                textDirection: TextDirection.ltr,
+                child: AnimatedBuilder(
+                  animation: _otpShakeController,
+                  builder: (context, child) => Transform.translate(
+                    offset: Offset(_otpShakeAnimation.value, 0),
+                    child: child,
+                  ),
+                  child: Pinput(
+                    length: 6,
+                    controller: _authC.otpTextField.value,
+                    focusNode: _pinFocusNode,
+                    defaultPinTheme: defaultPinTheme,
+                    submittedPinTheme: submittedPinTheme,
+                    focusedPinTheme: focusedPinTheme,
+                    errorPinTheme: errorPinTheme,
+                    forceErrorState: _otpIsError,
+                    separatorBuilder: (index) => SizedBox(width: 3.5.w),
+                    onCompleted: validateOTP,
+                    onChanged: (value) {
+                      if (_otpIsError) {
+                        setState(() {
+                          _otpIsError = false;
+                          _otpErrorMessage = null;
+                        });
+                      }
+                    },
+                    cursor: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 9),
+                          width: 22,
+                          height: 1,
+                          color: CommonColors.blackColor,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-          if (isError && errorMessage != null) ...[
+          if (_otpIsError && _otpErrorMessage != null) ...[
             SizedBox(height: 1.6.h),
             Align(
               alignment: Alignment.center,
               child: Text(
-                errorMessage!,
+                _otpErrorMessage!,
                 textAlign: TextAlign.center,
                 style: AppType.style(FontSize.s11,
                     w: FontWeight.w600, color: const Color(0xFFE5484D)),
@@ -826,49 +999,58 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
             ),
           ],
           SizedBox(height: 4.h),
-          Obx(
-            () => !_otpC.enableResend.value
-                ? Align(
-                    alignment: Alignment.center,
-                    child: Text(
-                      _otpC.formatTime(),
-                      // textScaler: const TextScaler.linear(1.0),
-                      style: AppType.style(FontSize.s14, w: FontWeight.w500, color: CommonColors.blackColor, letterSpacing: 0.5.w),
-                    ),
-                  )
-                : Container(),
-          ),
-          // SizedBox(height: 3.h),
-          Obx(
-            () => Align(
-              alignment: Alignment.center,
-              child: TextButton(
-                onPressed: _otpC.enableResend.value
-                    ? () => _otpC.resendOTP()
-                    : null,
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.symmetric(vertical: 0.5.h),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: Text.rich(
-                  TextSpan(
-                    children: [
-                      if (_otpC.enableResend.value)
-                        TextSpan(
-                          text: 'Resend code via SMS',
-                          style: TextStyle(
-                            color: CommonColors.bluebac,
-                            fontWeight: FontWeight.w500,
-                            decoration: TextDecoration.underline,
-                            decorationColor: CommonColors.whiteColor,
-                            fontSize: FontSize.s9,
+          _staggerItem(
+            controller: _otpStaggerController,
+            start: 0.45,
+            end: 0.9,
+            child: Column(
+              children: [
+                Obx(
+                  () => !_otpC.enableResend.value
+                      ? Align(
+                          alignment: Alignment.center,
+                          child: Text(
+                            _otpC.formatTime(),
+                            // textScaler: const TextScaler.linear(1.0),
+                            style: AppType.style(FontSize.s14, w: FontWeight.w500, color: CommonColors.blackColor, letterSpacing: 0.5.w),
                           ),
+                        )
+                      : Container(),
+                ),
+                // SizedBox(height: 3.h),
+                Obx(
+                  () => Align(
+                    alignment: Alignment.center,
+                    child: TextButton(
+                      onPressed: _otpC.enableResend.value
+                          ? () => _otpC.resendOTP()
+                          : null,
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.symmetric(vertical: 0.5.h),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text.rich(
+                        TextSpan(
+                          children: [
+                            if (_otpC.enableResend.value)
+                              TextSpan(
+                                text: 'Resend code via SMS',
+                                style: TextStyle(
+                                  color: CommonColors.bluebac,
+                                  fontWeight: FontWeight.w500,
+                                  decoration: TextDecoration.underline,
+                                  decorationColor: CommonColors.whiteColor,
+                                  fontSize: FontSize.s9,
+                                ),
+                              ),
+                          ],
                         ),
-                    ],
+                      ),
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
           ),
         ],
@@ -879,59 +1061,78 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
 
   Widget _buildLoginContainer() {
     return SingleChildScrollView(
-      padding: EdgeInsets.only(top: 5.h, bottom: 12.h),
+      padding: EdgeInsets.only(top: 2.h, bottom: 12.h),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            "Your Trek,",
-            style: GoogleFonts.sairaStencilOne(
-              fontSize: 24.sp,
-              fontWeight: FontWeight.w600,
-              color: Colors.black,
-            ),
-          ),
-          Text(
-            "just a",
-            style: GoogleFonts.sairaStencilOne(
-              fontSize: 24.sp,
-              fontWeight: FontWeight.w600,
-              color: Colors.black,
-            ),
-          ),
-          Text(
-            "Click",
-            style: GoogleFonts.sairaStencilOne(
-              fontSize: 24.sp,
-              fontWeight: FontWeight.w600,
-              color: Colors.black,
-            ),
-          ),
-          Text(
-            "Away !",
-            style: GoogleFonts.sairaStencilOne(
-              fontSize: 24.sp,
-              fontWeight: FontWeight.w600,
-              color: Colors.black,
+          _staggerItem(
+            controller: _loginStaggerController,
+            start: 0.0,
+            end: 0.55,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Your Trek,",
+                  style: GoogleFonts.sairaStencilOne(
+                    fontSize: 24.sp,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black,
+                  ),
+                ),
+                Text(
+                  "just a",
+                  style: GoogleFonts.sairaStencilOne(
+                    fontSize: 24.sp,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black,
+                  ),
+                ),
+                Text(
+                  "Click",
+                  style: GoogleFonts.sairaStencilOne(
+                    fontSize: 24.sp,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black,
+                  ),
+                ),
+                Text(
+                  "Away !",
+                  style: GoogleFonts.sairaStencilOne(
+                    fontSize: 24.sp,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black,
+                  ),
+                ),
+              ],
             ),
           ),
           SizedBox(height: 4.h),
 
-          Padding(
-            padding: EdgeInsets.only(left: 1.w, bottom: 1.h),
-            child: Text(
-              'MOBILE NUMBER',
-              style: TextStyle(
-                fontSize: FontSize.s9,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.4,
-                color: Colors.black.withValues(alpha: 0.45),
+          _staggerItem(
+            controller: _loginStaggerController,
+            start: 0.15,
+            end: 0.7,
+            child: Padding(
+              padding: EdgeInsets.only(left: 1.w, bottom: 1.h),
+              child: Text(
+                'MOBILE NUMBER',
+                style: TextStyle(
+                  fontSize: FontSize.s9,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.4,
+                  color: Colors.black.withValues(alpha: 0.45),
+                ),
               ),
             ),
           ),
 
           // ── Phone field — clean pill, focus glow, valid tick
-          AnimatedContainer(
+          _staggerItem(
+            controller: _loginStaggerController,
+            start: 0.15,
+            end: 0.7,
+            child: AnimatedContainer(
             duration: const Duration(milliseconds: 170),
             height: 6.6.h,
             padding: EdgeInsets.symmetric(horizontal: 5.w),
@@ -1030,11 +1231,16 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
               ],
             ),
           ),
+          ),
           SizedBox(height: 3.h),
 
           // ── Continue button — gradient + sheen + arrow chip when ready,
           //    clean black outline when not
-          Obx(() {
+          _staggerItem(
+            controller: _loginStaggerController,
+            start: 0.3,
+            end: 0.85,
+            child: Obx(() {
             final ready = isValidPhoneNumber && !_authC.isLoading.value;
             final loading = _authC.isLoading.value;
             return GestureDetector(
@@ -1049,6 +1255,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                     setState(() {
                       showOtp = true;
                     });
+                    _otpStaggerController.forward(from: 0);
                     _otpC.startTimer();
                   }
                 } else {
@@ -1160,6 +1367,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
               ),
             );
           }),
+          ),
         ],
       ),
     );
@@ -1460,6 +1668,31 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
           //       } else {
           //         Get.offNamed('/login');
           //       }
+          // Always mounted (not gated by an `if`) so AnimatedOpacity's
+          // fade-out actually plays when _showBootHint flips back to
+          // false — an `if` here would unmount it on the same frame,
+          // before the 260ms fade could run. IgnorePointer since it's
+          // non-interactive and may briefly overlap the incoming form
+          // while fading out.
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 6.h,
+            child: IgnorePointer(
+              child: AnimatedOpacity(
+                opacity: _showBootHint ? 1 : 0,
+                duration: const Duration(milliseconds: 260),
+                curve: Curves.easeOut,
+                child: Center(
+                  child: Text(
+                    'Checking your session…',
+                    style: AppType.style(FontSize.s10,
+                        w: FontWeight.w500, color: Colors.black54),
+                  ),
+                ),
+              ),
+            ),
+          ),
           SlideTransition(
             position: _formOffsetAnimation,
             child: Align(
@@ -1480,7 +1713,49 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                     top: Radius.circular(8.w),
                   ),
                 ),
-                child: showOtp ? _buildOtpContainer() : _buildLoginContainer(),
+                // Login <-> OTP step change — was a direct content swap
+                // (hard cut). AnimatedSwitcher cross-fades the two, with
+                // OTP content entering from the right and Login content
+                // entering from the left (so the reverse/back transition
+                // mirrors correctly too); the white panel above this
+                // never moves, only its inner content.
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 260),
+                  switchInCurve: Curves.easeOut,
+                  switchOutCurve: Curves.easeOut,
+                  // Default AnimatedSwitcher layout centers old/new children
+                  // in its Stack — fine when both are the same height, but
+                  // Login and OTP content are different heights, so each
+                  // was centering independently and landing at a different
+                  // vertical offset. Top-anchor both instead so the panel
+                  // content always starts at the same place regardless of
+                  // which step is showing.
+                  layoutBuilder: (currentChild, previousChildren) => Stack(
+                    alignment: Alignment.topCenter,
+                    children: <Widget>[
+                      ...previousChildren,
+                      if (currentChild != null) currentChild,
+                    ],
+                  ),
+                  transitionBuilder: (child, animation) {
+                    final isOtp = child.key == const ValueKey('otp');
+                    final offsetAnimation = Tween<Offset>(
+                      begin: Offset(isOtp ? 0.06 : -0.06, 0),
+                      end: Offset.zero,
+                    ).animate(animation);
+                    return FadeTransition(
+                      opacity: animation,
+                      child: SlideTransition(
+                          position: offsetAnimation, child: child),
+                    );
+                  },
+                  child: KeyedSubtree(
+                    key: ValueKey(showOtp ? 'otp' : 'login'),
+                    child: showOtp
+                        ? _buildOtpContainer()
+                        : _buildLoginContainer(),
+                  ),
+                ),
               ),
             ),
           ),

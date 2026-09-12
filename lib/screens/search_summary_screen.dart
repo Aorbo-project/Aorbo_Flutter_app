@@ -256,6 +256,10 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
     );
     _trekC.fetchSearchSponsored(
       destinationId: _dashboardC.selectedTrekId.value,
+      cityId: _dashboardC.selectedCityId.value,
+      date: TrekController.convertDateYYYYMMDD(
+        _dashboardC.dateController.value.text,
+      ),
     );
     // Results land asynchronously — force a rebuild so every non-Obx
     // layout decision (nothing depends on it now, but cheap insurance).
@@ -1638,18 +1642,35 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
       final listingSlot = _trekC.searchListingSlot.value;
       final bannerSlot = _trekC.searchBannerSlot.value;
 
+      // Now that the sponsored trek must match the current route+date
+      // (see fetchSearchSponsored), it can genuinely also appear in the
+      // organic results — it's a real match, not a fixed ad. Don't show
+      // it twice: tag the organic card instead of injecting a duplicate.
+      final sponsoredTrekId = (listingSlot?.trekId ?? 0) > 0
+          ? listingSlot!.trekId
+          : null;
+      final sponsoredIsOrganic =
+          sponsoredTrekId != null && ranked.any((t) => t.id == sponsoredTrekId);
+
       final entries = <({String kind, TrekData? trek, int? slotId})>[];
       var featuredUsed = false;
       for (var i = 0; i < ranked.length; i++) {
         final t = ranked[i];
-        final showFeatured = !featuredUsed && t.featured == true;
+        final isSponsoredMatch = sponsoredIsOrganic && t.id == sponsoredTrekId;
+        final showFeatured =
+            !isSponsoredMatch && !featuredUsed && t.featured == true;
         if (showFeatured) featuredUsed = true;
         entries.add((
-          kind: showFeatured ? 'featured' : 'trek',
+          kind: isSponsoredMatch
+              ? 'sponsored'
+              : (showFeatured ? 'featured' : 'trek'),
           trek: t,
-          slotId: null,
+          slotId: isSponsoredMatch ? listingSlot!.slotId : null,
         ));
-        if (i == 0 && listingSlot != null && (listingSlot.trekId ?? 0) > 0) {
+        if (i == 0 &&
+            !sponsoredIsOrganic &&
+            listingSlot != null &&
+            (listingSlot.trekId ?? 0) > 0) {
           entries.add((
             kind: 'sponsored',
             trek: TrekData.fromJson(listingSlot.trekJson),

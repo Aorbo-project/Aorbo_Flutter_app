@@ -655,11 +655,18 @@ class _RouteFlowBadgeState extends State<_RouteFlowBadge>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _ctrl,
-      builder: (_, __) => CustomPaint(
-        size: widget.size,
-        painter: _RouteFlowPainter(t: _ctrl.value, color: widget.color),
+    // This repeats forever (see initState), so it repaints every frame
+    // regardless of scroll/visibility state. Without its own
+    // RepaintBoundary, that forces the whole ticket card's layer (border
+    // painter, gradients, shadows) to repaint every frame too — isolating
+    // it here confines the repaint to just this small badge.
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: _ctrl,
+        builder: (_, __) => CustomPaint(
+          size: widget.size,
+          painter: _RouteFlowPainter(t: _ctrl.value, color: widget.color),
+        ),
       ),
     );
   }

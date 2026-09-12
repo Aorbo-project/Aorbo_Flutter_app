@@ -500,13 +500,31 @@ class TrekController extends GetxController {
     }
   }
 
-  /// Fetch the two search-results ad slots for this search. Fails soft —
-  /// on any error the slots stay null and the list renders organic-only.
-  Future<void> fetchSearchSponsored({int? destinationId}) async {
+  /// Fetch the two search-results ad slots for this search. `cityId`/`date`
+  /// let the backend require the sponsored trek to actually match the
+  /// CURRENT route+date (see sponsoredSlotController.js) instead of showing
+  /// on every search regardless of what was searched. Fails soft — on any
+  /// error the slots stay null and the list renders organic-only.
+  ///
+  /// Shares `_searchGeneration` with searchTreks (this is always called
+  /// right after it for the same search) so a slow, now-stale sponsored
+  /// response can't land after a newer search has already started and
+  /// show a mismatched card again.
+  Future<void> fetchSearchSponsored({
+    int? destinationId,
+    int? cityId,
+    String? date,
+  }) async {
+    final myGeneration = _searchGeneration;
     try {
       final response = await repository.getApiCall(
-        url: NetworkUrl.searchSponsored(destinationId),
+        url: NetworkUrl.searchSponsored(
+          destinationId,
+          cityId: cityId,
+          date: date,
+        ),
       );
+      if (myGeneration != _searchGeneration) return;
       if (response is Map<String, dynamic>) {
         final r = SearchSponsoredResponse.fromJson(response);
         searchListingSlot.value =
@@ -516,6 +534,7 @@ class TrekController extends GetxController {
         _dashboardC.admobFallbackEnabled.value = r.admobFallback;
       }
     } catch (e) {
+      if (myGeneration != _searchGeneration) return;
       logger.e('Error fetching search-sponsored slots: $e');
       searchListingSlot.value = null;
       searchBannerSlot.value = null;

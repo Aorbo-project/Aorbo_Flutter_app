@@ -51,10 +51,24 @@ class NetworkUrl {
   static String fetchSeasonalPicks = 'discovery/seasonal-picks';
   static String topTrekFavorite(int id) => 'discovery/top-treks/$id/favorite';
   static String fetchSponsoredSlots = 'discovery/sponsored-slots';
-  static String searchSponsored(int? destinationId) =>
-      (destinationId != null && destinationId > 0)
-          ? 'discovery/search-sponsored?destination_id=$destinationId'
-          : 'discovery/search-sponsored';
+  // cityId/date scope the sponsored trek card to the CURRENT search —
+  // without them the backend can't require an exact route+date match and
+  // treats the sponsored trek slot as ineligible (see sponsoredSlotController.js).
+  static String searchSponsored(
+    int? destinationId, {
+    int? cityId,
+    String? date,
+  }) {
+    final params = <String, String>{
+      if (destinationId != null && destinationId > 0)
+        'destination_id': destinationId.toString(),
+      if (cityId != null && cityId > 0) 'city_id': cityId.toString(),
+      if (date != null && date.isNotEmpty) 'date': date,
+    };
+    if (params.isEmpty) return 'discovery/search-sponsored';
+    final query = params.entries.map((e) => '${e.key}=${e.value}').join('&');
+    return 'discovery/search-sponsored?$query';
+  }
   static String detailScreenAds(String screen) =>
       'discovery/detail-screen-ads?screen=$screen';
   static String sponsoredSlotImpression(int id) =>

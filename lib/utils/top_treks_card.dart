@@ -300,18 +300,19 @@ class _TopTreksCardState extends State<TopTreksCard>
                         builder: (context, child) {
                           return Transform.scale(
                             scale: _scaleAnimation.value,
-                            child: Icon(
-                              widget.isFavorite
-                                  ? Icons.favorite
-                                  : Icons.favorite_border,
-                              key: _heartIconKey,
-                              size: 18,
-                              color: widget.isFavorite
-                                  ? CommonColors.favColor
-                                  : CommonColors.whiteColor,
-                            ),
+                            child: child,
                           );
                         },
+                        child: Icon(
+                          widget.isFavorite
+                              ? Icons.favorite
+                              : Icons.favorite_border,
+                          key: _heartIconKey,
+                          size: 18,
+                          color: widget.isFavorite
+                              ? CommonColors.favColor
+                              : CommonColors.whiteColor,
+                        ),
                       ),
                     ),
                   ),

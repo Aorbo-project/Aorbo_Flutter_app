@@ -183,7 +183,13 @@ class Repository {
               }
             }
             await sp!.clear();
-            Get.offAllNamed('/');
+            // forcedLogout: true tells SplashWithLoginScreen this is a
+            // mid-session kick-out, not a cold app start — it skips the
+            // logo entrance/breathing choreography (which is only
+            // meaningful for a real launch) and drops straight into the
+            // login form instead of replaying ~1s+ of animation the user
+            // just sat through moments ago.
+            Get.offAllNamed('/', arguments: {'forcedLogout': true});
             return handler.next(error);
           }
 
@@ -194,7 +200,7 @@ class Repository {
                       errorCode == 'INVALID_TOKEN_TYPE'));
           if (isSessionInvalid) {
             await sp!.clear();
-            Get.offAllNamed('/');
+            Get.offAllNamed('/', arguments: {'forcedLogout': true});
           }
 
           return handler.next(error);

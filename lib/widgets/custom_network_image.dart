@@ -70,9 +70,14 @@ class CustomNetworkImage extends StatelessWidget {
         width: width,
         height: height,
         color: color,
-        // // Memory optimization
-        // memCacheHeight: height?.toInt(),
-        // memCacheWidth: width?.toInt(),
+        // Memory optimization — decode at display size instead of full
+        // network resolution. Was commented out; every card list
+        // (trek/booking/top-treks) routes through this path, so every
+        // image in every list was decoding at full source resolution on
+        // scroll — a major jank contributor. Matches the pattern already
+        // used in _buildImageWithShadow below.
+        memCacheHeight: height?.toInt(),
+        memCacheWidth: width?.toInt(),
         // Smooth animations
         fadeInDuration: const Duration(milliseconds: 300),
         fadeOutDuration: const Duration(milliseconds: 200),
@@ -117,8 +122,9 @@ class CustomNetworkImage extends StatelessWidget {
         height: height,
         color: color,
         // Critical for transparent images - use contain to preserve alpha channel
-        // memCacheHeight: height?.toInt(),
-        // memCacheWidth: width?.toInt(),
+        // Memory optimization — see _buildBaseImage's comment above.
+        memCacheHeight: height?.toInt(),
+        memCacheWidth: width?.toInt(),
         fadeInDuration: const Duration(milliseconds: 300),
         fadeOutDuration: const Duration(milliseconds: 200),
         // Don't apply any background color to transparent images
