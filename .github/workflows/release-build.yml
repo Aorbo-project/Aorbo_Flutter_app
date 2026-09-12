@@ -1,0 +1,65 @@
+name: Build Signed Release
+
+# Manual only — a release build is a deliberate action, not something that
+# should fire on every push. Run it from the Actions tab (or `gh workflow
+# run release-build.yml -f build_type=appbundle`) when you actually want a
+# signed .aab/.apk.
+on:
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: "What to build"
+        required: true
+        default: appbundle
+        type: choice
+        options:
+          - appbundle
+          - apk
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.3"
+          channel: "stable"
+
+      # Keystore + credentials live only as encrypted repo secrets — decoded
+      # into place for this job only, never committed. See android/.gitignore
+      # (key.properties, *.jks are excluded there on purpose).
+      - name: Decode signing keystore
+        run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/app/upload-keystore.jks
+
+      - name: Write key.properties from secrets
+        run: |
+          cat > android/key.properties <<EOF
+          storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+          storeFile=upload-keystore.jks
+          EOF
+
+      - run: flutter pub get
+
+      - name: Build App Bundle
+        if: ${{ inputs.build_type == 'appbundle' }}
+        run: flutter build appbundle --release
+
+      - name: Build APK (arm64 only, for sideload testing)
+        if: ${{ inputs.build_type == 'apk' }}
+        run: flutter build apk --release --target-platform android-arm64 --split-per-abi
+
+      # Keystore/properties only ever existed in this job's disposable
+      # runner — nothing to clean up beyond not uploading them as artifacts.
+      - name: Upload build output
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ inputs.build_type }}-${{ github.run_number }}
+          path: |
+            build/app/outputs/bundle/release/*.aab
+            build/app/outputs/flutter-apk/*.apk
+          if-no-files-found: error
+          retention-days: 30
