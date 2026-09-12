@@ -32,10 +32,11 @@ class AdConfig {
   static const _testNativeAndroid = 'ca-app-pub-3940256099942544/2247696110';
   static const _testNativeIos = 'ca-app-pub-3940256099942544/3986624511';
 
-  // ── Real ids — fill when the AdMob account is set up ──────────────────
-  static const _realAppIdAndroid = '';
+  // ── Real ids — AdMob account created 2026-09-12. iOS app not set up yet,
+  // so those stay blank until an iOS AdMob app + ad unit exist. ───────────
+  static const _realAppIdAndroid = 'ca-app-pub-1409410183966075~2943255858';
   static const _realAppIdIos = '';
-  static const _realNativeAndroid = '';
+  static const _realNativeAndroid = 'ca-app-pub-1409410183966075/1490573383';
   static const _realNativeIos = '';
 
   /// Test-device ids so real ads (once live) never count our own taps, and
