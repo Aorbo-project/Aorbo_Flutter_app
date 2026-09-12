@@ -190,6 +190,49 @@ Widget _tiSheetTextField(
 );
 
 // ─────────────────────────────────────────────
+//  IN-SHEET ERROR BANNER
+//  Rendered inside the sheet's own widget tree,
+//  so it is ALWAYS visible — no overlay/snackbar
+//  can be hidden behind anything.
+// ─────────────────────────────────────────────
+class _SheetNoticeBanner extends StatelessWidget {
+  const _SheetNoticeBanner({required this.message});
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color accent = CommonColors.appRedColor;
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(horizontal: 3.5.w, vertical: 1.2.h),
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(2.5.w),
+        border: Border.all(color: accent.withValues(alpha: 0.35), width: 1),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.error_outline_rounded, size: 4.2.w, color: accent),
+          SizedBox(width: 2.5.w),
+          Expanded(
+            child: Text(
+              message,
+              style: AppType.style(
+                9.5.sp,
+                w: FontWeight.w600,
+                color: accent,
+                height: 1.35,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
 //  MAIN SCREEN
 // ─────────────────────────────────────────────
 class TravellerInformationScreen extends StatefulWidget {
@@ -539,74 +582,92 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
     );
   }
 
-  void _showSuccessSnack(String message) {
+  // ✅ NOTIFICATIONS — the exact SnackBar style this screen originally
+  // used for success (floating pill, check icon, same margins/position),
+  // driven by ScaffoldMessenger directly so it always displays.
+  // Red variant for problems.
+  void _showNotice(String message, {bool success = true}) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Container(
-              width: 8.w,
-              height: 8.w,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.15),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.check_rounded,
-                color: Colors.white,
-                size: 18,
-              ),
-            ),
-            SizedBox(width: 3.w),
-            Expanded(
-              child: Text(
-                message,
-                style: AppType.style(
-                  11.sp,
-                  w: FontWeight.w600,
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Container(
+                width: 8.w,
+                height: 8.w,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  success ? Icons.check_rounded : Icons.priority_high_rounded,
                   color: Colors.white,
+                  size: 18,
                 ),
               ),
-            ),
-          ],
+              SizedBox(width: 3.w),
+              Expanded(
+                child: Text(
+                  message,
+                  style: AppType.style(
+                    11.sp,
+                    w: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: success ? _TI.brandDeep : CommonColors.appRedColor,
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+          padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.4.h),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(3.w),
+          ),
+          duration: const Duration(seconds: 2),
         ),
-        backgroundColor: _TI.brandDeep,
-        behavior: SnackBarBehavior.floating,
-        margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
-        padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.4.h),
-        elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(3.w)),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+      );
   }
 
   Future<void> _showContactDetailsBottomSheet({bool isEdit = false}) async {
-    final saved = await showModalBottomSheet<bool>(
+    final result = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _ContactDetailsSheet(isEdit: isEdit),
     );
-    if (saved != true || !mounted) return;
+    if (!mounted || result == null) return;
 
     setState(() {});
 
-    _showSuccessSnack(
-      isEdit ? 'Contact details updated' : 'Contact details saved',
-    );
+    final String message;
+    switch (result) {
+      case 'email':
+        message = 'Email updated successfully';
+        break;
+      case 'state':
+        message = 'State of residence updated successfully';
+        break;
+      default:
+        message = 'Email & state updated successfully';
+    }
+
+    _showNotice(message);
   }
 
   Future<void> _showTravellerBottomSheet({Traveler? traveller}) async {
     final isEdit = traveller != null && traveller.id != null;
-    final saved = await showModalBottomSheet<bool>(
+    final savedName = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _TravellerFormSheet(traveller: traveller),
     );
-    if (saved != true || !mounted) return;
+    if (!mounted || savedName == null) return;
 
     if (isEdit) {
       _refreshSelectedTravellers();
@@ -614,7 +675,11 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
       _autoSelectNewestTraveller();
     }
 
-    _showSuccessSnack(isEdit ? 'Traveller updated' : 'Traveller added');
+    _showNotice(
+      isEdit
+          ? "$savedName's details were updated"
+          : '$savedName was added to your traveller list',
+    );
   }
 
   void _refreshSelectedTravellers() {
@@ -837,20 +902,14 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                 ),
               ],
             ),
-            SizedBox(height: 0.5.h),
-            Text(
-              'Ticket details will be sent to this contact information',
-              style: TextStyle(
-                fontSize: AppType.clampFontSize(8.sp),
-                color: _TI.inkMid,
-                fontStyle: FontStyle.italic,
-              ),
-            ),
             SizedBox(height: 1.h),
             if (!isCompleted)
               Text(
                 'Tap "Add" to enter your phone, email and state.',
-                style: TextStyle(fontSize: AppType.clampFontSize(9.sp), color: _TI.inkMid),
+                style: TextStyle(
+                  fontSize: AppType.clampFontSize(9.sp),
+                  color: _TI.inkMid,
+                ),
               )
             else ...[
               _infoRow(CommonImages.phone, customer?.phone ?? '-'),
@@ -902,55 +961,71 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                     ),
                   ),
                 ),
-                Builder(
-                  builder: (context) {
-                    final canIncrement = !isSlotsFull;
-                    return Row(
-                      children: [
-                        _counterBtn(Icons.remove, () {
-                          if (adultCountReq <= 1) return;
-                          final newCount = adultCountReq - 1;
-                          setState(() {
-                            _trekC.calculateFareRequestModel.value = _trekC
-                                .calculateFareRequestModel
-                                .value
-                                .copyWith(travelerCount: newCount);
-                            if (selectedTravellers.length > newCount) {
-                              selectedTravellers = selectedTravellers
-                                  .take(newCount)
-                                  .toList();
-                            }
-                          });
-                          _trekC.trekPersonCount.value = newCount;
-                          _trekC.travellerDetailList.value = List.from(
-                            selectedTravellers,
-                          );
-                          BookingDraftService.save(_trekC);
-                        }, active: adultCountReq > 1),
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 4.w),
-                          child: Text(
-                            '$adultCountReq',
-                            style: TextStyle(
-                              fontSize: AppType.clampFontSize(16.sp),
-                              fontWeight: FontWeight.w700,
-                              color: _TI.ink,
-                            ),
-                          ),
+                Row(
+                  children: [
+                    _counterBtn(Icons.remove, () {
+                      if (adultCountReq <= 1) {
+                        _showNotice(
+                          'You need at least 1 traveller to continue with this booking',
+                          success: false,
+                        );
+                        return;
+                      }
+                      final newCount = adultCountReq - 1;
+                      setState(() {
+                        _trekC.calculateFareRequestModel.value = _trekC
+                            .calculateFareRequestModel
+                            .value
+                            .copyWith(travelerCount: newCount);
+                        if (selectedTravellers.length > newCount) {
+                          selectedTravellers = selectedTravellers
+                              .take(newCount)
+                              .toList();
+                        }
+                      });
+                      _trekC.trekPersonCount.value = newCount;
+                      _trekC.travellerDetailList.value = List.from(
+                        selectedTravellers,
+                      );
+                      BookingDraftService.save(_trekC);
+                    }),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 4.w),
+                      child: Text(
+                        '$adultCountReq',
+                        style: TextStyle(
+                          fontSize: AppType.clampFontSize(16.sp),
+                          fontWeight: FontWeight.w700,
+                          color: _TI.ink,
                         ),
-                        _counterBtn(Icons.add, () {
-                          final newCount = adultCountReq + 1;
-                          setState(() {
-                            _trekC.calculateFareRequestModel.value = _trekC
-                                .calculateFareRequestModel
-                                .value
-                                .copyWith(travelerCount: newCount);
-                          });
-                          _trekC.trekPersonCount.value = newCount;
-                        }, active: canIncrement),
-                      ],
-                    );
-                  },
+                      ),
+                    ),
+                    _counterBtn(Icons.add, () {
+                      if (isSlotsFull) {
+                        _showNotice(
+                          'Batch is full — maximum $maxSlots slots for this batch',
+                          success: false,
+                        );
+                        return;
+                      }
+                      final newCount = adultCountReq + 1;
+                      setState(() {
+                        _trekC.calculateFareRequestModel.value = _trekC
+                            .calculateFareRequestModel
+                            .value
+                            .copyWith(travelerCount: newCount);
+                      });
+                      _trekC.trekPersonCount.value = newCount;
+
+                      final needed = newCount - selectedTravellers.length;
+                      if (needed > 0) {
+                        _showNotice(
+                          'Please add or select $needed more traveller${needed > 1 ? 's' : ''} for the trip',
+                          success: false,
+                        );
+                      }
+                    }),
+                  ],
                 ),
               ],
             ),
@@ -1737,7 +1812,9 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
             ),
             child: Center(
               child: Text(
-                (traveler.name ?? '?')[0].toUpperCase(),
+                (traveler.name?.trim().isNotEmpty ?? false)
+                    ? traveler.name!.trim()[0].toUpperCase()
+                    : '?',
                 style: AppType.style(
                   12.sp,
                   w: FontWeight.w700,
@@ -1888,6 +1965,15 @@ class _ContactDetailsSheetState extends State<_ContactDetailsSheet> {
   String _stateName = BookingConstants.defaultState;
   bool _isSaving = false;
 
+  // Original values — the Save button stays disabled until one of
+  // these actually changes.
+  String _originalEmail = '';
+  int _originalStateId = 0;
+
+  // In-sheet error banner (always visible — part of the sheet itself).
+  String? _error;
+  Timer? _errorTimer;
+
   @override
   void initState() {
     super.initState();
@@ -1910,38 +1996,68 @@ class _ContactDetailsSheetState extends State<_ContactDetailsSheet> {
         _stateName = matches.first.name!;
       }
     }
+    _originalEmail = _emailCtrl.text.trim();
+    _originalStateId = _stateId;
+
+    // Rebuild on every keystroke so the button state updates live.
+    _emailCtrl.addListener(_onFieldChanged);
+  }
+
+  void _onFieldChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
+    _emailCtrl.removeListener(_onFieldChanged);
+    _errorTimer?.cancel();
     _phoneCtrl.dispose();
     _emailCtrl.dispose();
     super.dispose();
   }
 
-  bool _validate() {
-    final phone = _phoneCtrl.text.trim();
+  void _showError(String message) {
+    setState(() => _error = message);
+    _errorTimer?.cancel();
+    _errorTimer = Timer(const Duration(milliseconds: 3500), () {
+      if (mounted) setState(() => _error = null);
+    });
+  }
+
+  bool get _phoneValid =>
+      RegExp(r'^[0-9]{10}$').hasMatch(_phoneCtrl.text.trim());
+
+  bool get _emailValid =>
+      RegExp(r'^[\w.+-]+@[\w-]+(\.[\w-]+)+$').hasMatch(_emailCtrl.text.trim());
+
+  bool get _hasChanges {
     final email = _emailCtrl.text.trim();
-    if (phone.length != 10 || !RegExp(r'^[0-9]{10}$').hasMatch(phone)) {
-      CustomSnackBar.show(
-        context,
-        message: 'Please enter a valid 10-digit phone number',
+    return email.toLowerCase() != _originalEmail.toLowerCase() ||
+        _stateId != _originalStateId;
+  }
+
+  /// Button enabled only when there is a valid change to save.
+  bool get _canSave => _emailValid && _stateId != 0 && _hasChanges;
+
+  // Runs on tap — explains the FIRST problem in the banner. This also
+  // covers the case where the button widget still fires while greyed.
+  bool _validate() {
+    if (!_phoneValid) {
+      _showError(
+        'Phone number is missing from your account — please contact support',
       );
       return false;
     }
-    if (email.isEmpty ||
-        !RegExp(r'^[\w.+-]+@[\w-]+(\.[\w-]+)+$').hasMatch(email)) {
-      CustomSnackBar.show(
-        context,
-        message: 'Please enter a valid email address',
-      );
+    if (!_emailValid) {
+      _showError('Please enter a valid email address');
       return false;
     }
     if (_stateId == 0) {
-      CustomSnackBar.show(
-        context,
-        message: 'Please select your state of residence',
-      );
+      _showError('Please select your state of residence');
+      return false;
+    }
+    if (!_hasChanges) {
+      _showError('No changes made yet — update your email or state first');
       return false;
     }
     return true;
@@ -1949,15 +2065,30 @@ class _ContactDetailsSheetState extends State<_ContactDetailsSheet> {
 
   Future<void> _save() async {
     if (_isSaving || !_validate()) return;
+
+    final email = _emailCtrl.text.trim();
+    final emailChanged = email.toLowerCase() != _originalEmail.toLowerCase();
+    final stateChanged = _stateId != _originalStateId;
+
     setState(() => _isSaving = true);
     final ok = await _userC.updateProfileDetails(
-      email: _emailCtrl.text.trim(),
+      email: email,
       stateId: _stateId,
     );
     if (!mounted) return;
     if (ok) {
-      Navigator.pop(context, true);
+      // Report what changed so the parent's notification can say it.
+      String result;
+      if (emailChanged && stateChanged) {
+        result = 'email+state';
+      } else if (emailChanged) {
+        result = 'email';
+      } else {
+        result = 'state';
+      }
+      Navigator.pop(context, result);
     } else {
+      // API failure: UserController already shows its own error snackbar.
       setState(() => _isSaving = false);
     }
   }
@@ -1998,6 +2129,19 @@ class _ContactDetailsSheetState extends State<_ContactDetailsSheet> {
               context,
               widget.isEdit ? 'Edit Contact Details' : 'Add Contact Details',
               Icons.contact_phone_outlined,
+            ),
+            // ✅ Error banner — rendered inside the sheet so it can
+            // never be hidden.
+            AnimatedSize(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOut,
+              alignment: Alignment.topCenter,
+              child: _error == null
+                  ? const SizedBox(width: double.infinity, height: 0)
+                  : Padding(
+                      padding: EdgeInsets.only(bottom: 1.2.h),
+                      child: _SheetNoticeBanner(message: _error!),
+                    ),
             ),
             _tiSheetInputContainer(
               label: 'Phone Number',
@@ -2087,6 +2231,8 @@ class _ContactDetailsSheetState extends State<_ContactDetailsSheet> {
               ),
             ),
             SizedBox(height: 3.h),
+            // ✅ Disabled until something valid actually changed,
+            // and stays disabled while saving.
             CommonButton(
               height: 48,
               gradient: _TI.ctaGradient,
@@ -2094,7 +2240,8 @@ class _ContactDetailsSheetState extends State<_ContactDetailsSheet> {
                   ? 'Saving...'
                   : (widget.isEdit ? 'Update' : 'Save'),
               textColor: CommonColors.whiteColor,
-              onPressed: _isSaving ? () {} : _save,
+              isDisabled: !_canSave || _isSaving,
+              onPressed: _save,
             ),
           ],
         ),
@@ -2121,6 +2268,13 @@ class _TravellerFormSheetState extends State<_TravellerFormSheet> {
   String _gender = '';
   bool _isSubmitting = false;
 
+  static const int _minAge = 18;
+  static const int _maxAge = 100;
+
+  // In-sheet error banner (always visible — part of the sheet itself).
+  String? _error;
+  Timer? _errorTimer;
+
   bool get _isEdit => widget.traveller?.id != null;
 
   @override
@@ -2131,37 +2285,124 @@ class _TravellerFormSheetState extends State<_TravellerFormSheet> {
       text: widget.traveller?.age?.toString() ?? '',
     );
     _gender = widget.traveller?.gender ?? '';
+
+    // Rebuild on every keystroke so the button state updates live.
+    _nameCtrl.addListener(_onFieldChanged);
+    _ageCtrl.addListener(_onFieldChanged);
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _nameFocus.requestFocus();
     });
   }
 
+  void _onFieldChanged() {
+    if (mounted) setState(() {});
+  }
+
   @override
   void dispose() {
+    _nameCtrl.removeListener(_onFieldChanged);
+    _ageCtrl.removeListener(_onFieldChanged);
+    _errorTimer?.cancel();
     _nameCtrl.dispose();
     _ageCtrl.dispose();
     _nameFocus.dispose();
     super.dispose();
   }
 
+  void _showError(String message) {
+    setState(() => _error = message);
+    _errorTimer?.cancel();
+    _errorTimer = Timer(const Duration(milliseconds: 3500), () {
+      if (mounted) setState(() => _error = null);
+    });
+  }
+
+  /// Trim + collapse doubled spaces ("Rahul  Sharma" → "Rahul Sharma").
+  String get _cleanName =>
+      _nameCtrl.text.trim().replaceAll(RegExp(r'\s+'), ' ');
+
+  String _clean(String s) => s.trim().replaceAll(RegExp(r'\s+'), ' ');
+
+  /// All fields filled and valid.
+  bool get _isFormValid {
+    final name = _cleanName;
+    final ageVal = int.tryParse(_ageCtrl.text.trim());
+    return name.length >= 2 &&
+        RegExp(r"^[A-Za-z][A-Za-z \-'.]*$").hasMatch(name) &&
+        ageVal != null &&
+        ageVal >= _minAge &&
+        ageVal <= _maxAge &&
+        _gender.isNotEmpty;
+  }
+
+  /// ✅ EDIT mode: button stays disabled until something actually
+  /// changed. ADD mode: a valid form is enough (it's all new data).
+  bool get _hasChanges {
+    if (!_isEdit) return true;
+    final t = widget.traveller!;
+    final nameChanged = _cleanName != _clean(t.name ?? '');
+    final ageChanged = _ageCtrl.text.trim() != (t.age?.toString() ?? '');
+    final genderChanged = _gender != (t.gender ?? '');
+    return nameChanged || ageChanged || genderChanged;
+  }
+
+  bool get _canSubmit => _isFormValid && _hasChanges;
+
+  // Runs on tap — explains the FIRST problem in the banner. This also
+  // covers the case where the button widget still fires while greyed.
   bool _validate() {
-    final name = _nameCtrl.text.trim();
+    final name = _cleanName;
     final age = _ageCtrl.text.trim();
+
     if (name.isEmpty) {
-      CustomSnackBar.show(context, message: 'Please enter traveller name');
+      _showError('Please enter the traveller\'s name');
+      return false;
+    }
+    if (name.length < 2) {
+      _showError('Name must be at least 2 letters long');
+      return false;
+    }
+    if (!RegExp(r"^[A-Za-z][A-Za-z \-'.]*$").hasMatch(name)) {
+      _showError('Name can\'t contain numbers or symbols — letters only');
+      return false;
+    }
+    final existing =
+        _userC.userProfileData.value.customer?.travelers ?? const <Traveler>[];
+    final duplicate = existing.any(
+      (t) =>
+          t.id != widget.traveller?.id &&
+          _clean(t.name ?? '').toLowerCase() == name.toLowerCase(),
+    );
+    if (duplicate) {
+      _showError('"$name" is already in your traveller list');
       return false;
     }
     if (age.isEmpty) {
-      CustomSnackBar.show(context, message: 'Please enter traveller age');
+      _showError('Please enter the traveller\'s age');
       return false;
     }
     final ageVal = int.tryParse(age);
-    if (ageVal == null || ageVal <= 0 || ageVal > 120) {
-      CustomSnackBar.show(context, message: 'Please enter a valid age');
+    if (ageVal == null) {
+      _showError('Please enter a valid age');
+      return false;
+    }
+    if (ageVal < _minAge) {
+      _showError(
+        'Adults only — travellers must be at least $_minAge years old',
+      );
+      return false;
+    }
+    if (ageVal > _maxAge) {
+      _showError('Travellers above $_maxAge years can\'t be added');
       return false;
     }
     if (_gender.isEmpty) {
-      CustomSnackBar.show(context, message: 'Please select gender');
+      _showError('Please select a gender');
+      return false;
+    }
+    if (!_hasChanges) {
+      _showError('No changes made yet');
       return false;
     }
     return true;
@@ -2170,22 +2411,24 @@ class _TravellerFormSheetState extends State<_TravellerFormSheet> {
   Future<void> _submit() async {
     if (_isSubmitting || !_validate()) return;
     setState(() => _isSubmitting = true);
+    final name = _cleanName;
     final ok = _isEdit
         ? await _userC.updateTravelerDetails(
             id: widget.traveller!.id!,
-            name: _nameCtrl.text.trim(),
+            name: name,
             age: _ageCtrl.text.trim(),
             gender: _gender,
           )
         : await _userC.addTravelerDetails(
-            name: _nameCtrl.text.trim(),
+            name: name,
             age: _ageCtrl.text.trim(),
             gender: _gender,
           );
     if (!mounted) return;
     if (ok) {
-      Navigator.pop(context, true);
+      Navigator.pop(context, name);
     } else {
+      // API failure: UserController already shows its own error snackbar.
       setState(() => _isSubmitting = false);
     }
   }
@@ -2252,13 +2495,37 @@ class _TravellerFormSheetState extends State<_TravellerFormSheet> {
               _isEdit ? 'Edit Traveller' : 'Add New Traveller',
               Icons.badge_outlined,
             ),
+            // ✅ Error banner — rendered inside the sheet so it can
+            // never be hidden.
+            AnimatedSize(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOut,
+              alignment: Alignment.topCenter,
+              child: _error == null
+                  ? const SizedBox(width: double.infinity, height: 0)
+                  : Padding(
+                      padding: EdgeInsets.only(bottom: 1.2.h),
+                      child: _SheetNoticeBanner(message: _error!),
+                    ),
+            ),
             _tiSheetInputContainer(
               label: 'Full Name',
               child: _tiSheetTextField(
                 context,
                 _nameCtrl,
                 focusNode: _nameFocus,
+                maxLength: 40,
                 textCapitalization: TextCapitalization.words,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z \-'.]")),
+                ],
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.only(left: 1.w, top: 0.6.h),
+              child: Text(
+                'Letters only — numbers and symbols are not allowed.',
+                style: AppType.style(8.sp, color: _TI.sheetInkMid),
               ),
             ),
             SizedBox(height: 1.5.h),
@@ -2305,7 +2572,17 @@ class _TravellerFormSheetState extends State<_TravellerFormSheet> {
                 ),
               ],
             ),
+            Padding(
+              padding: EdgeInsets.only(left: 1.w, top: 0.6.h),
+              child: Text(
+                'Adults only — travellers must be $_minAge–$_maxAge years old.',
+                style: AppType.style(8.sp, color: _TI.sheetInkMid),
+              ),
+            ),
             SizedBox(height: 3.h),
+            // ✅ Disabled until the form is valid AND (in edit mode)
+            // something has actually changed; stays disabled while
+            // adding/updating.
             CommonButton(
               height: 48,
               gradient: _TI.ctaGradient,
@@ -2313,7 +2590,8 @@ class _TravellerFormSheetState extends State<_TravellerFormSheet> {
                   ? (_isEdit ? 'Updating...' : 'Adding...')
                   : (_isEdit ? 'Update Traveller' : 'Add Traveller'),
               textColor: CommonColors.whiteColor,
-              onPressed: _isSubmitting ? () {} : _submit,
+              isDisabled: !_canSubmit || _isSubmitting,
+              onPressed: _submit,
             ),
           ],
         ),

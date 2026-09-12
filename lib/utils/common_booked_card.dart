@@ -185,6 +185,14 @@ class CommonBookedCard extends StatelessWidget {
         booking.trek?.vendor?.businessName ?? 'Unknown Vendor';
     final String vendorLogo = booking.trek?.vendor?.businessLogo ?? '';
     final String destinationName = booking.trek?.destination?.name ?? '';
+
+    // CHANGED: trek title removed — destination is now the highlighted
+    // headline of the card. Falls back to the trek title only when no
+    // destination exists (so the card is never blank).
+    final String headline = destinationName.isNotEmpty
+        ? destinationName
+        : title;
+
     final Color statusColor = _statusColor(trekStatusRaw);
     final String statusLabel = trekStatusRaw.isNotEmpty
         ? trekStatusRaw[0].toUpperCase() + trekStatusRaw.substring(1)
@@ -303,47 +311,38 @@ class CommonBookedCard extends StatelessWidget {
                         ],
                       ),
                       SizedBox(height: _rh(1.1, 12)),
-                      Text(
-                        title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textScaler: const TextScaler.linear(1),
-                        style: AppType.style(
-                          FontSize.s13,
-                          w: FontWeight.w800,
-                          color: _BC.ink,
-                          height: 1.15,
-                          letterSpacing: -0.2,
-                        ),
-                      ),
-                      if (destinationName.isNotEmpty)
-                        Padding(
-                          padding: EdgeInsets.only(top: _rh(0.35, 4.5)),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.location_on_rounded,
-                                size: _rw(3.1, 14),
-                                color: _BC.brand,
-                              ),
-                              SizedBox(width: _rw(0.9, 4.5)),
-                              Expanded(
-                                child: Text(
-                                  destinationName,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: AppType.style(
-                                    FontSize.s9,
-                                    color: _BC.inkMid,
-                                    height: 1.25,
-                                  ),
-                                ),
-                              ),
-                              if (difficulty.isNotEmpty && difficulty != '-')
-                                _badge(difficulty, _BC.brand, small: true),
-                            ],
+
+                      // CHANGED: trek title removed — the destination name is
+                      // now the bold headline with a location pin.
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.location_on_rounded,
+                            size: _rw(4, 18),
+                            color: _BC.brand,
                           ),
-                        ),
+                          SizedBox(width: _rw(1, 5)),
+                          Expanded(
+                            child: Text(
+                              headline,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textScaler: const TextScaler.linear(1),
+                              style: AppType.style(
+                                FontSize.s13,
+                                w: FontWeight.w800,
+                                color: _BC.ink,
+                                height: 1.15,
+                                letterSpacing: -0.2,
+                              ),
+                            ),
+                          ),
+                          if (difficulty.isNotEmpty && difficulty != '-')
+                            _badge(difficulty, _BC.brand, small: true),
+                        ],
+                      ),
+
                       SizedBox(height: _rh(1.2, 13)),
                       Container(
                         padding: EdgeInsets.symmetric(
