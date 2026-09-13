@@ -584,7 +584,18 @@ class TrekController extends GetxController {
     }
   }
 
+  // Guards against an in-flight calculate-fare request resolving AFTER a
+  // newer one — e.g. 4 travellers fires a request, a traveller is removed
+  // immediately after (3 travellers, a second request fires), and the
+  // first (now-stale) response arrives last. Without this, that stale
+  // response could momentarily restore a discount/fare that no longer
+  // matches the current traveller count. Whichever request was issued
+  // MOST RECENTLY always wins; every earlier one is discarded on arrival,
+  // success or failure alike, rather than raced on network timing.
+  int _calculateFareRequestSeq = 0;
+
   Future<void> calculateFare() async {
+    final mySeq = ++_calculateFareRequestSeq;
     try {
       calculateFareResponseModel.value = ApiResult.loading("");
       calculateFareRequestModel.value = calculateFareRequestModel.value
@@ -593,6 +604,14 @@ class TrekController extends GetxController {
         url: NetworkUrl.calculateFare,
         body: calculateFareRequestModel.value.toJson(),
       );
+
+      if (mySeq != _calculateFareRequestSeq) {
+        // A newer calculateFare() call has already been issued — this
+        // response is stale, whatever it says. Drop it silently; the
+        // newer request's own response (or its own catch block) is the
+        // one that gets to update state.
+        return;
+      }
 
       if (response != null) {
         final responseData = CalculateFareResponseModel.fromJson(response);
@@ -631,6 +650,7 @@ class TrekController extends GetxController {
       }
       throw "Response Body Null";
     } catch (e) {
+      if (mySeq != _calculateFareRequestSeq) return; // stale — see above
       errorMessage.value = 'Failed to calculate fare: ${e.toString()}';
       CustomSnackBar.show(Get.context!, message: errorMessage.value);
       calculateFareResponseModel.value = ApiResult.error(
