@@ -165,6 +165,7 @@ _$CalculateFareResponseModelImpl _$$CalculateFareResponseModelImplFromJson(
           : BreakDownDataModel.fromJson(
               json['breakdown'] as Map<String, dynamic>),
       couponDetails: json['coupon_details'],
+      couponRejectedReason: json['coupon_rejected_reason'] as String?,
       expiresAt: json['expires_at'],
       allowCancellation: json['allow_cancellation'],
       allowInsurance: json['allow_insurance'],
@@ -178,6 +179,7 @@ Map<String, dynamic> _$$CalculateFareResponseModelImplToJson(
       'fareToken': instance.fareToken,
       'breakdown': instance.breakdown,
       'coupon_details': instance.couponDetails,
+      'coupon_rejected_reason': instance.couponRejectedReason,
       'expires_at': instance.expiresAt,
       'allow_cancellation': instance.allowCancellation,
       'allow_insurance': instance.allowInsurance,

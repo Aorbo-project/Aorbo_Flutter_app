@@ -113,6 +113,13 @@ class CalculateFareResponseModel with _$CalculateFareResponseModel {
     String? fareToken,
     BreakDownDataModel? breakdown,
     @JsonKey(name: 'coupon_details') dynamic couponDetails,
+    // Set only when a coupon code was submitted but its eligibility rule
+    // (e.g. SQUAD25's minimum traveller count) no longer holds for the
+    // CURRENT booking state — the fare itself still comes back correct and
+    // discount-free; this just tells the UI why so it can stop showing
+    // "Coupon Applied" and clear its own stale state (see
+    // traveller_information_screen.dart's coupon section).
+    @JsonKey(name: 'coupon_rejected_reason') String? couponRejectedReason,
     @JsonKey(name: 'expires_at') dynamic expiresAt,
     @JsonKey(name: 'allow_cancellation') dynamic allowCancellation,
     @JsonKey(name: 'allow_insurance') dynamic allowInsurance,

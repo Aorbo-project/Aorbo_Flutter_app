@@ -1810,7 +1810,15 @@ mixin _$CalculateFareResponseModel {
   String? get fareToken => throw _privateConstructorUsedError;
   BreakDownDataModel? get breakdown => throw _privateConstructorUsedError;
   @JsonKey(name: 'coupon_details')
-  dynamic get couponDetails => throw _privateConstructorUsedError;
+  dynamic get couponDetails =>
+      throw _privateConstructorUsedError; // Set only when a coupon code was submitted but its eligibility rule
+// (e.g. SQUAD25's minimum traveller count) no longer holds for the
+// CURRENT booking state — the fare itself still comes back correct and
+// discount-free; this just tells the UI why so it can stop showing
+// "Coupon Applied" and clear its own stale state (see
+// traveller_information_screen.dart's coupon section).
+  @JsonKey(name: 'coupon_rejected_reason')
+  String? get couponRejectedReason => throw _privateConstructorUsedError;
   @JsonKey(name: 'expires_at')
   dynamic get expiresAt => throw _privateConstructorUsedError;
   @JsonKey(name: 'allow_cancellation')
@@ -1837,6 +1845,7 @@ abstract class $CalculateFareResponseModelCopyWith<$Res> {
       String? fareToken,
       BreakDownDataModel? breakdown,
       @JsonKey(name: 'coupon_details') dynamic couponDetails,
+      @JsonKey(name: 'coupon_rejected_reason') String? couponRejectedReason,
       @JsonKey(name: 'expires_at') dynamic expiresAt,
       @JsonKey(name: 'allow_cancellation') dynamic allowCancellation,
       @JsonKey(name: 'allow_insurance') dynamic allowInsurance});
@@ -1863,6 +1872,7 @@ class _$CalculateFareResponseModelCopyWithImpl<$Res,
     Object? fareToken = freezed,
     Object? breakdown = freezed,
     Object? couponDetails = freezed,
+    Object? couponRejectedReason = freezed,
     Object? expiresAt = freezed,
     Object? allowCancellation = freezed,
     Object? allowInsurance = freezed,
@@ -1888,6 +1898,10 @@ class _$CalculateFareResponseModelCopyWithImpl<$Res,
           ? _value.couponDetails
           : couponDetails // ignore: cast_nullable_to_non_nullable
               as dynamic,
+      couponRejectedReason: freezed == couponRejectedReason
+          ? _value.couponRejectedReason
+          : couponRejectedReason // ignore: cast_nullable_to_non_nullable
+              as String?,
       expiresAt: freezed == expiresAt
           ? _value.expiresAt
           : expiresAt // ignore: cast_nullable_to_non_nullable
@@ -1931,6 +1945,7 @@ abstract class _$$CalculateFareResponseModelImplCopyWith<$Res>
       String? fareToken,
       BreakDownDataModel? breakdown,
       @JsonKey(name: 'coupon_details') dynamic couponDetails,
+      @JsonKey(name: 'coupon_rejected_reason') String? couponRejectedReason,
       @JsonKey(name: 'expires_at') dynamic expiresAt,
       @JsonKey(name: 'allow_cancellation') dynamic allowCancellation,
       @JsonKey(name: 'allow_insurance') dynamic allowInsurance});
@@ -1957,6 +1972,7 @@ class __$$CalculateFareResponseModelImplCopyWithImpl<$Res>
     Object? fareToken = freezed,
     Object? breakdown = freezed,
     Object? couponDetails = freezed,
+    Object? couponRejectedReason = freezed,
     Object? expiresAt = freezed,
     Object? allowCancellation = freezed,
     Object? allowInsurance = freezed,
@@ -1982,6 +1998,10 @@ class __$$CalculateFareResponseModelImplCopyWithImpl<$Res>
           ? _value.couponDetails
           : couponDetails // ignore: cast_nullable_to_non_nullable
               as dynamic,
+      couponRejectedReason: freezed == couponRejectedReason
+          ? _value.couponRejectedReason
+          : couponRejectedReason // ignore: cast_nullable_to_non_nullable
+              as String?,
       expiresAt: freezed == expiresAt
           ? _value.expiresAt
           : expiresAt // ignore: cast_nullable_to_non_nullable
@@ -2007,6 +2027,7 @@ class _$CalculateFareResponseModelImpl implements _CalculateFareResponseModel {
       this.fareToken,
       this.breakdown,
       @JsonKey(name: 'coupon_details') this.couponDetails,
+      @JsonKey(name: 'coupon_rejected_reason') this.couponRejectedReason,
       @JsonKey(name: 'expires_at') this.expiresAt,
       @JsonKey(name: 'allow_cancellation') this.allowCancellation,
       @JsonKey(name: 'allow_insurance') this.allowInsurance});
@@ -2026,6 +2047,15 @@ class _$CalculateFareResponseModelImpl implements _CalculateFareResponseModel {
   @override
   @JsonKey(name: 'coupon_details')
   final dynamic couponDetails;
+// Set only when a coupon code was submitted but its eligibility rule
+// (e.g. SQUAD25's minimum traveller count) no longer holds for the
+// CURRENT booking state — the fare itself still comes back correct and
+// discount-free; this just tells the UI why so it can stop showing
+// "Coupon Applied" and clear its own stale state (see
+// traveller_information_screen.dart's coupon section).
+  @override
+  @JsonKey(name: 'coupon_rejected_reason')
+  final String? couponRejectedReason;
   @override
   @JsonKey(name: 'expires_at')
   final dynamic expiresAt;
@@ -2038,7 +2068,7 @@ class _$CalculateFareResponseModelImpl implements _CalculateFareResponseModel {
 
   @override
   String toString() {
-    return 'CalculateFareResponseModel(success: $success, message: $message, fareToken: $fareToken, breakdown: $breakdown, couponDetails: $couponDetails, expiresAt: $expiresAt, allowCancellation: $allowCancellation, allowInsurance: $allowInsurance)';
+    return 'CalculateFareResponseModel(success: $success, message: $message, fareToken: $fareToken, breakdown: $breakdown, couponDetails: $couponDetails, couponRejectedReason: $couponRejectedReason, expiresAt: $expiresAt, allowCancellation: $allowCancellation, allowInsurance: $allowInsurance)';
   }
 
   @override
@@ -2054,6 +2084,8 @@ class _$CalculateFareResponseModelImpl implements _CalculateFareResponseModel {
                 other.breakdown == breakdown) &&
             const DeepCollectionEquality()
                 .equals(other.couponDetails, couponDetails) &&
+            (identical(other.couponRejectedReason, couponRejectedReason) ||
+                other.couponRejectedReason == couponRejectedReason) &&
             const DeepCollectionEquality().equals(other.expiresAt, expiresAt) &&
             const DeepCollectionEquality()
                 .equals(other.allowCancellation, allowCancellation) &&
@@ -2070,6 +2102,7 @@ class _$CalculateFareResponseModelImpl implements _CalculateFareResponseModel {
       fareToken,
       breakdown,
       const DeepCollectionEquality().hash(couponDetails),
+      couponRejectedReason,
       const DeepCollectionEquality().hash(expiresAt),
       const DeepCollectionEquality().hash(allowCancellation),
       const DeepCollectionEquality().hash(allowInsurance));
@@ -2097,6 +2130,8 @@ abstract class _CalculateFareResponseModel
           final String? fareToken,
           final BreakDownDataModel? breakdown,
           @JsonKey(name: 'coupon_details') final dynamic couponDetails,
+          @JsonKey(name: 'coupon_rejected_reason')
+          final String? couponRejectedReason,
           @JsonKey(name: 'expires_at') final dynamic expiresAt,
           @JsonKey(name: 'allow_cancellation') final dynamic allowCancellation,
           @JsonKey(name: 'allow_insurance') final dynamic allowInsurance}) =
@@ -2116,6 +2151,14 @@ abstract class _CalculateFareResponseModel
   @override
   @JsonKey(name: 'coupon_details')
   dynamic get couponDetails;
+  @override // Set only when a coupon code was submitted but its eligibility rule
+// (e.g. SQUAD25's minimum traveller count) no longer holds for the
+// CURRENT booking state — the fare itself still comes back correct and
+// discount-free; this just tells the UI why so it can stop showing
+// "Coupon Applied" and clear its own stale state (see
+// traveller_information_screen.dart's coupon section).
+  @JsonKey(name: 'coupon_rejected_reason')
+  String? get couponRejectedReason;
   @override
   @JsonKey(name: 'expires_at')
   dynamic get expiresAt;

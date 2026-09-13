@@ -56,6 +56,10 @@ class TrekController extends GetxController {
   ).obs;
   final calculateFareResponseModel =
       const ApiResult<CalculateFareResponseModel>.init().obs;
+  // Dedupes the "coupon no longer eligible" snackbar in calculateFare() so
+  // it fires once per drop, not on every recalculation while still below
+  // the coupon's minimum traveller count.
+  String? _lastCouponRejectedReason;
 
   final createOrderRequestModel = CreateRazorpayRequestModel(
     fareToken: "",
@@ -597,6 +601,30 @@ class TrekController extends GetxController {
           logger.d('fareToken: ${responseData.fareToken ?? ""}');
           createOrderRequestModel.value = createOrderRequestModel.value
               .copyWith(fareToken: responseData.fareToken ?? "");
+
+          // Server dropped the coupon's discount because its eligibility
+          // rule (e.g. SQUAD25's minimum traveller count) doesn't hold for
+          // the CURRENT booking state — the fare itself is already
+          // correct/discount-free above. Deliberately does NOT clear
+          // calculateFareRequestModel.couponCode: the code stays in the
+          // request so the discount comes back automatically, backend-
+          // verified, the moment the traveller count is eligible again
+          // (e.g. add a traveller back to 4) — matching "coupon eligibility
+          // must always reflect the CURRENT booking state" in both
+          // directions, not just downward. _buildCouponSection's own
+          // "Applied" indicator already keys off the live discount amount
+          // from this same response, so it self-corrects with no extra
+          // state needed here — this only adds the one-time explanatory
+          // message so the drop isn't silent.
+          final rejected = responseData.couponRejectedReason;
+          if (rejected != null &&
+              rejected.isNotEmpty &&
+              rejected != _lastCouponRejectedReason) {
+            if (Get.context != null) {
+              CustomSnackBar.show(Get.context!, message: rejected);
+            }
+          }
+          _lastCouponRejectedReason = rejected;
           return;
         }
         throw "${responseData.message}";
