@@ -22,6 +22,7 @@ import 'package:sizer/sizer.dart';
 import 'config/ad_config.dart';
 import 'services/ad_consent_service.dart';
 import 'services/analytics_service.dart';
+import 'services/crash_report_service.dart';
 import 'utils/shared_preferences.dart';
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -74,6 +75,11 @@ void main() async {
     try {
       FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
     } catch (_) {}
+    // Mirrors into Aorbo's own admin panel (Admin > Crash Analytics) so
+    // customer app crashes show up next to vendor/admin web ones instead of
+    // only being visible in the separate Firebase console. Never awaited —
+    // must not delay returning from an error handler.
+    CrashReportService.instance.report(error, stack, fatal: true);
     // Swallow only in debug. In release, let it surface so OS/store vitals
     // report it — silent swallowing ships invisible crashes.
     return kDebugMode;
@@ -96,7 +102,17 @@ void main() async {
 Future<void> _bootstrap() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(!kDebugMode);
-  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FirebaseCrashlytics.instance.recordFlutterFatalError(details);
+    // Same admin-panel mirror as the PlatformDispatcher handler above, for
+    // errors Flutter's own framework catches (widget build/layout/paint)
+    // rather than uncaught async ones.
+    CrashReportService.instance.report(
+      details.exception,
+      details.stack,
+      fatal: true,
+    );
+  };
   await Preferences.initPref();
   sp = await SpUtil.getInstance();
   await Repository().initRepo();
