@@ -28,6 +28,7 @@ import 'package:get/get.dart';
 
 import '../screens/booking_cancle_screen.dart';
 import '../screens/chatboat_screen.dart';
+import '../screens/my_tickets_screen.dart';
 import '../screens/claims_screen.dart';
 import '../screens/help_screen.dart';
 import '../screens/logout_screen.dart';
@@ -110,5 +111,6 @@ final routes = [
   GetPage(name: '/payment-success', page: () => const PaymentSuccessPage()),
   GetPage(name: '/rate-review', page: () => const RateReviewScreen()),
   GetPage(name: '/issue-report', page: () => const IssueReportScreen()),
+  GetPage(name: '/my-tickets', page: () => const MyTicketsScreen()),
 
 ];

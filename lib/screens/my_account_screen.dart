@@ -223,6 +223,12 @@ class _MyAccountScreenState extends State<MyAccountScreen>
                       ),
                       _buildDivider(),
                       _buildMenuItem(
+                        icon: CommonImages.help,
+                        title: 'My Tickets',
+                        onTap: () => Get.toNamed('/my-tickets'),
+                      ),
+                      _buildDivider(),
+                      _buildMenuItem(
                         icon: CommonImages.notification,
                         title: 'Notifications',
                         onTap: () => Get.toNamed('/notifications'),

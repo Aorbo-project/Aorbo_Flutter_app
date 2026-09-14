@@ -1,13 +1,16 @@
-import 'package:arobo_app/utils/common_colors.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
 import 'package:get/get.dart';
-import '../models/chat_data.dart';
+import '../models/chat_data.dart' as chat_data_defaults;
 import '../controller/chat_controller.dart';
+import '../utils/common_booked_card.dart';
 import '../utils/screen_constants.dart';
 import '../repository/faq_repository.dart';
+import '../repository/network_url.dart';
+import '../repository/repository.dart';
+import '../freezed_models/booking/booking_history_model.dart';
 import '../services/socket_service.dart';
+import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
 
 class Message {
@@ -27,6 +30,7 @@ class Message {
 enum MessageType {
   welcome,
   category,
+  trekSelection,
   question,
   answer,
   liveMessage,
@@ -63,21 +67,49 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   final ChatController _chatController = Get.put(ChatController());
   final FaqRepository _faqRepository = FaqRepository();
   final SocketService _socketService = SocketService();
+  final Repository _repository = Repository();
 
-  List<String> get categories => chatbotData.keys.toList();
+  // BUGFIX (2026-09-14): _loadChatbotFaqs() used to clear()/addAll() the
+  // IMPORTED chatbotData map from models/chat_data.dart in place — mutating
+  // a module-level fallback-content constant as if it were a live per-screen
+  // cache. Now screen-local: seeded once from the import, only ever mutated
+  // here.
+  late final Map<String, dynamic> _chatbotData =
+      Map<String, dynamic>.from(chat_data_defaults.chatbotData);
+
+  // Trek-context step (2026-09-14): after picking a category, the customer
+  // picks one of their real recent bookings before seeing FAQs, so a
+  // follow-up "Report an Issue" carries real booking context. No fabricated
+  // per-FAQ status field — only which TREKS are offered is filtered
+  // (real trek_status from the backend), the FAQ list itself stays the
+  // category's real, unfiltered list.
+  List<BookingHistoryData> _recentBookings = [];
+  bool _loadingBookings = false;
+  BookingHistoryData? selectedBooking;
+
+  List<String> get categories => _chatbotData.keys.toList();
 
   List<String> get questionsList {
     if (selectedCategory != null) {
-      return List<String>.from(chatbotData[selectedCategory]!['questions']);
+      return List<String>.from(_chatbotData[selectedCategory]!['questions']);
     }
     return [];
   }
 
   String? get answer {
     if (selectedQuestion != null && selectedCategory != null) {
-      return chatbotData[selectedCategory]!['answers'][selectedQuestion];
+      return _chatbotData[selectedCategory]!['answers'][selectedQuestion];
     }
     return null;
+  }
+
+  // Heuristic, not a hardcoded category list — real category names come
+  // from the backend (FaqRepository().fetchCustomerFaqs()) and aren't fixed.
+  bool _categoryWantsRecentTreksOnly(String category) {
+    return RegExp(
+      r'issue|service|complaint|problem|safety',
+      caseSensitive: false,
+    ).hasMatch(category);
   }
 
   // Get all messages (FAQ + Live Chat combined)
@@ -180,8 +212,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
         if (mounted && newChatbotData.isNotEmpty) {
           setState(() {
-            chatbotData.clear();
-            chatbotData.addAll(newChatbotData);
+            _chatbotData.clear();
+            _chatbotData.addAll(newChatbotData);
           });
         }
       }
@@ -192,6 +224,11 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    // BUGFIX (2026-09-14): this listener was added in initState with no
+    // matching removeListener — a real leak (the `if (mounted)` guard
+    // inside _handleFaqRefresh only prevented a crash on a disposed
+    // widget, it never actually detached the listener from SocketService).
+    _socketService.removeListener('faq:updated', _handleFaqRefresh);
     _typingAnimationController.dispose();
     _scrollController.dispose();
     _messageController.dispose();
@@ -246,10 +283,78 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     setState(() {
       selectedCategory = category;
       selectedQuestion = null;
+      selectedBooking = null;
       _addMessage(category, false, MessageType.category);
     });
 
-    // Show questions after category selection
+    _showTrekSelection(category);
+  }
+
+  // Trek-context step, inserted between category and FAQ list (2026-09-14).
+  // Uses the same real endpoint/model the Bookings History screen already
+  // uses — no fake Trek class, no local date parsing, real backend-computed
+  // trek_status only.
+  Future<void> _showTrekSelection(String category) async {
+    setState(() => _loadingBookings = true);
+    Future.delayed(const Duration(milliseconds: 500), () {
+      _addMessage(
+        'Which trek is this about?',
+        true,
+        MessageType.trekSelection,
+      );
+    });
+
+    try {
+      final response = await _repository.getApiCall(
+        url: NetworkUrl.bookingHistoryWithStatus(page: 1),
+      );
+      if (!mounted) return;
+      if (response != null) {
+        final model = BookingHistoryModel.fromJson(
+          response as Map<String, dynamic>,
+        );
+        var bookings = model.data ?? <BookingHistoryData>[];
+        if (_categoryWantsRecentTreksOnly(category)) {
+          bookings = bookings
+              .where(
+                (b) => ['ongoing', 'completed'].contains(
+                  (b.trekStatus ?? '').toLowerCase(),
+                ),
+              )
+              .toList();
+        }
+        setState(() {
+          _recentBookings = bookings.take(5).toList();
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading recent bookings in ChatScreen: $e');
+    } finally {
+      if (mounted) setState(() => _loadingBookings = false);
+    }
+  }
+
+  void _handleTrekSelection(BookingHistoryData booking) {
+    final label = booking.trek?.title ?? booking.bookingNumber ?? 'this trek';
+    setState(() {
+      selectedBooking = booking;
+      _addMessage(label, false, MessageType.trekSelection);
+    });
+
+    Future.delayed(const Duration(milliseconds: 500), () {
+      _addMessage(
+        'Please select your question:',
+        true,
+        MessageType.question,
+      );
+    });
+  }
+
+  void _skipTrekSelection() {
+    setState(() {
+      selectedBooking = null;
+      _addMessage('Not about a specific trek', false, MessageType.trekSelection);
+    });
     Future.delayed(const Duration(milliseconds: 500), () {
       _addMessage(
         'Please select your question:',
@@ -395,10 +500,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  color: CommonColors.offWhiteColor,
+                  color: AppColors.elevated,
                   borderRadius: BorderRadius.circular(25),
                   border: Border.all(
-                    color: Colors.grey.shade300,
+                    color: AppColors.border,
                     width: 1,
                   ),
                 ),
@@ -410,14 +515,14 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                     hintText: currentMode == ChatMode.faq
                         ? 'Or type your question...'
                         : 'Type a message...',
-                    hintStyle: AppType.style(FontSize.s11, color: Colors.grey.shade500),
+                    hintStyle: AppType.style(FontSize.s11, color: AppColors.inkLight),
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.symmetric(
                       horizontal: 4.w,
                       vertical: 1.2.h,
                     ),
                   ),
-                  style: AppType.style(FontSize.s11, color: CommonColors.blackColor),
+                  style: AppType.style(FontSize.s11, color: AppColors.ink),
                   maxLines: 4,
                   minLines: 1,
                   textCapitalization: TextCapitalization.sentences,
@@ -438,7 +543,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 width: 12.w,
                 height: 12.w,
                 decoration: BoxDecoration(
-                  color: CommonColors.appBgColor,
+                  color: AppColors.forest,
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -454,6 +559,68 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     );
   }
 
+  Widget _modeOptionButton({
+    required IconData icon,
+    required String label,
+    required bool filled,
+    required VoidCallback onTap,
+  }) {
+    final Color fg = filled ? Colors.white : AppColors.forest;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 2.2.w, vertical: 1.5.h),
+        decoration: BoxDecoration(
+          color: filled ? AppColors.forest : AppColors.forestSoft,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.forest, width: 1.5),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: fg, size: 18),
+            SizedBox(height: 0.4.h),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: AppType.style(FontSize.s9, w: FontWeight.w600, color: fg),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _skipTrekButton() {
+    return InkWell(
+      onTap: _skipTrekSelection,
+      child: Text(
+        _recentBookings.isEmpty
+            ? "Doesn't apply to a specific trek — continue"
+            : 'Not one of these — continue anyway',
+        style: AppType.style(
+          FontSize.s10,
+          w: FontWeight.w600,
+          color: AppColors.info,
+        ),
+      ),
+    );
+  }
+
+  // "Report Issue" reuses the already-correct IssueReportScreen (fixing its
+  // long-standing unreachability at the same time) rather than building new
+  // ticket-creation UI here. Carries the trek context if one was picked.
+  void _handleReportIssue() {
+    _addMessage('Report an Issue', false, MessageType.systemMessage);
+    Get.toNamed(
+      '/issue-report',
+      arguments: {'bookingId': selectedBooking?.id},
+    );
+  }
+
   Widget _buildMessageBubble(Message message) {
     final isBot = message.isBot;
 
@@ -465,86 +632,35 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           children: [
             Text(
               message.text,
-              style: AppType.style(FontSize.s11, w: FontWeight.w500, color: Colors.black87),
+              style: AppType.style(FontSize.s11, w: FontWeight.w500, color: AppColors.ink),
             ),
             SizedBox(height: 1.h),
             Row(
               children: [
                 Expanded(
-                  child: InkWell(
+                  child: _modeOptionButton(
+                    icon: Icons.quiz_outlined,
+                    label: 'Browse FAQs',
+                    filled: false,
                     onTap: () => _handleModeSelection(ChatMode.faq),
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 3.w,
-                        vertical: 1.5.h,
-                      ),
-                      decoration: BoxDecoration(
-                        color: CommonColors.appBgColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: CommonColors.appBgColor,
-                          width: 1.5,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.quiz_outlined,
-                            color: CommonColors.appBgColor,
-                            size: 18,
-                          ),
-                          SizedBox(width: 2.w),
-                          Flexible(
-                            child: Text(
-                              'Browse FAQs',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppType.style(FontSize.s10, w: FontWeight.w600, color: CommonColors.appBgColor),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   ),
                 ),
-                SizedBox(width: 3.w),
+                SizedBox(width: 2.w),
                 Expanded(
-                  child: InkWell(
+                  child: _modeOptionButton(
+                    icon: Icons.confirmation_number_outlined,
+                    label: 'Report Issue',
+                    filled: false,
+                    onTap: _handleReportIssue,
+                  ),
+                ),
+                SizedBox(width: 2.w),
+                Expanded(
+                  child: _modeOptionButton(
+                    icon: Icons.support_agent,
+                    label: 'Live Support',
+                    filled: true,
                     onTap: () => _handleModeSelection(ChatMode.liveChat),
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 3.w,
-                        vertical: 1.5.h,
-                      ),
-                      decoration: BoxDecoration(
-                        color: CommonColors.appBgColor,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: CommonColors.appBgColor,
-                          width: 1.5,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.support_agent,
-                            color: Colors.white,
-                            size: 18,
-                          ),
-                          SizedBox(width: 2.w),
-                          Flexible(
-                            child: Text(
-                              'Live Support',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppType.style(FontSize.s10, w: FontWeight.w600, color: Colors.white),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   ),
                 ),
               ],
@@ -560,12 +676,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             Container(
               padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 0.5.h),
               decoration: BoxDecoration(
-                color: Colors.grey.shade200,
+                color: AppColors.elevated,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
                 message.text,
-                style: AppType.style(FontSize.s9, w: FontWeight.w500, color: Colors.grey.shade600),
+                style: AppType.style(FontSize.s9, w: FontWeight.w500, color: AppColors.inkMid),
               ),
             ),
           ],
@@ -575,7 +691,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       case MessageType.liveMessage:
         content = Text(
           message.text,
-          style: AppType.style(FontSize.s11, w: FontWeight.w500, color: isBot ? Colors.black87 : Colors.white),
+          style: AppType.style(FontSize.s11, w: FontWeight.w500, color: isBot ? AppColors.ink : Colors.white),
         );
         break;
 
@@ -586,7 +702,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 children: [
                   Text(
                     message.text,
-                    style: AppType.style(FontSize.s11, w: FontWeight.w500, color: isBot ? Colors.black87 : Colors.white),
+                    style: AppType.style(FontSize.s11, w: FontWeight.w500, color: isBot ? AppColors.ink : Colors.white),
                   ),
                   if (isBot) ...[
                     SizedBox(height: 1.h),
@@ -602,17 +718,16 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                               vertical: 1.h,
                             ),
                             decoration: BoxDecoration(
-                              color: CommonColors.appBgColor
-                                  .withValues(alpha: 0.1),
+                              color: AppColors.forest.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
-                                color: CommonColors.appBgColor,
+                                color: AppColors.forest,
                                 width: 1,
                               ),
                             ),
                             child: Text(
                               category,
-                              style: AppType.style(FontSize.s10, w: FontWeight.w500, color: CommonColors.appBgColor),
+                              style: AppType.style(FontSize.s10, w: FontWeight.w500, color: AppColors.forest),
                             ),
                           ),
                         );
@@ -623,7 +738,58 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               )
             : Text(
                 message.text,
-                style: AppType.style(FontSize.s11, w: FontWeight.w500, color: isBot ? Colors.black87 : Colors.white),
+                style: AppType.style(FontSize.s11, w: FontWeight.w500, color: isBot ? AppColors.ink : Colors.white),
+              );
+        break;
+
+      case MessageType.trekSelection:
+        content = message.isBot
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    message.text,
+                    style: AppType.style(FontSize.s11, w: FontWeight.w500, color: AppColors.ink),
+                  ),
+                  SizedBox(height: 1.h),
+                  if (_loadingBookings)
+                    Padding(
+                      padding: EdgeInsets.symmetric(vertical: 1.h),
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(AppColors.forest),
+                        ),
+                      ),
+                    )
+                  else if (_recentBookings.isEmpty)
+                    _skipTrekButton()
+                  else ...[
+                    SizedBox(
+                      height: 24.h,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _recentBookings.length,
+                        itemBuilder: (context, i) => SizedBox(
+                          width: 68.w,
+                          child: CommonBookedCard(
+                            booking: _recentBookings[i],
+                            onViewDetailsTap: () =>
+                                _handleTrekSelection(_recentBookings[i]),
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 1.h),
+                    _skipTrekButton(),
+                  ],
+                ],
+              )
+            : Text(
+                message.text,
+                style: AppType.style(FontSize.s11, w: FontWeight.w500, color: Colors.white),
               );
         break;
 
@@ -634,7 +800,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 children: [
                   Text(
                     message.text,
-                    style: AppType.style(FontSize.s11, w: FontWeight.w500, color: isBot ? Colors.black87 : Colors.white),
+                    style: AppType.style(FontSize.s11, w: FontWeight.w500, color: isBot ? AppColors.ink : Colors.white),
                   ),
                   if (isBot) ...[
                     SizedBox(height: 1.h),
@@ -650,17 +816,17 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                               vertical: 1.h,
                             ),
                             decoration: BoxDecoration(
-                              color: CommonColors.appBgColor
+                              color: AppColors.forest
                                   .withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
-                                color: CommonColors.appBgColor,
+                                color: AppColors.forest,
                                 width: 1,
                               ),
                             ),
                             child: Text(
                               question,
-                              style: AppType.style(FontSize.s10, w: FontWeight.w500, color: CommonColors.appBgColor),
+                              style: AppType.style(FontSize.s10, w: FontWeight.w500, color: AppColors.forest),
                             ),
                           ),
                         ),
@@ -671,21 +837,21 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               )
             : Text(
                 message.text,
-                style: AppType.style(FontSize.s11, w: FontWeight.w500, color: isBot ? Colors.black87 : Colors.white),
+                style: AppType.style(FontSize.s11, w: FontWeight.w500, color: isBot ? AppColors.ink : Colors.white),
               );
         break;
 
       case MessageType.answer:
         content = MarkdownText(
           text: message.text,
-          style: AppType.style(FontSize.s11, w: FontWeight.w500, color: isBot ? Colors.black87 : Colors.white),
+          style: AppType.style(FontSize.s11, w: FontWeight.w500, color: isBot ? AppColors.ink : Colors.white),
         );
         break;
 
       default:
         content = Text(
           message.text,
-          style: AppType.style(FontSize.s11, w: FontWeight.w500, color: isBot ? Colors.black87 : Colors.white),
+          style: AppType.style(FontSize.s11, w: FontWeight.w500, color: isBot ? AppColors.ink : Colors.white),
         );
     }
 
@@ -707,7 +873,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         ),
         padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
         decoration: BoxDecoration(
-          color: CommonColors.offWhiteColor,
+          color: AppColors.elevated,
           borderRadius: BorderRadius.circular(4.w),
           boxShadow: [
             BoxShadow(
@@ -732,7 +898,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         ),
         padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
         decoration: BoxDecoration(
-          color: isBot ? CommonColors.offWhiteColor : CommonColors.appBgColor,
+          color: isBot ? AppColors.elevated : AppColors.forest,
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(isBot ? 0 : 4.w),
             topRight: Radius.circular(isBot ? 4.w : 0),
@@ -764,7 +930,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         ),
         padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
         decoration: BoxDecoration(
-          color: CommonColors.offWhiteColor,
+          color: AppColors.elevated,
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(0),
             topRight: Radius.circular(4.w),
@@ -787,7 +953,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               'Support is typing',
               style: AppType.style(
                 FontSize.s11,
-                color: Colors.grey.shade600,
+                color: AppColors.inkMid,
                 fontStyle: FontStyle.italic,
               ),
             ),
@@ -797,7 +963,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               height: 20,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(CommonColors.appBgColor),
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.forest),
               ),
             ),
           ],
@@ -809,16 +975,16 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: CommonColors.offWhiteColor,
+      backgroundColor: AppColors.elevated,
       appBar: AppBar(
-        backgroundColor: CommonColors.lightBlueColor3.withValues(alpha: 0.2),
+        backgroundColor: AppColors.forestSoft.withValues(alpha: 0.2),
         scrolledUnderElevation: 0,
         elevation: 0,
         automaticallyImplyLeading: true,
         centerTitle: false,
         title: Text(
           'Chat with Aorbo',
-          style: AppType.style(FontSize.s15, w: FontWeight.w500, color: CommonColors.blackColor),
+          style: AppType.style(FontSize.s15, w: FontWeight.w500, color: AppColors.ink),
         ),
       ),
       body: Column(

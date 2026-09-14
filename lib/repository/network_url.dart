@@ -175,6 +175,14 @@ class NetworkUrl {
       'customer/emergency-contacts/$id';
   //#endregion
 
+  //#region Tickets
+  // "My Tickets" (2026-09-14) — lists/thread for support tickets created via
+  // submitIssue above (auth-required as of the same date: routes/v1/
+  // issueRoutes.js previously had no auth middleware at all).
+  static const String myTickets = 'issues';
+  static String ticketMessages(dynamic ticketId) => 'issues/$ticketId/messages';
+  //#endregion
+
   //#region Chat
   static String socketUrl = AppEnv().socketUrl;
 
