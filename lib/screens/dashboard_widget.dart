@@ -333,15 +333,15 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
   // ---------------------------------------------------------------------------
 
   Future<void> _selectSourceLocation() async {
-    final bool? completed = await Navigator.push<bool>(
+    final bool? completed = await SourceLocationSheet.show(
       context,
-      MaterialPageRoute(builder: (_) => const SourceLocationScreen()),
+      initialTarget: PickTarget.from,
     );
 
-    // If the user successfully completed the route selection, check
-    // availability immediately (no debounce) and only open the calendar
-    // if there's actually something to show — otherwise the dashboard's
-    // own "no treks on this route" card takes over, no empty popup.
+    // If the user locked in a full route, check availability immediately
+    // (no debounce) and only open the calendar if there's actually
+    // something to show — otherwise the dashboard's own "no treks on this
+    // route" card takes over, no empty popup.
     if (completed == true && mounted) {
       await _dashboardC.fetchCalendarDatesNow();
       if (!mounted) return;
@@ -354,9 +354,9 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
   }
 
   Future<void> _selectDestinationTrek() async {
-    final bool? completed = await Navigator.push<bool>(
+    final bool? completed = await SourceLocationSheet.show(
       context,
-      MaterialPageRoute(builder: (_) => const SourceLocationScreen()),
+      initialTarget: PickTarget.to,
     );
 
     if (completed == true && mounted) {

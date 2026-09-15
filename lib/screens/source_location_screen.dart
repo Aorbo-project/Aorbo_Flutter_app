@@ -10,6 +10,10 @@ import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:sizer/sizer.dart';
+
+/// Which dashboard field opened the sheet.
+enum PickTarget { from, to }
 
 // ─────────────────────────────────────────────
 //  TREKKING THEME TOKENS
@@ -200,15 +204,32 @@ class _FilterResult {
 }
 
 // ─────────────────────────────────────────────
-//  SCREEN
+//  SOURCE LOCATION — BOTTOM SHEET
 // ─────────────────────────────────────────────
-class SourceLocationScreen extends StatefulWidget {
-  const SourceLocationScreen({super.key});
+class SourceLocationSheet extends StatefulWidget {
+  final PickTarget initialTarget;
+
+  const SourceLocationSheet({super.key, this.initialTarget = PickTarget.from});
+
+  /// Opens the sheet. Returns `true` when a complete route was picked.
+  static Future<bool?> show(
+    BuildContext context, {
+    PickTarget initialTarget = PickTarget.from,
+  }) {
+    return showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.45),
+      builder: (_) => SourceLocationSheet(initialTarget: initialTarget),
+    );
+  }
+
   @override
-  State<SourceLocationScreen> createState() => _SourceLocationScreenState();
+  State<SourceLocationSheet> createState() => _SourceLocationSheetState();
 }
 
-class _SourceLocationScreenState extends State<SourceLocationScreen>
+class _SourceLocationSheetState extends State<SourceLocationSheet>
     with TickerProviderStateMixin {
   final DashboardController _dashboardC = Get.find<DashboardController>();
   _Tab _tab = _Tab.cities;
@@ -294,21 +315,23 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final fromValid = _hasValidFromSelection;
-      final toValid = _hasValidToSelection;
-      // Both already picked (e.g. reopening to edit) — the CTA below is the
-      // next step; don't force-focus either field.
-      if (fromValid && toValid) {
-        _refreshFiltered();
-        return;
-      }
-      if (fromValid) {
-        setState(() => _tab = _Tab.treks);
-        _query.value = _toCtrl.text;
-      }
-      _refreshFiltered();
-      FocusScope.of(context).requestFocus(fromValid ? _toFocus : _fromFocus);
+      // Let the sheet's entrance animation settle before raising the
+      // keyboard, so the two never fight over the layout.
+      Future.delayed(const Duration(milliseconds: 350), () {
+        if (!mounted) return;
+        _applyInitialTarget();
+      });
     });
+  }
+
+  /// Lands on the field the user tapped on the dashboard. Tapping "To"
+  /// without a valid departure falls back to the departure field.
+  void _applyInitialTarget() {
+    if (widget.initialTarget == PickTarget.to && _hasValidFromSelection) {
+      _setActiveField(_Tab.treks);
+      return;
+    }
+    _setActiveField(_Tab.cities);
   }
 
   int get _fromCityId => _dashboardC.selectedCityId.value;
@@ -377,8 +400,6 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
     if (!mounted || _itemTapInFlight) return;
     if (_toFocus.hasFocus && _tab != _Tab.treks) {
       if (!_hasValidFromSelection) {
-        // Can't pick a destination before a departure — bounce back after
-        // the current focus dispatch settles.
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) FocusScope.of(context).requestFocus(_fromFocus);
         });
@@ -403,8 +424,6 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
         ? _hasValidFromSelection
         : _hasValidToSelection;
     if (hasSelection) {
-      // Editing a completed field: show the full list and select the text
-      // so a single keystroke starts a fresh search.
       _query.value = '';
       ctrl.selection = TextSelection(
         baseOffset: 0,
@@ -416,9 +435,6 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
     _refreshFiltered();
     (tab == _Tab.cities ? _fromFocus : _toFocus).requestFocus();
   }
-
-  String get _activeRawText =>
-      _tab == _Tab.cities ? _fromCtrl.text : _toCtrl.text;
 
   // ── CACHES ─────────────────────────────────────────────────────────────
   void _rebuildCityCache() {
@@ -480,9 +496,6 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
   }
 
   void _revalidatePersistedIds() {
-    // Only prune once the list has actually LOADED — a null list means
-    // "still fetching", not "the saved city no longer exists". Wiping the
-    // persisted route on a slow network was a real cold-start bug.
     if (_dashboardC.citiesData.value.data != null &&
         _fromCityId != 0 &&
         _nameForCityId(_fromCityId) == null) {
@@ -655,13 +668,9 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
           offset: match.name.length,
         );
         _RecentSearches.add(_Tab.cities, match.name);
-        // The destination is intentionally KEPT when the departure changes
-        // — wiping it forced a full re-pick for a one-field edit.
         if (!_hasValidToSelection) {
           _setActiveField(_Tab.treks);
         } else {
-          // Route complete again — park the keyboard; the CTA (or the trek
-          // field, if they want to change it) takes over.
           FocusScope.of(context).unfocus();
           _query.value = '';
           setState(() {});
@@ -725,9 +734,6 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
       _fromCtrl.clear();
       _dashboardC.fromController.value.text = '';
       _fromCityId = 0;
-      // Clearing the origin breaks the route — reset the destination too so
-      // the flow restarts cleanly from step 1 (the controller already wipes
-      // availability + date when either id drops to 0).
       _toCtrl.clear();
       _dashboardC.toController.value.text = '';
       _selectedTrekId = 0;
@@ -762,7 +768,6 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
     if (_tab == _Tab.cities) {
       final m = _resolveCityByName(text);
       if (m == null || m.id == 0) {
-        // Keep what they typed — silently wiping the field was worse.
         CustomSnackBar.show(
           context,
           message: 'No exact match — pick a city from the list',
@@ -814,80 +819,127 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
   @override
   Widget build(BuildContext context) {
     ScreenConstant.setScreenAwareConstant(context);
+    final mq = MediaQuery.of(context);
+
+    // The sheet's top edge stops JUST BELOW the dashboard header's logo:
+    // status bar + the header's top spacing (size20) + logo height (7.h)
+    // + a small breathing gap. Tune _topGap if the header ever changes.
+    const double _topGap = 12;
+    final double reservedTop =
+        mq.padding.top + ScreenConstant.size20 + 7.h + _topGap;
+    final double sheetHeight = mq.size.height - reservedTop;
+
     return MediaQuery(
-      data: MediaQuery.of(
-        context,
-      ).copyWith(textScaler: const TextScaler.linear(1.0)),
+      data: mq.copyWith(textScaler: const TextScaler.linear(1.0)),
       child: AnnotatedRegion<SystemUiOverlayStyle>(
         value: SystemUiOverlayStyle.dark,
-        child: Scaffold(
-          backgroundColor: _T.bg,
-          resizeToAvoidBottomInset: true,
-          body: Stack(
-            children: [
-              SafeArea(
-                bottom: false,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildAppBar(),
-                    _buildRouteCard(),
-                    Expanded(child: _buildBody()),
-                  ],
-                ),
+        child: Padding(
+          // Keyboard rides up underneath the sheet; the pinned footer
+          // stays visible above it.
+          padding: EdgeInsets.only(bottom: mq.viewInsets.bottom),
+          child: Container(
+            height: sheetHeight,
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: _T.bg,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(28),
               ),
-              _buildStickyFooter(),
-            ],
+              boxShadow: [
+                BoxShadow(
+                  color: _T.pineDark.withValues(alpha: 0.20),
+                  blurRadius: 30,
+                  offset: const Offset(0, -8),
+                ),
+              ],
+            ),
+            child: Stack(
+              children: [
+                SafeArea(
+                  top: false,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildSheetHeader(),
+                      _buildRouteCard(),
+                      Expanded(child: _buildBody()),
+                    ],
+                  ),
+                ),
+                _buildStickyFooter(),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildAppBar() {
+  // ── SHEET CHROME ────────────────────────────────────────────────────────
+  Widget _buildSheetHeader() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 8, 20, 12),
-      child: Row(
+      padding: const EdgeInsets.fromLTRB(20, 10, 12, 4),
+      child: Column(
         children: [
-          IconButton(
-            onPressed: Get.back,
-            icon: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: _T.card,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withAlpha(10),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.arrow_back_ios_new_rounded,
-                size: 16,
-                color: _T.ink,
-              ),
+          Container(
+            width: 44,
+            height: 4.5,
+            decoration: BoxDecoration(
+              color: _T.inkLight.withValues(alpha: 0.35),
+              borderRadius: BorderRadius.circular(10),
             ),
           ),
-          const SizedBox(width: 14),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          const SizedBox(height: 12),
+          Row(
             children: [
-              Text(
-                'Plan your trek',
-                style: AppType.style(
-                  FontSize.s13,
-                  w: FontWeight.w700,
-                  color: _T.ink,
-                  letterSpacing: -0.5,
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: _T.mossSoft,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.hiking_rounded,
+                  size: 20,
+                  color: _T.forest,
                 ),
               ),
-              const SizedBox(height: 2),
-              Text(
-                'Two quick picks, then pick a date',
-                style: AppType.style(FontSize.s10, color: _T.inkMid),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Plan your trek',
+                      style: AppType.style(
+                        FontSize.s14,
+                        w: FontWeight.w800,
+                        color: _T.ink,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Two quick picks, then pick a date',
+                      style: AppType.style(FontSize.s10, color: _T.inkMid),
+                    ),
+                  ],
+                ),
+              ),
+              GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: const BoxDecoration(
+                    color: _T.card,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.close_rounded,
+                    size: 18,
+                    color: _T.inkMid,
+                  ),
+                ),
               ),
             ],
           ),
@@ -896,9 +948,10 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
     );
   }
 
+  // ── ROUTE CARD ──────────────────────────────────────────────────────────
   Widget _buildRouteCard() {
     return Container(
-      margin: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
       decoration: BoxDecoration(
         color: _T.card,
         borderRadius: BorderRadius.circular(24),
@@ -1107,8 +1160,6 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
       final bothPicked = _hasValidFromSelection && _hasValidToSelection;
       final editing = _fromFocus.hasFocus || _toFocus.hasFocus;
 
-      // Route complete and not being edited → the CTA is the only next
-      // step. (Previously tapping a field here showed nothing at all.)
       if (bothPicked && !editing) return _buildRouteReady();
 
       if (result.state == _ListState.loading ||
@@ -1344,9 +1395,9 @@ class _SourceLocationScreenState extends State<SourceLocationScreen>
     return AnimatedPositioned(
       duration: const Duration(milliseconds: 400),
       curve: Curves.easeOutCubic,
-      bottom: canContinue ? 24 : -120,
-      left: 24,
-      right: 24,
+      bottom: canContinue ? 16 : -120,
+      left: 20,
+      right: 20,
       child: AppButton.primary(
         text: 'Choose Departure Date',
         onPressed: _closeWithResult,
@@ -1576,19 +1627,19 @@ class _ResultTile extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(13),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: _T.card,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected ? _T.forest : _T.divider,
-            width: isSelected ? 1.4 : 0.5,
+            width: isSelected ? 1.4 : 0.6,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withAlpha(8),
-              blurRadius: 12,
-              offset: const Offset(0, 6),
+              color: Colors.black.withAlpha(6),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
@@ -1603,20 +1654,17 @@ class _ResultTile extends StatelessWidget {
               ),
               child: Icon(
                 isCity ? Icons.location_city_rounded : Icons.terrain_rounded,
-                color: isCity ? _T.forest : _T.clay,
                 size: 18,
+                color: isCity ? _T.forest : _T.clay,
               ),
             ),
-            const SizedBox(width: 14),
-            Expanded(child: _buildHighlightedText(label, query)),
-            const SizedBox(width: 8),
+            const SizedBox(width: 12),
+            Expanded(child: _highlighted(label, query)),
             if (isSelected)
-              const Icon(Icons.check_circle_rounded, size: 19, color: _T.forest)
-            else
               const Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 13,
-                color: _T.inkLight,
+                Icons.check_circle_rounded,
+                size: 20,
+                color: _T.forest,
               ),
           ],
         ),
@@ -1624,38 +1672,45 @@ class _ResultTile extends StatelessWidget {
     );
   }
 
-  Widget _buildHighlightedText(String text, String query) {
-    if (query.isEmpty)
+  /// Label with the matched portion of the query emphasized.
+  Widget _highlighted(String label, String query) {
+    final base = AppType.style(FontSize.s12, w: FontWeight.w600, color: _T.ink);
+    final q = query.trim();
+    if (q.isEmpty) {
       return Text(
-        text,
+        label,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: AppType.style(FontSize.s11, w: FontWeight.w600, color: _T.ink),
+        style: base,
       );
-    final q = query.toLowerCase();
-    final lower = text.toLowerCase();
-    final idx = lower.indexOf(q);
-    if (idx == -1)
+    }
+    final idx = label.toLowerCase().indexOf(q.toLowerCase());
+    if (idx < 0) {
       return Text(
-        text,
+        label,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: AppType.style(FontSize.s11, w: FontWeight.w600, color: _T.ink),
+        style: base,
       );
-    return RichText(
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      text: TextSpan(
-        style: AppType.style(FontSize.s11, w: FontWeight.w600, color: _T.ink),
+    }
+    return Text.rich(
+      TextSpan(
+        style: base,
         children: [
-          TextSpan(text: text.substring(0, idx)),
+          TextSpan(text: label.substring(0, idx)),
           TextSpan(
-            text: text.substring(idx, idx + q.length),
-            style: TextStyle(color: _T.forest, fontWeight: FontWeight.w800),
+            text: label.substring(idx, idx + q.length),
+            style: AppType.style(
+              FontSize.s12,
+              w: FontWeight.w800,
+              color: _T.forest,
+            ),
           ),
-          TextSpan(text: text.substring(idx + q.length)),
+          TextSpan(text: label.substring(idx + q.length)),
         ],
       ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
     );
   }
 }

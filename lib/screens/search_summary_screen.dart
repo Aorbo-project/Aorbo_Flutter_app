@@ -278,15 +278,16 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
     await _runSearch();
   }
 
-  Future<void> _openLocationSearch() async {
+  Future<void> _openLocationSearch(PickTarget target) async {
     final int oldCityId = _dashboardC.selectedCityId.value;
     final int oldTrekId = _dashboardC.selectedTrekId.value;
     final String oldFrom = _dashboardC.fromController.value.text;
     final String oldTo = _dashboardC.toController.value.text;
 
-    final bool? completed = await Navigator.push<bool>(
+    // The picker is a BOTTOM SHEET — must be shown, not pushed as a route.
+    final bool? completed = await SourceLocationSheet.show(
       context,
-      MaterialPageRoute(builder: (_) => const SourceLocationScreen()),
+      initialTarget: target, // ← pass through whatever field was tapped
     );
     if (!mounted || completed != true) return;
 
@@ -316,16 +317,21 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
       return;
     }
 
-    if (_dashboardC.dateController.value.text.isEmpty) {
-      await _selectDate(context);
-      if (!mounted) return;
-      if (_dashboardC.dateController.value.text.isEmpty) {
-        await _runSearch();
-      }
-      return;
-    }
+    // The sheet's "Choose Departure Date" button promised a calendar —
+    // open it EVERY time the sheet completes, not just when the date is
+    // empty (previously an already-set date skipped straight to refresh,
+    // so tapping the button never showed the calendar).
+    await _selectDate(context);
+    if (!mounted) return;
 
-    await _onRefresh();
+    // A date picked inside the calendar already triggers _onRefresh()
+    // from its own onDaySelected handler — don't double-search. Only
+    // fall back when the calendar was dismissed with no date at all
+    // (e.g. brand-new route): run the search unfiltered by date so the
+    // route's treks still show.
+    if (_dashboardC.dateController.value.text.isEmpty) {
+      await _runSearch();
+    }
   }
 
   // ── NOTIFY ME — subscribe to alerts for the current route ───────────────
@@ -1305,42 +1311,44 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
       clipBehavior: Clip.antiAlias,
       child: Material(
         color: Colors.transparent,
-        child: InkWell(
-          onTap: _openLocationSearch,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-            child: Column(
-              children: [
-                // ── SLOT 1: Departure city — full-width row ──
-                _routeRow(
+        child: Column(
+          children: [
+            // ── SLOT 1: Departure city — opens the sheet on the CITY field ──
+            InkWell(
+              onTap: () => _openLocationSearch(PickTarget.from),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+                child: _routeRow(
                   icon: Icons.location_city_rounded,
                   value: from,
                   hint: 'Departure city',
                   valueColor: AroboTheme.ink,
                 ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Divider(height: 1, color: AroboTheme.border),
-                      ),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 8),
-                        child: Icon(
-                          Icons.hiking_rounded,
-                          size: 14,
-                          color: AroboTheme.primary,
-                        ),
-                      ),
-                      Expanded(
-                        child: Divider(height: 1, color: AroboTheme.border),
-                      ),
-                    ],
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              child: Row(
+                children: [
+                  Expanded(child: Divider(height: 1, color: AroboTheme.border)),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8),
+                    child: Icon(
+                      Icons.hiking_rounded,
+                      size: 14,
+                      color: AroboTheme.primary,
+                    ),
                   ),
-                ),
-                // ── SLOT 2: Destination trek — full row + edit button ──
-                Row(
+                  Expanded(child: Divider(height: 1, color: AroboTheme.border)),
+                ],
+              ),
+            ),
+            // ── SLOT 2: Destination trek — opens the sheet on the TREK field ──
+            InkWell(
+              onTap: () => _openLocationSearch(PickTarget.to),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                child: Row(
                   children: [
                     Expanded(
                       child: _routeRow(
@@ -1373,9 +1381,9 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -2089,7 +2097,7 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
               // ── Change search → the route screen ──
               SizedBox(height: 1.6.h),
               GestureDetector(
-                onTap: _openLocationSearch,
+                onTap: () => _openLocationSearch(PickTarget.from),
                 child: Container(
                   padding: EdgeInsets.symmetric(
                     horizontal: 7.w,
