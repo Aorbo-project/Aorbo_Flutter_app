@@ -283,6 +283,143 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
   }
 
   // ─────────────────────────────────────────────
+  //  CHARGE LABEL SANITIZATION
+  //  The backend appends the slab percentage to charge labels, e.g.
+  //  "Cancellation Fee (0%)". A ZERO percentage carries no information,
+  //  so it is stripped in EVERY case — independent of policy detection.
+  //  This guarantees "(0%)" can never reach the UI even when the flexible
+  //  policy can't be identified from the backend text.
+  // ─────────────────────────────────────────────
+
+  /// Removes meaningless zero-percentage annotations from a label/sentence.
+  ///
+  ///   "Cancellation Fee (0%)"          → "Cancellation Fee"
+  ///   "Cancellation Fee(0%)"           → "Cancellation Fee"
+  ///   "Cancellation Fee (0.00%)"       → "Cancellation Fee"
+  ///   "Cancellation Fee (0% of total)" → "Cancellation Fee"
+  ///   "Cancellation Fee 0%"            → "Cancellation Fee"
+  ///
+  /// Non-zero percentages are real information and are preserved:
+  ///   "Cancellation Fee (30%)"  → unchanged
+  ///   "Cancellation Fee (0.5%)" → unchanged
+  String _stripZeroPercent(String text) {
+    var out = text
+        // Bracketed chunk containing a standalone zero percentage:
+        // "(0%)", "(0 %)", "(0.00%)", "(0% of total paid)".
+        .replaceAll(RegExp(r'\s*\(\s*[^)%]*?\b0+(?:\.0+)?\s*%[^)]*\)'), '')
+        // Zero percentage dangling at the very end: "Fee 0%".
+        .replaceAll(RegExp(r'\s*\b0+(?:\.0+)?\s*%\s*$'), '')
+        .replaceAll(RegExp(r'\s{2,}'), ' ')
+        .trim();
+    // Drop separators left dangling after stripping: "Fee -", "Fee,".
+    out = out.replaceAll(RegExp(r'[\s\-–—:,]+$'), '').trim();
+    return out;
+  }
+
+  /// Builds the display label for a cancellation-charge row.
+  ///
+  /// 1. Empty labels fall back to "Cancellation Fee".
+  /// 2. Zero percentages ("(0%)") are ALWAYS removed — pure noise.
+  /// 3. In fee-only mode (flexible policy + fully paid) any remaining
+  ///    percentage is removed too, so only the fee name survives.
+  String _chargeLabel(String? raw, {required bool feeOnly}) {
+    var label = (raw ?? '').trim();
+    if (label.isEmpty) return 'Cancellation Fee';
+    label = _stripZeroPercent(label);
+    if (feeOnly) label = _feeOnlyLabel(label);
+    return label.isEmpty ? 'Cancellation Fee' : label;
+  }
+
+  // ─────────────────────────────────────────────
+  //  FLEXIBLE POLICY (FULLY PAID) — FEE-ONLY MODE
+  //  Second layer: when the flexible policy IS detectable, every
+  //  percentage is hidden and only the flat fee is communicated.
+  // ─────────────────────────────────────────────
+
+  /// True when the active cancellation policy is the flexible one.
+  ///
+  /// Detected from keywords in the policy text the backend sends
+  /// (slab info + charge labels). If `CancellationDataModel` exposes an
+  /// explicit policy type (e.g. `data.policyType == 'flexible'`), replace
+  /// the keyword check with that field for exact matching.
+  bool _isFlexiblePolicy(CancellationDataModel? data) {
+    final calc = data?.refundCalculation;
+    if (calc == null) return false;
+    final String policyText = [
+      calc.slabInfo ?? '',
+      for (final item in calc.loseItems ?? const []) item.item ?? '',
+    ].join(' ').toLowerCase();
+    return policyText.contains('flexi') || policyText.contains('flat');
+  }
+
+  /// True when the booking has been paid in full (no balance pending).
+  bool _isFullPaid(CancellationDataModel? data, BookingHistoryData booking) {
+    final double payable =
+        data?.finalAmount ??
+        double.tryParse(booking.finalAmount?.toString() ?? '') ??
+        0;
+    final double? paidSoFar = data?.refundCalculation?.breakdown?.totalPaid;
+    if (paidSoFar == null || payable <= 0) return true;
+    return paidSoFar >= payable - 0.01;
+  }
+
+  /// Flexible policy + fully paid booking → show charges as a flat
+  /// "Cancellation Fee" and hide every percentage.
+  bool _showFeeOnlyCharges(
+    CancellationDataModel? data,
+    BookingHistoryData booking,
+  ) {
+    return _isFlexiblePolicy(data) && _isFullPaid(data, booking);
+  }
+
+  /// Total of all cancellation charges (the flat fee actually deducted).
+  double _totalCancellationFee(CancellationDataModel? data) {
+    final loseItems = data?.refundCalculation?.loseItems ?? const [];
+    double fee = 0;
+    for (final item in loseItems) {
+      fee += (item.amount ?? 0).toDouble();
+    }
+    return fee;
+  }
+
+  /// Notice shown in place of the slab/percentage text in fee-only mode.
+  /// Communicates the flat fee — never the percentage.
+  String _flatFeeNotice(CancellationDataModel? data) {
+    final double fee = _totalCancellationFee(data);
+    return fee > 0
+        ? 'A flat cancellation fee of ₹ ${fee.toStringAsFixed(2)} will be charged as per the flexible cancellation policy.'
+        : 'A flat cancellation fee will be charged as per the flexible cancellation policy.';
+  }
+
+  /// Strips every percentage mention from a charge label so only the
+  /// human-readable fee name survives.
+  ///
+  ///   "Cancellation Fee (30% of total)" → "Cancellation Fee"
+  ///   "Flexible Policy Charges 20%"     → "Flexible Policy Charges"
+  ///   "30% of total amount"             → "Cancellation Fee" (fallback)
+  String _feeOnlyLabel(String? raw, {String fallback = 'Cancellation Fee'}) {
+    if (raw == null || raw.trim().isEmpty) return fallback;
+    var cleaned = raw
+        // Bracketed chunks containing a percentage: "(30% of total paid)"
+        .replaceAll(RegExp(r'\s*\([^)]*%[^)]*\)'), '')
+        .replaceAll(
+          RegExp(r'\s*\([^)]*percent[^)]*\)', caseSensitive: false),
+          '',
+        )
+        // Bare percentages plus anything trailing them:
+        // "Fee 30% of total amount" → "Fee"
+        .replaceAll(
+          RegExp(r'\s*\d+(?:\.\d+)?\s*(?:%|percent\b).*', caseSensitive: false),
+          '',
+        )
+        .replaceAll(RegExp(r'\s{2,}'), ' ')
+        .trim();
+    // Drop dangling separators left behind: "Fee -", "Fee,", "Fee:"
+    cleaned = cleaned.replaceAll(RegExp(r'[\s\-–—:,.]+$'), '').trim();
+    return cleaned.isEmpty ? fallback : cleaned;
+  }
+
+  // ─────────────────────────────────────────────
   //  DEPARTURE & DEDUCTION CARD
   // ─────────────────────────────────────────────
   Widget _buildDepartureCard(
@@ -315,6 +452,19 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
       urgencyColor = _TI.red;
     }
     final double progress = (hours / 72).clamp(0.0, 1.0);
+
+    // ── Fee-only mode (flexible policy + fully paid booking) ──
+    final bool feeOnly = _showFeeOnlyCharges(data, booking);
+    final String? rawSlabInfo = data?.refundCalculation?.slabInfo;
+    // Fee-only → flat-fee notice. Otherwise still scrub any "(0%)" noise
+    // from the slab text so a zero percentage never reaches the UI even
+    // when the policy can't be identified as flexible.
+    final String? scrubbedSlab =
+        (rawSlabInfo == null || rawSlabInfo.trim().isEmpty)
+        ? null
+        : _stripZeroPercent(rawSlabInfo);
+    final String? slabMessage = feeOnly ? _flatFeeNotice(data) : scrubbedSlab;
+
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
       decoration: BoxDecoration(
@@ -348,7 +498,11 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
                       ),
                       Text(
                         formattedDeparture,
-                        style: AppType.style(10.sp, w: FontWeight.w700, color: _TI.ink),
+                        style: AppType.style(
+                          10.sp,
+                          w: FontWeight.w700,
+                          color: _TI.ink,
+                        ),
                       ),
                     ],
                   ),
@@ -360,12 +514,20 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
                   children: [
                     Text(
                       'TBR ID',
-                      style: AppType.style(8.sp, w: FontWeight.w600, color: _TI.inkMid),
+                      style: AppType.style(
+                        8.sp,
+                        w: FontWeight.w600,
+                        color: _TI.inkMid,
+                      ),
                     ),
                     SizedBox(height: 0.2.h),
                     Text(
                       tbrId,
-                      style: AppType.style(10.sp, w: FontWeight.w700, color: _TI.ink),
+                      style: AppType.style(
+                        10.sp,
+                        w: FontWeight.w700,
+                        color: _TI.ink,
+                      ),
                     ),
                   ],
                 ),
@@ -378,11 +540,19 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
             children: [
               Text(
                 'Time remaining to departure',
-                style: AppType.style(9.sp, w: FontWeight.w500, color: _TI.inkMid),
+                style: AppType.style(
+                  9.sp,
+                  w: FontWeight.w500,
+                  color: _TI.inkMid,
+                ),
               ),
               Text(
                 '$days Days $remainingHours Hrs',
-                style: AppType.style(10.sp, w: FontWeight.w800, color: urgencyColor),
+                style: AppType.style(
+                  10.sp,
+                  w: FontWeight.w800,
+                  color: urgencyColor,
+                ),
               ),
             ],
           ),
@@ -396,7 +566,7 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
               valueColor: AlwaysStoppedAnimation<Color>(urgencyColor),
             ),
           ),
-          if (data?.refundCalculation?.slabInfo != null) ...[
+          if (slabMessage != null && slabMessage.isNotEmpty) ...[
             SizedBox(height: 2.h),
             Container(
               width: double.infinity,
@@ -413,8 +583,13 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
                   SizedBox(width: 2.w),
                   Expanded(
                     child: Text(
-                      data!.refundCalculation!.slabInfo!,
-                      style: AppType.style(9.sp, w: FontWeight.w600, color: urgencyColor, height: 1.4),
+                      slabMessage,
+                      style: AppType.style(
+                        9.sp,
+                        w: FontWeight.w600,
+                        color: urgencyColor,
+                        height: 1.4,
+                      ),
                     ),
                   ),
                 ],
@@ -443,6 +618,8 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
     final double refund = data?.refundCalculation?.refund ?? 0;
     final loseItems = data?.refundCalculation?.loseItems ?? [];
     final refundItems = data?.refundCalculation?.refundItems ?? [];
+    // ── Fee-only mode (flexible policy + fully paid booking) ──
+    final bool feeOnly = _showFeeOnlyCharges(data, booking);
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
@@ -475,14 +652,22 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
           if (loseItems.isNotEmpty) ...[
             Text(
               'CANCELLATION CHARGES',
-              style: AppType.style(8.sp, w: FontWeight.w700, color: _TI.red, letterSpacing: 1),
+              style: AppType.style(
+                8.sp,
+                w: FontWeight.w700,
+                color: _TI.red,
+                letterSpacing: 1,
+              ),
             ),
             SizedBox(height: 1.h),
             ...loseItems.map(
               (item) => Padding(
                 padding: EdgeInsets.only(bottom: 0.8.h),
                 child: _summaryRow(
-                  label: item.item ?? 'Charge',
+                  // "Cancellation Fee (0%)" → "Cancellation Fee".
+                  // Zero percentages are ALWAYS stripped; in fee-only mode
+                  // any remaining percentage is stripped as well.
+                  label: _chargeLabel(item.item, feeOnly: feeOnly),
                   amount: -(item.amount ?? 0),
                   color: _TI.red,
                   isBold: false,
@@ -500,7 +685,12 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
           if (refundItems.isNotEmpty) ...[
             Text(
               'YOU WILL RECEIVE',
-              style: AppType.style(8.sp, w: FontWeight.w700, color: _TI.teal, letterSpacing: 1),
+              style: AppType.style(
+                8.sp,
+                w: FontWeight.w700,
+                color: _TI.teal,
+                letterSpacing: 1,
+              ),
             ),
             SizedBox(height: 1.h),
             ...refundItems.map(
@@ -576,7 +766,11 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
         Expanded(
           child: Text(
             label,
-            style: AppType.style(10.sp, w: isBold ? FontWeight.w700 : FontWeight.w500, color: isBold ? _TI.ink : _TI.inkMid),
+            style: AppType.style(
+              10.sp,
+              w: isBold ? FontWeight.w700 : FontWeight.w500,
+              color: isBold ? _TI.ink : _TI.inkMid,
+            ),
           ),
         ),
         TweenAnimationBuilder<double>(
@@ -589,7 +783,11 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
                 : "₹ ${val.toStringAsFixed(2)}";
             return Text(
               display,
-              style: AppType.style(10.sp, w: isBold ? FontWeight.w800 : FontWeight.w600, color: color),
+              style: AppType.style(
+                10.sp,
+                w: isBold ? FontWeight.w800 : FontWeight.w600,
+                color: color,
+              ),
             );
           },
         ),
@@ -627,7 +825,11 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
               textAlignVertical: TextAlignVertical.top,
               decoration: InputDecoration(
                 hintText: 'Please enter your reason for cancellation...',
-                hintStyle: AppType.style(10.sp, color: _TI.inkLight, height: 1.5),
+                hintStyle: AppType.style(
+                  10.sp,
+                  color: _TI.inkLight,
+                  height: 1.5,
+                ),
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.all(3.w),
               ),
@@ -685,7 +887,11 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
                         SizedBox(width: 1.5.w),
                         Text(
                           'Hold for $_holdSeconds seconds — this action cannot be undone',
-                          style: AppType.style(8.sp, w: FontWeight.w500, color: _TI.inkLight),
+                          style: AppType.style(
+                            8.sp,
+                            w: FontWeight.w500,
+                            color: _TI.inkLight,
+                          ),
                         ),
                       ],
                     ),
@@ -820,7 +1026,12 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
                                   : holding
                                   ? 'Keep Holding · ${secondsLeft}s'
                                   : 'Hold to Cancel Booking',
-                              style: AppType.style(12.sp, w: FontWeight.w700, color: Colors.white, letterSpacing: 0.3),
+                              style: AppType.style(
+                                12.sp,
+                                w: FontWeight.w700,
+                                color: Colors.white,
+                                letterSpacing: 0.3,
+                              ),
                             ),
                           ],
                         ),
