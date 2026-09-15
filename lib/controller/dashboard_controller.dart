@@ -37,6 +37,13 @@ class DashboardController extends GetxController {
       const ApiResult<WhatsNewDataResponseModel>.init().obs;
   final topTreksObserver =
       const ApiResult<TopTreksDataResponseModel>.init().obs;
+
+  /// Session-wide trek-favorite state — single source of truth shared by the
+  /// Dashboard Top-Treks carousel and the Popular Treks grid. Screens write
+  /// optimistically before calling toggleTopTrekFavorite() and revert on
+  /// failure. Session overrides always win over the isFavorite snapshot
+  /// delivered by the last fetchTopTreks() response.
+  final RxMap<int, bool> favoriteTrekOverrides = <int, bool>{}.obs;
   final seasonalForcastObserver =
       const ApiResult<SeasonalForecastDataResponseModel>.init().obs;
   final seasonalPicksObserver =

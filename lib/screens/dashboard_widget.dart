@@ -3,7 +3,8 @@ import 'dart:math' as math;
 
 import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/controller/trek_controller.dart';
-import 'package:arobo_app/widgets/dissolve_to_dashboard.dart' show whenDashboardVisible;
+import 'package:arobo_app/widgets/dissolve_to_dashboard.dart'
+    show whenDashboardVisible;
 import 'package:arobo_app/utils/app_theme.dart';
 import 'package:arobo_app/utils/common_btn.dart';
 import 'package:arobo_app/utils/common_colors.dart';
@@ -102,7 +103,6 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
   DateTime? _selectedDay;
 
   final List<DateTime> _nearestWeekendDates = [];
-  final Map<int, bool> _favoriteTreks = {};
 
   // ---------------------------------------------------------------------------
   // Helpers
@@ -420,13 +420,13 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
   }
 
   Future<void> _toggleFavorite(int id, bool currentlyFavorite) async {
-    setState(() => _favoriteTreks[id] = !currentlyFavorite);
+    _dashboardC.favoriteTrekOverrides[id] = !currentlyFavorite;
     final success = await _dashboardC.toggleTopTrekFavorite(
       id,
       currentlyFavorite,
     );
-    if (!success && mounted) {
-      setState(() => _favoriteTreks[id] = currentlyFavorite);
+    if (!success) {
+      _dashboardC.favoriteTrekOverrides[id] = currentlyFavorite;
     }
   }
 
@@ -1165,9 +1165,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                           0.75,
                                       height: ScreenConstant.size44,
                                       decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(
-                                          30,
-                                        ),
+                                        borderRadius: BorderRadius.circular(30),
                                         boxShadow: [
                                           BoxShadow(
                                             color: ht.accent.withValues(
@@ -1915,7 +1913,8 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                   physics: const BouncingScrollPhysics(),
                                   itemBuilder: (context, index) {
                                     final item =
-                                        whatsNewFeed[index % whatsNewFeed.length];
+                                        whatsNewFeed[index %
+                                            whatsNewFeed.length];
 
                                     if (item is AdmobFeedSlot) {
                                       return const Padding(
@@ -1938,8 +1937,9 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                         onImpression: () => _dashboardC
                                             .logSponsoredImpression(item.id),
                                         onCtaTap: () {
-                                          _dashboardC
-                                              .logSponsoredClick(item.id);
+                                          _dashboardC.logSponsoredClick(
+                                            item.id,
+                                          );
                                           _openSponsoredUrl(item.ctaUrl);
                                         },
                                       );
@@ -1990,7 +1990,8 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                     if (!topTreksLoading && topTreksResponse.isEmpty) {
                       return const SizedBox();
                     }
-
+                    final favoriteOverrides =
+                        _dashboardC.favoriteTrekOverrides.value;
                     final topTreksCardWidth = 68.w;
                     final topTreksCardHeight = topTreksCardWidth * 1.25;
 
@@ -2108,7 +2109,8 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                               height: topTreksCardHeight,
                                               child: SponsoredVideoCard(
                                                 key: ValueKey(
-                                                    'tt-ad-${item.id}'),
+                                                  'tt-ad-${item.id}',
+                                                ),
                                                 slotId: item.id,
                                                 videoUrl: item.videoUrl ?? '',
                                                 advertiser: item.advertiser,
@@ -2117,13 +2119,15 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                                 trailingMargin: 0,
                                                 onImpression: () => _dashboardC
                                                     .logSponsoredImpression(
-                                                        item.id),
+                                                      item.id,
+                                                    ),
                                                 onCtaTap: () {
-                                                  _dashboardC
-                                                      .logSponsoredClick(
-                                                          item.id);
+                                                  _dashboardC.logSponsoredClick(
+                                                    item.id,
+                                                  );
                                                   _openSponsoredUrl(
-                                                      item.ctaUrl);
+                                                    item.ctaUrl,
+                                                  );
                                                 },
                                               ),
                                             ),
@@ -2145,8 +2149,8 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                             imagePath: getFullImageUrl(
                                               item.imagePath,
                                             ),
-                                            title: item.title ??
-                                                item.advertiser,
+                                            title:
+                                                item.title ?? item.advertiser,
                                             description:
                                                 'By ${item.advertiser}',
                                             kicker: item.kicker,
@@ -2162,7 +2166,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                           trekData.badgeType == 'trending';
                                       final trekId = trekData.id;
                                       final isFavorite =
-                                          _favoriteTreks[trekId] ??
+                                          favoriteOverrides[trekId] ??
                                           (trekData.isFavorite ?? false);
                                       return Padding(
                                         padding: EdgeInsets.only(
@@ -2244,8 +2248,8 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                     // These feed the ad injection inside a nested Builder,
                     // whose reads this Obx can't see — track them here so the
                     // row rebuilds when a slot or the AdMob toggle changes.
-                    final seasonalAdSlots =
-                        _dashboardC.seasonalForecastSlots.toList();
+                    final seasonalAdSlots = _dashboardC.seasonalForecastSlots
+                        .toList();
                     final admobOn = _dashboardC.admobFallbackEnabled.value;
 
                     return Column(
@@ -2325,20 +2329,21 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                       // none sold, one AdMob native fill.
                                       final feed = withAdmobFallback(
                                         injectSponsoredSlots(
-                                          organic:
-                                              previewPicks.cast<Object>(),
+                                          organic: previewPicks.cast<Object>(),
                                           slots: seasonalAdSlots,
                                         ),
                                         organicCount: previewPicks.length,
                                         enabled: admobOn,
                                       );
 
-                                      final seasonalCards =
-                                          feed.map<Widget>((item) {
+                                      final seasonalCards = feed.map<Widget>((
+                                        item,
+                                      ) {
                                         if (item is AdmobFeedSlot) {
                                           return Padding(
-                                            padding:
-                                                EdgeInsets.only(right: 3.w),
+                                            padding: EdgeInsets.only(
+                                              right: 3.w,
+                                            ),
                                             child: SizedBox(
                                               width: 70.w,
                                               height: 24.h,
@@ -2351,58 +2356,60 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                         }
                                         if (item is SponsoredSlot) {
                                           return Padding(
-                                            padding:
-                                                EdgeInsets.only(right: 3.w),
+                                            padding: EdgeInsets.only(
+                                              right: 3.w,
+                                            ),
                                             child: SizedBox(
                                               width: 70.w,
                                               height: 24.h,
                                               child: SponsoredVideoCard(
                                                 key: ValueKey(
-                                                    'sf-ad-${item.id}'),
+                                                  'sf-ad-${item.id}',
+                                                ),
                                                 slotId: item.id,
-                                                videoUrl:
-                                                    item.videoUrl ?? '',
+                                                videoUrl: item.videoUrl ?? '',
                                                 advertiser: item.advertiser,
-                                                headline:
-                                                    item.headline ?? '',
+                                                headline: item.headline ?? '',
                                                 widthFraction: 70,
                                                 trailingMargin: 0,
                                                 onImpression: () => _dashboardC
                                                     .logSponsoredImpression(
-                                                        item.id),
+                                                      item.id,
+                                                    ),
                                                 onCtaTap: () {
-                                                  _dashboardC
-                                                      .logSponsoredClick(
-                                                          item.id);
+                                                  _dashboardC.logSponsoredClick(
+                                                    item.id,
+                                                  );
                                                   _openSponsoredUrl(
-                                                      item.ctaUrl);
+                                                    item.ctaUrl,
+                                                  );
                                                 },
                                               ),
                                             ),
                                           );
                                         }
 
-                                        final pick =
-                                            item as SeasonalPickItem;
+                                        final pick = item as SeasonalPickItem;
                                         final pickImageType =
                                             parseSeasonalPickImageType(
-                                          pick.imageType,
-                                        );
+                                              pick.imageType,
+                                            );
                                         final resolvedImagePath =
                                             getFullImageUrl(pick.imagePath);
-                                        final displayImagePath = pickImageType ==
+                                        final displayImagePath =
+                                            pickImageType ==
                                                 SeasonalPickImageType
                                                     .illustration
                                             ? resolvedImagePath
                                             : (resolvedImagePath.isEmpty
-                                                ? CommonImages.himalayas
-                                                : resolvedImagePath);
+                                                  ? CommonImages.himalayas
+                                                  : resolvedImagePath);
                                         return Padding(
-                                          padding:
-                                              EdgeInsets.only(right: 3.w),
+                                          padding: EdgeInsets.only(right: 3.w),
                                           child: SeasonalGradientCard(
                                             onTap: () => Get.toNamed(
-                                                '/seasonal-forecast'),
+                                              '/seasonal-forecast',
+                                            ),
                                             trekName: pick.trekName ?? '',
                                             reason: pick.reason ?? '',
                                             imagePath: displayImagePath,
