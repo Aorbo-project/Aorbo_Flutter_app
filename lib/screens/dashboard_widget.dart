@@ -1138,9 +1138,6 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
 
                     _FadeSlideIn(
                       delayMs: 440,
-                      // The "no treks on this route" inline card already has
-                      // its own Change Route / Notify Me buttons — showing
-                      // this main CTA too would just duplicate them.
                       child: Obx(() {
                         if (_computeNoTreksOnRoute()) {
                           return const SizedBox.shrink();
@@ -1191,7 +1188,8 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                 },
                               ),
                             ),
-                            SizedBox(height: ScreenConstant.size30),
+                            // Keeps the Search button clear of the bottom glass banner
+                            const SizedBox(height: 36),
                           ],
                         );
                       }),
@@ -1200,8 +1198,68 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                 ),
               ),
             ),
+
+            // ── Secure Payment Banner attached to the bottom edge ──
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: _FadeSlideIn(
+                delayMs: 600,
+                child: _buildSecurePaymentBanner(ht),
+              ),
+            ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildSecurePaymentBanner(DashboardHeaderTheme ht) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.15),
+        border: Border(
+          top: BorderSide(
+            color: Colors.white.withValues(alpha: 0.3),
+            width: 0.5,
+          ),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.shield_outlined, size: 12, color: const Color(0xFF0F7B6C)),
+          const SizedBox(width: 4),
+          Text(
+            '100% Secure Payments',
+            style: AppType.style(
+              9.5,
+              w: FontWeight.w700,
+              color: const Color(0xFF0F7B6C),
+              letterSpacing: 0.2,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Icon(
+            Icons.verified_outlined,
+            size: 12,
+            color: const Color(0xFF0F7B6C),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            'Verified Treks',
+            style: AppType.style(
+              9.5,
+              w: FontWeight.w700,
+              color: const Color(0xFF0F7B6C),
+              letterSpacing: 0.2,
+            ),
+          ),
+        ],
       ),
     );
   }
