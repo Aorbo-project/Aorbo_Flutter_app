@@ -11,7 +11,8 @@ import 'package:arobo_app/utils/common_bottom_nav.dart';
 import 'package:arobo_app/utils/common_safety_card.dart';
 import 'package:arobo_app/utils/coupon_gradient_card.dart';
 import 'package:arobo_app/utils/know_more_card.dart';
-import 'package:arobo_app/utils/seasonal_forecast_mock_data.dart' show TrekSeason;
+import 'package:arobo_app/utils/seasonal_forecast_mock_data.dart'
+    show TrekSeason;
 import 'package:arobo_app/utils/seasonal_gradient_card.dart';
 import 'package:arobo_app/utils/top_treks_card.dart';
 import 'package:arobo_app/widgets/cancellation_policy_widget.dart';
@@ -37,7 +38,8 @@ void main() {
         build: () => TopTreksCard(
           imagePath: '',
           title: 'Hampta Pass',
-          description: 'A classic crossover trek from lush Kullu to the '
+          description:
+              'A classic crossover trek from lush Kullu to the '
               'stark moonscape of Lahaul.',
           kicker: 'HIMACHAL',
           meta: '5D / 4N · Moderate',
@@ -54,7 +56,8 @@ void main() {
         build: () => TopTreksCard(
           imagePath: '',
           title: 'Kedarkantha Winter Summit Expedition via Sankri Base',
-          description: 'One of the most popular snow treks in the country, '
+          description:
+              'One of the most popular snow treks in the country, '
               'best attempted between late December and early April when the '
               'ridge holds deep powder.',
           badgeText: 'Editor’s Choice — Limited Departures',
@@ -74,7 +77,8 @@ void main() {
         tester,
         build: () => SeasonalGradientCard(
           trekName: 'Valley of Flowers National Park',
-          reason: 'Peak monsoon brings landslides on the Govindghat road and '
+          reason:
+              'Peak monsoon brings landslides on the Govindghat road and '
               'leeches on the trail — the blooms are past their best by then '
               'anyway.',
           imagePath: '',
@@ -96,7 +100,8 @@ void main() {
           gradientColors: ['#FFE066', '#FFC300'],
           imagePath: '',
           title: 'How Aorbo verifies every organiser',
-          subtitle: 'Background checks, insurance proof and a physical safety '
+          subtitle:
+              'Background checks, insurance proof and a physical safety '
               'audit before a single slot goes live.',
         ),
       );
@@ -112,8 +117,7 @@ void main() {
           gradientColors: ['#0F7B6C', '#1AA090'],
           badgeLabel: 'FIRST BOOKING',
           headline: 'FLAT ₹500 OFF',
-          conditionText:
-              'Upto ₹500 · On orders above ₹4,500 · New users only',
+          conditionText: 'Upto ₹500 · On orders above ₹4,500 · New users only',
           code: 'AORBOWELCOME500',
         ),
       );
@@ -127,7 +131,8 @@ void main() {
         tester,
         build: () => const CommonSafetyCard(
           title: 'Women’s Safety on Aorbo Treks',
-          subtitle: 'Verified organisers, female trip leaders on request, and '
+          subtitle:
+              'Verified organisers, female trip leaders on request, and '
               '24x7 SOS support throughout the trek.',
           backgroundImage: '',
           footerText: 'Tap to read our full safety charter',
@@ -198,7 +203,7 @@ void main() {
     testWidgets('index 0 selected', (tester) async {
       final failures = await collectResponsiveOverflows(
         tester,
-        build: () => const CommonBottomNav(selectedIndex: 0),
+        build: () => const CommonBottomNav(),
       );
       expectNoResponsiveOverflow(failures);
     });
@@ -207,7 +212,7 @@ void main() {
       Get.find<DashboardController>().selectedScreen.value = 1;
       final failures = await collectResponsiveOverflows(
         tester,
-        build: () => const CommonBottomNav(selectedIndex: 1),
+        build: () => const CommonBottomNav(),
       );
       expectNoResponsiveOverflow(failures);
     });
