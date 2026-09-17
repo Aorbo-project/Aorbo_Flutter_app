@@ -13,25 +13,27 @@ import 'package:sizer/sizer.dart';
 ///
 /// Depth, front to back:
 ///  1. Content scrolls BEHIND the frosted-glass bar (extendBody).
-///  2. The glass is a THICK SLAB: the top edge catches light and the
-///     bottom edge darkens (bevel gradient) — thickness, not a flat rect.
-///  3. Dual float shadows (contact + ambient) hover the slab above the
-///     screen.
-///  4. The selected pill is an EXTRUDED KEY on the glass: top-lit
-///     gradient, a hard-edged dark side face beneath it, soft ambient
-///     shadow, and a warm brand-colored emission glow.
-///  5. Pressing a tab DEPRESSES the key 2px into the glass while its
-///     side face compresses — physical press, not a tap.
+///  2. The glass is a THICK SLAB: lit top edge, darkened bottom edge.
+///  3. Dual float shadows (contact + ambient) hover the slab.
+///  4. The selected pill is an EXTRUDED KEY: top-lit gradient, hard
+///     dark side face, ambient shadow, warm brand-colored glow.
+///  5. Pressing a tab DEPRESSES the key 2px into the glass.
 ///
 /// Selection is the "bloom" morph: the pill condenses out of the icon's
-/// own footprint (one progress value drives pill fade/grow, icon color
-/// lerp + pop, label sliding out from behind the icon); deselect
-/// reverses. Unselected slots show ONLY a bigger muted icon.
+/// own footprint; deselect reverses. Unselected slots show ONLY a
+/// bigger muted icon.
 ///
-/// HEIGHT BUGFIX: the bar's height lives on the margin-bearing Container
-/// itself — previously the bottom float margin (2.h ≈ 14px) was deducted
-/// FROM the bar height, squeezing the visible bar ~50px against 56px of
-/// content (the recurring 2-3px overflow).
+/// OPTICAL CENTERING: the content column reserves a 16px label slot
+/// BELOW the icon — so a bare (unselected) icon sits at the top of the
+/// column, ~8px above the bar's true center. The content now shifts
+/// down by that amount when bare and rises into place as the pill
+/// blooms: the icon is optically centered in EVERY state.
+///
+/// Layout fixes carried over: bar height lives on the margin-bearing
+/// Container (float margin not deducted); label sits in a fixed 16px
+/// FittedBox slot (.sp text double-scales on wide/high-text-scale
+/// devices); content anchored to full bar height with the pill as a
+/// background layer.
 ///
 /// Single source of truth: DashboardController.selectedScreen.
 /// Perf: zero AnimationControllers — implicit animations only, running
@@ -67,7 +69,7 @@ class _CommonBottomNavState extends State<CommonBottomNav> {
   static const double _kGlassAlpha = 0.75;
   static const double _kBlurSigma = 18;
 
-  /// Fixed column height: 27px icon + gap + s8 label line.
+  /// Fixed column height: ≤27px icon + 16px label slot.
   static const double _kColumnHeight = 44;
 
   /// The label lives in a FIXED-height slot with FittedBox(scaleDown).
@@ -76,6 +78,13 @@ class _CommonBottomNavState extends State<CommonBottomNav> {
   /// overflowed any fixed column budget. The slot makes the column
   /// deterministic: icon(≤27) + 16 = ≤43 at EVERY device/text-scale.
   static const double _kLabelSlotHeight = 16;
+
+  /// OPTICAL CENTERING SHIFT. The bare icon sits at the TOP of the
+  /// 44px column (label slot below it), so its visible center is ~8.5px
+  /// above the bar's center. When unselected (t=0) the content drops by
+  /// this much — putting the icon exactly at bar-center — and rises
+  /// back to 0 as the pill blooms and the label appears below it.
+  static const double _kUnselectedIconDrop = 8.5;
 
   /// Icon sizes — the UNSELECTED icon is bigger so bare slots don't feel
   /// visually lighter than the pill.
@@ -106,10 +115,9 @@ class _CommonBottomNavState extends State<CommonBottomNav> {
     return SafeArea(
       top: false,
       child: Container(
-        // THE FIX: height on THIS container (the one with the margin) —
-        // the float margin is added OUTSIDE the 66px, so the visible bar
-        // is truly 66px. (Before, SizedBox(66) wrapped the margin, so
-        // 2.h came OFF the bar — the recurring overflow.)
+        // Height on THIS container (the one with the margin) — the
+        // float margin is added OUTSIDE the 66px, so the visible bar is
+        // truly 66px.
         height: _kBarHeight,
         margin: EdgeInsets.only(left: 4.w, right: 4.w, bottom: 2.h),
         decoration: BoxDecoration(
@@ -145,10 +153,9 @@ class _CommonBottomNavState extends State<CommonBottomNav> {
                 fit: StackFit.expand,
                 children: [
                   // ── SLAB BEVEL ───────────────────────────────────────
-                  // Under the content: the top strip of glass catches
-                  // light, the bottom strip darkens — the thickness of
-                  // the panel. Very low alphas; it reads as material,
-                  // not decoration.
+                  // Top strip of glass catches light, bottom strip
+                  // darkens — the thickness of the panel. Very low
+                  // alphas; material, not decoration.
                   Positioned.fill(
                     child: IgnorePointer(
                       child: DecoratedBox(
@@ -244,126 +251,157 @@ class _CommonBottomNavState extends State<CommonBottomNav> {
         HapticFeedback.selectionClick();
         widget.onIndexChanged?.call(index);
       },
-      child: Center(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: slotW - 12),
-          child: TweenAnimationBuilder<double>(
-            // t = the materialization progress. Everything derives from
-            // this one value — the bloom is synchronized and reverses
-            // cleanly on deselect.
-            tween: Tween(begin: 0, end: active ? 1 : 0),
-            duration: _kMorphMs,
-            curve: Curves.easeOutCubic,
-            builder: (context, t, _) {
-              // Pill body: transparent → top-lit black.
-              final top = Color.lerp(
-                Colors.transparent,
-                Color.lerp(pillColor, Colors.white, 0.15)!,
-                t,
-              )!;
-              final bottom = Color.lerp(Colors.transparent, pillColor, t)!;
+      // BAR-HEIGHT ANCHOR: the content is centered against the FULL bar
+      // height, with the pill as a pure background layer below.
+      child: SizedBox(
+        height: _kBarHeight,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: slotW - 12),
+            child: TweenAnimationBuilder<double>(
+              // t = the materialization progress. Everything derives
+              // from this one value — the bloom is synchronized and
+              // reverses cleanly on deselect.
+              tween: Tween(begin: 0, end: active ? 1 : 0),
+              duration: _kMorphMs,
+              curve: Curves.easeOutCubic,
+              builder: (context, t, _) {
+                // Pill body: transparent → top-lit black.
+                final top = Color.lerp(
+                  Colors.transparent,
+                  Color.lerp(pillColor, Colors.white, 0.15)!,
+                  t,
+                )!;
+                final bottom = Color.lerp(Colors.transparent, pillColor, t)!;
 
-              // Label trails the bloom slightly.
-              final labelT = ((t - 0.18) / 0.82).clamp(0.0, 1.0);
-              final iconColor = Color.lerp(unselectedColor, selectedColor, t)!;
-              final iconSize =
-                  _kIconSizeUnselected +
-                  (_kIconSize - _kIconSizeUnselected) * t;
+                // Label trails the bloom slightly.
+                final labelT = ((t - 0.18) / 0.82).clamp(0.0, 1.0);
+                final iconColor = Color.lerp(
+                  unselectedColor,
+                  selectedColor,
+                  t,
+                )!;
+                final iconSize =
+                    _kIconSizeUnselected +
+                    (_kIconSize - _kIconSizeUnselected) * t;
 
-              return AnimatedContainer(
-                duration: _kPressMs,
-                curve: Curves.easeOut,
-                // PHYSICAL PRESS: the key travels DOWN into the glass.
-                // A paint-time transform — it can never cause layout
-                // overflow, and the bar's slack absorbs the 2px.
-                transform: Matrix4.translationValues(
-                  0,
-                  pressed ? _kPressDepth : 0,
-                  0,
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [top, bottom],
+                // ── The pill: a BACKGROUND layer ─────────────────────
+                // Zero visual footprint when deselected (fully
+                // transparent), blooming up behind the content when
+                // selected. It does not participate in the content's
+                // layout at all.
+                final Widget pillLayer = AnimatedContainer(
+                  duration: _kPressMs,
+                  curve: Curves.easeOut,
+                  // PHYSICAL PRESS: the key travels DOWN into the glass.
+                  // A paint-time transform — it can never cause layout
+                  // overflow.
+                  transform: Matrix4.translationValues(
+                    0,
+                    pressed ? _kPressDepth : 0,
+                    0,
                   ),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    // EXTRUDED SIDE — hard-edged dark face directly
-                    // beneath the pill. On press it compresses (thinner
-                    // + sharper), like the key sinking into the slab.
-                    BoxShadow(
-                      color: Colors.black.withValues(
-                        alpha: (pressed ? 0.24 : 0.40) * t,
-                      ),
-                      blurRadius: pressed ? 1 : 0,
-                      offset: Offset(0, pressed ? 1 : 2.5),
+                  height: _kColumnHeight + 12,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [top, bottom],
                     ),
-                    // Soft ambient shadow under the key.
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.16 * t),
-                      blurRadius: 8,
-                      offset: const Offset(0, 6),
-                    ),
-                    // EMISSION — warm brand light cast onto the glass.
-                    BoxShadow(
-                      color: selectedColor.withValues(
-                        alpha: (pressed ? 0.10 : 0.16) * t,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      // EXTRUDED SIDE — hard-edged dark face directly
+                      // beneath the pill; compresses on press.
+                      BoxShadow(
+                        color: Colors.black.withValues(
+                          alpha: (pressed ? 0.24 : 0.40) * t,
+                        ),
+                        blurRadius: pressed ? 1 : 0,
+                        offset: Offset(0, pressed ? 1 : 2.5),
                       ),
-                      blurRadius: 22,
-                      spreadRadius: 2,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: SizedBox(
-                  height: _kColumnHeight,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Transform.scale(
-                        scale: (0.84 + 0.16 * Curves.easeOutBack.transform(t))
-                            .clamp(0.1, 1.3),
-                        child: Icon(icon, size: iconSize, color: iconColor),
+                      // Soft ambient shadow under the key.
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.16 * t),
+                        blurRadius: 8,
+                        offset: const Offset(0, 6),
                       ),
-                      // Fixed-height label slot — the text is always
-                      // laid out (opacity-driven) inside a 16px box and
-                      // scales itself down under FittedBox when text
-                      // scale / device width inflate it. No config can
-                      // exceed the column budget.
-                      SizedBox(
-                        height: _kLabelSlotHeight,
-                        child: Align(
-                          alignment: Alignment.topCenter,
-                          child: Opacity(
-                            opacity: labelT,
-                            child: Transform.translate(
-                              offset: Offset(0, 4 * (1 - labelT)),
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Text(
-                                  label,
-                                  maxLines: 1,
-                                  style: AppType.style(
-                                    FontSize.s8,
-                                    w: FontWeight.w700,
-                                    color: selectedColor,
+                      // EMISSION — warm brand light cast onto the glass.
+                      BoxShadow(
+                        color: selectedColor.withValues(
+                          alpha: (pressed ? 0.10 : 0.16) * t,
+                        ),
+                        blurRadius: 22,
+                        spreadRadius: 2,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                );
+
+                // ── The content ───────────────────────────────────────
+                // OPTICAL CENTERING: the column reserves a 16px label
+                // slot below the icon, so a BARE icon (label invisible)
+                // would sit at the top of the column — visibly above the
+                // bar's center. The content therefore drops by
+                // _kUnselectedIconDrop when bare and rises back to 0 as
+                // the pill blooms: the icon is at bar-center in the
+                // unselected state, and slides up to make room for the
+                // label as it appears. Reads as one deliberate motion.
+                final Widget content = Transform.translate(
+                  offset: Offset(0, (1 - t) * _kUnselectedIconDrop),
+                  child: SizedBox(
+                    height: _kColumnHeight,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // No scale-pop: the previous formula
+                        // (0.84 + 0.16·curve) held RESTING unselected
+                        // icons at 84% scale — they rendered shrunk at
+                        // all times, compounding the "small and high"
+                        // look. The bloom + color lerp + size lerp are
+                        // the whole motion budget now.
+                        Icon(icon, size: iconSize, color: iconColor),
+                        // Fixed-height label slot — text always laid
+                        // out (opacity-driven) inside a 16px box;
+                        // FittedBox scales it down when text scale /
+                        // device width inflate it.
+                        SizedBox(
+                          height: _kLabelSlotHeight,
+                          child: Align(
+                            alignment: Alignment.topCenter,
+                            child: Opacity(
+                              opacity: labelT,
+                              child: Transform.translate(
+                                offset: Offset(0, 4 * (1 - labelT)),
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    label,
+                                    maxLines: 1,
+                                    style: AppType.style(
+                                      FontSize.s8,
+                                      w: FontWeight.w700,
+                                      color: selectedColor,
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              );
-            },
+                );
+
+                // Content on top; pill behind. The Stack is sized by the
+                // CONTENT, so the pill layer can't influence layout.
+                return Stack(
+                  alignment: Alignment.center,
+                  children: [pillLayer, content],
+                );
+              },
+            ),
           ),
         ),
       ),
