@@ -313,6 +313,11 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
 
   bool _navigatingBack = false;
   bool _itemTapInFlight = false;
+
+  /// True while the route-completion "confirm beat" is playing — blocks
+  /// re-entrant taps for its ~620ms so the moment can land undisturbed.
+  bool _celebrating = false;
+
   String _errorMessage = '';
   String _citiesError = '';
   String _treksError = '';
@@ -510,7 +515,7 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
   }
 
   void _onFromFocusChange() {
-    if (!mounted || _itemTapInFlight) return;
+    if (!mounted || _itemTapInFlight || _celebrating) return;
     if (_fromFocus.hasFocus && _tab != _Tab.cities) {
       setState(() => _tab = _Tab.cities);
       _query.value = _fromCtrl.text;
@@ -521,7 +526,7 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
   }
 
   void _onToFocusChange() {
-    if (!mounted || _itemTapInFlight) return;
+    if (!mounted || _itemTapInFlight || _celebrating) return;
     if (_toFocus.hasFocus && _tab != _Tab.treks) {
       if (!_hasValidFromSelection) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -919,7 +924,7 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
 
   // ── SELECTION ──────────────────────────────────────────────────────────
   Future<void> _onItemTap(_Entry entry) async {
-    if (_itemTapInFlight) return;
+    if (_itemTapInFlight || _celebrating) return;
     _itemTapInFlight = true;
     try {
       HapticFeedback.selectionClick();
@@ -950,7 +955,9 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
         unawaited(LocationCacheService.instance.addRecentTrek(entry.name));
         if (_hasValidFromSelection) {
           FocusScope.of(context).unfocus();
-          await _closeWithResult();
+          _query.value = '';
+          if (mounted) setState(() {});
+          await _celebrateAndClose();
         }
       }
     } finally {
@@ -962,7 +969,7 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
   /// traveller. IDs are set BEFORE the text so the change-listeners'
   /// validation sees a matching selection and keeps it.
   Future<void> _onRouteTap(_RoutePair route) async {
-    if (_itemTapInFlight) return;
+    if (_itemTapInFlight || _celebrating) return;
     _itemTapInFlight = true;
     try {
       HapticFeedback.selectionClick();
@@ -975,7 +982,7 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
       FocusScope.of(context).unfocus();
       _query.value = '';
       if (mounted) setState(() {});
-      await _closeWithResult();
+      await _celebrateAndClose();
     } finally {
       _itemTapInFlight = false;
     }
@@ -997,6 +1004,21 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
     if (!mounted) return;
     // true → the caller refetches availability and opens the calendar.
     Navigator.pop(context, true);
+  }
+
+  /// Route complete → play the confirmation beat (markers pop, line
+  /// flows green, card pulses), THEN close. In the main flow the
+  /// completed card previously flashed for a single frame before the
+  /// sheet popped — this makes the moment land and confirms the pick
+  /// before the calendar takes over.
+  Future<void> _celebrateAndClose() async {
+    if (_celebrating) return;
+    _celebrating = true;
+    HapticFeedback.mediumImpact();
+    await Future.delayed(const Duration(milliseconds: 620));
+    _celebrating = false;
+    if (!mounted) return;
+    await _closeWithResult();
   }
 
   void _clearField(TextEditingController controller) {
@@ -1217,7 +1239,8 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
   // Origin dot → connecting line → destination marker: the visual grammar
   // of every route picker, so the card reads as ONE journey instead of two
   // form fields. The connecting line and the card border animate to forest
-  // green once the route is complete — a quiet "you're done here" cue.
+  // green once the route is complete — a quiet "you're done here" cue —
+  // and the card itself gives one subtle elastic pulse at that moment.
   //
   // Both TextFields stay permanently mounted; the inactive step's value is
   // an overlay that fades in over the field, so focus and the keyboard
@@ -1229,49 +1252,53 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
     final settled = routeComplete && !editing;
     final lineColor = settled ? _T.forest.withValues(alpha: 0.55) : _T.divider;
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
-      margin: const EdgeInsets.fromLTRB(14, 4, 14, 6),
-      decoration: BoxDecoration(
-        color: _T.card,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: settled ? _T.forest.withValues(alpha: 0.30) : _T.border,
-          width: 1,
+    return _popWhen(
+      settled,
+      AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+        margin: const EdgeInsets.fromLTRB(14, 4, 14, 6),
+        decoration: BoxDecoration(
+          color: _T.card,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: settled ? _T.forest.withValues(alpha: 0.30) : _T.border,
+            width: 1,
+          ),
+          boxShadow: AppShadows.soft(0.05),
         ),
-        boxShadow: AppShadows.soft(0.05),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _stepRow(
+              label: 'DEPARTURE CITY',
+              hint: 'e.g. Delhi, Mumbai',
+              controller: _fromCtrl,
+              focusNode: _fromFocus,
+              active: _fromFocus.hasFocus,
+              done: _hasValidFromSelection,
+              isOrigin: true,
+              lineColor: lineColor,
+              onTap: () => _setActiveField(_Tab.cities),
+              errorText: _fromErrorText(),
+            ),
+            _stepRow(
+              label: 'DESTINATION TREK',
+              hint: 'e.g. Kedarkantha, Roopkund',
+              controller: _toCtrl,
+              focusNode: _toFocus,
+              active: _toFocus.hasFocus,
+              done: _hasValidToSelection,
+              isOrigin: false,
+              lineColor: lineColor,
+              onTap: () => _setActiveField(_Tab.treks),
+              errorText: _toErrorText(),
+            ),
+          ],
+        ),
       ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _stepRow(
-            label: 'DEPARTURE CITY',
-            hint: 'e.g. Delhi, Mumbai',
-            controller: _fromCtrl,
-            focusNode: _fromFocus,
-            active: _fromFocus.hasFocus,
-            done: _hasValidFromSelection,
-            isOrigin: true,
-            lineColor: lineColor,
-            onTap: () => _setActiveField(_Tab.cities),
-            errorText: _fromErrorText(),
-          ),
-          _stepRow(
-            label: 'DESTINATION TREK',
-            hint: 'e.g. Kedarkantha, Roopkund',
-            controller: _toCtrl,
-            focusNode: _toFocus,
-            active: _toFocus.hasFocus,
-            done: _hasValidToSelection,
-            isOrigin: false,
-            lineColor: lineColor,
-            onTap: () => _setActiveField(_Tab.treks),
-            errorText: _toErrorText(),
-          ),
-        ],
-      ),
+      from: 0.965,
     );
   }
 
@@ -1305,7 +1332,9 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
               // ── Route marker column ─────────────────────────────────
               // The line is drawn as flex segments inside each row, so it
               // always runs marker-center → marker-center no matter how
-              // the row heights change (e.g. error text appearing).
+              // the row heights change (e.g. error text appearing). The
+              // two segments animate at different speeds so the "route
+              // complete" green visibly TRAVELS origin → destination.
               SizedBox(
                 width: 38,
                 child: Column(
@@ -1313,14 +1342,20 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
                     Expanded(
                       child: isOrigin
                           ? const SizedBox.shrink()
-                          : _lineSeg(lineColor),
+                          : _lineSeg(
+                              lineColor,
+                              duration: const Duration(milliseconds: 480),
+                            ),
                     ),
                     isOrigin
                         ? _originMarker(active: active, done: done)
                         : _destMarker(active: active, done: done),
                     Expanded(
                       child: isOrigin
-                          ? _lineSeg(lineColor)
+                          ? _lineSeg(
+                              lineColor,
+                              duration: const Duration(milliseconds: 240),
+                            )
                           : const SizedBox.shrink(),
                     ),
                   ],
@@ -1468,79 +1503,100 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
   }
 
   /// Origin: a map-style dot — outlined when untouched, solid forest with
-  /// a soft halo when active, forest circle with a check when picked.
-  /// Lives in a fixed 22px box so the line endpoints never jump.
+  /// a soft halo when active, forest circle with a check when picked
+  /// (arriving with an elastic pop). Lives in a fixed 22px box so the
+  /// line endpoints never jump.
   Widget _originMarker({required bool active, required bool done}) {
     return SizedBox(
       width: 22,
       height: 22,
       child: Center(
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          width: done ? 20 : (active ? 14 : 10),
-          height: done ? 20 : (active ? 14 : 10),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: done || active ? _T.forest : _T.card,
-            border: done || active
-                ? null
-                : Border.all(color: _T.inkLight, width: 2.2),
-            boxShadow: (active && !done)
-                ? [
-                    BoxShadow(
-                      color: _T.forest.withValues(alpha: 0.30),
-                      blurRadius: 8,
-                      spreadRadius: 3,
-                    ),
-                  ]
+        child: _popWhen(
+          done,
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: done ? 20 : (active ? 14 : 10),
+            height: done ? 20 : (active ? 14 : 10),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: done || active ? _T.forest : _T.card,
+              border: done || active
+                  ? null
+                  : Border.all(color: _T.inkLight, width: 2.2),
+              boxShadow: (active && !done)
+                  ? [
+                      BoxShadow(
+                        color: _T.forest.withValues(alpha: 0.30),
+                        blurRadius: 8,
+                        spreadRadius: 3,
+                      ),
+                    ]
+                  : null,
+            ),
+            child: done
+                ? const Icon(Icons.check_rounded, size: 12, color: Colors.white)
                 : null,
           ),
-          child: done
-              ? const Icon(Icons.check_rounded, size: 12, color: Colors.white)
-              : null,
         ),
       ),
     );
   }
 
   /// Destination: a mountain badge — outlined terrain icon when untouched,
-  /// solid forest when active, check when picked.
+  /// solid forest when active, check when picked (arriving with a pop).
   Widget _destMarker({required bool active, required bool done}) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      width: 24,
-      height: 24,
-      decoration: BoxDecoration(
-        color: (done || active) ? _T.forest : _T.card,
-        borderRadius: BorderRadius.circular(8),
-        border: (done || active)
-            ? null
-            : Border.all(color: _T.divider, width: 1.4),
-        boxShadow: (active && !done)
-            ? [
-                BoxShadow(
-                  color: _T.forest.withValues(alpha: 0.30),
-                  blurRadius: 10,
-                  spreadRadius: 2,
-                ),
-              ]
-            : null,
-      ),
-      child: Icon(
-        done ? Icons.check_rounded : Icons.terrain_rounded,
-        size: 14,
-        color: (done || active) ? Colors.white : _T.inkLight,
+    return _popWhen(
+      done,
+      AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 24,
+        height: 24,
+        decoration: BoxDecoration(
+          color: (done || active) ? _T.forest : _T.card,
+          borderRadius: BorderRadius.circular(8),
+          border: (done || active)
+              ? null
+              : Border.all(color: _T.divider, width: 1.4),
+          boxShadow: (active && !done)
+              ? [
+                  BoxShadow(
+                    color: _T.forest.withValues(alpha: 0.30),
+                    blurRadius: 10,
+                    spreadRadius: 2,
+                  ),
+                ]
+              : null,
+        ),
+        child: Icon(
+          done ? Icons.check_rounded : Icons.terrain_rounded,
+          size: 14,
+          color: (done || active) ? Colors.white : _T.inkLight,
+        ),
       ),
     );
   }
 
-  /// One half of the connecting route line (animated so the "route
-  /// complete" green flows through it).
-  Widget _lineSeg(Color color) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      width: 2,
-      color: color,
+  /// One half of the connecting route line. The two call sites pass
+  /// different durations so the "route complete" green flows from origin
+  /// to destination instead of snapping in all at once.
+  Widget _lineSeg(
+    Color color, {
+    Duration duration = const Duration(milliseconds: 300),
+  }) {
+    return AnimatedContainer(duration: duration, width: 2, color: color);
+  }
+
+  /// One-shot elastic pop. The TweenAnimationBuilder is only MOUNTED
+  /// while `trigger` is true, so the animation runs exactly once per
+  /// transition — no controller, no ticking, zero cost at rest.
+  Widget _popWhen(bool trigger, Widget child, {double from = 0.35}) {
+    if (!trigger) return child;
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: from, end: 1.0),
+      duration: const Duration(milliseconds: 450),
+      curve: Curves.elasticOut,
+      builder: (_, v, c) => Transform.scale(scale: v, child: c),
+      child: child,
     );
   }
 
@@ -1833,6 +1889,8 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
               const SizedBox(width: 5),
               Text(
                 title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: AppType.style(
                   FontSize.s8,
                   w: FontWeight.w800,
@@ -1874,17 +1932,20 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
     );
   }
 
-  /// Browse surface — ONE scroll view. The chip sections (routes /
-  /// recents / top cities / popular treks) are the list's leading
-  /// content, followed by a labeled divider, then the full list. They
-  /// scroll away with the content and come back with plain scrolling:
-  /// the standard, unfailable pattern.
+  /// Browse surface — ONE scroll view with elastic overscroll physics.
+  /// The chip sections (routes / recents / top cities / popular treks)
+  /// are the list's leading content, followed by a labeled divider, then
+  /// the full list. They scroll away with the content and come back with
+  /// plain scrolling: the standard, unfailable pattern.
   Widget _buildBrowseList(_FilterResult result) {
     final sections = _buildChipSections(result);
     final hasSections = sections.isNotEmpty;
 
     return ListView.builder(
       controller: _scrollCtrl,
+      physics: const BouncingScrollPhysics(
+        parent: AlwaysScrollableScrollPhysics(),
+      ),
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 90),
       itemCount: _browseRows.length + (hasSections ? 2 : 0),
       itemBuilder: (ctx, i) {
@@ -1918,7 +1979,8 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
   }
 
   /// Hidden while a field is focused — with the keyboard up the footer
-  /// would just float over the list. Slides in when focus drops.
+  /// would just float over the list. Slides in (with a spring pop) when
+  /// focus drops.
   Widget _buildStickyFooter() {
     final editing = _fromFocus.hasFocus || _toFocus.hasFocus;
     final canContinue = _hasValidFromSelection && _hasValidToSelection;
@@ -1929,14 +1991,18 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
       bottom: show ? 16 : -120,
       left: 20,
       right: 20,
-      child: AppButton.primary(
-        text: 'Choose Departure Date',
-        onPressed: _closeWithResult,
-        prefixIcon: const Icon(
-          Icons.calendar_month_rounded,
-          size: 20,
-          color: Colors.white,
+      child: _popWhen(
+        show,
+        AppButton.primary(
+          text: 'Choose Departure Date',
+          onPressed: _closeWithResult,
+          prefixIcon: const Icon(
+            Icons.calendar_month_rounded,
+            size: 20,
+            color: Colors.white,
+          ),
         ),
+        from: 0.88,
       ),
     );
   }
