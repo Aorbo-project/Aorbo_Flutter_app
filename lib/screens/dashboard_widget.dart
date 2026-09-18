@@ -40,6 +40,8 @@ import 'package:arobo_app/utils/custom_snackbar.dart';
 import 'package:ntp/ntp.dart';
 import 'package:table_calendar/table_calendar.dart';
 
+import 'package:arobo_app/utils/common_bottom_nav.dart';
+
 import '../freezed_models/treks/treks_model_data.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
@@ -2542,7 +2544,10 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                       ],
                     ),
                   ),
-                  SizedBox(height: ScreenConstant.size20),
+                  // Floating-nav clearance: last content rests above the
+                  // glass bar. MediaQuery bottom padding carries the bar's
+                  // full footprint under extendBody.
+                  SizedBox(height: CommonBottomNav.scrollBottomInset(context)),
                 ],
               ),
             ),

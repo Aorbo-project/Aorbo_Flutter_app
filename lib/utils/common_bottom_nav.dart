@@ -54,6 +54,14 @@ class CommonBottomNav extends StatefulWidget {
     this.pillColor,
   });
 
+  /// Bottom inset the body's scrollables need so their last item rests
+  /// above the floating bar. With extendBody, MediaQuery.padding.bottom
+  /// already equals the bar's full footprint (bar + float margin +
+  /// system inset) — the +12 is breathing room so content doesn't kiss
+  /// the glass edge.
+  static double scrollBottomInset(BuildContext context) =>
+      MediaQuery.of(context).padding.bottom + 12;
+
   @override
   State<CommonBottomNav> createState() => _CommonBottomNavState();
 }
