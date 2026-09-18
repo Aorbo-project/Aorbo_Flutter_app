@@ -17,9 +17,12 @@ class PopularTreksScreen extends StatefulWidget {
 
 class _PopularTreksScreenState extends State<PopularTreksScreen> {
   final ScrollController _scrollController = ScrollController();
-  final Map<int, bool> _favoriteTreks = {};
 
   final _dashboardC = Get.find<DashboardController>();
+
+  // Local `_favoriteTreks` map REMOVED — favorites now live in
+  // `_dashboardC.favoriteTrekOverrides`, shared with the Dashboard, so
+  // likes survive back-navigation and stay in sync across both screens.
 
   String _getFullImageUrl(String? path) {
     if (path == null || path.isEmpty) return '';
@@ -34,13 +37,17 @@ class _PopularTreksScreenState extends State<PopularTreksScreen> {
   }
 
   Future<void> _toggleFavorite(int id, bool currentlyFavorite) async {
-    setState(() => _favoriteTreks[id] = !currentlyFavorite);
+    // Optimistic write to the SHARED map — the Dashboard carousel reads the
+    // same map, so a like here instantly reflects there too. No setState
+    // needed: every Obx subscribed to the RxMap rebuilds automatically.
+    _dashboardC.favoriteTrekOverrides[id] = !currentlyFavorite;
     final success = await _dashboardC.toggleTopTrekFavorite(
       id,
       currentlyFavorite,
     );
-    if (!success && mounted) {
-      setState(() => _favoriteTreks[id] = currentlyFavorite);
+    if (!success) {
+      // API failed → roll the shared state back.
+      _dashboardC.favoriteTrekOverrides[id] = currentlyFavorite;
     }
   }
 
@@ -57,7 +64,11 @@ class _PopularTreksScreenState extends State<PopularTreksScreen> {
         title: Text(
           'Popular Treks',
           textScaler: const TextScaler.linear(1.0),
-          style: AppType.style(FontSize.s14, w: FontWeight.w500, color: CommonColors.blackColor),
+          style: AppType.style(
+            FontSize.s14,
+            w: FontWeight.w500,
+            color: CommonColors.blackColor,
+          ),
         ),
       ),
       body: Obx(() {
@@ -66,6 +77,13 @@ class _PopularTreksScreenState extends State<PopularTreksScreen> {
           orElse: () => [],
         );
 
+        // Capture the shared favorites via `.value` INSIDE this Obx so the
+        // grid subscribes to it. Any like/unlike — made here OR on the
+        // Dashboard — rebuilds this grid, even while covered by another
+        // route. (The capture must happen here, not inside itemBuilder —
+        // itemBuilder runs during layout, outside GetX's tracking.)
+        final favoriteOverrides = _dashboardC.favoriteTrekOverrides.value;
+
         return GridView.builder(
           controller: _scrollController,
           padding: EdgeInsets.fromLTRB(4.w, 2.h, 4.w, 2.h),
@@ -73,15 +91,18 @@ class _PopularTreksScreenState extends State<PopularTreksScreen> {
             crossAxisCount: 2,
             crossAxisSpacing: 3.w,
             mainAxisSpacing: 2.h,
-            childAspectRatio: 0.8, // 4:5 portrait — matches the dashboard carousel card and the recommended upload spec
+            childAspectRatio:
+                0.8, // 4:5 portrait — matches the dashboard carousel card and the recommended upload spec
           ),
           itemCount: topTreksData.length,
           itemBuilder: (context, index) {
             final trekData = topTreksData[index];
             final isTrending = trekData.badgeType == 'trending';
             final trekId = trekData.id;
+            // Session overrides (likes made this session on ANY screen) win
+            // over the server snapshot delivered with the last fetch.
             final isFavorite =
-                _favoriteTreks[trekId] ?? (trekData.isFavorite ?? false);
+                favoriteOverrides[trekId] ?? (trekData.isFavorite ?? false);
             return LayoutBuilder(
               builder: (context, constraints) {
                 return TopTreksCard(

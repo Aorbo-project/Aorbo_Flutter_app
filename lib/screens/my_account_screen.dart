@@ -9,6 +9,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
+import '../utils/common_bottom_nav.dart';
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS
@@ -293,7 +294,13 @@ class _MyAccountScreenState extends State<MyAccountScreen>
                     child: _buildLogoutButton(),
                   ),
                 ),
-                SizedBox(height: 4.h),
+                // Floating-nav clearance: the last content (logout
+                // button) must rest ABOVE the glass bar, not behind it.
+                // MediaQuery.padding.bottom carries the bar's full
+                // footprint under extendBody (bar + float margin +
+                // system inset) — replace the fixed 4.h spacer with it
+                // so the clearance is always exact on every device.
+                SizedBox(height: CommonBottomNav.scrollBottomInset(context)),
               ],
             ),
           ),

@@ -27,6 +27,7 @@ import '../repository/network_url.dart';
 import '../repository/repository.dart';
 import '../services/invoice_pdf_service.dart';
 import '../utils/custom_snackbar.dart';
+import '../services/location_cache_service.dart';
 
 class DashboardController extends GetxController {
   final Repository _repository = Repository();
@@ -37,6 +38,13 @@ class DashboardController extends GetxController {
       const ApiResult<WhatsNewDataResponseModel>.init().obs;
   final topTreksObserver =
       const ApiResult<TopTreksDataResponseModel>.init().obs;
+
+  /// Session-wide trek-favorite state — single source of truth shared by the
+  /// Dashboard Top-Treks carousel and the Popular Treks grid. Screens write
+  /// optimistically before calling toggleTopTrekFavorite() and revert on
+  /// failure. Session overrides always win over the isFavorite snapshot
+  /// delivered by the last fetchTopTreks() response.
+  final RxMap<int, bool> favoriteTrekOverrides = <int, bool>{}.obs;
   final seasonalForcastObserver =
       const ApiResult<SeasonalForecastDataResponseModel>.init().obs;
   final seasonalPicksObserver =
@@ -129,11 +137,35 @@ class DashboardController extends GetxController {
   @override
   void onReady() {
     super.onReady();
-    // onReady fires in a post-first-frame callback — the dashboard's initial
-    // frame has already painted by the time these three network calls kick
-    // off, so they no longer compete with the (heavy) first build for the
-    // main isolate.
-    Future.wait([fetchCitiesList(), fetchTrekList(), fetchStateList()]);
+    // Stale-while-revalidate: hydrate the location pickers from the
+    // on-device cache first (instant, no spinner), then revalidate over
+    // the network. A successful fetch simply overwrites the cached copy.
+    unawaited(_hydrateAndRefreshLocations());
+  }
+
+  Future<void> _hydrateAndRefreshLocations() async {
+    await hydrateLocationCache();
+    await Future.wait([fetchCitiesList(), fetchTrekList(), fetchStateList()]);
+  }
+
+  /// Instantly populates cities/treks from the on-device cache while the
+  /// live lists are still empty. Sets no loading flags, raises no errors,
+  /// shows no snackbars — the network fetch that follows replaces it.
+  Future<void> hydrateLocationCache() async {
+    if (citiesData.value.data?.isNotEmpty != true) {
+      final cached = await LocationCacheService.instance.loadCities();
+      if (cached != null && citiesData.value.data?.isNotEmpty != true) {
+        citiesData.value = cached;
+        logger.d('Cities hydrated from cache: ${cached.data?.length ?? 0}');
+      }
+    }
+    if (trekData.value.data?.isNotEmpty != true) {
+      final cached = await LocationCacheService.instance.loadTreks();
+      if (cached != null && trekData.value.data?.isNotEmpty != true) {
+        trekData.value = cached;
+        logger.d('Treks hydrated from cache: ${cached.data?.length ?? 0}');
+      }
+    }
   }
 
   void _initializeControllers() {}
@@ -588,11 +620,20 @@ class DashboardController extends GetxController {
       if (response != null) {
         citiesData.value = GetCities.fromJson(response);
         logger.d('Cities loaded: ${citiesData.value.data?.length ?? 0}');
+        // Fire-and-forget: this response becomes the next offline cache.
+        unawaited(LocationCacheService.instance.saveCities(citiesData.value));
       }
     } catch (e) {
       errorMessage.value = 'Failed to load cities: ${e.toString()}';
       logger.e(errorMessage.value);
-      CustomSnackBar.show(Get.context!, message: errorMessage.value);
+      // If a cached list is still on screen, the picker already surfaces
+      // an offline banner — don't also shout a snackbar at the user.
+      if (citiesData.value.data?.isNotEmpty != true) {
+        final ctx = Get.context;
+        if (ctx != null) {
+          CustomSnackBar.show(ctx, message: errorMessage.value);
+        }
+      }
     } finally {
       isLoadingCities.value = false;
     }
@@ -609,11 +650,17 @@ class DashboardController extends GetxController {
       if (response != null) {
         trekData.value = TrekModal.fromJson(response);
         logger.d('Treks loaded: ${trekData.value.data?.length ?? 0}');
+        unawaited(LocationCacheService.instance.saveTreks(trekData.value));
       }
     } catch (e) {
       errorMessage.value = 'Failed to load treks: ${e.toString()}';
       logger.e(errorMessage.value);
-      CustomSnackBar.show(Get.context!, message: errorMessage.value);
+      if (trekData.value.data?.isNotEmpty != true) {
+        final ctx = Get.context;
+        if (ctx != null) {
+          CustomSnackBar.show(ctx, message: errorMessage.value);
+        }
+      }
     } finally {
       isLoadingCities.value = false;
     }

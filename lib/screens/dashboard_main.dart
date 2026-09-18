@@ -29,6 +29,20 @@ class _DashboardMainState extends State<DashboardMain> {
   late final DashboardController _dashboardC;
   DateTime? _lastBackPressTime;
 
+  // ── Tab content transition ────────────────────────────────────────────
+  // Direction of the last tab change (+1 → moving right through the tabs,
+  // -1 → moving left). The body's incoming screen slides in from that
+  // side, matching the pill's travel direction; back-press therefore
+  // slides content home the way it came.
+  int _lastTab = 0;
+  int _tabDirection = 1;
+  Worker? _tabWorker;
+
+  // Out faster than in — the stagger that makes a crossfade read as
+  // "buttery" instead of "blurry".
+  static const Duration _kTabIn = Duration(milliseconds: 240);
+  static const Duration _kTabOut = Duration(milliseconds: 150);
+
   @override
   void initState() {
     super.initState();
@@ -36,6 +50,19 @@ class _DashboardMainState extends State<DashboardMain> {
     final trekC = Get.put(TrekController(), permanent: true);
     Get.put(CouponController(), permanent: true);
     final userC = Get.put(UserController(), permanent: true);
+
+    _lastTab = _dashboardC.selectedScreen.value.clamp(0, 2);
+
+    // Fires synchronously on every selectedScreen write, BEFORE the Obx
+    // rebuilds — so the transition direction is always correct, including
+    // back-press and any programmatic navigation.
+    _tabWorker = ever<int>(_dashboardC.selectedScreen, (i) {
+      if (i != _lastTab) {
+        _tabDirection = i > _lastTab ? 1 : -1;
+        _lastTab = i;
+      }
+    });
+
     // Everything network-bound is deferred to after the first frame so the
     // splash→dashboard reveal isn't competing with these calls.
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -50,7 +77,8 @@ class _DashboardMainState extends State<DashboardMain> {
 
   @override
   void dispose() {
-    RateTrekPopup.dismiss(); // ← FIXED: clean up overlay on dispose
+    _tabWorker?.dispose();
+    RateTrekPopup.dismiss(); // clean up overlay on dispose
     super.dispose();
   }
 
@@ -117,6 +145,38 @@ class _DashboardMainState extends State<DashboardMain> {
     }
   }
 
+  /// Directional fade+slide for the tab content. Incoming screen slides
+  /// in from the pill's travel direction and fades up; outgoing fades out
+  /// quickly with no slide (pure fade exits read cleaner than two things
+  /// moving at once). Both are render-object-cheap transforms — no
+  /// repaint of the screens' own content.
+  Widget _tabTransition(Widget child, Animation<double> animation) {
+    final isCurrent =
+        child.key == ValueKey<int>(_dashboardC.selectedScreen.value);
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeOutCubic,
+    );
+
+    if (isCurrent) {
+      return FadeTransition(
+        opacity: curved,
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: Offset(0.055 * _tabDirection, 0),
+            end: Offset.zero,
+          ).animate(curved),
+          child: child,
+        ),
+      );
+    }
+
+    return FadeTransition(
+      opacity: Tween<double>(begin: 1.0, end: 0.0).animate(curved),
+      child: child,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -127,16 +187,29 @@ class _DashboardMainState extends State<DashboardMain> {
       },
       child: Scaffold(
         backgroundColor: AppColors.bgCool,
-        body: Obx(() => _buildScreen(_dashboardC.selectedScreen.value)),
-        bottomNavigationBar: Obx(
-          () => CommonBottomNav(
-            selectedIndex: _dashboardC.selectedScreen.value,
-            selectedIconColor: CommonColors.appYellowColor,
-            unselectedIconColor: Colors.black,
-            onIndexChanged: (index) {
-              _dashboardC.selectedScreen.value = index;
-            },
-          ),
+        extendBody: true,
+        body: Obx(() {
+          final idx = _dashboardC.selectedScreen.value;
+          return AnimatedSwitcher(
+            duration: _kTabIn,
+            reverseDuration: _kTabOut,
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeOut,
+            transitionBuilder: _tabTransition,
+            child: KeyedSubtree(
+              key: ValueKey<int>(idx),
+              child: _buildScreen(idx),
+            ),
+          );
+        }),
+        // The nav needs no Obx: CommonBottomNav subscribes to
+        // selectedScreen itself (its worker drives the pill flight).
+        bottomNavigationBar: CommonBottomNav(
+          selectedIconColor: CommonColors.appYellowColor,
+          unselectedIconColor: Colors.black,
+          onIndexChanged: (index) {
+            _dashboardC.selectedScreen.value = index;
+          },
         ),
       ),
     );
