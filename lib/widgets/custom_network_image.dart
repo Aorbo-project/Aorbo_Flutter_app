@@ -38,6 +38,19 @@ class CustomNetworkImage extends StatelessWidget {
     this.shadowColor,
   });
 
+  // width/height are often double.infinity (e.g. inside an unbounded Row/
+  // Expanded) or occasionally NaN from an upstream layout calculation —
+  // CachedNetworkImage's memCacheWidth/Height require a finite int, and
+  // `.toInt()` on Infinity/NaN throws "Unsupported operation: Infinity or
+  // NaN toInt" (crashed 1168 times in one day on a single real device before
+  // this fix, 2026-09-18). Falling back to null just skips the memory-cache
+  // sizing hint for that one image — decodes at source resolution instead
+  // of crashing.
+  static int? _safeCacheDim(double? value) {
+    if (value == null || value.isNaN || value.isInfinite) return null;
+    return value.toInt();
+  }
+
   @override
   Widget build(BuildContext context) {
     // For transparent background images, return without shadow
@@ -76,8 +89,8 @@ class CustomNetworkImage extends StatelessWidget {
         // image in every list was decoding at full source resolution on
         // scroll — a major jank contributor. Matches the pattern already
         // used in _buildImageWithShadow below.
-        memCacheHeight: height?.toInt(),
-        memCacheWidth: width?.toInt(),
+        memCacheHeight: _safeCacheDim(height),
+        memCacheWidth: _safeCacheDim(width),
         // Smooth animations
         fadeInDuration: const Duration(milliseconds: 300),
         fadeOutDuration: const Duration(milliseconds: 200),
@@ -123,8 +136,8 @@ class CustomNetworkImage extends StatelessWidget {
         color: color,
         // Critical for transparent images - use contain to preserve alpha channel
         // Memory optimization — see _buildBaseImage's comment above.
-        memCacheHeight: height?.toInt(),
-        memCacheWidth: width?.toInt(),
+        memCacheHeight: _safeCacheDim(height),
+        memCacheWidth: _safeCacheDim(width),
         fadeInDuration: const Duration(milliseconds: 300),
         fadeOutDuration: const Duration(milliseconds: 200),
         // Don't apply any background color to transparent images
@@ -185,8 +198,8 @@ class CustomNetworkImage extends StatelessWidget {
                     cacheKey: '${imageUrl}_shadow',
                     width: width,
                     height: height,
-                    memCacheHeight: height?.toInt(),
-                    memCacheWidth: width?.toInt(),
+                    memCacheHeight: _safeCacheDim(height),
+                    memCacheWidth: _safeCacheDim(width),
                     // Don't show progress for shadow to avoid flicker
                     progressIndicatorBuilder: (context, url, progress) => const SizedBox.shrink(),
                     errorBuilder: (context, url, error) => const SizedBox.shrink(),
@@ -206,8 +219,8 @@ class CustomNetworkImage extends StatelessWidget {
             width: width,
             height: height,
             color: color,
-            memCacheHeight: height?.toInt(),
-            memCacheWidth: width?.toInt(),
+            memCacheHeight: _safeCacheDim(height),
+            memCacheWidth: _safeCacheDim(width),
             fadeInDuration: const Duration(milliseconds: 300),
             fadeOutDuration: const Duration(milliseconds: 200),
             progressIndicatorBuilder: (context, url, loadingProgress) => Center(
