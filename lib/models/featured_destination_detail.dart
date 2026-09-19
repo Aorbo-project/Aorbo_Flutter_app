@@ -57,8 +57,8 @@ class FeaturedDestinationDetail {
               .map(RelatedTrek.fromJson)
               .toList()
           : const [],
-      latitude: (json['latitude'] as num?)?.toDouble(),
-      longitude: (json['longitude'] as num?)?.toDouble(),
+      latitude: _asDouble(json['latitude']),
+      longitude: _asDouble(json['longitude']),
     );
   }
 
@@ -66,6 +66,11 @@ class FeaturedDestinationDetail {
     if (value is! List) return const [];
     return value.map((e) => e.toString()).where((e) => e.isNotEmpty).toList();
   }
+
+  // A bare `as num?` throws on anything else (a stray "" or a malformed
+  // string coordinate) — that used to fail parsing the ENTIRE response just
+  // because of one bad coordinate field, not just leave lat/long unset.
+  static double? _asDouble(dynamic value) => value is num ? value.toDouble() : null;
 }
 
 class RelatedTrek {

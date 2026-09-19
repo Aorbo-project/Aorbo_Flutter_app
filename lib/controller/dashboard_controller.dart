@@ -41,6 +41,19 @@ class DashboardController extends GetxController {
   // requests to the same host skip that handshake entirely.
   final Dio _featuredDestinationsDio = Dio();
 
+  /// Test-only access to the Featured Destinations Dio client, so tests can
+  /// attach a response interceptor exactly like the existing
+  /// `Repository().dio.interceptors` pattern (see trek_controller_test.dart)
+  /// instead of hitting the real aorbotreks.com API.
+  @visibleForTesting
+  Dio get featuredDestinationsDioForTesting => _featuredDestinationsDio;
+
+  /// Test-only access to the in-memory detail cache, to verify a cache hit
+  /// skips the network call entirely rather than just re-checking equality.
+  @visibleForTesting
+  Map<String, FeaturedDestinationDetail> get featuredDetailCacheForTesting =>
+      _featuredDetailCache;
+
   // In-memory cache of already-fetched trek details, keyed by slug — once a
   // user has opened a trek this session, reopening it (e.g. via back/
   // forward, or a related-trek link back to it) is instant, no network
@@ -455,7 +468,7 @@ class DashboardController extends GetxController {
       if (results != null) {
         final data = results
             .whereType<Map>()
-            .map((item) => _mapFeaturedDestination(item))
+            .map((item) => mapFeaturedDestinationJson(item))
             .toList();
         topTreksObserver.value = ApiResult.success(
           TopTreksDataResponseModel(success: true, data: data, count: data.length),
@@ -469,37 +482,28 @@ class DashboardController extends GetxController {
     }
   }
 
-  /// Maps one item of aorbotreks.com's `GET /api/treks/` response onto the
-  /// existing TopTreksData shape, so the Top Treks card UI doesn't change.
-  /// trekId is deliberately left null — these treks live in the website's
-  /// own DB, not ours, so their ids must never reach our favorite-toggle API
-  /// (an id collision there could silently favorite the wrong trek).
-  ///
-  /// Field slots reused from the card's existing layout (kicker sits above
-  /// the title, meta is the icon+text row, description is the last line):
-  ///   kicker = price ("₹15,000 ONWARDS")   meta = location
-  ///   title  = trek name                    description = duration · departure
-  TopTreksData _mapFeaturedDestination(Map item) {
-    final images = item['images'] as List?;
-    final imageUrl = (images != null && images.isNotEmpty)
-        ? (images.first as Map)['image_url'] as String?
-        : null;
-    final priceStart = item['price_start'];
-    final hasPrice = priceStart != null && priceStart.toString() != 'N/A';
-    final duration = item['duration_days'] ?? '3D/2N';
-    final departure = item['operating_days'] ?? 'THU, FRI, SAT';
-    final slug = item['slug'] ?? item['id'];
-    return TopTreksData(
-      title: item['name'] as String?,
-      kicker: hasPrice ? '₹$priceStart ONWARDS' : (item['state'] as String?),
-      meta: item['state'] as String?,
-      description: '$duration · $departure',
-      imagePath: imageUrl ?? '',
-      badgeType: 'featured',
-      isFavorite: false,
-      trekId: null,
-      detailUrl: slug == null ? null : 'https://www.aorbotreks.com/treks/$slug',
-    );
+  /// Free-text search across Featured Destinations — same aorbotreks.com
+  /// endpoint as fetchTopTreks(), just with `?q=` (the Django view already
+  /// filters by trek name/state/tags for this param — see api_featured_treks
+  /// in the website's treks_app/views.py). Returns an empty list on any
+  /// failure rather than throwing, since a search box should degrade to "no
+  /// results" quietly, not crash the screen it lives on.
+  Future<List<TopTreksData>> searchFeaturedDestinations(String query) async {
+    try {
+      final response = await _featuredDestinationsDio
+          .get(
+            NetworkUrl.featuredDestinationsUrl,
+            queryParameters: {'q': query},
+          )
+          .timeout(const Duration(seconds: 45));
+      final body = response.data;
+      final results = body is Map ? body['results'] as List? : null;
+      if (results == null) return [];
+      return results.whereType<Map>().map(mapFeaturedDestinationJson).toList();
+    } catch (e) {
+      logger.e('Error searching featured destinations: $e');
+      return [];
+    }
   }
 
   /// One-shot detail fetch for the native Featured Destination screen — not
@@ -1244,4 +1248,43 @@ class DashboardController extends GetxController {
     }
     return null;
   }
+}
+
+/// Maps one item of aorbotreks.com's `GET /api/treks/` response onto the
+/// existing TopTreksData shape, so the Top Treks card UI doesn't change.
+/// trekId is deliberately left null — these treks live in the website's
+/// own DB, not ours, so their ids must never reach our favorite-toggle API
+/// (an id collision there could silently favorite the wrong trek).
+///
+/// Field slots reused from the card's existing layout (kicker sits above
+/// the title, meta is the icon+text row, description is the last line):
+///   kicker = price ("₹15,000 ONWARDS")   meta = location
+///   title  = trek name                    description = duration · departure
+///
+/// Top-level (not a DashboardController method) and `@visibleForTesting`
+/// since it's pure data transformation with no instance state — testing it
+/// directly covers every field-mapping edge case without needing a
+/// DashboardController or any network mocking.
+@visibleForTesting
+TopTreksData mapFeaturedDestinationJson(Map item) {
+  final images = item['images'] as List?;
+  final imageUrl = (images != null && images.isNotEmpty)
+      ? (images.first as Map)['image_url'] as String?
+      : null;
+  final priceStart = item['price_start'];
+  final hasPrice = priceStart != null && priceStart.toString() != 'N/A';
+  final duration = item['duration_days'] ?? '3D/2N';
+  final departure = item['operating_days'] ?? 'THU, FRI, SAT';
+  final slug = item['slug'] ?? item['id'];
+  return TopTreksData(
+    title: item['name'] as String?,
+    kicker: hasPrice ? '₹$priceStart ONWARDS' : (item['state'] as String?),
+    meta: item['state'] as String?,
+    description: '$duration · $departure',
+    imagePath: imageUrl ?? '',
+    badgeType: 'featured',
+    isFavorite: false,
+    trekId: null,
+    detailUrl: slug == null ? null : 'https://www.aorbotreks.com/treks/$slug',
+  );
 }

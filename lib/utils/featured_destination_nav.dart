@@ -13,14 +13,8 @@ import 'package:get/get.dart';
 /// somehow has no usable detailUrl — callers pick their own fallback since
 /// "go to Popular Treks" doesn't make sense from Popular Treks itself.
 void openFeaturedDestination(TopTreksData trekData, {VoidCallback? onMissingSlug}) {
-  final url = trekData.detailUrl ?? '';
-  final slug = url.isEmpty
-      ? null
-      : Uri.tryParse(url)?.pathSegments.lastWhere(
-          (s) => s.isNotEmpty,
-          orElse: () => '',
-        );
-  if (slug != null && slug.isNotEmpty) {
+  final slug = extractFeaturedDestinationSlug(trekData.detailUrl);
+  if (slug != null) {
     Get.toNamed(
       '/featured-destination',
       arguments: {
@@ -32,4 +26,18 @@ void openFeaturedDestination(TopTreksData trekData, {VoidCallback? onMissingSlug
   } else {
     onMissingSlug?.call();
   }
+}
+
+/// Pulled out of [openFeaturedDestination] so the URL-parsing edge cases
+/// (empty/null url, no path segments, trailing slash) are unit-testable
+/// without needing GetX navigation set up.
+@visibleForTesting
+String? extractFeaturedDestinationSlug(String? detailUrl) {
+  final url = detailUrl ?? '';
+  if (url.isEmpty) return null;
+  final slug = Uri.tryParse(url)?.pathSegments.lastWhere(
+        (s) => s.isNotEmpty,
+        orElse: () => '',
+      );
+  return (slug != null && slug.isNotEmpty) ? slug : null;
 }
