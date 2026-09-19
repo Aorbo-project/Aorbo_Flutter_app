@@ -25,6 +25,10 @@ class SpUtil {
   // (flaky network, brief backend outage) gets retried on the next launch
   // instead of leaving that customer without push forever.
   static const String fcmTokenSynced   = 'fcm_token_synced';
+  // latest_version last shown in the soft "update available" nudge — lets
+  // the splash screen show it at most once per version instead of nagging
+  // on every launch until the user actually updates.
+  static const String dismissedUpdateVersion = 'dismissed_update_version';
 
   static SpUtil? _instance;
 

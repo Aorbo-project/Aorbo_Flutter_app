@@ -18,6 +18,7 @@ import 'package:arobo_app/utils/native_feed_ad_card.dart';
 import 'package:arobo_app/utils/sponsored_injection.dart';
 import 'package:arobo_app/models/sponsored_slot_data.dart';
 import 'package:arobo_app/models/top_treks_data.dart';
+import 'package:arobo_app/utils/featured_destination_nav.dart';
 import 'package:arobo_app/utils/seasonal_forecast_mock_data.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:arobo_app/utils/seasonal_gradient_card.dart';
@@ -2234,8 +2235,11 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                           right: ScreenConstant.size6,
                                         ),
                                         child: TopTreksCard(
-                                          onTap: () =>
-                                              Get.toNamed('/popular-treks'),
+                                          onTap: () => openFeaturedDestination(
+                                            trekData,
+                                            onMissingSlug: () =>
+                                                Get.toNamed('/popular-treks'),
+                                          ),
                                           imagePath: getFullImageUrl(
                                             trekData.imagePath,
                                           ),

@@ -8,7 +8,8 @@
 //
 // History: the first run flagged ~11 screens with pre-existing overflow.
 // All the consistent ones are now fixed (MyAccount, TravellerInformation,
-// ReferAndEarn, ChatScreen, ClaimsScreen, IssueReportScreen, SafetyScreen).
+// ReferAndEarn, ChatScreen, ClaimsScreen, SafetyScreen).
+// IssueReportScreen was removed 2026-09-15 (screen deleted, not just a fix).
 // PaymentScreen was dropped — orphaned dead code (live payment flow is
 // traveller_information -> PaymentProcessingScreen -> Razorpay native UI).
 // `_knownOverflowing` now holds only genuinely-deferred edge cases.
@@ -21,7 +22,6 @@ import 'package:arobo_app/screens/claims_screen.dart';
 import 'package:arobo_app/screens/contact_support_screen.dart';
 import 'package:arobo_app/screens/coupon_code_screen.dart';
 import 'package:arobo_app/screens/help_screen.dart';
-import 'package:arobo_app/screens/issue_report_screen.dart';
 import 'package:arobo_app/screens/know_more_screen.dart';
 import 'package:arobo_app/screens/logout_screen.dart';
 import 'package:arobo_app/screens/my_account_screen.dart';
@@ -72,7 +72,6 @@ void main() {
     'SafetyScreen': () => const SafetyScreen(),
     'NotificationScreen': () => const NotificationScreen(),
     'CouponCodeScreen': () => const CouponCodeScreen(),
-    'IssueReportScreen': () => const IssueReportScreen(),
     'RateReviewScreen': () => const RateReviewScreen(),
     'PaymentSuccessPage': () => const PaymentSuccessPage(),
     // PaymentScreen (/payment) is orphaned dead code — the live flow is

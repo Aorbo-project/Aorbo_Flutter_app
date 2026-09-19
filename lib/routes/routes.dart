@@ -1,5 +1,4 @@
 import 'package:arobo_app/screens/dashboard_main.dart';
-import 'package:arobo_app/screens/issue_report_screen.dart';
 import 'package:arobo_app/screens/login_screen.dart';
 import 'package:arobo_app/screens/notifications_screen.dart';
 import 'package:arobo_app/screens/otp_screen.dart';
@@ -18,6 +17,7 @@ import 'package:arobo_app/screens/my_account_screen.dart';
 import 'package:arobo_app/screens/bookings_history_screen.dart';
 import 'package:arobo_app/screens/safety_screen.dart';
 import 'package:arobo_app/screens/discount_card_details_screen.dart';
+import 'package:arobo_app/screens/featured_destination_detail_screen.dart';
 import 'package:arobo_app/screens/know_more_details_screen.dart';
 import 'package:arobo_app/screens/about_us_screen.dart';
 import 'package:arobo_app/screens/know_more_screen.dart';
@@ -82,6 +82,17 @@ final routes = [
       return KnowMoreDetailsScreen(knowMoreData: args['knowMoreData']);
     },
   ),
+  GetPage(
+    name: '/featured-destination',
+    page: () {
+      final args = Get.arguments as Map<String, dynamic>;
+      return FeaturedDestinationDetailScreen(
+        slug: args['slug'] as String,
+        previewTitle: args['title'] as String?,
+        previewImage: args['imagePath'] as String?,
+      );
+    },
+  ),
   GetPage(name: '/about-us', page: () => const AboutUsScreen()),
   GetPage(name: '/help', page: () => const HelpScreen()),
 
@@ -110,7 +121,6 @@ final routes = [
   GetPage(name: '/payment', page: () => const PaymentScreen()),
   GetPage(name: '/payment-success', page: () => const PaymentSuccessPage()),
   GetPage(name: '/rate-review', page: () => const RateReviewScreen()),
-  GetPage(name: '/issue-report', page: () => const IssueReportScreen()),
   GetPage(name: '/my-tickets', page: () => const MyTicketsScreen()),
 
 ];

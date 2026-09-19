@@ -187,6 +187,15 @@ class _HelpScreenState extends State<HelpScreen>
                     SizedBox(height: 3.h),
 
                     // ── Still need help card ──────────────
+                    // BUGFIX (found via live device QA, 2026-09-15): this
+                    // widget was fully built (_buildStillNeedHelpCard, the
+                    // "Chat now" -> /chatboat entry point) but never actually
+                    // placed here — only this comment marker was, so the
+                    // Help screen had no reachable way into chat at all
+                    // (the only other entry, the per-FAQ "Contact us"
+                    // button, is conditional on a thumbs-down + a backend
+                    // chat_support flag, and skips straight to live chat).
+                    _buildStillNeedHelpCard(),
                     SizedBox(height: 5.h),
                   ],
                 ),
@@ -265,7 +274,7 @@ class _HelpScreenState extends State<HelpScreen>
                 ),
                 SizedBox(height: 0.4.h),
                 Text(
-                  'Browse our FAQs or chat with our support team.',
+                  'Browse our FAQs or reach our support team by email.',
                   style: AppType.style(FontSize.s9, color: _C.inkMid, height: 1.4),
                 ),
               ],
@@ -457,7 +466,11 @@ class _HelpScreenState extends State<HelpScreen>
                       textColor: CommonColors.whiteColor,
                       fontFamily: 'Poppins',
                       text: 'Contact us',
-                      onPressed: () => Get.toNamed('/chatboat', arguments: {'mode': 'liveChat'}),
+                      // Live agent chat was removed 2026-09-15 (no team to
+                      // staff it) — {'mode': 'liveChat'} no longer does
+                      // anything in ChatScreen, so this just opens the
+                      // normal FAQ-bot flow now.
+                      onPressed: () => Get.toNamed('/chatboat'),
                       gradient: _C.ctaGradient,
                     ),
                   ],
@@ -556,7 +569,9 @@ class _HelpScreenState extends State<HelpScreen>
                 ),
                 SizedBox(height: 0.4.h),
                 Text(
-                  'Our support team is available 24/7',
+                  // Was "available 24/7" — false; there's no live team,
+                  // support runs over email (mail support).
+                  'Reach out anytime, we\'ll get back to you by email',
                   style: AppType.style(FontSize.s9, color: Colors.white.withValues(alpha: 0.8)),
                 ),
               ],

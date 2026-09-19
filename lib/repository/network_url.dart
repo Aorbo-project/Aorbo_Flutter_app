@@ -47,6 +47,13 @@ class NetworkUrl {
   // Dashboard
   static String fetchWhatsNew = 'discovery/whats-new';
   static String fetchTopTreks = 'discovery/top-treks';
+  // Featured Destinations, sourced live from the aorbotreks.com website's own
+  // Django API — a different backend from ours, called with its own bare Dio
+  // (no auth header, no relative baseUrl) since it's a separate, public origin.
+  static const String featuredDestinationsUrl =
+      'https://aorbotreks.com/api/treks/';
+  static String featuredDestinationDetailUrl(String slug) =>
+      'https://aorbotreks.com/api/treks/$slug/';
   static String fetchSeasonalForcasts = 'discovery/seasonal-forecast';
   static String fetchSeasonalPicks = 'discovery/seasonal-picks';
   static String topTrekFavorite(int id) => 'discovery/top-treks/$id/favorite';

@@ -1,6 +1,7 @@
 import 'package:arobo_app/controller/auth_controller.dart';
 import 'package:arobo_app/controller/otp_controller.dart';
 import 'package:arobo_app/main.dart';
+import 'package:arobo_app/models/auth/validate_version_model.dart';
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/common_images.dart';
 import 'package:arobo_app/utils/common_logics.dart';
@@ -8,6 +9,7 @@ import 'package:arobo_app/utils/custom_snackbar.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:arobo_app/utils/phone_input_formatter.dart';
 import 'package:arobo_app/screens/update_version_screen.dart';
+import 'package:arobo_app/utils/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
@@ -15,7 +17,9 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:pinput/pinput.dart';
 import 'dart:async';
+import 'dart:io';
 import 'package:sizer/sizer.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:arobo_app/theme/app_typography.dart';
 import 'package:arobo_app/widgets/otp_success_overlay.dart';
 import 'package:arobo_app/widgets/dissolve_to_dashboard.dart';
@@ -507,6 +511,8 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
       return;
     }
 
+    _maybeNotifySoftUpdate(validateResponse);
+
     if (CommonLogics.checkUserLogin()) {
       // Confirm the cached session is still accepted by the server
       // BEFORE committing to /dashboard — see validateSession's doc
@@ -531,6 +537,50 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
     } else {
       _startFormAnimation(); // Defined below, handles form slide up
     }
+  }
+
+  // Non-blocking "a newer version exists" nudge — update_required above
+  // already handles the hard-block case; this covers update_available-only,
+  // shown at most once per latest_version (via SpUtil.dismissedUpdateVersion)
+  // so it doesn't re-nag on every launch until the user actually updates.
+  void _maybeNotifySoftUpdate(ValidateDataModel? data) {
+    if (data?.updateAvailable != true) return;
+    final latest = data?.latestVersion;
+    if (latest == null || latest.isEmpty) return;
+    if (sp?.getString(SpUtil.dismissedUpdateVersion) == latest) return;
+    sp?.putString(SpUtil.dismissedUpdateVersion, latest);
+
+    Get.snackbar(
+      'Update available',
+      'Version $latest is ready — tap Update to get it from the store.',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: const Color(0xFF1A1A1A),
+      colorText: Colors.white,
+      margin: EdgeInsets.all(3.w),
+      borderRadius: 14,
+      duration: const Duration(seconds: 6),
+      mainButton: TextButton(
+        onPressed: () {
+          Get.closeCurrentSnackbar();
+          _launchStoreForUpdate();
+        },
+        child: const Text(
+          'UPDATE',
+          style: TextStyle(color: Color(0xFFFFC400), fontWeight: FontWeight.w800),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _launchStoreForUpdate() async {
+    final url = Uri.parse(
+      Platform.isAndroid
+          ? 'https://play.google.com/store/apps/details?id=com.aorbotreks.app'
+          : 'https://apps.apple.com/us/app/aorbo/id6747623495',
+    );
+    try {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } catch (_) {}
   }
 
   // Freezes the splash on a static frame, then hands off to /dashboard via

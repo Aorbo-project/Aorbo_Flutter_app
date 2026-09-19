@@ -1,5 +1,6 @@
 import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/utils/common_colors.dart';
+import 'package:arobo_app/utils/featured_destination_nav.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:arobo_app/utils/top_treks_card.dart';
 import 'package:flutter/material.dart';
@@ -106,6 +107,7 @@ class _PopularTreksScreenState extends State<PopularTreksScreen> {
             return LayoutBuilder(
               builder: (context, constraints) {
                 return TopTreksCard(
+                  onTap: () => openFeaturedDestination(trekData),
                   imagePath: _getFullImageUrl(trekData.imagePath),
                   title: trekData.title ?? "",
                   description: trekData.description ?? "",

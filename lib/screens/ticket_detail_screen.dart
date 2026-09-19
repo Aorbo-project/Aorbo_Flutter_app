@@ -172,7 +172,10 @@ class _MessageBubble extends StatelessWidget {
                   formatDate(message.createdAt),
                   style: AppType.style(FontSize.s7, color: AppColors.inkLight),
                 ),
-                if (message.status == 'bounced') ...[
+                // 'failed' (never queued) and 'bounced' (a future inbound
+                // bounce webhook, not built yet) both mean the same thing to
+                // the customer: this reply may not have reached your inbox.
+                if (message.status == 'bounced' || message.status == 'failed') ...[
                   SizedBox(width: 1.5.w),
                   Icon(Icons.error_outline_rounded, size: 2.8.w, color: AppColors.danger),
                   SizedBox(width: 0.5.w),

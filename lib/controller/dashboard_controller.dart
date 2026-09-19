@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:arobo_app/models/featured_destination_detail.dart';
 import 'package:arobo_app/models/know_more_data.dart';
 import 'package:arobo_app/models/seasonal_forecast_data.dart';
 import 'package:arobo_app/models/seasonal_picks_data.dart';
@@ -31,6 +32,21 @@ import '../services/location_cache_service.dart';
 
 class DashboardController extends GetxController {
   final Repository _repository = Repository();
+
+  // One shared client for the aorbotreks.com website's API (Featured
+  // Destinations), reused across every list + detail call — a fresh Dio()
+  // per call was paying a full TLS handshake (~450ms of the ~650ms a detail
+  // fetch took) every single time. Dio/HttpClient keep the underlying
+  // connection alive by default, so reusing this instance lets repeat
+  // requests to the same host skip that handshake entirely.
+  final Dio _featuredDestinationsDio = Dio();
+
+  // In-memory cache of already-fetched trek details, keyed by slug — once a
+  // user has opened a trek this session, reopening it (e.g. via back/
+  // forward, or a related-trek link back to it) is instant, no network
+  // round trip at all. Intentionally unbounded/session-lifetime: this is a
+  // handful of small JSON objects, not worth an eviction policy.
+  final Map<String, FeaturedDestinationDetail> _featuredDetailCache = {};
 
   VoidCallback? onDateAutoSelected;
 
@@ -427,21 +443,87 @@ class DashboardController extends GetxController {
   Future<void> fetchTopTreks() async {
     try {
       topTreksObserver.value = const ApiResult.loading("");
-      final response = await _repository.getApiCall(
-        url: NetworkUrl.fetchTopTreks,
-      );
-      if (response != null) {
-        final responseData = TopTreksDataResponseModel.fromJson(response);
-        if (responseData.success == true) {
-          topTreksObserver.value = ApiResult.success(responseData);
-          return;
-        }
-        throw responseData.message ?? "Failed to fetch top treks";
+      // Bare/shared Dio: no Authorization header, no relative baseUrl — this
+      // hits a separate public origin (the aorbotreks.com website's own
+      // backend), not ours, so our app's bearer token has no business being
+      // sent there. Shared instance (see field comment) for connection reuse.
+      final response = await _featuredDestinationsDio
+          .get(NetworkUrl.featuredDestinationsUrl)
+          .timeout(const Duration(seconds: 45));
+      final body = response.data;
+      final results = body is Map ? body['results'] as List? : null;
+      if (results != null) {
+        final data = results
+            .whereType<Map>()
+            .map((item) => _mapFeaturedDestination(item))
+            .toList();
+        topTreksObserver.value = ApiResult.success(
+          TopTreksDataResponseModel(success: true, data: data, count: data.length),
+        );
+        return;
       }
       throw "Response Body Null";
     } catch (e) {
       logger.e('Error fetching top treks: $e');
       topTreksObserver.value = ApiResult.error(e.toString());
+    }
+  }
+
+  /// Maps one item of aorbotreks.com's `GET /api/treks/` response onto the
+  /// existing TopTreksData shape, so the Top Treks card UI doesn't change.
+  /// trekId is deliberately left null — these treks live in the website's
+  /// own DB, not ours, so their ids must never reach our favorite-toggle API
+  /// (an id collision there could silently favorite the wrong trek).
+  ///
+  /// Field slots reused from the card's existing layout (kicker sits above
+  /// the title, meta is the icon+text row, description is the last line):
+  ///   kicker = price ("₹15,000 ONWARDS")   meta = location
+  ///   title  = trek name                    description = duration · departure
+  TopTreksData _mapFeaturedDestination(Map item) {
+    final images = item['images'] as List?;
+    final imageUrl = (images != null && images.isNotEmpty)
+        ? (images.first as Map)['image_url'] as String?
+        : null;
+    final priceStart = item['price_start'];
+    final hasPrice = priceStart != null && priceStart.toString() != 'N/A';
+    final duration = item['duration_days'] ?? '3D/2N';
+    final departure = item['operating_days'] ?? 'THU, FRI, SAT';
+    final slug = item['slug'] ?? item['id'];
+    return TopTreksData(
+      title: item['name'] as String?,
+      kicker: hasPrice ? '₹$priceStart ONWARDS' : (item['state'] as String?),
+      meta: item['state'] as String?,
+      description: '$duration · $departure',
+      imagePath: imageUrl ?? '',
+      badgeType: 'featured',
+      isFavorite: false,
+      trekId: null,
+      detailUrl: slug == null ? null : 'https://www.aorbotreks.com/treks/$slug',
+    );
+  }
+
+  /// One-shot detail fetch for the native Featured Destination screen — not
+  /// stored in an Rx observer since it's owned by that single screen, not
+  /// persistent dashboard state. Same bare-Dio reasoning as fetchTopTreks():
+  /// external origin, no app bearer token sent, no relative baseUrl.
+  Future<FeaturedDestinationDetail?> fetchFeaturedDestinationDetail(
+    String slug,
+  ) async {
+    final cached = _featuredDetailCache[slug];
+    if (cached != null) return cached;
+    try {
+      final response = await _featuredDestinationsDio
+          .get(NetworkUrl.featuredDestinationDetailUrl(slug))
+          .timeout(const Duration(seconds: 45));
+      if (response.data is Map) {
+        final detail = FeaturedDestinationDetail.fromJson(response.data as Map);
+        _featuredDetailCache[slug] = detail;
+        return detail;
+      }
+      return null;
+    } catch (e) {
+      logger.e('Error fetching featured destination detail: $e');
+      return null;
     }
   }
 
