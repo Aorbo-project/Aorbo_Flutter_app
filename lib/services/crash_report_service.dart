@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -17,6 +18,16 @@ import 'package:arobo_app/utils/auth_utils.dart';
 class CrashReportService {
   CrashReportService._();
   static final CrashReportService instance = CrashReportService._();
+
+  /// One random id per app launch, so every crash from the same run can be
+  /// grouped in Admin > Crash Analytics (it was always NULL before — a
+  /// rebuild-loop's 1000+ reports were indistinguishable from 1000 sessions).
+  /// Random, not derived from any user/device identifier.
+  static final String _sessionId = () {
+    final r = Random.secure();
+    final rand = List.generate(8, (_) => r.nextInt(36).toRadixString(36)).join();
+    return '${DateTime.now().millisecondsSinceEpoch.toRadixString(36)}-$rand';
+  }();
 
   final Dio _dio = Dio(
     BaseOptions(
@@ -37,6 +48,7 @@ class CrashReportService {
     try {
       final appVersion = await AuthUtils.getAppVersion();
       final deviceModel = await AuthUtils.getDeviceModel();
+      final osVersion = await AuthUtils.getOsVersion();
 
       await _dio.post(
         'crash-report',
@@ -45,8 +57,11 @@ class CrashReportService {
           'stack_trace': stack?.toString(),
           'severity': fatal ? 'fatal' : 'error',
           'screen_name': screenName ?? 'mobile_app',
+          'session_id': _sessionId,
           'device_info': {
             'os': Platform.isIOS ? 'ios' : 'android',
+            // Backend stores this as device_info.version (was always null).
+            'version': osVersion,
             'device_model': deviceModel,
             'app_version': appVersion,
           },
