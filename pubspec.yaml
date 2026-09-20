@@ -83,6 +83,11 @@ flutter:
     - assets/images/icons/icons/Calendar/
     - assets/images/icons/icons/User/
     - assets/animations/
+    # google_fonts finds these by file name (<Family>-<Variant>.ttf) BEFORE trying the
+    # network. Bundled because the runtime download failed on real phones on weak
+    # connections ("Failed to load font ... fonts.gstatic.com", OnePlus 8 Pro / vivo).
+    # Files are byte-identical to what the package downloads (sha256 verified).
+    - assets/google_fonts/
 
   fonts:
     - family: Poppins
