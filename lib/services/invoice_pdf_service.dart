@@ -208,10 +208,15 @@ class InvoicePdfService {
       author: 'Aorbo Treks',
     );
 
-    final font = await PdfGoogleFonts.poppinsRegular();
-    final fontBold = await PdfGoogleFonts.poppinsBold();
-    final fontSemi = await PdfGoogleFonts.poppinsSemiBold();
-    final fontItalic = await PdfGoogleFonts.poppinsItalic();
+    // Bundled in assets/fonts/poppins/ — the printing package's Google-font loader fetched these four
+    // files from fonts.gstatic.com on EVERY invoice, so a weak/offline connection made
+    // invoice generation fail (same failure class as the google_fonts crash on real phones).
+    Future<pw.Font> bundledPoppins(String file) async =>
+        pw.Font.ttf(await rootBundle.load('assets/fonts/poppins/$file'));
+    final font = await bundledPoppins('Poppins-Regular.ttf');
+    final fontBold = await bundledPoppins('Poppins-Bold.ttf');
+    final fontSemi = await bundledPoppins('Poppins-SemiBold.ttf');
+    final fontItalic = await bundledPoppins('Poppins-Italic.ttf');
 
     pw.MemoryImage? vendorLogo;
     pw.MemoryImage? aorboLogo;

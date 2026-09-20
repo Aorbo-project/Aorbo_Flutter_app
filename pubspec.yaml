@@ -102,6 +102,9 @@ flutter:
           weight: 600
         - asset: assets/fonts/poppins/Poppins-Bold.ttf
           weight: 700
+        - asset: assets/fonts/poppins/Poppins-Italic.ttf
+          weight: 400
+          style: italic
 
 flutter_launcher_icons:
   android: true
