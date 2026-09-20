@@ -190,13 +190,11 @@ class NetworkUrl {
   static String ticketMessages(dynamic ticketId) => 'issues/$ticketId/messages';
   //#endregion
 
-  //#region Chat
+  //#region Realtime
+  // Live-agent chat (customer/chats endpoints) was removed 2026-09-20 — the
+  // backend now answers 410 there. Only the socket base URL remains, for the
+  // refund/booking event stream in SocketService.
   static String socketUrl = AppEnv().socketUrl;
-
-  static const String createOrGetChat = 'customer/chats';
-  static String getChatMessages(int chatId) =>
-      'customer/chats/$chatId/messages';
-  static String markMessagesAsRead(int chatId) => 'customer/chats/$chatId/read';
   //#endregion
 
   //#region Referral

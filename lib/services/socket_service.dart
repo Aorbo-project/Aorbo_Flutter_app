@@ -1,8 +1,19 @@
 import 'dart:developer';
-import 'package:arobo_app/models/chat/message_model.dart';
 import 'package:arobo_app/repository/network_url.dart';
+import 'package:arobo_app/repository/repository.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 
+/// Customer real-time event stream (refund / booking / TBR / payment / FAQ).
+///
+/// Live-agent chat was removed 2026-09-20 (its controller was this class's only
+/// caller, and the backend chat handlers are gone), so the chat send/typing/
+/// read methods and listeners are gone with it.
+///
+/// The backend's /customer namespace now REQUIRES a valid customer JWT at
+/// connect and derives the room from the token — an anonymous or id-claiming
+/// client used to be able to subscribe to any customer's events. The token is
+/// therefore sent in the handshake `auth`. Access tokens are short-lived
+/// (30 min), so callers should (re)connect after a token refresh.
 class SocketService {
   // Singleton pattern
   static final SocketService _instance = SocketService._internal();
@@ -26,6 +37,7 @@ class SocketService {
         '${NetworkUrl.socketUrl}/customer',
         io.OptionBuilder()
             .setTransports(['websocket', 'polling'])
+            .setAuth({'token': Repository.token})
             .enableReconnection()
             .setReconnectionDelay(1000)
             .setReconnectionAttempts(5)
@@ -34,7 +46,8 @@ class SocketService {
 
       _socket!.onConnect((_) {
         log('✅ Socket connected');
-        // Join as customer
+        // Legacy handshake — the server ignores the claimed id and acks with
+        // the identity from the token.
         _socket!.emit('user:join', {
           'userType': 'customer',
           'userId': customerId,
@@ -56,41 +69,7 @@ class SocketService {
         _notifyListeners('error', error);
       });
 
-      // Listen for incoming messages
-      _socket!.on('message:received', (data) {
-        log('📩 Message received: $data');
-        try {
-          final message = MessageModel.fromJson(data);
-          _notifyListeners('message:received', message);
-        } catch (e) {
-          log('Error parsing message: $e');
-        }
-      });
-
-      // Listen for messages marked as read
-      _socket!.on('messages:marked_read', (data) {
-        log('✅ Messages marked as read: $data');
-        _notifyListeners('messages:marked_read', data);
-      });
-
-      // Listen for typing indicators
-      _socket!.on('user:typing', (data) {
-        log('⌨️ User typing: $data');
-        _notifyListeners('user:typing', data);
-      });
-
-      _socket!.on('user:stop_typing', (data) {
-        log('⌨️ User stopped typing: $data');
-        _notifyListeners('user:stop_typing', data);
-      });
-
-      // Listen for chat joined
-      _socket!.on('chat:joined', (data) {
-        log('✅ Chat joined: $data');
-        _notifyListeners('chat:joined', data);
-      });
-
-      // FAQ lifecycle updates — refresh FAQ/chat content when admin changes FAQs.
+      // FAQ lifecycle updates — refresh FAQ content when admin changes FAQs.
       _socket!.on('faq:updated', (data) {
         log('📢 FAQ updated: $data');
         _notifyListeners('faq:updated', data);
@@ -136,77 +115,6 @@ class SocketService {
       log('Error connecting to socket: $e');
       rethrow;
     }
-  }
-
-  /// Join a specific chat room
-  void joinChat({required int chatId}) {
-    if (_socket == null || !_socket!.connected) {
-      log('⚠️ Socket not connected. Cannot join chat.');
-      return;
-    }
-
-    _socket!.emit('chat:join', {
-      'chatId': chatId,
-    });
-    log('🔗 Joining chat: $chatId');
-  }
-
-  /// Send a message
-  void sendMessage({
-    required int chatId,
-    required String message,
-    required int senderId,
-  }) {
-    if (_socket == null || !_socket!.connected) {
-      log('⚠️ Socket not connected. Cannot send message.');
-      return;
-    }
-
-    _socket!.emit('message:send', {
-      'chatId': chatId,
-      'message': message,
-      'senderType': 'customer',
-      'senderId': senderId,
-    });
-    log('📤 Message sent: $message');
-  }
-
-  /// Mark messages as read
-  void markAsRead({required int chatId}) {
-    if (_socket == null || !_socket!.connected) {
-      log('⚠️ Socket not connected. Cannot mark as read.');
-      return;
-    }
-
-    _socket!.emit('messages:mark_read', {
-      'chatId': chatId,
-      'userType': 'customer',
-    });
-    log('✅ Marking messages as read for chat: $chatId');
-  }
-
-  /// Start typing indicator
-  void startTyping({
-    required int chatId,
-    required String userName,
-  }) {
-    if (_socket == null || !_socket!.connected) return;
-
-    _socket!.emit('user:typing', {
-      'chatId': chatId,
-      'userType': 'customer',
-      'userName': userName,
-    });
-  }
-
-  /// Stop typing indicator
-  void stopTyping({required int chatId}) {
-    if (_socket == null || !_socket!.connected) return;
-
-    _socket!.emit('user:stop_typing', {
-      'chatId': chatId,
-      'userType': 'customer',
-    });
   }
 
   /// Add event listener
