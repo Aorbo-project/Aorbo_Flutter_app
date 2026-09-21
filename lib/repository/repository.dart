@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:arobo_app/main.dart';
 import 'package:arobo_app/widgets/logger.dart';
+import 'package:arobo_app/repository/get_retry_interceptor.dart';
 import 'package:arobo_app/repository/network_url.dart';
 import 'package:arobo_app/utils/custom_alert_dialog.dart';
 import 'package:arobo_app/utils/shared_preferences.dart';
@@ -98,6 +99,12 @@ class Repository {
   }
 
   initRepo() async {
+    // First in the chain: transient GET failures are retried before the logging /
+    // Crashlytics / session handling below ever sees them (only the final error
+    // reaches it). See GetRetryInterceptor for scope.
+    if (!dio.interceptors.any((i) => i is GetRetryInterceptor)) {
+      dio.interceptors.add(GetRetryInterceptor(dio));
+    }
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
