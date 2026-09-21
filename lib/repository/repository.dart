@@ -264,7 +264,7 @@ class Repository {
         final opts = await _authOptions();
         Response response = await dio
             .get(url, options: opts)
-            .timeout(const Duration(seconds: 45));
+            .timeout(const Duration(seconds: 20));
         return response.data;
       } else {
         showToastMessage(msg: "Please check your internet connection and try.");
