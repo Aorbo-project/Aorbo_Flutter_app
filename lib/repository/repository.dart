@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:arobo_app/main.dart';
 import 'package:arobo_app/widgets/logger.dart';
 import 'package:arobo_app/repository/get_retry_interceptor.dart';
+import 'package:arobo_app/repository/hedging_http_client_adapter.dart';
 import 'package:arobo_app/repository/network_url.dart';
 import 'package:arobo_app/utils/custom_alert_dialog.dart';
 import 'package:arobo_app/utils/shared_preferences.dart';
@@ -104,6 +105,11 @@ class Repository {
     // reaches it). See GetRetryInterceptor for scope.
     if (!dio.interceptors.any((i) => i is GetRetryInterceptor)) {
       dio.interceptors.add(GetRetryInterceptor(dio));
+    }
+    // Transport layer: a GET still silent after ~2 s gets ONE duplicate on a
+    // fresh connection; the first answer wins (see HedgingHttpClientAdapter).
+    if (dio.httpClientAdapter is! HedgingHttpClientAdapter) {
+      dio.httpClientAdapter = HedgingHttpClientAdapter(dio.httpClientAdapter);
     }
     dio.interceptors.add(
       InterceptorsWrapper(

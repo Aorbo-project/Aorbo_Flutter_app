@@ -135,14 +135,14 @@ void main() {
       expect(_adapter(dio).calls, 1);
     });
 
-    test('GET gets fast-fail timeouts (8s connect / 12s receive); POST keeps base',
+    test('GET gets fast-fail timeouts (5s connect / 8s receive); POST keeps base',
         () async {
       final dio = _dioWith([200]);
       await dio.get('/x');
       await dio.post('/y', data: {});
       final seen = _adapter(dio).seen;
-      expect(seen[0].connectTimeout, const Duration(seconds: 8));
-      expect(seen[0].receiveTimeout, const Duration(seconds: 12));
+      expect(seen[0].connectTimeout, const Duration(seconds: 5));
+      expect(seen[0].receiveTimeout, const Duration(seconds: 8));
       expect(seen[1].connectTimeout, const Duration(seconds: 40));
       expect(seen[1].receiveTimeout, const Duration(seconds: 40));
     });

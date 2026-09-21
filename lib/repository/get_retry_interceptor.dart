@@ -23,8 +23,8 @@ class GetRetryInterceptor extends Interceptor {
   GetRetryInterceptor(
     this._dio, {
     this.maxRetries = 2,
-    this.connectTimeout = const Duration(seconds: 8),
-    this.receiveTimeout = const Duration(seconds: 12),
+    this.connectTimeout = const Duration(seconds: 5),
+    this.receiveTimeout = const Duration(seconds: 8),
     this.backoff = const [
       Duration(milliseconds: 400),
       Duration(milliseconds: 1200),
