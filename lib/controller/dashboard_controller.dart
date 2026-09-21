@@ -26,6 +26,7 @@ import 'package:dio/dio.dart';
 import '../repository/api_result.dart';
 import '../repository/network_url.dart';
 import '../repository/repository.dart';
+import '../repository/resilient_dio.dart';
 import '../services/invoice_pdf_service.dart';
 import '../utils/custom_snackbar.dart';
 import '../services/location_cache_service.dart';
@@ -39,7 +40,10 @@ class DashboardController extends GetxController {
   // fetch took) every single time. Dio/HttpClient keep the underlying
   // connection alive by default, so reusing this instance lets repeat
   // requests to the same host skip that handshake entirely.
-  final Dio _featuredDestinationsDio = Dio();
+  // Was a bare Dio() (no timeouts, no retry) — a stalled route hung these calls
+  // until the 45 s outer cap. Now has the same GET fast-fail + retry + hedging
+  // stack as the main API client.
+  final Dio _featuredDestinationsDio = makeResilient(Dio());
 
   /// Test-only access to the Featured Destinations Dio client, so tests can
   /// attach a response interceptor exactly like the existing
@@ -462,7 +466,7 @@ class DashboardController extends GetxController {
       // sent there. Shared instance (see field comment) for connection reuse.
       final response = await _featuredDestinationsDio
           .get(NetworkUrl.featuredDestinationsUrl)
-          .timeout(const Duration(seconds: 45));
+          .timeout(const Duration(seconds: 20));
       final body = response.data;
       final results = body is Map ? body['results'] as List? : null;
       if (results != null) {
@@ -495,7 +499,7 @@ class DashboardController extends GetxController {
             NetworkUrl.featuredDestinationsUrl,
             queryParameters: {'q': query},
           )
-          .timeout(const Duration(seconds: 45));
+          .timeout(const Duration(seconds: 20));
       final body = response.data;
       final results = body is Map ? body['results'] as List? : null;
       if (results == null) return [];
@@ -518,7 +522,7 @@ class DashboardController extends GetxController {
     try {
       final response = await _featuredDestinationsDio
           .get(NetworkUrl.featuredDestinationDetailUrl(slug))
-          .timeout(const Duration(seconds: 45));
+          .timeout(const Duration(seconds: 20));
       if (response.data is Map) {
         final detail = FeaturedDestinationDetail.fromJson(response.data as Map);
         _featuredDetailCache[slug] = detail;

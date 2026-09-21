@@ -1,3 +1,4 @@
+import 'package:arobo_app/repository/network_url.dart';
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -55,16 +56,33 @@ class CustomNetworkImage extends StatelessWidget {
     return _buildBaseImage();
   }
 
+  /// Headers for an image request. The user's access token is attached ONLY when
+  /// the image is served by our own API host — never to a third-party image host
+  /// (Cloudinary etc.), and never as the literal `Bearer null`. Public images
+  /// need no auth at all. [apiBaseUrl] is injectable for tests.
+  static Map<String, String>? authHeadersFor(
+    String imageUrl,
+    String? token, {
+    String? apiBaseUrl,
+  }) {
+    if (token == null || token.isEmpty) return null;
+    final imageHost = Uri.tryParse(imageUrl)?.host;
+    final apiHost = Uri.tryParse(apiBaseUrl ?? NetworkUrl.baseUrl)?.host;
+    if (imageHost == null ||
+        imageHost.isEmpty ||
+        apiHost == null ||
+        imageHost != apiHost) {
+      return null;
+    }
+    return {'Authorization': 'Bearer $token'};
+  }
+
   Widget _buildBaseImage() {
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(borderRadius ?? 8),
       child: CachedNetworkImage(
-        httpHeaders: {
-          'Accept': '*/*',
-          'Content-Type': 'application/json',
-          'Authorization' :'Bearer $accessToken'
-        },
+        httpHeaders: authHeadersFor(imageUrl, accessToken),
         imageUrl: imageUrl,
         fit: fit,
         cacheKey: imageUrl,
