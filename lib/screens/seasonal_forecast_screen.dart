@@ -31,7 +31,13 @@ class _SeasonalForecastScreenState extends State<SeasonalForecastScreen> {
   @override
   void initState() {
     super.initState();
-    _dashboardC.fetchSeasonalPicks();
+    // fetchSeasonalPicks() sets an Rx synchronously; doing that inside initState
+    // (the build phase) notifies an Obx already on the tree and throws "setState()
+    // or markNeedsBuild() called during build" (seen on a vivo I2404, crash
+    // CR-CUS-2026-1789455523010-3440). Defer to after the first frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _dashboardC.fetchSeasonalPicks();
+    });
   }
 
   void _selectSeason(TrekSeason season) {
