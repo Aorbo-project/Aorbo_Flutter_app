@@ -282,7 +282,13 @@ mixin _$TrekDetailData {
   @JsonKey(name: 'booked_slots')
   int? get bookedSlots => throw _privateConstructorUsedError;
   @JsonKey(name: 'available_slots')
-  int? get availableSlots => throw _privateConstructorUsedError;
+  int? get availableSlots =>
+      throw _privateConstructorUsedError; // "Stop Bookings" (STOP_BOOKINGS_SPEC.md) — vendor permanently closed
+// this batch to new bookings. Null = normal. Backend already returns
+// this (controllers/v1/trekController.js's batchAttrs); UX-only field,
+// the backend's own booking-flow gates are the real enforcement.
+  @JsonKey(name: 'bookings_stopped_at')
+  String? get bookingsStoppedAt => throw _privateConstructorUsedError;
   @JsonKey(name: 'cancellation_policy')
   CancellationPolicy? get cancellationPolicy =>
       throw _privateConstructorUsedError;
@@ -353,6 +359,7 @@ abstract class $TrekDetailDataCopyWith<$Res> {
       int? capacity,
       @JsonKey(name: 'booked_slots') int? bookedSlots,
       @JsonKey(name: 'available_slots') int? availableSlots,
+      @JsonKey(name: 'bookings_stopped_at') String? bookingsStoppedAt,
       @JsonKey(name: 'cancellation_policy')
       CancellationPolicy? cancellationPolicy,
       @JsonKey(name: 'booking_type') String? bookingType});
@@ -428,6 +435,7 @@ class _$TrekDetailDataCopyWithImpl<$Res, $Val extends TrekDetailData>
     Object? capacity = freezed,
     Object? bookedSlots = freezed,
     Object? availableSlots = freezed,
+    Object? bookingsStoppedAt = freezed,
     Object? cancellationPolicy = freezed,
     Object? bookingType = freezed,
   }) {
@@ -636,6 +644,10 @@ class _$TrekDetailDataCopyWithImpl<$Res, $Val extends TrekDetailData>
           ? _value.availableSlots
           : availableSlots // ignore: cast_nullable_to_non_nullable
               as int?,
+      bookingsStoppedAt: freezed == bookingsStoppedAt
+          ? _value.bookingsStoppedAt
+          : bookingsStoppedAt // ignore: cast_nullable_to_non_nullable
+              as String?,
       cancellationPolicy: freezed == cancellationPolicy
           ? _value.cancellationPolicy
           : cancellationPolicy // ignore: cast_nullable_to_non_nullable
@@ -769,6 +781,7 @@ abstract class _$$TrekDetailDataImplCopyWith<$Res>
       int? capacity,
       @JsonKey(name: 'booked_slots') int? bookedSlots,
       @JsonKey(name: 'available_slots') int? availableSlots,
+      @JsonKey(name: 'bookings_stopped_at') String? bookingsStoppedAt,
       @JsonKey(name: 'cancellation_policy')
       CancellationPolicy? cancellationPolicy,
       @JsonKey(name: 'booking_type') String? bookingType});
@@ -847,6 +860,7 @@ class __$$TrekDetailDataImplCopyWithImpl<$Res>
     Object? capacity = freezed,
     Object? bookedSlots = freezed,
     Object? availableSlots = freezed,
+    Object? bookingsStoppedAt = freezed,
     Object? cancellationPolicy = freezed,
     Object? bookingType = freezed,
   }) {
@@ -1055,6 +1069,10 @@ class __$$TrekDetailDataImplCopyWithImpl<$Res>
           ? _value.availableSlots
           : availableSlots // ignore: cast_nullable_to_non_nullable
               as int?,
+      bookingsStoppedAt: freezed == bookingsStoppedAt
+          ? _value.bookingsStoppedAt
+          : bookingsStoppedAt // ignore: cast_nullable_to_non_nullable
+              as String?,
       cancellationPolicy: freezed == cancellationPolicy
           ? _value.cancellationPolicy
           : cancellationPolicy // ignore: cast_nullable_to_non_nullable
@@ -1123,6 +1141,7 @@ class _$TrekDetailDataImpl implements _TrekDetailData {
       this.capacity,
       @JsonKey(name: 'booked_slots') this.bookedSlots,
       @JsonKey(name: 'available_slots') this.availableSlots,
+      @JsonKey(name: 'bookings_stopped_at') this.bookingsStoppedAt,
       @JsonKey(name: 'cancellation_policy') this.cancellationPolicy,
       @JsonKey(name: 'booking_type') this.bookingType})
       : _cityIds = cityIds,
@@ -1350,6 +1369,13 @@ class _$TrekDetailDataImpl implements _TrekDetailData {
   @override
   @JsonKey(name: 'available_slots')
   final int? availableSlots;
+// "Stop Bookings" (STOP_BOOKINGS_SPEC.md) — vendor permanently closed
+// this batch to new bookings. Null = normal. Backend already returns
+// this (controllers/v1/trekController.js's batchAttrs); UX-only field,
+// the backend's own booking-flow gates are the real enforcement.
+  @override
+  @JsonKey(name: 'bookings_stopped_at')
+  final String? bookingsStoppedAt;
   @override
   @JsonKey(name: 'cancellation_policy')
   final CancellationPolicy? cancellationPolicy;
@@ -1359,7 +1385,7 @@ class _$TrekDetailDataImpl implements _TrekDetailData {
 
   @override
   String toString() {
-    return 'TrekDetailData(cityIds: $cityIds, inclusions: $inclusions, exclusions: $exclusions, activities: $activities, id: $id, mtrId: $mtrId, title: $title, description: $description, vendorId: $vendorId, destinationId: $destinationId, captainId: $captainId, duration: $duration, durationDays: $durationDays, durationNights: $durationNights, basePrice: $basePrice, maxParticipants: $maxParticipants, trekkingRules: $trekkingRules, emergencyProtocols: $emergencyProtocols, organizerNotes: $organizerNotes, status: $status, discountValue: $discountValue, discountType: $discountType, hasDiscount: $hasDiscount, badgeId: $badgeId, hasBeenEdited: $hasBeenEdited, safetySecurityCount: $safetySecurityCount, organizerMannerCount: $organizerMannerCount, trekPlanningCount: $trekPlanningCount, womenSafetyCount: $womenSafetyCount, createdAt: $createdAt, updatedAt: $updatedAt, vendor: $vendor, destinationData: $destinationData, badge: $badge, trekStages: $trekStages, accommodations: $accommodations, itineraryItems: $itineraryItems, images: $images, averageRating: $averageRating, totalReviews: $totalReviews, ratingTotal: $ratingTotal, reviewCommentsCount: $reviewCommentsCount, latestReviews: $latestReviews, categoryRatings: $categoryRatings, batchId: $batchId, tbrId: $tbrId, startDate: $startDate, endDate: $endDate, capacity: $capacity, bookedSlots: $bookedSlots, availableSlots: $availableSlots, cancellationPolicy: $cancellationPolicy, bookingType: $bookingType)';
+    return 'TrekDetailData(cityIds: $cityIds, inclusions: $inclusions, exclusions: $exclusions, activities: $activities, id: $id, mtrId: $mtrId, title: $title, description: $description, vendorId: $vendorId, destinationId: $destinationId, captainId: $captainId, duration: $duration, durationDays: $durationDays, durationNights: $durationNights, basePrice: $basePrice, maxParticipants: $maxParticipants, trekkingRules: $trekkingRules, emergencyProtocols: $emergencyProtocols, organizerNotes: $organizerNotes, status: $status, discountValue: $discountValue, discountType: $discountType, hasDiscount: $hasDiscount, badgeId: $badgeId, hasBeenEdited: $hasBeenEdited, safetySecurityCount: $safetySecurityCount, organizerMannerCount: $organizerMannerCount, trekPlanningCount: $trekPlanningCount, womenSafetyCount: $womenSafetyCount, createdAt: $createdAt, updatedAt: $updatedAt, vendor: $vendor, destinationData: $destinationData, badge: $badge, trekStages: $trekStages, accommodations: $accommodations, itineraryItems: $itineraryItems, images: $images, averageRating: $averageRating, totalReviews: $totalReviews, ratingTotal: $ratingTotal, reviewCommentsCount: $reviewCommentsCount, latestReviews: $latestReviews, categoryRatings: $categoryRatings, batchId: $batchId, tbrId: $tbrId, startDate: $startDate, endDate: $endDate, capacity: $capacity, bookedSlots: $bookedSlots, availableSlots: $availableSlots, bookingsStoppedAt: $bookingsStoppedAt, cancellationPolicy: $cancellationPolicy, bookingType: $bookingType)';
   }
 
   @override
@@ -1457,6 +1483,8 @@ class _$TrekDetailDataImpl implements _TrekDetailData {
                 other.bookedSlots == bookedSlots) &&
             (identical(other.availableSlots, availableSlots) ||
                 other.availableSlots == availableSlots) &&
+            (identical(other.bookingsStoppedAt, bookingsStoppedAt) ||
+                other.bookingsStoppedAt == bookingsStoppedAt) &&
             (identical(other.cancellationPolicy, cancellationPolicy) ||
                 other.cancellationPolicy == cancellationPolicy) &&
             (identical(other.bookingType, bookingType) ||
@@ -1518,6 +1546,7 @@ class _$TrekDetailDataImpl implements _TrekDetailData {
         capacity,
         bookedSlots,
         availableSlots,
+        bookingsStoppedAt,
         cancellationPolicy,
         bookingType
       ]);
@@ -1591,6 +1620,7 @@ abstract class _TrekDetailData implements TrekDetailData {
       final int? capacity,
       @JsonKey(name: 'booked_slots') final int? bookedSlots,
       @JsonKey(name: 'available_slots') final int? availableSlots,
+      @JsonKey(name: 'bookings_stopped_at') final String? bookingsStoppedAt,
       @JsonKey(name: 'cancellation_policy')
       final CancellationPolicy? cancellationPolicy,
       @JsonKey(name: 'booking_type')
@@ -1739,6 +1769,12 @@ abstract class _TrekDetailData implements TrekDetailData {
   @override
   @JsonKey(name: 'available_slots')
   int? get availableSlots;
+  @override // "Stop Bookings" (STOP_BOOKINGS_SPEC.md) — vendor permanently closed
+// this batch to new bookings. Null = normal. Backend already returns
+// this (controllers/v1/trekController.js's batchAttrs); UX-only field,
+// the backend's own booking-flow gates are the real enforcement.
+  @JsonKey(name: 'bookings_stopped_at')
+  String? get bookingsStoppedAt;
   @override
   @JsonKey(name: 'cancellation_policy')
   CancellationPolicy? get cancellationPolicy;

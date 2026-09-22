@@ -81,6 +81,11 @@ class TrekDetailData with _$TrekDetailData {
     int? capacity,
     @JsonKey(name: 'booked_slots') int? bookedSlots,
     @JsonKey(name: 'available_slots') int? availableSlots,
+    // "Stop Bookings" (STOP_BOOKINGS_SPEC.md) — vendor permanently closed
+    // this batch to new bookings. Null = normal. Backend already returns
+    // this (controllers/v1/trekController.js's batchAttrs); UX-only field,
+    // the backend's own booking-flow gates are the real enforcement.
+    @JsonKey(name: 'bookings_stopped_at') String? bookingsStoppedAt,
     @JsonKey(name: 'cancellation_policy')
     CancellationPolicy? cancellationPolicy,
     @JsonKey(name: 'booking_type') String? bookingType,
@@ -91,6 +96,12 @@ class TrekDetailData with _$TrekDetailData {
 }
 
 extension TrekDetailDataExtension on TrekDetailData {
+  /// "Stop Bookings" (STOP_BOOKINGS_SPEC.md) — true once the vendor has
+  /// permanently closed this batch to new bookings. UX signal only; the
+  /// backend independently rejects a booking attempt regardless of this.
+  bool get isBookingsStopped =>
+      bookingsStoppedAt != null && bookingsStoppedAt!.isNotEmpty;
+
   /// Returns the departure datetime from the first boarding point stage.
   /// If no boarding stage is found, returns null.
   DateTime? get departureDateTimeFromStages {
