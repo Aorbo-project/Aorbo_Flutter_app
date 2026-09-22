@@ -543,6 +543,13 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
   }
 
   Widget _buildBottomBar() {
+    // "Stop Bookings" (STOP_BOOKINGS_SPEC.md) — vendor permanently closed this
+    // batch. UX only: the backend's own booking-flow gates already reject the
+    // attempt regardless, this just avoids showing a "Continue" button that
+    // would silently fail a step later. No customer-facing "why" beyond this —
+    // the vendor's reason is an admin-only detail.
+    final isClosed = _trekC.trekDetailData.value.isBookingsStopped;
+
     // Scaffold does NOT safe-area its bottomNavigationBar — without this the
     // "Continue" button sits under the gesture pill / 3-button nav on
     // Android, and fully under the system bar on Android 15+ edge-to-edge.
@@ -561,8 +568,10 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
           ],
         ),
         child: CommonButton(
-          text: 'Continue',
+          text: isClosed ? 'Bookings Closed' : 'Continue',
+          isDisabled: isClosed,
           onPressed: () async {
+            if (isClosed) return;
             final boardingCities = boardingCitiesFor(
               _trekC.trekDetailData.value.trekStages,
             );
