@@ -282,42 +282,49 @@ class _TopTreksCardState extends State<TopTreksCard>
                       ),
               ),
 
-              // Heart save
-              Positioned(
-                top: 10,
-                right: 10,
-                child: Material(
-                  color: CommonColors.blackColor.withValues(alpha: 0.28),
-                  shape: const CircleBorder(),
-                  child: InkWell(
-                    customBorder: const CircleBorder(),
-                    onTap: _handleFavoriteTap,
-                    child: SizedBox(
-                      width: 34,
-                      height: 34,
-                      child: AnimatedBuilder(
-                        animation: _scaleAnimation,
-                        builder: (context, child) {
-                          return Transform.scale(
-                            scale: _scaleAnimation.value,
-                            child: child,
-                          );
-                        },
-                        child: Icon(
-                          widget.isFavorite
-                              ? Icons.favorite
-                              : Icons.favorite_border,
-                          key: _heartIconKey,
-                          size: 18,
-                          color: widget.isFavorite
-                              ? CommonColors.favColor
-                              : CommonColors.whiteColor,
+              // Heart save — hidden on sponsored cards. `item.id` for a
+              // sponsored slot is a slot id (see slotId: item.id at this
+              // card's call sites), not a trek id, so there is no safe
+              // onFavoriteTap to wire here without risking the wrong id
+              // reaching the favorite/wishlist API. Found live (2026-09-23):
+              // this icon was always shown on ad cards with no callback
+              // passed, so tapping it silently did nothing.
+              if (!widget.isSponsored)
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: Material(
+                    color: CommonColors.blackColor.withValues(alpha: 0.28),
+                    shape: const CircleBorder(),
+                    child: InkWell(
+                      customBorder: const CircleBorder(),
+                      onTap: _handleFavoriteTap,
+                      child: SizedBox(
+                        width: 34,
+                        height: 34,
+                        child: AnimatedBuilder(
+                          animation: _scaleAnimation,
+                          builder: (context, child) {
+                            return Transform.scale(
+                              scale: _scaleAnimation.value,
+                              child: child,
+                            );
+                          },
+                          child: Icon(
+                            widget.isFavorite
+                                ? Icons.favorite
+                                : Icons.favorite_border,
+                            key: _heartIconKey,
+                            size: 18,
+                            color: widget.isFavorite
+                                ? CommonColors.favColor
+                                : CommonColors.whiteColor,
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
 
               // Kicker + title + meta + description
               Positioned(
