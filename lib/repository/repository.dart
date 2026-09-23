@@ -31,11 +31,26 @@ class Repository {
     return _service;
   }
 
+  // Reported directly (2026-09-23): the app "feels stuck" mid-flow —
+  // login, booking success, cancellation, refund — a few seconds at a time.
+  // Traced to this client: every one of getApiCall/postApiCall/putApiCall/
+  // patchApiCall/deleteApiCall shared a 40s Dio connect/receive timeout
+  // PLUS a separate outer .timeout(45s) wrapper — so on any real-world
+  // network hiccup (very plausible for a trekking app's users, often on
+  // weak signal), a plain login/booking/cancel/refund call — none of which
+  // should ever legitimately take more than a few seconds — could leave the
+  // screen looking frozen for up to 45 seconds before failing. 20s is
+  // already generous for a small JSON payload; uploads (the one FormData
+  // caller today: DashboardController.generateAndUploadInvoice) get their
+  // own longer override below instead of sharing this tightened default.
+  static const Duration _defaultTimeout = Duration(seconds: 20);
+  static const Duration _uploadTimeout = Duration(seconds: 60);
+
   final Dio dio = Dio(
     BaseOptions(
       baseUrl: NetworkUrl.baseUrl,
-      connectTimeout: const Duration(seconds: 40),
-      receiveTimeout: const Duration(seconds: 40),
+      connectTimeout: _defaultTimeout,
+      receiveTimeout: _defaultTimeout,
       headers: {'Accept': '*/*', 'Content-Type': 'application/json'},
     ),
   );
@@ -46,8 +61,8 @@ class Repository {
   final Dio _bareDio = Dio(
     BaseOptions(
       baseUrl: NetworkUrl.baseUrl,
-      connectTimeout: const Duration(seconds: 40),
-      receiveTimeout: const Duration(seconds: 40),
+      connectTimeout: _defaultTimeout,
+      receiveTimeout: _defaultTimeout,
       headers: {'Accept': '*/*', 'Content-Type': 'application/json'},
     ),
   );
@@ -257,7 +272,7 @@ class Repository {
         final opts = await _authOptions();
         Response response = await dio
             .get(url, options: opts)
-            .timeout(const Duration(seconds: 45));
+            .timeout(_defaultTimeout);
         return response.data;
       } else {
         showToastMessage(msg: "Please check your internet connection and try.");
@@ -284,10 +299,19 @@ class Repository {
     bool internetAvailable = await isInternetAvailable();
     try {
       if (internetAvailable) {
+        // FormData (file uploads — KYC docs, the generated invoice PDF)
+        // legitimately needs more time than a plain JSON call; everything
+        // else gets the tightened default so a real hiccup fails fast
+        // instead of leaving the screen looking frozen.
+        final isUpload = body is FormData;
         final opts = await _authOptions();
+        if (isUpload) {
+          opts.sendTimeout = _uploadTimeout;
+          opts.receiveTimeout = _uploadTimeout;
+        }
         Response response = await dio
             .post(url, data: body, options: opts)
-            .timeout(const Duration(seconds: 45));
+            .timeout(isUpload ? _uploadTimeout : _defaultTimeout);
         return response.data;
       } else {
         showToastMessage(msg: "Please check your internet connection and try.");
@@ -338,7 +362,7 @@ class Repository {
         final opts = await _authOptions();
         Response response = await dio
             .put(url, data: body, options: opts)
-            .timeout(const Duration(seconds: 45));
+            .timeout(_defaultTimeout);
         return response.data;
       } else {
         showToastMessage(msg: "Please check your internet connection and try.");
@@ -368,7 +392,7 @@ class Repository {
         final opts = await _authOptions();
         Response response = await dio
             .patch(url, data: body, options: opts)
-            .timeout(const Duration(seconds: 45));
+            .timeout(_defaultTimeout);
         return response.data;
       } else {
         showToastMessage(msg: "Please check your internet connection and try.");
@@ -398,7 +422,7 @@ class Repository {
         final opts = await _authOptions();
         Response response = await dio
             .delete(url, options: opts)
-            .timeout(const Duration(seconds: 45));
+            .timeout(_defaultTimeout);
         return response.data;
       } else {
         showToastMessage(msg: "Please check your internet connection and try.");
