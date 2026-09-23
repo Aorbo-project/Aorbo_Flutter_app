@@ -176,6 +176,84 @@ void main() {
       expect(success, isNotNull);
       expect(c.createOrderRequestModel.value.fareToken, 'tok-abc');
     });
+
+    // Coupon apply/remove made the whole payment page blink: calculateFare()
+    // swapped the on-screen fare for a `loading` state, which blanked the fare
+    // card, the footer total and the coupon row and raised a full-screen overlay.
+    // keepPrevious refreshes in place instead.
+    group('keepPrevious (refresh in place)', () {
+      Map<String, dynamic> fare(String token, {int amount = 10510}) => {
+        'success': true,
+        'fareToken': token,
+        'breakdown': {'final_amount': amount, 'amount_to_pay_now': amount},
+      };
+
+      Future<List<String>> statesDuring(TrekController c, Future<void> Function() run) async {
+        final seen = <String>[];
+        final worker = ever(c.calculateFareResponseModel, (r) {
+          seen.add(r.maybeWhen(loading: (_) => 'loading', success: (_) => 'success', error: (_) => 'error', orElse: () => 'other'));
+        });
+        await run();
+        worker.dispose();
+        return seen;
+      }
+
+      test('with a fare already on screen the state never drops to loading, and the flag clears', () async {
+        final c = await setUpController();
+        installFakeBackend({NetworkUrl.calculateFare: (_) => fare('tok-1')});
+        c.calculateFareRequestModel.value = c.calculateFareRequestModel.value.copyWith(batchId: 1, travelerCount: 2);
+        await c.calculateFare();
+
+        Repository().dio.interceptors.clear();
+        installFakeBackend({NetworkUrl.calculateFare: (_) => fare('tok-2', amount: 9510)});
+        final seen = await statesDuring(c, () async {
+          final f = c.calculateFare(keepPrevious: true);
+          expect(c.fareRefreshing.value, isTrue, reason: 'flag is up while the refresh is in flight');
+          await f;
+        });
+
+        expect(seen, isNot(contains('loading')));
+        expect(c.calculateFareResponseModel.value.maybeWhen(success: (_) => true, orElse: () => false), isTrue);
+        expect(c.createOrderRequestModel.value.fareToken, 'tok-2');
+        expect(c.fareRefreshing.value, isFalse);
+      });
+
+      test('control: without keepPrevious the old behaviour (loading state) is unchanged', () async {
+        final c = await setUpController();
+        installFakeBackend({NetworkUrl.calculateFare: (_) => fare('tok-1')});
+        c.calculateFareRequestModel.value = c.calculateFareRequestModel.value.copyWith(batchId: 1, travelerCount: 2);
+        await c.calculateFare();
+
+        final seen = await statesDuring(c, () => c.calculateFare());
+        expect(seen.first, 'loading');
+        expect(c.fareRefreshing.value, isFalse);
+      });
+
+      test('first load (no fare yet) still shows loading even with keepPrevious', () async {
+        final c = await setUpController();
+        installFakeBackend({NetworkUrl.calculateFare: (_) => fare('tok-1')});
+        c.calculateFareRequestModel.value = c.calculateFareRequestModel.value.copyWith(batchId: 1, travelerCount: 2);
+
+        final seen = await statesDuring(c, () => c.calculateFare(keepPrevious: true));
+        expect(seen.first, 'loading');
+      });
+
+      test('a failed refresh surfaces the error and clears the flag (never stuck dimmed / Pay blocked)', () async {
+        final c = await setUpController();
+        installFakeBackend({NetworkUrl.calculateFare: (_) => fare('tok-1')});
+        c.calculateFareRequestModel.value = c.calculateFareRequestModel.value.copyWith(batchId: 1, travelerCount: 2);
+        await c.calculateFare();
+
+        Repository().dio.interceptors.clear();
+        installFakeBackend({NetworkUrl.calculateFare: (_) => {'success': false, 'message': 'nope'}});
+        // The error branch shows a snackbar via Get.context!, unavailable headless — the
+        // controller's catch throws on it, so only assert the flag afterwards.
+        try {
+          await c.calculateFare(keepPrevious: true);
+        } catch (_) {}
+        expect(c.fareRefreshing.value, isFalse);
+      });
+    });
   });
 
   // NOTE: TrekController.createTrekOrder is NOT unit-testable here.

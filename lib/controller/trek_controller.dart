@@ -606,10 +606,28 @@ class TrekController extends GetxController {
   // success or failure alike, rather than raced on network timing.
   int _calculateFareRequestSeq = 0;
 
-  Future<void> calculateFare() async {
+  /// True while a fare recalculation is in flight and the previous fare is
+  /// still being shown (see `keepPrevious`). The payment screen dims just the
+  /// fare fields and blocks "Pay" while this is set.
+  final RxBool fareRefreshing = false.obs;
+
+  /// [keepPrevious]: refresh in place — if a fare is already on screen, keep it
+  /// (instead of swapping in a `loading` state that blanks/blinks the whole
+  /// page) until the new one lands. Only the payment screen uses this, for
+  /// coupon apply/remove and payment-option changes.
+  Future<void> calculateFare({bool keepPrevious = false}) async {
     final mySeq = ++_calculateFareRequestSeq;
     try {
-      calculateFareResponseModel.value = ApiResult.loading("");
+      final hadFare = calculateFareResponseModel.value.maybeWhen(
+        success: (_) => true,
+        orElse: () => false,
+      );
+      if (keepPrevious && hadFare) {
+        fareRefreshing.value = true;
+      } else {
+        fareRefreshing.value = false;
+        calculateFareResponseModel.value = ApiResult.loading("");
+      }
       calculateFareRequestModel.value = calculateFareRequestModel.value
           .copyWith(boardingCityId: selectedBoardingCityId.value);
       final response = await repository.postApiCall(
@@ -668,6 +686,10 @@ class TrekController extends GetxController {
       calculateFareResponseModel.value = ApiResult.error(
         'Failed to calculate fare: ${e.toString()}',
       );
+    } finally {
+      // Only the newest request may clear the flag — a stale one returning
+      // early must not un-dim/unblock while a newer refresh is still running.
+      if (mySeq == _calculateFareRequestSeq) fareRefreshing.value = false;
     }
   }
 

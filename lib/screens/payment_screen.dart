@@ -109,7 +109,7 @@ class _PaymentScreenState extends State<PaymentScreen>
 
     debounce(
       _trekC.calculateFareRequestModel,
-      (_) => _trekC.calculateFare(),
+      (_) => _trekC.calculateFare(keepPrevious: true),
       time: const Duration(milliseconds: 500),
     );
 
@@ -421,7 +421,10 @@ class _PaymentScreenState extends State<PaymentScreen>
       success: (_) => true,
       orElse: () => false,
     );
-    return _selectedUPI == PaymentMethods.razorpay && valid;
+    // Never pay against a fare that is mid-refresh (coupon just applied/removed).
+    return _selectedUPI == PaymentMethods.razorpay &&
+        valid &&
+        !_trekC.fareRefreshing.value;
   }
 
   List<Map<String, dynamic>> _getTravellerDetails() {
@@ -1569,12 +1572,16 @@ class _PaymentScreenState extends State<PaymentScreen>
                             ),
                           ],
                         ),
-                        Text(
-                          bd?.amountToPayNow != null
-                              ? '₹${bd?.amountToPayNow}'
-                              : '--',
-                          textScaler: const TextScaler.linear(1.0),
-                          style: AppType.style(18.sp, w: FontWeight.w800, color: _Pay.accent),
+                        AnimatedOpacity(
+                          opacity: _trekC.fareRefreshing.value ? 0.45 : 1.0,
+                          duration: const Duration(milliseconds: 220),
+                          child: Text(
+                            bd?.amountToPayNow != null
+                                ? '₹${bd?.amountToPayNow}'
+                                : '--',
+                            textScaler: const TextScaler.linear(1.0),
+                            style: AppType.style(18.sp, w: FontWeight.w800, color: _Pay.accent),
+                          ),
                         ),
                         Text(
                           BookingMessages.taxIncluded,
@@ -1645,9 +1652,21 @@ class _PaymentScreenState extends State<PaymentScreen>
               );
 
           final fareReq = _trekC.calculateFareRequestModel.value;
+          final bool refreshing = _trekC.fareRefreshing.value;
 
           return Stack(
             children: [
+              if (refreshing)
+                const Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: LinearProgressIndicator(
+                    minHeight: 2,
+                    color: _Pay.accent,
+                    backgroundColor: Colors.transparent,
+                  ),
+                ),
               SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
                 padding: EdgeInsets.only(
@@ -1665,9 +1684,17 @@ class _PaymentScreenState extends State<PaymentScreen>
                     SizedBox(height: 2.h),
                     _buildPaymentOptionsCard(fareReq),
                     SizedBox(height: 2.h),
-                    _buildFareBreakdownCard(breakdown, fareReq),
+                    AnimatedOpacity(
+                      opacity: refreshing ? 0.45 : 1.0,
+                      duration: const Duration(milliseconds: 220),
+                      child: _buildFareBreakdownCard(breakdown, fareReq),
+                    ),
                     SizedBox(height: 2.h),
-                    _buildCouponCard(fareReq, fareResponse),
+                    AnimatedOpacity(
+                      opacity: refreshing ? 0.45 : 1.0,
+                      duration: const Duration(milliseconds: 220),
+                      child: _buildCouponCard(fareReq, fareResponse),
+                    ),
                     SizedBox(height: 2.h),
                   ],
                 ),
