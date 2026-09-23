@@ -1,15 +1,19 @@
 import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/controller/trek_controller.dart';
+import 'package:arobo_app/screens/booking_upcoming_screen.dart';
 import 'package:arobo_app/services/analytics_service.dart';
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/common_images.dart';
+import 'package:arobo_app/utils/custom_snackbar.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:dotted_line/dotted_line.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:sizer/sizer.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:arobo_app/utils/ist_date_utils.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
@@ -1150,21 +1154,61 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
       padding: EdgeInsets.symmetric(horizontal: 4.w),
       child: Row(
         children: [
-          Expanded(child: _buildActionButton(Icons.confirmation_num_outlined, 'Ticket', onTap: () {})),
+          Expanded(child: _buildActionButton(Icons.confirmation_num_outlined, 'Ticket', onTap: _onViewTicket)),
           SizedBox(width: 3.w),
-          Expanded(child: _buildActionButton(Icons.cancel_outlined, 'Cancel', onTap: () {})),
+          Expanded(child: _buildActionButton(Icons.cancel_outlined, 'Cancel', onTap: _onCancelBooking)),
           SizedBox(width: 3.w),
-          Expanded(child: _buildActionButton(Icons.share_outlined, 'Share', onTap: () {})),
+          Expanded(child: _buildActionButton(Icons.share_outlined, 'Share', onTap: _onShareBooking)),
         ],
       ),
     );
+  }
+
+  // Same destination generateAndUploadInvoice's own comment already promises
+  // ("the same one the customer can preview/share later from the upcoming-
+  // bookings screen") — this button previously did nothing at all.
+  void _onViewTicket() {
+    final bookingId = _trekC.verifyOrderModal.value.data?.id;
+    if (bookingId == null) {
+      CustomSnackBar.show(context, message: "Booking details are still loading — please try again in a moment.");
+      return;
+    }
+    Get.to(() => BookingsUpcomingScreen(bookingId: bookingId));
+  }
+
+  // BookingsCancelScreen manages its own booking list/selection (no-arg
+  // constructor) rather than taking a specific booking id, so this opens the
+  // real cancellation flow rather than a pre-filtered single booking.
+  void _onCancelBooking() {
+    Get.toNamed('/bookingscancel');
+  }
+
+  Future<void> _onShareBooking() async {
+    final data = _trekC.verifyOrderModal.value.data;
+    final trek = data?.trek;
+    final batch = data?.batch;
+    final sb = StringBuffer()
+      ..writeln('Trek Booking Confirmed! \u{1F389}')
+      ..writeln('━━━━━━━━━━━━━━━━━━━')
+      ..writeln('Trek             : ${trek?.title ?? 'N/A'}')
+      ..writeln('TBR ID           : ${batch?.tbrId ?? 'N/A'}')
+      ..writeln('━━━━━━━━━━━━━━━━━━━')
+      ..writeln('Booked with Aorbo Treks!')
+      ..writeln('Download the app to explore more treks.');
+
+    try {
+      await Share.share(sb.toString(), subject: 'My Trek Booking — ${trek?.title ?? ''}');
+    } catch (e) {
+      if (!mounted) return;
+      CustomSnackBar.show(context, message: "Unable to share at the moment. Please try again.");
+    }
   }
 
   Widget _buildFAQCard() {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 4.w),
       child: GestureDetector(
-        onTap: () {},
+        onTap: () => Get.toNamed('/help'),
         child: Container(
           padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.8.h),
           decoration: BoxDecoration(
@@ -1285,6 +1329,11 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
   }
 
   Widget _ticketRowWithCall(String title, String value) {
+    // `value` is either a real phone number or a "Not available"-style
+    // fallback string from the call site — only offer to dial when it
+    // actually contains digits, so a fallback string never gets launched
+    // as a tel: URI.
+    final hasRealNumber = RegExp(r'\d{6,}').hasMatch(value);
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 0.9.h),
       child: Row(
@@ -1294,16 +1343,32 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
           Expanded(flex: 4, child: Text(value, textAlign: TextAlign.end, style: AppType.style(FontSize.s9, w: FontWeight.w500, color: _TC.ink))),
           SizedBox(width: 1.w),
           GestureDetector(
-            onTap: () {},
+            onTap: hasRealNumber ? () => _callNumber(value) : null,
             child: Container(
               width: 7.w, height: 7.w,
-              decoration: BoxDecoration(color: _TC.tealLight, borderRadius: BorderRadius.circular(8)),
-              child: Icon(Icons.call_rounded, size: 3.8.w, color: _TC.teal),
+              decoration: BoxDecoration(
+                color: hasRealNumber ? _TC.tealLight : _TC.tealLight.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(Icons.call_rounded, size: 3.8.w, color: hasRealNumber ? _TC.teal : _TC.inkLight),
             ),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _callNumber(String phone) async {
+    final uri = Uri(scheme: 'tel', path: phone);
+    try {
+      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched && mounted) {
+        CustomSnackBar.show(context, message: "Couldn't start a call on this device.");
+      }
+    } catch (_) {
+      if (!mounted) return;
+      CustomSnackBar.show(context, message: "Couldn't start a call on this device.");
+    }
   }
 
   Widget _buildActionButton(IconData icon, String label, {VoidCallback? onTap}) {

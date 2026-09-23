@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
 
 import '../utils/common_btn.dart';
+import '../utils/custom_snackbar.dart';
 import '../utils/screen_constants.dart';
 import 'package:arobo_app/theme/app_typography.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
@@ -118,7 +119,12 @@ class _claims extends State<claims> {
                               ),
                             ),
                             GestureDetector(
-                              onTap: () {},
+                              // No claim-procedure content exists anywhere in
+                              // the app/backend yet (this whole screen isn't
+                              // linked from anywhere live either — My Account's
+                              // "Claims" entry is still isComingSoon). Honest
+                              // "not ready" beats a silent no-op tap.
+                              onTap: () => CustomSnackBar.show(context, message: "Claim procedure details are coming soon."),
                               child: Text(
                                 "View Details",
                                 style: TextStyle(
@@ -143,7 +149,7 @@ class _claims extends State<claims> {
                               ),
                             ),
                             GestureDetector(
-                              onTap: () {},
+                              onTap: () => CustomSnackBar.show(context, message: "Terms and conditions are coming soon."),
                               child: Text(
                                 "View Details",
                                 style: TextStyle(
