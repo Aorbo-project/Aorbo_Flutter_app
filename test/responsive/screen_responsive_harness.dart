@@ -18,6 +18,7 @@ import 'package:arobo_app/controller/trek_controller.dart';
 import 'package:arobo_app/controller/user_controller.dart';
 import 'package:arobo_app/main.dart' as app;
 import 'package:arobo_app/repository/repository.dart';
+import 'package:arobo_app/services/analytics_service.dart';
 import 'package:arobo_app/utils/dashboard_header_theme.dart';
 import 'package:arobo_app/utils/shared_preferences.dart';
 // ignore: depend_on_referenced_packages
@@ -108,6 +109,13 @@ Future<void> installScreenTestEnv() async {
 void teardownScreenTestEnv() {
   Repository().dio.interceptors.clear();
   Get.reset();
+  // AnalyticsService is a process-wide singleton — any screen whose
+  // initState logs a view event (e.g. TrekDetailsScreen) leaves a pending
+  // flush timer that outlives this test's pumpWidget/dispose cycle by
+  // design (it's meant to survive individual screens in a real running
+  // app). Reset it here so flutter_test's !timersPending invariant doesn't
+  // flag it against whichever test happens to create it.
+  AnalyticsService.instance.resetForTest();
 }
 
 /// Pump [screen] across the responsive matrix; returns the same
@@ -123,8 +131,8 @@ Future<Map<String, List<String>>> collectScreenOverflows(
   // The real app clamps OS font scale to 1.0–1.15 (main.dart), so testing
   // beyond that would flag overflow users can never actually hit.
   List<double> textScales = const [1.0, 1.15],
-}) {
-  return collectResponsiveOverflows(
+}) async {
+  final result = await collectResponsiveOverflows(
     tester,
     devices: devices,
     textScales: textScales,
@@ -152,4 +160,12 @@ Future<Map<String, List<String>>> collectScreenOverflows(
       },
     ),
   );
+  // Must happen HERE, still inside this async function's call chain — the
+  // outer tearDown(teardownScreenTestEnv) registered in the test file runs
+  // too late: flutter_test's !timersPending invariant is checked at the end
+  // of the testWidgets callback itself, before any tearDown() runs. A screen
+  // whose initState logs an analytics view event (e.g. TrekDetailsScreen)
+  // leaves AnalyticsService's process-wide flush timer pending otherwise.
+  AnalyticsService.instance.resetForTest();
+  return result;
 }

@@ -97,4 +97,26 @@ class AnalyticsService {
       _sending = false;
     }
   }
+
+  /// Test-only: cancels any pending flush timer and clears buffered events.
+  ///
+  /// Root cause of the long-standing "A Timer is still pending" failure in
+  /// test/responsive/screens_responsive_test.dart's TrekDetailsScreen case
+  /// (misdiagnosed for weeks as an unrelated flake, 2026-09-23): this is a
+  /// process-wide singleton, so its _flushTimer (created by any screen whose
+  /// initState logs a view event — see logTrekDetailView) outlives any single
+  /// widget test's pumpWidget/dispose cycle, exactly as intended for a real
+  /// running app. flutter_test's !timersPending invariant has no way to know
+  /// that's deliberate, so it fails whichever test happens to be the one that
+  /// creates the timer. Call this from a test harness's tearDown/setUp —
+  /// screen_responsive_harness.dart's teardownScreenTestEnv already resets
+  /// other shared singletons (Repository's dio interceptors, Get.reset()) the
+  /// same way.
+  @visibleForTesting
+  void resetForTest() {
+    _flushTimer?.cancel();
+    _flushTimer = null;
+    _buffer.clear();
+    _sending = false;
+  }
 }
