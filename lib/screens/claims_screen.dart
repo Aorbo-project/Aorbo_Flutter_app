@@ -210,7 +210,13 @@ class _claims extends State<claims> {
                       SizedBox(height: 2.h),
                       CommonButton(
                         text: 'Claim Insurance',
-                        onPressed: () async {},
+                        // The insurance partner itself is still a literal
+                        // placeholder above ("Powered by (Insurance company
+                        // name)") — this whole screen is pre-launch content,
+                        // not wired to a real insurance-claim flow anywhere
+                        // in the backend yet. Same honest "coming soon"
+                        // treatment as this screen's other two links.
+                        onPressed: () => CustomSnackBar.show(context, message: "Insurance claims are coming soon."),
                         gradient: CommonColors.btnGradient,
                         textColor: CommonColors.whiteColor,
                         fontWeight: FontWeight.w600,
