@@ -281,7 +281,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
     _dashboardC.getBookingDetail(bookingId: widget.bookingId ?? '0');
 
     // Also refresh the list so the fallback check has the latest data
-    _dashboardC.getBookingHistory(refresh: true);
+    _dashboardC.loadAllBookingHistory(force: true, waitForCompletion: false);
   }
 
   // ──────────────────────────────────────────────────────────────────────────

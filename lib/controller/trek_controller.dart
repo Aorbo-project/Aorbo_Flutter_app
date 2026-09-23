@@ -753,7 +753,7 @@ class TrekController extends GetxController {
           if (nextAction == 'SHOW_BOOKING_CONFIRMED') {
             final pref = await SpUtil.getInstance();
             await pref.remove(SpUtil.pendingOrderId);
-            Get.find<DashboardController>().getBookingHistory(refresh: true);
+            Get.find<DashboardController>().loadAllBookingHistory(force: true, waitForCompletion: false);
             return true;
           }
           return false;
@@ -795,7 +795,7 @@ class TrekController extends GetxController {
       switch (status) {
         case 'paid':
           await pref.remove(SpUtil.pendingOrderId);
-          Get.find<DashboardController>().getBookingHistory(refresh: true);
+          Get.find<DashboardController>().loadAllBookingHistory(force: true, waitForCompletion: false);
           if (Get.context != null) {
             CustomSnackBar.show(
               Get.context!,
@@ -860,7 +860,7 @@ class TrekController extends GetxController {
 
       if (response != null) {
         if (response['success']) {
-          await _dashboardC.getBookingHistory(refresh: true);
+          await _dashboardC.loadAllBookingHistory(force: true, waitForCompletion: false);
           reviewController.value.clear();
           Get.back();
           Get.back();
@@ -938,7 +938,7 @@ class TrekController extends GetxController {
           requestCancellationResponseObserver.value = ApiResult.success(
             responseData,
           );
-          Get.find<DashboardController>().getBookingHistory(refresh: true);
+          Get.find<DashboardController>().loadAllBookingHistory(force: true, waitForCompletion: false);
           return null;
         }
         throw "${responseData.message}";
@@ -954,7 +954,7 @@ class TrekController extends GetxController {
             message: 'Booking cancelled successfully',
           ),
         );
-        Get.find<DashboardController>().getBookingHistory(refresh: true);
+        Get.find<DashboardController>().loadAllBookingHistory(force: true, waitForCompletion: false);
         return null;
       }
       CustomSnackBar.show(Get.context!, message: errMsg);
