@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:arobo_app/freezed_models/booking/booking_history_model.dart';
+import 'package:flutter/foundation.dart' show compute;
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
@@ -8,6 +9,29 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../utils/ist_date_utils.dart';
 import '../widgets/logger.dart';
+
+/// Everything the background-isolate PDF builder needs, as isolate-safe
+/// primitives (plain JSON + raw bytes) — no Flutter bindings, no closures.
+class _InvoiceBuildArgs {
+  final Map<String, dynamic> bookingJson;
+  final String? policyType;
+  final Uint8List fontRegular;
+  final Uint8List fontBold;
+  final Uint8List fontSemiBold;
+  final Uint8List fontItalic;
+  final Uint8List? aorboLogo;
+  final Uint8List? vendorLogo;
+  const _InvoiceBuildArgs({
+    required this.bookingJson,
+    required this.policyType,
+    required this.fontRegular,
+    required this.fontBold,
+    required this.fontSemiBold,
+    required this.fontItalic,
+    required this.aorboLogo,
+    required this.vendorLogo,
+  });
+}
 
 class InvoicePdfService {
   // ─────────────────────────────────────────────
@@ -131,10 +155,87 @@ class InvoicePdfService {
   // ─────────────────────────────────────────────
   //  PUBLIC: GENERATE PDF
   // ─────────────────────────────────────────────
+  /// Public entry point. Only the cheap, genuinely-async work (asset reads +
+  /// the vendor-logo download) happens on the calling isolate; the
+  /// synchronous, CPU-bound part — pw.MultiPage layout and doc.save(), which
+  /// the `pdf` package runs entirely on whatever isolate calls it — is handed
+  /// to a background isolate via compute().
+  ///
+  /// Why: this runs on EVERY successful booking (PaymentSuccessPage.initState
+  /// -> generateAndUploadInvoice, fire-and-forget). "Not awaited" is not "not
+  /// blocking" in Dart — the synchronous stretches of that Future still run to
+  /// completion on the UI isolate, so the invoice layout was freezing the
+  /// screen right at the payment-success moment. Found while investigating a
+  /// user-reported "app feels stuck" complaint (2026-09-23).
+  ///
+  /// Design notes (a first attempt at this failed its own tests, which is why
+  /// it looks like this):
+  ///  * NO rootBundle/asset loading inside the isolate — that needed
+  ///    BackgroundIsolateBinaryMessenger and did not work reliably. Every byte
+  ///    the builder needs is loaded up front here and sent across.
+  ///  * The booking crosses the isolate boundary as plain JSON produced with
+  ///    jsonEncode (which recursively calls toJson on nested Freezed models;
+  ///    calling booking.toJson() alone leaves nested objects un-serialized).
+  ///  * If the isolate route fails for any reason, fall back to building
+  ///    inline — a slower invoice is always better than no invoice.
   static Future<Uint8List> generateInvoice({
     required BookingHistoryData booking,
     String? policyType,
   }) async {
+    Future<Uint8List> asset(String path) async {
+      final data = await rootBundle.load(path);
+      return data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+    }
+
+    final fonts = await Future.wait([
+      asset('assets/fonts/poppins/Poppins-Regular.ttf'),
+      asset('assets/fonts/poppins/Poppins-Bold.ttf'),
+      asset('assets/fonts/poppins/Poppins-SemiBold.ttf'),
+      asset('assets/fonts/poppins/Poppins-Italic.ttf'),
+    ]);
+
+    Uint8List? aorboLogoBytes;
+    try {
+      aorboLogoBytes = await asset('assets/images/img/aorbologo.webp');
+    } catch (e) {
+      logger.e('InvoicePdfService: failed to load bundled Aorbo logo', error: e);
+    }
+
+    Uint8List? vendorLogoBytes;
+    final vendorLogoUrl = booking.trek?.vendor?.businessLogo ?? '';
+    if (vendorLogoUrl.isNotEmpty) {
+      try {
+        final response = await http
+            .get(Uri.parse(vendorLogoUrl))
+            .timeout(const Duration(seconds: 5));
+        if (response.statusCode == 200) vendorLogoBytes = response.bodyBytes;
+      } catch (e) {
+        logger.w('InvoicePdfService: failed to fetch vendor logo from $vendorLogoUrl', error: e);
+      }
+    }
+
+    final args = _InvoiceBuildArgs(
+      bookingJson: jsonDecode(jsonEncode(booking)) as Map<String, dynamic>,
+      policyType: policyType,
+      fontRegular: fonts[0],
+      fontBold: fonts[1],
+      fontSemiBold: fonts[2],
+      fontItalic: fonts[3],
+      aorboLogo: aorboLogoBytes,
+      vendorLogo: vendorLogoBytes,
+    );
+
+    try {
+      return await compute(_buildInvoiceBytes, args);
+    } catch (e, st) {
+      logger.w('InvoicePdfService: isolate build failed, building inline', error: e, stackTrace: st);
+      return _buildInvoiceBytes(args);
+    }
+  }
+
+  static Future<Uint8List> _buildInvoiceBytes(_InvoiceBuildArgs args) async {
+    final booking = BookingHistoryData.fromJson(args.bookingJson);
+    final policyType = args.policyType;
     final snap = _parseFinanceSnapshot(booking.financeSnapshot);
 
     final resolvedPolicy =
@@ -172,7 +273,6 @@ class InvoicePdfService {
     ].join(', ');
     final vendorPhone = booking.trek?.vendor?.phone ?? 'Contact via app';
     final vendorEmail = booking.trek?.vendor?.email ?? '';
-    final vendorLogoUrl = booking.trek?.vendor?.businessLogo ?? '';
 
     final trekTitle = booking.trek?.title ?? 'Trek';
     final destinationName = booking.trek?.destinationName ?? '—';
@@ -208,40 +308,21 @@ class InvoicePdfService {
       author: 'Aorbo Treks',
     );
 
-    // Bundled in assets/fonts/poppins/ — the printing package's Google-font loader fetched these four
-    // files from fonts.gstatic.com on EVERY invoice, so a weak/offline connection made
-    // invoice generation fail (same failure class as the google_fonts crash on real phones).
-    Future<pw.Font> bundledPoppins(String file) async =>
-        pw.Font.ttf(await rootBundle.load('assets/fonts/poppins/$file'));
-    final font = await bundledPoppins('Poppins-Regular.ttf');
-    final fontBold = await bundledPoppins('Poppins-Bold.ttf');
-    final fontSemi = await bundledPoppins('Poppins-SemiBold.ttf');
-    final fontItalic = await bundledPoppins('Poppins-Italic.ttf');
+    // Fonts are bundled in assets/fonts/poppins/ (the printing package's
+    // Google-font loader fetched these from fonts.gstatic.com on EVERY invoice,
+    // so a weak/offline connection made invoice generation fail — same failure
+    // class as the google_fonts crash on real phones). generateInvoice() reads
+    // them from the bundle and sends the raw bytes here.
+    pw.Font ttf(Uint8List bytes) => pw.Font.ttf(ByteData.sublistView(bytes));
+    final font = ttf(args.fontRegular);
+    final fontBold = ttf(args.fontBold);
+    final fontSemi = ttf(args.fontSemiBold);
+    final fontItalic = ttf(args.fontItalic);
 
-    pw.MemoryImage? vendorLogo;
-    pw.MemoryImage? aorboLogo;
-
-    try {
-      final aorboBytes = await rootBundle.load(
-        'assets/images/img/aorbologo.webp',
-      );
-      aorboLogo = pw.MemoryImage(aorboBytes.buffer.asUint8List());
-    } catch (e) {
-      logger.e('InvoicePdfService: failed to load bundled Aorbo logo', error: e);
-    }
-
-    if (vendorLogoUrl.isNotEmpty) {
-      try {
-        final response = await http
-            .get(Uri.parse(vendorLogoUrl))
-            .timeout(const Duration(seconds: 5));
-        if (response.statusCode == 200) {
-          vendorLogo = pw.MemoryImage(response.bodyBytes);
-        }
-      } catch (e) {
-        logger.w('InvoicePdfService: failed to fetch vendor logo from $vendorLogoUrl', error: e);
-      }
-    }
+    final pw.MemoryImage? vendorLogo =
+        args.vendorLogo != null ? pw.MemoryImage(args.vendorLogo!) : null;
+    final pw.MemoryImage? aorboLogo =
+        args.aorboLogo != null ? pw.MemoryImage(args.aorboLogo!) : null;
 
     final theme = pw.ThemeData.withFont(
       base: font,

@@ -1072,8 +1072,10 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
         return;
       }
       isSuccess = true;
+      // The list refresh is not needed to render the success screen — don't
+      // make the user wait on it (or be stranded here if it fails).
+      _dashboardC.getBookingHistory(refresh: true).catchError((_) {});
       await _dashboardC.getBookingDetail(bookingId: bookingId);
-      await _dashboardC.getBookingHistory(refresh: true);
       final updatedBooking = _dashboardC.bookingHistoryModal.value;
       final displayBooking =
           (updatedBooking != null && updatedBooking.batch != null)
