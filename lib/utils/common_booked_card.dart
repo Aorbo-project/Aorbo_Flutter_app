@@ -1,12 +1,10 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
-import 'package:arobo_app/widgets/custom_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 import '../freezed_models/booking/booking_history_model.dart';
 import 'ist_date_utils.dart';
 import 'screen_constants.dart';
-import 'package:arobo_app/repository/repository.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
 
@@ -58,13 +56,6 @@ class CommonBookedCard extends StatelessWidget {
       default:
         return _BC.inkLight;
     }
-  }
-
-  String _initials(String? name) {
-    if (name == null || name.trim().isEmpty) return '?';
-    final parts = name.trim().split(RegExp(r'\s+'));
-    if (parts.length == 1) return parts[0][0].toUpperCase();
-    return '${parts[0][0]}${parts.last[0]}'.toUpperCase();
   }
 
   String _formatDate(String? rawDate) {
@@ -183,7 +174,6 @@ class CommonBookedCard extends StatelessWidget {
         : startDateStr;
     final String vendorName =
         booking.trek?.vendor?.businessName ?? 'Unknown Vendor';
-    final String vendorLogo = booking.trek?.vendor?.businessLogo ?? '';
     final String destinationName = booking.trek?.destination?.name ?? '';
 
     // CHANGED: trek title removed — destination is now the highlighted
@@ -197,7 +187,6 @@ class CommonBookedCard extends StatelessWidget {
     final String statusLabel = trekStatusRaw.isNotEmpty
         ? trekStatusRaw[0].toUpperCase() + trekStatusRaw.substring(1)
         : '';
-    final double logoSize = _rw(9.5, 42);
     final double cornerRadius = _rw(4.5, 20);
 
     return GestureDetector(
@@ -241,41 +230,6 @@ class CommonBookedCard extends StatelessWidget {
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Container(
-                            width: logoSize,
-                            height: logoSize,
-                            decoration: BoxDecoration(
-                              color: _BC.iconBadge,
-                              borderRadius: BorderRadius.circular(_rw(2.6, 12)),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: _BC.iconBadge.withValues(alpha: 0.15),
-                                  blurRadius: 6,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            clipBehavior: Clip.antiAlias,
-                            child: vendorLogo.isNotEmpty
-                                ? CustomNetworkImage(
-                                    accessToken: Repository.token,
-                                    imageUrl: vendorLogo,
-                                    width: logoSize,
-                                    height: logoSize,
-                                    fit: BoxFit.cover,
-                                  )
-                                : Center(
-                                    child: Text(
-                                      _initials(vendorName),
-                                      style: AppType.style(
-                                        FontSize.s10,
-                                        w: FontWeight.w700,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                          ),
-                          SizedBox(width: _rw(2.8, 13)),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,

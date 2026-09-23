@@ -2,11 +2,9 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:arobo_app/controller/dashboard_controller.dart';
-import 'package:arobo_app/repository/repository.dart';
 import 'package:arobo_app/screens/booking_upcoming_screen.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
-import 'package:arobo_app/widgets/custom_network_image.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -95,12 +93,6 @@ String _formatDate(String? raw) {
   return dt == null ? raw : _fmt(dt);
 }
 
-String _initials(String? name) {
-  if (name == null || name.trim().isEmpty) return '?';
-  final parts = name.trim().split(RegExp(r'\s+'));
-  if (parts.length == 1) return parts[0][0].toUpperCase();
-  return '${parts[0][0]}${parts.last[0]}'.toUpperCase();
-}
 
 // ─────────────────────────────────────────────
 //  FILTERS — Status · Calendar range · Destination
@@ -1230,8 +1222,6 @@ class _BookingsScreenState extends State<BookingsScreen>
     final String destination = _destinationOf(b);
     final String difficulty = b.trek?.difficulty ?? '';
     final String vendorName = b.trek?.vendor?.businessName ?? 'Unknown Vendor';
-    final String vendorLogo = b.trek?.vendor?.businessLogo ?? '';
-    final double logoSize = 9.5.w;
 
     final String startDateStr = _formatDate(b.batch?.startDate);
     final String startTimeStr = b.batch?.startTime ?? '';
@@ -1249,41 +1239,6 @@ class _BookingsScreenState extends State<BookingsScreen>
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Container(
-                width: logoSize,
-                height: logoSize,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B),
-                  borderRadius: BorderRadius.circular(2.6.w),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF1E293B).withValues(alpha: 0.15),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: vendorLogo.isNotEmpty
-                    ? CustomNetworkImage(
-                        accessToken: Repository.token,
-                        imageUrl: vendorLogo,
-                        width: logoSize,
-                        height: logoSize,
-                        fit: BoxFit.cover,
-                      )
-                    : Center(
-                        child: Text(
-                          _initials(vendorName),
-                          style: AppType.style(
-                            FontSize.s10,
-                            w: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-              ),
-              SizedBox(width: 2.8.w),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
