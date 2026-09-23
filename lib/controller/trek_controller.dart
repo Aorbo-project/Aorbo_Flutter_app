@@ -341,10 +341,22 @@ class TrekController extends GetxController {
       final requestModel = ValidateCouponCodeRequestModel(
         code: coupon,
         trekId: trekDetailId.value,
+        // BUGFIX (2026-09-23): was amountToPayNow, which under the Flexible
+        // cancellation policy is just the ₹999 advance, not the trek's real
+        // value — every coupon with a minOrderValue above ₹999 (most of
+        // them) silently failed "Apply" for any Flexible-policy trek,
+        // because 999 < minOrderValue always. The real booking-time check
+        // (services/fareCalculationService.js on the backend) validates a
+        // coupon against vendorDiscountedTotal (base fare minus vendor
+        // discount, before any coupon) — amount_after_discount is that same
+        // value from THIS screen's own already-fetched fare breakdown
+        // (equal to it whenever no coupon is applied yet, which is exactly
+        // when this screen runs), so using it here keeps the preview
+        // consistent with what checkout will actually enforce.
         bookingAmount: calculateFareResponseModel.value.maybeWhen(
           success: (response) => (response as CalculateFareResponseModel)
               .breakdown
-              ?.amountToPayNow,
+              ?.amountAfterDiscount,
           orElse: () => "0",
         ),
         travelerCount: calculateFareRequestModel.value.travelerCount,
