@@ -862,6 +862,7 @@ class TrekController extends GetxController {
     required bool organizerManner,
     required bool trekPlanning,
     required bool womenSafety,
+    List<String> issueTags = const [],
   }) async {
     String body = json.encode({
       "trek_id": trekId,
@@ -873,6 +874,11 @@ class TrekController extends GetxController {
       "organizer_manner_count": organizerManner ? 1 : 0,
       "trek_planning_count": trekPlanning ? 1 : 0,
       "women_safety_count": womenSafety ? 1 : 0,
+      // 1-2 star "What went wrong?" codes (Backend utils/reviewRules.ISSUE_TAGS).
+      "issue_tags": issueTags,
+      // 2 = this app knows the star-dependent form; the backend then enforces
+      // complaint tag + written review on 1-2 star reviews.
+      "form_version": 2,
     });
     try {
       final response = await repository.postApiCall(
@@ -894,7 +900,7 @@ class TrekController extends GetxController {
         } else {
           errorMessage.value = response['message'];
           CustomSnackBar.show(Get.context!, message: errorMessage.value);
-          reviewController.value.clear();
+          // Keep what the user typed - they fix the problem and resubmit.
         }
       }
     } catch (e) {
