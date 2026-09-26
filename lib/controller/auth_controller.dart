@@ -21,6 +21,7 @@ import '../utils/auth_utils.dart';
 import '../utils/custom_snackbar.dart';
 import '../widgets/logger.dart';
 import '../repository/app_env.dart';
+import 'package:arobo_app/security/device_key_service.dart';
 
 class AuthController extends GetxController {
   Repository repository = Repository();
@@ -158,6 +159,9 @@ class AuthController extends GetxController {
       final osVersion = await AuthUtils.getOsVersion();
       final appVersion = await AuthUtils.getAppVersion();
       final trimmedReferral = (referralCode ?? '').trim().toUpperCase();
+      // Public half of this phone's Keystore key — binds the session to the
+      // device (see DeviceKeyService). Null on failure: login still works.
+      final devicePublicKey = await DeviceKeyService.instance.publicKey();
       final body = json.encode({
         'phone': phone,
         'otp': otp,
@@ -167,6 +171,7 @@ class AuthController extends GetxController {
         'os_version': osVersion,
         'app_version': appVersion,
         if (trimmedReferral.isNotEmpty) 'referral_code': trimmedReferral,
+        if (devicePublicKey != null) 'devicePublicKey': devicePublicKey,
       });
       final res = await repository.postApiCall(url: NetworkUrl.verifyOtpPath, body: body);
       isLoading.value = false;

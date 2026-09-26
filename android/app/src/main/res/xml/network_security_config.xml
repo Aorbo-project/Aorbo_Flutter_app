@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Native (Java/Kotlin) networking policy — Firebase, AdMob, Play services,
+  Razorpay's native SDK. (Dart's HttpClient does not read this file; the API
+  client's TLS policy lives in lib/security/pinned_http_client.dart.)
+
+  - No cleartext HTTP anywhere: every endpoint the app talks to is HTTPS.
+  - Only the system CA store is trusted. A CA a user (or an attacker with a
+    few seconds on the phone) installs under Settings is ignored, so
+    Burp/Charles-style interception of release builds fails.
+  - Debug builds additionally trust user CAs, so developers can still proxy.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+    <debug-overrides>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </debug-overrides>
+</network-security-config>

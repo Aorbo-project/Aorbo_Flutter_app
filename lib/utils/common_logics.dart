@@ -1,6 +1,8 @@
 import 'dart:developer';
 
 import 'package:arobo_app/repository/network_url.dart';
+import 'package:arobo_app/security/device_key_service.dart';
+import 'package:arobo_app/security/pinned_http_client.dart';
 // import 'package:arobo_app/screens/login_screen.dart';
 import 'package:arobo_app/screens/splash_screen.dart';
 import 'package:arobo_app/utils/shared_preferences.dart';
@@ -24,6 +26,7 @@ class CommonLogics {
             'Content-Type': 'application/json',
           },
         ));
+        PinnedHttp.apply(dio);
         await dio.post(NetworkUrl.logoutPath, data: '{}');
       }
     } catch (e) {
@@ -31,6 +34,7 @@ class CommonLogics {
     }
 
     await FirebaseCrashlytics.instance.setUserIdentifier('');
+    await DeviceKeyService.instance.reset();
     await sp!.clear();
     await Get.deleteAll(force: true);
     Get.offAll(() => SplashWithLoginScreen());
@@ -39,7 +43,6 @@ class CommonLogics {
   static bool checkUserLogin() {
     bool isLoggedIn = sp!.getBool(SpUtil.isLoggedIn) ?? false;
     if (isLoggedIn) {
-      log('token: :::${sp!.getString(SpUtil.accessToken)}');
       return true;
     } else {
       return false;

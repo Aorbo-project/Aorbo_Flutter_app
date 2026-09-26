@@ -73,5 +73,8 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
+    // Play Integrity standard requests (PlayIntegrityChannel.kt). 1.4.0+ is
+    // required for the app-access-risk verdict.
+    implementation 'com.google.android.play:integrity:1.6.0'
 }
 

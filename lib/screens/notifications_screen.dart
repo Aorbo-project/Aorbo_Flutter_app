@@ -98,14 +98,14 @@ class _NotificationScreenState extends State<NotificationScreen>
     final recentNotifications = _controller.notifications.where((n) {
       // Fallback: If the model failed to parse the date, show it anyway!
       if (n.createdAt == null) {
-        print('⚠️ Notification ${n.id} missing date, showing by default');
+        debugPrint('⚠️ Notification ${n.id} missing date, showing by default');
         return true;
       }
 
       final daysDifference = now.difference(n.createdAt!).inDays;
 
       // Debug print: Check your terminal to see exactly what the dates are calculating
-      print(
+      debugPrint(
         '🔍 Date Check: Now=$now | Created=${n.createdAt} | Diff=$daysDifference days',
       );
 

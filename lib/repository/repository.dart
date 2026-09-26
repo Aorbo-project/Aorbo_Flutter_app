@@ -10,7 +10,11 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:get/get.dart' hide FormData, Response;
+import 'package:arobo_app/integrity/integrity_interceptor.dart';
+import 'package:arobo_app/security/device_key_service.dart';
+import 'package:arobo_app/security/pinned_http_client.dart';
 
 class RateLimitException implements Exception {
   final String message;
@@ -83,9 +87,15 @@ class Repository {
         completer.complete(false);
         return false;
       }
+      // Device-bound session: prove this is the phone the session belongs to
+      // (Backend services/deviceBinding.js). Unbound sessions ignore it.
+      final signature = await DeviceKeyService.instance.signRefresh(refresh);
       final resp = await _bareDio.post(
         NetworkUrl.refreshTokenPath,
         data: {'refreshToken': refresh},
+        options: Options(headers: {
+          if (signature != null) DeviceKeyService.signatureHeader: signature,
+        }),
       );
       final data = resp.data is Map ? (resp.data as Map)['data'] ?? resp.data : null;
       final newAccess = data is Map ? data['token'] as String? : null;
@@ -112,12 +122,22 @@ class Repository {
     }
   }
 
+  /// (Re)build both clients' TLS layer — at start-up, and again if the
+  /// remote pinning switch changes (SecurityConfig).
+  void resetHttpClients() {
+    PinnedHttp.apply(dio);
+    PinnedHttp.apply(_bareDio);
+  }
+
   initRepo() async {
+    resetHttpClients();
+    // Play Integrity first: it fixes the exact request body it hashes, so it
+    // must see options.data before anything else touches it.
+    dio.interceptors.add(IntegrityInterceptor());
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          final curl = _toCurl(options);
-          debugPrint("📡 CURL: $curl");
+          if (kDebugMode) debugPrint("📡 CURL: ${_toCurl(options)}");
           FirebaseCrashlytics.instance.log(
             'API → ${options.method} ${options.path}',
           );
@@ -247,19 +267,56 @@ class Repository {
     );
   }
 
+  // Never log credentials, even in debug builds: screenshots / shared logs
+  // travel further than the developer's own terminal.
+  static const Set<String> _secretHeaders = {
+    'authorization',
+    'x-play-integrity',
+    'x-device-signature',
+    'cookie',
+  };
+  static const Set<String> _secretBodyKeys = {
+    'token',
+    'accessToken',
+    'refreshToken',
+    'refresh_token',
+    'otp',
+    'code',
+    'fareToken',
+    'fare_token',
+    'devicePublicKey',
+  };
+
+  static Object? _redact(Object? value) {
+    if (value is Map) {
+      return value.map((k, v) => MapEntry(
+            k,
+            _secretBodyKeys.contains(k.toString()) ? '[REDACTED]' : _redact(v),
+          ));
+    }
+    if (value is List) return value.map(_redact).toList();
+    return value;
+  }
+
   String _toCurl(RequestOptions options) {
     final method = options.method;
     final headers = options.headers.entries
-        .map((e) => "-H '${e.key}: ${e.value}'")
+        .map((e) => _secretHeaders.contains(e.key.toLowerCase())
+            ? "-H '${e.key}: [REDACTED]'"
+            : "-H '${e.key}: ${e.value}'")
         .join(" ");
 
     String data = "";
-    if (options.data != null) {
-      if (options.data is Map || options.data is List) {
-        data = "-d '${jsonEncode(options.data)}'";
-      } else {
-        data = "-d '${options.data}'";
-      }
+    Object? body = options.data;
+    if (body is String) {
+      try {
+        body = jsonDecode(body);
+      } catch (_) {}
+    }
+    if (body != null) {
+      data = (body is Map || body is List)
+          ? "-d '${jsonEncode(_redact(body))}'"
+          : "-d '$body'";
     }
 
     return "curl -X $method $headers $data '${options.uri}'";
