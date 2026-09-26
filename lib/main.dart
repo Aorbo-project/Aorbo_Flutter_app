@@ -24,6 +24,8 @@ import 'services/analytics_service.dart';
 import 'services/crash_report_service.dart';
 import 'utils/shared_preferences.dart';
 import 'package:arobo_app/integrity/play_integrity_service.dart';
+import 'package:arobo_app/security/security_config.dart';
+import 'package:arobo_app/security/security_guard.dart';
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // Message received while app is terminated/in background — system tray handles display.
@@ -64,6 +66,14 @@ late Future<void> appBootstrapFuture;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Release builds write NOTHING to the device log. debugPrint (unlike the
+  // `logger` package, which is already debug-only) prints in release too,
+  // and anything in logcat is readable over adb / by bug-report tools — the
+  // request log used to dump full Authorization headers there.
+  if (kReleaseMode) {
+    debugPrint = (String? message, {int? wrapWidth}) {};
+  }
 
   PlatformDispatcher.instance.onError = (error, stack) {
     debugPrint(
@@ -115,6 +125,9 @@ Future<void> _bootstrap() async {
   };
   await Preferences.initPref();
   sp = await SpUtil.getInstance();
+  // Remote security switches (last fetched values, local, fast) must be in
+  // place before the API client builds its TLS layer.
+  await SecurityConfig.loadCached();
   await Repository().initRepo();
 
   _deferredInit();
@@ -127,6 +140,8 @@ void _deferredInit() {
     // the old Firebase App Check activation, whose tokens nothing verified and
     // which spent the same Play Integrity quota.
     PlayIntegrityService.instance.warmUp();
+    // Remote-config refresh + tamper scan now and on every return to the app.
+    SecurityGuard.instance.start();
 
     // AdMob — off the critical path. Test ads only until AdConfig.useRealAds.
     // UMP consent is resolved first; nothing requests an ad until

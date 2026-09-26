@@ -5,7 +5,8 @@
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:label="Aorbo Treks"
-        android:usesCleartextTraffic="true">
+        android:usesCleartextTraffic="false"
+        android:networkSecurityConfig="@xml/network_security_config">
         <!-- resizeableActivity=false: the UI is fixed-layout (sizer %s, no
              reflow); a narrow split-screen pane on a phone squeezes rows
              past their content and stripes them, so opt out of

@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:arobo_app/integrity/play_integrity_service.dart';
 import 'package:arobo_app/integrity/request_hash.dart';
+import 'package:arobo_app/security/device_risk_service.dart';
 import 'package:dio/dio.dart';
 
 /// Endpoints the backend gates with requirePlayIntegrity (keep in sync with
@@ -39,10 +40,14 @@ class IntegrityProtectedPaths {
 ///
 /// Must run before anything else re-serialises `options.data`.
 class IntegrityInterceptor extends Interceptor {
-  IntegrityInterceptor({PlayIntegrityService? service})
-      : _service = service ?? PlayIntegrityService.instance;
+  IntegrityInterceptor({
+    PlayIntegrityService? service,
+    Future<List<String>> Function()? riskFlags,
+  })  : _service = service ?? PlayIntegrityService.instance,
+        _risk = riskFlags ?? DeviceRiskService.instance.current;
 
   final PlayIntegrityService _service;
+  final Future<List<String>> Function() _risk;
 
   static const String tokenHeader = 'X-Play-Integrity';
   static const String errorHeader = 'X-Play-Integrity-Error';
@@ -80,6 +85,10 @@ class IntegrityInterceptor extends Interceptor {
       bodyBytes: utf8.encode(body),
     );
     final result = await _service.tokenFor(hash);
+    final risk = await _risk();
+    if (risk.isNotEmpty) {
+      options.headers[DeviceRiskService.riskHeader] = risk.join(',');
+    }
     if (result.token != null) {
       options.headers[tokenHeader] = result.token;
     } else {
