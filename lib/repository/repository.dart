@@ -11,6 +11,7 @@ import 'package:dio/dio.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart' hide FormData, Response;
+import 'package:arobo_app/integrity/integrity_interceptor.dart';
 
 class RateLimitException implements Exception {
   final String message;
@@ -113,6 +114,9 @@ class Repository {
   }
 
   initRepo() async {
+    // Play Integrity first: it fixes the exact request body it hashes, so it
+    // must see options.data before anything else touches it.
+    dio.interceptors.add(IntegrityInterceptor());
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {

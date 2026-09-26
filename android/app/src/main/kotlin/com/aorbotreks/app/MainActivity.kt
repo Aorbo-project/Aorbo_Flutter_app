@@ -6,8 +6,11 @@ import io.flutter.plugins.googlemobileads.GoogleMobileAdsPlugin
 
 class MainActivity : FlutterActivity() {
 
+    private var playIntegrity: PlayIntegrityChannel? = null
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        playIntegrity = PlayIntegrityChannel(applicationContext, flutterEngine.dartExecutor.binaryMessenger)
         GoogleMobileAdsPlugin.registerNativeAdFactory(
             flutterEngine,
             "feedCard",
@@ -17,6 +20,8 @@ class MainActivity : FlutterActivity() {
 
     override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
         super.cleanUpFlutterEngine(flutterEngine)
+        playIntegrity?.dispose()
+        playIntegrity = null
         GoogleMobileAdsPlugin.unregisterNativeAdFactory(flutterEngine, "feedCard")
     }
 }

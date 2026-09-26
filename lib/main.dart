@@ -7,7 +7,6 @@ import 'package:arobo_app/repository/repository.dart';
 import 'package:arobo_app/routes/routes.dart';
 import 'package:arobo_app/utils/Preferences.dart';
 import 'package:arobo_app/utils/app_theme.dart';
-import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -24,6 +23,7 @@ import 'services/ad_consent_service.dart';
 import 'services/analytics_service.dart';
 import 'services/crash_report_service.dart';
 import 'utils/shared_preferences.dart';
+import 'package:arobo_app/integrity/play_integrity_service.dart';
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // Message received while app is terminated/in background — system tray handles display.
@@ -122,15 +122,11 @@ Future<void> _bootstrap() async {
 
 void _deferredInit() {
   Future(() async {
-    try {
-      await FirebaseAppCheck.instance.activate(
-        webProvider: ReCaptchaV3Provider('recaptcha-v3-site-key'),
-        androidProvider: AndroidProvider.playIntegrity,
-        appleProvider: AppleProvider.appAttest,
-      );
-    } catch (e) {
-      debugPrint('AppCheck activation failed: $e');
-    }
+    // Play Integrity: prepare the token provider now so the first protected
+    // request (usually OTP on the login screen) doesn't wait for it. Replaces
+    // the old Firebase App Check activation, whose tokens nothing verified and
+    // which spent the same Play Integrity quota.
+    PlayIntegrityService.instance.warmUp();
 
     // AdMob — off the critical path. Test ads only until AdConfig.useRealAds.
     // UMP consent is resolved first; nothing requests an ad until
