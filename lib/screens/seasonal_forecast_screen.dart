@@ -31,7 +31,13 @@ class _SeasonalForecastScreenState extends State<SeasonalForecastScreen> {
   @override
   void initState() {
     super.initState();
-    _dashboardC.fetchSeasonalPicks();
+    // fetchSeasonalPicks() sets an Rx value (loading) synchronously. Called
+    // straight from initState it can land while an Obx elsewhere is mid-build,
+    // which Flutter rejects ("setState() or markNeedsBuild() called during
+    // build" — crash report #1080, 2026-09-15). Start it after the first frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _dashboardC.fetchSeasonalPicks();
+    });
   }
 
   void _selectSeason(TrekSeason season) {
