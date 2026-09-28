@@ -9,13 +9,12 @@ import '../theme/app_typography.dart';
 import '../utils/common_logics.dart';
 import '../utils/custom_snackbar.dart';
 import '../utils/screen_constants.dart';
-import '../widgets/pending_deletion_dialog.dart';
 
 /// Delete Account — customer self-service account deletion.
 ///
 /// Procedure (owner decision 2026-09-28):
 ///  * A request schedules deletion 30 days out and signs the customer out;
-///    signing in again within those 30 days lets them cancel it.
+///    signing in again within those 30 days cancels it automatically.
 ///  * Blocked while the customer has an upcoming trek, a refund in progress
 ///    or an open complaint.
 ///  * Profile, travellers, emergency contacts, coupons/rewards, device and
@@ -56,6 +55,14 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
 
   String get _deletionDate {
     final d = DateTime.now().add(const Duration(days: 30));
+    const m = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${d.day} ${m[d.month - 1]} ${d.year}';
+  }
+
+  /// "28 Oct 2026" from an ISO timestamp (local time).
+  static String _formatDate(String? iso) {
+    final d = DateTime.tryParse(iso ?? '')?.toLocal();
+    if (d == null) return '';
     const m = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return '${d.day} ${m[d.month - 1]} ${d.year}';
   }
@@ -104,7 +111,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
       if (res is Map && res['success'] == true) {
         final data = res['data'];
         final scheduled = data is Map ? data['scheduledFor']?.toString() : null;
-        _showScheduled(formatDeletionDate(scheduled));
+        _showScheduled(_formatDate(scheduled));
         return;
       }
       throw Exception('Request failed');
@@ -286,7 +293,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                 SizedBox(height: 0.5.h),
                 Text(
                   'If you continue, your account will be deleted on $_deletionDate. '
-                  'Changed your mind? Just log in before that date and cancel.',
+                  'Changed your mind? Just log in again before that date and the request is cancelled.',
                   style: AppType.style(FontSize.s9, color: AppColors.ink, height: 1.5),
                 ),
               ],
@@ -519,7 +526,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
             SizedBox(height: 0.8.h),
             Text(
               'Your account will be deleted on $_deletionDate and you will be logged out now. '
-              'Log in before then to cancel.',
+              'Logging in again before then cancels it.',
               textAlign: TextAlign.center,
               style: AppType.style(FontSize.s9, color: AppColors.inkMid, height: 1.5),
             ),
@@ -581,7 +588,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                 SizedBox(height: 0.8.h),
                 Text(
                   'Your account will be deleted on ${date.isEmpty ? _deletionDate : date}. '
-                  "We've logged you out. Log in before that date if you want to keep your account.",
+                  "We've logged you out. Logging in again before that date cancels the request.",
                   textAlign: TextAlign.center,
                   style: AppType.style(FontSize.s9, color: AppColors.inkMid, height: 1.5),
                 ),

@@ -23,7 +23,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:arobo_app/theme/app_typography.dart';
 import 'package:arobo_app/widgets/otp_success_overlay.dart';
 import 'package:arobo_app/widgets/dissolve_to_dashboard.dart';
-import 'package:arobo_app/widgets/pending_deletion_dialog.dart';
 
 class SplashWithLoginScreen extends StatefulWidget {
   const SplashWithLoginScreen({super.key});
@@ -595,30 +594,6 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
   // Runs for BOTH cold-start auto-login and OTP-success: by the time this
   // is called the pin form has faded to nothing, so the visible background
   // is the same yellow gradient in both cases.
-  // Signed in during the 30-day account-deletion grace period: ask first.
-  // Keep → cancel the deletion and continue; otherwise sign out again.
-  Future<void> _afterOtpVerified() async {
-    final pending = _authC.pendingDeletionAt.value;
-    if (pending == null) {
-      _goToDashboard();
-      return;
-    }
-    final keep = await showPendingDeletionDialog(pending);
-    if (keep) {
-      final ok = await _authC.cancelAccountDeletion();
-      if (ok) {
-        CustomSnackBar.show(Get.context!, message: 'Your account will not be deleted.');
-        _goToDashboard();
-      } else {
-        CustomSnackBar.show(Get.context!, message: "Couldn't cancel the deletion. Please try again.");
-        await CommonLogics.logOut();
-      }
-    } else {
-      _authC.pendingDeletionAt.value = null;
-      await CommonLogics.logOut();
-    }
-  }
-
   void _goToDashboard() {
     _bootHintTimer?.cancel();
     if (!mounted) {
@@ -629,6 +604,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
     setState(() => _leavingToDashboard = true);
     _exitFadeController.forward();
     _maybeShowReferralOutcome();
+    _maybeShowDeletionCancelled();
     dissolveToDashboard(
       context,
       cover: const DecoratedBox(
@@ -641,6 +617,25 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
         ),
       ),
     );
+  }
+
+  // Signing in again cancelled a pending account-deletion request — say so
+  // once on the dashboard (no prompt; owner decision 2026-09-28).
+  void _maybeShowDeletionCancelled() {
+    if (!_authC.deletionCancelledOnLogin.value) return;
+    _authC.deletionCancelledOnLogin.value = false;
+    Future.delayed(const Duration(milliseconds: 900), () {
+      Get.snackbar(
+        'Welcome back',
+        'Your account deletion request has been cancelled.',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: const Color(0xFF1E8E3E),
+        colorText: Colors.white,
+        margin: EdgeInsets.all(3.w),
+        borderRadius: 14,
+        duration: const Duration(seconds: 4),
+      );
+    });
   }
 
   // Persistent confirmation of the referral outcome the backend returned in
@@ -890,7 +885,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
 
     return OtpSuccessOverlay(
       play: _showOtpSuccessOverlay,
-      onFinished: _afterOtpVerified,
+      onFinished: _goToDashboard,
       child: SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
