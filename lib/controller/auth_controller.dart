@@ -47,6 +47,10 @@ class AuthController extends GetxController {
   // Exact backend message from the last failed verifyOtp — so the OTP screen
   // can show "OTP has expired…" vs "Incorrect OTP…" instead of a generic line.
   final RxString otpErrorMessage = ''.obs;
+  // ISO date the account is scheduled for deletion, when the customer signs
+  // in during the 30-day grace period (verify-otp `accountDeletion`). The
+  // splash asks "Keep my account?" before going to the dashboard.
+  final RxnString pendingDeletionAt = RxnString();
   RxBool isLoading = false.obs;
   RxBool isProfileLoading = false.obs;
   RxBool isPhoneValid = false.obs;
@@ -206,6 +210,10 @@ class AuthController extends GetxController {
           // same request — keep the outcome for the post-verify banner.
           lastReferralResult.value = verifyOtpModal.value.data?.referral;
           referralCodeTextField.value.clear();
+          final data = res['data'];
+          final deletion = data is Map ? data['accountDeletion'] : null;
+          pendingDeletionAt.value =
+              deletion is Map ? deletion['scheduledFor']?.toString() : null;
           return true;
         } catch (parseError) {
           logger.e('Error parsing auth response: $parseError');
@@ -355,6 +363,19 @@ class AuthController extends GetxController {
       referralMessage.value = '';
     } finally {
       referralChecking.value = false;
+    }
+  }
+
+  /// Cancel a scheduled account deletion (customer chose "Keep my account").
+  Future<bool> cancelAccountDeletion() async {
+    try {
+      final res = await repository.deleteApiCall(url: NetworkUrl.accountDeletionPath);
+      final ok = res != null && res['success'] == true;
+      if (ok) pendingDeletionAt.value = null;
+      return ok;
+    } catch (e) {
+      logger.e('cancel account deletion failed: $e');
+      return false;
     }
   }
 

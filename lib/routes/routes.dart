@@ -32,6 +32,7 @@ import '../screens/my_tickets_screen.dart';
 import '../screens/claims_screen.dart';
 import '../screens/help_screen.dart';
 import '../screens/logout_screen.dart';
+import '../screens/delete_account_screen.dart';
 import '../screens/refer&earn_screen.dart';
 import '../screens/rate_review_screen.dart';
 import '../screens/contact_support_screen.dart';
@@ -106,6 +107,12 @@ final routes = [
 
   GetPage(name: '/notifications', page: () => const NotificationScreen()),
   GetPage(name: '/logout', page: () => const LogoutScreen()),
+  GetPage(
+    name: '/delete-account',
+    page: () => const DeleteAccountScreen(),
+    transition: Transition.rightToLeft,
+    transitionDuration: const Duration(milliseconds: 300),
+  ),
   GetPage(name: '/chatboat', page: () => const ChatScreen()),
   GetPage(name: '/refers', page: () => const refer()),
   GetPage(name: '/claim', page: () => const claims()),

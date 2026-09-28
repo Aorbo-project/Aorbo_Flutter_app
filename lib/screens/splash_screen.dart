@@ -23,6 +23,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:arobo_app/theme/app_typography.dart';
 import 'package:arobo_app/widgets/otp_success_overlay.dart';
 import 'package:arobo_app/widgets/dissolve_to_dashboard.dart';
+import 'package:arobo_app/widgets/pending_deletion_dialog.dart';
 
 class SplashWithLoginScreen extends StatefulWidget {
   const SplashWithLoginScreen({super.key});
@@ -594,6 +595,30 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
   // Runs for BOTH cold-start auto-login and OTP-success: by the time this
   // is called the pin form has faded to nothing, so the visible background
   // is the same yellow gradient in both cases.
+  // Signed in during the 30-day account-deletion grace period: ask first.
+  // Keep → cancel the deletion and continue; otherwise sign out again.
+  Future<void> _afterOtpVerified() async {
+    final pending = _authC.pendingDeletionAt.value;
+    if (pending == null) {
+      _goToDashboard();
+      return;
+    }
+    final keep = await showPendingDeletionDialog(pending);
+    if (keep) {
+      final ok = await _authC.cancelAccountDeletion();
+      if (ok) {
+        CustomSnackBar.show(Get.context!, message: 'Your account will not be deleted.');
+        _goToDashboard();
+      } else {
+        CustomSnackBar.show(Get.context!, message: "Couldn't cancel the deletion. Please try again.");
+        await CommonLogics.logOut();
+      }
+    } else {
+      _authC.pendingDeletionAt.value = null;
+      await CommonLogics.logOut();
+    }
+  }
+
   void _goToDashboard() {
     _bootHintTimer?.cancel();
     if (!mounted) {
@@ -865,7 +890,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
 
     return OtpSuccessOverlay(
       play: _showOtpSuccessOverlay,
-      onFinished: _goToDashboard,
+      onFinished: _afterOtpVerified,
       child: SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

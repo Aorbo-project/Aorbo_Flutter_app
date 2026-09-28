@@ -29,6 +29,8 @@ class NetworkUrl {
   static const String verifyOtpPath = 'customer/auth/verify-otp';
   static const String refreshTokenPath = 'customer/auth/refresh';
   static const String logoutPath = 'customer/auth/logout';
+  // Self-service account deletion: GET status, POST request, DELETE cancel.
+  static const String accountDeletionPath = 'customer/account/deletion';
   static const String deviceToken = 'customer/device-token';
   static const String notifications = 'customer/notifications';
   static String notificationRead(int id) => 'customer/notifications/$id/read';
