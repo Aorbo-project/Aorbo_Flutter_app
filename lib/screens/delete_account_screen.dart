@@ -366,7 +366,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
           SizedBox(width: 2.5.w),
           Expanded(
             child: Text(
-              'You can delete your account only when you have no upcoming trek, no refund in progress and no open complaint.',
+              'You can delete your account only when you have no upcoming or ongoing trek (wait until it is completed, or cancel it), no refund in progress and no open complaint.',
               style: AppType.style(FontSize.s9, color: AppColors.ink, height: 1.5),
             ),
           ),
