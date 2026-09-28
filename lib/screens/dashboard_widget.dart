@@ -1238,7 +1238,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
           Icon(Icons.shield_outlined, size: 12, color: const Color(0xFF0F7B6C)),
           const SizedBox(width: 4),
           Text(
-            '100% Secure Payments',
+            'Secure Payments',
             style: AppType.style(
               9.5,
               w: FontWeight.w700,

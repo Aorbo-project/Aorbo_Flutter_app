@@ -363,7 +363,7 @@ class _SafetyScreenState extends State<SafetyScreen>
     {
       'title': "Explore The Wild With Confidence.",
       'subtitle':
-          "AoRbo connects you with trusted trekking partners, experienced guides & safety equipment.",
+          "Aorbo connects you with verified trek organisers — each one's identity and business is checked before they can list a trek.",
       'gradientColors': [
         const Color(0xFF6C3DE0).withValues(alpha: 0.75),
         const Color(0xFFE0409A).withValues(alpha: 0.75),
@@ -373,7 +373,7 @@ class _SafetyScreenState extends State<SafetyScreen>
     {
       'title': "Safety First\nAdventure Second.",
       'subtitle':
-          "Our certified guides and well-maintained equipment ensure your safety throughout the journey.",
+          "Check each trek's itinerary, difficulty and traveller reviews before you book, and follow your trek leader's safety instructions on the trail.",
       'gradientColors': [
         const Color(0xFF0D47A1).withValues(alpha: 0.78),
         const Color(0xFF00897B).withValues(alpha: 0.78),
@@ -381,9 +381,9 @@ class _SafetyScreenState extends State<SafetyScreen>
       'backgroundImage': CommonImages.safety2,
     },
     {
-      'title': "24/7 Support\nAt Your Service.",
+      'title': "Help When\nYou Need It.",
       'subtitle':
-          "Round-the-clock assistance and emergency support available throughout your trek.",
+          "Write to us any time at care@aorbotreks.com. In an emergency on the trail, contact your trek leader or dial 112.",
       'gradientColors': [
         const Color(0xFFBF360C).withValues(alpha: 0.78),
         const Color(0xFFF9A825).withValues(alpha: 0.78),
@@ -665,7 +665,7 @@ class _SafetyScreenState extends State<SafetyScreen>
         ),
         SizedBox(height: 0.6.h),
         Text(
-          'These contacts will be notified in case of emergency',
+          'Keep the people to call in an emergency saved in one place',
           style: _ts(9.0, c: _C.inkMid),
         ),
         SizedBox(height: 1.5.h),
@@ -1624,7 +1624,7 @@ class _ManagerSheetState extends State<_ManagerSheet> {
               Text('No contacts yet', style: _ts(13.0, w: FontWeight.w600)),
               SizedBox(height: 0.8.h),
               Text(
-                'Add up to $_kMaxContacts trusted contacts who\nwill be notified in an emergency.',
+                'Save up to $_kMaxContacts trusted contacts to keep\nthem handy for emergencies.',
                 textAlign: TextAlign.center,
                 style: _ts(9.0, c: _C.inkMid, h: 1.6),
               ),
@@ -1647,7 +1647,7 @@ class _ManagerSheetState extends State<_ManagerSheet> {
       child: _SheetShell(
         messengerKey: _messengerKey,
         title: 'Emergency Contacts',
-        subtitle: 'They will be notified in case of emergency',
+        subtitle: 'Saved to your account for emergencies',
         onClose: _onCloseAttempt,
         closeEnabled: !_isSaving,
         trailing: TextButton(
@@ -1920,7 +1920,7 @@ class _AddContactSheetState extends State<_AddContactSheet> {
   Widget build(BuildContext context) {
     return _SheetShell(
       title: 'Add emergency contact',
-      subtitle: 'They will be notified if you raise an alert',
+      subtitle: 'Saved to your account for emergencies',
       onClose: () => Navigator.of(context).maybePop(),
       messengerKey: _messengerKey,
       body: SingleChildScrollView(

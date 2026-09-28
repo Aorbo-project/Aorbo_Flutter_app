@@ -96,7 +96,7 @@ const Map<String, List<Map<String, String>>> _dummyFaqsByCategory = {
   _cancellationRefundCategory: [
     {
       'q': 'How long does a refund take to process?',
-      'a': 'Refunds are typically processed within 5-7 business days after approval, depending on your bank.',
+      'a': 'Refunds start automatically as soon as your cancellation is confirmed and usually reach your account in 5-7 business days, depending on your bank.',
     },
     {
       'q': 'Why was my refund amount less than expected?',
@@ -104,7 +104,7 @@ const Map<String, List<Map<String, String>>> _dummyFaqsByCategory = {
     },
     {
       'q': 'Can I get a full refund if the trek is cancelled by the organiser?',
-      'a': "Yes — if a trek is cancelled by the organiser, you're eligible for a full refund or free rescheduling.",
+      'a': "If the organiser cancels, no cancellation charge applies: your trek fare and GST are refunded. The ₹10 platform fee and any card or net-banking payment fee are not refunded.",
     },
   ],
   'Something Else': [

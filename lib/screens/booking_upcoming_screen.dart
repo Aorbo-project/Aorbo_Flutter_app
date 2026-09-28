@@ -1749,7 +1749,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                       child: Text(
                         statusData?.refundSpeed == 'instant'
                             ? 'Instant refund — credited within minutes'
-                            : 'Normal refund — 3 to 5 business days',
+                            : 'Normal refund — 5 to 7 business days',
                         style: AppType.style(
                           8.sp,
                           w: FontWeight.w500,
@@ -2080,7 +2080,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                       ),
                       SizedBox(width: 2.w),
                       Text(
-                        'Speed: ${statusData?.refundSpeed == 'instant' ? 'Instant (within minutes)' : 'Normal (3–5 business days)'}',
+                        'Speed: ${statusData?.refundSpeed == 'instant' ? 'Instant (within minutes)' : 'Normal (5–7 business days)'}',
                         style: AppType.style(9.sp, color: _TC.inkMid),
                       ),
                     ],

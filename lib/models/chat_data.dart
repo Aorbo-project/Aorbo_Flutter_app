@@ -67,7 +67,7 @@ final Map<String, dynamic> chatbotData =
       "What is the refund policy for cancellations?": "Refund policies vary by trek organizer. Check the cancellation terms in the trek details before booking.",
       "Is there any cancellation fee?": "Cancellation fees depend on the trek's terms. Check the refund policy before canceling.",
       "What if I miss my trek due to unforeseen circumstances?": "Unfortunately, missed treks are usually non-refundable. Contact support for options.",
-      "What if the trek is canceled due to bad weather?": "full refund or rescheduling option is provided.",
+      "What if the trek is canceled due to bad weather?": "If the trek is cancelled before it starts, no cancellation charge applies: your trek fare and GST are refunded. The ₹10 platform fee and any card payment fee are not refunded.",
       "Can I transfer my booking to someone else?": "Some organizers allow name changes. Contact support for assistance."
     }
   },
@@ -94,9 +94,9 @@ final Map<String, dynamic> chatbotData =
       "Is trekking safe for solo travelers, especially women?"
     ],
     "answers": {
-      "Are trek organizers verified on Aorbo?": "Yes, all organizers undergo strict background checks and we will provide emergency support.",
+      "Are trek organizers verified on Aorbo?": "Yes, every organizer completes identity, business and bank verification before listing treks, and every trek is reviewed before it goes live.",
       "How can trek organizers partner with Aorbo Treks?": "Organizers can register at www.aorbovendor.co.in for verification.",
-      "Is trekking safe for solo travelers, especially women?": "Yes, Aorbo Treks ensures safety with verified organizers and secure groups."
+      "Is trekking safe for solo travelers, especially women?": "All organizers are verified, and you can read reviews from past travellers — including women-safety ratings — before you book."
     }
   },
   "Recently Asked": {
