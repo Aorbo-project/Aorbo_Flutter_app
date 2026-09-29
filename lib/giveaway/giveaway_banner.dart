@@ -5,22 +5,70 @@ import 'package:sizer/sizer.dart';
 import '../theme/app_tokens.dart';
 import '../theme/app_typography.dart';
 import '../utils/screen_constants.dart';
+import 'giveaway_api.dart';
 
-/// Dashboard entry point to the Aorbo Trek Giveaway. Shown only while
-/// GiveawayConfig.enabled; one wording for everyone, since new users enter
-/// and existing users invite (the page itself shows the right view).
-///
-/// DESIGN PHASE: [roundLabel] / [drawLabel] default to Round 1's planned
-/// values; the backend phase passes them from GET campaign/current.
+/// Dashboard slot for the giveaway: loads the featured round from the backend
+/// and shows [GiveawayBanner] for it — nothing when no round is running.
+/// Mounted only while GiveawayConfig.enabled.
+class GiveawayBannerSlot extends StatefulWidget {
+  const GiveawayBannerSlot({super.key});
+
+  // One fetch shared across dashboard rebuilds, refreshed after 5 minutes.
+  static Future<GiveawayRoundSummary?>? _cached;
+  static DateTime? _cachedAt;
+
+  static Future<GiveawayRoundSummary?> _load() {
+    final fresh = _cachedAt != null && DateTime.now().difference(_cachedAt!) < const Duration(minutes: 5);
+    if (_cached == null || !fresh) {
+      _cachedAt = DateTime.now();
+      _cached = GiveawayApi.instance.currentRound().catchError((Object _) {
+        _cachedAt = null; // retry on the next build
+        return null;
+      });
+    }
+    return _cached!;
+  }
+
+  @override
+  State<GiveawayBannerSlot> createState() => _GiveawayBannerSlotState();
+}
+
+class _GiveawayBannerSlotState extends State<GiveawayBannerSlot> {
+  late final Future<GiveawayRoundSummary?> _round = GiveawayBannerSlot._load();
+
+  static const _visiblePhases = {'upcoming', 'open', 'closed', 'drawing', 'drawn'};
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<GiveawayRoundSummary?>(
+      future: _round,
+      builder: (context, snap) {
+        final round = snap.data;
+        if (round == null || !_visiblePhases.contains(round.phase)) return const SizedBox.shrink();
+        return GiveawayBanner(
+          roundLabel: round.label.toUpperCase(),
+          drawLabel: round.drawLabel,
+          ctaLabel: round.phase == 'drawn' ? 'See the result' : 'Take part',
+        );
+      },
+    );
+  }
+}
+
+/// Dashboard entry point to the Aorbo Trek Giveaway. One wording for
+/// everyone, since new users enter and existing users invite (the page itself
+/// shows the right view).
 class GiveawayBanner extends StatelessWidget {
   const GiveawayBanner({
     super.key,
     this.roundLabel = 'ROUND 1',
     this.drawLabel = 'Draw on 31 Mar, 7 PM',
+    this.ctaLabel = 'Take part',
   });
 
   final String roundLabel;
   final String drawLabel;
+  final String ctaLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -126,7 +174,7 @@ class GiveawayBanner extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'Take part',
+                    ctaLabel,
                     textScaler: const TextScaler.linear(1.0),
                     style: AppType.style(FontSize.s10, w: FontWeight.w700, color: AppColors.inkStrong),
                   ),

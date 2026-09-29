@@ -7,8 +7,8 @@ import 'package:dio/dio.dart';
 
 /// Endpoints the backend gates with requirePlayIntegrity (keep in sync with
 /// Backend/routes/v1/*: customerAuthRoutes, secureBookingRoutes,
-/// referralRoutes). Matched on the END of the URL path so the base URL /
-/// environment doesn't matter.
+/// referralRoutes, giveawayRoutes). Matched on the END of the URL path so the
+/// base URL / environment doesn't matter.
 class IntegrityProtectedPaths {
   IntegrityProtectedPaths._();
 
@@ -19,6 +19,10 @@ class IntegrityProtectedPaths {
     '/bookings/holds': 'POST',
     '/bookings/create-order': 'POST',
     '/customer/referral/apply': 'POST',
+    // Aorbo Trek Giveaway (backend policy 'giveaway'). An entry only counts as
+    // valid when this check passes; otherwise it is held for review.
+    '/giveaway/web-code': 'POST',
+    '/giveaway/entries': 'POST',
   };
 
   static bool matches(String method, String path) {

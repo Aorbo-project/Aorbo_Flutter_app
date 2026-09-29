@@ -197,6 +197,17 @@ class NetworkUrl {
   static String socketUrl = AppEnv().socketUrl;
   //#endregion
 
+  //#region Aorbo Trek Giveaway (backend: services/giveaway/*)
+  // GET  → featured round (dates, phase, entry count, result) + server time. Public.
+  static const String giveawayCurrent = 'giveaway/current';
+  // GET  → official rules of the current round. Public.
+  static const String giveawayRules = 'giveaway/rules';
+  // POST → one-time 60 s code that signs the web page in. Login + Play Integrity.
+  static const String giveawayWebCode = 'giveaway/web-code';
+  // POST → the survey entry. Login + Play Integrity + Idempotency-Key.
+  static const String giveawayEntries = 'giveaway/entries';
+  //#endregion
+
   //#region Referral
   // GET  → my code, share text, live reward config, stats, milestone, history.
   //        The backend generates the customer's code lazily on this call.

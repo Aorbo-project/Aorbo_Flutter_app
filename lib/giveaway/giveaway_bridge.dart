@@ -102,11 +102,16 @@ class EntrySubmission {
     required this.answers,
     required this.rulesVersion,
     required this.publicityConsent,
+    this.stateId,
   });
 
   final Map<String, Object> answers;
   final String rulesVersion;
   final bool publicityConsent;
+
+  /// The state the person lives in — sent only when their profile has none
+  /// and the round excludes some states. The backend checks it exists.
+  final int? stateId;
 
   static const int maxAnswers = 12;
   static const int maxTextLength = 300;
@@ -126,6 +131,8 @@ class EntrySubmission {
     if (version is! String || !_rulesVersion.hasMatch(version)) return null;
     final publicity = payload['publicityConsent'] ?? false;
     if (publicity is! bool) return null;
+    final stateId = payload['stateId'];
+    if (stateId != null && (stateId is! int || stateId <= 0 || stateId > 1000000)) return null;
 
     final raw = payload['answers'];
     if (raw is! Map<String, dynamic> || raw.isEmpty || raw.length > maxAnswers) return null;
@@ -151,7 +158,12 @@ class EntrySubmission {
         return null;
       }
     }
-    return EntrySubmission(answers: answers, rulesVersion: version, publicityConsent: publicity);
+    return EntrySubmission(
+      answers: answers,
+      rulesVersion: version,
+      publicityConsent: publicity,
+      stateId: stateId as int?,
+    );
   }
 
   Map<String, Object> toJson() => {
@@ -160,5 +172,6 @@ class EntrySubmission {
         'declaredAdult': true,
         'rulesVersion': rulesVersion,
         'publicityConsent': publicityConsent,
+        if (stateId != null) 'stateId': stateId!,
       };
 }

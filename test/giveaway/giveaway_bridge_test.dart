@@ -94,6 +94,18 @@ void main() {
       }
     });
 
+    test('passes an optional positive state id through; rejects anything else', () {
+      final ok = GiveawayBridge.parse(msg({'type': 'submitEntry', 'payload': entryPayload(extra: {'stateId': 12})}));
+      expect(ok!.entry!.stateId, 12);
+      expect(ok.entry!.toJson()['stateId'], 12);
+      final none = GiveawayBridge.parse(msg({'type': 'submitEntry', 'payload': entryPayload()}));
+      expect(none!.entry!.toJson().containsKey('stateId'), isFalse);
+      for (final bad in [0, -1, '12', 1.5, 2000000]) {
+        expect(GiveawayBridge.parse(msg({'type': 'submitEntry', 'payload': entryPayload(extra: {'stateId': bad})})), isNull,
+            reason: '$bad');
+      }
+    });
+
     test('allows newlines in free text and trims it', () {
       final r = GiveawayBridge.parse(msg({
         'type': 'submitEntry',

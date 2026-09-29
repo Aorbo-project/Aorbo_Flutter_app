@@ -11,7 +11,9 @@ import 'package:firebase_remote_config/firebase_remote_config.dart';
 ///
 /// Switch: Firebase Remote Config `giveaway_enabled` (false when unset), so
 /// the banner and screen can be turned off without an app release.
-/// `--dart-define=GIVEAWAY_PREVIEW=true` forces it on for design-review builds.
+/// Test builds can force it on:
+///   --dart-define=GIVEAWAY_PREVIEW=true    sample data everywhere (design review)
+///   --dart-define=GIVEAWAY_FORCE_ON=true   real backend, before Remote Config is set
 class GiveawayConfig {
   GiveawayConfig._();
 
@@ -36,13 +38,14 @@ class GiveawayConfig {
   static String referralLink(String code) => 'https://$shareLinkHost/r/$code';
 
   static const bool isPreview = bool.fromEnvironment('GIVEAWAY_PREVIEW');
+  static const bool _forceOn = bool.fromEnvironment('GIVEAWAY_FORCE_ON');
 
   static const String _enabledKey = 'giveaway_enabled';
 
   /// Whether the campaign is visible in the app. Reads the last activated
   /// Remote Config value (local, synchronous); unset → off.
   static bool get enabled {
-    if (isPreview) return true;
+    if (isPreview || _forceOn) return true;
     try {
       final value = FirebaseRemoteConfig.instance.getValue(_enabledKey);
       if (value.source == ValueSource.valueStatic) return false;

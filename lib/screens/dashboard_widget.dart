@@ -1817,7 +1817,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                 spacing: MediaQuery.of(context).size.height / 50,
                 children: [
                   // ── Aorbo Trek Giveaway (Remote Config giveaway_enabled) ──
-                  if (GiveawayConfig.enabled) const GiveawayBanner(),
+                  if (GiveawayConfig.enabled) const GiveawayBannerSlot(),
 
                   // ── What's New ──
                   Obx(() {

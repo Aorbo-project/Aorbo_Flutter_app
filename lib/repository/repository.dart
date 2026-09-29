@@ -24,6 +24,16 @@ class RateLimitException implements Exception {
   String toString() => message;
 }
 
+/// A server reply kept whole — see [Repository.postForReply].
+class ApiReply {
+  const ApiReply(this.statusCode, this.data);
+  final int statusCode;
+  final dynamic data;
+
+  bool get ok => statusCode >= 200 && statusCode < 300 && data is Map && data['success'] == true;
+  Map<String, dynamic> get json => data is Map ? Map<String, dynamic>.from(data as Map) : const {};
+}
+
 class Repository {
   static final Repository _service = Repository._internal();
 
@@ -408,6 +418,33 @@ class Repository {
             : e.response?.data is Map && e.response?.data['message'] is String
             ? e.response?.data['message']
             : e.message,
+      );
+    }
+  }
+
+  /// POST that returns the server's status + JSON body for 2xx AND 4xx
+  /// replies instead of throwing, so the caller can act on the reply's
+  /// `code` (e.g. the giveaway's `rules_changed`). 401 still throws, so the
+  /// silent session refresh runs as usual; 5xx / network / timeout throw.
+  Future<ApiReply> postForReply({
+    required String url,
+    Object? body,
+    Map<String, String>? headers,
+  }) async {
+    if (!await isInternetAvailable()) {
+      throw Exception("Please check your internet connection and try again.");
+    }
+    final opts = await _authOptions();
+    opts.headers = {...?opts.headers, ...?headers};
+    opts.validateStatus = (s) => s != null && s < 500 && s != 401;
+    try {
+      final response = await dio
+          .post(url, data: body, options: opts)
+          .timeout(_defaultTimeout);
+      return ApiReply(response.statusCode ?? 0, response.data);
+    } on TimeoutException {
+      throw Exception(
+        "Request timed out. Please check your connection and try again.",
       );
     }
   }
