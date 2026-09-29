@@ -123,6 +123,84 @@ class _RateReviewScreenState extends State<RateReviewScreen>
     ),
   ];
 
+  // 1-2 stars: "What went wrong?" - codes MUST match Backend utils/reviewRules.ISSUE_TAGS.
+  final List<_CategoryItem> issueCategories = const [
+    _CategoryItem(
+      code: 'SAFETY_CONCERN',
+      name: 'Safety concern',
+      subtitle: 'Felt unsafe or safety was ignored',
+      icon: Icons.report_gmailerrorred_rounded,
+      tint: _R.softRose,
+      accent: _R.rose,
+    ),
+    _CategoryItem(
+      code: 'ORGANIZER_BEHAVIOUR',
+      name: 'Organizer behaviour',
+      subtitle: 'Rude, unhelpful or unprofessional',
+      icon: Icons.sentiment_dissatisfied_rounded,
+      tint: _R.softAmber,
+      accent: _R.amber,
+    ),
+    _CategoryItem(
+      code: 'PLAN_NOT_FOLLOWED',
+      name: 'Plan not followed',
+      subtitle: 'Route, schedule or itinerary changed',
+      icon: Icons.wrong_location_outlined,
+      tint: _R.softAmber,
+      accent: _R.amber,
+    ),
+    _CategoryItem(
+      code: 'WOMEN_SAFETY',
+      name: 'Felt unsafe as a woman',
+      subtitle: 'Uncomfortable or insecure experience',
+      icon: Icons.female_rounded,
+      tint: _R.softRose,
+      accent: _R.rose,
+    ),
+    _CategoryItem(
+      code: 'NOT_AS_DESCRIBED',
+      name: 'Not as described',
+      subtitle: 'Stay, food or inclusions did not match',
+      icon: Icons.fact_check_outlined,
+      tint: _R.softAmber,
+      accent: _R.amber,
+    ),
+    _CategoryItem(
+      code: 'HIDDEN_CHARGES',
+      name: 'Extra / hidden charges',
+      subtitle: 'Asked to pay more than booked',
+      icon: Icons.currency_rupee_rounded,
+      tint: _R.softRose,
+      accent: _R.rose,
+    ),
+    _CategoryItem(
+      code: 'OTHER',
+      name: 'Something else',
+      subtitle: 'Tell us in your review below',
+      icon: Icons.more_horiz_rounded,
+      tint: _R.bg,
+      accent: _R.inkMid,
+    ),
+  ];
+  List<String> selectedIssues = [];
+
+  static const int _minLowRatingText = 10;
+  bool get _isLowRating => selectedRating > 0 && selectedRating <= 2;
+  List<_CategoryItem> get _activeTags => _isLowRating ? issueCategories : categories;
+  int get _reviewTextLength => _trekC.reviewController.value.text.trim().length;
+
+  /// Why the form can't be submitted yet, or null when it can.
+  String? get _blocker {
+    if (selectedRating <= 0) return 'Select a Rating';
+    if (_isLowRating && selectedIssues.isEmpty) return 'Choose what went wrong';
+    if (_isLowRating && _reviewTextLength < _minLowRatingText) return 'Describe what happened';
+    return null;
+  }
+
+  void _onReviewTextChanged() {
+    if (mounted) setState(() {});
+  }
+
   late final List<AnimationController> _staggerCtrl;
   late final List<Animation<double>> _staggerFade;
   late final List<Animation<Offset>> _staggerSlide;
@@ -179,7 +257,7 @@ class _RateReviewScreenState extends State<RateReviewScreen>
     }
 
     _optionCtrl = List.generate(
-      categories.length,
+      categories.length > issueCategories.length ? categories.length : issueCategories.length,
       (_) => AnimationController(
         vsync: this,
         duration: const Duration(milliseconds: 140),
@@ -216,6 +294,9 @@ class _RateReviewScreenState extends State<RateReviewScreen>
       if (mounted) _bottomCtrl.forward();
     });
 
+    // 1-2 stars require text - re-evaluate the submit button as the user types.
+    _trekC.reviewController.value.addListener(_onReviewTextChanged);
+
     if (preSelected != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Future.delayed(const Duration(milliseconds: 320), () {
@@ -233,6 +314,7 @@ class _RateReviewScreenState extends State<RateReviewScreen>
 
   @override
   void dispose() {
+    _trekC.reviewController.value.removeListener(_onReviewTextChanged);
     for (final c in _staggerCtrl) c.dispose();
     for (final c in _optionCtrl) c.dispose();
     _bottomCtrl.dispose();
@@ -245,8 +327,17 @@ class _RateReviewScreenState extends State<RateReviewScreen>
     if (rounded == selectedRating) return;
     HapticFeedback.selectionClick();
     setState(() {
+      final wasLow = _isLowRating;
       selectedRating = rounded;
       _trekC.rating.value = selectedRating;
+      // Praise and complaint tags never mix: switching sides clears the other.
+      if (wasLow != _isLowRating) {
+        if (_isLowRating) {
+          selectedCategories.clear();
+        } else {
+          selectedIssues.clear();
+        }
+      }
     });
   }
 
@@ -258,7 +349,7 @@ class _RateReviewScreenState extends State<RateReviewScreen>
     );
   }
 
-  bool get _canSubmit => selectedRating > 0;
+  bool get _canSubmit => _blocker == null;
 
   @override
   Widget build(BuildContext context) {
@@ -598,7 +689,7 @@ class _RateReviewScreenState extends State<RateReviewScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'What stood out?',
+                      _isLowRating ? 'What went wrong?' : 'What stood out?',
                       textScaler: const TextScaler.linear(1.0),
                       style: AppType.style(
                         13.0.sp,
@@ -608,7 +699,9 @@ class _RateReviewScreenState extends State<RateReviewScreen>
                     ),
                     SizedBox(height: 0.3.h),
                     Text(
-                      'Highlight the parts that impressed you most.',
+                      _isLowRating
+                          ? 'Pick everything that applies. The organiser and our team will see this.'
+                          : 'Highlight the parts that impressed you most.',
                       textScaler: const TextScaler.linear(1.0),
                       maxLines: 2,
                       style: AppType.style(
@@ -622,27 +715,29 @@ class _RateReviewScreenState extends State<RateReviewScreen>
                 ),
               ),
               _SelectionCounter(
-                selected: selectedCategories.length,
-                total: categories.length,
+                selected: _isLowRating ? selectedIssues.length : selectedCategories.length,
+                total: _activeTags.length,
               ),
             ],
           ),
           SizedBox(height: 2.h),
           Column(
-            children: List.generate(categories.length, (i) {
-              final item = categories[i];
-              final selected = selectedCategories.contains(item.name);
+            children: List.generate(_activeTags.length, (i) {
+              final item = _activeTags[i];
+              final selected = _isLowRating
+                  ? selectedIssues.contains(item.code)
+                  : selectedCategories.contains(item.name);
 
               return Padding(
                 padding: EdgeInsets.only(
-                  bottom: i == categories.length - 1 ? 0 : 1.h,
+                  bottom: i == _activeTags.length - 1 ? 0 : 1.h,
                 ),
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTapDown: (_) => _optionCtrl[i].forward(),
                   onTapUp: (_) {
                     _optionCtrl[i].reverse();
-                    _toggleCategory(item.name);
+                    _toggleCategory(_isLowRating ? item.code : item.name);
                   },
                   onTapCancel: () => _optionCtrl[i].reverse(),
                   child: ScaleTransition(
@@ -661,10 +756,11 @@ class _RateReviewScreenState extends State<RateReviewScreen>
   void _toggleCategory(String name) {
     HapticFeedback.lightImpact();
     setState(() {
-      if (selectedCategories.contains(name)) {
-        selectedCategories.remove(name);
+      final list = _isLowRating ? selectedIssues : selectedCategories;
+      if (list.contains(name)) {
+        list.remove(name);
       } else {
-        selectedCategories.add(name);
+        list.add(name);
       }
     });
   }
@@ -720,7 +816,7 @@ class _RateReviewScreenState extends State<RateReviewScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Your review (optional)',
+                      _isLowRating ? 'Tell us what happened' : 'Your review (optional)',
                       textScaler: const TextScaler.linear(1.0),
                       style: AppType.style(
                         13.0.sp,
@@ -730,7 +826,9 @@ class _RateReviewScreenState extends State<RateReviewScreen>
                     ),
                     SizedBox(height: 0.3.h),
                     Text(
-                      'Share details that help other trekkers.',
+                      _isLowRating
+                          ? 'Required. At least $_minLowRatingText characters, so the organiser can fix it.'
+                          : 'Share details that help other trekkers.',
                       textScaler: const TextScaler.linear(1.0),
                       style: AppType.style(
                         9.0.sp,
@@ -745,7 +843,12 @@ class _RateReviewScreenState extends State<RateReviewScreen>
             ],
           ),
           SizedBox(height: 1.5.h),
-          _ReviewTextField(controller: _trekC.reviewController.value),
+          _ReviewTextField(
+            controller: _trekC.reviewController.value,
+            hint: _isLowRating
+                ? 'What went wrong? Please be specific...'
+                : 'Describe what made this trek memorable...',
+          ),
         ],
       ),
     );
@@ -774,13 +877,19 @@ class _RateReviewScreenState extends State<RateReviewScreen>
           duration: const Duration(milliseconds: 250),
           opacity: _canSubmit ? 1 : 0.6,
           child: CommonButton(
-            text: _canSubmit ? 'Submit Feedback' : 'Select a Rating',
+            text: _canSubmit ? 'Submit Feedback' : _blocker!,
             onPressed: () {
               if (!_canSubmit) {
                 HapticFeedback.lightImpact();
+                final needsRating = selectedRating <= 0;
+                final needsIssue = !needsRating && _isLowRating && selectedIssues.isEmpty;
                 Get.snackbar(
-                  'Rating required',
-                  'Please select a star rating before submitting.',
+                  needsRating ? 'Rating required' : 'A little more detail',
+                  needsRating
+                      ? 'Please select a star rating before submitting.'
+                      : needsIssue
+                          ? 'Please choose what went wrong.'
+                          : 'Please tell us what happened (at least $_minLowRatingText characters).',
                   snackPosition: SnackPosition.BOTTOM,
                   margin: EdgeInsets.all(4.w),
                   borderRadius: 12,
@@ -802,6 +911,7 @@ class _RateReviewScreenState extends State<RateReviewScreen>
                 ),
                 trekPlanning: selectedCategories.contains('Trek Planning'),
                 womenSafety: selectedCategories.contains('Women Safety'),
+                issueTags: _isLowRating ? List<String>.from(selectedIssues) : const [],
               );
             },
             gradient: _R.ctaGradient,
@@ -826,16 +936,20 @@ class _RateReviewScreenState extends State<RateReviewScreen>
     required bool organizerManner,
     required bool trekPlanning,
     required bool womenSafety,
+    required List<String> issueTags,
   }) {
+    final low = _isLowRating;
     _trekC.createReview(
       trekId: trekId,
       customerId: customerId,
       batchId: batchId,
       bookingId: bookingId,
-      safetySecurity: safetySecurity,
-      organizerManner: organizerManner,
-      trekPlanning: trekPlanning,
-      womenSafety: womenSafety,
+      // Praise tags are never sent with a 1-2 star review (backend drops them too).
+      safetySecurity: !low && safetySecurity,
+      organizerManner: !low && organizerManner,
+      trekPlanning: !low && trekPlanning,
+      womenSafety: !low && womenSafety,
+      issueTags: issueTags,
     );
   }
 }
@@ -844,6 +958,7 @@ class _RateReviewScreenState extends State<RateReviewScreen>
 //  MODELS
 // ─────────────────────────────────────────────
 class _CategoryItem {
+  final String code; // backend code for complaint tags; '' for praise tags
   final String name;
   final String subtitle;
   final IconData icon;
@@ -851,6 +966,7 @@ class _CategoryItem {
   final Color accent;
 
   const _CategoryItem({
+    this.code = '',
     required this.name,
     required this.subtitle,
     required this.icon,
@@ -1312,7 +1428,11 @@ class _SelectionCounter extends StatelessWidget {
 // ─────────────────────────────────────────────
 class _ReviewTextField extends StatefulWidget {
   final TextEditingController controller;
-  const _ReviewTextField({required this.controller});
+  final String hint;
+  const _ReviewTextField({
+    required this.controller,
+    this.hint = 'Describe what made this trek memorable...',
+  });
   @override
   State<_ReviewTextField> createState() => _ReviewTextFieldState();
 }
@@ -1384,7 +1504,7 @@ class _ReviewTextFieldState extends State<_ReviewTextField>
         textAlignVertical: TextAlignVertical.top,
         style: AppType.style(11.0.sp, color: _R.ink, height: 1.4),
         decoration: InputDecoration(
-          hintText: 'Describe what made this trek memorable...',
+          hintText: widget.hint,
           hintStyle: AppType.style(10.0.sp, color: _R.inkLight, height: 1.4),
           border: InputBorder.none,
           contentPadding: EdgeInsets.all(4.w),
