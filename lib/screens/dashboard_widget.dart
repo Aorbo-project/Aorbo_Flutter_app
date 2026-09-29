@@ -3,6 +3,8 @@ import 'dart:math' as math;
 
 import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/controller/trek_controller.dart';
+import 'package:arobo_app/giveaway/giveaway_banner.dart';
+import 'package:arobo_app/giveaway/giveaway_config.dart';
 import 'package:arobo_app/widgets/dissolve_to_dashboard.dart'
     show whenDashboardVisible;
 import 'package:arobo_app/utils/app_theme.dart';
@@ -1814,6 +1816,9 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
               child: Column(
                 spacing: MediaQuery.of(context).size.height / 50,
                 children: [
+                  // ── Aorbo Trek Giveaway (Remote Config giveaway_enabled) ──
+                  if (GiveawayConfig.enabled) const GiveawayBannerSlot(),
+
                   // ── What's New ──
                   Obx(() {
                     final whatsNewLoading = _dashboardC.whatsNewObserver.value

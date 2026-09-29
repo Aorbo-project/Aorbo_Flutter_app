@@ -16,9 +16,19 @@ public final class GeneratedPluginRegistrant {
   private static final String TAG = "GeneratedPluginRegistrant";
   public static void registerWith(@NonNull FlutterEngine flutterEngine) {
     try {
+      flutterEngine.getPlugins().add(new de.lschmierer.android_play_install_referrer.AndroidPlayInstallReferrerPlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin android_play_install_referrer, de.lschmierer.android_play_install_referrer.AndroidPlayInstallReferrerPlugin", e);
+    }
+    try {
       flutterEngine.getPlugins().add(new com.example.animated_rating_stars.AnimatedRatingStarsPlugin());
     } catch (Exception e) {
       Log.e(TAG, "Error registering plugin animated_rating_stars, com.example.animated_rating_stars.AnimatedRatingStarsPlugin", e);
+    }
+    try {
+      flutterEngine.getPlugins().add(new com.llfbandit.app_links.AppLinksPlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin app_links, com.llfbandit.app_links.AppLinksPlugin", e);
     }
     try {
       flutterEngine.getPlugins().add(new dev.fluttercommunity.plus.connectivity.ConnectivityPlugin());

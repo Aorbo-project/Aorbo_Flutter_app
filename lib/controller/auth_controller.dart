@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:arobo_app/giveaway/referral_links.dart';
 import 'package:arobo_app/main.dart';
 import 'package:arobo_app/utils/shared_preferences.dart';
 import 'package:dio/dio.dart' show Options, DioException;
@@ -212,6 +213,8 @@ class AuthController extends GetxController {
           final data = res['data'];
           deletionCancelledOnLogin.value =
               data is Map && data['accountDeletionCancelled'] == true;
+          // Signed in: a code from a referral link has had its one chance.
+          unawaited(PendingReferralCode.clear());
           return true;
         } catch (parseError) {
           logger.e('Error parsing auth response: $parseError');

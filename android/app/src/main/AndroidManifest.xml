@@ -36,6 +36,28 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Referral links https://<host>/r/<CODE> (Aorbo Trek Giveaway +
+                 Refer & Earn), handled by lib/giveaway/referral_links.dart.
+                 Verified https App Links only — no custom scheme another app
+                 could also register. EVERY host below must serve
+                 /.well-known/assetlinks.json with the Play App Signing
+                 certificate's SHA-256 (Play Console → App integrity), not the
+                 upload key; on Android 11 and lower one failing host stops
+                 all of them from opening the app. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+                <data android:host="aorbotreks.co.in" />
+                <data android:host="api.aorbotreks.co.in" />
+                <data android:pathPrefix="/r/" />
+            </intent-filter>
+            <!-- Links are read by the app_links plugin, not pushed onto the
+                 Flutter navigator as routes. -->
+            <meta-data
+                android:name="flutter_deeplinking_enabled"
+                android:value="false" />
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

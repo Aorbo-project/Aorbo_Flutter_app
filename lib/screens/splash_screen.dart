@@ -1,5 +1,6 @@
 import 'package:arobo_app/controller/auth_controller.dart';
 import 'package:arobo_app/controller/otp_controller.dart';
+import 'package:arobo_app/giveaway/referral_links.dart';
 import 'package:arobo_app/main.dart';
 import 'package:arobo_app/models/auth/validate_version_model.dart';
 import 'package:arobo_app/utils/common_colors.dart';
@@ -1322,8 +1323,11 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                   final phone = _authC.phoneNumberLoginTextField.value.text;
                   final success = await _authC.requestOtp(phone);
                   if (success && mounted) {
+                    final linkCode = await _pendingLinkReferralCode();
+                    if (!mounted) return;
                     setState(() {
                       showOtp = true;
+                      if (linkCode != null) _showReferralField = true;
                     });
                     _otpStaggerController.forward(from: 0);
                     _otpC.startTimer();
@@ -1461,6 +1465,19 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
         child: !_showReferralField ? _referralLink() : _referralField(),
       );
     });
+  }
+
+  /// A code from a friend's referral link (see giveaway/referral_links.dart),
+  /// pre-filled for a NEW number only and checked like a typed one. The
+  /// person can still edit or remove it; the backend decides at verify-otp.
+  Future<String?> _pendingLinkReferralCode() async {
+    if (_authC.lastNumberIsExisting.value) return null;
+    if (_authC.referralCodeTextField.value.text.trim().isNotEmpty) return null;
+    final code = await PendingReferralCode.read();
+    if (code == null) return null;
+    _authC.referralCodeTextField.value.text = code;
+    _authC.validateReferralCode();
+    return code;
   }
 
   Widget _referralLink() {
