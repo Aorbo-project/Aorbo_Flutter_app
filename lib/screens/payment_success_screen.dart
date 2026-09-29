@@ -2,6 +2,7 @@ import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/controller/trek_controller.dart';
 import 'package:arobo_app/screens/booking_upcoming_screen.dart';
 import 'package:arobo_app/services/analytics_service.dart';
+import 'package:arobo_app/services/ticket_share_service.dart';
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/common_images.dart';
 import 'package:arobo_app/utils/custom_snackbar.dart';
@@ -11,7 +12,6 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:dotted_line/dotted_line.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:sizer/sizer.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:arobo_app/utils/ist_date_utils.dart';
@@ -1183,22 +1183,47 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
     Get.toNamed('/bookingscancel');
   }
 
+  // Shares the ticket PDF (same document as the Ticket button) plus the app
+  // link. The full booking behind it is the one initState already loaded for
+  // the invoice upload; it's fetched again only if that hasn't landed yet.
   Future<void> _onShareBooking() async {
-    final data = _trekC.verifyOrderModal.value.data;
-    final trek = data?.trek;
-    final batch = data?.batch;
-    final sb = StringBuffer()
-      ..writeln('Trek Booking Confirmed! \u{1F389}')
-      ..writeln('━━━━━━━━━━━━━━━━━━━')
-      ..writeln('Trek             : ${trek?.title ?? 'N/A'}')
-      ..writeln('TBR ID           : ${batch?.tbrId ?? 'N/A'}')
-      ..writeln('━━━━━━━━━━━━━━━━━━━')
-      ..writeln('Booked with Aorbo Treks!')
-      ..writeln('Download the app to explore more treks.');
+    final bookingId = _trekC.verifyOrderModal.value.data?.id;
+    if (bookingId == null) {
+      CustomSnackBar.show(context, message: "Booking details are still loading — please try again in a moment.");
+      return;
+    }
+
+    Get.dialog(
+      Center(
+        child: Container(
+          padding: EdgeInsets.all(5.w),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(color: _TC.brand),
+              SizedBox(height: 2.h),
+              Text('Preparing ticket...', style: AppType.style(FontSize.s11, color: _TC.ink)),
+            ],
+          ),
+        ),
+      ),
+      barrierDismissible: false,
+    );
 
     try {
-      await Share.share(sb.toString(), subject: 'My Trek Booking — ${trek?.title ?? ''}');
+      var booking = _dashboardC.bookingHistoryModal.value;
+      if (booking?.id != bookingId) {
+        await _dashboardC.getBookingDetail(bookingId: bookingId);
+        booking = _dashboardC.bookingHistoryModal.value;
+      }
+      if (booking == null || booking.id != bookingId) throw StateError('booking $bookingId not loaded');
+
+      final ticket = await TicketShareService.prepareTicket(booking);
+      if (Get.isDialogOpen ?? false) Get.back();
+      await TicketShareService.share(ticket, booking);
     } catch (e) {
+      if (Get.isDialogOpen ?? false) Get.back();
       if (!mounted) return;
       CustomSnackBar.show(context, message: "Unable to share at the moment. Please try again.");
     }
