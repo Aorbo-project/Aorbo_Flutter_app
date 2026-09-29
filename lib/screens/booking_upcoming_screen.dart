@@ -7,7 +7,6 @@ import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:sizer/sizer.dart';
 import 'package:shimmer_ai/shimmer_ai.dart';
 import 'package:dotted_line/dotted_line.dart';
@@ -19,6 +18,7 @@ import '../utils/common_colors.dart';
 import '../utils/custom_snackbar.dart';
 import '../utils/detail_screen_ad_slot.dart';
 import '../services/invoice_pdf_service.dart';
+import '../services/ticket_share_service.dart';
 import '../utils/ist_date_utils.dart';
 import '../widgets/rate_trek_popup.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
@@ -296,29 +296,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
 
     FirebaseCrashlytics.instance.log('Popup: Ticket download dialog');
 
-    Get.dialog(
-      Center(
-        child: Container(
-          padding: EdgeInsets.all(5.w),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(color: _TC.brand),
-              SizedBox(height: 2.h),
-              Text(
-                'Generating ticket...',
-                style: AppType.style(10.sp, color: _TC.ink),
-              ),
-            ],
-          ),
-        ),
-      ),
-      barrierDismissible: false,
-    );
+    _showTicketProgress('Generating ticket...');
 
     try {
       await InvoicePdfService.previewInvoice(
@@ -344,66 +322,47 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
       return;
     }
 
-    final trek = booking.trek;
-    final batch = booking.batch;
-
-    final startDate = ISTDateUtils.toIST(batch?.startDate);
-    final endDate = ISTDateUtils.toIST(batch?.endDate);
-
-    final String sourceCity = booking.sourceCityName ?? 'Not available';
-    final String destinationName =
-        trek?.destinationName ?? trek?.title ?? 'N/A';
-
-    final StringBuffer sb = StringBuffer();
-
-    sb.writeln('🏔️  ${trek?.title ?? 'Trek Booking'}');
-    sb.writeln('━━━━━━━━━━━━━━━━━━━');
-    sb.writeln('Booking ID       : ${booking.bookingNumber ?? 'N/A'}');
-    sb.writeln('TBR ID           : ${batch?.tbrId ?? 'N/A'}');
-
-    if (startDate != null) {
-      sb.writeln(
-        'Departure        : ${DateFormat('E, dd MMM yyyy').format(startDate)}',
-      );
-      sb.writeln('Departure City   : $sourceCity');
-    }
-
-    if (endDate != null) {
-      sb.writeln(
-        'Arrival          : ${DateFormat('E, dd MMM yyyy').format(endDate)}',
-      );
-      sb.writeln('Arrival City     : $sourceCity');
-    }
-
-    sb.writeln('Duration         : ${trek?.duration ?? '-'}');
-    sb.writeln('Travellers       : ${booking.totalTravelers ?? 1}');
-    sb.writeln('Operator         : ${trek?.vendor?.businessName ?? 'N/A'}');
-    sb.writeln('Source City      : $sourceCity');
-    sb.writeln(
-      'Boarding Point   : ${trek?.boardingPoint ?? 'To be announced'}',
-    );
-
-    if (trek?.boardingTime != null) {
-      sb.writeln('Boarding Time    : ${trek!.boardingTime}');
-    }
-
-    sb.writeln('Destination      : $destinationName');
-    sb.writeln('━━━━━━━━━━━━━━━━━━━');
-    sb.writeln('Booking confirmed with Aorbo! 🎉');
-    sb.writeln('Download the app to explore more treks.');
+    _showTicketProgress('Preparing ticket...');
 
     try {
-      await Share.share(
-        sb.toString(),
-        subject: 'My Trek Booking — ${trek?.title ?? ''}',
-      );
+      final ticket = await TicketShareService.prepareTicket(booking);
+      if (Get.isDialogOpen ?? false) Get.back();
+      await TicketShareService.share(ticket, booking);
     } catch (e) {
+      if (Get.isDialogOpen ?? false) Get.back();
+
       if (!mounted) return;
       CustomSnackBar.show(
         context,
         message: 'Unable to share at the moment. Please try again.',
       );
     }
+  }
+
+  void _showTicketProgress(String label) {
+    Get.dialog(
+      Center(
+        child: Container(
+          padding: EdgeInsets.all(5.w),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(color: _TC.brand),
+              SizedBox(height: 2.h),
+              Text(
+                label,
+                style: AppType.style(10.sp, color: _TC.ink),
+              ),
+            ],
+          ),
+        ),
+      ),
+      barrierDismissible: false,
+    );
   }
 
   @override
