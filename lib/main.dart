@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:arobo_app/controller/auth_controller.dart';
 import 'package:arobo_app/firebase_options.dart';
+import 'package:arobo_app/giveaway/giveaway_config.dart';
 import 'package:arobo_app/giveaway/referral_links.dart';
 import 'package:arobo_app/repository/repository.dart';
 import 'package:arobo_app/routes/routes.dart';
@@ -267,6 +268,11 @@ void _deferredInit() {
           return;
         case 'COUPON_EXPIRING':
           Get.toNamed('/coupon-code');
+          return;
+        // Aorbo Trek Giveaway: draw reminders + "the result is out".
+        case 'GIVEAWAY_REMINDER':
+        case 'GIVEAWAY_RESULTS':
+          if (GiveawayConfig.enabled) Get.toNamed('/giveaway');
           return;
       }
 

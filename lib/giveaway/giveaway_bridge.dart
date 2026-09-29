@@ -11,15 +11,18 @@ import 'dart:convert';
 /// Messages are REQUESTS, never facts. The app checks their shape here and
 /// then asks the backend with its own login + Play Integrity token; the
 /// backend checks the content (the round's questions, eligibility, the rules
-/// version) and decides. A message that fails any check is dropped.
+/// version) and decides. A malformed message is dropped — except an entry
+/// with a valid id, which gets an `invalid_request` reply so the page never
+/// waits in silence. Limits match the backend's (roundService.validateContent).
 class GiveawayBridge {
   GiveawayBridge._();
 
   static const String channelName = 'AorboGiveaway';
   static const int protocolVersion = 1;
-  static const int maxMessageLength = 8 * 1024;
+  static const int maxMessageLength = 16 * 1024;
 
   static final RegExp _id = RegExp(r'^[A-Za-z0-9-]{8,64}$');
+  static final RegExp _roundCode = RegExp(r'^[A-Z0-9-]{2,16}$');
 
   /// Parses one raw channel message. Returns null for anything malformed.
   static BridgeRequest? parse(String raw) {
@@ -41,8 +44,15 @@ class GiveawayBridge {
 
     if (type == BridgeRequestType.submitEntry) {
       final entry = EntrySubmission.fromPayload(payload);
-      if (entry == null) return null;
-      return BridgeRequest(id: id, type: type, entry: entry);
+      return BridgeRequest(id: id, type: type, entry: entry, invalid: entry == null);
+    }
+    if (type == BridgeRequestType.openRules) {
+      final round = payload['round'];
+      return BridgeRequest(
+        id: id,
+        type: type,
+        round: round is String && _roundCode.hasMatch(round) ? round : null,
+      );
     }
     return BridgeRequest(id: id, type: type);
   }
@@ -60,7 +70,7 @@ enum BridgeRequestType {
   ready('ready'),
 
   /// Open the official rules (a native screen, so they stay reachable even
-  /// if the page breaks).
+  /// if the page breaks) — of the round in `payload.round` when given.
   openRules('openRules'),
 
   /// Open the phone's share sheet with the user's own referral link. The app
@@ -71,7 +81,11 @@ enum BridgeRequestType {
   submitEntry('submitEntry'),
 
   /// Close the giveaway screen.
-  close('close');
+  close('close'),
+
+  /// The page's web session ended (30 min, or a login elsewhere): sign it in
+  /// again with a fresh one-time code (the app reloads it).
+  refreshSession('refreshSession');
 
   const BridgeRequestType(this.wire);
   final String wire;
@@ -85,13 +99,19 @@ enum BridgeRequestType {
 }
 
 class BridgeRequest {
-  const BridgeRequest({required this.id, required this.type, this.entry});
+  const BridgeRequest({required this.id, required this.type, this.entry, this.round, this.invalid = false});
 
   /// Also used as the entry request's Idempotency-Key, so a double tap
   /// creates one entry.
   final String id;
   final BridgeRequestType type;
   final EntrySubmission? entry;
+
+  /// openRules: the round code the page is showing.
+  final String? round;
+
+  /// submitEntry whose payload failed the shape checks.
+  final bool invalid;
 }
 
 /// Shape-checked entry. The answers are forwarded as they are; which
@@ -114,8 +134,8 @@ class EntrySubmission {
   final int? stateId;
 
   static const int maxAnswers = 12;
-  static const int maxTextLength = 300;
-  static const int maxChoices = 8;
+  static const int maxTextLength = 1000;
+  static const int maxChoices = 12;
   static const int maxChoiceLength = 64;
 
   static final RegExp _questionKey = RegExp(r'^[a-z0-9_]{1,24}$');

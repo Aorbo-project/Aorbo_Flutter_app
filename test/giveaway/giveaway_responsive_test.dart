@@ -13,7 +13,7 @@ import '../responsive/responsive_harness.dart';
 /// Rules as long as the real Round 1 set (12 sections, long paragraphs).
 class _LongRulesApi extends PreviewGiveawayApi {
   @override
-  Future<GiveawayRules?> rules() async => GiveawayRules(
+  Future<GiveawayRules?> rules({String? round}) async => GiveawayRules(
         label: 'Round 1',
         version: 'R1-v1',
         sections: List.generate(

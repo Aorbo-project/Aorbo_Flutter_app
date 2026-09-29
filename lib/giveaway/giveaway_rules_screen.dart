@@ -15,9 +15,13 @@ import 'giveaway_api.dart';
 /// (GET giveaway/rules → giveaway_rules_versions), so it can't change
 /// mid-round and matches what every entry was made under.
 class GiveawayRulesScreen extends StatefulWidget {
-  const GiveawayRulesScreen({super.key, this.api});
+  const GiveawayRulesScreen({super.key, this.api, this.round});
 
   final GiveawayApi? api;
+
+  /// The round whose rules to show (from the page); null → the signed-in
+  /// person's own round, decided by the backend.
+  final String? round;
 
   @override
   State<GiveawayRulesScreen> createState() => _GiveawayRulesScreenState();
@@ -28,13 +32,20 @@ class _GiveawayRulesScreenState extends State<GiveawayRulesScreen> {
 
   GiveawayApi get _api => widget.api ?? GiveawayApi.instance;
 
+  String? get _round {
+    if (widget.round != null) return widget.round;
+    final args = Get.arguments;
+    final r = args is Map ? args['round'] : null;
+    return r is String && RegExp(r'^[A-Z0-9-]{2,16}$').hasMatch(r) ? r : null;
+  }
+
   @override
   void initState() {
     super.initState();
-    _rules = _api.rules();
+    _rules = _api.rules(round: _round);
   }
 
-  void _retry() => setState(() => _rules = _api.rules());
+  void _retry() => setState(() => _rules = _api.rules(round: _round));
 
   @override
   Widget build(BuildContext context) {

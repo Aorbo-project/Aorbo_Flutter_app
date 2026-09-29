@@ -169,14 +169,31 @@ class _GiveawayScreenState extends State<GiveawayScreen> {
       case BridgeRequestType.ready:
         _setPhase(_Phase.ready);
       case BridgeRequestType.openRules:
-        Get.toNamed('/giveaway-rules');
+        Get.toNamed('/giveaway-rules', arguments: {'round': request.round});
       case BridgeRequestType.share:
         await _share(request);
       case BridgeRequestType.submitEntry:
         await _submitEntry(request);
       case BridgeRequestType.close:
         Get.back();
+      case BridgeRequestType.refreshSession:
+        _refreshSession();
     }
+  }
+
+  // The page's web session ended: load it again with a fresh one-time code.
+  // At most once every 10 s and 5 times per visit, so a page that keeps
+  // failing to sign in can never loop.
+  DateTime? _lastSessionRefresh;
+  int _sessionRefreshes = 0;
+
+  void _refreshSession() {
+    final now = DateTime.now();
+    if (_sessionRefreshes >= 5) return;
+    if (_lastSessionRefresh != null && now.difference(_lastSessionRefresh!) < const Duration(seconds: 10)) return;
+    _lastSessionRefresh = now;
+    _sessionRefreshes += 1;
+    _load();
   }
 
   Future<void> _reply(Map<String, Object?> reply) async {
@@ -189,6 +206,18 @@ class _GiveawayScreenState extends State<GiveawayScreen> {
   }
 
   Future<void> _submitEntry(BridgeRequest request) async {
+    if (request.invalid || request.entry == null) {
+      await _reply({
+        'replyTo': request.id,
+        'type': 'entryResult',
+        'ok': false,
+        'error': {
+          'code': 'invalid_request',
+          'message': "Some answers couldn't be sent. Please check them and try again.",
+        },
+      });
+      return;
+    }
     if (_submitting) {
       await _reply({
         'replyTo': request.id,

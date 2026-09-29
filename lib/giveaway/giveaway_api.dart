@@ -110,7 +110,9 @@ abstract class GiveawayApi {
   /// The round the dashboard banner advertises; null when there is none.
   Future<GiveawayRoundSummary?> currentRound();
 
-  Future<GiveawayRules?> rules();
+  /// Official rules — of [round] when given, else the signed-in person's own
+  /// round (the backend decides).
+  Future<GiveawayRules?> rules({String? round});
 }
 
 class RemoteGiveawayApi implements GiveawayApi {
@@ -159,8 +161,9 @@ class RemoteGiveawayApi implements GiveawayApi {
   }
 
   @override
-  Future<GiveawayRules?> rules() async {
-    final res = await _repo.getApiCall(url: NetworkUrl.giveawayRules);
+  Future<GiveawayRules?> rules({String? round}) async {
+    final url = round == null ? NetworkUrl.giveawayRules : '${NetworkUrl.giveawayRules}?round=${Uri.encodeQueryComponent(round)}';
+    final res = await _repo.getApiCall(url: url);
     return GiveawayRules.fromJson(res is Map ? res['data'] : null);
   }
 }
@@ -192,7 +195,7 @@ class PreviewGiveawayApi implements GiveawayApi {
       );
 
   @override
-  Future<GiveawayRules?> rules() async => const GiveawayRules(
+  Future<GiveawayRules?> rules({String? round}) async => const GiveawayRules(
         label: 'Round 1',
         version: 'preview',
         sections: [

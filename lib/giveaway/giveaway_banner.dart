@@ -36,7 +36,9 @@ class GiveawayBannerSlot extends StatefulWidget {
 class _GiveawayBannerSlotState extends State<GiveawayBannerSlot> {
   late final Future<GiveawayRoundSummary?> _round = GiveawayBannerSlot._load();
 
-  static const _visiblePhases = {'upcoming', 'open', 'closed', 'drawing', 'drawn'};
+  // Not 'upcoming': nobody can take part before sign-ups open, and people
+  // who join the app before then aren't "new" when the round starts.
+  static const _visiblePhases = {'open', 'closed', 'drawing', 'drawn'};
 
   @override
   Widget build(BuildContext context) {

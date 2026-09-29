@@ -24,7 +24,7 @@ Map<String, Object?> entryPayload({Map<String, Object?>? answers, Map<String, Ob
 void main() {
   group('GiveawayBridge.parse — envelope', () {
     test('accepts each known request type', () {
-      for (final t in ['ready', 'openRules', 'share', 'close']) {
+      for (final t in ['ready', 'openRules', 'share', 'close', 'refreshSession']) {
         final r = GiveawayBridge.parse(msg({'type': t}));
         expect(r, isNotNull, reason: t);
         expect(r!.type.wire, t);
@@ -42,6 +42,12 @@ void main() {
       expect(GiveawayBridge.parse(jsonEncode({'v': 1, 'id': 'bad id with spaces', 'type': 'ready'})), isNull);
       expect(GiveawayBridge.parse(msg({'type': 'deleteAccount'})), isNull);
       expect(GiveawayBridge.parse(msg({'type': 'ready', 'payload': 'x'})), isNull);
+    });
+
+    test("openRules carries the page's round code only when it is well-formed", () {
+      expect(GiveawayBridge.parse(msg({'type': 'openRules', 'payload': {'round': 'R2'}}))!.round, 'R2');
+      expect(GiveawayBridge.parse(msg({'type': 'openRules'}))!.round, isNull);
+      expect(GiveawayBridge.parse(msg({'type': 'openRules', 'payload': {'round': '../x'}}))!.round, isNull);
     });
 
     test('drops oversized messages', () {
@@ -72,7 +78,8 @@ void main() {
         {'publicityConsent': 'yes'},
       ]) {
         final r = GiveawayBridge.parse(msg({'type': 'submitEntry', 'payload': entryPayload(extra: bad)}));
-        expect(r, isNull, reason: '$bad');
+        expect(r!.invalid, isTrue, reason: '$bad');
+        expect(r.entry, isNull);
       }
     });
 
@@ -90,7 +97,7 @@ void main() {
       ];
       for (final answers in cases) {
         final r = GiveawayBridge.parse(msg({'type': 'submitEntry', 'payload': entryPayload(answers: answers)}));
-        expect(r, isNull, reason: '$answers');
+        expect(r!.invalid, isTrue, reason: '$answers');
       }
     });
 
@@ -101,7 +108,7 @@ void main() {
       final none = GiveawayBridge.parse(msg({'type': 'submitEntry', 'payload': entryPayload()}));
       expect(none!.entry!.toJson().containsKey('stateId'), isFalse);
       for (final bad in [0, -1, '12', 1.5, 2000000]) {
-        expect(GiveawayBridge.parse(msg({'type': 'submitEntry', 'payload': entryPayload(extra: {'stateId': bad})})), isNull,
+        expect(GiveawayBridge.parse(msg({'type': 'submitEntry', 'payload': entryPayload(extra: {'stateId': bad})}))!.invalid, isTrue,
             reason: '$bad');
       }
     });

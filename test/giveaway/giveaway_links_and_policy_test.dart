@@ -103,9 +103,12 @@ void main() {
       }
     });
 
-    test('page address carries the one-time code only when there is one', () {
+    test('the one-time code rides in the fragment, never the query (not sent to servers)', () {
       expect(GiveawayConfig.pageUri().toString(), 'https://${GiveawayConfig.webHost}/giveaway/');
-      expect(GiveawayConfig.pageUri(code: 'abc').queryParameters['c'], 'abc');
+      final withCode = GiveawayConfig.pageUri(code: 'abc');
+      expect(withCode.fragment, 'c=abc');
+      expect(withCode.queryParameters, isEmpty);
+      expect(GiveawayWebPolicy.decide(withCode), WebNavAction.allow);
     });
   });
 }

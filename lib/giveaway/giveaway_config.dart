@@ -56,13 +56,15 @@ class GiveawayConfig {
   }
 
   /// The giveaway page. [code] is the one-time web login code from
-  /// POST campaign/web-code; it is removed from the address bar by the page.
-  /// Preview builds also turn on the page's design switcher.
+  /// POST giveaway/web-code. It rides in the URL FRAGMENT (#c=…), which is
+  /// never sent to a server — so it can't land in access logs or a Referer
+  /// — and the page removes it from the address bar. Preview builds also
+  /// turn on the page's design switcher.
   static Uri pageUri({String? code}) {
-    final query = {
-      if (code != null) 'c': code,
-      if (isPreview) 'preview': '1',
-    };
-    return webOrigin.replace(path: '$pathPrefix/', queryParameters: query.isEmpty ? null : query);
+    return webOrigin.replace(
+      path: '$pathPrefix/',
+      queryParameters: isPreview ? {'preview': '1'} : null,
+      fragment: code == null ? null : 'c=$code',
+    );
   }
 }
