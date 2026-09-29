@@ -111,22 +111,18 @@ By accessing and using Aorbo Treks, you agree to be bound by these terms.
       ''',
     ),
     ExpandableLink(
-      title: 'Licenses',
+      title: 'Organiser Verification',
       content: '''
-1. Trek Operator Licenses
-- Verified operators
-- Valid permits and certifications
-- Regular compliance checks
+1. Before an organiser can list treks
+- Identity verification (PAN and ID proof)
+- Business registration documents
+- Bank account verification
 
-2. Guide Certifications
-- Professional qualifications
-- Safety training
-- First aid certification
+2. Before a trek goes live
+- Every trek listing is reviewed by the Aorbo team
 
-3. Equipment Standards
-- Quality assurance
-- Regular maintenance
-- Safety compliance
+3. After your trek
+- Reviews come only from travellers who booked and completed the trek
       ''',
     ),
     ExpandableLink(

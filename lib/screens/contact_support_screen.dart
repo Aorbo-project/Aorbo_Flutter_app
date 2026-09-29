@@ -646,7 +646,7 @@ class _ContactSupportScreenState extends State<ContactSupportScreen>
           SizedBox(width: 2.5.w),
           Expanded(
             child: Text(
-              'Our team typically responds within 24 hours.',
+              'We will reply to you by e-mail.',
               style: AppType.style(FontSize.s9, w: FontWeight.w500, color: _C.teal),
             ),
           ),

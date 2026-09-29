@@ -604,6 +604,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
     setState(() => _leavingToDashboard = true);
     _exitFadeController.forward();
     _maybeShowReferralOutcome();
+    _maybeShowDeletionCancelled();
     dissolveToDashboard(
       context,
       cover: const DecoratedBox(
@@ -616,6 +617,25 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
         ),
       ),
     );
+  }
+
+  // Signing in again cancelled a pending account-deletion request — say so
+  // once on the dashboard (no prompt; owner decision 2026-09-28).
+  void _maybeShowDeletionCancelled() {
+    if (!_authC.deletionCancelledOnLogin.value) return;
+    _authC.deletionCancelledOnLogin.value = false;
+    Future.delayed(const Duration(milliseconds: 900), () {
+      Get.snackbar(
+        'Welcome back',
+        'Your account deletion request has been cancelled.',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: const Color(0xFF1E8E3E),
+        colorText: Colors.white,
+        margin: EdgeInsets.all(3.w),
+        borderRadius: 14,
+        duration: const Duration(seconds: 4),
+      );
+    });
   }
 
   // Persistent confirmation of the referral outcome the backend returned in

@@ -809,7 +809,7 @@ class _BookingCancellationSuccessScreenState
                 if (statusData?.refundSpeed != null) ...[
                   SizedBox(height: 1.h),
                   Text(
-                    'Speed: ${statusData?.refundSpeed == 'instant' ? 'Instant (within minutes)' : 'Normal (3–5 business days)'}',
+                    'Speed: ${statusData?.refundSpeed == 'instant' ? 'Instant (within minutes)' : 'Normal (5–7 business days)'}',
                     style: AppType.style(8.5.sp, color: _TI.inkLight),
                   ),
                 ],

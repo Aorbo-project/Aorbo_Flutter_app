@@ -47,6 +47,9 @@ class AuthController extends GetxController {
   // Exact backend message from the last failed verifyOtp — so the OTP screen
   // can show "OTP has expired…" vs "Incorrect OTP…" instead of a generic line.
   final RxString otpErrorMessage = ''.obs;
+  // True when this sign-in cancelled a pending account-deletion request
+  // (verify-otp `accountDeletionCancelled`); shown once as a snackbar.
+  final RxBool deletionCancelledOnLogin = false.obs;
   RxBool isLoading = false.obs;
   RxBool isProfileLoading = false.obs;
   RxBool isPhoneValid = false.obs;
@@ -206,6 +209,9 @@ class AuthController extends GetxController {
           // same request — keep the outcome for the post-verify banner.
           lastReferralResult.value = verifyOtpModal.value.data?.referral;
           referralCodeTextField.value.clear();
+          final data = res['data'];
+          deletionCancelledOnLogin.value =
+              data is Map && data['accountDeletionCancelled'] == true;
           return true;
         } catch (parseError) {
           logger.e('Error parsing auth response: $parseError');

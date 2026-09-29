@@ -294,6 +294,22 @@ class _MyAccountScreenState extends State<MyAccountScreen>
                     child: _buildLogoutButton(),
                   ),
                 ),
+                SizedBox(height: 1.h),
+                Center(
+                  child: TextButton(
+                    onPressed: () => Get.toNamed('/delete-account'),
+                    child: Text(
+                      'Delete my account',
+                      style: AppType.style(
+                        FontSize.s9,
+                        w: FontWeight.w500,
+                        color: _C.inkMid,
+                        decoration: TextDecoration.underline,
+                        decorationColor: _C.inkMid,
+                      ),
+                    ),
+                  ),
+                ),
                 // Floating-nav clearance: the last content (logout
                 // button) must rest ABOVE the glass bar, not behind it.
                 // MediaQuery.padding.bottom carries the bar's full

@@ -1000,7 +1000,7 @@ class _PaymentScreenState extends State<PaymentScreen>
         Icon(Icons.lock_outline_rounded, size: 12, color: _Pay.green),
         const SizedBox(width: 5),
         Text(
-          '256-bit SSL encrypted payment · 100% secure',
+          '256-bit SSL encrypted payment via Razorpay',
           textScaler: const TextScaler.linear(1.0),
           style: AppType.style(8.sp, color: _Pay.inkMid),
         ),

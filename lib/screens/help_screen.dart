@@ -49,17 +49,17 @@ class _HelpScreenState extends State<HelpScreen>
     {
       'question': 'How do I know if a trek organizer is trustworthy?',
       'answer':
-          'We carefully vet every trek organizer on Aorbo Treks to ensure they meet our high standards of safety, reliability, and quality service. 🌟 Your adventure and trust are our priorities!',
+          'Every organizer completes identity, business and bank verification with Aorbo before they can list treks, and our team reviews every trek before it goes live. You can also read reviews from past travellers on each trek.',
     },
     {
       'question': 'Will you arrange the stays during the trek?',
       'answer':
-          'All our treks include certified guides, first-aid kits, and 24/7 emergency support.',
+          'Stays are arranged by the trek organizer. Each trek page lists exactly what is included — stays, meals, transport — so check it before you book.',
     },
     {
       'question': 'Can I customize my trek itinerary?',
       'answer':
-          'Yes, cancellation and rescheduling are allowed up to 48 hours before departure.',
+          'No — each trek follows the itinerary set by its organizer and reviewed by Aorbo. You choose the date, boarding point and number of travellers when you book.',
     },
   ];
 
