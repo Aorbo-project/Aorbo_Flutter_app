@@ -35,6 +35,8 @@ import '../screens/logout_screen.dart';
 import '../screens/refer&earn_screen.dart';
 import '../screens/rate_review_screen.dart';
 import '../screens/contact_support_screen.dart';
+import '../giveaway/giveaway_rules_screen.dart';
+import '../giveaway/giveaway_screen.dart';
 
 
 final routes = [
@@ -122,5 +124,17 @@ final routes = [
   GetPage(name: '/payment-success', page: () => const PaymentSuccessPage()),
   GetPage(name: '/rate-review', page: () => const RateReviewScreen()),
   GetPage(name: '/my-tickets', page: () => const MyTicketsScreen()),
+  GetPage(
+    name: '/giveaway',
+    page: () => const GiveawayScreen(),
+    transition: Transition.rightToLeft,
+    transitionDuration: const Duration(milliseconds: 300),
+  ),
+  GetPage(
+    name: '/giveaway-rules',
+    page: () => const GiveawayRulesScreen(),
+    transition: Transition.rightToLeft,
+    transitionDuration: const Duration(milliseconds: 300),
+  ),
 
 ];

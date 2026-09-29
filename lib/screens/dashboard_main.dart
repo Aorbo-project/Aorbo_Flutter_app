@@ -4,6 +4,8 @@ import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/controller/trek_controller.dart';
 import 'package:arobo_app/controller/user_controller.dart';
 import 'package:arobo_app/freezed_models/booking/booking_history_model.dart';
+import 'package:arobo_app/giveaway/giveaway_config.dart';
+import 'package:arobo_app/giveaway/referral_links.dart';
 import 'package:arobo_app/screens/bookings_history_screen.dart';
 import 'package:arobo_app/screens/dashboard_widget.dart';
 import 'package:arobo_app/screens/my_account_screen.dart';
@@ -37,6 +39,7 @@ class _DashboardMainState extends State<DashboardMain> {
   int _lastTab = 0;
   int _tabDirection = 1;
   Worker? _tabWorker;
+  Worker? _giveawayLinkWorker;
 
   // Out faster than in — the stagger that makes a crossfade read as
   // "buttery" instead of "blurry".
@@ -71,13 +74,35 @@ class _DashboardMainState extends State<DashboardMain> {
       final resumed = await BookingDraftService.checkAndResume(trekC, userC);
       if (resumed && mounted) {
         Get.to(() => const TravellerInformationScreen());
+        return;
       }
+      _openGiveawayIfLinked();
     });
+
+    // A referral link tapped while signed in, with the app already open.
+    _giveawayLinkWorker = ever<bool>(
+      ReferralLinkCapture.instance.openGiveawayRequested,
+      (requested) {
+        if (requested) _openGiveawayIfLinked();
+      },
+    );
+  }
+
+  /// A referral link opened the app while signed in: show the giveaway (the
+  /// "invite friends" view for an existing user) once, then forget it.
+  void _openGiveawayIfLinked() {
+    final requested = ReferralLinkCapture.instance.openGiveawayRequested;
+    if (!requested.value || !mounted) return;
+    requested.value = false;
+    if (GiveawayConfig.enabled && Get.currentRoute != '/giveaway') {
+      Get.toNamed('/giveaway');
+    }
   }
 
   @override
   void dispose() {
     _tabWorker?.dispose();
+    _giveawayLinkWorker?.dispose();
     RateTrekPopup.dismiss(); // clean up overlay on dispose
     super.dispose();
   }

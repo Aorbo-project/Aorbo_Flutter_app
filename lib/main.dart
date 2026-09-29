@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:arobo_app/controller/auth_controller.dart';
 import 'package:arobo_app/firebase_options.dart';
+import 'package:arobo_app/giveaway/referral_links.dart';
 import 'package:arobo_app/repository/repository.dart';
 import 'package:arobo_app/routes/routes.dart';
 import 'package:arobo_app/utils/Preferences.dart';
@@ -142,6 +143,12 @@ void _deferredInit() {
     PlayIntegrityService.instance.warmUp();
     // Remote-config refresh + tamper scan now and on every return to the app.
     SecurityGuard.instance.start();
+
+    // Referral links (App Links) + the Play install referrer, read once —
+    // the code waits for the sign-up screen to pre-fill it.
+    ReferralLinkCapture.instance
+        .start(isLoggedIn: () => sp?.getBool(SpUtil.isLoggedIn) == true)
+        .catchError((Object e) => debugPrint('ReferralLinkCapture failed: $e'));
 
     // AdMob — off the critical path. Test ads only until AdConfig.useRealAds.
     // UMP consent is resolved first; nothing requests an ad until

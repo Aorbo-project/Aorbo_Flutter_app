@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:arobo_app/giveaway/referral_links.dart';
 import 'package:arobo_app/main.dart';
 import 'package:arobo_app/utils/shared_preferences.dart';
 import 'package:dio/dio.dart' show Options, DioException;
@@ -206,6 +207,8 @@ class AuthController extends GetxController {
           // same request — keep the outcome for the post-verify banner.
           lastReferralResult.value = verifyOtpModal.value.data?.referral;
           referralCodeTextField.value.clear();
+          // Signed in: a code from a referral link has had its one chance.
+          unawaited(PendingReferralCode.clear());
           return true;
         } catch (parseError) {
           logger.e('Error parsing auth response: $parseError');
