@@ -1,5 +1,7 @@
 import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/controller/user_controller.dart';
+import 'package:arobo_app/legal/legal_documents.dart';
+import 'package:arobo_app/legal/legal_service.dart';
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 import '../utils/common_colors.dart';
@@ -122,6 +124,11 @@ class _MyAccountScreenState extends State<MyAccountScreen>
     // ✅ FIX: Fetch user profile so the name is always loaded from API
     if (_userC.userProfileData.value.customer == null) {
       _userC.getUserProfile();
+    }
+
+    // Legal list: retry quietly if the app-start fetch didn't get through.
+    if (!LegalService.instance.loadedFromServer) {
+      LegalService.instance.refresh();
     }
 
     _runStaggeredEntrance();
@@ -285,6 +292,30 @@ class _MyAccountScreenState extends State<MyAccountScreen>
                       ),
                     ],
                   ),
+                ),
+                SizedBox(height: 2.h),
+                // Every document the server lists (built-in list offline);
+                // each opens the website's current page.
+                _buildAnimatedSection(
+                  index: 4,
+                  label: 'LEGAL',
+                  child: Obx(() {
+                    final docs = documentsForDisplay(LegalService.instance.documents);
+                    return _buildCard(
+                      children: [
+                        for (var i = 0; i < docs.length; i++) ...[
+                          if (i > 0) _buildDivider(),
+                          _buildMenuItem(
+                            icon: docs[i].key == LegalDocKeys.privacy
+                                ? CommonImages.safety
+                                : CommonImages.info,
+                            title: docs[i].title,
+                            onTap: () => openLegalDoc(docs[i].key),
+                          ),
+                        ],
+                      ],
+                    );
+                  }),
                 ),
                 SizedBox(height: 3.h),
                 SlideTransition(

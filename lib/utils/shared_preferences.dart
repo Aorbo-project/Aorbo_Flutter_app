@@ -34,6 +34,10 @@ class SpUtil {
   // on every launch until the user actually updates.
   static const String dismissedUpdateVersion = 'dismissed_update_version';
 
+  // Last legal-document list from GET legal/documents (JSON), so the
+  // Terms / Privacy links still open the server's URLs when offline.
+  static const String legalDocuments = 'legal_documents';
+
   static SpUtil? _instance;
 
   static Future<SpUtil> get instance async {

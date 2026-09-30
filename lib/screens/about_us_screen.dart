@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:arobo_app/legal/legal_service.dart';
 import 'package:arobo_app/models/about_us_data.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:flutter/material.dart';
@@ -733,10 +734,13 @@ class _ExpandableLinkTileState extends State<_ExpandableLinkTile>
 
   @override
   Widget build(BuildContext context) {
+    // A legal document opens the website's current page (never an in-app
+    // copy); everything else expands in place.
+    final legalKey = widget.link.legalDocKey;
     return Column(
       children: [
         InkWell(
-          onTap: _toggle,
+          onTap: legalKey != null ? () => openLegalDoc(legalKey) : _toggle,
           borderRadius: BorderRadius.circular(8),
           child: Padding(
             padding: EdgeInsets.symmetric(vertical: 1.8.h),
@@ -754,51 +758,67 @@ class _ExpandableLinkTileState extends State<_ExpandableLinkTile>
                     ),
                   ),
                 ),
-                RotationTransition(
-                  turns: _rotate,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
+                if (legalKey != null)
+                  Container(
                     width: 28,
                     height: 28,
-                    decoration: BoxDecoration(
-                      color: _open ? _C.tealSoft : _C.cardBg,
+                    decoration: const BoxDecoration(
+                      color: _C.cardBg,
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      size: 18,
-                      color: _open ? _C.teal : _C.inkLight,
+                    child: const Icon(
+                      Icons.open_in_new_rounded,
+                      size: 16,
+                      color: _C.inkLight,
+                    ),
+                  )
+                else
+                  RotationTransition(
+                    turns: _rotate,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: _open ? _C.tealSoft : _C.cardBg,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        size: 18,
+                        color: _open ? _C.teal : _C.inkLight,
+                      ),
                     ),
                   ),
-                ),
               ],
             ),
           ),
         ),
-        SizeTransition(
-          sizeFactor: _expand,
-          child: Container(
-            margin: EdgeInsets.only(bottom: 2.h),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: _C.cardBg,
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(12),
-                bottomRight: Radius.circular(12),
-                topRight: Radius.circular(12),
+        if (legalKey == null)
+          SizeTransition(
+            sizeFactor: _expand,
+            child: Container(
+              margin: EdgeInsets.only(bottom: 2.h),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: _C.cardBg,
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(12),
+                  bottomRight: Radius.circular(12),
+                  topRight: Radius.circular(12),
+                ),
+                border: const Border(left: BorderSide(color: _C.teal, width: 3)),
               ),
-              border: const Border(left: BorderSide(color: _C.teal, width: 3)),
-            ),
-            child: Text(
-              widget.link.content,
-              style: AppType.style(
-                FontSize.s12,
-                color: _C.inkMid,
-                height: 1.65,
+              child: Text(
+                widget.link.content,
+                style: AppType.style(
+                  FontSize.s12,
+                  color: _C.inkMid,
+                  height: 1.65,
+                ),
               ),
             ),
           ),
-        ),
         const Divider(color: _C.divider, thickness: 1, height: 1),
       ],
     );

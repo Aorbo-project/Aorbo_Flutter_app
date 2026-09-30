@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:arobo_app/giveaway/referral_links.dart';
+import 'package:arobo_app/legal/legal_service.dart';
 import 'package:arobo_app/main.dart';
 import 'package:arobo_app/utils/shared_preferences.dart';
 import 'package:dio/dio.dart' show Options, DioException;
@@ -239,6 +240,10 @@ class AuthController extends GetxController {
               data is Map && data['accountDeletionCancelled'] == true;
           // Signed in: a code from a referral link has had its one chance.
           unawaited(PendingReferralCode.clear());
+          // The sign-in screen says "By continuing, you agree to our Terms
+          // & Conditions and Privacy Policy" — record it. Fire and forget:
+          // never blocks or fails the login (see LegalService).
+          LegalService.instance.recordLoginAcceptance();
           return true;
         } catch (parseError) {
           logger.e('Error parsing auth response: $parseError');

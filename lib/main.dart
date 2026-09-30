@@ -5,6 +5,7 @@ import 'package:arobo_app/controller/auth_controller.dart';
 import 'package:arobo_app/firebase_options.dart';
 import 'package:arobo_app/giveaway/giveaway_config.dart';
 import 'package:arobo_app/giveaway/referral_links.dart';
+import 'package:arobo_app/legal/legal_service.dart';
 import 'package:arobo_app/repository/repository.dart';
 import 'package:arobo_app/routes/routes.dart';
 import 'package:arobo_app/utils/Preferences.dart';
@@ -144,6 +145,10 @@ void _deferredInit() {
     PlayIntegrityService.instance.warmUp();
     // Remote-config refresh + tamper scan now and on every return to the app.
     SecurityGuard.instance.start();
+
+    // Legal documents (Terms, Privacy, ...): cached list now, fresh one in
+    // the background — the sign-in screen's links use it.
+    LegalService.instance.warmUp();
 
     // Referral links (App Links) + the Play install referrer, read once —
     // the code waits for the sign-up screen to pre-fill it.

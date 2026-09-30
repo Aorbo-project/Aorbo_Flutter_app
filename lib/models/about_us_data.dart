@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../legal/legal_documents.dart';
 import '../utils/common_images.dart';
 
 class AboutUsData {
@@ -33,10 +34,16 @@ class ExpandableLink {
   final String content;
   final VoidCallback? onTap;
 
+  /// Set for a legal document (server key, e.g. 'terms'): the row opens the
+  /// website's current page instead of expanding in-app text, so the app
+  /// never shows a copy that can drift from the real one.
+  final String? legalDocKey;
+
   ExpandableLink({
     required this.title,
-    required this.content,
+    this.content = '',
     this.onTap,
+    this.legalDocKey,
   });
 }
 
@@ -69,46 +76,15 @@ final aboutUsData = AboutUsData(
     ),
   ],
   links: [
+    // Legal documents open the website's current version (lib/legal/) — the
+    // in-app copies that used to live here could contradict the real ones.
     ExpandableLink(
       title: 'Terms and Conditions',
-      content: '''
-1. Acceptance of Terms
-By accessing and using Aorbo Treks, you agree to be bound by these terms.
-
-2. User Responsibilities
-- Provide accurate information
-- Maintain account security
-- Follow trekking guidelines and safety protocols
-
-3. Booking and Cancellation
-- Clear booking procedures
-- Transparent cancellation policies
-- Refund terms and conditions
-
-4. Safety Guidelines
-- Follow trek leader instructions
-- Use recommended equipment
-- Adhere to safety protocols
-      ''',
+      legalDocKey: LegalDocKeys.terms,
     ),
     ExpandableLink(
       title: 'User Agreement',
-      content: '''
-1. Account Creation and Management
-- One account per user
-- Accurate information required
-- Account security responsibilities
-
-2. User Conduct
-- Respectful communication
-- Honest reviews and feedback
-- No misuse of platform
-
-3. Privacy and Data
-- Data collection practices
-- Information usage
-- User privacy rights
-      ''',
+      legalDocKey: LegalDocKeys.userAgreement,
     ),
     ExpandableLink(
       title: 'Organiser Verification',

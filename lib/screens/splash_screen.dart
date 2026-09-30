@@ -1,6 +1,7 @@
 import 'package:arobo_app/controller/auth_controller.dart';
 import 'package:arobo_app/controller/otp_controller.dart';
 import 'package:arobo_app/giveaway/referral_links.dart';
+import 'package:arobo_app/legal/legal_links_text.dart';
 import 'package:arobo_app/main.dart';
 import 'package:arobo_app/models/auth/validate_version_model.dart';
 import 'package:arobo_app/utils/common_colors.dart';
@@ -1860,22 +1861,11 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                     style: AppType.style(FontSize.s10, w: FontWeight.w400, color: Colors.black),
                   ),
                   SizedBox(height: 0.5.h),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "T&C",
-                        style: AppType.style(FontSize.s9, w: FontWeight.w400, color: Colors.lightBlue),
-                      ),
-                      Text(
-                        "  &  ",
-                        style: AppType.style(FontSize.s9, w: FontWeight.w400, color: Colors.black),
-                      ),
-                      Text(
-                        "Privacy Policy",
-                        style: AppType.style(FontSize.s9, w: FontWeight.w400, color: Colors.lightBlue),
-                      ),
-                    ],
+                  // Each half opens the server's current page.
+                  LegalLinksText(
+                    linkStyle: AppType.style(FontSize.s9, w: FontWeight.w400, color: Colors.lightBlue),
+                    separatorStyle: AppType.style(FontSize.s9, w: FontWeight.w400, color: Colors.black),
+                    separator: ' and ',
                   ),
                 ],
               ),

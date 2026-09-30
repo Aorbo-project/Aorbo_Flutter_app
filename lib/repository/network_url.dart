@@ -229,6 +229,15 @@ class NetworkUrl {
   }
   //#endregion
 
+  //#region Legal documents (Terms, Privacy Policy, ... — see lib/legal/)
+  // GET  → current documents: key, title, url, version, requiresAcceptance. Public.
+  static const String legalDocuments = 'legal/documents';
+  // GET  → which current versions this customer has / hasn't agreed to. Login.
+  static const String legalStatus = 'customer/legal/status';
+  // POST {documents:[{key,version}], source, appVersion} → records agreement. Login.
+  static const String legalAccept = 'customer/legal/accept';
+  //#endregion
+
   //#region Trek share links (backend: services/trekShareService.js)
   static const String trekShareCreate = 'share/treks';
   static String trekShareResolve(String code) => 'share/treks/${Uri.encodeComponent(code)}';

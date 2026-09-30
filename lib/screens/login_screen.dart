@@ -12,6 +12,7 @@
   import 'package:sizer/sizer.dart';
   import 'package:flutter_touch_ripple/flutter_touch_ripple.dart';
 
+  import '../legal/legal_links_text.dart';
   import '../utils/custom_snackbar.dart';
   import '../utils/phone_input_formatter.dart';
 import 'package:arobo_app/theme/app_typography.dart';
@@ -348,10 +349,13 @@ import 'package:arobo_app/theme/app_typography.dart';
                                       fontSize: AppType.clampFontSize(FontSize.s9),
                                       fontWeight: FontWeight.w500),
                                 ),
-                                Text(
-                                  'T&C | Privacy Policy',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
+                                // Each half opens the server's current page.
+                                LegalLinksText(
+                                  linkStyle: TextStyle(
+                                      color: CommonColors.appYellowColor,
+                                      fontSize: AppType.clampFontSize(FontSize.s9),
+                                      fontWeight: FontWeight.w800),
+                                  separatorStyle: TextStyle(
                                       color: CommonColors.appYellowColor,
                                       fontSize: AppType.clampFontSize(FontSize.s9),
                                       fontWeight: FontWeight.w800),

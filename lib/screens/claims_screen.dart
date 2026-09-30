@@ -1,3 +1,5 @@
+import 'package:arobo_app/legal/legal_documents.dart';
+import 'package:arobo_app/legal/legal_service.dart';
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -149,7 +151,8 @@ class _claims extends State<claims> {
                               ),
                             ),
                             GestureDetector(
-                              onTap: () => CustomSnackBar.show(context, message: "Terms and conditions are coming soon."),
+                              // Opens the website's current Terms page.
+                              onTap: () => openLegalDoc(LegalDocKeys.terms),
                               child: Text(
                                 "View Details",
                                 style: TextStyle(

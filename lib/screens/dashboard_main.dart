@@ -6,6 +6,7 @@ import 'package:arobo_app/controller/user_controller.dart';
 import 'package:arobo_app/freezed_models/booking/booking_history_model.dart';
 import 'package:arobo_app/giveaway/giveaway_config.dart';
 import 'package:arobo_app/giveaway/referral_links.dart';
+import 'package:arobo_app/legal/legal_update_sheet.dart';
 import 'package:arobo_app/screens/bookings_history_screen.dart';
 import 'package:arobo_app/screens/dashboard_widget.dart';
 import 'package:arobo_app/screens/my_account_screen.dart';
@@ -43,6 +44,7 @@ class _DashboardMainState extends State<DashboardMain> {
   Worker? _tabWorker;
   Worker? _giveawayLinkWorker;
   Worker? _trekLinkWorker;
+  Future<void>? _legalPrompt;
 
   // Out faster than in — the stagger that makes a crossfade read as
   // "buttery" instead of "blurry".
@@ -73,6 +75,9 @@ class _DashboardMainState extends State<DashboardMain> {
     // splash→dashboard reveal isn't competing with these calls.
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       trekC.checkPendingOrderOnResume();
+      // "We've updated our terms" — once per app run, silent on failure.
+      // The rate popup waits for it so the two never stack.
+      _legalPrompt = maybeShowLegalUpdatePrompt();
       _maybeShowRateTrekPopup();
       final resumed = await BookingDraftService.checkAndResume(trekC, userC);
       if (resumed && mounted) {
@@ -149,6 +154,8 @@ class _DashboardMainState extends State<DashboardMain> {
   Future<void> _maybeShowRateTrekPopup() async {
     // Let the dashboard paint and settle first — no jank on cold start.
     await Future.delayed(const Duration(milliseconds: 1200));
+    // Never over the legal update sheet — wait until it's closed.
+    await _legalPrompt;
     if (!mounted) return;
 
     try {
