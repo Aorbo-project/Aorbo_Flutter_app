@@ -228,4 +228,9 @@ class NetworkUrl {
     return q.toString();
   }
   //#endregion
+
+  //#region Trek share links (backend: services/trekShareService.js)
+  static const String trekShareCreate = 'share/treks';
+  static String trekShareResolve(String code) => 'share/treks/${Uri.encodeComponent(code)}';
+  //#endregion
 }
