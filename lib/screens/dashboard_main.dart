@@ -11,6 +11,8 @@ import 'package:arobo_app/screens/dashboard_widget.dart';
 import 'package:arobo_app/screens/my_account_screen.dart';
 import 'package:arobo_app/screens/traveller_information_screen.dart';
 import 'package:arobo_app/services/booking_draft_service.dart';
+import 'package:arobo_app/share/trek_link.dart';
+import 'package:arobo_app/share/trek_share.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/utils/common_bottom_nav.dart';
 import 'package:arobo_app/utils/common_colors.dart';
@@ -40,6 +42,7 @@ class _DashboardMainState extends State<DashboardMain> {
   int _tabDirection = 1;
   Worker? _tabWorker;
   Worker? _giveawayLinkWorker;
+  Worker? _trekLinkWorker;
 
   // Out faster than in — the stagger that makes a crossfade read as
   // "buttery" instead of "blurry".
@@ -77,6 +80,7 @@ class _DashboardMainState extends State<DashboardMain> {
         return;
       }
       _openGiveawayIfLinked();
+      _openTrekIfLinked();
     });
 
     // A referral link tapped while signed in, with the app already open.
@@ -86,6 +90,25 @@ class _DashboardMainState extends State<DashboardMain> {
         if (requested) _openGiveawayIfLinked();
       },
     );
+
+    // A trek link tapped while signed in, with the app already open.
+    _trekLinkWorker = ever<TrekLink?>(
+      ReferralLinkCapture.instance.openTrekRequested,
+      (link) {
+        if (link != null) _openTrekIfLinked();
+      },
+    );
+  }
+
+  /// A shared trek link — tapped while signed in, or saved before sign-in
+  /// (tapped link or Play install referrer): open that trek once.
+  Future<void> _openTrekIfLinked() async {
+    final requested = ReferralLinkCapture.instance.openTrekRequested;
+    final link = requested.value ?? await PendingTrekLink.read();
+    if (link == null || !mounted) return;
+    requested.value = null;
+    await PendingTrekLink.clear();
+    await TrekLinkOpener.open(link);
   }
 
   /// A referral link opened the app while signed in: show the giveaway (the
@@ -103,6 +126,7 @@ class _DashboardMainState extends State<DashboardMain> {
   void dispose() {
     _tabWorker?.dispose();
     _giveawayLinkWorker?.dispose();
+    _trekLinkWorker?.dispose();
     RateTrekPopup.dismiss(); // clean up overlay on dispose
     super.dispose();
   }

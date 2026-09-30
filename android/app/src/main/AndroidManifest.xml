@@ -37,7 +37,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
             <!-- Referral links https://<host>/r/<CODE> (Aorbo Trek Giveaway +
-                 Refer & Earn), handled by lib/giveaway/referral_links.dart.
+                 Refer & Earn) and shared treks https://<host>/t/<trekId>
+                 (lib/share/trek_link.dart), both read by
+                 lib/giveaway/referral_links.dart.
                  Verified https App Links only — no custom scheme another app
                  could also register. EVERY host below must serve
                  /.well-known/assetlinks.json with the Play App Signing
@@ -52,6 +54,7 @@
                 <data android:host="aorbotreks.co.in" />
                 <data android:host="api.aorbotreks.co.in" />
                 <data android:pathPrefix="/r/" />
+                <data android:pathPrefix="/t/" />
             </intent-filter>
             <!-- Links are read by the app_links plugin, not pushed onto the
                  Flutter navigator as routes. -->

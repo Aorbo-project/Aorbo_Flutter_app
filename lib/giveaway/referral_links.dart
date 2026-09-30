@@ -6,6 +6,7 @@ import 'package:app_links/app_links.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 
+import '../share/trek_link.dart';
 import '../utils/shared_preferences.dart';
 import 'giveaway_config.dart';
 
@@ -85,9 +86,10 @@ class PendingReferralCode {
   }
 }
 
-/// Listens for referral links (App Links) and reads the Play install referrer
-/// once per install. A captured code is saved for the sign-up screen; a
-/// signed-in user tapping a link is taken to the giveaway page instead.
+/// Listens for Aorbo links (App Links) and reads the Play install referrer
+/// once per install. Referral links: a captured code is saved for the sign-up
+/// screen; a signed-in user is taken to the giveaway page instead. Trek links
+/// (lib/share/trek_link.dart): opened once the person is signed in.
 class ReferralLinkCapture {
   ReferralLinkCapture._();
   static final ReferralLinkCapture instance = ReferralLinkCapture._();
@@ -100,6 +102,10 @@ class ReferralLinkCapture {
   /// Set when a link opened the app while signed in; the dashboard opens the
   /// giveaway once it is on screen, then clears this.
   final RxBool openGiveawayRequested = false.obs;
+
+  /// Set when a trek link arrives while signed in; the dashboard opens the
+  /// trek, then clears this. Signed out, the link waits in [PendingTrekLink].
+  final Rxn<TrekLink> openTrekRequested = Rxn<TrekLink>();
 
   /// [isLoggedIn] is read at the moment a link arrives.
   Future<void> start({required bool Function() isLoggedIn}) async {
@@ -122,6 +128,15 @@ class ReferralLinkCapture {
   }
 
   Future<void> _handle(Uri uri, bool loggedIn) async {
+    final trek = TrekLink.fromUri(uri);
+    if (trek != null) {
+      if (loggedIn) {
+        openTrekRequested.value = trek;
+      } else {
+        await PendingTrekLink.save(trek);
+      }
+      return;
+    }
     final code = ReferralLinkParser.fromUri(uri);
     if (code == null) return;
     if (loggedIn) {
@@ -144,6 +159,10 @@ class ReferralLinkCapture {
       // An App Link code, if any, is more recent — don't overwrite it.
       if (code != null && await PendingReferralCode.read() == null) {
         await PendingReferralCode.save(code);
+      }
+      final trek = TrekLink.fromInstallReferrer(details.installReferrer);
+      if (trek != null && await PendingTrekLink.read() == null) {
+        await PendingTrekLink.save(trek);
       }
     } catch (e) {
       // Sideloaded builds and phones without Play have no referrer — normal.

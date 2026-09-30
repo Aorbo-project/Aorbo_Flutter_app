@@ -557,14 +557,20 @@ class TrekController extends GetxController {
     }
   }
 
-  Future<void> trekDetail({required int batchId}) async {
+  /// [cityId] overrides the dashboard's selected source city (a shared trek
+  /// link carries the sharer's). A [batchId] of 0 is left out of the request
+  /// so the backend picks the next upcoming batch — `batch_id=0` matched no
+  /// batch and came back with no dates at all. Returns whether the trek
+  /// loaded; [showErrors] false leaves the error message to the caller.
+  Future<bool> trekDetail({required int batchId, int? cityId, bool showErrors = true}) async {
     isLoading.value = true;
     errorMessage.value = '';
 
     try {
+      final batchParam = batchId > 0 ? 'batch_id=$batchId&' : '';
       final response = await repository.getApiCall(
         url:
-            '${NetworkUrl.getTrekDetail}$trekDetailId?batch_id=$batchId&city_id=${_dashboardC.selectedCityId.value}',
+            '${NetworkUrl.getTrekDetail}$trekDetailId?${batchParam}city_id=${cityId ?? _dashboardC.selectedCityId.value}',
       );
 
       if (response != null) {
@@ -582,18 +588,20 @@ class TrekController extends GetxController {
           if (uniqueBoardingCityIds.length == 1) {
             selectedBoardingCityId.value = uniqueBoardingCityIds.first;
           }
+          return true;
         } else {
           errorMessage.value = response['message'];
-          CustomSnackBar.show(Get.context!, message: errorMessage.value);
+          if (showErrors) CustomSnackBar.show(Get.context!, message: errorMessage.value);
         }
       }
     } catch (e, st) {
       errorMessage.value = 'Failed to load trek details: ${e.toString()}';
       logger.e(st);
-      CustomSnackBar.show(Get.context!, message: errorMessage.value);
+      if (showErrors) CustomSnackBar.show(Get.context!, message: errorMessage.value);
     } finally {
       isLoading.value = false;
     }
+    return false;
   }
 
   // Guards against an in-flight calculate-fare request resolving AFTER a
