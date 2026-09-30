@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:arobo_app/freezed_models/booking/booking_data_model.dart';
+import 'package:arobo_app/freezed_models/treks/trek_detail_model.dart' show TrekDetailData;
 import 'package:arobo_app/screens/coupon_code_screen.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
@@ -1066,6 +1067,25 @@ class _PaymentScreenState extends State<PaymentScreen>
     );
   }
 
+  // The dashboard's search boxes describe this trek only when the booking
+  // started from a search for its destination; a trek opened from a shared
+  // link (or after searching somewhere else) is labelled from its own data.
+  String _routeLabel(TrekDetailData trek) {
+    final from = _dashboardC.fromController.value.text.trim();
+    final to = _dashboardC.toController.value.text.trim();
+    final searched = _dashboardC.selectedTrekId.value;
+    if (from.isNotEmpty && to.isNotEmpty && searched != 0 && searched == trek.destinationId) {
+      return '$from  →  $to';
+    }
+    final boardingId = _trekC.selectedBoardingCityId.value;
+    final boarding = (trek.trekStages ?? const []).where((s) =>
+        s.isBoardingPoint == true &&
+        s.city?.cityName != null &&
+        (boardingId == null || s.cityId == boardingId));
+    final destination = trek.destinationData?.name ?? trek.title ?? '-';
+    return boarding.isEmpty ? destination : '${boarding.first.city!.cityName}  →  $destination';
+  }
+
   Widget _buildTrekSummaryCard(
     dynamic trek,
     dynamic fareReq,
@@ -1083,10 +1103,7 @@ class _PaymentScreenState extends State<PaymentScreen>
             style: AppType.style(14.sp, w: FontWeight.w700, color: _Pay.ink),
           ),
           const SizedBox(height: 10),
-          _infoRow(
-            Icons.place_outlined,
-            '${_dashboardC.fromController.value.text}  →  ${_dashboardC.toController.value.text}',
-          ),
+          _infoRow(Icons.place_outlined, _routeLabel(trek)),
           const SizedBox(height: 6),
           Row(
             children: [
