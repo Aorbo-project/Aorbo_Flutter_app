@@ -5,7 +5,7 @@ import '../controller/trek_controller.dart';
 import '../freezed_models/treks/trek_detail_model.dart' show TrekDetailData;
 import '../freezed_models/treks/treks_model_data.dart' show TrekData;
 import '../screens/trek_details_screen.dart';
-import '../utils/custom_snackbar.dart';
+import '../services/app_feedback.dart';
 import 'trek_link.dart';
 
 /// Share button on the trek screen: the phone's own share sheet, so every
@@ -45,10 +45,7 @@ class TrekLinkOpener {
       }
       final data = trekC.trekDetailData.value;
       if (!ok || data.id != link.trekId) {
-        final ctx = Get.context;
-        if (ctx != null && ctx.mounted) {
-          CustomSnackBar.show(ctx, message: "This trek isn't available any more.");
-        }
+        AppFeedback.warning("This trek isn't available any more.");
         return;
       }
       Get.to(() => TrekDetailsScreen(trek: cardFor(data)));
