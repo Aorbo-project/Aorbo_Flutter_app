@@ -12,6 +12,10 @@ class SpUtil {
   // user is not bounced to the login screen mid-session. Absent when the
   // backend predates refresh-token support.
   static const String refreshToken     = 'refresh_token';
+  // True when this login sent a device key (verify-otp devicePublicKey), so
+  // every refresh must be signed — an unsigned refresh of a bound session is
+  // treated as theft by the backend and ends it. Absent for older logins.
+  static const String sessionDeviceBound = 'session_device_bound';
   static const String profileCompleted = 'profile_completed';
   static const String isNewCustomer    = 'is_new_customer';
   static const String deviceId         = 'device_id';

@@ -57,6 +57,16 @@ class AuthController extends GetxController {
   // Populated by resendOtp when server returns 429 with wait_seconds
   RxInt resendWaitSeconds = 0.obs;
 
+  // Set by requestOtp when the number already has a still-valid code and its
+  // resend wait is running ("Change number" → the same number): the OTP step
+  // opens on the server's countdown instead of a fresh 60s. Read once.
+  int? _otpResumeSeconds;
+  int? takeOtpResumeSeconds() {
+    final s = _otpResumeSeconds;
+    _otpResumeSeconds = null;
+    return s;
+  }
+
   bool get isLocalDev {
     final baseUrlStr = AppEnv().apiBaseUrl;
     return baseUrlStr.contains('127.0.0.1') ||
@@ -106,6 +116,19 @@ class AuthController extends GetxController {
       }
       CustomSnackBar.show(Get.context!,
           message: res?['message'] ?? 'Failed to send OTP. Please try again.');
+      return false;
+    } on RateLimitException catch (e) {
+      isProfileLoading.value = false;
+      // The server refuses a new OTP while this number's resend wait runs.
+      // If the code already sent is still valid, carry on to the code step
+      // on the server's countdown (no new SMS); otherwise say how long.
+      if (e.otpActive && e.waitSeconds > 0) {
+        _otpResumeSeconds = e.waitSeconds;
+        CustomSnackBar.show(Get.context!,
+            message: 'An OTP was already sent to this number. Enter it, or request a new one when the timer ends.');
+        return true;
+      }
+      CustomSnackBar.show(Get.context!, message: e.message);
       return false;
     } catch (e) {
       isProfileLoading.value = false;
@@ -197,6 +220,7 @@ class AuthController extends GetxController {
             // backend without refresh support — make sure no stale one lingers
             await sp!.remove(SpUtil.refreshToken);
           }
+          await sp!.putBool(SpUtil.sessionDeviceBound, devicePublicKey != null);
           await sp!.putBool(SpUtil.isLoggedIn, true);
           await sp!.putInt(SpUtil.userID, customer?.id ?? 0);
           // Store profile completion state so the app can prompt new/incomplete users

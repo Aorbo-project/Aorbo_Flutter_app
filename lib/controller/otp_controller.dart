@@ -18,7 +18,7 @@ class OTPController extends GetxController {
   void onInit() {
     super.onInit();
     otpController.value.clear();
-    startTimer();
+    startTimer(seconds: _authC.takeOtpResumeSeconds() ?? 60);
   }
 
   Future<void> resendOTP() async {
