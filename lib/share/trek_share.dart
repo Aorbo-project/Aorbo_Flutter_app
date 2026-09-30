@@ -27,8 +27,9 @@ class TrekLinkOpener {
 
   static bool _opening = false;
 
-  /// A shared date that has passed falls back to the trek's next upcoming
-  /// one; a trek that is no longer live gets a plain message, not an error.
+  /// A shared date that has passed or no longer exists falls back to the
+  /// trek's next upcoming one; a trek that is no longer live gets a plain
+  /// message, not an error.
   static Future<void> open(TrekLink link) async {
     if (_opening) return;
     _opening = true;
@@ -37,7 +38,9 @@ class TrekLinkOpener {
       trekC.trekDetailId.value = link.trekId;
       var ok = await trekC.trekDetail(
           batchId: link.batchId ?? 0, cityId: link.cityId, showErrors: false);
-      if (ok && link.batchId != null && TrekLink.isPastDate(trekC.trekDetailData.value.startDate)) {
+      final shared = trekC.trekDetailData.value;
+      if (ok && link.batchId != null &&
+          (shared.batchId == null || TrekLink.isPastDate(shared.startDate))) {
         ok = await trekC.trekDetail(batchId: 0, cityId: link.cityId, showErrors: false);
       }
       final data = trekC.trekDetailData.value;
