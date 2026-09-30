@@ -4,6 +4,7 @@ import 'package:share_plus/share_plus.dart';
 import '../controller/trek_controller.dart';
 import '../freezed_models/treks/trek_detail_model.dart' show TrekDetailData;
 import '../freezed_models/treks/treks_model_data.dart' show TrekData;
+import '../repository/trek_share_repository.dart';
 import '../screens/trek_details_screen.dart';
 import '../services/app_feedback.dart';
 import 'trek_link.dart';
@@ -13,11 +14,30 @@ import 'trek_link.dart';
 class TrekShare {
   TrekShare._();
 
-  static Future<void> share({required TrekLink link, required String title, String? startDate}) async {
-    await Share.share(
-      TrekShareText.build(title: title, startDate: startDate, link: link.toUri()),
-      subject: title.trim().isEmpty ? 'A trek on Aorbo Treks' : '${title.trim()} on Aorbo Treks',
-    );
+  static bool _sharing = false;
+
+  /// Asks the server for this trek card's link code, then opens the share
+  /// sheet. Shows its own message if the link can't be made.
+  static Future<void> share({
+    required int trekId,
+    int? batchId,
+    int? cityId,
+    required String title,
+    String? startDate,
+  }) async {
+    if (_sharing) return;
+    _sharing = true;
+    try {
+      final link = await TrekShareRepository().createLink(trekId: trekId, batchId: batchId, cityId: cityId);
+      await Share.share(
+        TrekShareText.build(title: title, startDate: startDate, link: link.toUri()),
+        subject: title.trim().isEmpty ? 'A trek on Aorbo Treks' : '${title.trim()} on Aorbo Treks',
+      );
+    } catch (e) {
+      AppFeedback.error(e is String ? e : 'Unable to share at the moment. Please try again.');
+    } finally {
+      _sharing = false;
+    }
   }
 }
 
@@ -27,24 +47,30 @@ class TrekLinkOpener {
 
   static bool _opening = false;
 
-  /// A shared date that has passed or no longer exists falls back to the
-  /// trek's next upcoming one; a trek that is no longer live gets a plain
-  /// message, not an error.
+  /// Resolves the link's code on the server, then opens that trek. A shared
+  /// date that has passed or no longer exists falls back to the trek's next
+  /// upcoming one; an unknown code or a trek that is no longer live gets a
+  /// plain message, not an error.
   static Future<void> open(TrekLink link) async {
     if (_opening) return;
     _opening = true;
     try {
+      final target = await TrekShareRepository().resolve(link);
+      if (target == null) {
+        AppFeedback.warning("This trek isn't available any more.");
+        return;
+      }
       final trekC = Get.find<TrekController>();
-      trekC.trekDetailId.value = link.trekId;
+      trekC.trekDetailId.value = target.trekId;
       var ok = await trekC.trekDetail(
-          batchId: link.batchId ?? 0, cityId: link.cityId, showErrors: false);
+          batchId: target.batchId ?? 0, cityId: target.cityId, showErrors: false);
       final shared = trekC.trekDetailData.value;
-      if (ok && link.batchId != null &&
+      if (ok && target.batchId != null &&
           (shared.batchId == null || TrekLink.isPastDate(shared.startDate))) {
-        ok = await trekC.trekDetail(batchId: 0, cityId: link.cityId, showErrors: false);
+        ok = await trekC.trekDetail(batchId: 0, cityId: target.cityId, showErrors: false);
       }
       final data = trekC.trekDetailData.value;
-      if (!ok || data.id != link.trekId) {
+      if (!ok || data.id != target.trekId) {
         AppFeedback.warning("This trek isn't available any more.");
         return;
       }

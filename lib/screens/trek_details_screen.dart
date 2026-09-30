@@ -22,7 +22,6 @@ import '../utils/common_btn.dart';
 import '../widgets/cancellation_policy_widget.dart';
 import '../utils/ist_date_utils.dart';
 import '../utils/custom_snackbar.dart';
-import '../share/trek_link.dart';
 import '../share/trek_share.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
@@ -410,29 +409,22 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
     );
   }
 
-  // The link carries this date and the boarding city on screen, so a friend
-  // opens the same trek card (lib/share/trek_link.dart).
+  // The link's code stands for this date and the boarding city on screen, so
+  // a friend opens the same trek card (lib/share/trek_link.dart).
   Future<void> _shareTrek() async {
     final detail = _trekC.trekDetailData.value;
-    final link = TrekLink.forShare(
-      trekId: detail.id ?? widget.trek?.id,
-      batchId: detail.batchId,
-      cityId: _trekC.selectedBoardingCityId.value ?? _dashboardC.selectedCityId.value,
-    );
-    if (link == null) {
+    final trekId = detail.id ?? widget.trek?.id;
+    if (trekId == null || trekId <= 0) {
       CustomSnackBar.show(context, message: 'Trek details are still loading — please try again in a moment.');
       return;
     }
-    try {
-      await TrekShare.share(
-        link: link,
-        title: detail.title ?? widget.trek?.name ?? '',
-        startDate: detail.startDate,
-      );
-    } catch (_) {
-      if (!mounted) return;
-      CustomSnackBar.show(context, message: 'Unable to share at the moment. Please try again.');
-    }
+    await TrekShare.share(
+      trekId: trekId,
+      batchId: detail.batchId,
+      cityId: _trekC.selectedBoardingCityId.value ?? _dashboardC.selectedCityId.value,
+      title: detail.title ?? widget.trek?.name ?? '',
+      startDate: detail.startDate,
+    );
   }
 
   Widget _buildSliverAppBar() {
