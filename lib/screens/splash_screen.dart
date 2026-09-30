@@ -1330,7 +1330,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
                       if (linkCode != null) _showReferralField = true;
                     });
                     _otpStaggerController.forward(from: 0);
-                    _otpC.startTimer();
+                    _otpC.startTimer(seconds: _authC.takeOtpResumeSeconds() ?? 60);
                   }
                 } else {
                   CustomSnackBar.show(

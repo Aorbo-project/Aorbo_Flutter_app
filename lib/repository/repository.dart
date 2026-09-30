@@ -19,10 +19,44 @@ import 'package:arobo_app/security/pinned_http_client.dart';
 class RateLimitException implements Exception {
   final String message;
   final int waitSeconds;
-  const RateLimitException(this.message, this.waitSeconds);
+  /// OTP endpoints: the code already sent to this number is still valid.
+  final bool otpActive;
+  const RateLimitException(this.message, this.waitSeconds, {this.otpActive = false});
   @override
   String toString() => message;
 }
+
+/// What a token refresh came to. Only [sessionOver] may sign the user out:
+/// a network drop, timeout or server error while refreshing leaves the
+/// refresh token perfectly good, so the next request just tries again.
+enum RefreshOutcome { refreshed, sessionOver, transientFailure }
+
+/// A refresh that failed with [error]: the server rejecting the refresh token
+/// (400/401/403) ends the session; anything else (no connection, timeout,
+/// 5xx, 429) is transient.
+@visibleForTesting
+RefreshOutcome refreshOutcomeForError(Object error) {
+  if (error is DioException) {
+    final status = error.response?.statusCode;
+    if (status == 400 || status == 401 || status == 403) return RefreshOutcome.sessionOver;
+  }
+  return RefreshOutcome.transientFailure;
+}
+
+/// After a successful refresh the original request is replayed once. Only a
+/// 401 on that replay means the session is over; any other failure (a 409
+/// "slot full", a timeout, ...) is that request's own result for the caller.
+@visibleForTesting
+bool replayFailureEndsSession(Object error) =>
+    error is DioException && error.response?.statusCode == 401;
+
+/// A device-bound login must never send an unsigned refresh — the backend
+/// treats that as a stolen token and ends the session. When signing fails
+/// (e.g. a slow keystore), hold the refresh instead and let the next request
+/// try again. [bound] is null for logins made before this was recorded.
+@visibleForTesting
+bool holdUnsignedRefresh({required bool? bound, required String? signature}) =>
+    bound == true && signature == null;
 
 /// A server reply kept whole — see [Repository.postForReply].
 class ApiReply {
@@ -83,23 +117,31 @@ class Repository {
 
   // Single-flight guard: many requests can 401 at once; only one /refresh call
   // should fire and the rest await its result.
-  Completer<bool>? _refreshInFlight;
+  Completer<RefreshOutcome>? _refreshInFlight;
 
   /// Exchange the stored refresh token for a fresh access+refresh pair.
-  /// Returns true on success (new tokens persisted), false otherwise.
-  Future<bool> _refreshAccessToken() async {
+  Future<RefreshOutcome> _refreshAccessToken() async {
     if (_refreshInFlight != null) return _refreshInFlight!.future;
-    final completer = Completer<bool>();
+    final completer = Completer<RefreshOutcome>();
     _refreshInFlight = completer;
+    var outcome = RefreshOutcome.transientFailure;
     try {
       final refresh = await sp!.getString(SpUtil.refreshToken);
       if (refresh == null || refresh.isEmpty) {
-        completer.complete(false);
-        return false;
+        outcome = RefreshOutcome.sessionOver;
+        return outcome;
       }
       // Device-bound session: prove this is the phone the session belongs to
       // (Backend services/deviceBinding.js). Unbound sessions ignore it.
-      final signature = await DeviceKeyService.instance.signRefresh(refresh);
+      final bound = sp!.getBool(SpUtil.sessionDeviceBound);
+      var signature = await DeviceKeyService.instance.signRefresh(refresh);
+      if (holdUnsignedRefresh(bound: bound, signature: signature)) {
+        signature = await DeviceKeyService.instance.signRefresh(refresh);
+        if (holdUnsignedRefresh(bound: bound, signature: signature)) {
+          logger.w('Refresh held: device signature unavailable');
+          return outcome; // transient — never send an unsigned bound refresh
+        }
+      }
       final resp = await _bareDio.post(
         NetworkUrl.refreshTokenPath,
         data: {'refreshToken': refresh},
@@ -113,21 +155,21 @@ class Repository {
           ? (data['refreshToken'] ?? data['refresh_token']) as String?
           : null;
       if (newAccess == null || newAccess.isEmpty) {
-        completer.complete(false);
-        return false;
+        return outcome; // unexpected reply shape — transient, keep the session
       }
       await sp!.putString(SpUtil.accessToken, newAccess);
       token = newAccess;
       if (newRefresh != null && newRefresh.isNotEmpty) {
         await sp!.putString(SpUtil.refreshToken, newRefresh);
       }
-      completer.complete(true);
-      return true;
+      outcome = RefreshOutcome.refreshed;
+      return outcome;
     } catch (e) {
       logger.w('Token refresh failed: $e');
-      completer.complete(false);
-      return false;
+      outcome = refreshOutcomeForError(e);
+      return outcome;
     } finally {
+      completer.complete(outcome);
       _refreshInFlight = null;
     }
   }
@@ -205,8 +247,14 @@ class Repository {
               errorCode == 'TOKEN_EXPIRED' &&
               !alreadyRetried &&
               !isRefreshCall) {
-            final refreshed = await _refreshAccessToken();
-            if (refreshed) {
+            final outcome = await _refreshAccessToken();
+            if (outcome == RefreshOutcome.transientFailure) {
+              // Couldn't renew right now (no connection, timeout, server
+              // error, keystore busy). The session itself is fine: keep the
+              // user signed in — this request fails, the next one renews.
+              return handler.next(error);
+            }
+            if (outcome == RefreshOutcome.refreshed) {
               final ro = error.requestOptions;
               // A FormData body is a single-use stream — it cannot be replayed.
               // The refresh still succeeded, so surface the original error
@@ -224,7 +272,11 @@ class Repository {
                 return handler.resolve(replay);
               } catch (e) {
                 logger.w('Replay after refresh failed: $e');
-                // fall through to logout
+                if (!replayFailureEndsSession(e)) {
+                  // That request's own failure (a 409, a timeout, ...) — the
+                  // session was just renewed, so give the caller that error.
+                  return handler.next(e is DioException ? e : error);
+                }
               }
             }
             await sp!.clear();
@@ -406,7 +458,7 @@ class Repository {
         final msg = data['message'] is String
             ? data['message'] as String
             : 'Too many requests. Please wait.';
-        throw RateLimitException(msg, waitSecs);
+        throw RateLimitException(msg, waitSecs, otpActive: data['otp_active'] == true);
       }
 
       throw Exception(
