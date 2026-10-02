@@ -116,6 +116,9 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
           'contact': '${_userC.userProfileData.value.customer?.phone}',
           'email': '${_userC.userProfileData.value.customer?.email}',
         },
+        // Close Checkout when the booking session ends (seconds; sent by the
+        // server). A payment made after it can only be refunded.
+        'timeout': params['timeout'] ?? 900,
       };
       _razorpay.open(options);
       _startWatchingForRealStatus();
