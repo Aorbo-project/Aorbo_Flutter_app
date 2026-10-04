@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io' show Platform;
 
+import 'package:arobo_app/app_update/app_version_info.dart';
 import 'package:arobo_app/repository/network_url.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -83,7 +84,10 @@ class DeviceRiskService {
           baseUrl: NetworkUrl.baseUrl,
           connectTimeout: const Duration(seconds: 8),
           receiveTimeout: const Duration(seconds: 8),
-          headers: {'Content-Type': 'application/json'},
+          headers: {
+            'Content-Type': 'application/json',
+            ...AppVersionInfo.currentHeaders,
+          },
         )).post('device-security/report', data: {'event': 'rasp_detected', 'flags': reportable});
       } catch (_) {}
     }();

@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'dart:ui';
 
+import 'package:arobo_app/app_update/app_update_gate.dart';
+import 'package:arobo_app/app_update/app_version_info.dart';
 import 'package:arobo_app/controller/auth_controller.dart';
 import 'package:arobo_app/firebase_options.dart';
 import 'package:arobo_app/giveaway/giveaway_config.dart';
@@ -131,6 +133,10 @@ Future<void> _bootstrap() async {
   // Remote security switches (last fetched values, local, fast) must be in
   // place before the API client builds its TLS layer.
   await SecurityConfig.loadCached();
+  // This build's version/build number, for the X-App-* headers every API
+  // request carries (force update). Never throws; headers are just left out
+  // if it fails.
+  await AppVersionInfo.load();
   await Repository().initRepo();
 
   _deferredInit();
@@ -329,6 +335,8 @@ class MyApp extends StatelessWidget {
           routingCallback: (routing) {
             final screen = routing?.current;
             if (screen == null || screen.isEmpty) return;
+            // Once "Update required" is up, nothing may navigate away.
+            AppUpdateGate.instance.onRouteChanged(screen);
             // The very first route push happens synchronously during
             // runApp()'s initial build — now potentially before
             // appBootstrapFuture's Firebase.initializeApp() has completed,

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:arobo_app/app_update/app_update_policy.dart';
 import 'package:arobo_app/giveaway/referral_links.dart';
 import 'package:arobo_app/legal/legal_service.dart';
 import 'package:arobo_app/main.dart';
@@ -12,9 +13,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../models/auth/validate_version_model.dart';
 import '../models/auth/verify_otp_modal.dart';
-import '../repository/api_result.dart';
 import '../repository/network_url.dart';
 import '../repository/referral_repository.dart';
 import '../repository/repository.dart';
@@ -73,33 +72,6 @@ class AuthController extends GetxController {
     return baseUrlStr.contains('127.0.0.1') ||
         baseUrlStr.contains('10.0.2.2') ||
         baseUrlStr.contains('localhost');
-  }
-
-  final validaVersionObserver = const ApiResult<ValidateVersionResponseModel>.init().obs;
-
-  Future<ValidateDataModel?> validateVersion() async {
-    try {
-      validaVersionObserver.value = const ApiResult.loading("");
-      final version = await AuthUtils.getAppVersion();
-      final platform = AuthUtils.getSource();
-      final String? validatorResponse = AuthUtils.validateRequestFields(
-          ['version'], {"version": version, "platform": platform});
-      if (validatorResponse != null) throw validatorResponse;
-      final body = await repository.getApiCall(
-          url: NetworkUrl.validateVersion(version ?? "1.0.0", platform));
-      if (body != null) {
-        final responseData = ValidateVersionResponseModel.fromJson(body);
-        if (responseData.success == true) {
-          validaVersionObserver.value = ApiResult.success(responseData);
-          return responseData.data;
-        }
-        throw responseData.message ?? "something went wrong";
-      }
-      throw "Response Body Null";
-    } catch (e) {
-      CustomSnackBar.show(Get.context!, message: e.toString());
-      return null;
-    }
   }
 
   // Send OTP to phone via backend (Message Central). Returns true on success.
@@ -303,6 +275,9 @@ class AuthController extends GetxController {
       return response.statusCode == 200;
     } on DioException catch (e) {
       final statusCode = e.response?.statusCode;
+      // "Update this app" (426 / 403 APP_UPDATE_REQUIRED) says nothing about
+      // the session — the update screen takes over; keep the login.
+      if (isAppUpdateRequired(statusCode, e.response?.data)) return true;
       return statusCode != 401 && statusCode != 403;
     } catch (_) {
       return true;

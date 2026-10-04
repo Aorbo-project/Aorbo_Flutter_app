@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
+import 'package:arobo_app/app_update/app_version_info.dart';
 import 'package:arobo_app/repository/network_url.dart';
 import 'package:arobo_app/repository/repository.dart';
 import 'package:arobo_app/utils/auth_utils.dart';
@@ -37,7 +38,7 @@ class CrashReportService {
       receiveTimeout: const Duration(seconds: 8),
       headers: {'Accept': '*/*', 'Content-Type': 'application/json'},
     ),
-  );
+  )..interceptors.add(AppVersionHeadersInterceptor());
 
   Future<void> report(
     Object error,

@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'header_scene.dart';
 import 'seasonal_forecast_mock_data.dart' show TrekSeason, trekSeasonFor;
 import 'package:arobo_app/theme/app_tokens.dart';
+import '../app_update/app_version_info.dart';
 import '../repository/app_env.dart';
 
 class DashboardHeaderTheme {
@@ -855,7 +856,9 @@ class HeaderThemeController extends GetxController {
       final uri = Uri.parse(
         '${AppEnv().apiBaseUrl}/api/v1/dashboard-header-theme',
       );
-      final response = await http.get(uri).timeout(const Duration(seconds: 6));
+      final response = await http
+          .get(uri, headers: AppVersionInfo.currentHeaders)
+          .timeout(const Duration(seconds: 6));
       if (response.statusCode != 200) return;
 
       final body = jsonDecode(response.body);

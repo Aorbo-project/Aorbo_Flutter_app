@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:arobo_app/app_update/app_update_gate.dart';
+import 'package:arobo_app/app_update/app_update_policy.dart';
+import 'package:arobo_app/app_update/app_version_info.dart';
 import 'package:arobo_app/main.dart';
 import 'package:arobo_app/widgets/logger.dart';
 import 'package:arobo_app/repository/network_url.dart';
@@ -29,18 +32,33 @@ class RateLimitException implements Exception {
 /// What a token refresh came to. Only [sessionOver] may sign the user out:
 /// a network drop, timeout or server error while refreshing leaves the
 /// refresh token perfectly good, so the next request just tries again.
-enum RefreshOutcome { refreshed, sessionOver, transientFailure }
+/// [updateRequired]: the server refuses this build (426 / 403
+/// APP_UPDATE_REQUIRED) — the session is fine, the app must be updated.
+enum RefreshOutcome { refreshed, sessionOver, transientFailure, updateRequired }
 
-/// A refresh that failed with [error]: the server rejecting the refresh token
-/// (400/401/403) ends the session; anything else (no connection, timeout,
-/// 5xx, 429) is transient.
+/// A refresh that failed with [error]: "update this app" is never a logout;
+/// the server rejecting the refresh token (400/401/403) ends the session;
+/// anything else (no connection, timeout, 5xx, 429) is transient.
 @visibleForTesting
 RefreshOutcome refreshOutcomeForError(Object error) {
   if (error is DioException) {
     final status = error.response?.statusCode;
+    if (isAppUpdateRequired(status, error.response?.data)) {
+      return RefreshOutcome.updateRequired;
+    }
     if (status == 400 || status == 401 || status == 403) return RefreshOutcome.sessionOver;
   }
   return RefreshOutcome.transientFailure;
+}
+
+/// The server refused this build: show the "Update required" screen (once).
+/// Never a logout, never a retry, never a Crashlytics report.
+void _blockForUpdate(dynamic body) {
+  final block = AppUpdateBlock.fromBody(body);
+  AppUpdateGate.instance.forceBlock(
+    message: block.message,
+    storeUrl: block.storeUrl,
+  );
 }
 
 /// After a successful refresh the original request is replayed once. Only a
@@ -94,6 +112,8 @@ class Repository {
   static const Duration _defaultTimeout = Duration(seconds: 20);
   static const Duration _uploadTimeout = Duration(seconds: 60);
 
+  // X-App-Version / X-App-Build / X-App-Platform go on every request of
+  // both clients (header-only, so it never disturbs the Play Integrity body).
   final Dio dio = Dio(
     BaseOptions(
       baseUrl: NetworkUrl.baseUrl,
@@ -101,11 +121,11 @@ class Repository {
       receiveTimeout: _defaultTimeout,
       headers: {'Accept': '*/*', 'Content-Type': 'application/json'},
     ),
-  );
+  )..interceptors.add(AppVersionHeadersInterceptor());
 
-  // A second Dio with NO interceptors — used to call /auth/refresh and to
+  // A second Dio with no error handling — used to call /auth/refresh and to
   // replay the original request after a refresh, so neither can recurse back
-  // into the 401 handler below.
+  // into the 401 handler below. Its only interceptor adds the version headers.
   final Dio _bareDio = Dio(
     BaseOptions(
       baseUrl: NetworkUrl.baseUrl,
@@ -113,7 +133,7 @@ class Repository {
       receiveTimeout: _defaultTimeout,
       headers: {'Accept': '*/*', 'Content-Type': 'application/json'},
     ),
-  );
+  )..interceptors.add(AppVersionHeadersInterceptor());
 
   // Single-flight guard: many requests can 401 at once; only one /refresh call
   // should fire and the rest await its result.
@@ -167,6 +187,9 @@ class Repository {
     } catch (e) {
       logger.w('Token refresh failed: $e');
       outcome = refreshOutcomeForError(e);
+      if (outcome == RefreshOutcome.updateRequired && e is DioException) {
+        _blockForUpdate(e.response?.data);
+      }
       return outcome;
     } finally {
       completer.complete(outcome);
@@ -179,6 +202,14 @@ class Repository {
   void resetHttpClients() {
     PinnedHttp.apply(dio);
     PinnedHttp.apply(_bareDio);
+  }
+
+  /// Tests: send both clients (incl. the refresh/replay one) through a fake
+  /// transport.
+  @visibleForTesting
+  set httpClientAdapterForTesting(HttpClientAdapter adapter) {
+    dio.httpClientAdapter = adapter;
+    _bareDio.httpClientAdapter = adapter;
   }
 
   initRepo() async {
@@ -209,16 +240,30 @@ class Repository {
           FirebaseCrashlytics.instance.log(
             'API ← ${response.statusCode} ${response.requestOptions.path}',
           );
+          // Callers with their own validateStatus (postForReply) receive a
+          // 426 / 403 as a response rather than an error.
+          if (isAppUpdateRequired(response.statusCode, response.data)) {
+            _blockForUpdate(response.data);
+          }
           return handler.next(response);
         },
         onError: (error, handler) async {
           logger.e("❌ onError: Error ->> ${error.error}");
           logger.e("Response ->> ${error.response}");
+
+          final statusCode = error.response?.statusCode;
+
+          // ── This build is too old (426, or 403 APP_UPDATE_REQUIRED) ──────
+          // Not a session problem and not a crash: show the update screen,
+          // and skip the Crashlytics report, the refresh and the logout.
+          if (isAppUpdateRequired(statusCode, error.response?.data)) {
+            _blockForUpdate(error.response?.data);
+            return handler.next(error);
+          }
+
           FirebaseCrashlytics.instance.log(
             'API ✕ ${error.response?.statusCode} ${error.requestOptions.path}',
           );
-
-          final statusCode = error.response?.statusCode;
 
           // ✅ Prevent business logic errors (400, 409) from spamming Crashlytics
           final isBusinessError = statusCode == 400 || statusCode == 409;
@@ -248,10 +293,13 @@ class Repository {
               !alreadyRetried &&
               !isRefreshCall) {
             final outcome = await _refreshAccessToken();
-            if (outcome == RefreshOutcome.transientFailure) {
+            if (outcome == RefreshOutcome.transientFailure ||
+                outcome == RefreshOutcome.updateRequired) {
               // Couldn't renew right now (no connection, timeout, server
               // error, keystore busy). The session itself is fine: keep the
               // user signed in — this request fails, the next one renews.
+              // updateRequired: /refresh refused this build — the update
+              // screen is already up, and it is never a logout.
               return handler.next(error);
             }
             if (outcome == RefreshOutcome.refreshed) {
@@ -272,6 +320,12 @@ class Repository {
                 return handler.resolve(replay);
               } catch (e) {
                 logger.w('Replay after refresh failed: $e');
+                if (e is DioException &&
+                    isAppUpdateRequired(
+                        e.response?.statusCode, e.response?.data)) {
+                  _blockForUpdate(e.response?.data);
+                  return handler.next(e);
+                }
                 if (!replayFailureEndsSession(e)) {
                   // That request's own failure (a 409, a timeout, ...) — the
                   // session was just renewed, so give the caller that error.
@@ -285,8 +339,11 @@ class Repository {
             // logo entrance/breathing choreography (which is only
             // meaningful for a real launch) and drops straight into the
             // login form instead of replaying ~1s+ of animation the user
-            // just sat through moments ago.
-            Get.offAllNamed('/', arguments: {'forcedLogout': true});
+            // just sat through moments ago. Never away from the update
+            // screen, though.
+            if (!AppUpdateGate.instance.isBlocked) {
+              Get.offAllNamed('/', arguments: {'forcedLogout': true});
+            }
             return handler.next(error);
           }
 
@@ -297,7 +354,9 @@ class Repository {
                       errorCode == 'INVALID_TOKEN_TYPE'));
           if (isSessionInvalid) {
             await sp!.clear();
-            Get.offAllNamed('/', arguments: {'forcedLogout': true});
+            if (!AppUpdateGate.instance.isBlocked) {
+              Get.offAllNamed('/', arguments: {'forcedLogout': true});
+            }
           }
 
           return handler.next(error);

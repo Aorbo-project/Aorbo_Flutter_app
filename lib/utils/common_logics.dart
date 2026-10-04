@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:arobo_app/app_update/app_version_info.dart';
 import 'package:arobo_app/repository/network_url.dart';
 import 'package:arobo_app/security/device_key_service.dart';
 import 'package:arobo_app/security/pinned_http_client.dart';
@@ -24,6 +25,7 @@ class CommonLogics {
           headers: {
             'Authorization': 'Bearer $token',
             'Content-Type': 'application/json',
+            ...AppVersionInfo.currentHeaders,
           },
         ));
         PinnedHttp.apply(dio);

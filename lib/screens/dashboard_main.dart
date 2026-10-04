@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'package:arobo_app/app_update/app_update_banner.dart';
 import 'package:arobo_app/controller/coupon_controller.dart';
 import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/controller/trek_controller.dart';
@@ -23,6 +24,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:sizer/sizer.dart';
 
 class DashboardMain extends StatefulWidget {
   const DashboardMain({super.key});
@@ -246,16 +248,41 @@ class _DashboardMainState extends State<DashboardMain> {
         extendBody: true,
         body: Obx(() {
           final idx = _dashboardC.selectedScreen.value;
-          return AnimatedSwitcher(
-            duration: _kTabIn,
-            reverseDuration: _kTabOut,
-            switchInCurve: Curves.easeOutCubic,
-            switchOutCurve: Curves.easeOut,
-            transitionBuilder: _tabTransition,
-            child: KeyedSubtree(
-              key: ValueKey<int>(idx),
-              child: _buildScreen(idx),
-            ),
+          return Stack(
+            children: [
+              Positioned.fill(
+                child: AnimatedSwitcher(
+                  duration: _kTabIn,
+                  reverseDuration: _kTabOut,
+                  switchInCurve: Curves.easeOutCubic,
+                  switchOutCurve: Curves.easeOut,
+                  transitionBuilder: _tabTransition,
+                  child: KeyedSubtree(
+                    key: ValueKey<int>(idx),
+                    child: _buildScreen(idx),
+                  ),
+                ),
+              ),
+              // "A new version is available" / "Please update by …" — a
+              // small closable card floating just above the bottom nav, on
+              // the home tab only. Renders nothing when there's no news.
+              // The Builder reads the body's MediaQuery, where (extendBody)
+              // padding.bottom is the nav's full footprint.
+              if (idx == 0)
+                Positioned(
+                  left: 4.w,
+                  right: 4.w,
+                  bottom: 0,
+                  child: Builder(
+                    builder: (bodyContext) => Padding(
+                      padding: EdgeInsets.only(
+                        bottom: MediaQuery.of(bodyContext).padding.bottom + 1.h,
+                      ),
+                      child: const AppUpdateBanner(),
+                    ),
+                  ),
+                ),
+            ],
           );
         }),
         // The nav needs no Obx: CommonBottomNav subscribes to
