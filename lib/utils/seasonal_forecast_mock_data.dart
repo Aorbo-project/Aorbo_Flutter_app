@@ -124,14 +124,21 @@ const Map<TrekSeason, SeasonInfo> seasonalForecastMockData = {
   ),
 };
 
-TrekSeason currentTrekSeason() {
-  final month = DateTime.now().month;
-  if (month == 3 || month == 4) return TrekSeason.spring;
-  if (month == 5 || month == 6) return TrekSeason.summer;
-  if (month == 7 || month == 8 || month == 9) return TrekSeason.monsoon;
-  if (month == 10 || month == 11) return TrekSeason.autumn;
-  return TrekSeason.winter;
+/// The trek season for a date — the same calendar as the backend
+/// (utils/trekSeason.js: spring 1 Mar, summer 1 May, monsoon 1 Jul,
+/// autumn 15 Sep, winter 1 Dec), which is what decides the season the app
+/// shows. The app only needs its own copy for the header's offline
+/// first-launch fallback.
+TrekSeason trekSeasonFor(DateTime d) {
+  final md = d.month * 100 + d.day;
+  if (md >= 1201 || md < 301) return TrekSeason.winter;
+  if (md < 501) return TrekSeason.spring;
+  if (md < 701) return TrekSeason.summer;
+  if (md < 915) return TrekSeason.monsoon;
+  return TrekSeason.autumn;
 }
+
+TrekSeason currentTrekSeason() => trekSeasonFor(DateTime.now());
 
 /// Line-art glyph per season for [SeasonalGradientCard]'s badge — a
 /// sprout, sun, rain cloud, falling leaf and snowflake, in that order,

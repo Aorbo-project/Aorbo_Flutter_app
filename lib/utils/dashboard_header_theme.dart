@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'header_scene.dart';
+import 'seasonal_forecast_mock_data.dart' show TrekSeason, trekSeasonFor;
 import 'package:arobo_app/theme/app_tokens.dart';
 import '../repository/app_env.dart';
 
@@ -888,12 +889,20 @@ class HeaderThemeController extends GetxController {
     }
   }
 
+  /// Same season calendar as the server (trekSeasonFor), so an offline first
+  /// launch shows the same season the server would have picked.
   DashboardHeaderTheme seasonalFallback(DateTime now) {
-    final m = now.month;
-    if (m == 2 || m == 3) return DashboardHeaderTheme.spring;
-    if (m >= 4 && m <= 6) return DashboardHeaderTheme.summer;
-    if (m >= 7 && m <= 9) return DashboardHeaderTheme.monsoon;
-    if (m == 10 || m == 11) return DashboardHeaderTheme.autumn;
-    return DashboardHeaderTheme.winter;
+    switch (trekSeasonFor(now)) {
+      case TrekSeason.spring:
+        return DashboardHeaderTheme.spring;
+      case TrekSeason.summer:
+        return DashboardHeaderTheme.summer;
+      case TrekSeason.monsoon:
+        return DashboardHeaderTheme.monsoon;
+      case TrekSeason.autumn:
+        return DashboardHeaderTheme.autumn;
+      case TrekSeason.winter:
+        return DashboardHeaderTheme.winter;
+    }
   }
 }
