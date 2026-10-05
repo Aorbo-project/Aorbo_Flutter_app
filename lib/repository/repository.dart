@@ -553,7 +553,9 @@ class Repository {
       return ConditionalReply(
         notModified: notModified,
         data: notModified ? null : response.data,
-        etag: response.headers.value('etag'),
+        // headers.value() throws when a reply carries two ETag headers
+        // (review C L13) — that turned a good 200 into "couldn't load".
+        etag: response.headers['etag']?.first,
       );
     } on TimeoutException {
       throw const ApiException(FriendlyText.tooSlow);

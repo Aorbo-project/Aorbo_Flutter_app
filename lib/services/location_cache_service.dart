@@ -107,9 +107,21 @@ class LocationCacheService {
 
   // ── Cities list cache ────────────────────────────────────────────────
 
+  // Review C L13: saves run one after another, in call order. Two
+  // overlapping saves could interleave remove-ETag / write list / write
+  // ETag, leaving one reply's list next to the other's ETag (or an older
+  // list on top of a newer one).
+  Future<void> _citiesSaves = Future<void>.value();
+
   /// [etag]: the server ETag of the reply [model] came from (null when it
   /// sent none). Stored only together with the list it belongs to.
-  Future<void> saveCities(GetCities model, {String? etag}) async {
+  Future<void> saveCities(GetCities model, {String? etag}) {
+    final save = _citiesSaves.then((_) => _saveCitiesNow(model, etag));
+    _citiesSaves = save.catchError((_) {});
+    return save;
+  }
+
+  Future<void> _saveCitiesNow(GetCities model, String? etag) async {
     await ensureReady();
     try {
       // Old ETag out first: it must never sit next to a different list.
