@@ -539,7 +539,8 @@ void main() {
     testWidgets('failure, order stays pending through the whole grace period -> only then the client error message', (tester) async {
       final trekC = await setUpPaymentScreenDeps(tester);
       trekC.orderData.value = const Order(id: 'order_ambiguous');
-      mockRazorpayChannel((_) => razorpayError(message: 'TLS handshake failed'));
+      // a gateway error (not the customer closing the sheet: that is code 2)
+      mockRazorpayChannel((_) => razorpayError(code: Razorpay.TLS_ERROR, message: 'TLS handshake failed'));
       var checks = 0;
       installFakeBackend({
         'order-status': (_) {
@@ -565,6 +566,35 @@ void main() {
       expect(checks, greaterThanOrEqualTo(13)); // the first check + 12 grace checks
       expect(find.text('Something went wrong'), findsOneWidget);
       expect(find.text('TLS handshake failed'), findsOneWidget);
+    });
+
+    // Review C-M1: the customer closed the checkout sheet. The order stays
+    // "pending" (no payment exists) until it expires; the grace poll used to
+    // show "Checking with your bank..." for 60 s with no RETRY.
+    testWidgets('customer closed the sheet (PAYMENT_CANCELLED), order pending -> one check, then the error card + RETRY at once', (tester) async {
+      final trekC = await setUpPaymentScreenDeps(tester);
+      trekC.orderData.value = const Order(id: 'order_closed');
+      mockRazorpayChannel((_) => razorpayError(code: Razorpay.PAYMENT_CANCELLED, message: 'Payment cancelled by user'));
+      var checks = 0;
+      installFakeBackend({
+        'order-status': (_) {
+          checks++;
+          return {'success': true, 'data': {'status': 'pending'}};
+        },
+      });
+
+      await pushPaymentScreen(
+        tester,
+        breakdown: BreakDownDataModel(finalAmount: 10510, amountToPayNow: 5000),
+      );
+      await settleUntil(tester, () => find.text('Something went wrong').evaluate().isNotEmpty);
+
+      expect(find.text('Something went wrong'), findsOneWidget);
+      expect(find.text('RETRY'), findsOneWidget);
+      expect(find.text('Checking with your bank...'), findsNothing);
+      expect(checks, 1);
+      await tester.pump(const Duration(seconds: 10)); // no grace poll running
+      expect(checks, 1);
     });
 
     testWidgets('failure with an empty message from the gateway falls back to a generic message, never shows a blank card', (tester) async {
@@ -924,6 +954,82 @@ void main() {
       expect(trekC.orderData.value.id, 'order_new');
       final open = calls.lastWhere((c) => c.method == 'open');
       expect((open.arguments as Map)['order_id'], 'order_new');
+    });
+
+    // Review C-M2: order-status says "expired" both for a true expiry and for
+    // an order whose attempt was only declined (still payable until
+    // expires_at). The server now adds retryable / detailed_status.
+    testWidgets('an order whose attempt only FAILED (retryable) -> RETRY reopens the SAME order, creates no second one', (tester) async {
+      final trekC = await setUpPaymentScreenDeps(tester);
+      var calls = mockRazorpayChannel((_) => razorpayError(code: Razorpay.NETWORK_ERROR, message: 'Card declined'));
+      trekC.orderData.value = const Order(id: 'order_declined');
+      var created = 0;
+      installFakeBackend({
+        'order-status': (_) => {
+          'success': true,
+          'data': {'status': 'expired', 'detailed_status': 'failed', 'retryable': true, 'expires_at': '2099-01-01T00:00:00.000Z'},
+        },
+        NetworkUrl.addBooking: (_) {
+          created++;
+          return {'success': true, 'order': {'id': 'order_second', 'amount': 1051000, 'currency': 'INR'}, 'next_action_params': {}};
+        },
+      });
+      await pushPaymentScreen(
+        tester,
+        breakdown: BreakDownDataModel(finalAmount: 10510, amountToPayNow: 5000),
+      );
+      await settleUntil(tester, () => find.text('Something went wrong').evaluate().isNotEmpty);
+
+      calls = mockRazorpayChannel((_) => null);
+      await tester.runAsync(() async {
+        await tester.tap(find.text('RETRY'));
+        await tester.pump();
+        await Future.delayed(const Duration(milliseconds: 50));
+      });
+      await settleUntil(tester, () => calls.any((c) => c.method == 'open'));
+
+      // Late-UPI-authorisation guard: if the declined attempt is still
+      // authorised later, there is still only ONE order to complete.
+      expect(created, 0);
+      expect(trekC.orderData.value.id, 'order_declined');
+      final open = calls.lastWhere((c) => c.method == 'open');
+      expect((open.arguments as Map)['order_id'], 'order_declined');
+    });
+
+    testWidgets('a truly expired order (retryable false) -> RETRY still starts a fresh order', (tester) async {
+      final trekC = await setUpPaymentScreenDeps(tester);
+      var calls = mockRazorpayChannel((_) => razorpayError(code: Razorpay.NETWORK_ERROR, message: 'Network error'));
+      trekC.orderData.value = const Order(id: 'order_timed_out');
+      var orderStatus = <String, dynamic>{'status': 'unknown'};
+      installFakeBackend({
+        'order-status': (_) => {'success': true, 'data': orderStatus},
+        NetworkUrl.calculateFare: (_) => {
+          'success': true,
+          'fareToken': 'tok-retry',
+          'breakdown': {'final_amount': 10510, 'amount_to_pay_now': 10510},
+        },
+        NetworkUrl.addBooking: (_) => {
+          'success': true,
+          'order': {'id': 'order_fresh', 'amount': 1051000, 'currency': 'INR'},
+          'next_action_params': {},
+        },
+      });
+      await pushPaymentScreen(
+        tester,
+        breakdown: BreakDownDataModel(finalAmount: 10510, amountToPayNow: 5000),
+      );
+      await settleUntil(tester, () => find.text('Something went wrong').evaluate().isNotEmpty);
+
+      orderStatus = {'status': 'expired', 'detailed_status': 'expired', 'retryable': false};
+      calls = mockRazorpayChannel((_) => null);
+      await tester.runAsync(() async {
+        await tester.tap(find.text('RETRY'));
+        await tester.pump();
+        await Future.delayed(const Duration(milliseconds: 50));
+      });
+      await settleUntil(tester, () => calls.any((c) => c.method == 'open'));
+
+      expect(trekC.orderData.value.id, 'order_fresh');
     });
 
     testWidgets('no captured payment and no existing order re-fetches fare and creates a fresh order before reopening Razorpay', (tester) async {

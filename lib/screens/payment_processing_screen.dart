@@ -217,6 +217,12 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
       fallbackMessage: (r.message?.isNotEmpty ?? false)
           ? r.message!
           : 'Payment was not completed.',
+      // Review C-M1: the customer closed the checkout sheet. No payment
+      // exists, so the order stays "pending" until it expires; the grace poll
+      // would show "Checking with your bank..." for a minute with no RETRY.
+      // One check, then the error card + RETRY at once (RETRY re-checks the
+      // order first and reuses it while pending, so no double charge).
+      cancelledByCustomer: r.code == Razorpay.PAYMENT_CANCELLED,
     );
   }
 
@@ -270,6 +276,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
 
   Future<void> _resolveViaBackendCheck({
     required String fallbackMessage,
+    bool cancelledByCustomer = false,
   }) async {
     final orderId =
         _trekC.orderData.value.id ??
@@ -290,6 +297,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
             );
             return;
           case 'pending':
+            if (cancelledByCustomer) break; // straight to the error card + RETRY
             _startGracePoll(fallbackMessage);
             return;
         }
@@ -437,7 +445,16 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
           );
           return;
         case 'expired':
-          await _startFreshOrder();
+          // Review C-M2: "expired" also covers an order whose attempt was only
+          // declined; it can still be paid (and a UPI attempt can still be
+          // authorised late) until expires_at. A second order next to it is a
+          // double-charge risk, so reuse it while the server says retryable.
+          if (status?['retryable'] == true) {
+            setState(() => _state = PaymentFlowState.awaitingGateway);
+            _openRazorpay();
+          } else {
+            await _startFreshOrder();
+          }
           return;
         default:
           // pending (its grace period is over) or unknown: same order.
