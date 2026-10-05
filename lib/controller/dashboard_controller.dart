@@ -735,8 +735,49 @@ class DashboardController extends GetxController {
     }
   }
 
-  Future<void> fetchStateList() async {
+  // ── Location lists (scan D12) ─────────────────────────────────────────
+  // One request per list at a time: a second caller (the From/To picker
+  // opened while the first download is still running) joins it instead of
+  // downloading the 346 KB city list again. `isLoadingCities` stays true
+  // while ANY of the three lists is loading (the 1 KB states reply used to
+  // clear it long before the cities arrived), and each list has its own
+  // error text for the picker.
+  Future<void>? _statesInFlight;
+  Future<void>? _citiesInFlight;
+  Future<void>? _treksInFlight;
+  int _locationLoads = 0;
+
+  /// Why the cities / trek list could not load ('' when fine).
+  final RxString citiesError = ''.obs;
+  final RxString treksError = ''.obs;
+
+  void _beginLocationLoad() {
+    _locationLoads++;
     isLoadingCities.value = true;
+  }
+
+  void _endLocationLoad() {
+    if (_locationLoads > 0) _locationLoads--;
+    isLoadingCities.value = _locationLoads > 0;
+  }
+
+  Future<void> fetchStateList() =>
+      _statesInFlight ??= _fetchStateList().whenComplete(() {
+        _statesInFlight = null;
+      });
+
+  Future<void> fetchCitiesList() =>
+      _citiesInFlight ??= _fetchCitiesList().whenComplete(() {
+        _citiesInFlight = null;
+      });
+
+  Future<void> fetchTrekList() =>
+      _treksInFlight ??= _fetchTrekList().whenComplete(() {
+        _treksInFlight = null;
+      });
+
+  Future<void> _fetchStateList() async {
+    _beginLocationLoad();
     errorMessage.value = '';
 
     try {
@@ -755,12 +796,12 @@ class DashboardController extends GetxController {
       // is no list at all (and never via a null context).
       if (stateList.isEmpty) CustomSnackBar.error(errorMessage.value);
     } finally {
-      isLoadingCities.value = false;
+      _endLocationLoad();
     }
   }
 
-  Future<void> fetchCitiesList() async {
-    isLoadingCities.value = true;
+  Future<void> _fetchCitiesList() async {
+    _beginLocationLoad();
     errorMessage.value = '';
 
     try {
@@ -784,8 +825,10 @@ class DashboardController extends GetxController {
         _pendingCitiesSave = save;
         unawaited(save);
       }
+      citiesError.value = '';
     } catch (e) {
       logger.e('Failed to load cities: $e');
+      citiesError.value = friendlyError(e);
       // "cities" / "trek" in the text tell the picker which list failed.
       errorMessage.value = "Couldn't load the cities. ${friendlyError(e)}";
       // If a cached list is still on screen, the picker already surfaces
@@ -797,7 +840,7 @@ class DashboardController extends GetxController {
         }
       }
     } finally {
-      isLoadingCities.value = false;
+      _endLocationLoad();
     }
   }
 
@@ -821,8 +864,8 @@ class DashboardController extends GetxController {
   @visibleForTesting
   Future<void>? get pendingCitiesSaveForTesting => _pendingCitiesSave;
 
-  Future<void> fetchTrekList() async {
-    isLoadingCities.value = true;
+  Future<void> _fetchTrekList() async {
+    _beginLocationLoad();
     errorMessage.value = '';
 
     try {
@@ -834,8 +877,10 @@ class DashboardController extends GetxController {
         logger.d('Treks loaded: ${trekData.value.data?.length ?? 0}');
         unawaited(LocationCacheService.instance.saveTreks(trekData.value));
       }
+      treksError.value = '';
     } catch (e) {
       logger.e('Failed to load treks: $e');
+      treksError.value = friendlyError(e);
       errorMessage.value = "Couldn't load the trek list. ${friendlyError(e)}";
       if (trekData.value.data?.isNotEmpty != true) {
         final ctx = Get.context;
@@ -844,7 +889,7 @@ class DashboardController extends GetxController {
         }
       }
     } finally {
-      isLoadingCities.value = false;
+      _endLocationLoad();
     }
   }
 

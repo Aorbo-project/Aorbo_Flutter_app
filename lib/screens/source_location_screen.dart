@@ -234,6 +234,7 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
   Worker? _citiesWorker;
   Worker? _treksWorker;
   Worker? _errorWorker;
+  Worker? _treksErrorWorker;
   Worker? _loadingWorker;
 
   @override
@@ -265,12 +266,20 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
       _refreshFiltered();
     });
 
-    _errorWorker = ever(_dashboardC.errorMessage, (err) {
+    // Each list's own error (scan D12) — no guessing from a shared message.
+    _errorWorker = ever(_dashboardC.citiesError, (err) {
       if (!mounted) return;
-      if (err.toLowerCase().contains('cities')) _citiesError = err;
-      if (err.toLowerCase().contains('trek')) _treksError = err;
+      if (err.isNotEmpty) _citiesError = err;
       _refreshFiltered();
     });
+    _treksErrorWorker = ever(_dashboardC.treksError, (err) {
+      if (!mounted) return;
+      if (err.isNotEmpty) _treksError = err;
+      _refreshFiltered();
+    });
+    // A list that already failed before the picker opened.
+    _citiesError = _dashboardC.citiesError.value;
+    _treksError = _dashboardC.treksError.value;
 
     _loadingWorker = ever(_dashboardC.isLoadingCities, (_) {
       if (!mounted) return;
@@ -321,12 +330,11 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
       await _dashboardC.hydrateLocationCache();
       if (!mounted) return;
     }
-    if (_dashboardC.citiesData.value.data == null &&
-        !_dashboardC.isLoadingCities.value) {
+    // Joins a download already running (one request per list).
+    if (_dashboardC.citiesData.value.data == null) {
       _dashboardC.fetchCitiesList();
     }
-    if (_dashboardC.trekData.value.data == null &&
-        !_dashboardC.isLoadingCities.value) {
+    if (_dashboardC.trekData.value.data == null) {
       _dashboardC.fetchTrekList();
     }
     if (mounted) _refreshFiltered();
@@ -376,6 +384,7 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
     _citiesWorker?.dispose();
     _treksWorker?.dispose();
     _errorWorker?.dispose();
+    _treksErrorWorker?.dispose();
     _loadingWorker?.dispose();
     _fromCtrl.dispose();
     _toCtrl.dispose();

@@ -114,7 +114,8 @@ class LocationCacheService {
     try {
       // Old ETag out first: it must never sit next to a different list.
       await _prefs!.remove(_kCitiesEtag);
-      final encoded = await compute(jsonEncode, model.toJson());
+      // Scan D10: model -> JSON text entirely off the UI isolate.
+      final encoded = await compute(_encodeCities, model);
       await _prefs!.setString(_kCitiesJson, encoded);
       if (etag != null && etag.isNotEmpty) {
         await _prefs!.setString(
@@ -183,7 +184,9 @@ class LocationCacheService {
     final raw = _prefs!.getString(_kCitiesJson);
     if (raw == null || raw.isEmpty) return null;
     try {
-      final model = GetCities.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+      // Scan D10: decoding ~350 KB on the UI isolate cost every launch a few
+      // frames on budget phones; it runs in the background now.
+      final model = await compute(_decodeCities, raw);
       if (model.data?.isNotEmpty != true) return null;
       lastLoadedCityCache = model;
       return model;
@@ -198,7 +201,7 @@ class LocationCacheService {
   Future<void> saveTreks(TrekModal model) async {
     await ensureReady();
     try {
-      final encoded = await compute(jsonEncode, model.toJson());
+      final encoded = await compute(_encodeTreks, model);
       await _prefs!.setString(_kTreksJson, encoded);
       _treksSavedAt = DateTime.now();
       await _prefs!.setInt(
@@ -216,7 +219,7 @@ class LocationCacheService {
     final raw = _prefs!.getString(_kTreksJson);
     if (raw == null || raw.isEmpty) return null;
     try {
-      final model = TrekModal.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+      final model = await compute(_decodeTreks, raw);
       if (model.data?.isNotEmpty != true) return null;
       lastLoadedTrekCache = model;
       return model;
@@ -331,3 +334,11 @@ class LocationCacheService {
     return DateTime.fromMillisecondsSinceEpoch(ms);
   }
 }
+
+// Background-isolate helpers (top-level so compute() can send them).
+String _encodeCities(GetCities model) => jsonEncode(model.toJson());
+GetCities _decodeCities(String raw) =>
+    GetCities.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+String _encodeTreks(TrekModal model) => jsonEncode(model.toJson());
+TrekModal _decodeTreks(String raw) =>
+    TrekModal.fromJson(jsonDecode(raw) as Map<String, dynamic>);

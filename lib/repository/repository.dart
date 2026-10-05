@@ -260,17 +260,16 @@ class Repository {
           );
 
           if (options.data is FormData) {
-            logger.w("Data is FormData");
+            _debugLog(() => "Data is FormData");
           } else {
-            logger.d("Body ->> ${options.data}");
+            _debugLog(() => "Body ->> ${_clip(options.data)}");
           }
 
           return handler.next(options);
         },
         onResponse: (response, handler) async {
-          logger.i("✅ onResponse: RealUri ->> ${response.realUri}");
-          logger.i("StatusCode ->> ${response.statusCode}");
-          logger.d("Data ->> ${response.data}");
+          _debugLog(() => "✅ onResponse: ${response.realUri} "
+              "(${response.statusCode}) Data ->> ${_clip(response.data)}");
           FirebaseCrashlytics.instance.log(
             'API ← ${response.statusCode} ${response.requestOptions.path}',
           );
@@ -282,8 +281,8 @@ class Repository {
           return handler.next(response);
         },
         onError: (error, handler) async {
-          logger.e("❌ onError: Error ->> ${error.error}");
-          logger.e("Response ->> ${error.response}");
+          _debugLog(() => "❌ onError: ${error.error} "
+              "Response ->> ${_clip(error.response)}");
 
           final statusCode = error.response?.statusCode;
 
@@ -400,6 +399,19 @@ class Repository {
     );
   }
 
+  /// Scan D10: these lines used to interpolate every response body (the
+  /// 346 KB city list included) into a String on EVERY call, in release too
+  /// — the logger drops the line in release, but only after the String was
+  /// built. Now debug-only, built lazily and cut to 2 KB.
+  static void _debugLog(String Function() message) {
+    if (kDebugMode) logger.d(message());
+  }
+
+  static String _clip(Object? value) {
+    final s = '$value';
+    return s.length <= 2048 ? s : '${s.substring(0, 2048)}… (${s.length} chars)';
+  }
+
   /// After the server ended the session: back to the sign-in form — never
   /// away from the update screen, and not when the caller navigates itself.
   void _goToSignIn(RequestOptions request) {
@@ -510,10 +522,8 @@ class Repository {
   /// customer (the server's own message when it is one, never Dio's
   /// developer paragraph — scan D5), with the status kept for callers.
   ApiException _failure(DioException e) {
-    if (kDebugMode) {
-      logger.w("Dio Exception Message -> ${e.message}");
-      logger.w("Dio Exception Data -> ${e.response?.data}");
-    }
+    _debugLog(() => "Dio Exception Message -> ${e.message}");
+    _debugLog(() => "Dio Exception Data -> ${_clip(e.response?.data)}");
     return ApiException.fromDio(e);
   }
 
