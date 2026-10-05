@@ -794,6 +794,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                       fit: BoxFit.contain,
                       width: 100.w,
                       height: 100.h,
+                      zoomable: true, // up to 3x pinch-zoom (scan D6)
                     ),
                   ),
                 ),
