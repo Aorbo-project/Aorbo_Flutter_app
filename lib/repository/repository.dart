@@ -76,6 +76,17 @@ bool replayFailureEndsSession(Object error) =>
 bool holdUnsignedRefresh({required bool? bound, required String? signature}) =>
     bound == true && signature == null;
 
+/// Set to true on a failed request's `RequestOptions.extra` by the 401/403
+/// handler in [Repository.initRepo] when IT ended the session (the server
+/// refused it: a non-renewable 401, a refused refresh token, a 403
+/// ACCOUNT_INACTIVE). Scan E8: the splash gate signs the user out only on this
+/// verdict — a refresh that timed out / got a 5xx / a 429 keeps the session.
+const String sessionEndedExtra = 'aorbo_session_ended';
+
+/// Did the network layer end the session while handling [error]?
+bool sessionEndedByServer(DioException error) =>
+    error.requestOptions.extra[sessionEndedExtra] == true;
+
 /// A server reply kept whole — see [Repository.postForReply].
 class ApiReply {
   const ApiReply(this.statusCode, this.data);
@@ -347,6 +358,7 @@ class Repository {
                 }
               }
             }
+            error.requestOptions.extra[sessionEndedExtra] = true;
             await sp!.clear();
             // forcedLogout: true tells SplashWithLoginScreen this is a
             // mid-session kick-out, not a cold app start — it skips the
@@ -367,6 +379,7 @@ class Repository {
                   (errorCode == 'ACCOUNT_INACTIVE' ||
                       errorCode == 'INVALID_TOKEN_TYPE'));
           if (isSessionInvalid) {
+            error.requestOptions.extra[sessionEndedExtra] = true;
             await sp!.clear();
             if (!AppUpdateGate.instance.isBlocked) {
               Get.offAllNamed('/', arguments: {'forcedLogout': true});

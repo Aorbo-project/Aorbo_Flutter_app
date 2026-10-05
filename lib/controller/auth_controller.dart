@@ -256,9 +256,15 @@ class AuthController extends GetxController {
   // →login flicker). This makes that check happen first, while still on
   // splash, so dashboard is only ever shown once the session is confirmed.
   //
-  // Fails OPEN on anything that isn't an explicit 401/403 rejection — a
+  // Fails OPEN on anything the network layer did not treat as a refusal — a
   // timeout or dropped connection is not proof the session is dead and must
   // never force a still-valid session to log out.
+  //
+  // Scan E8: with a 30-min access token nearly every cold start begins with a
+  // 401 TOKEN_EXPIRED. If the silent refresh then hiccups (timeout, 5xx, 429,
+  // keystore busy) the interceptor KEEPS the session and hands back that 401,
+  // so the raw status is not the verdict. Only [sessionEndedByServer] — set
+  // by the interceptor when it really ended the session — returns false.
   Future<bool> validateSession() async {
     try {
       final accessToken = sp!.getString(SpUtil.accessToken);
@@ -278,7 +284,7 @@ class AuthController extends GetxController {
       // "Update this app" (426 / 403 APP_UPDATE_REQUIRED) says nothing about
       // the session — the update screen takes over; keep the login.
       if (isAppUpdateRequired(statusCode, e.response?.data)) return true;
-      return statusCode != 401 && statusCode != 403;
+      return !sessionEndedByServer(e);
     } catch (_) {
       return true;
     }
