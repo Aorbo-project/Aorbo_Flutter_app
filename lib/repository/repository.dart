@@ -6,6 +6,7 @@ import 'package:arobo_app/app_update/app_update_policy.dart';
 import 'package:arobo_app/app_update/app_version_info.dart';
 import 'package:arobo_app/main.dart';
 import 'package:arobo_app/widgets/logger.dart';
+import 'package:arobo_app/repository/friendly_error.dart';
 import 'package:arobo_app/repository/network_url.dart';
 import 'package:arobo_app/utils/custom_alert_dialog.dart';
 import 'package:arobo_app/utils/shared_preferences.dart';
@@ -19,6 +20,9 @@ import 'package:arobo_app/integrity/integrity_interceptor.dart';
 import 'package:arobo_app/security/device_key_service.dart';
 import 'package:arobo_app/security/pinned_http_client.dart';
 import 'package:arobo_app/services/session_teardown.dart';
+
+export 'package:arobo_app/repository/friendly_error.dart'
+    show ApiException, FriendlyText, friendlyError;
 
 class RateLimitException implements Exception {
   final String message;
@@ -496,25 +500,21 @@ class Repository {
         return null;
       }
     } on TimeoutException {
-      throw Exception(
-        "Request timed out. Please check your connection and try again.",
-      );
+      throw const ApiException(FriendlyText.tooSlow);
     } on DioException catch (e) {
-      throw _getFailure(e);
+      throw _failure(e);
     }
   }
 
-  /// [getApiCall]'s error for a failed GET.
-  Exception _getFailure(DioException e) {
-    if (e.type == DioExceptionType.connectionTimeout) {
-      return Exception("Connection Timeout Exception");
+  /// The error every call throws for a failed request: text fit for the
+  /// customer (the server's own message when it is one, never Dio's
+  /// developer paragraph — scan D5), with the status kept for callers.
+  ApiException _failure(DioException e) {
+    if (kDebugMode) {
+      logger.w("Dio Exception Message -> ${e.message}");
+      logger.w("Dio Exception Data -> ${e.response?.data}");
     }
-    if (e.type == DioExceptionType.receiveTimeout) {
-      return Exception("Receive Timeout Exception");
-    }
-    logger.w("Dio Exception Message -> ${e.message.toString()}");
-    logger.w("Dio Exception Data -> ${e.response?.data?.toString()}");
-    return Exception(e.message.toString());
+    return ApiException.fromDio(e);
   }
 
   /// A conditional GET: sends `If-None-Match: [etag]` when one is given, and
@@ -546,11 +546,9 @@ class Repository {
         etag: response.headers.value('etag'),
       );
     } on TimeoutException {
-      throw Exception(
-        "Request timed out. Please check your connection and try again.",
-      );
+      throw const ApiException(FriendlyText.tooSlow);
     } on DioException catch (e) {
-      throw _getFailure(e);
+      throw _failure(e);
     }
   }
 
@@ -577,19 +575,8 @@ class Repository {
         return null;
       }
     } on TimeoutException {
-      throw Exception(
-        "Request timed out. Please check your connection and try again.",
-      );
+      throw const ApiException(FriendlyText.tooSlow);
     } on DioException catch (e) {
-      if (e.type == DioExceptionType.connectionTimeout) {
-        throw Exception("Connection Timeout Exception");
-      }
-      if (e.type == DioExceptionType.receiveTimeout) {
-        throw Exception("Receive Timeout Exception");
-      }
-      logger.w("Dio Exception Message ->> ${e.message.toString()}");
-      logger.w("Dio Exception Data ->> ${e.response?.data?.toString()}");
-
       if (e.response?.statusCode == 429 && e.response?.data is Map) {
         final data = e.response!.data as Map;
         final waitSecs = data['wait_seconds'] is int
@@ -600,17 +587,7 @@ class Repository {
             : 'Too many requests. Please wait.';
         throw RateLimitException(msg, waitSecs, otpActive: data['otp_active'] == true);
       }
-
-      throw Exception(
-        e.response?.data is List &&
-                (e.response?.data as List).isNotEmpty &&
-                e.response?.data[0] is Map &&
-                e.response?.data[0]['message'] is String
-            ? e.response?.data[0]['message']
-            : e.response?.data is Map && e.response?.data['message'] is String
-            ? e.response?.data['message']
-            : e.message,
-      );
+      throw _failure(e);
     }
   }
 
@@ -624,7 +601,7 @@ class Repository {
     Map<String, String>? headers,
   }) async {
     if (!await isInternetAvailable()) {
-      throw Exception("Please check your internet connection and try again.");
+      throw const ApiException(FriendlyText.noInternet);
     }
     final opts = await _authOptions();
     opts.headers = {...?opts.headers, ...?headers};
@@ -635,9 +612,7 @@ class Repository {
           .timeout(_defaultTimeout);
       return ApiReply(response.statusCode ?? 0, response.data);
     } on TimeoutException {
-      throw Exception(
-        "Request timed out. Please check your connection and try again.",
-      );
+      throw const ApiException(FriendlyText.tooSlow);
     }
   }
 
@@ -655,19 +630,9 @@ class Repository {
         return null;
       }
     } on TimeoutException {
-      throw Exception(
-        "Request timed out. Please check your connection and try again.",
-      );
+      throw const ApiException(FriendlyText.tooSlow);
     } on DioException catch (e) {
-      if (e.type == DioExceptionType.connectionTimeout) {
-        throw Exception("Connection Timeout Exception");
-      }
-      if (e.type == DioExceptionType.receiveTimeout) {
-        throw Exception("Receive Timeout Exception");
-      }
-      logger.w("Dio Exception Message ->> ${e.message.toString()}");
-      logger.w("Dio Exception Data ->> ${e.response?.data?.toString()}");
-      throw Exception(e.response?.data['message'] ?? e.message);
+      throw _failure(e);
     }
   }
 
@@ -685,19 +650,9 @@ class Repository {
         return null;
       }
     } on TimeoutException {
-      throw Exception(
-        "Request timed out. Please check your connection and try again.",
-      );
+      throw const ApiException(FriendlyText.tooSlow);
     } on DioException catch (e) {
-      if (e.type == DioExceptionType.connectionTimeout) {
-        throw Exception("Connection Timeout Exception");
-      }
-      if (e.type == DioExceptionType.receiveTimeout) {
-        throw Exception("Receive Timeout Exception");
-      }
-      logger.w("Dio Exception Message ->> ${e.message.toString()}");
-      logger.w("Dio Exception Data ->> ${e.response?.data?.toString()}");
-      throw Exception(e.response?.data['message'] ?? e.message);
+      throw _failure(e);
     }
   }
 
@@ -715,19 +670,9 @@ class Repository {
         return null;
       }
     } on TimeoutException {
-      throw Exception(
-        "Request timed out. Please check your connection and try again.",
-      );
+      throw const ApiException(FriendlyText.tooSlow);
     } on DioException catch (e) {
-      if (e.type == DioExceptionType.connectionTimeout) {
-        throw Exception("Connection Timeout Exception");
-      }
-      if (e.type == DioExceptionType.receiveTimeout) {
-        throw Exception("Receive Timeout Exception");
-      }
-      logger.w("Dio Exception Message ->> ${e.message.toString()}");
-      logger.w("Dio Exception Data ->> ${e.response?.data?.toString()}");
-      throw Exception(e.response?.data['message'] ?? e.message);
+      throw _failure(e);
     }
   }
 

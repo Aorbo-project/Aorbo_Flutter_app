@@ -386,10 +386,8 @@ class DashboardController extends GetxController {
       throw "Response Body Null";
     } catch (e) {
       logger.e('Error fetching calendar dates: $e');
-      errorMessage.value = e.toString();
-      calenderTrekDatesObserver.value = ApiResult.error(
-        'Failed to fetch calendar dates: ${e.toString()}',
-      );
+      errorMessage.value = friendlyError(e);
+      calenderTrekDatesObserver.value = ApiResult.error(friendlyError(e));
     }
   }
 
@@ -505,7 +503,7 @@ class DashboardController extends GetxController {
       throw "Response Body Null";
     } catch (e) {
       logger.e('Error fetching whats new: $e');
-      if (!hadData) whatsNewObserver.value = ApiResult.error(e.toString());
+      if (!hadData) whatsNewObserver.value = ApiResult.error(friendlyError(e));
       return false;
     }
   }
@@ -536,7 +534,7 @@ class DashboardController extends GetxController {
       throw "Response Body Null";
     } catch (e) {
       logger.e('Error fetching top treks: $e');
-      if (!hadData) topTreksObserver.value = ApiResult.error(e.toString());
+      if (!hadData) topTreksObserver.value = ApiResult.error(friendlyError(e));
       return false;
     }
   }
@@ -692,7 +690,7 @@ class DashboardController extends GetxController {
       throw "Response Body Null";
     } catch (e) {
       logger.e('Error fetching seasonal picks: $e');
-      if (!hadData) seasonalPicksObserver.value = ApiResult.error(e.toString());
+      if (!hadData) seasonalPicksObserver.value = ApiResult.error(friendlyError(e));
       return false;
     }
   }
@@ -733,7 +731,7 @@ class DashboardController extends GetxController {
       throw "Response Body Null";
     } catch (e) {
       logger.e('Error fetching seasonal forecasts: $e');
-      seasonalForcastObserver.value = ApiResult.error(e.toString());
+      seasonalForcastObserver.value = ApiResult.error(friendlyError(e));
     }
   }
 
@@ -751,9 +749,11 @@ class DashboardController extends GetxController {
         logger.d('States loaded: ${stateList.length}');
       }
     } catch (e) {
-      errorMessage.value = 'Failed to load states: ${e.toString()}';
-      logger.e(errorMessage.value);
-      CustomSnackBar.show(Get.context!, message: errorMessage.value);
+      logger.e('Failed to load states: $e');
+      errorMessage.value = "Couldn't load the states. ${friendlyError(e)}";
+      // States feed nothing on Home by themselves; only say so when there
+      // is no list at all (and never via a null context).
+      if (stateList.isEmpty) CustomSnackBar.error(errorMessage.value);
     } finally {
       isLoadingCities.value = false;
     }
@@ -785,8 +785,9 @@ class DashboardController extends GetxController {
         unawaited(save);
       }
     } catch (e) {
-      errorMessage.value = 'Failed to load cities: ${e.toString()}';
-      logger.e(errorMessage.value);
+      logger.e('Failed to load cities: $e');
+      // "cities" / "trek" in the text tell the picker which list failed.
+      errorMessage.value = "Couldn't load the cities. ${friendlyError(e)}";
       // If a cached list is still on screen, the picker already surfaces
       // an offline banner — don't also shout a snackbar at the user.
       if (citiesData.value.data?.isNotEmpty != true) {
@@ -834,8 +835,8 @@ class DashboardController extends GetxController {
         unawaited(LocationCacheService.instance.saveTreks(trekData.value));
       }
     } catch (e) {
-      errorMessage.value = 'Failed to load treks: ${e.toString()}';
-      logger.e(errorMessage.value);
+      logger.e('Failed to load treks: $e');
+      errorMessage.value = "Couldn't load the trek list. ${friendlyError(e)}";
       if (trekData.value.data?.isNotEmpty != true) {
         final ctx = Get.context;
         if (ctx != null) {
@@ -1020,14 +1021,14 @@ class DashboardController extends GetxController {
           _replaceAllOnNextSuccess = false;
           observer.value.isPaginationCompleted = true;
           observer.refresh();
-          errorMessage.value = 'Could not refresh bookings: ${e.toString()}';
+          errorMessage.value = "Couldn't refresh your bookings. ${friendlyError(e)}";
           final ctx = Get.context;
           if (ctx != null) {
             CustomSnackBar.show(ctx, message: errorMessage.value);
           }
         } else {
-          observer.value.data.value = ApiResult.error(e.toString());
-          errorMessage.value = 'Failed to load bookings: ${e.toString()}';
+          observer.value.data.value = ApiResult.error(friendlyError(e));
+          errorMessage.value = friendlyError(e);
           final ctx = Get.context;
           if (ctx != null) {
             CustomSnackBar.show(ctx, message: errorMessage.value);

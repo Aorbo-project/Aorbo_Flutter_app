@@ -42,7 +42,7 @@ class CouponController extends GetxController {
     } catch (e) {
       // Non-fatal — missing coupon carousel is acceptable.
       // Do NOT show a snackbar; do NOT crash the listing screen.
-      adminCouponsObserver.value = ApiResult.error(e.toString());
+      adminCouponsObserver.value = ApiResult.error(friendlyError(e));
     }
   }
 

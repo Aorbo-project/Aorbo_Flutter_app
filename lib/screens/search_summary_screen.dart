@@ -28,6 +28,7 @@ import 'package:table_calendar/table_calendar.dart';
 import '../freezed_models/treks/treks_model_data.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
+import 'package:arobo_app/repository/friendly_error.dart';
 
 class SearchSummaryScreen extends StatefulWidget {
   const SearchSummaryScreen({super.key});
@@ -338,7 +339,7 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
       await _dashboardC.subscribeToRouteNotification(cityId, trekId);
       _feedback("We'll notify you when dates open on this route");
     } catch (e) {
-      final msg = e.toString().replaceFirst('Exception: ', '').trim();
+      final msg = friendlyError(e);
       _feedback(
         msg.isEmpty ? 'Could not set up alerts — try again' : msg,
         error: true,

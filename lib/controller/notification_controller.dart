@@ -68,7 +68,7 @@ class NotificationController extends GetxController {
       }
     } catch (e) {
       logger.e('fetchNotifications error: $e');
-      error = e.toString();
+      error = friendlyError(e);
     } finally {
       isLoading.value = false;
     }

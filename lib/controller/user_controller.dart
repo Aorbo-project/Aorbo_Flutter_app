@@ -56,7 +56,7 @@ class UserController extends GetxController {
         nameController.value.text = customer?.name ?? '';
       }
     } catch (e) {
-      _showError(e.toString());
+      _showError(friendlyError(e));
     } finally {
       isLoading.value = false;
     }
@@ -91,7 +91,7 @@ class UserController extends GetxController {
       );
       return false;
     } catch (e) {
-      _showError(e.toString());
+      _showError(friendlyError(e));
       return false;
     } finally {
       isLoading.value = false;
@@ -123,7 +123,7 @@ class UserController extends GetxController {
       );
       return false;
     } catch (e) {
-      _showError(e.toString());
+      _showError(friendlyError(e));
       return false;
     } finally {
       isLoading.value = false;
@@ -156,7 +156,7 @@ class UserController extends GetxController {
       );
       return false;
     } catch (e) {
-      _showError(e.toString());
+      _showError(friendlyError(e));
       return false;
     } finally {
       isLoading.value = false;
@@ -176,24 +176,7 @@ class UserController extends GetxController {
       return response?['message']?.toString() ?? 'Could not delete traveller.';
     } catch (e) {
       // Extract friendly message from Dio's response body if present
-      String errorMsg = 'Could not delete traveller.';
-      try {
-        final dynamic responseData = (e as dynamic).response?.data;
-        if (responseData is Map && responseData['message'] != null) {
-          errorMsg = responseData['message'].toString();
-        } else {
-          errorMsg = e.toString();
-          if (errorMsg.startsWith('Exception: ')) {
-            errorMsg = errorMsg.replaceFirst('Exception: ', '');
-          }
-        }
-      } catch (_) {
-        errorMsg = e.toString();
-        if (errorMsg.startsWith('Exception: ')) {
-          errorMsg = errorMsg.replaceFirst('Exception: ', '');
-        }
-      }
-      return errorMsg;
+      return friendlyError(e);
     } finally {
       isLoading.value = false;
     }

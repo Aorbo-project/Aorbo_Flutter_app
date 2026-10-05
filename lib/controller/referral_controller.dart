@@ -2,6 +2,7 @@ import 'package:arobo_app/models/referral/referral_models.dart';
 import 'package:arobo_app/repository/api_result.dart';
 import 'package:arobo_app/repository/referral_repository.dart';
 import 'package:get/get.dart';
+import 'package:arobo_app/repository/friendly_error.dart';
 
 /// Single source of truth for the Refer & Earn screen.
 ///
@@ -98,9 +99,5 @@ class ReferralController extends GetxController {
 
   void clearApplyState() => applyState.value = null;
 
-  String _clean(Object e) {
-    var s = e.toString();
-    if (s.startsWith('Exception: ')) s = s.substring('Exception: '.length);
-    return s.isEmpty ? 'Something went wrong' : s;
-  }
+  String _clean(Object e) => friendlyError(e);
 }

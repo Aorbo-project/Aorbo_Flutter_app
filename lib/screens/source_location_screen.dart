@@ -811,6 +811,7 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
         lower.contains('internet') ||
         lower.contains('connection') ||
         lower.contains('timeout') ||
+        lower.contains('too long') || // FriendlyText.tooSlow
         lower.contains('handshake');
   }
 
@@ -2156,7 +2157,9 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
             Text(
               msg,
               textAlign: TextAlign.center,
-              style: AppType.style(10.5, color: _T.inkMid, height: 1.4),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: AppType.style(FontSize.s10, color: _T.inkMid, height: 1.4),
             ),
             const SizedBox(height: 16),
             AppButton.secondary(

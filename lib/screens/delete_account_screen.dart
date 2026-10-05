@@ -118,7 +118,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _submitting = false);
-      final msg = e.toString().replaceFirst('Exception: ', '');
+      final msg = friendlyError(e);
       CustomSnackBar.show(
         context,
         message: msg.isNotEmpty && msg != 'Request failed'

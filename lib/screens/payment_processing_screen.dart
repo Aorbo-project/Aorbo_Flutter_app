@@ -142,7 +142,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
       _startWatchingForRealStatus();
     } catch (e) {
       _resolveViaBackendCheck(
-        fallbackMessage: 'Failed to open payment: ${e.toString()}',
+        fallbackMessage: 'Could not open the payment page. Please try again.',
       );
     }
   }

@@ -339,8 +339,8 @@ class TrekController extends GetxController {
       throw "Response Body Null";
     } catch (e) {
       logger.e('Coupon error: ${e.toString()}');
-      CustomSnackBar.show(Get.context!, message: e.toString());
-      vendorCouponsObserver.value = ApiResult.error(e.toString());
+      CustomSnackBar.show(Get.context!, message: friendlyError(e));
+      vendorCouponsObserver.value = ApiResult.error(friendlyError(e));
     }
   }
 
@@ -402,8 +402,8 @@ class TrekController extends GetxController {
       throw "Response Body Null";
     } catch (e) {
       logger.e('Coupon error: ${e.toString()}');
-      CustomSnackBar.show(Get.context!, message: e.toString());
-      validateCouponObserver.value = ApiResult.error(e.toString());
+      CustomSnackBar.show(Get.context!, message: friendlyError(e));
+      validateCouponObserver.value = ApiResult.error(friendlyError(e));
     }
   }
 
@@ -517,9 +517,9 @@ class TrekController extends GetxController {
     } catch (e) {
       // first line, so a stale timeout can't clobber fresh results:
       if (myGeneration != _searchGeneration) return;
-      errorMessage.value = 'Failed to search treks: ${e.toString()}';
+      errorMessage.value = friendlyError(e);
       CustomSnackBar.show(Get.context!, message: errorMessage.value);
-      observer.value.data.value = ApiResult.error(e.toString());
+      observer.value.data.value = ApiResult.error(friendlyError(e));
       observer.value.isLoading = false;
       observer.refresh();
     }
@@ -604,7 +604,7 @@ class TrekController extends GetxController {
         }
       }
     } catch (e, st) {
-      errorMessage.value = 'Failed to load trek details: ${e.toString()}';
+      errorMessage.value = friendlyError(e);
       logger.e(st);
       if (showErrors) CustomSnackBar.show(Get.context!, message: errorMessage.value);
     } finally {
@@ -701,10 +701,10 @@ class TrekController extends GetxController {
       throw "Response Body Null";
     } catch (e) {
       if (mySeq != _calculateFareRequestSeq) return; // stale — see above
-      errorMessage.value = 'Failed to calculate fare: ${e.toString()}';
+      errorMessage.value = friendlyError(e);
       CustomSnackBar.show(Get.context!, message: errorMessage.value);
       calculateFareResponseModel.value = ApiResult.error(
-        'Failed to calculate fare: ${e.toString()}',
+        friendlyError(e),
       );
     } finally {
       // Only the newest request may clear the flag — a stale one returning
@@ -786,7 +786,7 @@ class TrekController extends GetxController {
       }
     } catch (e) {
       resetOrderState();
-      errorMessage.value = 'Failed to create booking: ${e.toString()}';
+      errorMessage.value = friendlyError(e);
       CustomSnackBar.show(Get.context!, message: errorMessage.value);
     } finally {
       hideLoaderDialog();
@@ -855,7 +855,7 @@ class TrekController extends GetxController {
     } catch (e, s) {
       logger.e('Stack trace: $s');
       logger.e('Error: $e');
-      errorMessage.value = 'Failed to verify payment: ${e.toString()}';
+      errorMessage.value = friendlyError(e);
       return false;
     } finally {
       isLoading.value = false;
@@ -969,7 +969,7 @@ class TrekController extends GetxController {
         }
       }
     } catch (e) {
-      errorMessage.value = 'Failed to submit review: ${e.toString()}';
+      errorMessage.value = friendlyError(e);
       CustomSnackBar.show(Get.context!, message: errorMessage.value);
     } finally {
       reviewController.value.clear();
@@ -1001,11 +1001,11 @@ class TrekController extends GetxController {
       throw "Response Body Null";
     } catch (e) {
       // show the REAL error, not a stale one:
-      CustomSnackBar.error(e.toString());
+      CustomSnackBar.error(friendlyError(e));
       cancellationDetailsResponseObserver.value = ApiResult.error(
-        'Failed to load cancellation details: ${e.toString()}',
+        friendlyError(e),
       );
-      return e.toString();
+      return friendlyError(e);
     }
   }
 
@@ -1050,11 +1050,10 @@ class TrekController extends GetxController {
         Get.find<DashboardController>().loadAllBookingHistory(force: true, waitForCompletion: false);
         return null;
       }
-      CustomSnackBar.show(Get.context!, message: errMsg);
-      requestCancellationResponseObserver.value = ApiResult.error(
-        'Failed to get cancellation details: $errMsg',
-      );
-      return errMsg;
+      final shown = friendlyError(e);
+      CustomSnackBar.show(Get.context!, message: shown);
+      requestCancellationResponseObserver.value = ApiResult.error(shown);
+      return shown;
     }
   }
 
@@ -1123,7 +1122,7 @@ class TrekController extends GetxController {
         }
       }
     } catch (e) {
-      errorMessage.value = 'Failed to submit issue report: ${e.toString()}';
+      errorMessage.value = friendlyError(e);
       CustomSnackBar.show(Get.context!, message: errorMessage.value);
     } finally {
       isLoading.value = false;

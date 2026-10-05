@@ -131,8 +131,7 @@ class AuthController extends GetxController {
       CustomSnackBar.show(Get.context!, message: e.message);
       return false;
     } catch (e) {
-      final msg = e.toString().replaceFirst('Exception: ', '');
-      CustomSnackBar.show(Get.context!, message: msg.isNotEmpty ? msg : 'Failed to resend OTP. Please try again.');
+      CustomSnackBar.show(Get.context!, message: friendlyError(e));
       return false;
     }
   }
@@ -242,9 +241,7 @@ class AuthController extends GetxController {
     } catch (e) {
       isLoading.value = false;
       logger.e('verifyOtp error: $e');
-      final msg = e.toString().replaceFirst('Exception: ', '');
-      otpErrorMessage.value =
-          msg.isNotEmpty ? msg : 'Verification failed. Please try again.';
+      otpErrorMessage.value = friendlyError(e);
       CustomSnackBar.show(Get.context!, message: otpErrorMessage.value);
       return false;
     }
@@ -339,9 +336,11 @@ class AuthController extends GetxController {
           }
           logger.w('FCM token registration returned non-success response: $res');
         } catch (e) {
-          final msg = e.toString();
-          // Auth/validation errors won't be fixed by retrying the same request.
-          final isRetryable = !msg.contains('401') && !msg.contains('Unauthorized');
+          // Auth/validation errors (4xx) won't be fixed by retrying the same
+          // request; no connection, timeouts, 429 and 5xx might.
+          final status = e is ApiException ? e.statusCode : null;
+          final isRetryable =
+              status == null || status == 429 || status >= 500;
           logger.e('FCM token registration attempt ${attempt + 1} failed: $e');
           if (!isRetryable) return;
         }

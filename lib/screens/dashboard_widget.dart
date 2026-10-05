@@ -48,6 +48,7 @@ import 'package:arobo_app/utils/common_bottom_nav.dart';
 import '../freezed_models/treks/treks_model_data.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
+import 'package:arobo_app/repository/friendly_error.dart';
 
 /// Neutral palette for the body/calendar. The HEADER no longer reads from
 /// this — it is fully driven by DashboardHeaderTheme.
@@ -3088,7 +3089,7 @@ class _NotifyMeSheetState extends State<_NotifyMeSheet>
       setState(() {
         _isLoading = false;
         _hasError = true;
-        _errorMessage = e.toString().replaceFirst('Exception: ', '');
+        _errorMessage = friendlyError(e);
       });
 
       // Close sheet after a short delay on error
