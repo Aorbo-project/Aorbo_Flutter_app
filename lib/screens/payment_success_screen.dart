@@ -7,6 +7,9 @@ import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/common_images.dart';
 import 'package:arobo_app/utils/custom_snackbar.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
+import 'package:arobo_app/utils/success_ticket_header.dart';
+import 'package:arobo_app/freezed_models/booking/booking_history_model.dart'
+    show BookingHistoryData;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -407,6 +410,10 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
   List<_Particle> _particles = [];
   bool _showConfetti = false;
 
+  // Booking-detail reply, loaded only when the verify reply carried a bare
+  // booking (no trek) — fills the ticket header (see SuccessTicketHeader).
+  BookingHistoryData? _ticketBooking;
+
   @override
   void initState() {
     super.initState();
@@ -418,6 +425,9 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
     final bookingId = _trekC.verifyOrderModal.value.data?.id;
     if (bookingId != null) {
       _dashboardC.generateAndUploadInvoice(bookingId);
+      if (_trekC.verifyOrderModal.value.data?.trek == null) {
+        _loadTicketBooking(bookingId);
+      }
     }
 
     // Performance-Insights funnel: booking paid. (The backend also derives
@@ -470,6 +480,13 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
       _dashboardC.clearSearchAndBookingData();
     });
     super.dispose();
+  }
+
+  Future<void> _loadTicketBooking(int bookingId) async {
+    await _dashboardC.getBookingDetail(bookingId: bookingId);
+    final booking = _dashboardC.bookingHistoryModal.value;
+    if (!mounted || booking == null || booking.id != bookingId) return;
+    setState(() => _ticketBooking = booking);
   }
 
   void _fireConfetti() {
@@ -641,10 +658,16 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
     final data = _trekC.verifyOrderModal.value.data;
     if (data == null) return const SizedBox.shrink();
 
-    final trek        = data.trek;
     final batch       = data.batch;
-    final startDate   = ISTDateUtils.toIST(batch?.startDate);
-    final endDate     = ISTDateUtils.toIST(batch?.endDate);
+    // Trek name/dates/duration/destination, with fallbacks for a bare
+    // booking in the verify reply (scan E0-2).
+    final header      = SuccessTicketHeader.resolve(
+      data: data,
+      booking: _ticketBooking,
+      trek: _trekC.trekDetailData.value,
+    );
+    final startDate   = ISTDateUtils.toIST(header.startDate);
+    final endDate     = ISTDateUtils.toIST(header.endDate);
     final bookingDate = ISTDateUtils.toIST(data.bookingDate);
     final payment     = _trekC.verifyOrderModal.value.payment;
     final paymentDet  = _trekC.verifyOrderModal.value.paymentDetails;
@@ -686,7 +709,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
               children: [
                 Expanded(
                   child: Text(
-                    trek?.title ?? 'Trek Details',
+                    header.title ?? 'Trek Details',
                     style: AppType.style(FontSize.s18, w: FontWeight.w800, color: Colors.white, height: 1.2),
                   ),
                 ),
@@ -756,7 +779,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          trek?.duration?.replaceAll('Days', 'D').replaceAll('Nights', 'N') ?? '-',
+                          header.duration?.replaceAll('Days', 'D').replaceAll('Nights', 'N') ?? '-',
                           style: AppType.style(FontSize.s8, w: FontWeight.w600, color: _TC.inkMid),
                         ),
                       ),
@@ -777,7 +800,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                       ),
                       SizedBox(height: 0.2.h),
                       Text(
-                        trek?.destinationData?.name ?? 'Destination',
+                        header.destination ?? 'Destination',
                         textAlign: TextAlign.right,
                         style: AppType.style(FontSize.s8, color: _TC.inkMid),
                       ),
@@ -821,7 +844,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                     ),
                     child: Column(
                       children: [
-                        _ticketRow('TBR ID', batch?.tbrId ?? 'N/A', isHighlight: true),
+                        _ticketRow('TBR ID', batch?.tbrId ?? _ticketBooking?.batch?.tbrId ?? 'N/A', isHighlight: true),
                         _dividerLine(),
                         _ticketRow(
                           'Booking ID',

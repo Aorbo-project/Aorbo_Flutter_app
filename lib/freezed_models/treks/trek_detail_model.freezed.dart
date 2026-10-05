@@ -192,10 +192,15 @@ TrekDetailData _$TrekDetailDataFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$TrekDetailData {
-  @JsonKey(name: 'city_ids')
+// Vendor-entered JSON lists: ids may come as numbers or strings, and
+// inclusions/activities as plain names instead of objects.
+  @JsonKey(name: 'city_ids', fromJson: jsonToIntList)
   List<int>? get cityIds => throw _privateConstructorUsedError;
+  @JsonKey(fromJson: _inclusionsFromJson)
   List<Inclusions>? get inclusions => throw _privateConstructorUsedError;
+  @JsonKey(fromJson: jsonToNameList)
   List<String>? get exclusions => throw _privateConstructorUsedError;
+  @JsonKey(fromJson: _activitiesFromJson)
   List<Activities>? get activities => throw _privateConstructorUsedError;
   int? get id => throw _privateConstructorUsedError;
   @JsonKey(name: 'mtr_id')
@@ -308,10 +313,10 @@ abstract class $TrekDetailDataCopyWith<$Res> {
       _$TrekDetailDataCopyWithImpl<$Res, TrekDetailData>;
   @useResult
   $Res call(
-      {@JsonKey(name: 'city_ids') List<int>? cityIds,
-      List<Inclusions>? inclusions,
-      List<String>? exclusions,
-      List<Activities>? activities,
+      {@JsonKey(name: 'city_ids', fromJson: jsonToIntList) List<int>? cityIds,
+      @JsonKey(fromJson: _inclusionsFromJson) List<Inclusions>? inclusions,
+      @JsonKey(fromJson: jsonToNameList) List<String>? exclusions,
+      @JsonKey(fromJson: _activitiesFromJson) List<Activities>? activities,
       int? id,
       @JsonKey(name: 'mtr_id') String? mtrId,
       String? title,
@@ -730,10 +735,10 @@ abstract class _$$TrekDetailDataImplCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {@JsonKey(name: 'city_ids') List<int>? cityIds,
-      List<Inclusions>? inclusions,
-      List<String>? exclusions,
-      List<Activities>? activities,
+      {@JsonKey(name: 'city_ids', fromJson: jsonToIntList) List<int>? cityIds,
+      @JsonKey(fromJson: _inclusionsFromJson) List<Inclusions>? inclusions,
+      @JsonKey(fromJson: jsonToNameList) List<String>? exclusions,
+      @JsonKey(fromJson: _activitiesFromJson) List<Activities>? activities,
       int? id,
       @JsonKey(name: 'mtr_id') String? mtrId,
       String? title,
@@ -1089,9 +1094,12 @@ class __$$TrekDetailDataImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$TrekDetailDataImpl implements _TrekDetailData {
   const _$TrekDetailDataImpl(
-      {@JsonKey(name: 'city_ids') final List<int>? cityIds,
+      {@JsonKey(name: 'city_ids', fromJson: jsonToIntList)
+      final List<int>? cityIds,
+      @JsonKey(fromJson: _inclusionsFromJson)
       final List<Inclusions>? inclusions,
-      final List<String>? exclusions,
+      @JsonKey(fromJson: jsonToNameList) final List<String>? exclusions,
+      @JsonKey(fromJson: _activitiesFromJson)
       final List<Activities>? activities,
       this.id,
       @JsonKey(name: 'mtr_id') this.mtrId,
@@ -1157,9 +1165,13 @@ class _$TrekDetailDataImpl implements _TrekDetailData {
   factory _$TrekDetailDataImpl.fromJson(Map<String, dynamic> json) =>
       _$$TrekDetailDataImplFromJson(json);
 
+// Vendor-entered JSON lists: ids may come as numbers or strings, and
+// inclusions/activities as plain names instead of objects.
   final List<int>? _cityIds;
+// Vendor-entered JSON lists: ids may come as numbers or strings, and
+// inclusions/activities as plain names instead of objects.
   @override
-  @JsonKey(name: 'city_ids')
+  @JsonKey(name: 'city_ids', fromJson: jsonToIntList)
   List<int>? get cityIds {
     final value = _cityIds;
     if (value == null) return null;
@@ -1170,6 +1182,7 @@ class _$TrekDetailDataImpl implements _TrekDetailData {
 
   final List<Inclusions>? _inclusions;
   @override
+  @JsonKey(fromJson: _inclusionsFromJson)
   List<Inclusions>? get inclusions {
     final value = _inclusions;
     if (value == null) return null;
@@ -1180,6 +1193,7 @@ class _$TrekDetailDataImpl implements _TrekDetailData {
 
   final List<String>? _exclusions;
   @override
+  @JsonKey(fromJson: jsonToNameList)
   List<String>? get exclusions {
     final value = _exclusions;
     if (value == null) return null;
@@ -1190,6 +1204,7 @@ class _$TrekDetailDataImpl implements _TrekDetailData {
 
   final List<Activities>? _activities;
   @override
+  @JsonKey(fromJson: _activitiesFromJson)
   List<Activities>? get activities {
     final value = _activities;
     if (value == null) return null;
@@ -1568,9 +1583,12 @@ class _$TrekDetailDataImpl implements _TrekDetailData {
 
 abstract class _TrekDetailData implements TrekDetailData {
   const factory _TrekDetailData(
-      {@JsonKey(name: 'city_ids') final List<int>? cityIds,
+      {@JsonKey(name: 'city_ids', fromJson: jsonToIntList)
+      final List<int>? cityIds,
+      @JsonKey(fromJson: _inclusionsFromJson)
       final List<Inclusions>? inclusions,
-      final List<String>? exclusions,
+      @JsonKey(fromJson: jsonToNameList) final List<String>? exclusions,
+      @JsonKey(fromJson: _activitiesFromJson)
       final List<Activities>? activities,
       final int? id,
       @JsonKey(name: 'mtr_id') final String? mtrId,
@@ -1629,14 +1647,18 @@ abstract class _TrekDetailData implements TrekDetailData {
   factory _TrekDetailData.fromJson(Map<String, dynamic> json) =
       _$TrekDetailDataImpl.fromJson;
 
-  @override
-  @JsonKey(name: 'city_ids')
+  @override // Vendor-entered JSON lists: ids may come as numbers or strings, and
+// inclusions/activities as plain names instead of objects.
+  @JsonKey(name: 'city_ids', fromJson: jsonToIntList)
   List<int>? get cityIds;
   @override
+  @JsonKey(fromJson: _inclusionsFromJson)
   List<Inclusions>? get inclusions;
   @override
+  @JsonKey(fromJson: jsonToNameList)
   List<String>? get exclusions;
   @override
+  @JsonKey(fromJson: _activitiesFromJson)
   List<Activities>? get activities;
   @override
   int? get id;
@@ -3520,7 +3542,9 @@ Details _$DetailsFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$Details {
+  @JsonKey(fromJson: jsonToInt)
   int? get night => throw _privateConstructorUsedError;
+  @JsonKey(fromJson: jsonToStringOrNull)
   String? get location => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -3533,7 +3557,9 @@ abstract class $DetailsCopyWith<$Res> {
   factory $DetailsCopyWith(Details value, $Res Function(Details) then) =
       _$DetailsCopyWithImpl<$Res, Details>;
   @useResult
-  $Res call({int? night, String? location});
+  $Res call(
+      {@JsonKey(fromJson: jsonToInt) int? night,
+      @JsonKey(fromJson: jsonToStringOrNull) String? location});
 }
 
 /// @nodoc
@@ -3572,7 +3598,9 @@ abstract class _$$DetailsImplCopyWith<$Res> implements $DetailsCopyWith<$Res> {
       __$$DetailsImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({int? night, String? location});
+  $Res call(
+      {@JsonKey(fromJson: jsonToInt) int? night,
+      @JsonKey(fromJson: jsonToStringOrNull) String? location});
 }
 
 /// @nodoc
@@ -3605,14 +3633,18 @@ class __$$DetailsImplCopyWithImpl<$Res>
 /// @nodoc
 @JsonSerializable()
 class _$DetailsImpl implements _Details {
-  const _$DetailsImpl({this.night, this.location});
+  const _$DetailsImpl(
+      {@JsonKey(fromJson: jsonToInt) this.night,
+      @JsonKey(fromJson: jsonToStringOrNull) this.location});
 
   factory _$DetailsImpl.fromJson(Map<String, dynamic> json) =>
       _$$DetailsImplFromJson(json);
 
   @override
+  @JsonKey(fromJson: jsonToInt)
   final int? night;
   @override
+  @JsonKey(fromJson: jsonToStringOrNull)
   final String? location;
 
   @override
@@ -3649,14 +3681,18 @@ class _$DetailsImpl implements _Details {
 }
 
 abstract class _Details implements Details {
-  const factory _Details({final int? night, final String? location}) =
+  const factory _Details(
+          {@JsonKey(fromJson: jsonToInt) final int? night,
+          @JsonKey(fromJson: jsonToStringOrNull) final String? location}) =
       _$DetailsImpl;
 
   factory _Details.fromJson(Map<String, dynamic> json) = _$DetailsImpl.fromJson;
 
   @override
+  @JsonKey(fromJson: jsonToInt)
   int? get night;
   @override
+  @JsonKey(fromJson: jsonToStringOrNull)
   String? get location;
   @override
   @JsonKey(ignore: true)
@@ -3670,6 +3706,8 @@ ItineraryItems _$ItineraryItemsFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$ItineraryItems {
+// Activity names; an id the server could not resolve is left out.
+  @JsonKey(fromJson: jsonToNameList)
   List<String>? get activities => throw _privateConstructorUsedError;
   int? get id => throw _privateConstructorUsedError;
   @JsonKey(name: 'trek_id')
@@ -3692,7 +3730,7 @@ abstract class $ItineraryItemsCopyWith<$Res> {
       _$ItineraryItemsCopyWithImpl<$Res, ItineraryItems>;
   @useResult
   $Res call(
-      {List<String>? activities,
+      {@JsonKey(fromJson: jsonToNameList) List<String>? activities,
       int? id,
       @JsonKey(name: 'trek_id') int? trekId,
       @JsonKey(name: 'createdAt') String? createdAt,
@@ -3752,7 +3790,7 @@ abstract class _$$ItineraryItemsImplCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {List<String>? activities,
+      {@JsonKey(fromJson: jsonToNameList) List<String>? activities,
       int? id,
       @JsonKey(name: 'trek_id') int? trekId,
       @JsonKey(name: 'createdAt') String? createdAt,
@@ -3805,7 +3843,7 @@ class __$$ItineraryItemsImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$ItineraryItemsImpl implements _ItineraryItems {
   const _$ItineraryItemsImpl(
-      {final List<String>? activities,
+      {@JsonKey(fromJson: jsonToNameList) final List<String>? activities,
       this.id,
       @JsonKey(name: 'trek_id') this.trekId,
       @JsonKey(name: 'createdAt') this.createdAt,
@@ -3815,8 +3853,11 @@ class _$ItineraryItemsImpl implements _ItineraryItems {
   factory _$ItineraryItemsImpl.fromJson(Map<String, dynamic> json) =>
       _$$ItineraryItemsImplFromJson(json);
 
+// Activity names; an id the server could not resolve is left out.
   final List<String>? _activities;
+// Activity names; an id the server could not resolve is left out.
   @override
+  @JsonKey(fromJson: jsonToNameList)
   List<String>? get activities {
     final value = _activities;
     if (value == null) return null;
@@ -3884,7 +3925,7 @@ class _$ItineraryItemsImpl implements _ItineraryItems {
 
 abstract class _ItineraryItems implements ItineraryItems {
   const factory _ItineraryItems(
-          {final List<String>? activities,
+          {@JsonKey(fromJson: jsonToNameList) final List<String>? activities,
           final int? id,
           @JsonKey(name: 'trek_id') final int? trekId,
           @JsonKey(name: 'createdAt') final String? createdAt,
@@ -3894,7 +3935,8 @@ abstract class _ItineraryItems implements ItineraryItems {
   factory _ItineraryItems.fromJson(Map<String, dynamic> json) =
       _$ItineraryItemsImpl.fromJson;
 
-  @override
+  @override // Activity names; an id the server could not resolve is left out.
+  @JsonKey(fromJson: jsonToNameList)
   List<String>? get activities;
   @override
   int? get id;
@@ -5143,8 +5185,9 @@ mixin _$LatestReviews {
   @JsonKey(name: 'customer_id')
   int? get customerId => throw _privateConstructorUsedError;
   @JsonKey(name: 'customer_name')
-  String? get customerName => throw _privateConstructorUsedError;
-  @JsonKey(name: 'rating_value')
+  String? get customerName =>
+      throw _privateConstructorUsedError; // Whole stars. Older servers sent 4.0 / "4" / 4.5 — rounded here.
+  @JsonKey(name: 'rating_value', fromJson: jsonToInt)
   int? get ratingValue => throw _privateConstructorUsedError;
   String? get content => throw _privateConstructorUsedError;
   @JsonKey(name: 'created_at')
@@ -5169,7 +5212,7 @@ abstract class $LatestReviewsCopyWith<$Res> {
   $Res call(
       {@JsonKey(name: 'customer_id') int? customerId,
       @JsonKey(name: 'customer_name') String? customerName,
-      @JsonKey(name: 'rating_value') int? ratingValue,
+      @JsonKey(name: 'rating_value', fromJson: jsonToInt) int? ratingValue,
       String? content,
       @JsonKey(name: 'created_at') String? createdAt,
       @JsonKey(name: 'category_highlights')
@@ -5236,7 +5279,7 @@ abstract class _$$LatestReviewsImplCopyWith<$Res>
   $Res call(
       {@JsonKey(name: 'customer_id') int? customerId,
       @JsonKey(name: 'customer_name') String? customerName,
-      @JsonKey(name: 'rating_value') int? ratingValue,
+      @JsonKey(name: 'rating_value', fromJson: jsonToInt) int? ratingValue,
       String? content,
       @JsonKey(name: 'created_at') String? createdAt,
       @JsonKey(name: 'category_highlights')
@@ -5296,7 +5339,7 @@ class _$LatestReviewsImpl implements _LatestReviews {
   const _$LatestReviewsImpl(
       {@JsonKey(name: 'customer_id') this.customerId,
       @JsonKey(name: 'customer_name') this.customerName,
-      @JsonKey(name: 'rating_value') this.ratingValue,
+      @JsonKey(name: 'rating_value', fromJson: jsonToInt) this.ratingValue,
       this.content,
       @JsonKey(name: 'created_at') this.createdAt,
       @JsonKey(name: 'category_highlights')
@@ -5312,8 +5355,9 @@ class _$LatestReviewsImpl implements _LatestReviews {
   @override
   @JsonKey(name: 'customer_name')
   final String? customerName;
+// Whole stars. Older servers sent 4.0 / "4" / 4.5 — rounded here.
   @override
-  @JsonKey(name: 'rating_value')
+  @JsonKey(name: 'rating_value', fromJson: jsonToInt)
   final int? ratingValue;
   @override
   final String? content;
@@ -5386,7 +5430,8 @@ abstract class _LatestReviews implements LatestReviews {
   const factory _LatestReviews(
       {@JsonKey(name: 'customer_id') final int? customerId,
       @JsonKey(name: 'customer_name') final String? customerName,
-      @JsonKey(name: 'rating_value') final int? ratingValue,
+      @JsonKey(name: 'rating_value', fromJson: jsonToInt)
+      final int? ratingValue,
       final String? content,
       @JsonKey(name: 'created_at') final String? createdAt,
       @JsonKey(name: 'category_highlights')
@@ -5401,8 +5446,8 @@ abstract class _LatestReviews implements LatestReviews {
   @override
   @JsonKey(name: 'customer_name')
   String? get customerName;
-  @override
-  @JsonKey(name: 'rating_value')
+  @override // Whole stars. Older servers sent 4.0 / "4" / 4.5 — rounded here.
+  @JsonKey(name: 'rating_value', fromJson: jsonToInt)
   int? get ratingValue;
   @override
   String? get content;

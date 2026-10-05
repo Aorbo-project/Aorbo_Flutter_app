@@ -30,6 +30,9 @@ import '../services/invoice_pdf_service.dart';
 import '../utils/custom_snackbar.dart';
 import '../services/location_cache_service.dart';
 
+/// Shown when the booking-detail screen's data can't be loaded.
+const String bookingDetailsLoadError = "Couldn't load booking details";
+
 class DashboardController extends GetxController {
   final Repository _repository = Repository();
 
@@ -700,14 +703,25 @@ class DashboardController extends GetxController {
     errorMessage.value = '';
 
     try {
-      final response = await _repository.getApiCall(
+      // ~350 KB on every launch: ask with the cached list's ETag, and on a
+      // 304 keep that list (no download, no parse, no rewrite).
+      final cache = LocationCacheService.instance;
+      var reply = await _repository.getIfChanged(
         url: NetworkUrl.getCitiesList,
+        etag: await cache.citiesEtag(),
       );
-      if (response != null) {
-        citiesData.value = GetCities.fromJson(response);
+      if (reply != null && reply.notModified && !await _keepCachedCities()) {
+        // The cached copy can't be read back: forget its ETag, fetch it all.
+        await cache.forgetCitiesEtag();
+        reply = await _repository.getIfChanged(url: NetworkUrl.getCitiesList);
+      }
+      if (reply != null && !reply.notModified && reply.data != null) {
+        citiesData.value = GetCities.fromJson(reply.data);
         logger.d('Cities loaded: ${citiesData.value.data?.length ?? 0}');
         // Fire-and-forget: this response becomes the next offline cache.
-        unawaited(LocationCacheService.instance.saveCities(citiesData.value));
+        final save = cache.saveCities(citiesData.value, etag: reply.etag);
+        _pendingCitiesSave = save;
+        unawaited(save);
       }
     } catch (e) {
       errorMessage.value = 'Failed to load cities: ${e.toString()}';
@@ -724,6 +738,26 @@ class DashboardController extends GetxController {
       isLoadingCities.value = false;
     }
   }
+
+  /// A 304 for the cities list: keep the list in memory, or load it from
+  /// the on-device cache if memory is empty. False when there is none.
+  Future<bool> _keepCachedCities() async {
+    final cache = LocationCacheService.instance;
+    if (citiesData.value.data?.isNotEmpty != true) {
+      final cached = await cache.loadCities();
+      if (cached == null) return false;
+      citiesData.value = cached;
+    }
+    await cache.markCitiesFresh();
+    logger.d('Cities unchanged (304): ${citiesData.value.data?.length ?? 0}');
+    return true;
+  }
+
+  Future<void>? _pendingCitiesSave;
+
+  /// Tests: the cache write started by the last full cities reply.
+  @visibleForTesting
+  Future<void>? get pendingCitiesSaveForTesting => _pendingCitiesSave;
 
   Future<void> fetchTrekList() async {
     isLoadingCities.value = true;
@@ -1094,20 +1128,19 @@ class DashboardController extends GetxController {
           bookingDetailsObserver.value = ApiResult.success(body);
           bookingHistoryModal.value = body.data;
         } else {
+          final message = response['message'];
           bookingDetailsObserver.value = ApiResult.error(
-            response['message'] ?? 'Failed to load dispute details',
+            message is String && message.isNotEmpty
+                ? message
+                : bookingDetailsLoadError,
           );
         }
       }
     } catch (e) {
-      bookingDetailsObserver.value = ApiResult.error(
-        'Failed to load dispute details: ${e.toString()}',
-      );
+      logger.e('getBookingDetail($bookingId) failed: $e');
+      bookingDetailsObserver.value = ApiResult.error(bookingDetailsLoadError);
       if (Get.context != null) {
-        CustomSnackBar.show(
-          Get.context!,
-          message: 'Failed to load dispute details: ${e.toString()}',
-        );
+        CustomSnackBar.show(Get.context!, message: bookingDetailsLoadError);
       }
     }
     return null;

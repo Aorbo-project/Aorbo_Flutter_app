@@ -86,6 +86,20 @@ class ApiReply {
   Map<String, dynamic> get json => data is Map ? Map<String, dynamic>.from(data as Map) : const {};
 }
 
+/// A conditional GET's reply — see [Repository.getIfChanged].
+class ConditionalReply {
+  const ConditionalReply({required this.notModified, this.data, this.etag});
+
+  /// 304: the copy whose ETag was sent is still current; [data] is null.
+  final bool notModified;
+
+  /// The decoded body of a 2xx reply.
+  final dynamic data;
+
+  /// The reply's ETag header; null when the server sent none.
+  final String? etag;
+}
+
 class Repository {
   static final Repository _service = Repository._internal();
 
@@ -461,15 +475,57 @@ class Repository {
         "Request timed out. Please check your connection and try again.",
       );
     } on DioException catch (e) {
-      if (e.type == DioExceptionType.connectionTimeout) {
-        throw Exception("Connection Timeout Exception");
+      throw _getFailure(e);
+    }
+  }
+
+  /// [getApiCall]'s error for a failed GET.
+  Exception _getFailure(DioException e) {
+    if (e.type == DioExceptionType.connectionTimeout) {
+      return Exception("Connection Timeout Exception");
+    }
+    if (e.type == DioExceptionType.receiveTimeout) {
+      return Exception("Receive Timeout Exception");
+    }
+    logger.w("Dio Exception Message -> ${e.message.toString()}");
+    logger.w("Dio Exception Data -> ${e.response?.data?.toString()}");
+    return Exception(e.message.toString());
+  }
+
+  /// A conditional GET: sends `If-None-Match: [etag]` when one is given, and
+  /// returns a 304 as [ConditionalReply.notModified] instead of an error
+  /// (Dio throws on a 304 by default — only this call accepts it). Otherwise
+  /// the same as [getApiCall]: null when offline, the same exceptions.
+  Future<ConditionalReply?> getIfChanged({
+    required String url,
+    String? etag,
+  }) async {
+    bool internetAvailable = await isInternetAvailable();
+    try {
+      if (!internetAvailable) {
+        showToastMessage(msg: "Please check your internet connection and try.");
+        return null;
       }
-      if (e.type == DioExceptionType.receiveTimeout) {
-        throw Exception("Receive Timeout Exception");
+      final opts = await _authOptions();
+      if (etag != null && etag.isNotEmpty) {
+        opts.headers = {...?opts.headers, 'If-None-Match': etag};
       }
-      logger.w("Dio Exception Message -> ${e.message.toString()}");
-      logger.w("Dio Exception Data -> ${e.response?.data?.toString()}");
-      throw Exception(e.message.toString());
+      opts.validateStatus = (s) => s != null && (s < 300 || s == 304);
+      final Response response = await dio
+          .get(url, options: opts)
+          .timeout(_defaultTimeout);
+      final notModified = response.statusCode == 304;
+      return ConditionalReply(
+        notModified: notModified,
+        data: notModified ? null : response.data,
+        etag: response.headers.value('etag'),
+      );
+    } on TimeoutException {
+      throw Exception(
+        "Request timed out. Please check your connection and try again.",
+      );
+    } on DioException catch (e) {
+      throw _getFailure(e);
     }
   }
 

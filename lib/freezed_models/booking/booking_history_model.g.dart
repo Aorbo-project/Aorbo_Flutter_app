@@ -100,7 +100,7 @@ _$BookingHistoryDataImpl _$$BookingHistoryDataImplFromJson(
       trekStatus: json['trek_status'] as String?,
       ratingGiven: _parseBoolNullable(json['rating_given']),
       ratingValue: _parseDoubleNullable(json['rating_value']),
-      canCancel: json['can_cancel'] as bool?,
+      canCancel: _parseBoolNullable(json['can_cancel']),
       cancellationMessage: json['cancellation_message'] as String?,
     );
 
@@ -168,8 +168,7 @@ _$TrekImpl _$$TrekImplFromJson(Map<String, dynamic> json) => _$TrekImpl(
           ? null
           : Destination.fromJson(json['destination'] as Map<String, dynamic>),
       destinationId: json['destination_id'] as int?,
-      cityIds:
-          (json['city_ids'] as List<dynamic>?)?.map((e) => e as int).toList(),
+      cityIds: jsonToIntList(json['city_ids']),
       destinationName: json['destination_name'] as String?,
       cityNames: (json['city_names'] as List<dynamic>?)
           ?.map((e) => e as String)

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:arobo_app/controller/dashboard_controller.dart';
+import 'package:arobo_app/controller/payment_verify_outcome.dart';
 import 'package:arobo_app/freezed_models/booking/booking_data_model.dart';
 import 'package:arobo_app/freezed_models/treks/treks_model_data.dart';
 import 'package:arobo_app/models/treaks/booking_cancelled_modal.dart';
@@ -11,6 +12,7 @@ import 'package:arobo_app/models/dispute/submit_issue_modal.dart';
 import 'package:arobo_app/models/refund/refund_status_model.dart';
 import 'package:arobo_app/models/sponsored_slot_data.dart';
 import 'package:arobo_app/services/socket_service.dart';
+import 'package:arobo_app/utils/coupon_rejection.dart';
 import 'package:arobo_app/utils/custom_snackbar.dart';
 import 'package:arobo_app/utils/loader_dialog.dart';
 import 'package:arobo_app/widgets/logger.dart';
@@ -103,6 +105,13 @@ class TrekController extends GetxController {
   RxString paymentId = ''.obs;
   RxString signature = ''.obs;
   Rx<VerifyOrderModal> verifyOrderModal = VerifyOrderModal().obs;
+
+  /// What the last verifyTrekOrder() call came to (its bool is true only
+  /// for [VerifyPaymentOutcome.confirmed]). [lastVerifyMessage] holds the
+  /// server's message for a refunded payment.
+  final Rx<VerifyPaymentOutcome> lastVerifyOutcome =
+      VerifyPaymentOutcome.unconfirmed.obs;
+  final RxString lastVerifyMessage = ''.obs;
 
   RxDouble rating = 0.0.obs;
   Rx<TextEditingController> reviewController = TextEditingController().obs;
@@ -673,10 +682,13 @@ class TrekController extends GetxController {
           // from this same response, so it self-corrects with no extra
           // state needed here — this only adds the one-time explanatory
           // message so the drop isn't silent.
-          final rejected = responseData.couponRejectedReason;
-          if (rejected != null &&
-              rejected.isNotEmpty &&
-              rejected != _lastCouponRejectedReason) {
+          // The reason is a sentence for people; an empty or code-like one
+          // (older servers) is swapped for friendly text for the code.
+          final rejected = couponRejectionMessage(
+            reason: responseData.couponRejectedReason,
+            code: responseData.couponRejectedCode,
+          );
+          if (rejected != null && rejected != _lastCouponRejectedReason) {
             if (Get.context != null) {
               CustomSnackBar.show(Get.context!, message: rejected);
             }
@@ -768,6 +780,8 @@ class TrekController extends GetxController {
       "razorpay_signature": razorpaySignature,
     });
 
+    lastVerifyOutcome.value = VerifyPaymentOutcome.unconfirmed;
+    lastVerifyMessage.value = '';
     try {
       final response = await repository.postApiCall(
         url: NetworkUrl.verifyBooking,
@@ -775,12 +789,27 @@ class TrekController extends GetxController {
       );
 
       if (response != null) {
-        if (response['success']) {
-          verifyOrderModal.value = VerifyOrderModal.fromJson(response);
-          final nextAction =
-              response['next_action'] ?? 'SHOW_BOOKING_CONFIRMED';
+        final outcome = classifyVerifyReply(response);
 
-          if (nextAction == 'SHOW_BOOKING_CONFIRMED') {
+        // Already refunded (an earlier attempt or the webhook gave up and
+        // refunded): never "confirmed", whatever `success` says. The order
+        // is settled, so it is no longer a pending order to resume.
+        if (outcome == VerifyPaymentOutcome.refunded) {
+          final message = refundedReplyMessage(response);
+          lastVerifyOutcome.value = VerifyPaymentOutcome.refunded;
+          lastVerifyMessage.value = message;
+          errorMessage.value = message;
+          final pref = await SpUtil.getInstance();
+          await pref.remove(SpUtil.pendingOrderId);
+          return false;
+        }
+
+        if (response['success'] == true) {
+          verifyOrderModal.value = VerifyOrderModal.fromJson(response);
+          // success:true with no booking in `data` is not a confirmation:
+          // the caller polls the order status instead.
+          if (outcome == VerifyPaymentOutcome.confirmed) {
+            lastVerifyOutcome.value = VerifyPaymentOutcome.confirmed;
             final pref = await SpUtil.getInstance();
             await pref.remove(SpUtil.pendingOrderId);
             Get.find<DashboardController>().loadAllBookingHistory(force: true, waitForCompletion: false);
@@ -788,8 +817,10 @@ class TrekController extends GetxController {
           }
           return false;
         } else {
-          errorMessage.value =
-              response['message'] ?? 'Payment verification failed';
+          final message = response['message'];
+          errorMessage.value = message is String && message.isNotEmpty
+              ? message
+              : 'Payment verification failed';
           return false;
         }
       }
@@ -1088,6 +1119,8 @@ class TrekController extends GetxController {
     paymentId.value = '';
     signature.value = '';
     verifyOrderModal.value = VerifyOrderModal();
+    lastVerifyOutcome.value = VerifyPaymentOutcome.unconfirmed;
+    lastVerifyMessage.value = '';
 
     rating.value = 0.0;
     reviewController.value.clear();

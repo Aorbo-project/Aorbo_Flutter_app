@@ -14,12 +14,14 @@ import '../freezed_models/booking/booking_history_model.dart';
 import '../models/dispute/dispute_detail_modal.dart';
 import '../models/refund/refund_status_model.dart';
 import '../controller/dashboard_controller.dart';
+import '../utils/booking_cancel_eligibility.dart';
 import '../utils/common_colors.dart';
 import '../utils/custom_snackbar.dart';
 import '../utils/detail_screen_ad_slot.dart';
 import '../services/invoice_pdf_service.dart';
 import '../services/ticket_share_service.dart';
 import '../utils/ist_date_utils.dart';
+import '../utils/screen_constants.dart';
 import '../widgets/rate_trek_popup.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
@@ -218,6 +220,21 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
     }
 
     return 0.0;
+  }
+
+  /// The same booking in the bookings list (null if not loaded / not there)
+  /// — a fallback for fields the detail reply leaves out.
+  BookingHistoryData? _listBookingFor(int? id) {
+    if (id == null) return null;
+    final listBookings = _dashboardC.bookingHistoryObserver.value.data.value
+        .maybeWhen(
+          success: (m) => m?.data ?? <BookingHistoryData>[],
+          orElse: () => <BookingHistoryData>[],
+        );
+    for (final bk in listBookings) {
+      if (bk.id == id) return bk;
+    }
+    return null;
   }
 
   /// Delegates to the single shared, type-tolerant check so this screen,
@@ -2713,17 +2730,30 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
             // ── Cancel eligibility ────────────────────────────────────────────
             // Cancellation is allowed ONLY when:
             //   • status is upcoming / confirmed / booked
-            //   • backend `canCancel` flag allows it
+            //   • backend `canCancel` flag allows it (this detail reply's,
+            //     else the same booking in the list, else allowed)
             //   • the trek is NOT ongoing (currently in progress)
             //   • the trek is NOT completed (arrival date passed)
-            final bool canCancelBooking =
+            final bool statusAllowsCancel =
                 booking != null &&
                 (status == 'upcoming' ||
                     status == 'confirmed' ||
                     status == 'booked') &&
-                (booking.canCancel ?? true) &&
                 !_isTrekOngoing(booking) &&
                 !_isTrekCompleted(booking);
+            final CancelEligibility? cancelEligibility = booking == null
+                ? null
+                : resolveCancelEligibility(
+                    detail: booking,
+                    listItem: _listBookingFor(booking.id),
+                  );
+            final bool canCancelBooking =
+                statusAllowsCancel && (cancelEligibility?.allowed ?? true);
+            // Why the Cancel button is missing (e.g. the departure lock).
+            final String? cancelBlockedMessage =
+                statusAllowsCancel && cancelEligibility?.allowed == false
+                    ? cancelEligibility?.message
+                    : null;
 
             return Stack(
               children: [
@@ -2893,6 +2923,32 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                           ],
                         ),
                       ),
+
+                      if (cancelBlockedMessage != null)
+                        Padding(
+                          padding: EdgeInsets.fromLTRB(4.w, 1.2.h, 4.w, 0),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(
+                                Icons.info_outline_rounded,
+                                size: FontSize.s12,
+                                color: _TC.inkMid,
+                              ),
+                              SizedBox(width: 1.5.w),
+                              Expanded(
+                                child: Text(
+                                  cancelBlockedMessage,
+                                  style: AppType.style(
+                                    FontSize.s9,
+                                    color: _TC.inkMid,
+                                    height: 1.3,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
 
                       SizedBox(height: 2.5.h),
 

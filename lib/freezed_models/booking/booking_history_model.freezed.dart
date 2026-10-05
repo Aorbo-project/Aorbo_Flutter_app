@@ -550,7 +550,7 @@ mixin _$BookingHistoryData {
   bool? get ratingGiven => throw _privateConstructorUsedError;
   @JsonKey(name: 'rating_value', fromJson: _parseDoubleNullable)
   double? get ratingValue => throw _privateConstructorUsedError;
-  @JsonKey(name: 'can_cancel')
+  @JsonKey(name: 'can_cancel', fromJson: _parseBoolNullable)
   bool? get canCancel => throw _privateConstructorUsedError;
   @JsonKey(name: 'cancellation_message')
   String? get cancellationMessage => throw _privateConstructorUsedError;
@@ -622,7 +622,8 @@ abstract class $BookingHistoryDataCopyWith<$Res> {
       bool? ratingGiven,
       @JsonKey(name: 'rating_value', fromJson: _parseDoubleNullable)
       double? ratingValue,
-      @JsonKey(name: 'can_cancel') bool? canCancel,
+      @JsonKey(name: 'can_cancel', fromJson: _parseBoolNullable)
+      bool? canCancel,
       @JsonKey(name: 'cancellation_message') String? cancellationMessage});
 
   $TrekCopyWith<$Res>? get trek;
@@ -960,7 +961,8 @@ abstract class _$$BookingHistoryDataImplCopyWith<$Res>
       bool? ratingGiven,
       @JsonKey(name: 'rating_value', fromJson: _parseDoubleNullable)
       double? ratingValue,
-      @JsonKey(name: 'can_cancel') bool? canCancel,
+      @JsonKey(name: 'can_cancel', fromJson: _parseBoolNullable)
+      bool? canCancel,
       @JsonKey(name: 'cancellation_message') String? cancellationMessage});
 
   @override
@@ -1268,7 +1270,7 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
       this.ratingGiven,
       @JsonKey(name: 'rating_value', fromJson: _parseDoubleNullable)
       this.ratingValue,
-      @JsonKey(name: 'can_cancel') this.canCancel,
+      @JsonKey(name: 'can_cancel', fromJson: _parseBoolNullable) this.canCancel,
       @JsonKey(name: 'cancellation_message') this.cancellationMessage})
       : _travelers = travelers;
 
@@ -1408,7 +1410,7 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
   @JsonKey(name: 'rating_value', fromJson: _parseDoubleNullable)
   final double? ratingValue;
   @override
-  @JsonKey(name: 'can_cancel')
+  @JsonKey(name: 'can_cancel', fromJson: _parseBoolNullable)
   final bool? canCancel;
   @override
   @JsonKey(name: 'cancellation_message')
@@ -1634,7 +1636,8 @@ abstract class _BookingHistoryData implements BookingHistoryData {
       final bool? ratingGiven,
       @JsonKey(name: 'rating_value', fromJson: _parseDoubleNullable)
       final double? ratingValue,
-      @JsonKey(name: 'can_cancel') final bool? canCancel,
+      @JsonKey(name: 'can_cancel', fromJson: _parseBoolNullable)
+      final bool? canCancel,
       @JsonKey(name: 'cancellation_message')
       final String? cancellationMessage}) = _$BookingHistoryDataImpl;
 
@@ -1764,7 +1767,7 @@ abstract class _BookingHistoryData implements BookingHistoryData {
   @JsonKey(name: 'rating_value', fromJson: _parseDoubleNullable)
   double? get ratingValue;
   @override
-  @JsonKey(name: 'can_cancel')
+  @JsonKey(name: 'can_cancel', fromJson: _parseBoolNullable)
   bool? get canCancel;
   @override
   @JsonKey(name: 'cancellation_message')
@@ -1791,8 +1794,9 @@ mixin _$Trek {
   Vendor? get vendor => throw _privateConstructorUsedError;
   Destination? get destination => throw _privateConstructorUsedError;
   @JsonKey(name: 'destination_id')
-  int? get destinationId => throw _privateConstructorUsedError;
-  @JsonKey(name: 'city_ids')
+  int? get destinationId =>
+      throw _privateConstructorUsedError; // Vendor-entered JSON list: ids as numbers or strings.
+  @JsonKey(name: 'city_ids', fromJson: jsonToIntList)
   List<int>? get cityIds => throw _privateConstructorUsedError;
   @JsonKey(name: 'destination_name')
   String? get destinationName => throw _privateConstructorUsedError;
@@ -1832,7 +1836,7 @@ abstract class $TrekCopyWith<$Res> {
       Vendor? vendor,
       Destination? destination,
       @JsonKey(name: 'destination_id') int? destinationId,
-      @JsonKey(name: 'city_ids') List<int>? cityIds,
+      @JsonKey(name: 'city_ids', fromJson: jsonToIntList) List<int>? cityIds,
       @JsonKey(name: 'destination_name') String? destinationName,
       @JsonKey(name: 'city_names') List<String>? cityNames,
       @JsonKey(name: 'captain_name') String? captainName,
@@ -2002,7 +2006,7 @@ abstract class _$$TrekImplCopyWith<$Res> implements $TrekCopyWith<$Res> {
       Vendor? vendor,
       Destination? destination,
       @JsonKey(name: 'destination_id') int? destinationId,
-      @JsonKey(name: 'city_ids') List<int>? cityIds,
+      @JsonKey(name: 'city_ids', fromJson: jsonToIntList) List<int>? cityIds,
       @JsonKey(name: 'destination_name') String? destinationName,
       @JsonKey(name: 'city_names') List<String>? cityNames,
       @JsonKey(name: 'captain_name') String? captainName,
@@ -2143,7 +2147,8 @@ class _$TrekImpl implements _Trek {
       this.vendor,
       this.destination,
       @JsonKey(name: 'destination_id') this.destinationId,
-      @JsonKey(name: 'city_ids') final List<int>? cityIds,
+      @JsonKey(name: 'city_ids', fromJson: jsonToIntList)
+      final List<int>? cityIds,
       @JsonKey(name: 'destination_name') this.destinationName,
       @JsonKey(name: 'city_names') final List<String>? cityNames,
       @JsonKey(name: 'captain_name') this.captainName,
@@ -2179,9 +2184,11 @@ class _$TrekImpl implements _Trek {
   @override
   @JsonKey(name: 'destination_id')
   final int? destinationId;
+// Vendor-entered JSON list: ids as numbers or strings.
   final List<int>? _cityIds;
+// Vendor-entered JSON list: ids as numbers or strings.
   @override
-  @JsonKey(name: 'city_ids')
+  @JsonKey(name: 'city_ids', fromJson: jsonToIntList)
   List<int>? get cityIds {
     final value = _cityIds;
     if (value == null) return null;
@@ -2320,7 +2327,8 @@ abstract class _Trek implements Trek {
       final Vendor? vendor,
       final Destination? destination,
       @JsonKey(name: 'destination_id') final int? destinationId,
-      @JsonKey(name: 'city_ids') final List<int>? cityIds,
+      @JsonKey(name: 'city_ids', fromJson: jsonToIntList)
+      final List<int>? cityIds,
       @JsonKey(name: 'destination_name') final String? destinationName,
       @JsonKey(name: 'city_names') final List<String>? cityNames,
       @JsonKey(name: 'captain_name') final String? captainName,
@@ -2353,8 +2361,8 @@ abstract class _Trek implements Trek {
   @override
   @JsonKey(name: 'destination_id')
   int? get destinationId;
-  @override
-  @JsonKey(name: 'city_ids')
+  @override // Vendor-entered JSON list: ids as numbers or strings.
+  @JsonKey(name: 'city_ids', fromJson: jsonToIntList)
   List<int>? get cityIds;
   @override
   @JsonKey(name: 'destination_name')

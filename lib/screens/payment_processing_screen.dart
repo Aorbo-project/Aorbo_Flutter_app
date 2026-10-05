@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:arobo_app/controller/dashboard_controller.dart';
+import 'package:arobo_app/controller/payment_verify_outcome.dart';
 import 'package:arobo_app/controller/trek_controller.dart';
 import 'package:arobo_app/controller/user_controller.dart';
 import 'package:arobo_app/freezed_models/booking/booking_data_model.dart';
@@ -166,9 +167,25 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
 
     if (verified) {
       _resolveSucceeded();
+    } else if (_resolveIfRefunded()) {
+      return;
     } else {
       await _pollOrderStatus(force: true);
     }
+  }
+
+  /// The verify reply said the payment was already refunded: show
+  /// that straight away (no order-status poll, never "confirmed").
+  bool _resolveIfRefunded() {
+    if (_trekC.lastVerifyOutcome.value != VerifyPaymentOutcome.refunded) {
+      return false;
+    }
+    final message = _trekC.lastVerifyMessage.value;
+    _resolveTerminal(
+      PaymentFlowState.refundedAutomatically,
+      message.isNotEmpty ? message : paymentRefundedFallbackMessage,
+    );
+    return true;
   }
 
   Future<void> _handlePaymentError(PaymentFailureResponse r) async {
@@ -341,7 +358,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
       );
       if (verified) {
         _resolveSucceeded();
-      } else {
+      } else if (!_resolveIfRefunded()) {
         _resolveTerminal(
           PaymentFlowState.expiredOrFailed,
           'Still could not confirm your payment. Please try again.',

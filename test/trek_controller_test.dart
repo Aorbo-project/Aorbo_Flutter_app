@@ -22,6 +22,7 @@
 // real Get.context and were previously untestable here.
 
 import 'package:arobo_app/controller/dashboard_controller.dart';
+import 'package:arobo_app/controller/payment_verify_outcome.dart';
 import 'package:arobo_app/controller/trek_controller.dart';
 import 'package:arobo_app/main.dart' as app;
 import 'package:arobo_app/repository/network_url.dart';
@@ -304,6 +305,111 @@ void main() {
 
       expect(result, false);
       expect(pref.getString('pending_razorpay_order_id'), 'order_xyz'); // untouched
+    });
+
+    // Scan E0-1: a retry after the payment was auto-refunded must never say
+    // "booking confirmed".
+    test('already refunded (HTTP 200, success:false, refunded:true) -> false, outcome refunded, message kept, pending order cleared', () async {
+      final c = await setUpController();
+      final pref = await SharedPreferences.getInstance();
+      await pref.setString('pending_razorpay_order_id', 'order_xyz');
+      installFakeBackend({
+        NetworkUrl.verifyBooking: (_) => {
+          'success': false,
+          'alreadyProcessed': true,
+          'refunded': true,
+          'code': 'PAYMENT_REFUNDED',
+          'message': 'This payment could not be turned into a booking and has been refunded in full.',
+          'data': null,
+          'next_action': 'SHOW_PAYMENT_REFUNDED',
+          'next_action_params': {'order_id': 'order_xyz'},
+        },
+      });
+
+      final result = await c.verifyTrekOrder(
+        razorpayOrderId: 'order_xyz', razorpayPaymentId: 'pay_1', razorpaySignature: 'sig_1',
+      );
+
+      expect(result, false);
+      expect(c.lastVerifyOutcome.value, VerifyPaymentOutcome.refunded);
+      expect(c.lastVerifyMessage.value, contains('refunded in full'));
+      expect(pref.getString('pending_razorpay_order_id'), isNull);
+    });
+
+    test('refunded wins even if a reply also says success:true + SHOW_PAYMENT_REFUNDED', () async {
+      final c = await setUpController();
+      installFakeBackend({
+        NetworkUrl.verifyBooking: (_) => {
+          'success': true,
+          'data': {'id': 5},
+          'next_action': 'SHOW_PAYMENT_REFUNDED',
+        },
+      });
+      final result = await c.verifyTrekOrder(
+        razorpayOrderId: 'order_xyz', razorpayPaymentId: 'pay_1', razorpaySignature: 'sig_1',
+      );
+      expect(result, false);
+      expect(c.lastVerifyOutcome.value, VerifyPaymentOutcome.refunded);
+      expect(c.lastVerifyMessage.value, paymentRefundedFallbackMessage);
+    });
+
+    test('success:true with data:null is NOT a confirmation -> false, pending order kept for the status poll', () async {
+      final c = await setUpController();
+      final pref = await SharedPreferences.getInstance();
+      await pref.setString('pending_razorpay_order_id', 'order_xyz');
+      installFakeBackend({
+        NetworkUrl.verifyBooking: (_) => {
+          'success': true,
+          'alreadyProcessed': true,
+          'data': null,
+          'next_action': 'SHOW_BOOKING_CONFIRMED',
+        },
+      });
+      final result = await c.verifyTrekOrder(
+        razorpayOrderId: 'order_xyz', razorpayPaymentId: 'pay_1', razorpaySignature: 'sig_1',
+      );
+      expect(result, false);
+      expect(c.lastVerifyOutcome.value, VerifyPaymentOutcome.unconfirmed);
+      expect(pref.getString('pending_razorpay_order_id'), 'order_xyz');
+    });
+
+    test('webhook completed it first (alreadyProcessed + full booking) -> confirmed, ticket data present', () async {
+      final c = await setUpController();
+      installFakeBackend({
+        NetworkUrl.verifyBooking: (_) => {
+          'success': true,
+          'alreadyProcessed': true,
+          'data': {
+            'id': 321,
+            'booking_number': 'BI321',
+            'trek': {'id': 7, 'title': 'Kedarkantha', 'city_ids': ['3', 4], 'inclusions': null},
+            'batch': {'id': 9, 'start_date': '2026-12-01', 'end_date': '2026-12-05'},
+            'travelers': [],
+            'payments': [],
+          },
+          'next_action': 'SHOW_BOOKING_CONFIRMED',
+        },
+      });
+      final result = await c.verifyTrekOrder(
+        razorpayOrderId: 'order_xyz', razorpayPaymentId: 'pay_1', razorpaySignature: 'sig_1',
+      );
+      expect(result, true);
+      expect(c.lastVerifyOutcome.value, VerifyPaymentOutcome.confirmed);
+      expect(c.verifyOrderModal.value.data?.id, 321);
+      expect(c.verifyOrderModal.value.data?.trek?.title, 'Kedarkantha');
+      expect(c.verifyOrderModal.value.data?.trek?.cityIds, [3, 4]);
+    });
+
+    test('classifyVerifyReply: the three outcomes', () {
+      expect(classifyVerifyReply({'success': true, 'data': {'id': 1}}), VerifyPaymentOutcome.confirmed);
+      expect(classifyVerifyReply({'success': true, 'data': {'id': 1}, 'next_action': 'SHOW_BOOKING_CONFIRMED'}), VerifyPaymentOutcome.confirmed);
+      expect(classifyVerifyReply({'success': true, 'data': {}}), VerifyPaymentOutcome.unconfirmed);
+      expect(classifyVerifyReply({'success': true}), VerifyPaymentOutcome.unconfirmed);
+      expect(classifyVerifyReply({'success': false, 'message': 'x'}), VerifyPaymentOutcome.unconfirmed);
+      expect(classifyVerifyReply({'success': false, 'refunded': true}), VerifyPaymentOutcome.refunded);
+      expect(classifyVerifyReply({'success': false, 'code': 'PAYMENT_REFUNDED'}), VerifyPaymentOutcome.refunded);
+      expect(classifyVerifyReply(null), VerifyPaymentOutcome.unconfirmed);
+      expect(classifyVerifyReply('oops'), VerifyPaymentOutcome.unconfirmed);
     });
 
     test("network error returns false rather than throwing, so the caller's poll-fallback still runs (artifact #47)", () async {

@@ -389,6 +389,47 @@ void main() {
       expect(find.text('Payment Confirmed!'), findsNothing);
       expect(find.text('Still confirming with your bank...'), findsOneWidget);
     });
+
+    // Scan E0-1: the payment was already auto-refunded (retry after the
+    // session expired / the slot was lost). Straight to "Payment Refunded",
+    // never "confirmed", no order-status poll needed.
+    testWidgets('verify says already refunded -> "Payment Refunded" with the server message, never confirmed, no status poll', (tester) async {
+      final trekC = await setUpPaymentScreenDeps(tester);
+      trekC.orderData.value = const Order(id: 'order_refunded');
+      var statusPolls = 0;
+      mockRazorpayChannel((_) => razorpaySuccess(orderId: 'order_refunded'));
+      installFakeBackend({
+        NetworkUrl.verifyBooking: (_) => {
+          'success': false,
+          'alreadyProcessed': true,
+          'refunded': true,
+          'code': 'PAYMENT_REFUNDED',
+          'message': 'This payment could not be turned into a booking and has been refunded in full.',
+          'data': null,
+          'next_action': 'SHOW_PAYMENT_REFUNDED',
+          'next_action_params': {'order_id': 'order_refunded'},
+        },
+        'order-status': (_) {
+          statusPolls++;
+          return {'success': true, 'data': {'status': 'pending'}};
+        },
+      });
+
+      await pushPaymentScreen(
+        tester,
+        breakdown: BreakDownDataModel(finalAmount: 10510, amountToPayNow: 5000),
+      );
+      await tester.runAsync(() async {
+        await Future.delayed(const Duration(milliseconds: 300));
+      });
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text('Payment Refunded'), findsOneWidget);
+      expect(find.text('This payment could not be turned into a booking and has been refunded in full.'), findsOneWidget);
+      expect(find.text('Payment Confirmed!'), findsNothing);
+      expect(statusPolls, 0);
+    });
   });
 
   group('Payment error', () {

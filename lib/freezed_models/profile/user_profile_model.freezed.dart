@@ -352,7 +352,10 @@ mixin _$Customer {
   String? get phone => throw _privateConstructorUsedError;
   String? get name => throw _privateConstructorUsedError;
   String? get email => throw _privateConstructorUsedError;
-  String? get dateOfBirth => throw _privateConstructorUsedError;
+  String? get dateOfBirth =>
+      throw _privateConstructorUsedError; // A JSON column on the server: may arrive as an object/array (kept as
+// its JSON text) instead of a string.
+  @JsonKey(fromJson: jsonToStringOrJson)
   String? get emergencyContact => throw _privateConstructorUsedError;
   bool? get profileCompleted => throw _privateConstructorUsedError;
   UserState? get state => throw _privateConstructorUsedError;
@@ -375,7 +378,7 @@ abstract class $CustomerCopyWith<$Res> {
       String? name,
       String? email,
       String? dateOfBirth,
-      String? emergencyContact,
+      @JsonKey(fromJson: jsonToStringOrJson) String? emergencyContact,
       bool? profileCompleted,
       UserState? state,
       List<Traveler>? travelers});
@@ -473,7 +476,7 @@ abstract class _$$CustomerImplCopyWith<$Res>
       String? name,
       String? email,
       String? dateOfBirth,
-      String? emergencyContact,
+      @JsonKey(fromJson: jsonToStringOrJson) String? emergencyContact,
       bool? profileCompleted,
       UserState? state,
       List<Traveler>? travelers});
@@ -553,7 +556,7 @@ class _$CustomerImpl implements _Customer {
       this.name,
       this.email,
       this.dateOfBirth,
-      this.emergencyContact,
+      @JsonKey(fromJson: jsonToStringOrJson) this.emergencyContact,
       this.profileCompleted,
       this.state,
       final List<Traveler>? travelers})
@@ -572,7 +575,10 @@ class _$CustomerImpl implements _Customer {
   final String? email;
   @override
   final String? dateOfBirth;
+// A JSON column on the server: may arrive as an object/array (kept as
+// its JSON text) instead of a string.
   @override
+  @JsonKey(fromJson: jsonToStringOrJson)
   final String? emergencyContact;
   @override
   final bool? profileCompleted;
@@ -648,7 +654,7 @@ abstract class _Customer implements Customer {
       final String? name,
       final String? email,
       final String? dateOfBirth,
-      final String? emergencyContact,
+      @JsonKey(fromJson: jsonToStringOrJson) final String? emergencyContact,
       final bool? profileCompleted,
       final UserState? state,
       final List<Traveler>? travelers}) = _$CustomerImpl;
@@ -666,7 +672,9 @@ abstract class _Customer implements Customer {
   String? get email;
   @override
   String? get dateOfBirth;
-  @override
+  @override // A JSON column on the server: may arrive as an object/array (kept as
+// its JSON text) instead of a string.
+  @JsonKey(fromJson: jsonToStringOrJson)
   String? get emergencyContact;
   @override
   bool? get profileCompleted;

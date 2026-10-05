@@ -1,4 +1,17 @@
+import '../../freezed_models/json_converters.dart';
 import '../../freezed_models/profile/user_profile_model.dart';
+
+/// Each scalar entry of a JSON list as text (objects use their `name`).
+List<String>? _scalarStrings(Object? v) {
+  final list = jsonToList(v);
+  if (list == null) return null;
+  return [
+    for (final e in list)
+      if ((e is Map ? jsonToStringOrNull(e['name']) : jsonToStringOrNull(e))
+          case final String s)
+        s,
+  ];
+}
 
 class VerifyOrderModal {
   bool? success;
@@ -269,10 +282,13 @@ class Trek {
   });
 
   Trek.fromJson(Map<String, dynamic> json) {
-    cityIds = json['city_ids'].cast<int>();
-    inclusions = json['inclusions'].cast<String>();
-    exclusions = json['exclusions'].cast<String>();
-    activities = json['activities'].cast<int>();
+    // Vendor-entered JSON columns: may be null, ids as numbers or strings,
+    // or a JSON-encoded string. A strict cast here failed the whole verify
+    // reply (and with it the success ticket).
+    cityIds = jsonToIntList(json['city_ids']);
+    inclusions = _scalarStrings(json['inclusions']);
+    exclusions = _scalarStrings(json['exclusions']);
+    activities = jsonToIntList(json['activities']);
     id = json['id'];
     mtrId = (json['mtr_id'] ?? json['display_trek_id'])?.toString();
     title = json['title'];

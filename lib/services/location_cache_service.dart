@@ -19,6 +19,7 @@
 
 import 'dart:convert';
 
+import 'package:arobo_app/app_update/app_version_info.dart';
 import 'package:arobo_app/models/dashboard/cities_model.dart';
 import 'package:arobo_app/models/dashboard/trek_modal.dart';
 import 'package:arobo_app/widgets/logger.dart';
@@ -51,6 +52,9 @@ class LocationCacheService {
   // Bump the suffix when the stored shape changes in a breaking way.
   static const _kCitiesJson = 'loc_cache.cities.json.v1';
   static const _kCitiesSavedAt = 'loc_cache.cities.savedAt.v1';
+  // {"etag": ..., "build": ...}: the server ETag of the cached list, and
+  // the app build that saved it.
+  static const _kCitiesEtag = 'loc_cache.cities.etag.v1';
   static const _kTreksJson = 'loc_cache.treks.json.v1';
   static const _kTreksSavedAt = 'loc_cache.treks.savedAt.v1';
   static const _kRecentCities = 'loc_cache.recent.cities.v1';
@@ -103,11 +107,21 @@ class LocationCacheService {
 
   // ── Cities list cache ────────────────────────────────────────────────
 
-  Future<void> saveCities(GetCities model) async {
+  /// [etag]: the server ETag of the reply [model] came from (null when it
+  /// sent none). Stored only together with the list it belongs to.
+  Future<void> saveCities(GetCities model, {String? etag}) async {
     await ensureReady();
     try {
+      // Old ETag out first: it must never sit next to a different list.
+      await _prefs!.remove(_kCitiesEtag);
       final encoded = await compute(jsonEncode, model.toJson());
       await _prefs!.setString(_kCitiesJson, encoded);
+      if (etag != null && etag.isNotEmpty) {
+        await _prefs!.setString(
+          _kCitiesEtag,
+          jsonEncode({'etag': etag, 'build': _appBuild}),
+        );
+      }
       _citiesSavedAt = DateTime.now();
       await _prefs!.setInt(
         _kCitiesSavedAt,
@@ -118,6 +132,51 @@ class LocationCacheService {
       logger.w('LocationCache: saveCities failed: $e');
     }
   }
+
+  /// The ETag to send as If-None-Match for the cities list — only while
+  /// that list is actually cached, and only if this same app build saved
+  /// it (the cache holds this build's re-encoding of the reply, so a new
+  /// build fetches the full list once). Null → fetch unconditionally.
+  Future<String?> citiesEtag() async {
+    await ensureReady();
+    final list = _prefs!.getString(_kCitiesJson);
+    if (list == null || list.isEmpty) return null;
+    final raw = _prefs!.getString(_kCitiesEtag);
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map || decoded['build'] != _appBuild) return null;
+      final etag = decoded['etag'];
+      return (etag is String && etag.isNotEmpty) ? etag : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// The server answered 304 to [citiesEtag]: the cached list is current.
+  /// Nothing is re-parsed or rewritten — only the "updated" time moves, and
+  /// the list on screen no longer counts as an offline copy.
+  Future<void> markCitiesFresh() async {
+    await ensureReady();
+    _citiesSavedAt = DateTime.now();
+    lastLoadedCityCache = null;
+    try {
+      await _prefs!.setInt(
+        _kCitiesSavedAt,
+        _citiesSavedAt!.millisecondsSinceEpoch,
+      );
+    } catch (e) {
+      logger.w('LocationCache: markCitiesFresh failed: $e');
+    }
+  }
+
+  /// Drops the stored ETag (e.g. the cached list could not be read back).
+  Future<void> forgetCitiesEtag() async {
+    await ensureReady();
+    await _prefs!.remove(_kCitiesEtag);
+  }
+
+  static String get _appBuild => AppVersionInfo.current?.build ?? '';
 
   Future<GetCities?> loadCities() async {
     await ensureReady();

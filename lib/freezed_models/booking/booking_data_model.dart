@@ -1,5 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import '../json_converters.dart';
 import '../profile/user_profile_model.dart';
 
 part 'booking_data_model.freezed.dart';
@@ -119,7 +120,13 @@ class CalculateFareResponseModel with _$CalculateFareResponseModel {
     // discount-free; this just tells the UI why so it can stop showing
     // "Coupon Applied" and clear its own stale state (see
     // traveller_information_screen.dart's coupon section).
-    @JsonKey(name: 'coupon_rejected_reason') String? couponRejectedReason,
+    @JsonKey(name: 'coupon_rejected_reason', fromJson: jsonToStringOrNull)
+    String? couponRejectedReason,
+    // Stable code for the same drop: COUPON_NOT_ELIGIBLE |
+    // FLEXIBLE_ADVANCE_EXCEEDS_FARE, null when nothing was dropped. Show
+    // couponRejectedReason (a sentence); see utils/coupon_rejection.dart.
+    @JsonKey(name: 'coupon_rejected_code', fromJson: jsonToStringOrNull)
+    String? couponRejectedCode,
     @JsonKey(name: 'expires_at') dynamic expiresAt,
     @JsonKey(name: 'allow_cancellation') dynamic allowCancellation,
     @JsonKey(name: 'allow_insurance') dynamic allowInsurance,
