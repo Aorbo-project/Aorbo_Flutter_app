@@ -13,6 +13,7 @@ import 'package:arobo_app/screens/dashboard_widget.dart';
 import 'package:arobo_app/screens/my_account_screen.dart';
 import 'package:arobo_app/screens/traveller_information_screen.dart';
 import 'package:arobo_app/services/booking_draft_service.dart';
+import 'package:arobo_app/services/push_router.dart';
 import 'package:arobo_app/share/trek_link.dart';
 import 'package:arobo_app/share/trek_share.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
@@ -46,6 +47,7 @@ class _DashboardMainState extends State<DashboardMain> {
   Worker? _tabWorker;
   Worker? _giveawayLinkWorker;
   Worker? _trekLinkWorker;
+  Worker? _pushTapWorker;
   Future<void>? _legalPrompt;
 
   // Out faster than in — the stagger that makes a crossfade read as
@@ -88,6 +90,7 @@ class _DashboardMainState extends State<DashboardMain> {
       }
       _openGiveawayIfLinked();
       _openTrekIfLinked();
+      _openPushIfTapped();
     });
 
     // A referral link tapped while signed in, with the app already open.
@@ -105,6 +108,25 @@ class _DashboardMainState extends State<DashboardMain> {
         if (link != null) _openTrekIfLinked();
       },
     );
+
+    // A notification tapped with the app already open / in the background.
+    _pushTapWorker = ever<Map<String, dynamic>?>(
+      PendingPush.instance.tapped,
+      (data) {
+        if (data != null) _openPushIfTapped();
+      },
+    );
+  }
+
+  /// A notification tapped (app closed, in the background, or open): open
+  /// the screen it is about, once (scan E1).
+  void _openPushIfTapped() {
+    if (!mounted || PendingPush.instance.tapped.value == null) return;
+    final data = PendingPush.instance.take();
+    if (data == null) return;
+    final target = routeForPush(data, giveawayEnabled: GiveawayConfig.enabled);
+    if (target == null || Get.currentRoute == target.route) return;
+    Get.toNamed(target.route, arguments: target.arguments);
   }
 
   /// A shared trek link — tapped while signed in, or saved before sign-in
@@ -134,6 +156,7 @@ class _DashboardMainState extends State<DashboardMain> {
     _tabWorker?.dispose();
     _giveawayLinkWorker?.dispose();
     _trekLinkWorker?.dispose();
+    _pushTapWorker?.dispose();
     RateTrekPopup.dismiss(); // clean up overlay on dispose
     super.dispose();
   }

@@ -10,6 +10,7 @@ import 'package:arobo_app/controller/user_controller.dart';
 import 'package:arobo_app/main.dart' show sp;
 import 'package:arobo_app/repository/repository.dart';
 import 'package:arobo_app/security/device_key_service.dart';
+import 'package:arobo_app/services/push_router.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -45,6 +46,8 @@ class SessionTeardown {
   /// previous customer's booking / refund pushes stop arriving (E3).
   static Future<void> clearLocalSession() async {
     Repository.token = '';
+    // A notification tap still waiting was for the person signing out.
+    PendingPush.instance.take();
     final prefs = sp;
     if (prefs != null) {
       final kept = <String, Object>{};

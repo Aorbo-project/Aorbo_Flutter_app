@@ -5,11 +5,11 @@ import 'package:arobo_app/app_update/app_update_gate.dart';
 import 'package:arobo_app/app_update/app_version_info.dart';
 import 'package:arobo_app/controller/auth_controller.dart';
 import 'package:arobo_app/firebase_options.dart';
-import 'package:arobo_app/giveaway/giveaway_config.dart';
 import 'package:arobo_app/giveaway/referral_links.dart';
 import 'package:arobo_app/legal/legal_service.dart';
 import 'package:arobo_app/repository/repository.dart';
 import 'package:arobo_app/routes/routes.dart';
+import 'package:arobo_app/services/push_router.dart';
 import 'package:arobo_app/utils/Preferences.dart';
 import 'package:arobo_app/utils/app_theme.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -48,10 +48,27 @@ const AndroidNotificationChannel _fcmChannel = AndroidNotificationChannel(
   importance: Importance.high,
 );
 
+bool _signedIn() => sp?.getBool(SpUtil.isLoggedIn) == true;
+
+/// A tap on a re-posted foreground push (its payload is the push data).
+void _onLocalNotificationTap(NotificationResponse response) {
+  final data = decodePushPayload(response.payload);
+  if (data != null) PendingPush.instance.save(data, signedIn: _signedIn());
+}
+
 Future<void> _initLocalNotifications() async {
   const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
   const initSettings = InitializationSettings(android: androidInit);
-  await _localNotifications.initialize(initSettings);
+  await _localNotifications.initialize(
+    initSettings,
+    onDidReceiveNotificationResponse: _onLocalNotificationTap,
+  );
+  // The app was started by tapping one of those local notifications.
+  final launch = await _localNotifications.getNotificationAppLaunchDetails();
+  final launchResponse = launch?.notificationResponse;
+  if (launch?.didNotificationLaunchApp == true && launchResponse != null) {
+    _onLocalNotificationTap(launchResponse);
+  }
 
   await _localNotifications
       .resolvePlatformSpecificImplementation<
@@ -59,6 +76,7 @@ Future<void> _initLocalNotifications() async {
       >()
       ?.createNotificationChannel(_fcmChannel);
 }
+
 
 // Resolves once Firebase/Preferences/Repository are ready. runApp() no
 // longer waits on this — splash_screen.dart awaits it right before it first
@@ -144,6 +162,10 @@ Future<void> _bootstrap() async {
 
 void _deferredInit() {
   Future(() async {
+    // Scan E1: notification taps, wired before the AdMob / consent /
+    // permission awaits below so no early tap is missed.
+    PushTapCapture.start(signedIn: _signedIn);
+
     // Play Integrity: prepare the token provider now so the first protected
     // request (usually OTP on the login screen) doesn't wait for it. Replaces
     // the old Firebase App Check activation, whose tokens nothing verified and
@@ -235,6 +257,8 @@ void _deferredInit() {
               priority: Priority.high,
             ),
           ),
+          // So a tap on it opens the same screen as a tap on the original.
+          payload: encodePushPayload(message.data),
         );
       } catch (e) {
         debugPrint('Failed to show foreground notification: $e');
@@ -246,54 +270,6 @@ void _deferredInit() {
         Get.find<AuthController>().registerFcmToken(newToken);
       } catch (e) {
         debugPrint('onTokenRefresh: AuthController not available yet: $e');
-      }
-    });
-
-    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      final event = message.data['event'];
-      final bookingId = message.data['bookingId'] ?? message.data['id'];
-
-      switch (event) {
-        case 'BOOKING_CONFIRMED':
-        case 'TREK_REMINDER':
-        case 'TREK_DEPARTURE_SOON':
-        case 'TREK_CANCELLED_BY_VENDOR':
-        case 'BOOKING_PAYMENT_FAILED':
-          Get.toNamed(
-            '/my-bookings',
-            arguments: {
-              'booking_id': int.tryParse(bookingId?.toString() ?? ''),
-            },
-          );
-          return;
-        case 'REFUND_INITIATED':
-        case 'REFUND_COMPLETED':
-        case 'REFUND_ISSUED':
-        case 'SLOT_SOLD_OUT_REFUND':
-          Get.toNamed(
-            '/my-bookings',
-            arguments: {
-              'booking_id': int.tryParse(bookingId?.toString() ?? ''),
-            },
-          );
-          return;
-        case 'COUPON_EXPIRING':
-          Get.toNamed('/coupon-code');
-          return;
-        // Aorbo Trek Giveaway: draw reminders + "the result is out".
-        case 'GIVEAWAY_REMINDER':
-        case 'GIVEAWAY_RESULTS':
-          if (GiveawayConfig.enabled) Get.toNamed('/giveaway');
-          return;
-      }
-
-      final type = message.data['type'];
-      final id = message.data['id'];
-      if (type == 'booking' && id != null) {
-        Get.toNamed(
-          '/my-bookings',
-          arguments: {'booking_id': int.tryParse(id.toString())},
-        );
       }
     });
   });
