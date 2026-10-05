@@ -584,7 +584,7 @@ class _BookingCancellationSuccessScreenState
             _buildTimelineLine(isDone: false),
             _buildTimelineItem(
               'Credited to Bank',
-              'Amount will reflect in your original payment method in 5-7 business days.',
+              'Amount usually reflects in your original payment method in 5–7 business days.',
               false,
               Icons.account_balance,
             ),

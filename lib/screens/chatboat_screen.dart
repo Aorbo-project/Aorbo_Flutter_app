@@ -103,7 +103,7 @@ const Map<String, List<Map<String, String>>> _dummyFaqsByCategory = {
       'a': "Refund amounts follow the cancellation policy's time-slab deductions — see the breakdown above for this booking.",
     },
     {
-      'q': 'Can I get a full refund if the trek is cancelled by the organiser?',
+      'q': 'What is refunded if the trek is cancelled by the organiser?',
       'a': "If the organiser cancels, no cancellation charge applies: your trek fare and GST are refunded. The ₹10 platform fee and any card or net-banking payment fee are not refunded.",
     },
   ],

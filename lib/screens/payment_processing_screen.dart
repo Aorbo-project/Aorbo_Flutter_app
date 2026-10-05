@@ -247,7 +247,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
         _resolveTerminal(
           PaymentFlowState.refundedAutomatically,
           status['message']?.toString() ??
-              'Your payment was fully refunded automatically.',
+              paymentRefundedFallbackMessage,
         );
         break;
       case 'expired':
@@ -286,7 +286,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
             _resolveTerminal(
               PaymentFlowState.refundedAutomatically,
               status['message']?.toString() ??
-                  'Your payment was fully refunded automatically.',
+                  paymentRefundedFallbackMessage,
             );
             return;
           case 'pending':
@@ -433,7 +433,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
           _resolveTerminal(
             PaymentFlowState.refundedAutomatically,
             status?['message']?.toString() ??
-                'Your payment was fully refunded automatically.',
+                paymentRefundedFallbackMessage,
           );
           return;
         case 'expired':

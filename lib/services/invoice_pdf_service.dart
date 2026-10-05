@@ -858,7 +858,7 @@ class InvoicePdfService {
               font,
             ),
             _policyNote(
-              'The remaining balance will be refunded within 5 to 7 working days, subject to cancellation terms.',
+              'The remaining balance will be refunded, subject to cancellation terms. Refunds usually take 5 to 7 working days.',
               font,
             ),
             _policyNote(
@@ -900,7 +900,7 @@ class InvoicePdfService {
               font,
             ),
             _policyNote(
-              'Refund will be processed within 5 to 7 working days.',
+              'Refunds usually take 5 to 7 working days.',
               font,
             ),
             _policyNote(
