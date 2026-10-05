@@ -1032,6 +1032,50 @@ void main() {
       expect(trekC.orderData.value.id, 'order_fresh');
     });
 
+    // Scan D2: the fresh create-order FAILS. The old order's reply was still in
+    // the controller, so checkout used to reopen on the dead order.
+    testWidgets('D2: expired order + the fresh create-order fails -> error card, checkout NOT reopened on the old order', (tester) async {
+      final trekC = await setUpPaymentScreenDeps(tester);
+      var calls = mockRazorpayChannel((_) => razorpayError(code: Razorpay.NETWORK_ERROR, message: 'Network error'));
+      // As left by an earlier successful create-order.
+      trekC.orderModal.value = const BookingResponse(success: true, order: Order(id: 'order_old'));
+      trekC.orderData.value = const Order(id: 'order_old');
+      trekC.orderNextActionParams.value = {'order_id': 'order_old', 'amount': 1051000};
+      var orderStatus = <String, dynamic>{'status': 'unknown'};
+      installFakeBackend({
+        'order-status': (_) => {'success': true, 'data': orderStatus},
+        NetworkUrl.calculateFare: (_) => {
+          'success': true,
+          'fareToken': 'tok-retry',
+          'breakdown': {'final_amount': 10510, 'amount_to_pay_now': 10510},
+        },
+        NetworkUrl.addBooking: (_) => {
+          '__error__': true, 'statusCode': 409,
+          'data': {'success': false, 'message': 'Only 1 slot left'},
+        },
+      });
+      await pushPaymentScreen(
+        tester,
+        breakdown: BreakDownDataModel(finalAmount: 10510, amountToPayNow: 5000),
+      );
+      await settleUntil(tester, () => find.text('Something went wrong').evaluate().isNotEmpty);
+
+      orderStatus = {'status': 'expired', 'retryable': false};
+      calls = mockRazorpayChannel((_) => null);
+      await tester.runAsync(() async {
+        await tester.tap(find.text('RETRY'));
+        await tester.pump();
+        await Future.delayed(const Duration(milliseconds: 50));
+      });
+      await settleUntil(tester, () => find.textContaining('Only 1 slot left').evaluate().isNotEmpty);
+
+      expect(calls.where((c) => c.method == 'open'), isEmpty);
+      expect(find.text('Something went wrong'), findsOneWidget);
+      expect(find.textContaining('Only 1 slot left'), findsWidgets);
+      expect(trekC.orderNextActionParams['order_id'], isNull);
+      await tester.pump(const Duration(seconds: 5)); // let the error snackbar go
+    });
+
     testWidgets('no captured payment and no existing order re-fetches fare and creates a fresh order before reopening Razorpay', (tester) async {
       final trekC = await setUpPaymentScreenDeps(tester);
       mockRazorpayChannel((_) => razorpayError(message: 'Order expired'));

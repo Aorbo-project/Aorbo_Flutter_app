@@ -575,5 +575,93 @@ void main() {
       expect(c.errorMessage.value, contains('Batch is no longer active'));
       expect(find.byType(CircularProgressIndicator), findsNothing); // finally block still ran
     });
+
+    // Scan D2: a failed SECOND create-order used to keep the first order's
+    // id/amount, and the payment screen then opened Razorpay on that old order.
+    Map<String, dynamic> orderA() => {
+      'success': true,
+      'order': {'id': 'order_A', 'amount': 1051000, 'currency': 'INR'},
+      'next_action': 'OPEN_RAZORPAY',
+      'next_action_params': {'order_id': 'order_A', 'amount': 1051000},
+    };
+
+    testWidgets('D2: a failed second create-order (409) returns false and leaves NO order behind (not the first one)', (tester) async {
+      final c = await setUpPumpedController(tester);
+      installFakeBackend({NetworkUrl.addBooking: (_) => orderA()});
+      late bool first;
+      await tester.runAsync(() async {
+        first = await c.createTrekOrder();
+      });
+      await tester.pump();
+      expect(first, isTrue);
+      expect(c.orderNextActionParams['order_id'], 'order_A');
+
+      Repository().dio.interceptors.clear();
+      installFakeBackend({
+        NetworkUrl.addBooking: (_) => {
+          '__error__': true, 'statusCode': 409,
+          'data': {'success': false, 'message': 'Only 1 slot left'},
+        },
+      });
+      late bool second;
+      await tester.runAsync(() async {
+        second = await c.createTrekOrder();
+      });
+      await tester.pump();
+      await tester.pump();
+
+      expect(second, isFalse);
+      expect(c.orderModal.value.success, isNot(true));
+      expect(c.orderData.value.id, isNull);
+      expect(c.orderNextActionParams['order_id'], isNull);
+      expect(c.orderNextActionParams['amount'], isNull);
+      expect(c.errorMessage.value, contains('Only 1 slot left'));
+    });
+
+    testWidgets('D2: a second create-order made offline returns false, clears the first order and says "No internet connection"', (tester) async {
+      final c = await setUpPumpedController(tester);
+      installFakeBackend({NetworkUrl.addBooking: (_) => orderA()});
+      await tester.runAsync(() async {
+        await c.createTrekOrder();
+      });
+      await tester.pump();
+      expect(c.orderData.value.id, 'order_A');
+      c.errorMessage.value = 'an older message';
+
+      ConnectivityPlatform.instance = _OfflineConnectivityPlatform();
+      late bool second;
+      await tester.runAsync(() async {
+        second = await c.createTrekOrder();
+      });
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 5)); // let the offline snackbar go
+
+      expect(second, isFalse);
+      expect(c.orderModal.value.success, isNot(true));
+      expect(c.orderData.value.id, isNull);
+      expect(c.orderNextActionParams, isEmpty);
+      expect(c.errorMessage.value, 'No internet connection. Please try again.');
+    });
+
+    testWidgets('D2: clearBookingData also forgets the Razorpay order params', (tester) async {
+      final c = await setUpPumpedController(tester);
+      installFakeBackend({NetworkUrl.addBooking: (_) => orderA()});
+      await tester.runAsync(() async {
+        await c.createTrekOrder();
+      });
+      await tester.pump();
+      c.clearBookingData();
+      expect(c.orderNextActionParams, isEmpty);
+      expect(c.orderData.value.id, isNull);
+    });
   });
+}
+
+class _OfflineConnectivityPlatform extends ConnectivityPlatform {
+  @override
+  Future<List<ConnectivityResult>> checkConnectivity() async => [ConnectivityResult.none];
+
+  @override
+  Stream<List<ConnectivityResult>> get onConnectivityChanged =>
+      Stream.value([ConnectivityResult.none]);
 }

@@ -480,8 +480,9 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
       );
       return;
     }
-    await _trekC.createTrekOrder();
-    if (_trekC.orderModal.value.success ?? false) {
+    final created = await _trekC.createTrekOrder();
+    if (!mounted) return;
+    if (created) {
       _openRazorpay();
     } else {
       _resolveTerminal(

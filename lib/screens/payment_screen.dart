@@ -309,8 +309,8 @@ class _PaymentScreenState extends State<PaymentScreen>
       _isProcessingPayment = true;
       _showPaymentError = false;
     });
-    await _trekC.createTrekOrder();
-    if (_trekC.orderModal.value.success ?? false) {
+    final created = await _trekC.createTrekOrder();
+    if (created) {
       _openRazorpay(
         _trekC.calculateFareResponseModel.value.maybeWhen(
           success: (r) => (r as CalculateFareResponseModel).breakdown,

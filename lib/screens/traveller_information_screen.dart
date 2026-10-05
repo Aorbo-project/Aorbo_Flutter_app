@@ -449,9 +449,9 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
           travelers: selectedTravellers.toList(),
           payFull: !_isFlexiblePolicy || _selectedPaymentOption == 'full',
         );
-    await _trekC.createTrekOrder();
+    final created = await _trekC.createTrekOrder();
     if (!mounted) return;
-    if (_trekC.orderModal.value.success ?? false) {
+    if (created) {
       final breakdown = _trekC.calculateFareResponseModel.value.maybeWhen(
         success: (r) => (r as CalculateFareResponseModel).breakdown,
         orElse: () => null,

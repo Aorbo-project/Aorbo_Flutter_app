@@ -713,7 +713,23 @@ class TrekController extends GetxController {
     }
   }
 
-  Future<void> createTrekOrder() async {
+  /// Forget the last create-order reply. Scan D2: the order fields were only
+  /// ever written on success, so a failed second create-order left the FIRST
+  /// order's id and amount behind and the payment screen opened Razorpay on it.
+  void resetOrderState() {
+    orderModal.value = BookingResponse();
+    orderData.value = Order();
+    orderBookingData.value = BookingData();
+    orderNextAction.value = 'OPEN_RAZORPAY';
+    orderNextActionParams.clear();
+  }
+
+  /// Creates the Razorpay order. Returns true only when the server created
+  /// it; on false the order fields are empty (never the previous order) and
+  /// [errorMessage] says why.
+  Future<bool> createTrekOrder() async {
+    resetOrderState();
+    errorMessage.value = '';
     try {
       showLoaderDialog();
       createOrderRequestModel.value = createOrderRequestModel.value.copyWith(
@@ -732,7 +748,7 @@ class TrekController extends GetxController {
       );
 
       if (response != null) {
-        if (response['success']) {
+        if (response['success'] == true) {
           orderModal.value = BookingResponse.fromJson(response);
           orderData.value = orderModal.value.order ?? Order();
           orderBookingData.value =
@@ -754,19 +770,29 @@ class TrekController extends GetxController {
           // covers recovery from here on, so the pre-order draft is no
           // longer needed.
           await BookingDraftService.clear();
+          return true;
         } else {
-          errorMessage.value = response['message'];
+          resetOrderState();
+          final message = response['message'];
+          errorMessage.value = message is String && message.isNotEmpty
+              ? message
+              : 'Could not start payment. Please try again.';
           logger.e(errorMessage.value);
           CustomSnackBar.show(Get.context!, message: errorMessage.value);
         }
+      } else {
+        // Offline: getApiCall/postApiCall returned null (it already toasted).
+        errorMessage.value = 'No internet connection. Please try again.';
       }
     } catch (e) {
+      resetOrderState();
       errorMessage.value = 'Failed to create booking: ${e.toString()}';
       CustomSnackBar.show(Get.context!, message: errorMessage.value);
     } finally {
       hideLoaderDialog();
       isLoading.value = false;
     }
+    return false;
   }
 
   Future<bool> verifyTrekOrder({
@@ -1111,9 +1137,7 @@ class TrekController extends GetxController {
     trekBatchId.value = 0;
     BookingDraftService.clear();
 
-    orderModal.value = BookingResponse();
-    orderData.value = Order();
-    orderBookingData.value = BookingData();
+    resetOrderState();
 
     orderId.value = '';
     paymentId.value = '';
