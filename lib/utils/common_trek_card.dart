@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-import 'package:arobo_app/repository/repository.dart';
 import 'package:arobo_app/utils/auth_utils.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:flutter/material.dart';
@@ -343,7 +342,6 @@ class _CommonTrekCardState extends State<CommonTrekCard>
           clipBehavior: Clip.antiAlias,
           child: vendorLogo.isNotEmpty
               ? CustomNetworkImage(
-                  accessToken: Repository.token,
                   imageUrl: vendorLogo,
                   width: logoSize,
                   height: logoSize,

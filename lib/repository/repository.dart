@@ -6,6 +6,7 @@ import 'package:arobo_app/app_update/app_update_policy.dart';
 import 'package:arobo_app/app_update/app_version_info.dart';
 import 'package:arobo_app/main.dart';
 import 'package:arobo_app/widgets/logger.dart';
+import 'package:arobo_app/repository/friendly_error.dart';
 import 'package:arobo_app/repository/network_url.dart';
 import 'package:arobo_app/utils/custom_alert_dialog.dart';
 import 'package:arobo_app/utils/shared_preferences.dart';
@@ -18,6 +19,10 @@ import 'package:get/get.dart' hide FormData, Response;
 import 'package:arobo_app/integrity/integrity_interceptor.dart';
 import 'package:arobo_app/security/device_key_service.dart';
 import 'package:arobo_app/security/pinned_http_client.dart';
+import 'package:arobo_app/services/session_teardown.dart';
+
+export 'package:arobo_app/repository/friendly_error.dart'
+    show ApiException, FriendlyText, friendlyError, isFriendlyText;
 
 class RateLimitException implements Exception {
   final String message;
@@ -76,6 +81,21 @@ bool replayFailureEndsSession(Object error) =>
 bool holdUnsignedRefresh({required bool? bound, required String? signature}) =>
     bound == true && signature == null;
 
+/// Set to true on a failed request's `RequestOptions.extra` by the 401/403
+/// handler in [Repository.initRepo] when IT ended the session (the server
+/// refused it: a non-renewable 401, a refused refresh token, a 403
+/// ACCOUNT_INACTIVE). Scan E8: the splash gate signs the user out only on this
+/// verdict — a refresh that timed out / got a 5xx / a 429 keeps the session.
+const String sessionEndedExtra = 'aorbo_session_ended';
+
+/// Did the network layer end the session while handling [error]?
+bool sessionEndedByServer(DioException error) =>
+    error.requestOptions.extra[sessionEndedExtra] == true;
+
+/// Request flag: if the server refuses the session on this request, clear it
+/// but do not navigate — the caller (the Logout button) does that itself.
+const String noSignOutNavigationExtra = 'aorbo_no_signout_navigation';
+
 /// A server reply kept whole — see [Repository.postForReply].
 class ApiReply {
   const ApiReply(this.statusCode, this.data);
@@ -84,6 +104,20 @@ class ApiReply {
 
   bool get ok => statusCode >= 200 && statusCode < 300 && data is Map && data['success'] == true;
   Map<String, dynamic> get json => data is Map ? Map<String, dynamic>.from(data as Map) : const {};
+}
+
+/// A conditional GET's reply — see [Repository.getIfChanged].
+class ConditionalReply {
+  const ConditionalReply({required this.notModified, this.data, this.etag});
+
+  /// 304: the copy whose ETag was sent is still current; [data] is null.
+  final bool notModified;
+
+  /// The decoded body of a 2xx reply.
+  final dynamic data;
+
+  /// The reply's ETag header; null when the server sent none.
+  final String? etag;
 }
 
 class Repository {
@@ -226,17 +260,16 @@ class Repository {
           );
 
           if (options.data is FormData) {
-            logger.w("Data is FormData");
+            _debugLog(() => "Data is FormData");
           } else {
-            logger.d("Body ->> ${options.data}");
+            _debugLog(() => "Body ->> ${_clip(options.data)}");
           }
 
           return handler.next(options);
         },
         onResponse: (response, handler) async {
-          logger.i("✅ onResponse: RealUri ->> ${response.realUri}");
-          logger.i("StatusCode ->> ${response.statusCode}");
-          logger.d("Data ->> ${response.data}");
+          _debugLog(() => "✅ onResponse: ${response.realUri} "
+              "(${response.statusCode}) Data ->> ${_clip(response.data)}");
           FirebaseCrashlytics.instance.log(
             'API ← ${response.statusCode} ${response.requestOptions.path}',
           );
@@ -248,8 +281,8 @@ class Repository {
           return handler.next(response);
         },
         onError: (error, handler) async {
-          logger.e("❌ onError: Error ->> ${error.error}");
-          logger.e("Response ->> ${error.response}");
+          _debugLog(() => "❌ onError: ${error.error} "
+              "Response ->> ${_clip(error.response)}");
 
           final statusCode = error.response?.statusCode;
 
@@ -333,7 +366,11 @@ class Repository {
                 }
               }
             }
-            await sp!.clear();
+            error.requestOptions.extra[sessionEndedExtra] = true;
+            // Scan E2/E3: the same teardown as the Logout button (stored
+            // session, push token, device key); the previous person's
+            // controllers are dropped at the next sign-in.
+            await SessionTeardown.clearLocalSession();
             // forcedLogout: true tells SplashWithLoginScreen this is a
             // mid-session kick-out, not a cold app start — it skips the
             // logo entrance/breathing choreography (which is only
@@ -341,9 +378,7 @@ class Repository {
             // login form instead of replaying ~1s+ of animation the user
             // just sat through moments ago. Never away from the update
             // screen, though.
-            if (!AppUpdateGate.instance.isBlocked) {
-              Get.offAllNamed('/', arguments: {'forcedLogout': true});
-            }
+            _goToSignIn(error.requestOptions);
             return handler.next(error);
           }
 
@@ -353,16 +388,36 @@ class Repository {
                   (errorCode == 'ACCOUNT_INACTIVE' ||
                       errorCode == 'INVALID_TOKEN_TYPE'));
           if (isSessionInvalid) {
-            await sp!.clear();
-            if (!AppUpdateGate.instance.isBlocked) {
-              Get.offAllNamed('/', arguments: {'forcedLogout': true});
-            }
+            error.requestOptions.extra[sessionEndedExtra] = true;
+            await SessionTeardown.clearLocalSession();
+            _goToSignIn(error.requestOptions);
           }
 
           return handler.next(error);
         },
       ),
     );
+  }
+
+  /// Scan D10: these lines used to interpolate every response body (the
+  /// 346 KB city list included) into a String on EVERY call, in release too
+  /// — the logger drops the line in release, but only after the String was
+  /// built. Now debug-only, built lazily and cut to 2 KB.
+  static void _debugLog(String Function() message) {
+    if (kDebugMode) logger.d(message());
+  }
+
+  static String _clip(Object? value) {
+    final s = '$value';
+    return s.length <= 2048 ? s : '${s.substring(0, 2048)}… (${s.length} chars)';
+  }
+
+  /// After the server ended the session: back to the sign-in form — never
+  /// away from the update screen, and not when the caller navigates itself.
+  void _goToSignIn(RequestOptions request) {
+    if (AppUpdateGate.instance.isBlocked) return;
+    if (request.extra[noSignOutNavigationExtra] == true) return;
+    Get.offAllNamed('/', arguments: {'forcedLogout': true});
   }
 
   Future<bool> isInternetAvailable() async {
@@ -457,19 +512,55 @@ class Repository {
         return null;
       }
     } on TimeoutException {
-      throw Exception(
-        "Request timed out. Please check your connection and try again.",
-      );
+      throw const ApiException(FriendlyText.tooSlow);
     } on DioException catch (e) {
-      if (e.type == DioExceptionType.connectionTimeout) {
-        throw Exception("Connection Timeout Exception");
+      throw _failure(e);
+    }
+  }
+
+  /// The error every call throws for a failed request: text fit for the
+  /// customer (the server's own message when it is one, never Dio's
+  /// developer paragraph — scan D5), with the status kept for callers.
+  ApiException _failure(DioException e) {
+    _debugLog(() => "Dio Exception Message -> ${e.message}");
+    _debugLog(() => "Dio Exception Data -> ${_clip(e.response?.data)}");
+    return ApiException.fromDio(e);
+  }
+
+  /// A conditional GET: sends `If-None-Match: [etag]` when one is given, and
+  /// returns a 304 as [ConditionalReply.notModified] instead of an error
+  /// (Dio throws on a 304 by default — only this call accepts it). Otherwise
+  /// the same as [getApiCall]: null when offline, the same exceptions.
+  Future<ConditionalReply?> getIfChanged({
+    required String url,
+    String? etag,
+  }) async {
+    bool internetAvailable = await isInternetAvailable();
+    try {
+      if (!internetAvailable) {
+        showToastMessage(msg: "Please check your internet connection and try.");
+        return null;
       }
-      if (e.type == DioExceptionType.receiveTimeout) {
-        throw Exception("Receive Timeout Exception");
+      final opts = await _authOptions();
+      if (etag != null && etag.isNotEmpty) {
+        opts.headers = {...?opts.headers, 'If-None-Match': etag};
       }
-      logger.w("Dio Exception Message -> ${e.message.toString()}");
-      logger.w("Dio Exception Data -> ${e.response?.data?.toString()}");
-      throw Exception(e.message.toString());
+      opts.validateStatus = (s) => s != null && (s < 300 || s == 304);
+      final Response response = await dio
+          .get(url, options: opts)
+          .timeout(_defaultTimeout);
+      final notModified = response.statusCode == 304;
+      return ConditionalReply(
+        notModified: notModified,
+        data: notModified ? null : response.data,
+        // headers.value() throws when a reply carries two ETag headers
+        // (review C L13) — that turned a good 200 into "couldn't load".
+        etag: response.headers['etag']?.first,
+      );
+    } on TimeoutException {
+      throw const ApiException(FriendlyText.tooSlow);
+    } on DioException catch (e) {
+      throw _failure(e);
     }
   }
 
@@ -496,19 +587,8 @@ class Repository {
         return null;
       }
     } on TimeoutException {
-      throw Exception(
-        "Request timed out. Please check your connection and try again.",
-      );
+      throw const ApiException(FriendlyText.tooSlow);
     } on DioException catch (e) {
-      if (e.type == DioExceptionType.connectionTimeout) {
-        throw Exception("Connection Timeout Exception");
-      }
-      if (e.type == DioExceptionType.receiveTimeout) {
-        throw Exception("Receive Timeout Exception");
-      }
-      logger.w("Dio Exception Message ->> ${e.message.toString()}");
-      logger.w("Dio Exception Data ->> ${e.response?.data?.toString()}");
-
       if (e.response?.statusCode == 429 && e.response?.data is Map) {
         final data = e.response!.data as Map;
         final waitSecs = data['wait_seconds'] is int
@@ -519,17 +599,7 @@ class Repository {
             : 'Too many requests. Please wait.';
         throw RateLimitException(msg, waitSecs, otpActive: data['otp_active'] == true);
       }
-
-      throw Exception(
-        e.response?.data is List &&
-                (e.response?.data as List).isNotEmpty &&
-                e.response?.data[0] is Map &&
-                e.response?.data[0]['message'] is String
-            ? e.response?.data[0]['message']
-            : e.response?.data is Map && e.response?.data['message'] is String
-            ? e.response?.data['message']
-            : e.message,
-      );
+      throw _failure(e);
     }
   }
 
@@ -543,7 +613,7 @@ class Repository {
     Map<String, String>? headers,
   }) async {
     if (!await isInternetAvailable()) {
-      throw Exception("Please check your internet connection and try again.");
+      throw const ApiException(FriendlyText.noInternet);
     }
     final opts = await _authOptions();
     opts.headers = {...?opts.headers, ...?headers};
@@ -554,9 +624,7 @@ class Repository {
           .timeout(_defaultTimeout);
       return ApiReply(response.statusCode ?? 0, response.data);
     } on TimeoutException {
-      throw Exception(
-        "Request timed out. Please check your connection and try again.",
-      );
+      throw const ApiException(FriendlyText.tooSlow);
     }
   }
 
@@ -574,19 +642,9 @@ class Repository {
         return null;
       }
     } on TimeoutException {
-      throw Exception(
-        "Request timed out. Please check your connection and try again.",
-      );
+      throw const ApiException(FriendlyText.tooSlow);
     } on DioException catch (e) {
-      if (e.type == DioExceptionType.connectionTimeout) {
-        throw Exception("Connection Timeout Exception");
-      }
-      if (e.type == DioExceptionType.receiveTimeout) {
-        throw Exception("Receive Timeout Exception");
-      }
-      logger.w("Dio Exception Message ->> ${e.message.toString()}");
-      logger.w("Dio Exception Data ->> ${e.response?.data?.toString()}");
-      throw Exception(e.response?.data['message'] ?? e.message);
+      throw _failure(e);
     }
   }
 
@@ -604,19 +662,9 @@ class Repository {
         return null;
       }
     } on TimeoutException {
-      throw Exception(
-        "Request timed out. Please check your connection and try again.",
-      );
+      throw const ApiException(FriendlyText.tooSlow);
     } on DioException catch (e) {
-      if (e.type == DioExceptionType.connectionTimeout) {
-        throw Exception("Connection Timeout Exception");
-      }
-      if (e.type == DioExceptionType.receiveTimeout) {
-        throw Exception("Receive Timeout Exception");
-      }
-      logger.w("Dio Exception Message ->> ${e.message.toString()}");
-      logger.w("Dio Exception Data ->> ${e.response?.data?.toString()}");
-      throw Exception(e.response?.data['message'] ?? e.message);
+      throw _failure(e);
     }
   }
 
@@ -634,19 +682,9 @@ class Repository {
         return null;
       }
     } on TimeoutException {
-      throw Exception(
-        "Request timed out. Please check your connection and try again.",
-      );
+      throw const ApiException(FriendlyText.tooSlow);
     } on DioException catch (e) {
-      if (e.type == DioExceptionType.connectionTimeout) {
-        throw Exception("Connection Timeout Exception");
-      }
-      if (e.type == DioExceptionType.receiveTimeout) {
-        throw Exception("Receive Timeout Exception");
-      }
-      logger.w("Dio Exception Message ->> ${e.message.toString()}");
-      logger.w("Dio Exception Data ->> ${e.response?.data?.toString()}");
-      throw Exception(e.response?.data['message'] ?? e.message);
+      throw _failure(e);
     }
   }
 

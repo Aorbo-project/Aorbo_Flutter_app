@@ -26,7 +26,6 @@ import 'package:arobo_app/screens/know_more_screen.dart';
 import 'package:arobo_app/screens/logout_screen.dart';
 import 'package:arobo_app/screens/my_account_screen.dart';
 import 'package:arobo_app/screens/notifications_screen.dart';
-import 'package:arobo_app/screens/payment_success_screen.dart';
 import 'package:arobo_app/screens/popular_treks_screen.dart';
 import 'package:arobo_app/screens/rate_review_screen.dart';
 import 'package:arobo_app/screens/refer&earn_screen.dart';
@@ -73,9 +72,6 @@ void main() {
     'NotificationScreen': () => const NotificationScreen(),
     'CouponCodeScreen': () => const CouponCodeScreen(),
     'RateReviewScreen': () => const RateReviewScreen(),
-    'PaymentSuccessPage': () => const PaymentSuccessPage(),
-    // PaymentScreen (/payment) is orphaned dead code — the live flow is
-    // traveller_information -> PaymentProcessingScreen -> Razorpay native UI.
     'MyAccountScreen': () => const MyAccountScreen(),
     'BookingsHistoryScreen': () => const BookingsScreen(),
     'ChatScreen': () => const ChatScreen(),

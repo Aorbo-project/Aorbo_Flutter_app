@@ -200,6 +200,26 @@ class _BookingsScreenState extends State<BookingsScreen>
     });
   }
 
+  bool _openedArgumentBooking = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Scan E11: a booking / refund notification opens My Bookings with
+    // {'booking_id': id} — that booking's details open on top (the list
+    // stays underneath for Back). Only for the pushed route, never the tab.
+    if (_openedArgumentBooking) return;
+    final settings = ModalRoute.of(context)?.settings;
+    if (settings?.name != '/my-bookings') return;
+    final args = settings?.arguments;
+    final id = args is Map ? args['booking_id'] : null;
+    if (id is! int || id <= 0) return;
+    _openedArgumentBooking = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) Get.to(() => BookingsUpcomingScreen(bookingId: id));
+    });
+  }
+
   @override
   void dispose() {
     _scrollC.dispose();

@@ -1,5 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import '../../repository/network_url.dart';
+import '../json_converters.dart';
 import '../profile/user_profile_model.dart';
 
 part 'booking_history_model.freezed.dart';
@@ -163,7 +164,7 @@ class BookingHistoryData with _$BookingHistoryData {
     @JsonKey(name: 'rating_value', fromJson: _parseDoubleNullable)
     double? ratingValue,
 
-    @JsonKey(name: 'can_cancel') bool? canCancel,
+    @JsonKey(name: 'can_cancel', fromJson: _parseBoolNullable) bool? canCancel,
 
     @JsonKey(name: 'cancellation_message') String? cancellationMessage,
   }) = _BookingHistoryData;
@@ -185,7 +186,8 @@ class Trek with _$Trek {
     Destination? destination,
 
     @JsonKey(name: 'destination_id') int? destinationId,
-    @JsonKey(name: 'city_ids') List<int>? cityIds,
+    // Vendor-entered JSON list: ids as numbers or strings.
+    @JsonKey(name: 'city_ids', fromJson: jsonToIntList) List<int>? cityIds,
 
     @JsonKey(name: 'destination_name') String? destinationName,
     @JsonKey(name: 'city_names') List<String>? cityNames,

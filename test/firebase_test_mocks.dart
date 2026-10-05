@@ -20,6 +20,8 @@ import 'package:firebase_core_platform_interface/firebase_core_platform_interfac
 // ignore: implementation_imports
 import 'package:firebase_core_platform_interface/src/pigeon/messages.pigeon.dart';
 import 'package:firebase_crashlytics_platform_interface/firebase_crashlytics_platform_interface.dart';
+// ignore: depend_on_referenced_packages
+import 'package:firebase_messaging_platform_interface/firebase_messaging_platform_interface.dart';
 
 class _FakeFirebaseCoreHostApi extends FirebaseCoreHostApi {
   @override
@@ -69,6 +71,59 @@ class FakeCrashlyticsPlatform extends FirebaseCrashlyticsPlatform {
 
   @override
   Future<void> log(String message) async {}
+
+  final List<String> userIdentifiers = [];
+
+  @override
+  Future<void> setUserIdentifier(String identifier) async {
+    userIdentifiers.add(identifier);
+  }
+}
+
+/// FirebaseMessaging without a device: counts deleteToken() calls and
+/// serves a scripted getInitialMessage().
+class FakeMessagingPlatform extends FirebaseMessagingPlatform {
+  FakeMessagingPlatform() : super();
+
+  int deleteTokenCalls = 0;
+  RemoteMessage? initialMessage;
+
+  @override
+  FirebaseMessagingPlatform delegateFor({required FirebaseApp app}) => this;
+
+  @override
+  FirebaseMessagingPlatform setInitialValues({bool? isAutoInitEnabled}) => this;
+
+  @override
+  bool get isAutoInitEnabled => true;
+
+  @override
+  Future<void> deleteToken() async {
+    deleteTokenCalls++;
+  }
+
+  @override
+  Future<String?> getToken({String? vapidKey}) async => 'fake-fcm-token';
+
+  @override
+  Future<RemoteMessage?> getInitialMessage() async {
+    final m = initialMessage;
+    initialMessage = null;
+    return m;
+  }
+}
+
+FakeMessagingPlatform? _fakeMessaging;
+
+/// Installs [FakeMessagingPlatform] once per test process (FirebaseMessaging
+/// caches its delegate) and resets its counters. Call after
+/// [setUpFakeFirebase].
+FakeMessagingPlatform setUpFakeMessaging() {
+  final fake = _fakeMessaging ??= FakeMessagingPlatform();
+  FirebaseMessagingPlatform.instance = fake;
+  fake.deleteTokenCalls = 0;
+  fake.initialMessage = null;
+  return fake;
 }
 
 bool _firebaseCoreInitialized = false;

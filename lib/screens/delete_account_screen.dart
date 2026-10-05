@@ -9,6 +9,7 @@ import '../theme/app_typography.dart';
 import '../utils/common_logics.dart';
 import '../utils/custom_snackbar.dart';
 import '../utils/screen_constants.dart';
+import 'package:arobo_app/widgets/tap_target.dart';
 
 /// Delete Account — customer self-service account deletion.
 ///
@@ -118,7 +119,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _submitting = false);
-      final msg = e.toString().replaceFirst('Exception: ', '');
+      final msg = friendlyError(e);
       CustomSnackBar.show(
         context,
         message: msg.isNotEmpty && msg != 'Request failed'
@@ -218,11 +219,11 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
       ),
       title: Row(
         children: [
-          GestureDetector(
+          TapTarget(
+            label: 'Back',
             onTap: () => Get.back(),
             child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: AppColors.ink),
           ),
-          SizedBox(width: 2.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

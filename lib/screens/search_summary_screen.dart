@@ -20,7 +20,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:ntp/ntp.dart';
+import 'package:arobo_app/services/trusted_clock.dart';
 import 'package:shimmer_ai/shimmer_ai.dart';
 import 'package:sizer/sizer.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -28,6 +28,7 @@ import 'package:table_calendar/table_calendar.dart';
 import '../freezed_models/treks/treks_model_data.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
+import 'package:arobo_app/repository/friendly_error.dart';
 
 class SearchSummaryScreen extends StatefulWidget {
   const SearchSummaryScreen({super.key});
@@ -157,21 +158,15 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
     Overlay.of(context).insert(entry);
   }
 
+  // Scan D3: bounded, shared NTP lookup (TrustedClock) — never hangs, falls
+  // back to device time.
   Future<void> _initializeNTPTime() async {
-    try {
-      final DateTime ntpTime = await NTP.now();
-      if (!mounted) return;
-      setState(() {
-        _ntpTime = ntpTime;
-        _focusedDay = ntpTime;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _ntpTime = DateTime.now();
-        _focusedDay = DateTime.now();
-      });
-    }
+    final DateTime trusted = await TrustedClock.instance.sync();
+    if (!mounted) return;
+    setState(() {
+      _ntpTime = trusted;
+      _focusedDay = trusted;
+    });
   }
 
   void _startCouponAutoScroll(int totalCoupons) {
@@ -344,7 +339,7 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
       await _dashboardC.subscribeToRouteNotification(cityId, trekId);
       _feedback("We'll notify you when dates open on this route");
     } catch (e) {
-      final msg = e.toString().replaceFirst('Exception: ', '').trim();
+      final msg = friendlyError(e);
       _feedback(
         msg.isEmpty ? 'Could not set up alerts — try again' : msg,
         error: true,
@@ -362,15 +357,13 @@ class _SearchSummaryScreenState extends State<SearchSummaryScreen>
       return;
     }
 
-    if (_ntpTime == null) await _initializeNTPTime();
-    if (!context.mounted) return;
-
+    // Never wait on the network clock here (scan D3): the picker opens at once.
     // Fresh availability for the CURRENT route — the observer may still
     // hold the previous route's dates. Fire-and-forget: the sheet renders
     // its own loading state from the observer while it lands.
     unawaited(_dashboardC.fetchCalendarDatesNow());
 
-    final DateTime currentTime = _ntpTime ?? DateTime.now();
+    final DateTime currentTime = _ntpTime ?? TrustedClock.instance.now();
     final DateTime normalizedCurrent = DateTime(
       currentTime.year,
       currentTime.month,

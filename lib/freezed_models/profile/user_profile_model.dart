@@ -1,5 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import '../json_converters.dart';
+
 part 'user_profile_model.freezed.dart';
 part 'user_profile_model.g.dart';
 
@@ -44,7 +46,9 @@ class Customer with _$Customer {
     String? name,
     String? email,
     String? dateOfBirth,
-    String? emergencyContact,
+    // A JSON column on the server: may arrive as an object/array (kept as
+    // its JSON text) instead of a string.
+    @JsonKey(fromJson: jsonToStringOrJson) String? emergencyContact,
     bool? profileCompleted,
     UserState? state,
     List<Traveler>? travelers,

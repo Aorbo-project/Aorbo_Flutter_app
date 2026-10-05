@@ -1,6 +1,8 @@
 import 'package:arobo_app/repository/repository.dart';
 import 'package:arobo_app/security/device_risk_service.dart';
 import 'package:arobo_app/security/security_config.dart';
+import 'package:arobo_app/services/analytics_service.dart';
+import 'package:arobo_app/services/crash_report_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -35,6 +37,8 @@ class SecurityGuard with WidgetsBindingObserver {
   Future<void> _check({required bool refreshConfig}) async {
     if (refreshConfig && await SecurityConfig.refresh()) {
       Repository().resetHttpClients();
+      AnalyticsService.instance.resetHttpClient();
+      CrashReportService.instance.resetHttpClient();
     }
     await DeviceRiskService.instance.scan();
     if (_blocked || !kReleaseMode || !SecurityConfig.raspBlockEnabled) return;

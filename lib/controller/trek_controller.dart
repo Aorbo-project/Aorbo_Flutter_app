@@ -2,15 +2,18 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:arobo_app/controller/dashboard_controller.dart';
+import 'package:arobo_app/controller/payment_verify_outcome.dart';
 import 'package:arobo_app/freezed_models/booking/booking_data_model.dart';
 import 'package:arobo_app/freezed_models/treks/treks_model_data.dart';
 import 'package:arobo_app/models/treaks/booking_cancelled_modal.dart';
 import 'package:arobo_app/models/treaks/verify_order_modal.dart';
+import 'package:arobo_app/freezed_models/json_converters.dart';
 import 'package:arobo_app/models/coupon_code/coupon_code_model.dart';
 import 'package:arobo_app/models/dispute/submit_issue_modal.dart';
 import 'package:arobo_app/models/refund/refund_status_model.dart';
 import 'package:arobo_app/models/sponsored_slot_data.dart';
 import 'package:arobo_app/services/socket_service.dart';
+import 'package:arobo_app/utils/coupon_rejection.dart';
 import 'package:arobo_app/utils/custom_snackbar.dart';
 import 'package:arobo_app/utils/loader_dialog.dart';
 import 'package:arobo_app/widgets/logger.dart';
@@ -103,6 +106,13 @@ class TrekController extends GetxController {
   RxString paymentId = ''.obs;
   RxString signature = ''.obs;
   Rx<VerifyOrderModal> verifyOrderModal = VerifyOrderModal().obs;
+
+  /// What the last verifyTrekOrder() call came to (its bool is true only
+  /// for [VerifyPaymentOutcome.confirmed]). [lastVerifyMessage] holds the
+  /// server's message for a refunded payment.
+  final Rx<VerifyPaymentOutcome> lastVerifyOutcome =
+      VerifyPaymentOutcome.unconfirmed.obs;
+  final RxString lastVerifyMessage = ''.obs;
 
   RxDouble rating = 0.0.obs;
   Rx<TextEditingController> reviewController = TextEditingController().obs;
@@ -330,8 +340,8 @@ class TrekController extends GetxController {
       throw "Response Body Null";
     } catch (e) {
       logger.e('Coupon error: ${e.toString()}');
-      CustomSnackBar.show(Get.context!, message: e.toString());
-      vendorCouponsObserver.value = ApiResult.error(e.toString());
+      CustomSnackBar.show(Get.context!, message: friendlyError(e));
+      vendorCouponsObserver.value = ApiResult.error(friendlyError(e));
     }
   }
 
@@ -393,8 +403,8 @@ class TrekController extends GetxController {
       throw "Response Body Null";
     } catch (e) {
       logger.e('Coupon error: ${e.toString()}');
-      CustomSnackBar.show(Get.context!, message: e.toString());
-      validateCouponObserver.value = ApiResult.error(e.toString());
+      CustomSnackBar.show(Get.context!, message: friendlyError(e));
+      validateCouponObserver.value = ApiResult.error(friendlyError(e));
     }
   }
 
@@ -508,9 +518,9 @@ class TrekController extends GetxController {
     } catch (e) {
       // first line, so a stale timeout can't clobber fresh results:
       if (myGeneration != _searchGeneration) return;
-      errorMessage.value = 'Failed to search treks: ${e.toString()}';
+      errorMessage.value = friendlyError(e);
       CustomSnackBar.show(Get.context!, message: errorMessage.value);
-      observer.value.data.value = ApiResult.error(e.toString());
+      observer.value.data.value = ApiResult.error(friendlyError(e));
       observer.value.isLoading = false;
       observer.refresh();
     }
@@ -595,7 +605,7 @@ class TrekController extends GetxController {
         }
       }
     } catch (e, st) {
-      errorMessage.value = 'Failed to load trek details: ${e.toString()}';
+      errorMessage.value = friendlyError(e);
       logger.e(st);
       if (showErrors) CustomSnackBar.show(Get.context!, message: errorMessage.value);
     } finally {
@@ -673,10 +683,13 @@ class TrekController extends GetxController {
           // from this same response, so it self-corrects with no extra
           // state needed here — this only adds the one-time explanatory
           // message so the drop isn't silent.
-          final rejected = responseData.couponRejectedReason;
-          if (rejected != null &&
-              rejected.isNotEmpty &&
-              rejected != _lastCouponRejectedReason) {
+          // The reason is a sentence for people; an empty or code-like one
+          // (older servers) is swapped for friendly text for the code.
+          final rejected = couponRejectionMessage(
+            reason: responseData.couponRejectedReason,
+            code: responseData.couponRejectedCode,
+          );
+          if (rejected != null && rejected != _lastCouponRejectedReason) {
             if (Get.context != null) {
               CustomSnackBar.show(Get.context!, message: rejected);
             }
@@ -689,10 +702,10 @@ class TrekController extends GetxController {
       throw "Response Body Null";
     } catch (e) {
       if (mySeq != _calculateFareRequestSeq) return; // stale — see above
-      errorMessage.value = 'Failed to calculate fare: ${e.toString()}';
+      errorMessage.value = friendlyError(e);
       CustomSnackBar.show(Get.context!, message: errorMessage.value);
       calculateFareResponseModel.value = ApiResult.error(
-        'Failed to calculate fare: ${e.toString()}',
+        friendlyError(e),
       );
     } finally {
       // Only the newest request may clear the flag — a stale one returning
@@ -701,7 +714,23 @@ class TrekController extends GetxController {
     }
   }
 
-  Future<void> createTrekOrder() async {
+  /// Forget the last create-order reply. Scan D2: the order fields were only
+  /// ever written on success, so a failed second create-order left the FIRST
+  /// order's id and amount behind and the payment screen opened Razorpay on it.
+  void resetOrderState() {
+    orderModal.value = BookingResponse();
+    orderData.value = Order();
+    orderBookingData.value = BookingData();
+    orderNextAction.value = 'OPEN_RAZORPAY';
+    orderNextActionParams.clear();
+  }
+
+  /// Creates the Razorpay order. Returns true only when the server created
+  /// it; on false the order fields are empty (never the previous order) and
+  /// [errorMessage] says why.
+  Future<bool> createTrekOrder() async {
+    resetOrderState();
+    errorMessage.value = '';
     try {
       showLoaderDialog();
       createOrderRequestModel.value = createOrderRequestModel.value.copyWith(
@@ -720,7 +749,7 @@ class TrekController extends GetxController {
       );
 
       if (response != null) {
-        if (response['success']) {
+        if (response['success'] == true) {
           orderModal.value = BookingResponse.fromJson(response);
           orderData.value = orderModal.value.order ?? Order();
           orderBookingData.value =
@@ -742,19 +771,29 @@ class TrekController extends GetxController {
           // covers recovery from here on, so the pre-order draft is no
           // longer needed.
           await BookingDraftService.clear();
+          return true;
         } else {
-          errorMessage.value = response['message'];
+          resetOrderState();
+          final message = response['message'];
+          errorMessage.value = message is String && message.isNotEmpty
+              ? message
+              : 'Could not start payment. Please try again.';
           logger.e(errorMessage.value);
           CustomSnackBar.show(Get.context!, message: errorMessage.value);
         }
+      } else {
+        // Offline: getApiCall/postApiCall returned null (it already toasted).
+        errorMessage.value = 'No internet connection. Please try again.';
       }
     } catch (e) {
-      errorMessage.value = 'Failed to create booking: ${e.toString()}';
+      resetOrderState();
+      errorMessage.value = friendlyError(e);
       CustomSnackBar.show(Get.context!, message: errorMessage.value);
     } finally {
       hideLoaderDialog();
       isLoading.value = false;
     }
+    return false;
   }
 
   Future<bool> verifyTrekOrder({
@@ -768,6 +807,8 @@ class TrekController extends GetxController {
       "razorpay_signature": razorpaySignature,
     });
 
+    lastVerifyOutcome.value = VerifyPaymentOutcome.unconfirmed;
+    lastVerifyMessage.value = '';
     try {
       final response = await repository.postApiCall(
         url: NetworkUrl.verifyBooking,
@@ -775,12 +816,27 @@ class TrekController extends GetxController {
       );
 
       if (response != null) {
-        if (response['success']) {
-          verifyOrderModal.value = VerifyOrderModal.fromJson(response);
-          final nextAction =
-              response['next_action'] ?? 'SHOW_BOOKING_CONFIRMED';
+        final outcome = classifyVerifyReply(response);
 
-          if (nextAction == 'SHOW_BOOKING_CONFIRMED') {
+        // Already refunded (an earlier attempt or the webhook gave up and
+        // refunded): never "confirmed", whatever `success` says. The order
+        // is settled, so it is no longer a pending order to resume.
+        if (outcome == VerifyPaymentOutcome.refunded) {
+          final message = refundedReplyMessage(response);
+          lastVerifyOutcome.value = VerifyPaymentOutcome.refunded;
+          lastVerifyMessage.value = message;
+          errorMessage.value = message;
+          final pref = await SpUtil.getInstance();
+          await pref.remove(SpUtil.pendingOrderId);
+          return false;
+        }
+
+        if (response['success'] == true) {
+          verifyOrderModal.value = readVerifyReply(response);
+          // success:true with no booking in `data` is not a confirmation:
+          // the caller polls the order status instead.
+          if (outcome == VerifyPaymentOutcome.confirmed) {
+            lastVerifyOutcome.value = VerifyPaymentOutcome.confirmed;
             final pref = await SpUtil.getInstance();
             await pref.remove(SpUtil.pendingOrderId);
             Get.find<DashboardController>().loadAllBookingHistory(force: true, waitForCompletion: false);
@@ -788,8 +844,10 @@ class TrekController extends GetxController {
           }
           return false;
         } else {
-          errorMessage.value =
-              response['message'] ?? 'Payment verification failed';
+          final message = response['message'];
+          errorMessage.value = message is String && message.isNotEmpty
+              ? message
+              : 'Payment verification failed';
           return false;
         }
       }
@@ -798,10 +856,34 @@ class TrekController extends GetxController {
     } catch (e, s) {
       logger.e('Stack trace: $s');
       logger.e('Error: $e');
-      errorMessage.value = 'Failed to verify payment: ${e.toString()}';
+      errorMessage.value = friendlyError(e);
       return false;
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  /// The verify-payment reply as a model. Review C L11: vendor-entered
+  /// fields in it (company_info, discount values, amounts sent as numbers)
+  /// could make the full parse throw, which turned a CONFIRMED payment into
+  /// "unconfirmed". Whether it is confirmed is decided from the raw reply
+  /// (classifyVerifyReply); only the booking id / number are needed here.
+  @visibleForTesting
+  static VerifyOrderModal readVerifyReply(Map<String, dynamic> response) {
+    try {
+      return VerifyOrderModal.fromJson(response);
+    } catch (e) {
+      logger.w('verify-payment reply only partly readable: $e');
+      final raw = response['data'];
+      return VerifyOrderModal(
+        success: response['success'] == true,
+        data: raw is Map
+            ? Data(
+                id: jsonToInt(raw['id']),
+                bookingNumber: jsonToStringOrNull(raw['booking_number']),
+              )
+            : null,
+      );
     }
   }
 
@@ -861,7 +943,11 @@ class TrekController extends GetxController {
     }
   }
 
-  createReview({
+  /// Posts the review. True when it is saved (also when the server says it
+  /// already has one for this booking - a lost reply to an earlier tap).
+  /// Scan D11: on failure the typed review is KEPT so the customer can fix
+  /// the problem and send it again; only a saved review clears it.
+  Future<bool> createReview({
     required int trekId,
     required int customerId,
     required int bookingId,
@@ -888,6 +974,7 @@ class TrekController extends GetxController {
       // complaint tag + written review on 1-2 star reviews.
       "form_version": 2,
     });
+    isLoading.value = true;
     try {
       final response = await repository.postApiCall(
         url: NetworkUrl.review,
@@ -895,29 +982,46 @@ class TrekController extends GetxController {
       );
 
       if (response != null) {
-        if (response['success']) {
-          await _dashboardC.loadAllBookingHistory(force: true, waitForCompletion: false);
-          reviewController.value.clear();
-          Get.back();
-          Get.back();
-          CustomSnackBar.show(
-            Get.context!,
-            message: 'Thank you for your valuable feedback!',
-          );
-          update();
+        if (response['success'] == true) {
+          await _reviewSaved();
+          return true;
         } else {
-          errorMessage.value = response['message'];
+          final message = response['message'];
+          if (_alreadyReviewed(message)) {
+            await _reviewSaved();
+            return true;
+          }
+          errorMessage.value = friendlyError(message ?? '');
           CustomSnackBar.show(Get.context!, message: errorMessage.value);
           // Keep what the user typed - they fix the problem and resubmit.
         }
       }
     } catch (e) {
-      errorMessage.value = 'Failed to submit review: ${e.toString()}';
+      if (_alreadyReviewed(e.toString())) {
+        await _reviewSaved();
+        return true;
+      }
+      errorMessage.value = friendlyError(e);
       CustomSnackBar.show(Get.context!, message: errorMessage.value);
     } finally {
-      reviewController.value.clear();
       isLoading.value = false;
     }
+    return false;
+  }
+
+  bool _alreadyReviewed(Object? message) =>
+      '${message ?? ''}'.toLowerCase().contains('already reviewed');
+
+  Future<void> _reviewSaved() async {
+    await _dashboardC.loadAllBookingHistory(force: true, waitForCompletion: false);
+    reviewController.value.clear();
+    Get.back();
+    Get.back();
+    CustomSnackBar.show(
+      Get.context!,
+      message: 'Thank you for your valuable feedback!',
+    );
+    update();
   }
 
   Future<String?> fetchCancellationDetails(String bookingId) async {
@@ -944,11 +1048,11 @@ class TrekController extends GetxController {
       throw "Response Body Null";
     } catch (e) {
       // show the REAL error, not a stale one:
-      CustomSnackBar.error(e.toString());
+      CustomSnackBar.error(friendlyError(e));
       cancellationDetailsResponseObserver.value = ApiResult.error(
-        'Failed to load cancellation details: ${e.toString()}',
+        friendlyError(e),
       );
-      return e.toString();
+      return friendlyError(e);
     }
   }
 
@@ -993,11 +1097,10 @@ class TrekController extends GetxController {
         Get.find<DashboardController>().loadAllBookingHistory(force: true, waitForCompletion: false);
         return null;
       }
-      CustomSnackBar.show(Get.context!, message: errMsg);
-      requestCancellationResponseObserver.value = ApiResult.error(
-        'Failed to get cancellation details: $errMsg',
-      );
-      return errMsg;
+      final shown = friendlyError(e);
+      CustomSnackBar.show(Get.context!, message: shown);
+      requestCancellationResponseObserver.value = ApiResult.error(shown);
+      return shown;
     }
   }
 
@@ -1066,7 +1169,7 @@ class TrekController extends GetxController {
         }
       }
     } catch (e) {
-      errorMessage.value = 'Failed to submit issue report: ${e.toString()}';
+      errorMessage.value = friendlyError(e);
       CustomSnackBar.show(Get.context!, message: errorMessage.value);
     } finally {
       isLoading.value = false;
@@ -1080,14 +1183,14 @@ class TrekController extends GetxController {
     trekBatchId.value = 0;
     BookingDraftService.clear();
 
-    orderModal.value = BookingResponse();
-    orderData.value = Order();
-    orderBookingData.value = BookingData();
+    resetOrderState();
 
     orderId.value = '';
     paymentId.value = '';
     signature.value = '';
     verifyOrderModal.value = VerifyOrderModal();
+    lastVerifyOutcome.value = VerifyPaymentOutcome.unconfirmed;
+    lastVerifyMessage.value = '';
 
     rating.value = 0.0;
     reviewController.value.clear();

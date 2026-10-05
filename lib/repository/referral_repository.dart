@@ -73,9 +73,5 @@ class ReferralRepository {
     }
   }
 
-  String _clean(Object e) {
-    var s = e.toString();
-    if (s.startsWith('Exception: ')) s = s.substring('Exception: '.length);
-    return s.isEmpty ? 'Something went wrong' : s;
-  }
+  String _clean(Object e) => friendlyError(e);
 }

@@ -1,9 +1,5 @@
 import 'package:arobo_app/screens/dashboard_main.dart';
-import 'package:arobo_app/screens/login_screen.dart';
 import 'package:arobo_app/screens/notifications_screen.dart';
-import 'package:arobo_app/screens/otp_screen.dart';
-import 'package:arobo_app/screens/payment_screen.dart';
-import 'package:arobo_app/screens/payment_success_screen.dart';
 import 'package:arobo_app/screens/popular_treks_screen.dart';
 import 'package:arobo_app/screens/search_summary_screen.dart';
 import 'package:arobo_app/screens/splash_screen.dart';
@@ -42,8 +38,6 @@ import '../giveaway/giveaway_screen.dart';
 
 final routes = [
   GetPage(name: '/', page: () => const SplashWithLoginScreen()),
-  GetPage(name: '/login', page: () => const LoginScreen()),
-  GetPage(name: '/otp', page: () => OTPScreen()),
   // noTransition on purpose: the splash→dashboard (and OTP→dashboard)
   // handoff is a dissolve owned by dissolveToDashboard() (see
   // widgets/dissolve_to_dashboard.dart) — an opaque cover held over the
@@ -127,8 +121,6 @@ final routes = [
     name: '/seasonal-forecast',
     page: () => const SeasonalForecastScreen(),
   ),
-  GetPage(name: '/payment', page: () => const PaymentScreen()),
-  GetPage(name: '/payment-success', page: () => const PaymentSuccessPage()),
   GetPage(name: '/rate-review', page: () => const RateReviewScreen()),
   GetPage(name: '/my-tickets', page: () => const MyTicketsScreen()),
   GetPage(

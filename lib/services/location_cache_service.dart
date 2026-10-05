@@ -19,6 +19,7 @@
 
 import 'dart:convert';
 
+import 'package:arobo_app/app_update/app_version_info.dart';
 import 'package:arobo_app/models/dashboard/cities_model.dart';
 import 'package:arobo_app/models/dashboard/trek_modal.dart';
 import 'package:arobo_app/widgets/logger.dart';
@@ -51,6 +52,9 @@ class LocationCacheService {
   // Bump the suffix when the stored shape changes in a breaking way.
   static const _kCitiesJson = 'loc_cache.cities.json.v1';
   static const _kCitiesSavedAt = 'loc_cache.cities.savedAt.v1';
+  // {"etag": ..., "build": ...}: the server ETag of the cached list, and
+  // the app build that saved it.
+  static const _kCitiesEtag = 'loc_cache.cities.etag.v1';
   static const _kTreksJson = 'loc_cache.treks.json.v1';
   static const _kTreksSavedAt = 'loc_cache.treks.savedAt.v1';
   static const _kRecentCities = 'loc_cache.recent.cities.v1';
@@ -103,11 +107,34 @@ class LocationCacheService {
 
   // ── Cities list cache ────────────────────────────────────────────────
 
-  Future<void> saveCities(GetCities model) async {
+  // Review C L13: saves run one after another, in call order. Two
+  // overlapping saves could interleave remove-ETag / write list / write
+  // ETag, leaving one reply's list next to the other's ETag (or an older
+  // list on top of a newer one).
+  Future<void> _citiesSaves = Future<void>.value();
+
+  /// [etag]: the server ETag of the reply [model] came from (null when it
+  /// sent none). Stored only together with the list it belongs to.
+  Future<void> saveCities(GetCities model, {String? etag}) {
+    final save = _citiesSaves.then((_) => _saveCitiesNow(model, etag));
+    _citiesSaves = save.catchError((_) {});
+    return save;
+  }
+
+  Future<void> _saveCitiesNow(GetCities model, String? etag) async {
     await ensureReady();
     try {
-      final encoded = await compute(jsonEncode, model.toJson());
+      // Old ETag out first: it must never sit next to a different list.
+      await _prefs!.remove(_kCitiesEtag);
+      // Scan D10: model -> JSON text entirely off the UI isolate.
+      final encoded = await compute(_encodeCities, model);
       await _prefs!.setString(_kCitiesJson, encoded);
+      if (etag != null && etag.isNotEmpty) {
+        await _prefs!.setString(
+          _kCitiesEtag,
+          jsonEncode({'etag': etag, 'build': _appBuild}),
+        );
+      }
       _citiesSavedAt = DateTime.now();
       await _prefs!.setInt(
         _kCitiesSavedAt,
@@ -119,12 +146,59 @@ class LocationCacheService {
     }
   }
 
+  /// The ETag to send as If-None-Match for the cities list — only while
+  /// that list is actually cached, and only if this same app build saved
+  /// it (the cache holds this build's re-encoding of the reply, so a new
+  /// build fetches the full list once). Null → fetch unconditionally.
+  Future<String?> citiesEtag() async {
+    await ensureReady();
+    final list = _prefs!.getString(_kCitiesJson);
+    if (list == null || list.isEmpty) return null;
+    final raw = _prefs!.getString(_kCitiesEtag);
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map || decoded['build'] != _appBuild) return null;
+      final etag = decoded['etag'];
+      return (etag is String && etag.isNotEmpty) ? etag : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// The server answered 304 to [citiesEtag]: the cached list is current.
+  /// Nothing is re-parsed or rewritten — only the "updated" time moves, and
+  /// the list on screen no longer counts as an offline copy.
+  Future<void> markCitiesFresh() async {
+    await ensureReady();
+    _citiesSavedAt = DateTime.now();
+    lastLoadedCityCache = null;
+    try {
+      await _prefs!.setInt(
+        _kCitiesSavedAt,
+        _citiesSavedAt!.millisecondsSinceEpoch,
+      );
+    } catch (e) {
+      logger.w('LocationCache: markCitiesFresh failed: $e');
+    }
+  }
+
+  /// Drops the stored ETag (e.g. the cached list could not be read back).
+  Future<void> forgetCitiesEtag() async {
+    await ensureReady();
+    await _prefs!.remove(_kCitiesEtag);
+  }
+
+  static String get _appBuild => AppVersionInfo.current?.build ?? '';
+
   Future<GetCities?> loadCities() async {
     await ensureReady();
     final raw = _prefs!.getString(_kCitiesJson);
     if (raw == null || raw.isEmpty) return null;
     try {
-      final model = GetCities.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+      // Scan D10: decoding ~350 KB on the UI isolate cost every launch a few
+      // frames on budget phones; it runs in the background now.
+      final model = await compute(_decodeCities, raw);
       if (model.data?.isNotEmpty != true) return null;
       lastLoadedCityCache = model;
       return model;
@@ -139,7 +213,7 @@ class LocationCacheService {
   Future<void> saveTreks(TrekModal model) async {
     await ensureReady();
     try {
-      final encoded = await compute(jsonEncode, model.toJson());
+      final encoded = await compute(_encodeTreks, model);
       await _prefs!.setString(_kTreksJson, encoded);
       _treksSavedAt = DateTime.now();
       await _prefs!.setInt(
@@ -157,7 +231,7 @@ class LocationCacheService {
     final raw = _prefs!.getString(_kTreksJson);
     if (raw == null || raw.isEmpty) return null;
     try {
-      final model = TrekModal.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+      final model = await compute(_decodeTreks, raw);
       if (model.data?.isNotEmpty != true) return null;
       lastLoadedTrekCache = model;
       return model;
@@ -272,3 +346,11 @@ class LocationCacheService {
     return DateTime.fromMillisecondsSinceEpoch(ms);
   }
 }
+
+// Background-isolate helpers (top-level so compute() can send them).
+String _encodeCities(GetCities model) => jsonEncode(model.toJson());
+GetCities _decodeCities(String raw) =>
+    GetCities.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+String _encodeTreks(TrekModal model) => jsonEncode(model.toJson());
+TrekModal _decodeTreks(String raw) =>
+    TrekModal.fromJson(jsonDecode(raw) as Map<String, dynamic>);

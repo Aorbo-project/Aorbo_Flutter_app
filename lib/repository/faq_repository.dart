@@ -53,7 +53,8 @@ class FaqRepository {
         }
       } catch (e) {
         final message = e.toString().toLowerCase();
-        if (message.contains('404') || message.contains('route not found')) {
+        if ((e is ApiException && e.statusCode == 404) ||
+            message.contains('route not found')) {
           continue;
         }
         log('Error fetching FAQs from $endpoint: $e');
@@ -81,7 +82,8 @@ class FaqRepository {
         }
       } catch (e) {
         final messageText = e.toString().toLowerCase();
-        if (messageText.contains('404') || messageText.contains('route not found')) {
+        if ((e is ApiException && e.statusCode == 404) ||
+            messageText.contains('route not found')) {
           continue;
         }
         log('Error getting chatbot reply from $endpoint: $e');

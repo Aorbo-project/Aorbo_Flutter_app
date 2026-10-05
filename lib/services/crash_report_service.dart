@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:arobo_app/app_update/app_version_info.dart';
 import 'package:arobo_app/repository/network_url.dart';
 import 'package:arobo_app/repository/repository.dart';
+import 'package:arobo_app/security/pinned_http_client.dart';
 import 'package:arobo_app/utils/auth_utils.dart';
 
 /// Sends every crash Firebase Crashlytics already sees into Aorbo's own
@@ -40,6 +41,24 @@ class CrashReportService {
     ),
   )..interceptors.add(AppVersionHeadersInterceptor());
 
+  // Scan E5: this request carries the customer's access token, so it goes
+  // through the same pinned TLS client as every other API call (it used to
+  // use the phone's normal trust store, readable by an interception proxy).
+  bool _pinned = false;
+  Dio get _client {
+    if (!_pinned) {
+      PinnedHttp.apply(_dio);
+      _pinned = true;
+    }
+    return _dio;
+  }
+
+  /// Rebuild the TLS layer (the remote pinning switch changed).
+  void resetHttpClient() => PinnedHttp.apply(_dio);
+
+  @visibleForTesting
+  Dio get clientForTesting => _client;
+
   Future<void> report(
     Object error,
     StackTrace? stack, {
@@ -51,7 +70,7 @@ class CrashReportService {
       final deviceModel = await AuthUtils.getDeviceModel();
       final osVersion = await AuthUtils.getOsVersion();
 
-      await _dio.post(
+      await _client.post(
         'crash-report',
         data: {
           'error_message': error.toString(),

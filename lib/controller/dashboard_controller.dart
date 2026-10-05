@@ -30,6 +30,9 @@ import '../services/invoice_pdf_service.dart';
 import '../utils/custom_snackbar.dart';
 import '../services/location_cache_service.dart';
 
+/// Shown when the booking-detail screen's data can't be loaded.
+const String bookingDetailsLoadError = "Couldn't load booking details";
+
 class DashboardController extends GetxController {
   final Repository _repository = Repository();
 
@@ -383,10 +386,8 @@ class DashboardController extends GetxController {
       throw "Response Body Null";
     } catch (e) {
       logger.e('Error fetching calendar dates: $e');
-      errorMessage.value = e.toString();
-      calenderTrekDatesObserver.value = ApiResult.error(
-        'Failed to fetch calendar dates: ${e.toString()}',
-      );
+      errorMessage.value = friendlyError(e);
+      calenderTrekDatesObserver.value = ApiResult.error(friendlyError(e));
     }
   }
 
@@ -432,9 +433,62 @@ class DashboardController extends GetxController {
     return upcomingDates;
   }
 
-  Future<void> fetchWhatsNew() async {
+  // -- Home content (scan D4) ---------------------------------------------
+  // The Home tab is rebuilt on every tab switch (DashboardMain's
+  // AnimatedSwitcher). Its initState used to fetch What's New, Top Treks,
+  // Seasonal Picks and the sponsored slots EVERY time, blanking the loaded
+  // sections into shimmer. Each section now loads at most once per
+  // [homeFreshFor] (a failed one is retried on the next visit), and a
+  // refresh keeps the content already on screen until the new reply lands.
+  static const Duration homeFreshFor = Duration(minutes: 5);
+  final Map<String, DateTime> _homeLoadedAt = {};
+  final Map<String, Future<bool>> _homeInFlight = {};
+
+  /// Loads the Home sections that are not fresh (all of them with [force]).
+  Future<void> loadHomeContent({bool force = false}) {
+    final jobs = <Future<bool>>[];
+    void section(String key, Future<bool> Function() fetch) {
+      final at = _homeLoadedAt[key];
+      if (!force && at != null && DateTime.now().difference(at) < homeFreshFor) {
+        return;
+      }
+      final running = _homeInFlight[key];
+      if (running != null) {
+        jobs.add(running);
+        return;
+      }
+      final job = fetch().then((ok) {
+        if (ok) {
+          _homeLoadedAt[key] = DateTime.now();
+        } else {
+          _homeLoadedAt.remove(key);
+        }
+        return ok;
+      }).whenComplete(() {
+        // A block body: `=> remove(key)` would return this very future and
+        // make it wait for itself.
+        _homeInFlight.remove(key);
+      });
+      _homeInFlight[key] = job;
+      jobs.add(job);
+    }
+
+    section('whats_new', () => fetchWhatsNew(keepPrevious: true));
+    section('top_treks', () => fetchTopTreks(keepPrevious: true));
+    section('seasonal_picks', () => fetchSeasonalPicks(keepPrevious: true));
+    section('sponsored_slots', fetchSponsoredSlots);
+    return Future.wait(jobs);
+  }
+
+  bool _isLoaded(ApiResult<dynamic> r) =>
+      r.maybeWhen(success: (_) => true, orElse: () => false);
+
+  /// [keepPrevious]: content already loaded stays on screen (no shimmer)
+  /// while this refreshes, and is kept if the refresh fails.
+  Future<bool> fetchWhatsNew({bool keepPrevious = false}) async {
+    final hadData = keepPrevious && _isLoaded(whatsNewObserver.value);
     try {
-      whatsNewObserver.value = const ApiResult.loading("");
+      if (!hadData) whatsNewObserver.value = const ApiResult.loading("");
       final response = await _repository.getApiCall(
         url: NetworkUrl.fetchWhatsNew,
       );
@@ -442,20 +496,22 @@ class DashboardController extends GetxController {
         final responseData = WhatsNewDataResponseModel.fromJson(response);
         if (responseData.success == true) {
           whatsNewObserver.value = ApiResult.success(responseData);
-          return;
+          return true;
         }
         throw responseData.message ?? "Failed to fetch whats new";
       }
       throw "Response Body Null";
     } catch (e) {
       logger.e('Error fetching whats new: $e');
-      whatsNewObserver.value = ApiResult.error(e.toString());
+      if (!hadData) whatsNewObserver.value = ApiResult.error(friendlyError(e));
+      return false;
     }
   }
 
-  Future<void> fetchTopTreks() async {
+  Future<bool> fetchTopTreks({bool keepPrevious = false}) async {
+    final hadData = keepPrevious && _isLoaded(topTreksObserver.value);
     try {
-      topTreksObserver.value = const ApiResult.loading("");
+      if (!hadData) topTreksObserver.value = const ApiResult.loading("");
       // Bare/shared Dio: no Authorization header, no relative baseUrl — this
       // hits a separate public origin (the aorbotreks.com website's own
       // backend), not ours, so our app's bearer token has no business being
@@ -473,12 +529,13 @@ class DashboardController extends GetxController {
         topTreksObserver.value = ApiResult.success(
           TopTreksDataResponseModel(success: true, data: data, count: data.length),
         );
-        return;
+        return true;
       }
       throw "Response Body Null";
     } catch (e) {
       logger.e('Error fetching top treks: $e');
-      topTreksObserver.value = ApiResult.error(e.toString());
+      if (!hadData) topTreksObserver.value = ApiResult.error(friendlyError(e));
+      return false;
     }
   }
 
@@ -531,7 +588,7 @@ class DashboardController extends GetxController {
     }
   }
 
-  Future<void> fetchSponsoredSlots() async {
+  Future<bool> fetchSponsoredSlots() async {
     try {
       final response = await _repository.getApiCall(
         url: NetworkUrl.fetchSponsoredSlots,
@@ -556,7 +613,9 @@ class DashboardController extends GetxController {
           ),
         );
         admobFallbackEnabled.value = r.admobFallback;
+        return true;
       }
+      return false;
     } catch (e) {
       // An ad failure must never affect the dashboard — just leave the
       // slot lists empty so the rows render with organic content only.
@@ -564,6 +623,7 @@ class DashboardController extends GetxController {
       whatsNewSlots.clear();
       topTreksSlots.clear();
       seasonalForecastSlots.clear();
+      return false;
     }
   }
 
@@ -611,9 +671,10 @@ class DashboardController extends GetxController {
         .catchError((_) => null);
   }
 
-  Future<void> fetchSeasonalPicks({String? season}) async {
+  Future<bool> fetchSeasonalPicks({String? season, bool keepPrevious = false}) async {
+    final hadData = keepPrevious && _isLoaded(seasonalPicksObserver.value);
     try {
-      seasonalPicksObserver.value = const ApiResult.loading("");
+      if (!hadData) seasonalPicksObserver.value = const ApiResult.loading("");
       final url = season == null
           ? NetworkUrl.fetchSeasonalPicks
           : '${NetworkUrl.fetchSeasonalPicks}?season=$season';
@@ -622,14 +683,15 @@ class DashboardController extends GetxController {
         final responseData = SeasonalPicksDataResponseModel.fromJson(response);
         if (responseData.success == true) {
           seasonalPicksObserver.value = ApiResult.success(responseData);
-          return;
+          return true;
         }
         throw responseData.message ?? "Failed to fetch seasonal picks";
       }
       throw "Response Body Null";
     } catch (e) {
       logger.e('Error fetching seasonal picks: $e');
-      seasonalPicksObserver.value = ApiResult.error(e.toString());
+      if (!hadData) seasonalPicksObserver.value = ApiResult.error(friendlyError(e));
+      return false;
     }
   }
 
@@ -669,12 +731,53 @@ class DashboardController extends GetxController {
       throw "Response Body Null";
     } catch (e) {
       logger.e('Error fetching seasonal forecasts: $e');
-      seasonalForcastObserver.value = ApiResult.error(e.toString());
+      seasonalForcastObserver.value = ApiResult.error(friendlyError(e));
     }
   }
 
-  Future<void> fetchStateList() async {
+  // ── Location lists (scan D12) ─────────────────────────────────────────
+  // One request per list at a time: a second caller (the From/To picker
+  // opened while the first download is still running) joins it instead of
+  // downloading the 346 KB city list again. `isLoadingCities` stays true
+  // while ANY of the three lists is loading (the 1 KB states reply used to
+  // clear it long before the cities arrived), and each list has its own
+  // error text for the picker.
+  Future<void>? _statesInFlight;
+  Future<void>? _citiesInFlight;
+  Future<void>? _treksInFlight;
+  int _locationLoads = 0;
+
+  /// Why the cities / trek list could not load ('' when fine).
+  final RxString citiesError = ''.obs;
+  final RxString treksError = ''.obs;
+
+  void _beginLocationLoad() {
+    _locationLoads++;
     isLoadingCities.value = true;
+  }
+
+  void _endLocationLoad() {
+    if (_locationLoads > 0) _locationLoads--;
+    isLoadingCities.value = _locationLoads > 0;
+  }
+
+  Future<void> fetchStateList() =>
+      _statesInFlight ??= _fetchStateList().whenComplete(() {
+        _statesInFlight = null;
+      });
+
+  Future<void> fetchCitiesList() =>
+      _citiesInFlight ??= _fetchCitiesList().whenComplete(() {
+        _citiesInFlight = null;
+      });
+
+  Future<void> fetchTrekList() =>
+      _treksInFlight ??= _fetchTrekList().whenComplete(() {
+        _treksInFlight = null;
+      });
+
+  Future<void> _fetchStateList() async {
+    _beginLocationLoad();
     errorMessage.value = '';
 
     try {
@@ -687,31 +790,47 @@ class DashboardController extends GetxController {
         logger.d('States loaded: ${stateList.length}');
       }
     } catch (e) {
-      errorMessage.value = 'Failed to load states: ${e.toString()}';
-      logger.e(errorMessage.value);
-      CustomSnackBar.show(Get.context!, message: errorMessage.value);
+      logger.e('Failed to load states: $e');
+      errorMessage.value = "Couldn't load the states. ${friendlyError(e)}";
+      // States feed nothing on Home by themselves; only say so when there
+      // is no list at all (and never via a null context).
+      if (stateList.isEmpty) CustomSnackBar.error(errorMessage.value);
     } finally {
-      isLoadingCities.value = false;
+      _endLocationLoad();
     }
   }
 
-  Future<void> fetchCitiesList() async {
-    isLoadingCities.value = true;
+  Future<void> _fetchCitiesList() async {
+    _beginLocationLoad();
     errorMessage.value = '';
 
     try {
-      final response = await _repository.getApiCall(
+      // ~350 KB on every launch: ask with the cached list's ETag, and on a
+      // 304 keep that list (no download, no parse, no rewrite).
+      final cache = LocationCacheService.instance;
+      var reply = await _repository.getIfChanged(
         url: NetworkUrl.getCitiesList,
+        etag: await cache.citiesEtag(),
       );
-      if (response != null) {
-        citiesData.value = GetCities.fromJson(response);
+      if (reply != null && reply.notModified && !await _keepCachedCities()) {
+        // The cached copy can't be read back: forget its ETag, fetch it all.
+        await cache.forgetCitiesEtag();
+        reply = await _repository.getIfChanged(url: NetworkUrl.getCitiesList);
+      }
+      if (reply != null && !reply.notModified && reply.data != null) {
+        citiesData.value = GetCities.fromJson(reply.data);
         logger.d('Cities loaded: ${citiesData.value.data?.length ?? 0}');
         // Fire-and-forget: this response becomes the next offline cache.
-        unawaited(LocationCacheService.instance.saveCities(citiesData.value));
+        final save = cache.saveCities(citiesData.value, etag: reply.etag);
+        _pendingCitiesSave = save;
+        unawaited(save);
       }
+      citiesError.value = '';
     } catch (e) {
-      errorMessage.value = 'Failed to load cities: ${e.toString()}';
-      logger.e(errorMessage.value);
+      logger.e('Failed to load cities: $e');
+      citiesError.value = friendlyError(e);
+      // "cities" / "trek" in the text tell the picker which list failed.
+      errorMessage.value = "Couldn't load the cities. ${friendlyError(e)}";
       // If a cached list is still on screen, the picker already surfaces
       // an offline banner — don't also shout a snackbar at the user.
       if (citiesData.value.data?.isNotEmpty != true) {
@@ -721,12 +840,32 @@ class DashboardController extends GetxController {
         }
       }
     } finally {
-      isLoadingCities.value = false;
+      _endLocationLoad();
     }
   }
 
-  Future<void> fetchTrekList() async {
-    isLoadingCities.value = true;
+  /// A 304 for the cities list: keep the list in memory, or load it from
+  /// the on-device cache if memory is empty. False when there is none.
+  Future<bool> _keepCachedCities() async {
+    final cache = LocationCacheService.instance;
+    if (citiesData.value.data?.isNotEmpty != true) {
+      final cached = await cache.loadCities();
+      if (cached == null) return false;
+      citiesData.value = cached;
+    }
+    await cache.markCitiesFresh();
+    logger.d('Cities unchanged (304): ${citiesData.value.data?.length ?? 0}');
+    return true;
+  }
+
+  Future<void>? _pendingCitiesSave;
+
+  /// Tests: the cache write started by the last full cities reply.
+  @visibleForTesting
+  Future<void>? get pendingCitiesSaveForTesting => _pendingCitiesSave;
+
+  Future<void> _fetchTrekList() async {
+    _beginLocationLoad();
     errorMessage.value = '';
 
     try {
@@ -738,9 +877,11 @@ class DashboardController extends GetxController {
         logger.d('Treks loaded: ${trekData.value.data?.length ?? 0}');
         unawaited(LocationCacheService.instance.saveTreks(trekData.value));
       }
+      treksError.value = '';
     } catch (e) {
-      errorMessage.value = 'Failed to load treks: ${e.toString()}';
-      logger.e(errorMessage.value);
+      logger.e('Failed to load treks: $e');
+      treksError.value = friendlyError(e);
+      errorMessage.value = "Couldn't load the trek list. ${friendlyError(e)}";
       if (trekData.value.data?.isNotEmpty != true) {
         final ctx = Get.context;
         if (ctx != null) {
@@ -748,7 +889,7 @@ class DashboardController extends GetxController {
         }
       }
     } finally {
-      isLoadingCities.value = false;
+      _endLocationLoad();
     }
   }
 
@@ -925,14 +1066,14 @@ class DashboardController extends GetxController {
           _replaceAllOnNextSuccess = false;
           observer.value.isPaginationCompleted = true;
           observer.refresh();
-          errorMessage.value = 'Could not refresh bookings: ${e.toString()}';
+          errorMessage.value = "Couldn't refresh your bookings. ${friendlyError(e)}";
           final ctx = Get.context;
           if (ctx != null) {
             CustomSnackBar.show(ctx, message: errorMessage.value);
           }
         } else {
-          observer.value.data.value = ApiResult.error(e.toString());
-          errorMessage.value = 'Failed to load bookings: ${e.toString()}';
+          observer.value.data.value = ApiResult.error(friendlyError(e));
+          errorMessage.value = friendlyError(e);
           final ctx = Get.context;
           if (ctx != null) {
             CustomSnackBar.show(ctx, message: errorMessage.value);
@@ -1081,36 +1222,60 @@ class DashboardController extends GetxController {
     }
   }
 
-  getBookingDetail({required dynamic bookingId}) async {
+  getBookingDetail({required dynamic bookingId}) =>
+      _loadBookingDetail(bookingId, keepPrevious: false);
+
+  /// Pull-to-refresh: the booking on screen stays up while it reloads, and
+  /// stays if the reload fails.
+  Future<void> reloadBookingDetail({required dynamic bookingId}) =>
+      _loadBookingDetail(bookingId, keepPrevious: true);
+
+  Future<void> _loadBookingDetail(dynamic bookingId, {required bool keepPrevious}) async {
+    final shown = bookingDetailsObserver.value.maybeWhen(
+      success: (r) => (r as BookingDetailsResponseModel?)?.data,
+      orElse: () => null,
+    );
+    final keep = keepPrevious && shown != null && '${shown.id}' == '$bookingId';
     try {
-      bookingDetailsObserver.value = ApiResult.loading("");
+      if (!keep) bookingDetailsObserver.value = ApiResult.loading("");
       final response = await _repository.getApiCall(
         url: NetworkUrl.bookingDetails(bookingId),
       );
 
-      if (response != null) {
-        if (response['success']) {
-          final body = BookingDetailsResponseModel.fromJson(response);
-          bookingDetailsObserver.value = ApiResult.success(body);
-          bookingHistoryModal.value = body.data;
-        } else {
-          bookingDetailsObserver.value = ApiResult.error(
-            response['message'] ?? 'Failed to load dispute details',
-          );
+      if (response == null) {
+        // Scan D9: offline. getApiCall returns null (and already says so),
+        // which used to leave this observer on `loading` - a shimmer that
+        // never ended, even right after paying.
+        if (!keep) {
+          bookingDetailsObserver.value = const ApiResult.error(FriendlyText.noInternet);
         }
+        return;
       }
-    } catch (e) {
-      bookingDetailsObserver.value = ApiResult.error(
-        'Failed to load dispute details: ${e.toString()}',
-      );
-      if (Get.context != null) {
-        CustomSnackBar.show(
-          Get.context!,
-          message: 'Failed to load dispute details: ${e.toString()}',
+      if (response['success'] == true) {
+        final body = BookingDetailsResponseModel.fromJson(response);
+        bookingDetailsObserver.value = ApiResult.success(body);
+        bookingHistoryModal.value = body.data;
+      } else if (!keep) {
+        final message = response['message'];
+        bookingDetailsObserver.value = ApiResult.error(
+          message is String && isFriendlyText(message)
+              ? message
+              : bookingDetailsLoadError,
         );
       }
+    } catch (e) {
+      logger.e('getBookingDetail($bookingId) failed: $e');
+      if (!keep) {
+        bookingDetailsObserver.value = ApiResult.error(
+          e is ApiException && e.message == FriendlyText.noInternet
+              ? FriendlyText.noInternet
+              : bookingDetailsLoadError,
+        );
+      }
+      if (Get.context != null) {
+        CustomSnackBar.show(Get.context!, message: bookingDetailsLoadError);
+      }
     }
-    return null;
   }
 
   Future<void> generateAndUploadInvoice(int bookingId) async {

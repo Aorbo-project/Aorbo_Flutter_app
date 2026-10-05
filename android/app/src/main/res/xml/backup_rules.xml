@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 6-11 Auto Backup (android:fullBackupContent). Scan E4.
+     Backup stays on for everything else, but the sign-in session never goes
+     to Google Drive: the access + refresh tokens, user id, "logged in" flag
+     and pending order live in the Flutter SharedPreferences file. A restored
+     or new phone starts signed out instead of replaying the old session
+     (whose device-bound refresh would fail and be flagged as theft).
+     Keep in sync with data_extraction_rules.xml. -->
+<full-backup-content>
+    <!-- Flutter shared_preferences (legacy API) - tokens, session flags. -->
+    <exclude domain="sharedpref" path="FlutterSharedPreferences.xml" />
+    <!-- Flutter shared_preferences (async / DataStore API), if ever used. -->
+    <exclude domain="file" path="datastore/flutter_preferences.preferences_pb" />
+    <!-- The FCM registration of THIS phone: never restored onto another one. -->
+    <exclude domain="sharedpref" path="com.google.android.gms.appid.xml" />
+</full-backup-content>

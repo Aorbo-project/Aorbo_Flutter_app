@@ -742,7 +742,7 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
                 SizedBox(width: 2.w),
                 Expanded(
                   child: Text(
-                    'Refund will be processed to your original payment method within 5-7 business days.',
+                    'Refunds go to your original payment method and usually take 5–7 business days.',
                     style: AppType.style(9.sp, color: _TI.inkMid, height: 1.4),
                   ),
                 ),

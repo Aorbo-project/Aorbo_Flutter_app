@@ -43,7 +43,7 @@ _$CustomerImpl _$$CustomerImplFromJson(Map<String, dynamic> json) =>
       name: json['name'] as String?,
       email: json['email'] as String?,
       dateOfBirth: json['dateOfBirth'] as String?,
-      emergencyContact: json['emergencyContact'] as String?,
+      emergencyContact: jsonToStringOrJson(json['emergencyContact']),
       profileCompleted: json['profileCompleted'] as bool?,
       state: json['state'] == null
           ? null

@@ -150,7 +150,7 @@ class TicketController extends GetxController {
       }
     } catch (e) {
       logger.e('fetchMyTickets error: $e');
-      error = e.toString();
+      error = friendlyError(e);
     } finally {
       isLoading.value = false;
     }

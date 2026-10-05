@@ -8,6 +8,10 @@ import '../utils/common_images.dart';
 import '../utils/safe_dimensions.dart';
 
 class CustomNetworkImage extends StatelessWidget {
+  /// Ignored. Scan E5: images never carry the customer's token — the image
+  /// loader has its own HTTP stack (not pinned), photos and vendor logos are
+  /// public, and a logo URL can be a third-party CDN (Cloudinary).
+  @Deprecated('Images are loaded without the access token (scan E5).')
   final String? accessToken;
   final String imageUrl;
   final BoxFit fit;
@@ -37,48 +41,53 @@ class CustomNetworkImage extends StatelessWidget {
     this.shadowOffset,
     this.shadowBlurSigma,
     this.shadowColor,
+    this.zoomable = false,
   });
+
+  /// Shown in a pinch-zoom viewer: decoded at twice the usual resolution.
+  final bool zoomable;
 
   @override
   Widget build(BuildContext context) {
+    final decodeWidth = decodeWidthFor(
+      width: width,
+      height: height,
+      devicePixelRatio: MediaQuery.maybeDevicePixelRatioOf(context) ?? 2.0,
+      fit: fit,
+      zoom: zoomable ? 2 : 1,
+    );
+
     // For transparent background images, return without shadow
     if (hasTransparentBackground) {
-      return _buildImageWithTransparency();
+      return _buildImageWithTransparency(decodeWidth);
     }
 
     // For images with background and optional shadow
     if (showShadow) {
-      return _buildImageWithShadow();
+      return _buildImageWithShadow(decodeWidth);
     }
 
     // Default: simple image without shadow
-    return _buildBaseImage();
+    return _buildBaseImage(decodeWidth);
   }
 
-  Widget _buildBaseImage() {
+  Widget _buildBaseImage(int? decodeWidth) {
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(borderRadius ?? 8),
       child: CachedNetworkImage(
-        httpHeaders: {
-          'Accept': '*/*',
-          'Content-Type': 'application/json',
-          'Authorization' :'Bearer $accessToken'
-        },
+        httpHeaders: const {'Accept': '*/*'},
         imageUrl: imageUrl,
         fit: fit,
         cacheKey: imageUrl,
         width: width,
         height: height,
         color: color,
-        // Memory optimization — decode at display size instead of full
-        // network resolution. Was commented out; every card list
-        // (trek/booking/top-treks) routes through this path, so every
-        // image in every list was decoding at full source resolution on
-        // scroll — a major jank contributor. Matches the pattern already
-        // used in _buildImageWithShadow below.
-        memCacheHeight: safeCacheDim(height),
-        memCacheWidth: safeCacheDim(width),
+        // Memory optimization — decode near display size instead of full
+        // network resolution (every card list routes through here). Width
+        // only, in physical px, so the photo keeps its own shape and stays
+        // sharp: see decodeWidthFor (scan D6).
+        memCacheWidth: decodeWidth,
         // Smooth animations
         fadeInDuration: const Duration(milliseconds: 300),
         fadeOutDuration: const Duration(milliseconds: 200),
@@ -111,7 +120,7 @@ class CustomNetworkImage extends StatelessWidget {
     );
   }
 
-  Widget _buildImageWithTransparency() {
+  Widget _buildImageWithTransparency(int? decodeWidth) {
     // For transparent images - no background, clean rendering
     return ClipRRect(
       borderRadius: BorderRadius.circular(borderRadius ?? 8),
@@ -124,8 +133,7 @@ class CustomNetworkImage extends StatelessWidget {
         color: color,
         // Critical for transparent images - use contain to preserve alpha channel
         // Memory optimization — see _buildBaseImage's comment above.
-        memCacheHeight: safeCacheDim(height),
-        memCacheWidth: safeCacheDim(width),
+        memCacheWidth: decodeWidth,
         fadeInDuration: const Duration(milliseconds: 300),
         fadeOutDuration: const Duration(milliseconds: 200),
         // Don't apply any background color to transparent images
@@ -158,7 +166,7 @@ class CustomNetworkImage extends StatelessWidget {
     );
   }
 
-  Widget _buildImageWithShadow() {
+  Widget _buildImageWithShadow(int? decodeWidth) {
     // For images that need a shadow effect (like your original KnowMoreCard)
     final shadowOffsetValue = shadowOffset ?? 4.0;
     final blurSigmaValue = shadowBlurSigma ?? 4.0;
@@ -186,8 +194,7 @@ class CustomNetworkImage extends StatelessWidget {
                     cacheKey: '${imageUrl}_shadow',
                     width: width,
                     height: height,
-                    memCacheHeight: safeCacheDim(height),
-                    memCacheWidth: safeCacheDim(width),
+                    memCacheWidth: decodeWidth,
                     // Don't show progress for shadow to avoid flicker
                     progressIndicatorBuilder: (context, url, progress) => const SizedBox.shrink(),
                     errorBuilder: (context, url, error) => const SizedBox.shrink(),
@@ -207,8 +214,7 @@ class CustomNetworkImage extends StatelessWidget {
             width: width,
             height: height,
             color: color,
-            memCacheHeight: safeCacheDim(height),
-            memCacheWidth: safeCacheDim(width),
+            memCacheWidth: decodeWidth,
             fadeInDuration: const Duration(milliseconds: 300),
             fadeOutDuration: const Duration(milliseconds: 200),
             progressIndicatorBuilder: (context, url, loadingProgress) => Center(

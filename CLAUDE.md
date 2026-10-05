@@ -42,7 +42,7 @@ Key controllers:
 - `DashboardController` — Dashboard state
 
 ### Routing: GetX Named Routes
-All 32 routes defined in `lib/routes/routes.dart`. Navigation uses `Get.toNamed('/route-name')` or `Get.to(Screen())`. Entry point is `/` (splash/login).
+All routes are defined in `lib/routes/routes.dart`. Navigation uses `Get.toNamed('/route-name')` or `Get.to(Screen())`. Entry point is `/` (splash/login).
 
 ### Network Layer: Repository Pattern
 `lib/repository/repository.dart` is a singleton Dio-based HTTP client. It handles:
@@ -71,7 +71,7 @@ Firebase Phone Auth → OTP verification → Firebase ID token → stored via `S
 - Lottie animations in `assets/animations/`, SVGs and PNGs in `assets/images/`
 
 ### Controller Registration Rules
-- `AuthController` is registered **once** with `Get.put(AuthController(), permanent: true)` in `login_screen.dart`
+- `AuthController` is registered **once** with `Get.put(AuthController(), permanent: true)` in `splash_screen.dart` (the sign-in screen)
 - All other files must use `Get.find<AuthController>()` — never call `Get.put(AuthController(), ...)` again elsewhere
 - `OTPController` uses `Get.find<AuthController>()` (fixed — was previously creating a duplicate)
 

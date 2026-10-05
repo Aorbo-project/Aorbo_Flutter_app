@@ -6,6 +6,7 @@ import 'screen_constants.dart';
 import '../models/coupon_code/coupon_code_model.dart';
 import 'ist_date_utils.dart';
 import 'package:arobo_app/theme/app_typography.dart';
+import 'package:arobo_app/widgets/tap_target.dart';
 
 const Color _accentStart = Color(0xFFE8925A);
 const Color _accentEnd = Color(0xFFF4C68A);
@@ -93,7 +94,8 @@ class _CouponTermsSheetContent extends StatelessWidget {
                   style: AppType.style(FontSize.s16, w: FontWeight.w800, color: _ink, letterSpacing: 1.5),
                 ),
               ),
-              GestureDetector(
+              TapTarget(
+                label: 'Close',
                 onTap: () => Navigator.pop(context),
                 child: Container(
                   width: 7.w,

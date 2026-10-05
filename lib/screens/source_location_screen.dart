@@ -6,6 +6,7 @@ import 'package:arobo_app/theme/app_button.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
 import 'package:arobo_app/utils/custom_snackbar.dart';
+import 'package:arobo_app/utils/location_search.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -71,98 +72,7 @@ const List<String> _kTopCityNames = [
 ];
 
 extension on String {
-  String get _normalized {
-    var s = toLowerCase().trim();
-    s = s.replaceAllMapped(
-      _Diacritics.pattern,
-      (m) => _Diacritics.map[m[0]!] ?? '',
-    );
-    s = s.replaceAll(RegExp(r'[^a-z0-9\s]'), ' ');
-    s = s.replaceAll(RegExp(r'\s+'), ' ');
-    return s.trim();
-  }
-}
-
-class _Diacritics {
-  static final map = <String, String>{
-    'á': 'a',
-    'à': 'a',
-    'ä': 'a',
-    'â': 'a',
-    'ã': 'a',
-    'å': 'a',
-    'ā': 'a',
-    'é': 'e',
-    'è': 'e',
-    'ë': 'e',
-    'ê': 'e',
-    'ē': 'e',
-    'í': 'i',
-    'ì': 'i',
-    'ï': 'i',
-    'î': 'i',
-    'ī': 'i',
-    'ó': 'o',
-    'ò': 'o',
-    'ö': 'o',
-    'ô': 'o',
-    'õ': 'o',
-    'ø': 'o',
-    'ō': 'o',
-    'ú': 'u',
-    'ù': 'u',
-    'ü': 'u',
-    'û': 'u',
-    'ū': 'u',
-    'ñ': 'n',
-    'ń': 'n',
-    'ç': 'c',
-    'ć': 'c',
-    'ś': 's',
-    'š': 's',
-    'ý': 'y',
-    'ÿ': 'y',
-    'ź': 'z',
-    'ż': 'z',
-    'ř': 'r',
-    'ŕ': 'r',
-    'ł': 'l',
-    'đ': 'd',
-    'ß': 'ss',
-  };
-  static final pattern = RegExp(
-    '[' + map.keys.map((c) => RegExp.escape(c)).join() + ']',
-  );
-}
-
-int _levenshteinCapped(String a, String b, int max) {
-  if (a == b) return 0;
-  final la = a.length, lb = b.length;
-  if ((la - lb).abs() > max) return max + 1;
-  if (la == 0) return lb;
-  if (lb == 0) return la;
-  var prev = List<int>.generate(lb + 1, (i) => i);
-  var curr = List<int>.filled(lb + 1, 0);
-  for (var i = 1; i <= la; i++) {
-    curr[0] = i;
-    var rowMin = i;
-    final ci = a[i - 1];
-    for (var j = 1; j <= lb; j++) {
-      final cost = ci == b[j - 1] ? 0 : 1;
-      final v = [
-        prev[j] + 1,
-        curr[j - 1] + 1,
-        prev[j - 1] + cost,
-      ].reduce((x, y) => x < y ? x : y);
-      curr[j] = v;
-      if (v < rowMin) rowMin = v;
-    }
-    if (rowMin > max) return max + 1;
-    final tmp = prev;
-    prev = curr;
-    curr = tmp;
-  }
-  return prev[lb];
+  String get _normalized => normalizeLocationName(this);
 }
 
 class _Debouncer {
@@ -182,22 +92,8 @@ class _Debouncer {
   void dispose() => cancel();
 }
 
-/// One pickable location — pre-normalized search key, popular flag, and
-/// (treks) the state shown as trailing context.
-class _Entry {
-  final int id;
-  final String name;
-  final String normalized;
-  final bool isPopular;
-  final String? state;
-  const _Entry({
-    required this.id,
-    required this.name,
-    required this.normalized,
-    this.isPopular = false,
-    this.state,
-  });
-}
+/// One pickable location (see lib/utils/location_search.dart).
+typedef _Entry = LocationEntry;
 
 /// A flattened browse row — either a static letter label (cities) or a
 /// tile. Static = scrolls away with content, so nothing can ever stack
@@ -218,24 +114,23 @@ class _RoutePair {
   const _RoutePair(this.from, this.to);
 }
 
-class _Scored {
-  final _Entry entry;
-  final int score;
-  const _Scored(this.entry, this.score);
-}
-
 class _FilterResult {
   final _ListState state;
   final List<_Entry> items;
   final List<_Entry> recent;
   final List<_RoutePair> routes;
   final String? query;
+
+  /// "Did you mean…?" names for the empty state, computed once per query
+  /// (scan D1: it used to run inside build, on every keystroke).
+  final List<_Entry> suggestions;
   const _FilterResult({
     required this.state,
     required this.items,
     this.recent = const [],
     this.routes = const [],
     this.query,
+    this.suggestions = const [],
   });
 }
 
@@ -307,6 +202,21 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
   // Dedupe memory for _commit — see _commit for why.
   List<_Entry>? _lastItems;
   List<_Entry>? _lastRecent;
+  List<_Entry> _lastSuggestions = const [];
+
+  // "Did you mean" for the last (list, query) — _refreshFiltered runs on
+  // several triggers (query, loading flag, errors, focus) for one query.
+  List<_Entry>? _suggestFor;
+  String? _suggestQuery;
+  List<_Entry> _suggestValue = const [];
+  List<_Entry> _suggestionsFor(List<_Entry> entries, String query) {
+    if (!identical(entries, _suggestFor) || query != _suggestQuery) {
+      _suggestFor = entries;
+      _suggestQuery = query;
+      _suggestValue = didYouMean(entries, query);
+    }
+    return _suggestValue;
+  }
   List<_RoutePair>? _lastRoutes;
   String? _lastQuery;
   _ListState? _lastState;
@@ -324,6 +234,7 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
   Worker? _citiesWorker;
   Worker? _treksWorker;
   Worker? _errorWorker;
+  Worker? _treksErrorWorker;
   Worker? _loadingWorker;
 
   @override
@@ -355,12 +266,20 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
       _refreshFiltered();
     });
 
-    _errorWorker = ever(_dashboardC.errorMessage, (err) {
+    // Each list's own error (scan D12) — no guessing from a shared message.
+    _errorWorker = ever(_dashboardC.citiesError, (err) {
       if (!mounted) return;
-      if (err.toLowerCase().contains('cities')) _citiesError = err;
-      if (err.toLowerCase().contains('trek')) _treksError = err;
+      if (err.isNotEmpty) _citiesError = err;
       _refreshFiltered();
     });
+    _treksErrorWorker = ever(_dashboardC.treksError, (err) {
+      if (!mounted) return;
+      if (err.isNotEmpty) _treksError = err;
+      _refreshFiltered();
+    });
+    // A list that already failed before the picker opened.
+    _citiesError = _dashboardC.citiesError.value;
+    _treksError = _dashboardC.treksError.value;
 
     _loadingWorker = ever(_dashboardC.isLoadingCities, (_) {
       if (!mounted) return;
@@ -411,12 +330,11 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
       await _dashboardC.hydrateLocationCache();
       if (!mounted) return;
     }
-    if (_dashboardC.citiesData.value.data == null &&
-        !_dashboardC.isLoadingCities.value) {
+    // Joins a download already running (one request per list).
+    if (_dashboardC.citiesData.value.data == null) {
       _dashboardC.fetchCitiesList();
     }
-    if (_dashboardC.trekData.value.data == null &&
-        !_dashboardC.isLoadingCities.value) {
+    if (_dashboardC.trekData.value.data == null) {
       _dashboardC.fetchTrekList();
     }
     if (mounted) _refreshFiltered();
@@ -466,6 +384,7 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
     _citiesWorker?.dispose();
     _treksWorker?.dispose();
     _errorWorker?.dispose();
+    _treksErrorWorker?.dispose();
     _loadingWorker?.dispose();
     _fromCtrl.dispose();
     _toCtrl.dispose();
@@ -592,9 +511,7 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
         );
       }
     }
-    entries.sort(
-      (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
-    );
+    entries.sort((a, b) => a.lowerName.compareTo(b.lowerName));
     _cityEntries = entries;
     _cityByName
       ..clear()
@@ -624,9 +541,7 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
         );
       }
     }
-    entries.sort(
-      (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
-    );
+    entries.sort((a, b) => a.lowerName.compareTo(b.lowerName));
     _trekEntries = entries;
     _trekByName
       ..clear()
@@ -713,13 +628,14 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
         _commit(_ListState.ready, entries, recent, routes: routes);
         return;
       }
-      final result = _computeFiltered(entries, query);
+      final result = filterLocations(entries, query);
       _commit(
         result.isEmpty ? _ListState.empty : _ListState.ready,
         result,
         recent,
         routes: routes,
         query: query,
+        suggestions: result.isEmpty ? _suggestionsFor(entries, query) : const [],
       );
       return;
     }
@@ -754,6 +670,7 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
     List<_Entry> recent, {
     List<_RoutePair> routes = const [],
     String? query,
+    List<_Entry> suggestions = const [],
   }) {
     final q = query ?? '';
     final itemsSame =
@@ -765,13 +682,16 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
     final routesSame =
         identical(routes, _lastRoutes) ||
         _routesEquals(routes, _lastRoutes ?? const []);
+    final suggestionsSame = _listEquals(suggestions, _lastSuggestions);
     if (_lastState == state &&
         (_lastQuery ?? '') == q &&
         itemsSame &&
         recentSame &&
-        routesSame) {
+        routesSame &&
+        suggestionsSame) {
       return;
     }
+    _lastSuggestions = suggestions;
     _lastState = state;
     _lastQuery = q;
     _lastItems = items;
@@ -783,6 +703,7 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
       recent: recent,
       routes: routes,
       query: q.isEmpty ? null : q,
+      suggestions: suggestions,
     );
   }
 
@@ -811,73 +732,8 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
         lower.contains('internet') ||
         lower.contains('connection') ||
         lower.contains('timeout') ||
+        lower.contains('too long') || // FriendlyText.tooSlow
         lower.contains('handshake');
-  }
-
-  List<_Entry> _computeFiltered(List<_Entry> source, String rawQuery) {
-    final q = rawQuery._normalized;
-    if (q.isEmpty) return source;
-    final prefix = <_Entry>[];
-    final wordPrefix = <_Entry>[];
-    final substring = <_Entry>[];
-    for (final e in source) {
-      final norm = e.normalized;
-      if (norm.startsWith(q)) {
-        prefix.add(e);
-        continue;
-      }
-      var wp = false;
-      for (final token in norm.split(' ')) {
-        if (token.isEmpty) continue;
-        if (token.startsWith(q)) {
-          wp = true;
-          break;
-        }
-      }
-      if (wp) {
-        wordPrefix.add(e);
-      } else if (norm.contains(q)) {
-        substring.add(e);
-      }
-    }
-    final direct = [...prefix, ...wordPrefix, ...substring];
-    if (direct.length >= 6) return direct;
-    final fuzzy = <_Scored>[];
-    final seen = direct.map((e) => e.name.toLowerCase()).toSet();
-    final maxDist = q.length <= 3 ? 1 : 2;
-    for (final e in source) {
-      if (seen.contains(e.name.toLowerCase())) continue;
-      var best = _levenshteinCapped(q, e.normalized, maxDist);
-      for (final token in e.normalized.split(' ')) {
-        if (token.isEmpty) continue;
-        final d = _levenshteinCapped(q, token, maxDist);
-        if (d < best) best = d;
-      }
-      if (best <= maxDist) fuzzy.add(_Scored(e, best));
-    }
-    fuzzy.sort((a, b) => a.score.compareTo(b.score));
-    return [...direct, ...fuzzy.map((s) => s.entry)];
-  }
-
-  /// Relaxed fuzzy pass for the empty state — "Did you mean…?" chips.
-  List<_Entry> _didYouMean(String rawQuery) {
-    final q = rawQuery._normalized;
-    if (q.isEmpty) return const [];
-    final entries = _tab == _Tab.cities ? _cityEntries : _trekEntries;
-    final maxDist = q.length <= 4 ? 2 : 3;
-    final scored = <_Scored>[];
-    for (final e in entries) {
-      var best = _levenshteinCapped(q, e.normalized, maxDist);
-      for (final token in e.normalized.split(' ')) {
-        if (token.isEmpty) continue;
-        final d = _levenshteinCapped(q, token, maxDist);
-        if (d < best) best = d;
-      }
-      if (best <= maxDist) scored.add(_Scored(e, best));
-    }
-    scored.sort((a, b) => a.score.compareTo(b.score));
-    if (scored.length > 3) scored.removeRange(3, scored.length);
-    return [for (final s in scored) s.entry];
   }
 
   // ── BROWSE ROWS ────────────────────────────────────────────────────────
@@ -1623,7 +1479,7 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (_servingCacheOnTab) _buildCacheBanner(),
-            Expanded(child: _buildEmpty(result.query ?? '')),
+            Expanded(child: _buildEmpty(result.query ?? '', result.suggestions)),
           ],
         );
       }
@@ -2064,8 +1920,7 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
     );
   }
 
-  Widget _buildEmpty(String q) {
-    final suggestions = _didYouMean(q);
+  Widget _buildEmpty(String q, List<_Entry> suggestions) {
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
@@ -2156,7 +2011,9 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
             Text(
               msg,
               textAlign: TextAlign.center,
-              style: AppType.style(10.5, color: _T.inkMid, height: 1.4),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: AppType.style(FontSize.s10, color: _T.inkMid, height: 1.4),
             ),
             const SizedBox(height: 16),
             AppButton.secondary(
@@ -2164,7 +2021,7 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
               onPressed: _retry,
               isFullWidth: false,
               width: 128,
-              height: 40,
+              height: 48,
               prefixIcon: const Icon(
                 Icons.refresh_rounded,
                 size: 16,

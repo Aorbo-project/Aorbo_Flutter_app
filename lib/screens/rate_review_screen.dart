@@ -90,6 +90,10 @@ class _RateReviewScreenState extends State<RateReviewScreen>
   final dynamic arguments = Get.arguments;
 
   double selectedRating = 0;
+
+  /// A review is being sent: the button is locked (scan D11 - a second tap
+  /// used to send a second review: "Thank you" then "already reviewed").
+  bool _submitting = false;
   List<String> selectedCategories = [];
 
   final List<_CategoryItem> categories = const [
@@ -877,8 +881,12 @@ class _RateReviewScreenState extends State<RateReviewScreen>
           duration: const Duration(milliseconds: 250),
           opacity: _canSubmit ? 1 : 0.6,
           child: CommonButton(
-            text: _canSubmit ? 'Submit Feedback' : _blocker!,
+            text: _submitting
+                ? 'Sending your review...'
+                : (_canSubmit ? 'Submit Feedback' : _blocker!),
+            isDisabled: _submitting,
             onPressed: () {
+              if (_submitting) return;
               if (!_canSubmit) {
                 HapticFeedback.lightImpact();
                 final needsRating = selectedRating <= 0;
@@ -927,7 +935,7 @@ class _RateReviewScreenState extends State<RateReviewScreen>
     );
   }
 
-  void _submitFeedback({
+  Future<void> _submitFeedback({
     required int trekId,
     required int customerId,
     required int bookingId,
@@ -937,20 +945,27 @@ class _RateReviewScreenState extends State<RateReviewScreen>
     required bool trekPlanning,
     required bool womenSafety,
     required List<String> issueTags,
-  }) {
+  }) async {
+    if (_submitting) return;
+    setState(() => _submitting = true);
     final low = _isLowRating;
-    _trekC.createReview(
-      trekId: trekId,
-      customerId: customerId,
-      batchId: batchId,
-      bookingId: bookingId,
-      // Praise tags are never sent with a 1-2 star review (backend drops them too).
-      safetySecurity: !low && safetySecurity,
-      organizerManner: !low && organizerManner,
-      trekPlanning: !low && trekPlanning,
-      womenSafety: !low && womenSafety,
-      issueTags: issueTags,
-    );
+    try {
+      await _trekC.createReview(
+        trekId: trekId,
+        customerId: customerId,
+        batchId: batchId,
+        bookingId: bookingId,
+        // Praise tags are never sent with a 1-2 star review (backend drops them too).
+        safetySecurity: !low && safetySecurity,
+        organizerManner: !low && organizerManner,
+        trekPlanning: !low && trekPlanning,
+        womenSafety: !low && womenSafety,
+        issueTags: issueTags,
+      );
+    } finally {
+      // Saved -> this screen is already closing; failed -> try again.
+      if (mounted) setState(() => _submitting = false);
+    }
   }
 }
 

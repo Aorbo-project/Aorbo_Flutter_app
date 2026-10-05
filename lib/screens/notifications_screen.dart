@@ -6,6 +6,8 @@ import '../controller/notification_controller.dart';
 import '../utils/screen_constants.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
+import 'package:arobo_app/services/push_router.dart';
+import 'package:arobo_app/giveaway/giveaway_config.dart';
 
 // ─────────────────────────────────────────────
 //  TIME HELPERS
@@ -89,6 +91,15 @@ class _NotificationScreenState extends State<NotificationScreen>
   late final AnimationController _pulseCtrl;
 
   final NotificationController _controller = Get.put(NotificationController());
+
+  /// Marks it read and opens what it is about (scan E11: a tap used to only
+  /// mark it read). Same mapping as a push tap.
+  void _openNotification(NotificationItem item) {
+    _controller.markAsRead(item);
+    final target = routeForPush(item.pushData, giveawayEnabled: GiveawayConfig.enabled);
+    if (target == null || Get.currentRoute == target.route) return;
+    Get.toNamed(target.route, arguments: target.arguments);
+  }
 
   final List<String> _filters = ['All', 'Unread'];
 
@@ -369,7 +380,7 @@ class _NotificationScreenState extends State<NotificationScreen>
         ),
       ),
       child: GestureDetector(
-        onTap: () => _controller.markAsRead(item),
+        onTap: () => _openNotification(item),
         child: Container(
           margin: const EdgeInsets.only(bottom: 12),
           decoration: BoxDecoration(

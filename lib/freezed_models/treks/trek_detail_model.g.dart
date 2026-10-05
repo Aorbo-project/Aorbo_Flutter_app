@@ -24,17 +24,10 @@ Map<String, dynamic> _$$TrekDetailModalImplToJson(
 
 _$TrekDetailDataImpl _$$TrekDetailDataImplFromJson(Map<String, dynamic> json) =>
     _$TrekDetailDataImpl(
-      cityIds:
-          (json['city_ids'] as List<dynamic>?)?.map((e) => e as int).toList(),
-      inclusions: (json['inclusions'] as List<dynamic>?)
-          ?.map((e) => Inclusions.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      exclusions: (json['exclusions'] as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList(),
-      activities: (json['activities'] as List<dynamic>?)
-          ?.map((e) => Activities.fromJson(e as Map<String, dynamic>))
-          .toList(),
+      cityIds: jsonToIntList(json['city_ids']),
+      inclusions: _inclusionsFromJson(json['inclusions']),
+      exclusions: jsonToNameList(json['exclusions']),
+      activities: _activitiesFromJson(json['activities']),
       id: json['id'] as int?,
       mtrId: json['mtr_id'] as String?,
       title: json['title'] as String?,
@@ -285,12 +278,10 @@ Map<String, dynamic> _$$CityImplToJson(_$CityImpl instance) =>
 
 _$AccommodationsImpl _$$AccommodationsImplFromJson(Map<String, dynamic> json) =>
     _$AccommodationsImpl(
-      details: json['details'] == null
-          ? null
-          : Details.fromJson(json['details'] as Map<String, dynamic>),
-      id: json['id'] as int?,
-      trekId: json['trek_id'] as int?,
-      batchId: json['batch_id'] as int?,
+      details: _detailsFromJson(json['details']),
+      id: jsonToInt(json['id']),
+      trekId: jsonToInt(json['trek_id']),
+      batchId: jsonToInt(json['batch_id']),
       type: json['type'] as String?,
       createdAt: json['createdAt'] as String?,
       updatedAt: json['updatedAt'] as String?,
@@ -310,8 +301,8 @@ Map<String, dynamic> _$$AccommodationsImplToJson(
 
 _$DetailsImpl _$$DetailsImplFromJson(Map<String, dynamic> json) =>
     _$DetailsImpl(
-      night: json['night'] as int?,
-      location: json['location'] as String?,
+      night: jsonToInt(json['night']),
+      location: jsonToStringOrNull(json['location']),
     );
 
 Map<String, dynamic> _$$DetailsImplToJson(_$DetailsImpl instance) =>
@@ -322,9 +313,7 @@ Map<String, dynamic> _$$DetailsImplToJson(_$DetailsImpl instance) =>
 
 _$ItineraryItemsImpl _$$ItineraryItemsImplFromJson(Map<String, dynamic> json) =>
     _$ItineraryItemsImpl(
-      activities: (json['activities'] as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList(),
+      activities: jsonToNameList(json['activities']),
       id: json['id'] as int?,
       trekId: json['trek_id'] as int?,
       createdAt: json['createdAt'] as String?,
@@ -445,7 +434,7 @@ _$LatestReviewsImpl _$$LatestReviewsImplFromJson(Map<String, dynamic> json) =>
     _$LatestReviewsImpl(
       customerId: json['customer_id'] as int?,
       customerName: json['customer_name'] as String?,
-      ratingValue: json['rating_value'] as int?,
+      ratingValue: jsonToInt(json['rating_value']),
       content: json['content'] as String?,
       createdAt: json['created_at'] as String?,
       categoryHighlights: json['category_highlights'] as Map<String, dynamic>?,

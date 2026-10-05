@@ -1,7 +1,6 @@
 import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/controller/trek_controller.dart';
 import 'package:arobo_app/controller/user_controller.dart';
-import 'package:arobo_app/repository/repository.dart';
 import 'package:arobo_app/services/analytics_service.dart';
 import 'package:arobo_app/widgets/custom_network_image.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -25,6 +24,7 @@ import '../utils/custom_snackbar.dart';
 import '../share/trek_share.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
+import 'package:arobo_app/widgets/tap_target.dart';
 
 // One entry per distinct boarding CITY (not per stage — two boarding stages
 // in the same city are still a single choice for the customer). Shared by
@@ -451,14 +451,14 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
       titleSpacing: 0,
       toolbarHeight: 8.h,
       title: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 4.w),
+        padding: EdgeInsets.only(left: 1.w, right: 4.w),
         child: Row(
           children: [
-            GestureDetector(
+            TapTarget(
+              label: 'Back',
               onTap: () => Get.back(),
               child: Icon(Icons.arrow_back_rounded, color: _C.ink, size: 6.w),
             ),
-            SizedBox(width: 3.w),
             Container(
               width: 7.w,
               height: 7.w,
@@ -469,7 +469,6 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
               clipBehavior: Clip.antiAlias,
               child: trek?.vendorLogo?.isNotEmpty == true
                   ? CustomNetworkImage(
-                      accessToken: Repository.token,
                       imageUrl: trek?.vendorLogo ?? "",
                       fit: BoxFit.cover,
                       width: 7.w,
@@ -794,6 +793,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                       fit: BoxFit.contain,
                       width: 100.w,
                       height: 100.h,
+                      zoomable: true, // up to 3x pinch-zoom (scan D6)
                     ),
                   ),
                 ),

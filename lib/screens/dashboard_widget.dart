@@ -40,7 +40,7 @@ import 'package:flutter_touch_ripple/flutter_touch_ripple.dart';
 import 'package:shimmer_ai/shimmer_ai.dart';
 import 'package:sizer/sizer.dart';
 import 'package:arobo_app/utils/custom_snackbar.dart';
-import 'package:ntp/ntp.dart';
+import 'package:arobo_app/services/trusted_clock.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import 'package:arobo_app/utils/common_bottom_nav.dart';
@@ -48,6 +48,7 @@ import 'package:arobo_app/utils/common_bottom_nav.dart';
 import '../freezed_models/treks/treks_model_data.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
+import 'package:arobo_app/repository/friendly_error.dart';
 
 /// Neutral palette for the body/calendar. The HEADER no longer reads from
 /// this — it is fully driven by DashboardHeaderTheme.
@@ -108,6 +109,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
   DateTime? _selectedDay;
 
   final List<DateTime> _nearestWeekendDates = [];
+  late final Worker _calendarWorker;
 
   // ---------------------------------------------------------------------------
   // Helpers
@@ -153,16 +155,16 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
       duration: const Duration(milliseconds: 1800),
     )..repeat(reverse: true);
 
-    ever(_dashboardC.calenderTrekDatesObserver, (value) {
+    // Kept and disposed: the controller is permanent, so an un-stored
+    // worker outlived every Home visit (scan D4).
+    _calendarWorker = ever(_dashboardC.calenderTrekDatesObserver, (value) {
       if (mounted) setState(() {});
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _resetAllScrolls();
-      _dashboardC.fetchWhatsNew();
-      _dashboardC.fetchTopTreks();
-      _dashboardC.fetchSeasonalPicks();
-      _dashboardC.fetchSponsoredSlots();
+      // Only sections that are not fresh; loaded ones stay on screen.
+      _dashboardC.loadHomeContent();
     });
   }
 
@@ -182,6 +184,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    _calendarWorker.dispose();
     _stopAutoScroll();
     _pageController.dispose();
     _animationController.dispose();
@@ -208,21 +211,15 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
     }
   }
 
+  // Scan D3: bounded, shared NTP lookup (TrustedClock) — never hangs, falls
+  // back to device time.
   Future<void> _initializeNTPTime() async {
-    try {
-      final DateTime ntpTime = await NTP.now();
-      if (!mounted) return;
-      setState(() {
-        _ntpTime = ntpTime;
-        _focusedDay = ntpTime;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _ntpTime = DateTime.now();
-        _focusedDay = DateTime.now();
-      });
-    }
+    final DateTime trusted = await TrustedClock.instance.sync();
+    if (!mounted) return;
+    setState(() {
+      _ntpTime = trusted;
+      _focusedDay = trusted;
+    });
   }
 
   DateTime? _getFirstAvailableDate(DateTime startDate, DateTime endDate) {
@@ -452,10 +449,8 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
       return;
     }
 
-    if (_ntpTime == null) await _initializeNTPTime();
-    if (!context.mounted) return;
-
-    final DateTime currentTime = _ntpTime ?? DateTime.now();
+    // Never wait on the network clock here (scan D3): the picker opens at once.
+    final DateTime currentTime = _ntpTime ?? TrustedClock.instance.now();
     final DateTime normalizedCurrent = DateTime(
       currentTime.year,
       currentTime.month,
@@ -3094,7 +3089,7 @@ class _NotifyMeSheetState extends State<_NotifyMeSheet>
       setState(() {
         _isLoading = false;
         _hasError = true;
-        _errorMessage = e.toString().replaceFirst('Exception: ', '');
+        _errorMessage = friendlyError(e);
       });
 
       // Close sheet after a short delay on error

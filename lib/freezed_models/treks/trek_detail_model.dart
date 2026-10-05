@@ -1,6 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:intl/intl.dart';
 import '../../repository/network_url.dart';
+import '../json_converters.dart';
 import '../../widgets/logger.dart';
 
 part 'trek_detail_model.freezed.dart';
@@ -30,10 +31,12 @@ class TrekDetailModal with _$TrekDetailModal {
 @freezed
 class TrekDetailData with _$TrekDetailData {
   const factory TrekDetailData({
-    @JsonKey(name: 'city_ids') List<int>? cityIds,
-    List<Inclusions>? inclusions,
-    List<String>? exclusions,
-    List<Activities>? activities,
+    // Vendor-entered JSON lists: ids may come as numbers or strings, and
+    // inclusions/activities as plain names instead of objects.
+    @JsonKey(name: 'city_ids', fromJson: jsonToIntList) List<int>? cityIds,
+    @JsonKey(fromJson: _inclusionsFromJson) List<Inclusions>? inclusions,
+    @JsonKey(fromJson: jsonToNameList) List<String>? exclusions,
+    @JsonKey(fromJson: _activitiesFromJson) List<Activities>? activities,
     int? id,
     @JsonKey(name: 'mtr_id') String? mtrId,
     String? title,
@@ -135,6 +138,43 @@ extension TrekDetailDataExtension on TrekDetailData {
   }
 }
 
+/// Inclusions as objects ({id, name, description}) or plain name strings.
+List<Inclusions>? _inclusionsFromJson(Object? v) {
+  final list = jsonToList(v);
+  if (list == null) return null;
+  final out = <Inclusions>[];
+  for (final e in list) {
+    if (e is Map) {
+      out.add(Inclusions(
+        id: jsonToInt(e['id']),
+        name: jsonToStringOrNull(e['name']),
+        description: jsonToStringOrNull(e['description']),
+      ));
+    } else if (jsonDisplayName(e) case final String name) {
+      out.add(Inclusions(name: name));
+    }
+  }
+  return out;
+}
+
+/// Activities as objects ({id, name}) or plain name strings.
+List<Activities>? _activitiesFromJson(Object? v) {
+  final list = jsonToList(v);
+  if (list == null) return null;
+  final out = <Activities>[];
+  for (final e in list) {
+    if (e is Map) {
+      out.add(Activities(
+        id: jsonToInt(e['id']),
+        name: jsonToStringOrNull(e['name']),
+      ));
+    } else if (jsonDisplayName(e) case final String name) {
+      out.add(Activities(name: name));
+    }
+  }
+  return out;
+}
+
 @freezed
 class Inclusions with _$Inclusions {
   const factory Inclusions({int? id, String? name, String? description}) =
@@ -215,10 +255,12 @@ class City with _$City {
 @freezed
 class Accommodations with _$Accommodations {
   const factory Accommodations({
-    Details? details,
-    int? id,
-    @JsonKey(name: 'trek_id') int? trekId,
-    @JsonKey(name: 'batch_id') int? batchId,
+    // Review C L12: vendor-entered; a stored [] or a double-encoded string
+    // used to throw and blank the whole trek page.
+    @JsonKey(fromJson: _detailsFromJson) Details? details,
+    @JsonKey(fromJson: jsonToInt) int? id,
+    @JsonKey(name: 'trek_id', fromJson: jsonToInt) int? trekId,
+    @JsonKey(name: 'batch_id', fromJson: jsonToInt) int? batchId,
     String? type,
     @JsonKey(name: 'createdAt') String? createdAt,
     @JsonKey(name: 'updatedAt') String? updatedAt,
@@ -228,9 +270,17 @@ class Accommodations with _$Accommodations {
       _$AccommodationsFromJson(json);
 }
 
+Details? _detailsFromJson(Object? v) {
+  final map = jsonToMap(v);
+  return map == null ? null : Details.fromJson(map);
+}
+
 @freezed
 class Details with _$Details {
-  const factory Details({int? night, String? location}) = _Details;
+  const factory Details({
+    @JsonKey(fromJson: jsonToInt) int? night,
+    @JsonKey(fromJson: jsonToStringOrNull) String? location,
+  }) = _Details;
 
   factory Details.fromJson(Map<String, dynamic> json) =>
       _$DetailsFromJson(json);
@@ -239,7 +289,8 @@ class Details with _$Details {
 @freezed
 class ItineraryItems with _$ItineraryItems {
   const factory ItineraryItems({
-    List<String>? activities,
+    // Activity names; an id the server could not resolve is left out.
+    @JsonKey(fromJson: jsonToNameList) List<String>? activities,
     int? id,
     @JsonKey(name: 'trek_id') int? trekId,
     @JsonKey(name: 'createdAt') String? createdAt,
@@ -330,7 +381,8 @@ class LatestReviews with _$LatestReviews {
   const factory LatestReviews({
     @JsonKey(name: 'customer_id') int? customerId,
     @JsonKey(name: 'customer_name') String? customerName,
-    @JsonKey(name: 'rating_value') int? ratingValue,
+    // Whole stars. Older servers sent 4.0 / "4" / 4.5 — rounded here.
+    @JsonKey(name: 'rating_value', fromJson: jsonToInt) int? ratingValue,
     String? content,
     @JsonKey(name: 'created_at') String? createdAt,
     // 👇 ADD THIS LINE
