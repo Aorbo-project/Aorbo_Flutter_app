@@ -13,6 +13,8 @@ import 'package:arobo_app/screens/dashboard_widget.dart';
 import 'package:arobo_app/screens/my_account_screen.dart';
 import 'package:arobo_app/screens/traveller_information_screen.dart';
 import 'package:arobo_app/services/booking_draft_service.dart';
+import 'package:arobo_app/routes/app_route_observer.dart';
+import 'package:arobo_app/services/app_feedback.dart';
 import 'package:arobo_app/services/push_router.dart';
 import 'package:arobo_app/share/trek_link.dart';
 import 'package:arobo_app/share/trek_share.dart';
@@ -33,7 +35,7 @@ class DashboardMain extends StatefulWidget {
   State<DashboardMain> createState() => _DashboardMainState();
 }
 
-class _DashboardMainState extends State<DashboardMain> {
+class _DashboardMainState extends State<DashboardMain> with RouteAware {
   late final DashboardController _dashboardC;
   DateTime? _lastBackPressTime;
 
@@ -118,10 +120,48 @@ class _DashboardMainState extends State<DashboardMain> {
     );
   }
 
+  // ── Links and notification taps (scan E6) ───────────────────────────
+  // A shared trek link, a referral link or a notification tap must never
+  // open on top of a booking in progress: TrekLinkOpener rewrites the shared
+  // TrekController (coupons, the saved draft and "resume booking" then point
+  // at the wrong trek) and a pushed screen can be torn down by the payment
+  // flow. They wait until Home is the top screen again (didPopNext).
+  bool get _isOnTop => mounted && (ModalRoute.of(context)?.isCurrent ?? true);
+
+  bool _toldLinkWaits = false;
+  void _tellLinkWaits() {
+    if (_toldLinkWaits) return;
+    _toldLinkWaits = true;
+    AppFeedback.info("The shared trek will open when you're back on Home.");
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != null) {
+      appRouteObserver.unsubscribe(this);
+      appRouteObserver.subscribe(this, route);
+    }
+  }
+
+  /// Home is the top screen again: open whatever waited (after this frame
+  /// — the navigator is still finishing the pop when this is called).
+  @override
+  void didPopNext() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _openGiveawayIfLinked();
+      _openTrekIfLinked();
+      _openPushIfTapped();
+    });
+  }
+
   /// A notification tapped (app closed, in the background, or open): open
   /// the screen it is about, once (scan E1).
   void _openPushIfTapped() {
     if (!mounted || PendingPush.instance.tapped.value == null) return;
+    if (!_isOnTop) return; // kept until Home is on top (scan E6)
     final data = PendingPush.instance.take();
     if (data == null) return;
     final target = routeForPush(data, giveawayEnabled: GiveawayConfig.enabled);
@@ -135,6 +175,11 @@ class _DashboardMainState extends State<DashboardMain> {
     final requested = ReferralLinkCapture.instance.openTrekRequested;
     final link = requested.value ?? await PendingTrekLink.read();
     if (link == null || !mounted) return;
+    if (!_isOnTop) {
+      _tellLinkWaits(); // kept (in memory or saved) until Home is on top
+      return;
+    }
+    _toldLinkWaits = false;
     requested.value = null;
     await PendingTrekLink.clear();
     await TrekLinkOpener.open(link);
@@ -145,6 +190,7 @@ class _DashboardMainState extends State<DashboardMain> {
   void _openGiveawayIfLinked() {
     final requested = ReferralLinkCapture.instance.openGiveawayRequested;
     if (!requested.value || !mounted) return;
+    if (!_isOnTop) return; // kept until Home is on top (scan E6)
     requested.value = false;
     if (GiveawayConfig.enabled && Get.currentRoute != '/giveaway') {
       Get.toNamed('/giveaway');
@@ -157,6 +203,7 @@ class _DashboardMainState extends State<DashboardMain> {
     _giveawayLinkWorker?.dispose();
     _trekLinkWorker?.dispose();
     _pushTapWorker?.dispose();
+    appRouteObserver.unsubscribe(this);
     RateTrekPopup.dismiss(); // clean up overlay on dispose
     super.dispose();
   }

@@ -8,6 +8,7 @@ import 'package:arobo_app/firebase_options.dart';
 import 'package:arobo_app/giveaway/referral_links.dart';
 import 'package:arobo_app/legal/legal_service.dart';
 import 'package:arobo_app/repository/repository.dart';
+import 'package:arobo_app/routes/app_route_observer.dart';
 import 'package:arobo_app/routes/routes.dart';
 import 'package:arobo_app/services/push_router.dart';
 import 'package:arobo_app/utils/Preferences.dart';
@@ -296,6 +297,7 @@ class MyApp extends StatelessWidget {
           theme: AppTheme.lightTheme,
           initialRoute: '/',
           getPages: routes,
+          navigatorObservers: [appRouteObserver],
           builder: (context, child) {
             final mq = MediaQuery.of(context);
             return MediaQuery(
