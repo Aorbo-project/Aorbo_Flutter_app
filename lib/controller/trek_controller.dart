@@ -918,7 +918,11 @@ class TrekController extends GetxController {
     }
   }
 
-  createReview({
+  /// Posts the review. True when it is saved (also when the server says it
+  /// already has one for this booking - a lost reply to an earlier tap).
+  /// Scan D11: on failure the typed review is KEPT so the customer can fix
+  /// the problem and send it again; only a saved review clears it.
+  Future<bool> createReview({
     required int trekId,
     required int customerId,
     required int bookingId,
@@ -945,6 +949,7 @@ class TrekController extends GetxController {
       // complaint tag + written review on 1-2 star reviews.
       "form_version": 2,
     });
+    isLoading.value = true;
     try {
       final response = await repository.postApiCall(
         url: NetworkUrl.review,
@@ -952,29 +957,46 @@ class TrekController extends GetxController {
       );
 
       if (response != null) {
-        if (response['success']) {
-          await _dashboardC.loadAllBookingHistory(force: true, waitForCompletion: false);
-          reviewController.value.clear();
-          Get.back();
-          Get.back();
-          CustomSnackBar.show(
-            Get.context!,
-            message: 'Thank you for your valuable feedback!',
-          );
-          update();
+        if (response['success'] == true) {
+          await _reviewSaved();
+          return true;
         } else {
-          errorMessage.value = response['message'];
+          final message = response['message'];
+          if (_alreadyReviewed(message)) {
+            await _reviewSaved();
+            return true;
+          }
+          errorMessage.value = friendlyError(message ?? '');
           CustomSnackBar.show(Get.context!, message: errorMessage.value);
           // Keep what the user typed - they fix the problem and resubmit.
         }
       }
     } catch (e) {
+      if (_alreadyReviewed(e.toString())) {
+        await _reviewSaved();
+        return true;
+      }
       errorMessage.value = friendlyError(e);
       CustomSnackBar.show(Get.context!, message: errorMessage.value);
     } finally {
-      reviewController.value.clear();
       isLoading.value = false;
     }
+    return false;
+  }
+
+  bool _alreadyReviewed(Object? message) =>
+      '${message ?? ''}'.toLowerCase().contains('already reviewed');
+
+  Future<void> _reviewSaved() async {
+    await _dashboardC.loadAllBookingHistory(force: true, waitForCompletion: false);
+    reviewController.value.clear();
+    Get.back();
+    Get.back();
+    CustomSnackBar.show(
+      Get.context!,
+      message: 'Thank you for your valuable feedback!',
+    );
+    update();
   }
 
   Future<String?> fetchCancellationDetails(String bookingId) async {
