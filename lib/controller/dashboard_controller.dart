@@ -1177,35 +1177,60 @@ class DashboardController extends GetxController {
     }
   }
 
-  getBookingDetail({required dynamic bookingId}) async {
+  getBookingDetail({required dynamic bookingId}) =>
+      _loadBookingDetail(bookingId, keepPrevious: false);
+
+  /// Pull-to-refresh: the booking on screen stays up while it reloads, and
+  /// stays if the reload fails.
+  Future<void> reloadBookingDetail({required dynamic bookingId}) =>
+      _loadBookingDetail(bookingId, keepPrevious: true);
+
+  Future<void> _loadBookingDetail(dynamic bookingId, {required bool keepPrevious}) async {
+    final shown = bookingDetailsObserver.value.maybeWhen(
+      success: (r) => (r as BookingDetailsResponseModel?)?.data,
+      orElse: () => null,
+    );
+    final keep = keepPrevious && shown != null && '${shown.id}' == '$bookingId';
     try {
-      bookingDetailsObserver.value = ApiResult.loading("");
+      if (!keep) bookingDetailsObserver.value = ApiResult.loading("");
       final response = await _repository.getApiCall(
         url: NetworkUrl.bookingDetails(bookingId),
       );
 
-      if (response != null) {
-        if (response['success']) {
-          final body = BookingDetailsResponseModel.fromJson(response);
-          bookingDetailsObserver.value = ApiResult.success(body);
-          bookingHistoryModal.value = body.data;
-        } else {
-          final message = response['message'];
-          bookingDetailsObserver.value = ApiResult.error(
-            message is String && message.isNotEmpty
-                ? message
-                : bookingDetailsLoadError,
-          );
+      if (response == null) {
+        // Scan D9: offline. getApiCall returns null (and already says so),
+        // which used to leave this observer on `loading` - a shimmer that
+        // never ended, even right after paying.
+        if (!keep) {
+          bookingDetailsObserver.value = const ApiResult.error(FriendlyText.noInternet);
         }
+        return;
+      }
+      if (response['success'] == true) {
+        final body = BookingDetailsResponseModel.fromJson(response);
+        bookingDetailsObserver.value = ApiResult.success(body);
+        bookingHistoryModal.value = body.data;
+      } else if (!keep) {
+        final message = response['message'];
+        bookingDetailsObserver.value = ApiResult.error(
+          message is String && isFriendlyText(message)
+              ? message
+              : bookingDetailsLoadError,
+        );
       }
     } catch (e) {
       logger.e('getBookingDetail($bookingId) failed: $e');
-      bookingDetailsObserver.value = ApiResult.error(bookingDetailsLoadError);
+      if (!keep) {
+        bookingDetailsObserver.value = ApiResult.error(
+          e is ApiException && e.message == FriendlyText.noInternet
+              ? FriendlyText.noInternet
+              : bookingDetailsLoadError,
+        );
+      }
       if (Get.context != null) {
         CustomSnackBar.show(Get.context!, message: bookingDetailsLoadError);
       }
     }
-    return null;
   }
 
   Future<void> generateAndUploadInvoice(int bookingId) async {

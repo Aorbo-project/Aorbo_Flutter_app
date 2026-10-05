@@ -2660,6 +2660,58 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
     );
   }
 
+  /// Pull-to-refresh: reload, keeping the booking on screen meanwhile.
+  Future<void> _reloadBooking() => _dashboardC.reloadBookingDetail(
+        bookingId: widget.bookingId ?? '0',
+      );
+
+  /// Couldn't load the booking (offline, server trouble): the reason and a
+  /// Retry button, instead of a shimmer that never ends.
+  Widget _buildLoadError(String message) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 8.w),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.cloud_off_rounded, size: 48, color: _TC.inkMid),
+            SizedBox(height: 2.h),
+            Text(
+              bookingDetailsLoadError,
+              textAlign: TextAlign.center,
+              style: AppType.style(FontSize.s14, w: FontWeight.w700, color: _TC.ink),
+            ),
+            if (message != bookingDetailsLoadError) ...[
+              SizedBox(height: 1.h),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: AppType.style(FontSize.s11, color: _TC.inkMid, height: 1.4),
+              ),
+            ],
+            SizedBox(height: 3.h),
+            SizedBox(
+              height: 48,
+              child: ElevatedButton.icon(
+                onPressed: () => _dashboardC.getBookingDetail(
+                  bookingId: widget.bookingId ?? '0',
+                ),
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Retry'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.forest,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildShimmerLoading() {
     return SingleChildScrollView(
       padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
@@ -2722,6 +2774,16 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
 
             if (isLoading) return _buildShimmerLoading();
 
+            // Scan D9: offline / failed load -> say so, with Retry (never an
+            // endless shimmer, never an empty ticket).
+            final loadError = _dashboardC.bookingDetailsObserver.value.maybeWhen(
+              error: (message) => message,
+              orElse: () => null,
+            );
+            if (booking == null && loadError != null) {
+              return _buildLoadError(loadError);
+            }
+
             final bool isRated = _isRated(booking);
 
             final bool showRatingFab =
@@ -2757,8 +2819,13 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
 
             return Stack(
               children: [
-                SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
+                RefreshIndicator(
+                  onRefresh: _reloadBooking,
+                  color: AppColors.forest,
+                  child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(
+                    parent: BouncingScrollPhysics(),
+                  ),
                   padding: EdgeInsets.only(bottom: showRatingFab ? 18.h : 0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -3069,6 +3136,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                       ),
                     ],
                   ),
+                ),
                 ),
 
                 if (showRatingFab)

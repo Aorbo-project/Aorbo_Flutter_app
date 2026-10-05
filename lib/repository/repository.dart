@@ -22,7 +22,7 @@ import 'package:arobo_app/security/pinned_http_client.dart';
 import 'package:arobo_app/services/session_teardown.dart';
 
 export 'package:arobo_app/repository/friendly_error.dart'
-    show ApiException, FriendlyText, friendlyError;
+    show ApiException, FriendlyText, friendlyError, isFriendlyText;
 
 class RateLimitException implements Exception {
   final String message;
