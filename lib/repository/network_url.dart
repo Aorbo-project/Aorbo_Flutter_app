@@ -87,8 +87,16 @@ class NetworkUrl {
 
   // Coupons
   static const String fetchPlatformCoupons = 'coupons/platform';
-  static String validateVersion(String? version, String platform) =>
-      'version/check?current_version=$version&platform=$platform';
+  // Force-update policy for this build (app_update/app_update_gate.dart).
+  // Enforcement is by `build` (versionCode); current_version stays for
+  // servers/older code paths that only know the name.
+  static String validateVersion(String? version, String platform,
+          {String? build}) =>
+      Uri(path: 'version/check', queryParameters: {
+        'current_version': version ?? '',
+        if (build != null && build.isNotEmpty) 'build': build,
+        'platform': platform,
+      }).toString();
   static String fetchCouponsForTrek(int trekId) => 'coupons/trek/$trekId';
   static String fetchCouponsForBatch({
     required int batchId,

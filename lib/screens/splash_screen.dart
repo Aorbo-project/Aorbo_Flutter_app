@@ -1,17 +1,15 @@
+import 'package:arobo_app/app_update/app_update_gate.dart';
 import 'package:arobo_app/controller/auth_controller.dart';
 import 'package:arobo_app/controller/otp_controller.dart';
 import 'package:arobo_app/giveaway/referral_links.dart';
 import 'package:arobo_app/legal/legal_links_text.dart';
 import 'package:arobo_app/main.dart';
-import 'package:arobo_app/models/auth/validate_version_model.dart';
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/common_images.dart';
 import 'package:arobo_app/utils/common_logics.dart';
 import 'package:arobo_app/utils/custom_snackbar.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:arobo_app/utils/phone_input_formatter.dart';
-import 'package:arobo_app/screens/update_version_screen.dart';
-import 'package:arobo_app/utils/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
@@ -19,9 +17,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:pinput/pinput.dart';
 import 'dart:async';
-import 'dart:io';
 import 'package:sizer/sizer.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:arobo_app/theme/app_typography.dart';
 import 'package:arobo_app/widgets/otp_success_overlay.dart';
 import 'package:arobo_app/widgets/dissolve_to_dashboard.dart';
@@ -500,27 +496,24 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
     await appBootstrapFuture;
     if (!mounted) return;
 
-    final validateResponse = await _authC.validateVersion();
-
-    // Hard block ONLY on update_required (below min_supported_version
-    // — an explicit admin-set minimum). update_available alone means
-    // "a newer version exists" and must never block anyone; that flag
-    // used to be wired to this same block, which would have force-
-    // blocked every user on every single release.
-    if (validateResponse?.updateRequired == true) {
+    // Force-update gate (app_update/app_update_gate.dart). Hard block ONLY
+    // on update_required — the gate then replaces this screen with the
+    // "Update required" one. update_available / update_announced only feed
+    // the dashboard banner. No answer (offline, server error) = carry on.
+    final gate = AppUpdateGate.instance;
+    await gate.check();
+    if (!mounted || gate.isBlocked) {
       _bootHintTimer?.cancel();
-      Get.offAll(() => UpdateVersionScreen(dataModel: validateResponse));
       return;
     }
-
-    _maybeNotifySoftUpdate(validateResponse);
 
     if (CommonLogics.checkUserLogin()) {
       // Confirm the cached session is still accepted by the server
       // BEFORE committing to /dashboard — see validateSession's doc
       // comment for why (splash→dashboard→login flicker bug).
       final sessionValid = await _authC.validateSession();
-      if (!mounted) return;
+      // A 426 on that call blocks the app; never sign out over it.
+      if (!mounted || gate.isBlocked) return;
 
       if (sessionValid) {
         // Self-healing sync: catches a token that failed to register
@@ -541,50 +534,6 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
     }
   }
 
-  // Non-blocking "a newer version exists" nudge — update_required above
-  // already handles the hard-block case; this covers update_available-only,
-  // shown at most once per latest_version (via SpUtil.dismissedUpdateVersion)
-  // so it doesn't re-nag on every launch until the user actually updates.
-  void _maybeNotifySoftUpdate(ValidateDataModel? data) {
-    if (data?.updateAvailable != true) return;
-    final latest = data?.latestVersion;
-    if (latest == null || latest.isEmpty) return;
-    if (sp?.getString(SpUtil.dismissedUpdateVersion) == latest) return;
-    sp?.putString(SpUtil.dismissedUpdateVersion, latest);
-
-    Get.snackbar(
-      'Update available',
-      'Version $latest is ready — tap Update to get it from the store.',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: const Color(0xFF1A1A1A),
-      colorText: Colors.white,
-      margin: EdgeInsets.all(3.w),
-      borderRadius: 14,
-      duration: const Duration(seconds: 6),
-      mainButton: TextButton(
-        onPressed: () {
-          Get.closeCurrentSnackbar();
-          _launchStoreForUpdate();
-        },
-        child: const Text(
-          'UPDATE',
-          style: TextStyle(color: Color(0xFFFFC400), fontWeight: FontWeight.w800),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _launchStoreForUpdate() async {
-    final url = Uri.parse(
-      Platform.isAndroid
-          ? 'https://play.google.com/store/apps/details?id=com.aorbotreks.app'
-          : 'https://apps.apple.com/us/app/aorbo/id6747623495',
-    );
-    try {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-    } catch (_) {}
-  }
-
   // Freezes the splash on a static frame, then hands off to /dashboard via
   // dissolveToDashboard(): an opaque copy of this screen's yellow gradient
   // is held on top while the dashboard mounts + paints + runs its content
@@ -598,6 +547,8 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
   // is the same yellow gradient in both cases.
   void _goToDashboard() {
     _bootHintTimer?.cancel();
+    // The update screen owns the app once a request was refused as too old.
+    if (AppUpdateGate.instance.isBlocked) return;
     if (!mounted) {
       Get.offAllNamed('/dashboard');
       return;

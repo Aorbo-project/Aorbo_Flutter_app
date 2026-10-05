@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:arobo_app/app_update/app_version_info.dart';
 import 'package:arobo_app/repository/network_url.dart';
 import 'package:arobo_app/security/pinned_roots.dart';
 import 'package:arobo_app/security/security_config.dart';
@@ -75,7 +76,10 @@ class PinnedHttp {
           baseUrl: NetworkUrl.baseUrl,
           connectTimeout: const Duration(seconds: 8),
           receiveTimeout: const Duration(seconds: 8),
-          headers: {'Content-Type': 'application/json'},
+          headers: {
+            'Content-Type': 'application/json',
+            ...AppVersionInfo.currentHeaders,
+          },
         )).post('device-security/report', data: {
           'event': 'tls_pin_mismatch',
           'host': host,

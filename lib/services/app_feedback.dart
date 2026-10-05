@@ -65,8 +65,14 @@ class AppFeedback {
     _busy = false;
   }
 
+  /// While true, toasts are dropped — set once the "Update required" screen
+  /// owns the app (AppUpdateGate), so failures of requests still in flight
+  /// don't pile up on top of it.
+  static bool muted = false;
+
   // ── internals ──────────────────────────────
   static void _enqueue(String message, FeedbackKind kind, Duration duration) {
+    if (muted) return;
     final msg = message.replaceFirst('Exception: ', '').trim();
     if (msg.isEmpty) return;
     // Collapse rapid duplicates (double-taps, retry loops).

@@ -33,6 +33,29 @@ void main() {
       }
       expect(refreshOutcomeForError(StateError('boom')), RefreshOutcome.transientFailure);
     });
+
+    test('a refresh refused as "update this app" is never a logout', () {
+      DioException withBody(int status, Object? body) => DioException(
+            requestOptions: RequestOptions(path: '/customer/auth/refresh'),
+            response: Response(
+              requestOptions: RequestOptions(path: '/customer/auth/refresh'),
+              statusCode: status,
+              data: body,
+            ),
+            type: DioExceptionType.badResponse,
+          );
+      expect(refreshOutcomeForError(_http(426)), RefreshOutcome.updateRequired);
+      expect(
+        refreshOutcomeForError(withBody(426, {'success': false, 'code': 'APP_UPDATE_REQUIRED', 'message': 'Update'})),
+        RefreshOutcome.updateRequired,
+      );
+      expect(
+        refreshOutcomeForError(withBody(403, {'success': false, 'code': 'APP_UPDATE_REQUIRED'})),
+        RefreshOutcome.updateRequired,
+      );
+      // Any other 403 still means the refresh token was rejected.
+      expect(refreshOutcomeForError(withBody(403, {'code': 'INVALID_TOKEN'})), RefreshOutcome.sessionOver);
+    });
   });
 
   group('replayFailureEndsSession — after a successful refresh', () {

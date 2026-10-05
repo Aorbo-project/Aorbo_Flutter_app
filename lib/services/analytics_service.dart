@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
+import 'package:arobo_app/app_update/app_version_info.dart';
 import 'package:arobo_app/repository/network_url.dart';
 import 'package:arobo_app/repository/repository.dart';
 
@@ -25,7 +26,7 @@ class AnalyticsService {
       receiveTimeout: const Duration(seconds: 8),
       headers: {'Accept': '*/*', 'Content-Type': 'application/json'},
     ),
-  );
+  )..interceptors.add(AppVersionHeadersInterceptor());
 
   late final String _sessionId = _makeSessionId();
   final List<Map<String, dynamic>> _buffer = [];

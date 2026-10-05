@@ -29,10 +29,10 @@ class SpUtil {
   // (flaky network, brief backend outage) gets retried on the next launch
   // instead of leaving that customer without push forever.
   static const String fcmTokenSynced   = 'fcm_token_synced';
-  // latest_version last shown in the soft "update available" nudge — lets
-  // the splash screen show it at most once per version instead of nagging
-  // on every launch until the user actually updates.
-  static const String dismissedUpdateVersion = 'dismissed_update_version';
+  // The "update available" dashboard banner the user closed, keyed by
+  // latest_build (AppUpdatePolicy.dismissKey) — it stays hidden until a
+  // newer build is published (app_update/app_update_gate.dart).
+  static const String dismissedUpdateBuild = 'dismissed_update_build';
 
   // Last legal-document list from GET legal/documents (JSON), so the
   // Terms / Privacy links still open the server's URLs when offline.
