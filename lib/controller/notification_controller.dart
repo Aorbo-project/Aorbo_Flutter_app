@@ -11,25 +11,44 @@ class NotificationItem {
   final DateTime? createdAt;
   bool isRead;
 
+  /// The push event it came from (`template_name`, e.g. BOOKING_CONFIRMED).
+  final String? event;
+
+  /// The booking it is about, when the server sends one.
+  final int? bookingId;
+
   NotificationItem({
     required this.id,
     required this.title,
     required this.message,
     required this.createdAt,
     required this.isRead,
+    this.event,
+    this.bookingId,
   });
+
+  /// The same data a push tap carries — for [routeForPush] (scan E11).
+  Map<String, dynamic> get pushData => {
+        if (event != null) 'event': event,
+        if (bookingId != null) 'bookingId': bookingId,
+      };
 
   factory NotificationItem.fromJson(Map<String, dynamic> json) {
     // 🔥 THE FIX: Check for both 'createdAt' (API) and 'created_at' (Standard)
     final dateStr =
         json['createdAt']?.toString() ?? json['created_at']?.toString() ?? '';
 
+    final data = json['data'] is Map ? json['data'] as Map : const {};
+    final event = (json['template_name'] ?? json['event'] ?? data['event'])?.toString();
+    final booking = json['booking_id'] ?? data['bookingId'] ?? data['booking_id'];
     return NotificationItem(
       id: json['id'] is int ? json['id'] : int.tryParse('${json['id']}') ?? 0,
       title: json['title']?.toString() ?? '',
       message: json['message']?.toString() ?? '',
       createdAt: dateStr.isNotEmpty ? DateTime.tryParse(dateStr) : null,
       isRead: json['is_read'] == true || json['isRead'] == true,
+      event: (event == null || event.isEmpty) ? null : event,
+      bookingId: booking is int ? booking : int.tryParse('${booking ?? ''}'),
     );
   }
 }

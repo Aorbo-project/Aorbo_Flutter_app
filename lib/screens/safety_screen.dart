@@ -883,7 +883,8 @@ class _SafetyScreenState extends State<SafetyScreen>
                             borderRadius: BorderRadius.circular(20),
                             gradientColors:
                                 _safetyCards[index]['gradientColors'],
-                            onTap: () {},
+                            // Informational card: nothing to open (scan E11).
+                            onTap: null,
                           ),
                         ),
                       ),

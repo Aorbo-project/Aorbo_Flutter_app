@@ -161,8 +161,8 @@ class InvoicePdfService {
   /// the `pdf` package runs entirely on whatever isolate calls it — is handed
   /// to a background isolate via compute().
   ///
-  /// Why: this runs on EVERY successful booking (PaymentSuccessPage.initState
-  /// -> generateAndUploadInvoice, fire-and-forget). "Not awaited" is not "not
+  /// Why: this runs on EVERY successful booking (PaymentProcessingScreen
+  /// success -> generateAndUploadInvoice, fire-and-forget). "Not awaited" is not "not
   /// blocking" in Dart — the synchronous stretches of that Future still run to
   /// completion on the UI isolate, so the invoice layout was freezing the
   /// screen right at the payment-success moment. Found while investigating a

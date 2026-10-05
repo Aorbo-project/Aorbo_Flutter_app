@@ -12,10 +12,17 @@ import 'package:get/get.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
 import '../utils/common_bottom_nav.dart';
+import 'package:arobo_app/app_update/app_update_policy.dart' show defaultStoreUrl;
+import 'package:url_launcher/url_launcher.dart';
+import 'package:arobo_app/utils/custom_snackbar.dart';
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS
 // ─────────────────────────────────────────────
+
+/// Where trek organisers sign up / sign in (the partner portal).
+const String kPartnerPortalUrl = 'https://partners.aorbotreks.co.in/';
+
 class _C {
   static const bg = CommonColors.offWhiteColor;
   static const cardBg = CommonColors.whiteColor;
@@ -245,18 +252,13 @@ class _MyAccountScreenState extends State<MyAccountScreen>
                   ),
                 ),
                 SizedBox(height: 2.h),
+                // Scan E11: "Claims" was a dead "coming soon" row with no
+                // feature behind it — hidden until claims exist.
                 _buildAnimatedSection(
                   index: 2,
-                  label: 'EARNINGS & CLAIMS',
+                  label: 'EARNINGS',
                   child: _buildCard(
                     children: [
-                      _buildMenuItem(
-                        icon: CommonImages.claims,
-                        title: 'Claims',
-                        onTap: () {},
-                        isComingSoon: true,
-                      ),
-                      _buildDivider(),
                       _buildMenuItem(
                         icon: CommonImages.refer,
                         title: 'Refer & Earn',
@@ -271,18 +273,17 @@ class _MyAccountScreenState extends State<MyAccountScreen>
                   label: 'MORE',
                   child: _buildCard(
                     children: [
+                      // Scan E11: these two were dead "coming soon" rows.
                       _buildMenuItem(
                         icon: CommonImages.partner,
                         title: 'Become Partner',
-                        onTap: () {},
-                        isComingSoon: true,
+                        onTap: () => _openExternal(kPartnerPortalUrl),
                       ),
                       _buildDivider(),
                       _buildMenuItem(
                         icon: CommonImages.rate,
                         title: 'Rate us',
-                        onTap: () {},
-                        isComingSoon: true,
+                        onTap: () => _openExternal(defaultStoreUrl()),
                       ),
                       _buildDivider(),
                       _buildMenuItem(
@@ -568,6 +569,21 @@ class _MyAccountScreenState extends State<MyAccountScreen>
       ),
       child: Column(mainAxisSize: MainAxisSize.min, children: children),
     );
+  }
+
+  /// Opens [url] in the browser / store app; a short note if it can't.
+  Future<void> _openExternal(String url) async {
+    try {
+      final opened = await launchUrl(
+        Uri.parse(url),
+        mode: LaunchMode.externalApplication,
+      );
+      if (!opened) throw StateError('not opened');
+    } catch (_) {
+      if (mounted) {
+        CustomSnackBar.show(context, message: "Couldn't open the page. Please try again.");
+      }
+    }
   }
 
   Widget _buildMenuItem({
