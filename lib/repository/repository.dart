@@ -18,6 +18,7 @@ import 'package:get/get.dart' hide FormData, Response;
 import 'package:arobo_app/integrity/integrity_interceptor.dart';
 import 'package:arobo_app/security/device_key_service.dart';
 import 'package:arobo_app/security/pinned_http_client.dart';
+import 'package:arobo_app/services/session_teardown.dart';
 
 class RateLimitException implements Exception {
   final String message;
@@ -86,6 +87,10 @@ const String sessionEndedExtra = 'aorbo_session_ended';
 /// Did the network layer end the session while handling [error]?
 bool sessionEndedByServer(DioException error) =>
     error.requestOptions.extra[sessionEndedExtra] == true;
+
+/// Request flag: if the server refuses the session on this request, clear it
+/// but do not navigate — the caller (the Logout button) does that itself.
+const String noSignOutNavigationExtra = 'aorbo_no_signout_navigation';
 
 /// A server reply kept whole — see [Repository.postForReply].
 class ApiReply {
@@ -359,7 +364,10 @@ class Repository {
               }
             }
             error.requestOptions.extra[sessionEndedExtra] = true;
-            await sp!.clear();
+            // Scan E2/E3: the same teardown as the Logout button (stored
+            // session, push token, device key); the previous person's
+            // controllers are dropped at the next sign-in.
+            await SessionTeardown.clearLocalSession();
             // forcedLogout: true tells SplashWithLoginScreen this is a
             // mid-session kick-out, not a cold app start — it skips the
             // logo entrance/breathing choreography (which is only
@@ -367,9 +375,7 @@ class Repository {
             // login form instead of replaying ~1s+ of animation the user
             // just sat through moments ago. Never away from the update
             // screen, though.
-            if (!AppUpdateGate.instance.isBlocked) {
-              Get.offAllNamed('/', arguments: {'forcedLogout': true});
-            }
+            _goToSignIn(error.requestOptions);
             return handler.next(error);
           }
 
@@ -380,16 +386,22 @@ class Repository {
                       errorCode == 'INVALID_TOKEN_TYPE'));
           if (isSessionInvalid) {
             error.requestOptions.extra[sessionEndedExtra] = true;
-            await sp!.clear();
-            if (!AppUpdateGate.instance.isBlocked) {
-              Get.offAllNamed('/', arguments: {'forcedLogout': true});
-            }
+            await SessionTeardown.clearLocalSession();
+            _goToSignIn(error.requestOptions);
           }
 
           return handler.next(error);
         },
       ),
     );
+  }
+
+  /// After the server ended the session: back to the sign-in form — never
+  /// away from the update screen, and not when the caller navigates itself.
+  void _goToSignIn(RequestOptions request) {
+    if (AppUpdateGate.instance.isBlocked) return;
+    if (request.extra[noSignOutNavigationExtra] == true) return;
+    Get.offAllNamed('/', arguments: {'forcedLogout': true});
   }
 
   Future<bool> isInternetAvailable() async {

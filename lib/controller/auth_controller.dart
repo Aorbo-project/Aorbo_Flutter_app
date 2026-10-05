@@ -23,6 +23,7 @@ import '../utils/custom_snackbar.dart';
 import '../widgets/logger.dart';
 import '../repository/app_env.dart';
 import 'package:arobo_app/security/device_key_service.dart';
+import 'package:arobo_app/services/session_teardown.dart';
 
 class AuthController extends GetxController {
   Repository repository = Repository();
@@ -202,6 +203,9 @@ class AuthController extends GetxController {
           FirebaseCrashlytics.instance.setUserIdentifier(
             customer?.id?.toString() ?? '',
           );
+          // Scan E2: a new person is signing in — the previous one's
+          // bookings / profile / coupons must not be served from memory.
+          SessionTeardown.dropUserControllers();
           registerFcmToken();
           // The backend applied (or rejected) the referral code inside this
           // same request — keep the outcome for the post-verify banner.
@@ -306,6 +310,11 @@ class AuthController extends GetxController {
   //
   // Errors are non-fatal — user is already logged in regardless of outcome.
   Future<void> registerFcmToken([String? tokenOverride]) async {
+    // Signed out (e.g. FCM rotated the token right after Logout deleted it):
+    // nothing to register it to — and an unauthenticated call would only be
+    // refused.
+    final accessToken = sp?.getString(SpUtil.accessToken);
+    if (accessToken == null || accessToken.toString().isEmpty) return;
     try {
       final fcmToken = tokenOverride ?? await FirebaseMessaging.instance.getToken();
       if (fcmToken == null) return;

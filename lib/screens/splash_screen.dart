@@ -4,6 +4,7 @@ import 'package:arobo_app/controller/otp_controller.dart';
 import 'package:arobo_app/giveaway/referral_links.dart';
 import 'package:arobo_app/legal/legal_links_text.dart';
 import 'package:arobo_app/main.dart';
+import 'package:arobo_app/services/session_teardown.dart';
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/common_images.dart';
 import 'package:arobo_app/utils/common_logics.dart';
@@ -526,7 +527,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
         // Explicit server rejection — the cached flag lied, clear it
         // so the user lands cleanly on the login form instead of a
         // dashboard that would immediately bounce them back out.
-        await sp!.clear();
+        await SessionTeardown.clearLocalSession();
         _startFormAnimation();
       }
     } else {
