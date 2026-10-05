@@ -8,6 +8,10 @@ import '../utils/common_images.dart';
 import '../utils/safe_dimensions.dart';
 
 class CustomNetworkImage extends StatelessWidget {
+  /// Ignored. Scan E5: images never carry the customer's token — the image
+  /// loader has its own HTTP stack (not pinned), photos and vendor logos are
+  /// public, and a logo URL can be a third-party CDN (Cloudinary).
+  @Deprecated('Images are loaded without the access token (scan E5).')
   final String? accessToken;
   final String imageUrl;
   final BoxFit fit;
@@ -72,11 +76,7 @@ class CustomNetworkImage extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(borderRadius ?? 8),
       child: CachedNetworkImage(
-        httpHeaders: {
-          'Accept': '*/*',
-          'Content-Type': 'application/json',
-          'Authorization' :'Bearer $accessToken'
-        },
+        httpHeaders: const {'Accept': '*/*'},
         imageUrl: imageUrl,
         fit: fit,
         cacheKey: imageUrl,

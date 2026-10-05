@@ -1,7 +1,6 @@
 import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/controller/trek_controller.dart';
 import 'package:arobo_app/controller/user_controller.dart';
-import 'package:arobo_app/repository/repository.dart';
 import 'package:arobo_app/services/analytics_service.dart';
 import 'package:arobo_app/widgets/custom_network_image.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -469,7 +468,6 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
               clipBehavior: Clip.antiAlias,
               child: trek?.vendorLogo?.isNotEmpty == true
                   ? CustomNetworkImage(
-                      accessToken: Repository.token,
                       imageUrl: trek?.vendorLogo ?? "",
                       fit: BoxFit.cover,
                       width: 7.w,

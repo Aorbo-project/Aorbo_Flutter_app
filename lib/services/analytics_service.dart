@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:arobo_app/app_update/app_version_info.dart';
 import 'package:arobo_app/repository/network_url.dart';
 import 'package:arobo_app/repository/repository.dart';
+import 'package:arobo_app/security/pinned_http_client.dart';
 
 /// Fire-and-forget behaviour tracking for the vendor Performance Insights
 /// conversion funnel (trek views -> booking started -> booking paid).
@@ -27,6 +28,24 @@ class AnalyticsService {
       headers: {'Accept': '*/*', 'Content-Type': 'application/json'},
     ),
   )..interceptors.add(AppVersionHeadersInterceptor());
+
+  // Scan E5: this request carries the customer's access token, so it goes
+  // through the same pinned TLS client as every other API call (it used to
+  // use the phone's normal trust store, readable by an interception proxy).
+  bool _pinned = false;
+  Dio get _client {
+    if (!_pinned) {
+      PinnedHttp.apply(_dio);
+      _pinned = true;
+    }
+    return _dio;
+  }
+
+  /// Rebuild the TLS layer (the remote pinning switch changed).
+  void resetHttpClient() => PinnedHttp.apply(_dio);
+
+  @visibleForTesting
+  Dio get clientForTesting => _client;
 
   late final String _sessionId = _makeSessionId();
   final List<Map<String, dynamic>> _buffer = [];
@@ -84,7 +103,7 @@ class AnalyticsService {
     _buffer.clear();
     try {
       final token = Repository.token;
-      await _dio.post(
+      await _client.post(
         'analytics/events',
         data: {'events': batch},
         options: Options(
