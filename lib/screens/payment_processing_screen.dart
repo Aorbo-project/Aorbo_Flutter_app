@@ -4,6 +4,7 @@ import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/controller/payment_verify_outcome.dart';
 import 'package:arobo_app/controller/trek_controller.dart';
 import 'package:arobo_app/controller/user_controller.dart';
+import 'package:arobo_app/security/screen_security.dart';
 import 'package:arobo_app/freezed_models/booking/booking_data_model.dart';
 import 'package:arobo_app/screens/booking_upcoming_screen.dart';
 import 'package:arobo_app/screens/dashboard_main.dart';
@@ -87,6 +88,8 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
   @override
   void initState() {
     super.initState();
+    // Scan E10: no screenshots / screen sharing while paying.
+    ScreenSecurity.enter();
     _razorpay = Razorpay();
     _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
     _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
@@ -96,6 +99,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
 
   @override
   void dispose() {
+    ScreenSecurity.leave();
     _statusPoll?.cancel();
     _watchdog?.cancel();
     _gracePoll?.cancel();

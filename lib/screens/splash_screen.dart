@@ -4,6 +4,7 @@ import 'package:arobo_app/controller/otp_controller.dart';
 import 'package:arobo_app/giveaway/referral_links.dart';
 import 'package:arobo_app/legal/legal_links_text.dart';
 import 'package:arobo_app/main.dart';
+import 'package:arobo_app/security/screen_security.dart';
 import 'package:arobo_app/services/session_teardown.dart';
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/common_images.dart';
@@ -107,6 +108,8 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
   // because that method is rebuilt fresh on every setState — a local flag
   // here would never survive the rebuild it's meant to trigger.
   bool _showOtpSuccessOverlay = false;
+
+  final ScreenSecurityHold _otpScreenSecurity = ScreenSecurityHold();
 
   // Same rebuild-survival requirement as _showOtpSuccessOverlay above —
   // these used to be local variables inside _buildOtpContainer() and were
@@ -641,6 +644,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
 
   @override
   void dispose() {
+    _otpScreenSecurity.release();
     _otpController.dispose();
     if (_timer?.isActive == true) _timer?.cancel();
     _bootHintTimer?.cancel();
@@ -1634,6 +1638,9 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Scan E10: FLAG_SECURE while the OTP step is on screen (blank in
+    // recents / screenshots / screen sharing), off again on the phone step.
+    _otpScreenSecurity.sync(showOtp && !_leavingToDashboard);
     return Scaffold(
       resizeToAvoidBottomInset: false,
       body: Stack(

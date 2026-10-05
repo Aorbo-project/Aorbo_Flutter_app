@@ -615,6 +615,37 @@ void main() {
     });
   });
 
+  // Scan E10: FLAG_SECURE while paying, off again when the screen closes.
+  group('Screen security', () {
+    testWidgets('the payment screen turns FLAG_SECURE on when it opens and off when it closes', (tester) async {
+      await setUpPaymentScreenDeps(tester);
+      final secureCalls = <bool>[];
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(const MethodChannel('com.aorbotreks.app/screen_security'), (call) async {
+        if (call.method == 'setSecure') secureCalls.add((call.arguments as Map)['secure'] as bool);
+        return true;
+      });
+      addTearDown(() => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(const MethodChannel('com.aorbotreks.app/screen_security'), null));
+      mockRazorpayChannel((_) => null);
+
+      await pushPaymentScreen(
+        tester,
+        breakdown: BreakDownDataModel(finalAmount: 10510, amountToPayNow: 5000),
+      );
+      expect(secureCalls, [true]);
+
+      await tester.binding.handlePopRoute();
+      await tester.pump();
+      await tester.tap(find.text('Leave Anyway'));
+      await tester.pump();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
+      expect(find.byType(PaymentProcessingScreen), findsNothing);
+      expect(secureCalls, [true, false]);
+    });
+  });
+
   group('External wallet', () {
     testWidgets('shows a toast naming the wallet and does not resolve the flow (still awaiting the real result)', (tester) async {
       await setUpPaymentScreenDeps(tester);
