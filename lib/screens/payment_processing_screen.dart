@@ -78,6 +78,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
   static const Duration _graceInterval = Duration(seconds: 5);
   static const int _graceChecks = 12;
   Timer? _gracePoll;
+  bool _inGrace = false;
   int _graceLeft = 0;
   String _graceFallback = '';
 
@@ -238,12 +239,28 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
     );
   }
 
-  Future<void> _pollOrderStatus({bool force = false}) async {
-    if (_resolved && !force) return;
-    final orderId =
-        _trekC.orderData.value.id ??
-        _trekC.orderNextActionParams['order_id']?.toString() ??
-        '';
+  /// The Razorpay order this screen is about: the created order, else the
+  /// one Checkout reported back with the captured payment.
+  String get _currentOrderId {
+    final created = _trekC.orderData.value.id ??
+        _trekC.orderNextActionParams['order_id']?.toString();
+    if (created != null && created.isNotEmpty) return created;
+    return _trekC.orderId.value;
+  }
+
+  // One order-status check at a time (the 15 s poll and the grace checks
+  // join a check that is still running instead of starting another).
+  Future<void>? _statusCheck;
+
+  Future<void> _pollOrderStatus({bool force = false}) {
+    if (_resolved && !force) return Future.value();
+    return _statusCheck ??= _checkOrderStatusOnce().whenComplete(() {
+      _statusCheck = null;
+    });
+  }
+
+  Future<void> _checkOrderStatusOnce() async {
+    final orderId = _currentOrderId;
     if (orderId.isEmpty) return;
 
     final status = await _trekC.checkOrderStatus(orderId);
@@ -268,7 +285,9 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
         );
         break;
       case 'pending':
-        if (mounted && !_resolved) {
+        // During the grace checks the screen already says "Checking with
+        // your bank..." — keep it (review C L8).
+        if (mounted && !_resolved && !_inGrace) {
           setState(() {
             _state = PaymentFlowState.stillPending;
             _message = 'Still confirming with your bank...';
@@ -282,10 +301,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
     required String fallbackMessage,
     bool cancelledByCustomer = false,
   }) async {
-    final orderId =
-        _trekC.orderData.value.id ??
-        _trekC.orderNextActionParams['order_id']?.toString() ??
-        '';
+    final orderId = _currentOrderId;
     if (orderId.isNotEmpty) {
       final status = await _trekC.checkOrderStatus(orderId);
       if (status != null) {
@@ -321,24 +337,28 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
       _message = 'Checking with your bank...';
     });
     _gracePoll?.cancel();
-    _gracePoll = Timer.periodic(_graceInterval, (_) => _gracePollTick());
+    _inGrace = true;
+    _scheduleGraceCheck();
+  }
+
+  // Review C L8: the next check is scheduled only after the previous one
+  // has answered. A periodic timer started a new check every 5 s even while
+  // a slow one was still running, so checks overlapped and the grace period
+  // ran out early on exactly the slow networks it is for.
+  void _scheduleGraceCheck() {
+    _gracePoll = Timer(_graceInterval, _gracePollTick);
   }
 
   Future<void> _gracePollTick() async {
-    if (_resolved) {
-      _gracePoll?.cancel();
-      return;
-    }
+    if (_resolved || !mounted) return;
     _graceLeft--;
     await _pollOrderStatus();
-    if (_resolved) {
-      _gracePoll?.cancel();
+    if (_resolved || !mounted) return;
+    if (_graceLeft <= 0) {
+      _resolveTerminal(PaymentFlowState.expiredOrFailed, _graceFallback);
       return;
     }
-    if (_graceLeft <= 0) {
-      _gracePoll?.cancel();
-      _resolveTerminal(PaymentFlowState.expiredOrFailed, _graceFallback);
-    }
+    _scheduleGraceCheck();
   }
 
   void _resolveSucceeded({String? bookingId}) {
@@ -347,6 +367,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
     _statusPoll?.cancel();
     _watchdog?.cancel();
     _gracePoll?.cancel();
+    _inGrace = false;
     if (!mounted) return;
     setState(() => _state = PaymentFlowState.succeeded);
 
@@ -395,6 +416,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
     _statusPoll?.cancel();
     _watchdog?.cancel();
     _gracePoll?.cancel();
+    _inGrace = false;
     if (!mounted) return;
     setState(() {
       _state = state;
@@ -411,10 +433,8 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
     });
 
     final hasCapturedPayment = _trekC.paymentId.value.isNotEmpty;
-    final existingOrderId =
-        _trekC.orderData.value.id ??
-        _trekC.orderNextActionParams['order_id']?.toString();
-    final hasExistingOrder = (existingOrderId ?? '').isNotEmpty;
+    final existingOrderId = _currentOrderId;
+    final hasExistingOrder = existingOrderId.isNotEmpty;
 
     if (hasCapturedPayment) {
       setState(() => _state = PaymentFlowState.verifying);
@@ -426,16 +446,20 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
       if (verified) {
         _resolveSucceeded();
       } else if (!_resolveIfRefunded()) {
-        _resolveTerminal(
-          PaymentFlowState.expiredOrFailed,
-          'Still could not confirm your payment. Please try again.',
+        // Review C L9: the verify call can come back unconfirmed although the
+        // booking exists (the webhook completed it, a reply the app could
+        // not read, a 409 after an automatic refund ...). Ask the server for
+        // the order's state before calling it a failure.
+        await _resolveViaBackendCheck(
+          fallbackMessage:
+              'Still could not confirm your payment. Please try again.',
         );
       }
     } else if (hasExistingOrder) {
       // Scan D8 (#2): ask the server first — reopening checkout on an order
       // that was paid meanwhile is how a customer gets charged twice.
       setState(() => _state = PaymentFlowState.verifying);
-      final status = await _trekC.checkOrderStatus(existingOrderId!);
+      final status = await _trekC.checkOrderStatus(existingOrderId);
       if (!mounted) return;
       switch (status?['status']) {
         case 'paid':
@@ -527,6 +551,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
       _statusPoll?.cancel();
       _watchdog?.cancel();
       _gracePoll?.cancel();
+      _inGrace = false;
       Get.back();
     }
   }

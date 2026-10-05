@@ -39,7 +39,8 @@ import 'package:arobo_app/freezed_models/booking/booking_data_model.dart';
 import 'package:arobo_app/repository/network_url.dart';
 import 'package:arobo_app/repository/repository.dart';
 import 'package:arobo_app/screens/payment_processing_screen.dart';
-import 'package:dio/dio.dart' show RequestOptions;
+import 'package:dio/dio.dart' show InterceptorsWrapper, RequestOptions;
+import 'package:dio/dio.dart' as dio show Response;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -568,6 +569,54 @@ void main() {
       expect(find.text('TLS handshake failed'), findsOneWidget);
     });
 
+    // Review C L8: on a slow network a check can take longer than the 5 s
+    // interval. The checks must not overlap (they used to, so the grace
+    // period ran out early), and the text stays "Checking with your bank...".
+    testWidgets('L8: slow order-status replies - grace checks never overlap', (tester) async {
+      final trekC = await setUpPaymentScreenDeps(tester);
+      trekC.orderData.value = const Order(id: 'order_slow_network');
+      mockRazorpayChannel((_) => razorpayError(code: Razorpay.TLS_ERROR, message: 'TLS handshake failed'));
+      var checks = 0, inFlight = 0, maxInFlight = 0;
+      var paid = false;
+      Repository().dio.interceptors.add(InterceptorsWrapper(onRequest: (o, h) async {
+        if (!o.path.contains('order-status')) return h.next(o);
+        checks++;
+        inFlight++;
+        if (inFlight > maxInFlight) maxInFlight = inFlight;
+        if (checks > 1 && !paid) await Future<void>.delayed(const Duration(seconds: 7));
+        inFlight--;
+        h.resolve(dio.Response(requestOptions: o, statusCode: 200, data: {
+          'success': true,
+          'data': paid ? {'status': 'paid', 'booking_id': 5} : {'status': 'pending'},
+        }));
+      }));
+
+      await pushPaymentScreen(
+        tester,
+        breakdown: BreakDownDataModel(finalAmount: 10510, amountToPayNow: 5000),
+      );
+      await settleUntil(tester, () => find.text('Checking with your bank...').evaluate().isNotEmpty);
+
+      for (var i = 0; i < 12; i++) {
+        await tester.pump(const Duration(seconds: 5));
+        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+        await tester.pump();
+      }
+      expect(checks, greaterThan(2));
+      expect(maxInFlight, 1, reason: 'a new check starts only after the previous answered');
+      expect(find.text('Checking with your bank...'), findsOneWidget);
+      expect(find.text('Something went wrong'), findsNothing);
+
+      paid = true; // finish cleanly
+      for (var i = 0; i < 6 && find.text('Payment Confirmed!').evaluate().isEmpty; i++) {
+        await tester.pump(const Duration(seconds: 7));
+        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+        await tester.pump();
+      }
+      expect(find.text('Payment Confirmed!'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 1));
+    });
+
     // Review C-M1: the customer closed the checkout sheet. The order stays
     // "pending" (no payment exists) until it expires; the grace poll used to
     // show "Checking with your bank..." for 60 s with no RETRY.
@@ -886,6 +935,79 @@ void main() {
 
       expect(find.text('Payment Confirmed!'), findsOneWidget);
       await tester.pump(const Duration(seconds: 1)); // flush the 900ms delayed-navigation timer before teardown
+    });
+
+    // Review C L9 / L14: RETRY with a captured payment whose verify comes
+    // back unconfirmed (webhook finished it, unreadable reply, 409 after an
+    // automatic refund) asks the server before calling it a failure.
+    Future<TrekController> captureThenFail(WidgetTester tester) async {
+      final trekC = await setUpPaymentScreenDeps(tester);
+      mockRazorpayChannel((_) => razorpayError(message: 'Verification timed out'));
+      await pushPaymentScreen(
+        tester,
+        breakdown: BreakDownDataModel(finalAmount: 10510, amountToPayNow: 5000),
+      );
+      await settleUntil(tester, () => find.text('Something went wrong').evaluate().isNotEmpty);
+      trekC.paymentId.value = 'pay_captured';
+      trekC.orderId.value = 'order_captured';
+      trekC.signature.value = 'sig_captured';
+      return trekC;
+    }
+
+    testWidgets('L9: captured payment, verify unconfirmed, order already PAID -> confirmed (not "could not confirm")', (tester) async {
+      await captureThenFail(tester);
+      var statusAskedFor = '';
+      installFakeBackend({
+        NetworkUrl.verifyBooking: (_) => {'success': true, 'alreadyProcessed': true, 'data': null},
+        'order-status': (o) {
+          statusAskedFor = o.path;
+          return {'success': true, 'data': {'status': 'paid', 'booking_id': 88}};
+        },
+      });
+      await tester.runAsync(() async {
+        await tester.tap(find.text('RETRY'));
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+      });
+      await settleUntil(tester, () => find.text('Payment Confirmed!').evaluate().isNotEmpty);
+
+      expect(find.text('Payment Confirmed!'), findsOneWidget);
+      expect(statusAskedFor, contains('order_captured'));
+      expect(find.text('Still could not confirm your payment. Please try again.'), findsNothing);
+      await tester.pump(const Duration(seconds: 1));
+    });
+
+    testWidgets('L14: captured payment, verify says REFUNDED -> "Payment Refunded", never confirmed', (tester) async {
+      await captureThenFail(tester);
+      installFakeBackend({
+        NetworkUrl.verifyBooking: (_) => {
+          'success': false,
+          'refunded': true,
+          'code': 'PAYMENT_REFUNDED',
+          'message': 'This payment could not be turned into a booking and was refunded. Refunds usually take 5-7 business days.',
+        },
+      });
+      await tester.runAsync(() async {
+        await tester.tap(find.text('RETRY'));
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+      });
+      await settleUntil(tester, () => find.text('Payment Refunded').evaluate().isNotEmpty);
+      expect(find.text('Payment Refunded'), findsOneWidget);
+      expect(find.text('Payment Confirmed!'), findsNothing);
+    });
+
+    testWidgets('L14: captured payment, verify unconfirmed and the order really failed -> the error card', (tester) async {
+      await captureThenFail(tester);
+      installFakeBackend({
+        NetworkUrl.verifyBooking: (_) => {'success': false, 'message': 'Signature mismatch'},
+        'order-status': (_) => {'success': true, 'data': {'status': 'expired', 'retryable': false}},
+      });
+      await tester.runAsync(() async {
+        await tester.tap(find.text('RETRY'));
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+      });
+      await settleUntil(tester, () => find.text('Still could not confirm your payment. Please try again.').evaluate().isNotEmpty);
+      expect(find.text('Something went wrong'), findsOneWidget);
+      expect(find.text('Still could not confirm your payment. Please try again.'), findsOneWidget);
     });
 
     testWidgets('an existing order but no captured payment reopens Razorpay directly, skipping fare recalculation', (tester) async {
