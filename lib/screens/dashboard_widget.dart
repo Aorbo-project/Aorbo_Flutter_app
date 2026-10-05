@@ -40,7 +40,7 @@ import 'package:flutter_touch_ripple/flutter_touch_ripple.dart';
 import 'package:shimmer_ai/shimmer_ai.dart';
 import 'package:sizer/sizer.dart';
 import 'package:arobo_app/utils/custom_snackbar.dart';
-import 'package:ntp/ntp.dart';
+import 'package:arobo_app/services/trusted_clock.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import 'package:arobo_app/utils/common_bottom_nav.dart';
@@ -208,21 +208,15 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
     }
   }
 
+  // Scan D3: bounded, shared NTP lookup (TrustedClock) — never hangs, falls
+  // back to device time.
   Future<void> _initializeNTPTime() async {
-    try {
-      final DateTime ntpTime = await NTP.now();
-      if (!mounted) return;
-      setState(() {
-        _ntpTime = ntpTime;
-        _focusedDay = ntpTime;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _ntpTime = DateTime.now();
-        _focusedDay = DateTime.now();
-      });
-    }
+    final DateTime trusted = await TrustedClock.instance.sync();
+    if (!mounted) return;
+    setState(() {
+      _ntpTime = trusted;
+      _focusedDay = trusted;
+    });
   }
 
   DateTime? _getFirstAvailableDate(DateTime startDate, DateTime endDate) {
@@ -452,10 +446,8 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
       return;
     }
 
-    if (_ntpTime == null) await _initializeNTPTime();
-    if (!context.mounted) return;
-
-    final DateTime currentTime = _ntpTime ?? DateTime.now();
+    // Never wait on the network clock here (scan D3): the picker opens at once.
+    final DateTime currentTime = _ntpTime ?? TrustedClock.instance.now();
     final DateTime normalizedCurrent = DateTime(
       currentTime.year,
       currentTime.month,
