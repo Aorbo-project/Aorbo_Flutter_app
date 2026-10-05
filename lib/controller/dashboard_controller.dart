@@ -435,9 +435,62 @@ class DashboardController extends GetxController {
     return upcomingDates;
   }
 
-  Future<void> fetchWhatsNew() async {
+  // -- Home content (scan D4) ---------------------------------------------
+  // The Home tab is rebuilt on every tab switch (DashboardMain's
+  // AnimatedSwitcher). Its initState used to fetch What's New, Top Treks,
+  // Seasonal Picks and the sponsored slots EVERY time, blanking the loaded
+  // sections into shimmer. Each section now loads at most once per
+  // [homeFreshFor] (a failed one is retried on the next visit), and a
+  // refresh keeps the content already on screen until the new reply lands.
+  static const Duration homeFreshFor = Duration(minutes: 5);
+  final Map<String, DateTime> _homeLoadedAt = {};
+  final Map<String, Future<bool>> _homeInFlight = {};
+
+  /// Loads the Home sections that are not fresh (all of them with [force]).
+  Future<void> loadHomeContent({bool force = false}) {
+    final jobs = <Future<bool>>[];
+    void section(String key, Future<bool> Function() fetch) {
+      final at = _homeLoadedAt[key];
+      if (!force && at != null && DateTime.now().difference(at) < homeFreshFor) {
+        return;
+      }
+      final running = _homeInFlight[key];
+      if (running != null) {
+        jobs.add(running);
+        return;
+      }
+      final job = fetch().then((ok) {
+        if (ok) {
+          _homeLoadedAt[key] = DateTime.now();
+        } else {
+          _homeLoadedAt.remove(key);
+        }
+        return ok;
+      }).whenComplete(() {
+        // A block body: `=> remove(key)` would return this very future and
+        // make it wait for itself.
+        _homeInFlight.remove(key);
+      });
+      _homeInFlight[key] = job;
+      jobs.add(job);
+    }
+
+    section('whats_new', () => fetchWhatsNew(keepPrevious: true));
+    section('top_treks', () => fetchTopTreks(keepPrevious: true));
+    section('seasonal_picks', () => fetchSeasonalPicks(keepPrevious: true));
+    section('sponsored_slots', fetchSponsoredSlots);
+    return Future.wait(jobs);
+  }
+
+  bool _isLoaded(ApiResult<dynamic> r) =>
+      r.maybeWhen(success: (_) => true, orElse: () => false);
+
+  /// [keepPrevious]: content already loaded stays on screen (no shimmer)
+  /// while this refreshes, and is kept if the refresh fails.
+  Future<bool> fetchWhatsNew({bool keepPrevious = false}) async {
+    final hadData = keepPrevious && _isLoaded(whatsNewObserver.value);
     try {
-      whatsNewObserver.value = const ApiResult.loading("");
+      if (!hadData) whatsNewObserver.value = const ApiResult.loading("");
       final response = await _repository.getApiCall(
         url: NetworkUrl.fetchWhatsNew,
       );
@@ -445,20 +498,22 @@ class DashboardController extends GetxController {
         final responseData = WhatsNewDataResponseModel.fromJson(response);
         if (responseData.success == true) {
           whatsNewObserver.value = ApiResult.success(responseData);
-          return;
+          return true;
         }
         throw responseData.message ?? "Failed to fetch whats new";
       }
       throw "Response Body Null";
     } catch (e) {
       logger.e('Error fetching whats new: $e');
-      whatsNewObserver.value = ApiResult.error(e.toString());
+      if (!hadData) whatsNewObserver.value = ApiResult.error(e.toString());
+      return false;
     }
   }
 
-  Future<void> fetchTopTreks() async {
+  Future<bool> fetchTopTreks({bool keepPrevious = false}) async {
+    final hadData = keepPrevious && _isLoaded(topTreksObserver.value);
     try {
-      topTreksObserver.value = const ApiResult.loading("");
+      if (!hadData) topTreksObserver.value = const ApiResult.loading("");
       // Bare/shared Dio: no Authorization header, no relative baseUrl — this
       // hits a separate public origin (the aorbotreks.com website's own
       // backend), not ours, so our app's bearer token has no business being
@@ -476,12 +531,13 @@ class DashboardController extends GetxController {
         topTreksObserver.value = ApiResult.success(
           TopTreksDataResponseModel(success: true, data: data, count: data.length),
         );
-        return;
+        return true;
       }
       throw "Response Body Null";
     } catch (e) {
       logger.e('Error fetching top treks: $e');
-      topTreksObserver.value = ApiResult.error(e.toString());
+      if (!hadData) topTreksObserver.value = ApiResult.error(e.toString());
+      return false;
     }
   }
 
@@ -534,7 +590,7 @@ class DashboardController extends GetxController {
     }
   }
 
-  Future<void> fetchSponsoredSlots() async {
+  Future<bool> fetchSponsoredSlots() async {
     try {
       final response = await _repository.getApiCall(
         url: NetworkUrl.fetchSponsoredSlots,
@@ -559,7 +615,9 @@ class DashboardController extends GetxController {
           ),
         );
         admobFallbackEnabled.value = r.admobFallback;
+        return true;
       }
+      return false;
     } catch (e) {
       // An ad failure must never affect the dashboard — just leave the
       // slot lists empty so the rows render with organic content only.
@@ -567,6 +625,7 @@ class DashboardController extends GetxController {
       whatsNewSlots.clear();
       topTreksSlots.clear();
       seasonalForecastSlots.clear();
+      return false;
     }
   }
 
@@ -614,9 +673,10 @@ class DashboardController extends GetxController {
         .catchError((_) => null);
   }
 
-  Future<void> fetchSeasonalPicks({String? season}) async {
+  Future<bool> fetchSeasonalPicks({String? season, bool keepPrevious = false}) async {
+    final hadData = keepPrevious && _isLoaded(seasonalPicksObserver.value);
     try {
-      seasonalPicksObserver.value = const ApiResult.loading("");
+      if (!hadData) seasonalPicksObserver.value = const ApiResult.loading("");
       final url = season == null
           ? NetworkUrl.fetchSeasonalPicks
           : '${NetworkUrl.fetchSeasonalPicks}?season=$season';
@@ -625,14 +685,15 @@ class DashboardController extends GetxController {
         final responseData = SeasonalPicksDataResponseModel.fromJson(response);
         if (responseData.success == true) {
           seasonalPicksObserver.value = ApiResult.success(responseData);
-          return;
+          return true;
         }
         throw responseData.message ?? "Failed to fetch seasonal picks";
       }
       throw "Response Body Null";
     } catch (e) {
       logger.e('Error fetching seasonal picks: $e');
-      seasonalPicksObserver.value = ApiResult.error(e.toString());
+      if (!hadData) seasonalPicksObserver.value = ApiResult.error(e.toString());
+      return false;
     }
   }
 

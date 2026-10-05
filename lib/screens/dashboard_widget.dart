@@ -108,6 +108,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
   DateTime? _selectedDay;
 
   final List<DateTime> _nearestWeekendDates = [];
+  late final Worker _calendarWorker;
 
   // ---------------------------------------------------------------------------
   // Helpers
@@ -153,16 +154,16 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
       duration: const Duration(milliseconds: 1800),
     )..repeat(reverse: true);
 
-    ever(_dashboardC.calenderTrekDatesObserver, (value) {
+    // Kept and disposed: the controller is permanent, so an un-stored
+    // worker outlived every Home visit (scan D4).
+    _calendarWorker = ever(_dashboardC.calenderTrekDatesObserver, (value) {
       if (mounted) setState(() {});
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _resetAllScrolls();
-      _dashboardC.fetchWhatsNew();
-      _dashboardC.fetchTopTreks();
-      _dashboardC.fetchSeasonalPicks();
-      _dashboardC.fetchSponsoredSlots();
+      // Only sections that are not fresh; loaded ones stay on screen.
+      _dashboardC.loadHomeContent();
     });
   }
 
@@ -182,6 +183,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    _calendarWorker.dispose();
     _stopAutoScroll();
     _pageController.dispose();
     _animationController.dispose();
