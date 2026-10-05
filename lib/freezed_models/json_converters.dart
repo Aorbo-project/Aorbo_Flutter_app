@@ -23,6 +23,22 @@ int? jsonToInt(Object? v) {
   return null;
 }
 
+/// A JSON object, or a JSON-encoded object string ('{"night":2}'). Anything
+/// else (a list, a number, garbage) → null.
+Map<String, dynamic>? jsonToMap(Object? v) {
+  if (v is Map) return Map<String, dynamic>.from(v);
+  if (v is String) {
+    final s = v.trim();
+    if (s.startsWith('{')) {
+      try {
+        final decoded = jsonDecode(s);
+        if (decoded is Map) return Map<String, dynamic>.from(decoded);
+      } catch (_) {}
+    }
+  }
+  return null;
+}
+
 /// A JSON array, or a JSON-encoded array string ("[1,2]"). Else null.
 List<dynamic>? jsonToList(Object? v) {
   if (v is List) return v;

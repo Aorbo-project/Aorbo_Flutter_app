@@ -3248,11 +3248,15 @@ Accommodations _$AccommodationsFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$Accommodations {
+// Review C L12: vendor-entered; a stored [] or a double-encoded string
+// used to throw and blank the whole trek page.
+  @JsonKey(fromJson: _detailsFromJson)
   Details? get details => throw _privateConstructorUsedError;
+  @JsonKey(fromJson: jsonToInt)
   int? get id => throw _privateConstructorUsedError;
-  @JsonKey(name: 'trek_id')
+  @JsonKey(name: 'trek_id', fromJson: jsonToInt)
   int? get trekId => throw _privateConstructorUsedError;
-  @JsonKey(name: 'batch_id')
+  @JsonKey(name: 'batch_id', fromJson: jsonToInt)
   int? get batchId => throw _privateConstructorUsedError;
   String? get type => throw _privateConstructorUsedError;
   @JsonKey(name: 'createdAt')
@@ -3273,10 +3277,10 @@ abstract class $AccommodationsCopyWith<$Res> {
       _$AccommodationsCopyWithImpl<$Res, Accommodations>;
   @useResult
   $Res call(
-      {Details? details,
-      int? id,
-      @JsonKey(name: 'trek_id') int? trekId,
-      @JsonKey(name: 'batch_id') int? batchId,
+      {@JsonKey(fromJson: _detailsFromJson) Details? details,
+      @JsonKey(fromJson: jsonToInt) int? id,
+      @JsonKey(name: 'trek_id', fromJson: jsonToInt) int? trekId,
+      @JsonKey(name: 'batch_id', fromJson: jsonToInt) int? batchId,
       String? type,
       @JsonKey(name: 'createdAt') String? createdAt,
       @JsonKey(name: 'updatedAt') String? updatedAt});
@@ -3359,10 +3363,10 @@ abstract class _$$AccommodationsImplCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {Details? details,
-      int? id,
-      @JsonKey(name: 'trek_id') int? trekId,
-      @JsonKey(name: 'batch_id') int? batchId,
+      {@JsonKey(fromJson: _detailsFromJson) Details? details,
+      @JsonKey(fromJson: jsonToInt) int? id,
+      @JsonKey(name: 'trek_id', fromJson: jsonToInt) int? trekId,
+      @JsonKey(name: 'batch_id', fromJson: jsonToInt) int? batchId,
       String? type,
       @JsonKey(name: 'createdAt') String? createdAt,
       @JsonKey(name: 'updatedAt') String? updatedAt});
@@ -3427,10 +3431,10 @@ class __$$AccommodationsImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$AccommodationsImpl implements _Accommodations {
   const _$AccommodationsImpl(
-      {this.details,
-      this.id,
-      @JsonKey(name: 'trek_id') this.trekId,
-      @JsonKey(name: 'batch_id') this.batchId,
+      {@JsonKey(fromJson: _detailsFromJson) this.details,
+      @JsonKey(fromJson: jsonToInt) this.id,
+      @JsonKey(name: 'trek_id', fromJson: jsonToInt) this.trekId,
+      @JsonKey(name: 'batch_id', fromJson: jsonToInt) this.batchId,
       this.type,
       @JsonKey(name: 'createdAt') this.createdAt,
       @JsonKey(name: 'updatedAt') this.updatedAt});
@@ -3438,15 +3442,19 @@ class _$AccommodationsImpl implements _Accommodations {
   factory _$AccommodationsImpl.fromJson(Map<String, dynamic> json) =>
       _$$AccommodationsImplFromJson(json);
 
+// Review C L12: vendor-entered; a stored [] or a double-encoded string
+// used to throw and blank the whole trek page.
   @override
+  @JsonKey(fromJson: _detailsFromJson)
   final Details? details;
   @override
+  @JsonKey(fromJson: jsonToInt)
   final int? id;
   @override
-  @JsonKey(name: 'trek_id')
+  @JsonKey(name: 'trek_id', fromJson: jsonToInt)
   final int? trekId;
   @override
-  @JsonKey(name: 'batch_id')
+  @JsonKey(name: 'batch_id', fromJson: jsonToInt)
   final int? batchId;
   @override
   final String? type;
@@ -3500,10 +3508,10 @@ class _$AccommodationsImpl implements _Accommodations {
 
 abstract class _Accommodations implements Accommodations {
   const factory _Accommodations(
-          {final Details? details,
-          final int? id,
-          @JsonKey(name: 'trek_id') final int? trekId,
-          @JsonKey(name: 'batch_id') final int? batchId,
+          {@JsonKey(fromJson: _detailsFromJson) final Details? details,
+          @JsonKey(fromJson: jsonToInt) final int? id,
+          @JsonKey(name: 'trek_id', fromJson: jsonToInt) final int? trekId,
+          @JsonKey(name: 'batch_id', fromJson: jsonToInt) final int? batchId,
           final String? type,
           @JsonKey(name: 'createdAt') final String? createdAt,
           @JsonKey(name: 'updatedAt') final String? updatedAt}) =
@@ -3512,15 +3520,18 @@ abstract class _Accommodations implements Accommodations {
   factory _Accommodations.fromJson(Map<String, dynamic> json) =
       _$AccommodationsImpl.fromJson;
 
-  @override
+  @override // Review C L12: vendor-entered; a stored [] or a double-encoded string
+// used to throw and blank the whole trek page.
+  @JsonKey(fromJson: _detailsFromJson)
   Details? get details;
   @override
+  @JsonKey(fromJson: jsonToInt)
   int? get id;
   @override
-  @JsonKey(name: 'trek_id')
+  @JsonKey(name: 'trek_id', fromJson: jsonToInt)
   int? get trekId;
   @override
-  @JsonKey(name: 'batch_id')
+  @JsonKey(name: 'batch_id', fromJson: jsonToInt)
   int? get batchId;
   @override
   String? get type;

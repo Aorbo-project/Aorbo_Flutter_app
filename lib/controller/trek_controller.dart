@@ -7,6 +7,7 @@ import 'package:arobo_app/freezed_models/booking/booking_data_model.dart';
 import 'package:arobo_app/freezed_models/treks/treks_model_data.dart';
 import 'package:arobo_app/models/treaks/booking_cancelled_modal.dart';
 import 'package:arobo_app/models/treaks/verify_order_modal.dart';
+import 'package:arobo_app/freezed_models/json_converters.dart';
 import 'package:arobo_app/models/coupon_code/coupon_code_model.dart';
 import 'package:arobo_app/models/dispute/submit_issue_modal.dart';
 import 'package:arobo_app/models/refund/refund_status_model.dart';
@@ -831,7 +832,7 @@ class TrekController extends GetxController {
         }
 
         if (response['success'] == true) {
-          verifyOrderModal.value = VerifyOrderModal.fromJson(response);
+          verifyOrderModal.value = readVerifyReply(response);
           // success:true with no booking in `data` is not a confirmation:
           // the caller polls the order status instead.
           if (outcome == VerifyPaymentOutcome.confirmed) {
@@ -859,6 +860,30 @@ class TrekController extends GetxController {
       return false;
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  /// The verify-payment reply as a model. Review C L11: vendor-entered
+  /// fields in it (company_info, discount values, amounts sent as numbers)
+  /// could make the full parse throw, which turned a CONFIRMED payment into
+  /// "unconfirmed". Whether it is confirmed is decided from the raw reply
+  /// (classifyVerifyReply); only the booking id / number are needed here.
+  @visibleForTesting
+  static VerifyOrderModal readVerifyReply(Map<String, dynamic> response) {
+    try {
+      return VerifyOrderModal.fromJson(response);
+    } catch (e) {
+      logger.w('verify-payment reply only partly readable: $e');
+      final raw = response['data'];
+      return VerifyOrderModal(
+        success: response['success'] == true,
+        data: raw is Map
+            ? Data(
+                id: jsonToInt(raw['id']),
+                bookingNumber: jsonToStringOrNull(raw['booking_number']),
+              )
+            : null,
+      );
     }
   }
 

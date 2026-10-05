@@ -278,12 +278,10 @@ Map<String, dynamic> _$$CityImplToJson(_$CityImpl instance) =>
 
 _$AccommodationsImpl _$$AccommodationsImplFromJson(Map<String, dynamic> json) =>
     _$AccommodationsImpl(
-      details: json['details'] == null
-          ? null
-          : Details.fromJson(json['details'] as Map<String, dynamic>),
-      id: json['id'] as int?,
-      trekId: json['trek_id'] as int?,
-      batchId: json['batch_id'] as int?,
+      details: _detailsFromJson(json['details']),
+      id: jsonToInt(json['id']),
+      trekId: jsonToInt(json['trek_id']),
+      batchId: jsonToInt(json['batch_id']),
       type: json['type'] as String?,
       createdAt: json['createdAt'] as String?,
       updatedAt: json['updatedAt'] as String?,

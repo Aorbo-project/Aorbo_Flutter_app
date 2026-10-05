@@ -255,10 +255,12 @@ class City with _$City {
 @freezed
 class Accommodations with _$Accommodations {
   const factory Accommodations({
-    Details? details,
-    int? id,
-    @JsonKey(name: 'trek_id') int? trekId,
-    @JsonKey(name: 'batch_id') int? batchId,
+    // Review C L12: vendor-entered; a stored [] or a double-encoded string
+    // used to throw and blank the whole trek page.
+    @JsonKey(fromJson: _detailsFromJson) Details? details,
+    @JsonKey(fromJson: jsonToInt) int? id,
+    @JsonKey(name: 'trek_id', fromJson: jsonToInt) int? trekId,
+    @JsonKey(name: 'batch_id', fromJson: jsonToInt) int? batchId,
     String? type,
     @JsonKey(name: 'createdAt') String? createdAt,
     @JsonKey(name: 'updatedAt') String? updatedAt,
@@ -266,6 +268,11 @@ class Accommodations with _$Accommodations {
 
   factory Accommodations.fromJson(Map<String, dynamic> json) =>
       _$AccommodationsFromJson(json);
+}
+
+Details? _detailsFromJson(Object? v) {
+  final map = jsonToMap(v);
+  return map == null ? null : Details.fromJson(map);
 }
 
 @freezed
