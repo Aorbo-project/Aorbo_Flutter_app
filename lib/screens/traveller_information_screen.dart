@@ -28,6 +28,7 @@ import 'package:arobo_app/theme/app_typography.dart';
 import 'package:arobo_app/services/booking_draft_service.dart';
 import 'package:arobo_app/widgets/trek_card_ui.dart';
 import 'package:dio/dio.dart';
+import 'package:arobo_app/widgets/tap_target.dart';
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS
@@ -105,7 +106,8 @@ Widget _tiSheetHeader(BuildContext context, String title, IconData icon) =>
               ),
             ],
           ),
-          GestureDetector(
+          TapTarget(
+            label: 'Close',
             onTap: () => Navigator.pop(context),
             child: Container(
               width: 8.w,
@@ -990,7 +992,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
                       BookingDraftService.save(_trekC);
                     }),
                     Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 4.w),
+                      padding: EdgeInsets.symmetric(horizontal: 1.5.w),
                       child: Text(
                         '$adultCountReq',
                         style: TextStyle(
@@ -1752,8 +1754,11 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
     );
   }
 
+  // The 9.w circle sits in a 48 dp touch box (scan D7); the number's own
+  // padding shrank by the same amount, so the row looks the same.
   Widget _counterBtn(IconData icon, VoidCallback onTap, {bool active = true}) {
-    return GestureDetector(
+    return TapTarget(
+      label: icon == Icons.add ? 'Add traveller' : 'Remove traveller',
       onTap: active ? onTap : null,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),

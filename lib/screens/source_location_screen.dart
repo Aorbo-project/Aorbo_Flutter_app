@@ -2021,7 +2021,7 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
               onPressed: _retry,
               isFullWidth: false,
               width: 128,
-              height: 40,
+              height: 48,
               prefixIcon: const Icon(
                 Icons.refresh_rounded,
                 size: 16,

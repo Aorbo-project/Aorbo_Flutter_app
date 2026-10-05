@@ -24,6 +24,7 @@ import '../utils/custom_snackbar.dart';
 import '../share/trek_share.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
+import 'package:arobo_app/widgets/tap_target.dart';
 
 // One entry per distinct boarding CITY (not per stage — two boarding stages
 // in the same city are still a single choice for the customer). Shared by
@@ -450,14 +451,14 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
       titleSpacing: 0,
       toolbarHeight: 8.h,
       title: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 4.w),
+        padding: EdgeInsets.only(left: 1.w, right: 4.w),
         child: Row(
           children: [
-            GestureDetector(
+            TapTarget(
+              label: 'Back',
               onTap: () => Get.back(),
               child: Icon(Icons.arrow_back_rounded, color: _C.ink, size: 6.w),
             ),
-            SizedBox(width: 3.w),
             Container(
               width: 7.w,
               height: 7.w,

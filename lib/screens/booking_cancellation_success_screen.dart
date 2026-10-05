@@ -15,6 +15,7 @@ import '../utils/detail_screen_ad_slot.dart';
 import '../utils/ist_date_utils.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
+import 'package:arobo_app/widgets/tap_target.dart';
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS — matches app-wide standards
@@ -850,7 +851,8 @@ class _BookingCancellationSuccessScreenState
             ),
           ],
         ),
-        GestureDetector(
+        TapTarget(
+          label: 'Close',
           onTap: () => Get.back(),
           child: Container(
             width: 8.w,
