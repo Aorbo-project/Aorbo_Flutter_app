@@ -69,6 +69,21 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
   Timer? _watchdog;
   bool _resolved = false;
 
+  // Scan D8 (#2): after a gateway error the bank may still be settling (UPI
+  // approved, then the app returned early or the network dropped). While the
+  // order reads "pending" we keep checking for [_graceChecks] x
+  // [_graceInterval] before showing an error, so RETRY can't open a second
+  // checkout on an order that is about to be paid.
+  static const Duration _graceInterval = Duration(seconds: 5);
+  static const int _graceChecks = 12;
+  Timer? _gracePoll;
+  int _graceLeft = 0;
+  String _graceFallback = '';
+
+  // The success screen's delayed hop to the booking; cancelled on dispose so
+  // it can never navigate from a screen that is already gone.
+  Timer? _successNav;
+
   @override
   void initState() {
     super.initState();
@@ -83,6 +98,8 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
   void dispose() {
     _statusPoll?.cancel();
     _watchdog?.cancel();
+    _gracePoll?.cancel();
+    _successNav?.cancel();
     _razorpay.clear();
     super.dispose();
   }
@@ -272,10 +289,44 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
                   'Your payment was fully refunded automatically.',
             );
             return;
+          case 'pending':
+            _startGracePoll(fallbackMessage);
+            return;
         }
       }
     }
     _resolveTerminal(PaymentFlowState.expiredOrFailed, fallbackMessage);
+  }
+
+  /// The order is still "pending" after a gateway error: keep checking with
+  /// the server for a short while instead of declaring a failure.
+  void _startGracePoll(String fallbackMessage) {
+    if (_resolved || !mounted) return;
+    _graceFallback = fallbackMessage;
+    _graceLeft = _graceChecks;
+    setState(() {
+      _state = PaymentFlowState.stillPending;
+      _message = 'Checking with your bank...';
+    });
+    _gracePoll?.cancel();
+    _gracePoll = Timer.periodic(_graceInterval, (_) => _gracePollTick());
+  }
+
+  Future<void> _gracePollTick() async {
+    if (_resolved) {
+      _gracePoll?.cancel();
+      return;
+    }
+    _graceLeft--;
+    await _pollOrderStatus();
+    if (_resolved) {
+      _gracePoll?.cancel();
+      return;
+    }
+    if (_graceLeft <= 0) {
+      _gracePoll?.cancel();
+      _resolveTerminal(PaymentFlowState.expiredOrFailed, _graceFallback);
+    }
   }
 
   void _resolveSucceeded({String? bookingId}) {
@@ -283,6 +334,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
     _resolved = true;
     _statusPoll?.cancel();
     _watchdog?.cancel();
+    _gracePoll?.cancel();
     if (!mounted) return;
     setState(() => _state = PaymentFlowState.succeeded);
 
@@ -306,7 +358,9 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
     //    DashboardMain, re-triggering initState → rate popup)
     //    with Get.until (pops back to the EXISTING DashboardMain)
     //    + Get.to (pushes booking detail on top).
-    Future.delayed(const Duration(milliseconds: 900), () {
+    _successNav?.cancel();
+    _successNav = Timer(const Duration(milliseconds: 900), () {
+      if (!mounted) return;
       // Pop every route above the first one (DashboardMain).
       // This removes TravellerInformationScreen and
       // PaymentProcessingScreen from the stack.
@@ -328,6 +382,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
     _resolved = true;
     _statusPoll?.cancel();
     _watchdog?.cancel();
+    _gracePoll?.cancel();
     if (!mounted) return;
     setState(() {
       _state = state;
@@ -365,31 +420,59 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
         );
       }
     } else if (hasExistingOrder) {
+      // Scan D8 (#2): ask the server first — reopening checkout on an order
+      // that was paid meanwhile is how a customer gets charged twice.
+      setState(() => _state = PaymentFlowState.verifying);
+      final status = await _trekC.checkOrderStatus(existingOrderId!);
+      if (!mounted) return;
+      switch (status?['status']) {
+        case 'paid':
+          _resolveSucceeded(bookingId: status?['booking_id']?.toString());
+          return;
+        case 'refunded':
+          _resolveTerminal(
+            PaymentFlowState.refundedAutomatically,
+            status?['message']?.toString() ??
+                'Your payment was fully refunded automatically.',
+          );
+          return;
+        case 'expired':
+          await _startFreshOrder();
+          return;
+        default:
+          // pending (its grace period is over) or unknown: same order.
+          setState(() => _state = PaymentFlowState.awaitingGateway);
+          _openRazorpay();
+      }
+    } else {
+      await _startFreshOrder();
+    }
+  }
+
+  /// No usable order: refresh the fare, create a new order, open checkout.
+  Future<void> _startFreshOrder() async {
+    await _trekC.calculateFare();
+    final refreshed = _trekC.calculateFareResponseModel.value.maybeWhen(
+      success: (_) => true,
+      orElse: () => false,
+    );
+    if (!refreshed) {
+      _resolveTerminal(
+        PaymentFlowState.expiredOrFailed,
+        'Could not refresh fare. Please try again.',
+      );
+      return;
+    }
+    await _trekC.createTrekOrder();
+    if (_trekC.orderModal.value.success ?? false) {
       _openRazorpay();
     } else {
-      await _trekC.calculateFare();
-      final refreshed = _trekC.calculateFareResponseModel.value.maybeWhen(
-        success: (_) => true,
-        orElse: () => false,
+      _resolveTerminal(
+        PaymentFlowState.expiredOrFailed,
+        _trekC.errorMessage.value.isNotEmpty
+            ? _trekC.errorMessage.value
+            : 'Could not start payment. Please try again.',
       );
-      if (!refreshed) {
-        _resolveTerminal(
-          PaymentFlowState.expiredOrFailed,
-          'Could not refresh fare. Please try again.',
-        );
-        return;
-      }
-      await _trekC.createTrekOrder();
-      if (_trekC.orderModal.value.success ?? false) {
-        _openRazorpay();
-      } else {
-        _resolveTerminal(
-          PaymentFlowState.expiredOrFailed,
-          _trekC.errorMessage.value.isNotEmpty
-              ? _trekC.errorMessage.value
-              : 'Could not start payment. Please try again.',
-        );
-      }
     }
   }
 
@@ -399,9 +482,11 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
       builder: (ctx) => AlertDialog(
         title: const Text('Cancel Payment?'),
         content: const Text(
-          'Your payment is still being processed. If any amount was already '
-          'deducted, it will never be charged twice — your booking will still '
-          'go through safely once confirmed. Are you sure you want to leave?',
+          'Your payment is still being processed. If it goes through, your '
+          'booking will appear in My Bookings. If money was deducted but no '
+          'booking is made, it is refunded to your original payment method; '
+          'refunds usually take 5–7 business days. Are you sure you want to '
+          'leave?',
         ),
         actions: [
           TextButton(
@@ -419,6 +504,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
       _resolved = true;
       _statusPoll?.cancel();
       _watchdog?.cancel();
+      _gracePoll?.cancel();
       Get.back();
     }
   }

@@ -182,6 +182,24 @@ Future<TrekController> setUpPaymentScreenDeps(WidgetTester tester) async {
   return trekC;
 }
 
+/// Lets real Dio round-trips (fake backend) finish, pumping between short
+/// real waits until [done] holds or [timeout] passes. Fixed single delays
+/// were flaky under the full suite's load.
+Future<void> settleUntil(
+  WidgetTester tester,
+  bool Function() done, {
+  Duration timeout = const Duration(seconds: 5),
+}) async {
+  final end = DateTime.now().add(timeout);
+  while (!done() && DateTime.now().isBefore(end)) {
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(milliseconds: 50));
+    });
+    await tester.pump();
+  }
+  await tester.pump();
+}
+
 Future<void> pushPaymentScreen(
   WidgetTester tester, {
   required BreakDownDataModel? breakdown,
@@ -483,14 +501,20 @@ void main() {
       expect(find.text('BACK TO SEARCH'), findsOneWidget);
     });
 
-    testWidgets('failure, backend check finds the order still pending (not paid, not refunded) -> falls back to the client error message', (tester) async {
+    // Scan D8 (#2): a gateway error while the order is still "pending" (UPI
+    // approved, bank still settling) must not show an error + RETRY at once —
+    // a second checkout on that order is how a customer gets charged twice.
+    testWidgets('failure, order still pending -> keeps checking with the bank (no error, no RETRY); a later check finds it paid -> confirmed', (tester) async {
       final trekC = await setUpPaymentScreenDeps(tester);
-      trekC.orderData.value = const Order(id: 'order_ambiguous');
-      mockRazorpayChannel((_) => razorpayError(message: 'TLS handshake failed'));
+      trekC.orderData.value = const Order(id: 'order_settling');
+      mockRazorpayChannel((_) => razorpayError(code: 0, message: 'Network error'));
+      var checks = 0;
       installFakeBackend({
-        'order-status': (_) => {
-          'success': true,
-          'data': {'status': 'pending'},
+        'order-status': (_) {
+          checks++;
+          return checks == 1
+              ? {'success': true, 'data': {'status': 'pending'}}
+              : {'success': true, 'data': {'status': 'paid', 'booking_id': 77}};
         },
       });
 
@@ -498,12 +522,47 @@ void main() {
         tester,
         breakdown: BreakDownDataModel(finalAmount: 10510, amountToPayNow: 5000),
       );
-      await tester.runAsync(() async {
-        await Future.delayed(const Duration(milliseconds: 100));
-      });
-      await tester.pump();
-      await tester.pump();
+      await settleUntil(tester, () => find.text('Checking with your bank...').evaluate().isNotEmpty);
 
+      expect(find.text('Something went wrong'), findsNothing);
+      expect(find.text('RETRY'), findsNothing);
+      expect(find.text('Checking with your bank...'), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 5)); // next grace check
+      await settleUntil(tester, () => find.text('Payment Confirmed!').evaluate().isNotEmpty);
+
+      expect(checks, greaterThanOrEqualTo(2));
+      expect(find.text('Payment Confirmed!'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 1)); // flush the 900ms delayed-navigation timer before teardown
+    });
+
+    testWidgets('failure, order stays pending through the whole grace period -> only then the client error message', (tester) async {
+      final trekC = await setUpPaymentScreenDeps(tester);
+      trekC.orderData.value = const Order(id: 'order_ambiguous');
+      mockRazorpayChannel((_) => razorpayError(message: 'TLS handshake failed'));
+      var checks = 0;
+      installFakeBackend({
+        'order-status': (_) {
+          checks++;
+          return {'success': true, 'data': {'status': 'pending'}};
+        },
+      });
+
+      await pushPaymentScreen(
+        tester,
+        breakdown: BreakDownDataModel(finalAmount: 10510, amountToPayNow: 5000),
+      );
+      await settleUntil(tester, () => find.text('Checking with your bank...').evaluate().isNotEmpty);
+      expect(find.text('Something went wrong'), findsNothing);
+
+      for (var i = 0; i < 12; i++) {
+        final before = checks;
+        await tester.pump(const Duration(seconds: 5));
+        await settleUntil(tester, () => checks > before);
+      }
+      await settleUntil(tester, () => find.text('Something went wrong').evaluate().isNotEmpty);
+
+      expect(checks, greaterThanOrEqualTo(13)); // the first check + 12 grace checks
       expect(find.text('Something went wrong'), findsOneWidget);
       expect(find.text('TLS handshake failed'), findsOneWidget);
     });
@@ -639,6 +698,9 @@ void main() {
 
       expect(find.text('Cancel Payment?'), findsOneWidget);
       expect(find.text('Payment Confirmed!'), findsNothing); // still on the processing screen underneath
+      // Scan D8: no false "never charged twice" promise; the real refund rule.
+      expect(find.textContaining('charged twice'), findsNothing);
+      expect(find.textContaining('refunds usually take 5–7 business days'), findsOneWidget);
     });
 
     testWidgets('"Stay" dismisses the dialog and leaves the payment flow running untouched', (tester) async {
@@ -782,12 +844,86 @@ void main() {
       expect(find.text('Something went wrong'), findsOneWidget);
 
       final openCallsBefore = calls.where((c) => c.method == 'open').length;
-      await tester.tap(find.text('RETRY'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
+      // RETRY now asks the server for the order status first (Scan D8), so
+      // the tap runs where that Dio call can complete.
+      await tester.runAsync(() async {
+        await tester.tap(find.text('RETRY'));
+        await tester.pump();
+        await Future.delayed(const Duration(milliseconds: 50));
+      });
+      await settleUntil(tester, () => calls.where((c) => c.method == 'open').length > openCallsBefore);
 
       final openCallsAfter = calls.where((c) => c.method == 'open').length;
       expect(openCallsAfter, openCallsBefore + 1);
+    });
+
+    // Scan D8 (#2): the order was paid while the error card was showing.
+    testWidgets('existing order that got PAID meanwhile -> RETRY confirms the booking and never reopens checkout', (tester) async {
+      final trekC = await setUpPaymentScreenDeps(tester);
+      final calls = mockRazorpayChannel((_) => razorpayError(message: 'User dismissed checkout'));
+      trekC.orderData.value = const Order(id: 'order_paid_late');
+      var orderStatus = 'unknown'; // no outcome yet -> the error card
+      installFakeBackend({
+        'order-status': (_) => {'success': true, 'data': {'status': orderStatus, 'booking_id': 91}},
+      });
+      await pushPaymentScreen(
+        tester,
+        breakdown: BreakDownDataModel(finalAmount: 10510, amountToPayNow: 5000),
+      );
+      await settleUntil(tester, () => find.text('Something went wrong').evaluate().isNotEmpty);
+      expect(find.text('Something went wrong'), findsOneWidget);
+
+      orderStatus = 'paid';
+      final openCallsBefore = calls.where((c) => c.method == 'open').length;
+      await tester.runAsync(() async {
+        await tester.tap(find.text('RETRY'));
+        await tester.pump();
+        await Future.delayed(const Duration(milliseconds: 50));
+      });
+      await settleUntil(tester, () => find.text('Payment Confirmed!').evaluate().isNotEmpty);
+
+      expect(calls.where((c) => c.method == 'open').length, openCallsBefore);
+      expect(find.text('Payment Confirmed!'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 1)); // flush the 900ms delayed-navigation timer before teardown
+    });
+
+    testWidgets('existing order that EXPIRED -> RETRY starts a fresh order instead of reopening the dead one', (tester) async {
+      final trekC = await setUpPaymentScreenDeps(tester);
+      var calls = mockRazorpayChannel((_) => razorpayError(message: 'User dismissed checkout'));
+      trekC.orderData.value = const Order(id: 'order_dead');
+      var orderStatus = 'unknown';
+      installFakeBackend({
+        'order-status': (_) => {'success': true, 'data': {'status': orderStatus}},
+        NetworkUrl.calculateFare: (_) => {
+          'success': true,
+          'fareToken': 'tok-retry',
+          'breakdown': {'final_amount': 10510, 'amount_to_pay_now': 10510},
+        },
+        NetworkUrl.addBooking: (_) => {
+          'success': true,
+          'order': {'id': 'order_new', 'amount': 1051000, 'currency': 'INR'},
+          'next_action_params': {},
+        },
+      });
+      await pushPaymentScreen(
+        tester,
+        breakdown: BreakDownDataModel(finalAmount: 10510, amountToPayNow: 5000),
+      );
+      await settleUntil(tester, () => find.text('Something went wrong').evaluate().isNotEmpty);
+      expect(find.text('Something went wrong'), findsOneWidget);
+
+      orderStatus = 'expired';
+      calls = mockRazorpayChannel((_) => null);
+      await tester.runAsync(() async {
+        await tester.tap(find.text('RETRY'));
+        await tester.pump();
+        await Future.delayed(const Duration(milliseconds: 50));
+      });
+      await settleUntil(tester, () => calls.any((c) => c.method == 'open'));
+
+      expect(trekC.orderData.value.id, 'order_new');
+      final open = calls.lastWhere((c) => c.method == 'open');
+      expect((open.arguments as Map)['order_id'], 'order_new');
     });
 
     testWidgets('no captured payment and no existing order re-fetches fare and creates a fresh order before reopening Razorpay', (tester) async {
