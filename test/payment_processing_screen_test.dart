@@ -39,6 +39,7 @@ import 'package:arobo_app/freezed_models/booking/booking_data_model.dart';
 import 'package:arobo_app/repository/network_url.dart';
 import 'package:arobo_app/repository/repository.dart';
 import 'package:arobo_app/screens/payment_processing_screen.dart';
+import 'package:arobo_app/security/app_foreground.dart';
 import 'package:dio/dio.dart' show InterceptorsWrapper, RequestOptions;
 import 'package:dio/dio.dart' as dio show Response;
 import 'package:flutter/material.dart';
@@ -332,6 +333,92 @@ void main() {
       expect(verifyRequest?.data, contains('pay_1'));
 
       await tester.pump(const Duration(seconds: 1)); // flush the 900ms delayed-navigation timer before teardown
+    });
+
+    // 2026-10-12: PhonePe stayed as an invisible window over the booking
+    // screen after the payment settled. Paid while another app is on top ->
+    // the screen asks Android to bring the app back (AppForeground).
+    testWidgets('paid while a UPI app is still on top -> asks Android to bring the app back in front', (tester) async {
+      await setUpPaymentScreenDeps(tester);
+      var reclaimAsks = 0;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(AppForeground.channel, (call) async {
+        if (call.method == 'reclaimForeground') reclaimAsks++;
+        return true;
+      });
+      addTearDown(() {
+        AppForeground.resetForTest();
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(AppForeground.channel, null);
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      });
+      mockRazorpayChannel((_) => razorpaySuccess(orderId: 'order_upi'));
+      installFakeBackend({
+        NetworkUrl.verifyBooking: (_) => {
+          'success': true,
+          'data': {'id': 502, 'booking_number': 'BI502'},
+          'next_action': 'SHOW_BOOKING_CONFIRMED',
+        },
+      });
+
+      // PhonePe is in front of our app.
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      await pushPaymentScreen(
+        tester,
+        breakdown: BreakDownDataModel(finalAmount: 10510, amountToPayNow: 5000),
+      );
+      await tester.runAsync(() async {
+        await Future.delayed(const Duration(milliseconds: 100));
+      });
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text('Payment Confirmed!'), findsOneWidget);
+      expect(reclaimAsks, 1);
+
+      // Back in front (PhonePe closed): the next check stops the retries.
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pump(AppForeground.retryEvery); // also flushes the 900ms delayed navigation
+      expect(reclaimAsks, 1);
+      expect(AppForeground.isRetrying, isFalse);
+    });
+
+    testWidgets('paid while the app is in front -> never pulls anything forward', (tester) async {
+      await setUpPaymentScreenDeps(tester);
+      var reclaimAsks = 0;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(AppForeground.channel, (call) async {
+        if (call.method == 'reclaimForeground') reclaimAsks++;
+        return true;
+      });
+      addTearDown(() {
+        AppForeground.resetForTest();
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(AppForeground.channel, null);
+      });
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      mockRazorpayChannel((_) => razorpaySuccess(orderId: 'order_front'));
+      installFakeBackend({
+        NetworkUrl.verifyBooking: (_) => {
+          'success': true,
+          'data': {'id': 503, 'booking_number': 'BI503'},
+          'next_action': 'SHOW_BOOKING_CONFIRMED',
+        },
+      });
+
+      await pushPaymentScreen(
+        tester,
+        breakdown: BreakDownDataModel(finalAmount: 10510, amountToPayNow: 5000),
+      );
+      await tester.runAsync(() async {
+        await Future.delayed(const Duration(milliseconds: 100));
+      });
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text('Payment Confirmed!'), findsOneWidget);
+      expect(reclaimAsks, 0);
+      await tester.pump(const Duration(seconds: 1));
     });
 
     testWidgets('verification returns false (e.g. webhook not yet landed) -> falls back to a forced order-status poll, which finds it paid', (tester) async {

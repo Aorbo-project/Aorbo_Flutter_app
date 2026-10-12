@@ -4,6 +4,7 @@ import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/controller/payment_verify_outcome.dart';
 import 'package:arobo_app/controller/trek_controller.dart';
 import 'package:arobo_app/controller/user_controller.dart';
+import 'package:arobo_app/security/app_foreground.dart';
 import 'package:arobo_app/security/screen_security.dart';
 import 'package:arobo_app/freezed_models/booking/booking_data_model.dart';
 import 'package:arobo_app/screens/booking_upcoming_screen.dart';
@@ -211,13 +212,15 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
   }
 
   Future<void> _handlePaymentError(PaymentFailureResponse r) async {
+    // Already settled by the server: a late "cancelled" (e.g. the checkout
+    // closed by AppForeground.reclaimAfterPayment) is not a failed payment.
+    if (_resolved) return;
     FirebaseCrashlytics.instance.recordError(
       'Razorpay payment failed: code=${r.code} message=${r.message}',
       null,
       reason: 'Razorpay EVENT_PAYMENT_ERROR (payment_processing_screen)',
       fatal: false,
     );
-    if (_resolved) return;
     await _resolveViaBackendCheck(
       fallbackMessage: (r.message?.isNotEmpty ?? false)
           ? r.message!
@@ -368,6 +371,8 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
     _watchdog?.cancel();
     _gracePoll?.cancel();
     _inGrace = false;
+    // The server says paid: close a UPI app the payment left on top of us.
+    AppForeground.reclaimAfterPayment();
     if (!mounted) return;
     setState(() => _state = PaymentFlowState.succeeded);
 
@@ -417,6 +422,10 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
     _watchdog?.cancel();
     _gracePoll?.cancel();
     _inGrace = false;
+    // Refunded is settled too — the customer must be able to read the card.
+    if (state == PaymentFlowState.refundedAutomatically) {
+      AppForeground.reclaimAfterPayment();
+    }
     if (!mounted) return;
     setState(() {
       _state = state;
