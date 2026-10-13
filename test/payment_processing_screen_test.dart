@@ -114,25 +114,22 @@ Map<String, dynamic> razorpayExternalWallet(String walletName) => {
   'data': {'external_wallet': walletName},
 };
 
-// _resolveSucceeded fires generateAndUploadInvoice(...) fire-and-forget on
-// success (real getBookingDetail -> InvoicePdfService -> upload chain,
-// entirely unrelated to what PaymentProcessingScreen itself is responsible
-// for). Even with the Dio interceptor resolving instantly, Dio schedules its
-// own internal connect/receive-timeout Timers per request that don't get
-// cleanly torn down under FakeAsync, leaving a "Timer still pending after
-// dispose" test failure. Stubbed the same way trek_controller_test.dart's
+// Real network side effects unrelated to what PaymentProcessingScreen itself
+// is responsible for: even with the Dio interceptor resolving instantly, Dio
+// schedules its own internal connect/receive-timeout Timers per request that
+// don't get cleanly torn down under FakeAsync, leaving a "Timer still pending
+// after dispose" test failure. Stubbed the same way trek_controller_test.dart's
 // own _StubDashboardController already stubs getBookingHistory for the same
 // class of reason. Registered *before* setUpController() so its own
 // Get.isRegistered<DashboardController> guard skips putting its stub instead.
+// (The success path no longer builds / uploads an invoice — the server issues
+// it since 13 Oct 2026.)
 class _PaymentScreenStubDashboardController extends DashboardController {
   @override
   void onInit() {}
 
   @override
   Future<void> getBookingHistory({required bool refresh}) async {}
-
-  @override
-  Future<void> generateAndUploadInvoice(int bookingId) async {}
 
   // _resolveSucceeded's 900ms-delayed navigation pushes BookingsUpcomingScreen,
   // whose own initState calls these for real — same class of unrelated
@@ -165,7 +162,7 @@ Future<TrekController> setUpPaymentScreenDeps(WidgetTester tester) async {
   // Must run BEFORE setUpController(): Get.put() is put-if-absent in GetX,
   // not an overwrite (confirmed empirically — putting after left
   // trek_controller_test.dart's own _StubDashboardController in place, whose
-  // getBookingDetail/generateAndUploadInvoice are real, silently ignoring
+  // getBookingDetail is real, silently ignoring
   // this one). Registering first means setUpController()'s own
   // isRegistered guard skips putting its stub instead.
   Get.put<DashboardController>(_PaymentScreenStubDashboardController());

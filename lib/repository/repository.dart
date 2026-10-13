@@ -14,7 +14,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/foundation.dart' show kDebugMode, Uint8List;
 import 'package:get/get.dart' hide FormData, Response;
 import 'package:arobo_app/integrity/integrity_interceptor.dart';
 import 'package:arobo_app/security/device_key_service.dart';
@@ -140,8 +140,8 @@ class Repository {
   // weak signal), a plain login/booking/cancel/refund call — none of which
   // should ever legitimately take more than a few seconds — could leave the
   // screen looking frozen for up to 45 seconds before failing. 20s is
-  // already generous for a small JSON payload; uploads (the one FormData
-  // caller today: DashboardController.generateAndUploadInvoice) get their
+  // already generous for a small JSON payload; uploads and file downloads
+  // (e.g. getBytes, the booking receipt PDF) get their
   // own longer override below instead of sharing this tightened default.
   static const Duration _defaultTimeout = Duration(seconds: 20);
   static const Duration _uploadTimeout = Duration(seconds: 60);
@@ -511,6 +511,30 @@ class Repository {
         showToastMessage(msg: "Please check your internet connection and try.");
         return null;
       }
+    } on TimeoutException {
+      throw const ApiException(FriendlyText.tooSlow);
+    } on DioException catch (e) {
+      throw _failure(e);
+    }
+  }
+
+  /// A file download (the booking receipt PDF): the raw bytes of a 200 reply,
+  /// with the same login, refresh and pinned client as [getApiCall]. Null when
+  /// offline; the same exceptions otherwise.
+  Future<Uint8List?> getBytes({required String url}) async {
+    bool internetAvailable = await isInternetAvailable();
+    try {
+      if (!internetAvailable) return null;
+      final opts = await _authOptions();
+      opts.responseType = ResponseType.bytes;
+      opts.receiveTimeout = _uploadTimeout;
+      final Response response = await dio
+          .get(url, options: opts)
+          .timeout(_uploadTimeout);
+      final data = response.data;
+      if (data is Uint8List) return data;
+      if (data is List<int>) return Uint8List.fromList(data);
+      return null;
     } on TimeoutException {
       throw const ApiException(FriendlyText.tooSlow);
     } on DioException catch (e) {

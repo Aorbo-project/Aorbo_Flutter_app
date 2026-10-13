@@ -18,7 +18,7 @@ import '../utils/booking_cancel_eligibility.dart';
 import '../utils/common_colors.dart';
 import '../utils/custom_snackbar.dart';
 import '../utils/detail_screen_ad_slot.dart';
-import '../services/invoice_pdf_service.dart';
+import '../services/booking_document_service.dart';
 import '../services/ticket_share_service.dart';
 import '../utils/ist_date_utils.dart';
 import '../utils/screen_constants.dart';
@@ -309,17 +309,13 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
       return;
     }
 
-    final policyType = booking.cancellationPolicyType?.toString();
-
     FirebaseCrashlytics.instance.log('Popup: Ticket download dialog');
 
     _showTicketProgress('Generating ticket...');
 
     try {
-      await InvoicePdfService.previewInvoice(
-        booking: booking,
-        policyType: policyType,
-      );
+      // The server's receipt (falls back to the phone-built PDF offline).
+      await BookingDocumentService.preview(booking);
 
       if (Get.isDialogOpen ?? false) Get.back();
     } catch (e) {

@@ -50,9 +50,6 @@ class _CancelFlowStubDashboardController extends DashboardController {
   Future<void> getBookingHistory({required bool refresh}) async {}
 
   @override
-  Future<void> generateAndUploadInvoice(int bookingId) async {}
-
-  @override
   Future<void> getBookingDetail({required dynamic bookingId}) async {}
 
   // Both post-booking detail screens now fetch their in-content ad slots in

@@ -6,7 +6,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../freezed_models/booking/booking_history_model.dart';
 import '../utils/ist_date_utils.dart';
-import 'invoice_pdf_service.dart';
+import 'booking_document_service.dart';
 
 /// Shares a booking the way ticketing apps do: the ticket PDF itself (the
 /// same document the Ticket button opens) with a short note and the app link.
@@ -29,14 +29,12 @@ class TicketShareService {
         '$appLink';
   }
 
-  /// Builds the ticket PDF into a temp file. Split from [share] so callers can
-  /// close their progress dialog before the share sheet opens (the sheet's
-  /// Future only completes when it is dismissed).
+  /// The ticket PDF (the server's receipt — [BookingDocumentService]) in a
+  /// temp file. Split from [share] so callers can close their progress dialog
+  /// before the share sheet opens (the sheet's Future only completes when it
+  /// is dismissed).
   static Future<XFile> prepareTicket(BookingHistoryData booking) async {
-    final bytes = await InvoicePdfService.generateInvoice(
-      booking: booking,
-      policyType: booking.cancellationPolicyType?.toString(),
-    );
+    final bytes = await BookingDocumentService.fetch(booking);
     final ref = (booking.bookingNumber ?? 'booking')
         .replaceAll(RegExp(r'[^A-Za-z0-9_-]'), '');
     final name = 'Aorbo_Ticket_$ref.pdf';

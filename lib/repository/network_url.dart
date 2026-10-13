@@ -186,6 +186,10 @@ class NetworkUrl {
   static String invoiceUpload(String bookingNumber) =>
       'customer/bookings/$bookingNumber/invoice';
 
+  /// GET: the booking receipt / invoice PDF the server issues (13 Oct 2026).
+  static String bookingDocument(String bookingNumber) =>
+      'customer/bookings/${Uri.encodeComponent(bookingNumber)}/invoice';
+
   // Emergency contacts
   static const String emergencyContacts = 'customer/emergency-contacts';
   static String deleteEmergencyContact(int id) =>

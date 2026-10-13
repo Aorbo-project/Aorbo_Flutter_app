@@ -383,11 +383,8 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
                 '')
             .toString();
 
-    final int? invoiceBookingId = int.tryParse(finalBookingId);
-    if (invoiceBookingId != null) {
-      // Fire-and-forget — the booking succeeded regardless.
-      _dashboardC.generateAndUploadInvoice(invoiceBookingId);
-    }
+    // The booking receipt is issued and e-mailed by the server now (13 Oct
+    // 2026) — the phone no longer builds and uploads a PDF here.
 
     _trekC.clearBookingData();
     _dashboardC.clearSearchAndBookingData();

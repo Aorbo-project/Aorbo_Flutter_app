@@ -26,7 +26,6 @@ import 'package:dio/dio.dart';
 import '../repository/api_result.dart';
 import '../repository/network_url.dart';
 import '../repository/repository.dart';
-import '../services/invoice_pdf_service.dart';
 import '../utils/custom_snackbar.dart';
 import '../services/location_cache_service.dart';
 
@@ -1275,32 +1274,6 @@ class DashboardController extends GetxController {
       if (Get.context != null) {
         CustomSnackBar.show(Get.context!, message: bookingDetailsLoadError);
       }
-    }
-  }
-
-  Future<void> generateAndUploadInvoice(int bookingId) async {
-    try {
-      await getBookingDetail(bookingId: bookingId);
-      final booking = bookingHistoryModal.value;
-      final bookingNumber = booking?.bookingNumber;
-      if (booking == null || bookingNumber == null || bookingNumber.isEmpty)
-        return;
-
-      final bytes = await InvoicePdfService.generateInvoice(booking: booking);
-
-      final formData = FormData.fromMap({
-        'invoice': MultipartFile.fromBytes(
-          bytes,
-          filename: 'invoice_$bookingNumber.pdf',
-        ),
-      });
-      await _repository.postApiCall(
-        url: NetworkUrl.invoiceUpload(bookingNumber),
-        body: formData,
-      );
-      logger.d('Invoice uploaded for booking $bookingNumber');
-    } catch (e) {
-      logger.e('generateAndUploadInvoice failed for booking $bookingId: $e');
     }
   }
 
