@@ -182,7 +182,7 @@ class _DocLink extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () => openLegalUrl(doc.url),
+      onTap: () => openLegalUrl(doc.url, title: doc.title),
       borderRadius: BorderRadius.circular(2.w),
       child: Padding(
         padding: EdgeInsets.symmetric(vertical: 1.h),

@@ -8,33 +8,42 @@ import 'package:arobo_app/utils/shared_preferences.dart';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:get/get.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import 'legal_api.dart';
+import 'legal_document_screen.dart';
 import 'legal_documents.dart';
 
-/// Opens a legal document (by server key: 'terms', 'privacy', ...) in the
-/// browser. Uses the server's URL; falls back to the built-in one when the
-/// list has never loaded (offline).
+/// Opens a legal document (by server key: 'terms', 'privacy', ...) inside the
+/// app. Uses the server's URL; falls back to the built-in one when the list
+/// has never loaded (offline).
 Future<void> openLegalDoc(String key) async {
   final url = LegalService.instance.urlFor(key);
   if (url == null) {
     AppFeedback.error("Couldn't open this page right now. Please try again.");
     return;
   }
-  await openLegalUrl(url);
+  await openLegalUrl(url, title: legalTitleFor(key: key));
 }
 
-/// Opens [url] (already validated as http/https) in the browser.
-Future<void> openLegalUrl(String url) async {
+/// Opens [url] (validated as http/https) in the in-app document view
+/// (LegalDocumentScreen: the website's current page under the app's header).
+Future<void> openLegalUrl(String url, {String? title}) async {
   if (!isOpenableLegalUrl(url)) return;
-  final uri = Uri.parse(url);
-  try {
-    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
-    if (!opened) AppFeedback.error("Couldn't open this page. Please try again.");
-  } catch (_) {
-    AppFeedback.error("Couldn't open this page. Please try again.");
+  await Get.to<void>(
+    () => LegalDocumentScreen(url: url, title: title ?? legalTitleFor(url: url)),
+  );
+}
+
+/// The document's display title, by key or by URL; "Legal" if unknown.
+String legalTitleFor({String? key, String? url}) {
+  final docs = [
+    ...LegalService.instance.documents,
+    ...fallbackLegalDocuments,
+  ];
+  for (final d in docs) {
+    if ((key != null && d.key == key) || (url != null && d.url == url)) return d.title;
   }
+  return 'Legal';
 }
 
 /// Customer legal documents: the list (memory + prefs cache), agreement at
