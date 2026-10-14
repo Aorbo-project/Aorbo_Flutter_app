@@ -39,11 +39,15 @@ class ExpandableLink {
   /// never shows a copy that can drift from the real one.
   final String? legalDocKey;
 
+  /// Set for a page on the website: the row opens it in the browser.
+  final String? url;
+
   ExpandableLink({
     required this.title,
     this.content = '',
     this.onTap,
     this.legalDocKey,
+    this.url,
   });
 }
 
@@ -51,28 +55,23 @@ class ExpandableLink {
 final aboutUsData = AboutUsData(
   title: 'Discover, Explore, and Conquer the Outdoors',
   welcomeText:
-      'Welcome to "Aorbo Treks", your ultimate companion for trekking adventures! Whether you\'re seasoned hiker or a beginner looking to explore nature\'s beauty, we\'re here to guide you every step of the way.',
+      'Welcome to Aorbo Treks, the place to find and book treks run by verified trek organisers. Whether you\'re a seasoned hiker or a beginner looking to explore nature\'s beauty, we help you compare treks and book with confidence.',
   imagePath: CommonImages.aboutUs,
   sections: [
     AboutUsSection(
       title: 'Our Mission',
       content:
-          'We aim to bridge the Gap between Adventurers and Trusted Trekking Companies.\n\nTo empower adventurers weekly with easy access to credible trekking companies, while giving vendors a powerful way to connect with potential customers.',
+          'We aim to bridge the gap between adventurers and trusted trek organisers.\n\nWe give adventurers easy access to verified trek organisers, and give organisers a simple way to reach the people looking for their treks.',
     ),
     AboutUsSection(
       title: 'Our Story',
       content:
-          'We have identified a crucial gap in the market, one that lies between customers seeking memorable trekking experiences and the trusted vendors who can deliver them. "Aorbo Treks" is the innovative solution designed to address the trust issues, the lack of transparency, and the challenges faced by both trekkers and companies.',
+          'We saw a gap between people looking for memorable treks and the trusted organisers who can deliver them. Aorbo Treks was built to fix the trust issues and the lack of transparency that both trekkers and organisers face.',
     ),
     AboutUsSection(
       title: 'Join Our Journey',
       content:
-          'Whether you\'re hiking a local trail or conquering a mountain peak, "Aorbo Treks" is your trusted partner for planning and inspiration. Let\'s make every step count.',
-    ),
-    AboutUsSection(
-      title: 'Call to Action',
-      content:
-          'Start your adventure today!\nExplore Trails Now or Join Our Community',
+          'Whether you\'re hiking a local trail or conquering a mountain peak, Aorbo Treks helps you find the right trek and the right organiser. Let\'s make every step count.',
     ),
   ],
   links: [
@@ -90,36 +89,23 @@ final aboutUsData = AboutUsData(
       title: 'Organiser Verification',
       content: '''
 1. Before an organiser can list treks
-- Identity verification (PAN and ID proof)
-- Business registration documents
-- Bank account verification
+- PAN and ID proof
+- Bank details, checked against a cancelled cheque
+- Business documents such as GST or MSME certificates, where the organiser has them
+- Every organiser is reviewed and approved by the Aorbo team
 
 2. Before a trek goes live
 - Every trek listing is reviewed by the Aorbo team
 
 3. After your trek
-- Reviews come only from travellers who booked and completed the trek
+- Reviews come only from travellers who booked the trek, after the trek has ended
       ''',
     ),
+    // Opens the real blog on the website (the in-app text was a placeholder
+    // outline of features that don't exist).
     ExpandableLink(
       title: 'Blogs',
-      content: '''
-1. Latest Posts
-- Trek experiences
-- Safety tips
-- Equipment reviews
-- Nature photography
-
-2. Featured Content
-- Expert advice
-- Seasonal recommendations
-- Community stories
-
-3. Contribution Guidelines
-- Writing standards
-- Photo submission
-- Content sharing policies
-      ''',
+      url: 'https://www.aorbotreks.com/blogs',
     ),
   ],
 );

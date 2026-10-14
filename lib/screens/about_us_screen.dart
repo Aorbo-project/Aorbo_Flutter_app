@@ -737,10 +737,19 @@ class _ExpandableLinkTileState extends State<_ExpandableLinkTile>
     // A legal document opens the website's current page (never an in-app
     // copy); everything else expands in place.
     final legalKey = widget.link.legalDocKey;
+    final url = widget.link.url;
+    final opensPage = legalKey != null || url != null;
     return Column(
       children: [
         InkWell(
-          onTap: legalKey != null ? () => openLegalDoc(legalKey) : _toggle,
+          onTap: legalKey != null
+              ? () => openLegalDoc(legalKey)
+              : url != null
+              ? () => launchUrl(
+                  Uri.parse(url),
+                  mode: LaunchMode.externalApplication,
+                ).catchError((_) => false)
+              : _toggle,
           borderRadius: BorderRadius.circular(8),
           child: Padding(
             padding: EdgeInsets.symmetric(vertical: 1.8.h),
@@ -758,7 +767,7 @@ class _ExpandableLinkTileState extends State<_ExpandableLinkTile>
                     ),
                   ),
                 ),
-                if (legalKey != null)
+                if (opensPage)
                   Container(
                     width: 28,
                     height: 28,
@@ -794,7 +803,7 @@ class _ExpandableLinkTileState extends State<_ExpandableLinkTile>
             ),
           ),
         ),
-        if (legalKey == null)
+        if (!opensPage)
           SizeTransition(
             sizeFactor: _expand,
             child: Container(
@@ -884,7 +893,7 @@ class _EstablishedBadge extends StatelessWidget {
           SizedBox(width: 1.w),
           Flexible(
             child: Text(
-              'ESTABLISHED  2021',
+              'ESTABLISHED  2025',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: AppType.style(
