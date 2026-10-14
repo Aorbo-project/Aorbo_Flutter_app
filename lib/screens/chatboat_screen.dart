@@ -82,11 +82,11 @@ const Map<String, List<Map<String, String>>> _dummyFaqsByCategory = {
   'Trek Service': [
     {
       'q': "The trek experience didn't match what was advertised",
-      'a': 'Please share which parts of the trek fell short of the listing, and we will follow up with the vendor.',
+      'a': 'Please share which parts of the trek fell short of the listing, and we will follow up with the organiser.',
     },
     {
       'q': 'Poor quality accommodation or meals during the trek',
-      'a': 'Please share details (photos help) and we will raise this with the vendor and organiser.',
+      'a': 'Please share details (photos help) and we will raise this with the organiser.',
     },
     {
       'q': 'Guide or support staff were not adequately equipped',

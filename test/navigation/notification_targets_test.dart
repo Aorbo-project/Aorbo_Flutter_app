@@ -107,7 +107,12 @@ void main() {
                   'message': 'Use it before it expires.',
                   'template_name': 'COUPON_EXPIRING',
                   'is_read': false,
-                  'created_at': '2026-10-05T10:00:00.000Z',
+                  // Relative: the screen hides notifications older than 7 days
+                  // (a fixed date made this test fail a week after it was written).
+                  'created_at': DateTime.now()
+                      .toUtc()
+                      .subtract(const Duration(hours: 2))
+                      .toIso8601String(),
                 },
               ],
               'unread_count': 1,

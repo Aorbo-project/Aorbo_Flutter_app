@@ -49,7 +49,7 @@ class _HelpScreenState extends State<HelpScreen>
     {
       'question': 'How do I know if a trek organizer is trustworthy?',
       'answer':
-          'Every organizer completes identity, business and bank verification with Aorbo before they can list treks, and our team reviews every trek before it goes live. You can also read reviews from past travellers on each trek.',
+          'Every organizer is reviewed and approved by Aorbo before they can list treks: PAN, ID proof and bank details are checked, and our team reviews every trek before it goes live. You can also read reviews from past travellers on each trek.',
     },
     {
       'question': 'Will you arrange the stays during the trek?',

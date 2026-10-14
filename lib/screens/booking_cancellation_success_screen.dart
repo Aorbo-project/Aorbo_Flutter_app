@@ -410,7 +410,7 @@ class _BookingCancellationSuccessScreenState
                     _hasRefund
                         ? 'Your refund will be processed to your original payment method.'
                         : _creditNoteEligible
-                        ? 'The amount paid is non-refundable. A credit note will be issued for GST reversal.'
+                        ? 'The amount paid is non-refundable, per the cancellation policy.'
                         : _isAdvanceOnly
                         ? 'Your advance amount, including GST, is non-refundable.'
                         : 'No refund is applicable for this cancellation.',
@@ -489,37 +489,8 @@ class _BookingCancellationSuccessScreenState
               ],
             ),
           ],
-          if (_creditNoteEligible) ...[
-            SizedBox(height: 1.5.h),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.2.h),
-              decoration: BoxDecoration(
-                color: _TI.orangeSoft,
-                borderRadius: BorderRadius.circular(2.w),
-                border: Border.all(color: _TI.orange.withValues(alpha: 0.2)),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.receipt_long_outlined,
-                    size: 4.5.w,
-                    color: _TI.orange,
-                  ),
-                  SizedBox(width: 2.5.w),
-                  Expanded(
-                    child: Text(
-                      'A credit note for GST reversal will be shared to your registered email.',
-                      style: AppType.style(
-                        9.sp,
-                        color: _TI.orange,
-                        height: 1.4,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+          // No "credit note will be e-mailed" banner: the server records the
+          // GST reversal but never sends the customer a credit note.
         ],
       ),
     );

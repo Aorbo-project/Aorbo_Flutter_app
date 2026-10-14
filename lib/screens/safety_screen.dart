@@ -363,7 +363,7 @@ class _SafetyScreenState extends State<SafetyScreen>
     {
       'title': "Explore The Wild With Confidence.",
       'subtitle':
-          "Aorbo connects you with verified trek organisers — each one's identity and business is checked before they can list a trek.",
+          "Aorbo connects you with verified trek organisers — each one's identity and bank details are checked before they can list a trek.",
       'gradientColors': [
         const Color(0xFF6C3DE0).withValues(alpha: 0.75),
         const Color(0xFFE0409A).withValues(alpha: 0.75),

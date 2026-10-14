@@ -478,7 +478,7 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     });
 
-    testWidgets('creditNoteEligible shows the GST credit-note banner', (tester) async {
+    testWidgets('creditNoteEligible never promises a credit-note e-mail (none is sent)', (tester) async {
       await setUpCancelScreenDeps(tester);
       Get.to(() => BookingCancellationSuccessScreen(
         booking: _activeBooking(),
@@ -493,10 +493,7 @@ void main() {
       await _pump(tester);
       await _pump(tester, const Duration(milliseconds: 600));
 
-      expect(
-        find.text('A credit note for GST reversal will be shared to your registered email.'),
-        findsOneWidget,
-      );
+      expect(find.textContaining('credit note'), findsNothing);
       await tester.pumpWidget(const SizedBox());
     });
 
