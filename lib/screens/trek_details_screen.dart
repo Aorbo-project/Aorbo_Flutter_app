@@ -525,13 +525,15 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                 ],
               ),
             ),
-            GestureDetector(
+            TapTarget(
               onTap: _shareTrek,
+              label: 'Share',
               child: Icon(Icons.ios_share, color: _C.ink, size: 6.w),
             ),
-            SizedBox(width: 4.w),
-            GestureDetector(
+            SizedBox(width: 1.w),
+            TapTarget(
               onTap: _toggleFavorite,
+              label: 'Save',
               child: Icon(
                 _isFav ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
                 color: _isFav ? _C.teal : _C.ink,

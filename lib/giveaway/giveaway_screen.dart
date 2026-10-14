@@ -17,6 +17,7 @@ import 'giveaway_api.dart';
 import 'giveaway_bridge.dart';
 import 'giveaway_config.dart';
 import 'giveaway_web_policy.dart';
+import '../widgets/tap_target.dart';
 
 /// Aorbo Trek Giveaway — hosts the campaign web page in a locked-down
 /// in-app browser.
@@ -326,13 +327,10 @@ class _GiveawayScreenState extends State<GiveawayScreen> {
       ),
       title: Row(
         children: [
-          GestureDetector(
+          TapTarget(
             onTap: _handleBack,
-            behavior: HitTestBehavior.opaque,
-            child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 1.h),
-              child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: AppColors.ink),
-            ),
+            label: 'Back',
+            child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: AppColors.ink),
           ),
           SizedBox(width: 2.w),
           Expanded(

@@ -6,6 +6,7 @@ import '../theme/app_tokens.dart';
 import '../theme/app_typography.dart';
 import '../utils/screen_constants.dart';
 import 'giveaway_api.dart';
+import '../widgets/tap_target.dart';
 
 /// Official Giveaway Rules — native on purpose, so they stay reachable from
 /// the app even if the campaign web page is down (Google Play requires the
@@ -93,13 +94,10 @@ class _GiveawayRulesScreenState extends State<GiveawayRulesScreen> {
       ),
       title: Row(
         children: [
-          GestureDetector(
+          TapTarget(
             onTap: () => Get.back(),
-            behavior: HitTestBehavior.opaque,
-            child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 1.h),
-              child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: AppColors.ink),
-            ),
+            label: 'Back',
+            child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: AppColors.ink),
           ),
           SizedBox(width: 2.w),
           Expanded(

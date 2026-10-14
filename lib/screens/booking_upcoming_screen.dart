@@ -3018,10 +3018,9 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: 4.w),
                         child: GestureDetector(
-                          onTap: () => CustomSnackBar.show(
-                            context,
-                            message: 'FAQ coming soon',
-                          ),
+                          // The FAQs live on the Help screen (this used to
+                          // be a dead "FAQ coming soon" toast).
+                          onTap: () => Get.toNamed('/help'),
                           child: Container(
                             padding: EdgeInsets.symmetric(
                               horizontal: 4.w,

@@ -65,4 +65,41 @@ void main() {
       expect(isFriendlyText(ok), isTrue, reason: ok);
     }
   });
+
+  // The gate in AppFeedback (every toast): real phone, 14 Oct 2026 showed
+  // "undefined" on screen.
+  test('isDeveloperText catches gateway / framework junk', () {
+    for (final junk in [
+      'undefined',
+      'null',
+      'Null',
+      'NaN',
+      'error',
+      'Reason: undefined',
+      '{"error":{"code":"BAD_REQUEST_ERROR"}}',
+      '[object Object]',
+      'DioException [bad response]: This exception was thrown because the response has a status code of 503',
+      "type 'Null' is not a subtype of type 'String'",
+      'Null check operator used on a null value',
+      'SequelizeDatabaseError: Unknown column',
+      '<!DOCTYPE html><html>',
+      "Cannot read properties of undefined (reading 'id')",
+    ]) {
+      expect(isDeveloperText(junk), isTrue, reason: junk);
+    }
+  });
+
+  test("isDeveloperText lets the app's own messages through, long or multi-line", () {
+    for (final ok in [
+      'OTP sent',
+      'Thank you for your valuable feedback!',
+      'The price was updated. Please check the total and tap Pay Now again.',
+      'No booking was made. If any money was debited, we will confirm your booking or refund it automatically. Tap RETRY to try again.',
+      'Line one\nLine two',
+      'An exceptional view awaits',
+      '',
+    ]) {
+      expect(isDeveloperText(ok), isFalse, reason: ok);
+    }
+  });
 }

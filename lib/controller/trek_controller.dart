@@ -1015,8 +1015,13 @@ class TrekController extends GetxController {
   Future<void> _reviewSaved() async {
     await _dashboardC.loadAllBookingHistory(force: true, waitForCompletion: false);
     reviewController.value.clear();
-    Get.back();
-    Get.back();
+    // Close only the review screen. It used to close TWO screens: from the
+    // dashboard's rate popup (an overlay, not a route) that also closed the
+    // dashboard itself (blank screen / app gone), and from Booking Details it
+    // skipped the "You rated this trek" refresh that screen waits for.
+    if (Get.currentRoute == '/rate-review') {
+      Get.back();
+    }
     CustomSnackBar.show(
       Get.context!,
       message: 'Thank you for your valuable feedback!',

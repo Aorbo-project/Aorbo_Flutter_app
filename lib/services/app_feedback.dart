@@ -16,6 +16,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:sizer/sizer.dart';
 
+import '../repository/friendly_error.dart';
 import '../theme/app_tokens.dart';
 import '../theme/app_typography.dart';
 
@@ -73,8 +74,18 @@ class AppFeedback {
   // ── internals ──────────────────────────────
   static void _enqueue(String message, FeedbackKind kind, Duration duration) {
     if (muted) return;
-    final msg = message.replaceFirst('Exception: ', '').trim();
+    var msg = message.replaceFirst('Exception: ', '').trim();
     if (msg.isEmpty) return;
+    // The one gate every toast passes (CustomSnackBar delegates here): a
+    // server / gateway / framework text like "undefined" or a Dio paragraph
+    // is never shown (real phone, 14 Oct 2026: "undefined" on screen). An
+    // error becomes the generic sentence; a junk success / info is dropped.
+    // The raw text goes to the Crashlytics log so it can still be traced.
+    if (isDeveloperText(msg)) {
+      _logHidden(kind, msg);
+      if (kind == FeedbackKind.success || kind == FeedbackKind.info) return;
+      msg = FriendlyText.generic;
+    }
     // Collapse rapid duplicates (double-taps, retry loops).
     if (msg == _lastMessage &&
         DateTime.now().difference(_lastAt) < const Duration(seconds: 1)) {
@@ -84,6 +95,14 @@ class AppFeedback {
     _lastAt = DateTime.now();
     _queue.add(_FeedbackRequest(msg, kind, duration));
     _drain();
+  }
+
+  static void _logHidden(FeedbackKind kind, String raw) {
+    try {
+      FirebaseCrashlytics.instance.log('Toast hidden (${kind.name}): $raw');
+    } catch (_) {
+      debugPrint('AppFeedback hid (${kind.name}): $raw');
+    }
   }
 
   static void _drain() {

@@ -15,6 +15,7 @@ import '../utils/common_bottom_nav.dart';
 import 'package:arobo_app/app_update/app_update_policy.dart' show defaultStoreUrl;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:arobo_app/utils/custom_snackbar.dart';
+import 'package:arobo_app/widgets/tap_target.dart';
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS
@@ -393,8 +394,9 @@ class _MyAccountScreenState extends State<MyAccountScreen>
       ),
       title: Row(
         children: [
-          GestureDetector(
+          TapTarget(
             onTap: _goToDashboard,
+            label: 'Back',
             child: const Icon(
               Icons.arrow_back_ios_new_rounded,
               size: 18,

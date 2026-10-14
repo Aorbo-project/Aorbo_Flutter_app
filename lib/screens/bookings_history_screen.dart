@@ -16,6 +16,7 @@ import '../freezed_models/booking/booking_history_model.dart';
 import '../utils/common_booked_card.dart';
 import '../utils/common_colors.dart';
 import '../utils/ist_date_utils.dart';
+import 'package:arobo_app/widgets/tap_target.dart';
 import '../utils/screen_constants.dart'; // FontSize
 
 // ─────────────────────────────────────────────
@@ -2999,16 +3000,13 @@ class _RangeCalendarState extends State<_RangeCalendar> {
           padding: EdgeInsets.symmetric(horizontal: 5.w),
           child: Row(
             children: [
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
+              TapTarget(
                 onTap: () => _shiftMonth(-1),
-                child: Padding(
-                  padding: EdgeInsets.all(1.4.w),
-                  child: Icon(
-                    Icons.chevron_left_rounded,
-                    size: 5.6.w,
-                    color: _Bk.ink,
-                  ),
+                label: 'Previous month',
+                child: Icon(
+                  Icons.chevron_left_rounded,
+                  size: 5.6.w,
+                  color: _Bk.ink,
                 ),
               ),
               Expanded(
@@ -3024,16 +3022,13 @@ class _RangeCalendarState extends State<_RangeCalendar> {
                   ),
                 ),
               ),
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
+              TapTarget(
                 onTap: () => _shiftMonth(1),
-                child: Padding(
-                  padding: EdgeInsets.all(1.4.w),
-                  child: Icon(
-                    Icons.chevron_right_rounded,
-                    size: 5.6.w,
-                    color: _Bk.ink,
-                  ),
+                label: 'Next month',
+                child: Icon(
+                  Icons.chevron_right_rounded,
+                  size: 5.6.w,
+                  color: _Bk.ink,
                 ),
               ),
             ],

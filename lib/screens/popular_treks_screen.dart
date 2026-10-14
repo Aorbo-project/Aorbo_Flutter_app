@@ -12,6 +12,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
 import 'package:sizer/sizer.dart';
 import 'package:arobo_app/theme/app_typography.dart';
+import 'package:arobo_app/widgets/tap_target.dart';
 
 class PopularTreksScreen extends StatefulWidget {
   const PopularTreksScreen({super.key});
@@ -231,11 +232,12 @@ class _PopularTreksScreenState extends State<PopularTreksScreen> {
                 child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.teal),
               )
             else if (_searchController.text.isNotEmpty)
-              GestureDetector(
+              TapTarget(
                 onTap: () {
                   _searchController.clear();
                   _onSearchChanged('');
                 },
+                label: 'Clear search',
                 child: Icon(Icons.close_rounded, size: 18, color: AppColors.inkLight),
               ),
           ],

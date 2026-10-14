@@ -68,6 +68,19 @@ final RegExp _developerText = RegExp(
   caseSensitive: false,
 );
 
+/// Whether [text] is developer / framework / gateway junk that must never be
+/// shown: "undefined", "null", exception names, Dio paragraphs, SQL, HTML,
+/// raw JSON. Unlike [isFriendlyText] it does not judge length or line breaks,
+/// so the app's own longer messages pass.
+bool isDeveloperText(String text) {
+  final t = text.trim();
+  if (t.isEmpty) return false;
+  final lower = t.toLowerCase();
+  if (lower == 'null' || lower == 'undefined' || lower == 'nan' || lower == 'error') return true;
+  if (t.startsWith('{') || t.startsWith('[')) return true;
+  return _developerText.hasMatch(t);
+}
+
 /// Whether [text] reads as a sentence written for a customer.
 bool isFriendlyText(String text) {
   final t = text.trim();
