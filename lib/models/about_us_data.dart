@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../legal/legal_documents.dart';
 import '../utils/common_images.dart';
 
 class AboutUsData {
@@ -34,11 +33,6 @@ class ExpandableLink {
   final String content;
   final VoidCallback? onTap;
 
-  /// Set for a legal document (server key, e.g. 'terms'): the row opens the
-  /// website's current page instead of expanding in-app text, so the app
-  /// never shows a copy that can drift from the real one.
-  final String? legalDocKey;
-
   /// Set for a page on the website: the row opens it in the browser.
   final String? url;
 
@@ -46,7 +40,6 @@ class ExpandableLink {
     required this.title,
     this.content = '',
     this.onTap,
-    this.legalDocKey,
     this.url,
   });
 }
@@ -75,16 +68,8 @@ final aboutUsData = AboutUsData(
     ),
   ],
   links: [
-    // Legal documents open the website's current version (lib/legal/) — the
-    // in-app copies that used to live here could contradict the real ones.
-    ExpandableLink(
-      title: 'Terms and Conditions',
-      legalDocKey: LegalDocKeys.terms,
-    ),
-    ExpandableLink(
-      title: 'User Agreement',
-      legalDocKey: LegalDocKeys.userAgreement,
-    ),
+    // Legal documents live in one place: My Account → LEGAL (every document
+    // the server lists). They used to be repeated here as well.
     ExpandableLink(
       title: 'Organiser Verification',
       content: '''

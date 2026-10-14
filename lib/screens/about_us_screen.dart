@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-import 'package:arobo_app/legal/legal_service.dart';
 import 'package:arobo_app/models/about_us_data.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:flutter/material.dart';
@@ -734,17 +733,14 @@ class _ExpandableLinkTileState extends State<_ExpandableLinkTile>
 
   @override
   Widget build(BuildContext context) {
-    // A legal document opens the website's current page (never an in-app
-    // copy); everything else expands in place.
-    final legalKey = widget.link.legalDocKey;
+    // A website page (Blogs) opens in the browser; everything else expands
+    // in place.
     final url = widget.link.url;
-    final opensPage = legalKey != null || url != null;
+    final opensPage = url != null;
     return Column(
       children: [
         InkWell(
-          onTap: legalKey != null
-              ? () => openLegalDoc(legalKey)
-              : url != null
+          onTap: url != null
               ? () => launchUrl(
                   Uri.parse(url),
                   mode: LaunchMode.externalApplication,
