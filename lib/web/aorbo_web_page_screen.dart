@@ -19,7 +19,8 @@ import 'aorbo_web_policy.dart';
 ///
 /// It shows the website's CURRENT page — the one source of truth, so the app
 /// can never show an outdated copy — under the app's own header, with the
-/// site's menu, footer and cookie banner hidden (kHideSiteChromeScript).
+/// site's menu, footer and cookie banner hidden and phone-sized text and
+/// spacing (kAppViewScript).
 /// Locked down like the giveaway view: only Aorbo's site loads here, other
 /// links open outside the app, no file / content / location access, TLS
 /// errors cancel, web debugging only in debug builds.
@@ -92,7 +93,10 @@ class _AorboWebPageScreenState extends State<AorboWebPageScreen> {
         ..setMixedContentMode(MixedContentMode.neverAllow)
         ..setGeolocationEnabled(false)
         ..setMediaPlaybackRequiresUserGesture(true)
-        ..setOnPlatformPermissionRequest((request) => request.deny());
+        ..setOnPlatformPermissionRequest((request) => request.deny())
+        ..setTextZoom(
+          appViewTextZoom(WidgetsBinding.instance.platformDispatcher.textScaleFactor),
+        );
     }
     return controller;
   }
@@ -105,7 +109,7 @@ class _AorboWebPageScreenState extends State<AorboWebPageScreen> {
 
   Future<void> _hideSiteChrome() async {
     try {
-      await _web.runJavaScript(kHideSiteChromeScript);
+      await _web.runJavaScript(kAppViewScript);
     } catch (_) {
       // Too early in the load (no document yet) — the next tick runs it.
     }

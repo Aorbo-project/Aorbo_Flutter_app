@@ -34,11 +34,29 @@ void main() {
     });
   });
 
-  test("the hide script hides only the site's menu, footer, cookie banner and loading bar", () {
-    for (final selector in ['.site-nav', '.site-footer', '#cookie-banner', '.route-progress']) {
-      expect(kHideSiteChromeScript, contains(selector));
+  test("the app view hides the site's menu, footer, cookie banner and loading bar", () {
+    expect(
+      kAppViewCss,
+      startsWith('.site-nav,.site-footer,#cookie-banner,.route-progress{display:none!important}'),
+    );
+    // The document itself is resized, never hidden.
+    for (final content in ['.legal', '.prose', '.blog-card', '.page-title']) {
+      expect(RegExp('(^|[},])${RegExp.escape(content)}[^{]*\\{display:none').hasMatch(kAppViewCss), isFalse);
     }
-    expect(kHideSiteChromeScript, isNot(contains('.legal')));
+  });
+
+  test('the style is injected inside a single-quoted JS string, so it may hold no quote or backslash', () {
+    expect(kAppViewCss.contains("'"), isFalse);
+    expect(kAppViewCss.contains(r'\'), isFalse);
+    expect(kAppViewScript, contains(kAppViewCss));
+  });
+
+  test("text zoom follows the phone's font setting within the app's 1.0–1.15× range", () {
+    expect(appViewTextZoom(1.0), 100);
+    expect(appViewTextZoom(1.1), 110);
+    expect(appViewTextZoom(1.3), 115);
+    expect(appViewTextZoom(2.0), 115);
+    expect(appViewTextZoom(0.85), 100);
   });
 
   test('legalTitleFor finds the built-in titles by key or URL', () {
