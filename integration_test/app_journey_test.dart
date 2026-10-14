@@ -17,6 +17,11 @@
 
 import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/main.dart' as app;
+import 'package:arobo_app/controller/payment_failure_message.dart';
+import 'package:arobo_app/screens/booking_upcoming_screen.dart';
+import 'package:arobo_app/screens/help_screen.dart';
+import 'package:arobo_app/screens/payment_processing_screen.dart';
+
 import 'package:arobo_app/screens/traveller_information_screen.dart';
 import 'package:arobo_app/utils/common_trek_card.dart';
 import 'package:arobo_app/screens/trek_details_screen.dart';
@@ -326,12 +331,115 @@ void main() {
       expectNoErrorToast('checkout');
     });
 
+    // Razorpay's checkout is a native window the test cannot touch: the host
+    // helper (integration_test/close_razorpay.sh) presses the phone's Back
+    // button when it appears. Expected: the "Payment cancelled" card — no
+    // "undefined" (real phone, 14 Oct 2026).
+    await step('Pay Now → Razorpay opens → closed → "Payment cancelled"', () async {
+      await pressButton('Pay Now');
+      await settle(const Duration(seconds: 2));
+      if (find.byType(PaymentProcessingScreen).evaluate().isEmpty) {
+        // No traveller picked yet: pick the first saved one and retry.
+        final pick = find.byType(Checkbox);
+        if (pick.evaluate().isNotEmpty) {
+          final box = tester.widget<Checkbox>(pick.first);
+          if (box.value != true) box.onChanged?.call(true);
+          await settle(const Duration(seconds: 1));
+        } else {
+          final row = find.textContaining(RegExp(r'\d+ yrs'));
+          if (row.evaluate().isNotEmpty) await press(row.first);
+        }
+        await settle(const Duration(seconds: 1));
+        await pressButton('Pay Now');
+      }
+      await waitFor(find.byType(PaymentProcessingScreen), timeout: const Duration(seconds: 40), what: 'payment screen');
+      // ignore: avoid_print
+      print('E2E_WAITING_FOR_RAZORPAY_CLOSE');
+      await waitFor(find.text(paymentCancelledTitle), timeout: const Duration(minutes: 3), what: '"Payment cancelled" card');
+      expect(find.text(paymentCancelledMessage), findsOneWidget);
+      expect(find.textContaining('undefined'), findsNothing);
+      expect(find.text('RETRY'), findsOneWidget);
+      await pressButton('GO BACK');
+      await settle(const Duration(seconds: 2));
+    });
+
     await step('leave checkout and trek', () async {
-      await back();
-      await back();
-      await back();
+      while (find.byType(TrekDetailsScreen).evaluate().isNotEmpty ||
+          find.byType(TravellerInformationScreen).evaluate().isNotEmpty ||
+          find.byType(PaymentProcessingScreen).evaluate().isNotEmpty) {
+        await back();
+      }
       expect(tester.takeException(), isNull);
     });
+
+    // ── Bookings: details, FAQ, cancellation preview, review ─────────────
+    final dash = Get.find<DashboardController>();
+    if (dash.bookingList.isEmpty) {
+      await press(find.byIcon(Icons.event_available_rounded));
+      await settle(const Duration(seconds: 4));
+    }
+    final bookings = dash.bookingList.toList();
+    final upcoming = bookings.where((b) => b.canCancel == true).toList();
+    final completed = bookings.where((b) => (b.trekStatus ?? '').toLowerCase() == 'completed').toList();
+
+    await step('booking details → FAQ opens Help', () async {
+      expect(bookings, isNotEmpty, reason: 'this account has no bookings to open');
+      final b = upcoming.isNotEmpty ? upcoming.first : bookings.first;
+      Get.to(() => BookingsUpcomingScreen(bookingId: b.id));
+      await waitFor(find.byType(BookingsUpcomingScreen), what: 'booking details');
+      await settle(const Duration(seconds: 4));
+      expectNoErrorToast('booking details');
+      await scrollTo('Frequently Asked Questions');
+      await tapText('Frequently Asked Questions');
+      await waitFor(find.byType(HelpScreen), what: 'Help from the FAQ row');
+      await back();
+      await back();
+    });
+
+    if (upcoming.isNotEmpty) {
+      await step('cancellation preview opens (not confirmed)', () async {
+        Get.toNamed('/bookingscancel', arguments: upcoming.first);
+        await settle(const Duration(seconds: 6));
+        expectNoErrorToast('cancellation preview');
+        expect(find.textContaining('credit note'), findsNothing);
+        await back();
+      });
+    }
+
+    if (completed.isNotEmpty) {
+      await step('review screen opens (not submitted)', () async {
+        Get.toNamed('/rate-review', arguments: {'booking': completed.first});
+        await settle(const Duration(seconds: 3));
+        expectNoErrorToast('review screen');
+        await back();
+      });
+    }
+
+    // ── Every other screen opens and closes cleanly ──────────────────────
+    for (final route in [
+      '/traveller-info',
+      '/my-bookings',
+      '/popular-treks',
+      '/seasonal-forecast',
+      '/know-more-screen',
+      '/chatboat',
+      '/contact-support',
+      '/coupon-code',
+      '/logout',
+      '/delete-account',
+      '/giveaway-rules',
+      '/giveaway',
+    ]) {
+      await step('screen $route', () async {
+        final before = Get.currentRoute;
+        Get.toNamed(route);
+        await settle(const Duration(seconds: 5));
+        expect(Get.currentRoute, isNot(before), reason: '$route did not open');
+        expectNoErrorToast(route);
+        expect(tester.takeException(), isNull);
+        await back();
+      });
+    }
 
     // ignore: avoid_print
     print('ALL STEPS PASSED (${_passed.length}): ${_passed.join(' | ')}');
