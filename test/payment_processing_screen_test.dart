@@ -32,6 +32,7 @@
 
 import 'dart:async';
 
+import 'package:arobo_app/controller/payment_failure_message.dart';
 import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/controller/trek_controller.dart';
 import 'package:arobo_app/controller/user_controller.dart';
@@ -538,7 +539,7 @@ void main() {
   group('Payment error', () {
     testWidgets('failure with no order id anywhere -> resolves straight to the real client-side error message, and records it to Crashlytics', (tester) async {
       await setUpPaymentScreenDeps(tester);
-      mockRazorpayChannel((_) => razorpayError(message: 'Payment cancelled by user'));
+      mockRazorpayChannel((_) => razorpayError(code: Razorpay.UNKNOWN_ERROR, message: 'Payment failed at the bank'));
 
       await pushPaymentScreen(
         tester,
@@ -551,13 +552,13 @@ void main() {
       await tester.pump();
 
       expect(find.text('Something went wrong'), findsOneWidget);
-      expect(find.text('Payment cancelled by user'), findsOneWidget);
+      expect(find.text('Payment failed at the bank'), findsOneWidget);
       expect(find.text('GO BACK'), findsOneWidget);
       expect(find.text('RETRY'), findsOneWidget);
 
       final fake = FirebaseCrashlyticsPlatform.instance as FakeCrashlyticsPlatform;
       expect(fake.recordedExceptions, hasLength(1));
-      expect(fake.recordedExceptions.first, contains('Payment cancelled by user'));
+      expect(fake.recordedExceptions.first, contains('Payment failed at the bank'));
     });
 
     testWidgets('failure but the backend independently confirms the amount was refunded -> overrides the client-side failure with the real outcome', (tester) async {
@@ -720,9 +721,9 @@ void main() {
         tester,
         breakdown: BreakDownDataModel(finalAmount: 10510, amountToPayNow: 5000),
       );
-      await settleUntil(tester, () => find.text('Something went wrong').evaluate().isNotEmpty);
+      await settleUntil(tester, () => find.text(paymentCancelledTitle).evaluate().isNotEmpty);
 
-      expect(find.text('Something went wrong'), findsOneWidget);
+      expect(find.text(paymentCancelledTitle), findsOneWidget);
       expect(find.text('RETRY'), findsOneWidget);
       expect(find.text('Checking with your bank...'), findsNothing);
       expect(checks, 1);
@@ -730,9 +731,32 @@ void main() {
       expect(checks, 1);
     });
 
+    // Real phone, 14 Oct 2026: a closed checkout came back with the message
+    // "undefined" and the card read "Something went wrong / undefined".
+    testWidgets('closed checkout with message "undefined" -> "Payment cancelled" + a real sentence, never "undefined"', (tester) async {
+      final trekC = await setUpPaymentScreenDeps(tester);
+      trekC.orderData.value = const Order(id: 'order_undefined');
+      mockRazorpayChannel((_) => razorpayError(code: Razorpay.PAYMENT_CANCELLED, message: 'undefined'));
+      installFakeBackend({
+        'order-status': (_) => {'success': true, 'data': {'status': 'pending'}},
+      });
+
+      await pushPaymentScreen(
+        tester,
+        breakdown: BreakDownDataModel(finalAmount: 10510, amountToPayNow: 5000),
+      );
+      await settleUntil(tester, () => find.text(paymentCancelledTitle).evaluate().isNotEmpty);
+
+      expect(find.text(paymentCancelledTitle), findsOneWidget);
+      expect(find.text(paymentCancelledMessage), findsOneWidget);
+      expect(find.text('Something went wrong'), findsNothing);
+      expect(find.textContaining('undefined'), findsNothing);
+      expect(find.text('RETRY'), findsOneWidget);
+    });
+
     testWidgets('failure with an empty message from the gateway falls back to a generic message, never shows a blank card', (tester) async {
       await setUpPaymentScreenDeps(tester);
-      mockRazorpayChannel((_) => razorpayError(message: ''));
+      mockRazorpayChannel((_) => razorpayError(code: Razorpay.UNKNOWN_ERROR, message: ''));
 
       await pushPaymentScreen(
         tester,
@@ -744,7 +768,7 @@ void main() {
       await tester.pump();
       await tester.pump();
 
-      expect(find.text('Payment was not completed.'), findsOneWidget);
+      expect(find.text(paymentNotCompletedMessage), findsOneWidget);
     });
   });
 
@@ -978,7 +1002,7 @@ void main() {
   group('Retry', () {
     testWidgets('a captured payment id (verification failed, not the gateway) retries verification directly, without reopening Razorpay', (tester) async {
       final trekC = await setUpPaymentScreenDeps(tester);
-      mockRazorpayChannel((_) => razorpayError(message: 'Verification timed out'));
+      mockRazorpayChannel((_) => razorpayError(code: Razorpay.UNKNOWN_ERROR, message: 'Verification timed out'));
 
       await pushPaymentScreen(
         tester,
@@ -1026,7 +1050,7 @@ void main() {
     // automatic refund) asks the server before calling it a failure.
     Future<TrekController> captureThenFail(WidgetTester tester) async {
       final trekC = await setUpPaymentScreenDeps(tester);
-      mockRazorpayChannel((_) => razorpayError(message: 'Verification timed out'));
+      mockRazorpayChannel((_) => razorpayError(code: Razorpay.UNKNOWN_ERROR, message: 'Verification timed out'));
       await pushPaymentScreen(
         tester,
         breakdown: BreakDownDataModel(finalAmount: 10510, amountToPayNow: 5000),
@@ -1108,7 +1132,7 @@ void main() {
       });
       await tester.pump();
       await tester.pump();
-      expect(find.text('Something went wrong'), findsOneWidget);
+      expect(find.text(paymentCancelledTitle), findsOneWidget);
 
       final openCallsBefore = calls.where((c) => c.method == 'open').length;
       // RETRY now asks the server for the order status first (Scan D8), so
@@ -1137,8 +1161,8 @@ void main() {
         tester,
         breakdown: BreakDownDataModel(finalAmount: 10510, amountToPayNow: 5000),
       );
-      await settleUntil(tester, () => find.text('Something went wrong').evaluate().isNotEmpty);
-      expect(find.text('Something went wrong'), findsOneWidget);
+      await settleUntil(tester, () => find.text(paymentCancelledTitle).evaluate().isNotEmpty);
+      expect(find.text(paymentCancelledTitle), findsOneWidget);
 
       orderStatus = 'paid';
       final openCallsBefore = calls.where((c) => c.method == 'open').length;
@@ -1176,8 +1200,8 @@ void main() {
         tester,
         breakdown: BreakDownDataModel(finalAmount: 10510, amountToPayNow: 5000),
       );
-      await settleUntil(tester, () => find.text('Something went wrong').evaluate().isNotEmpty);
-      expect(find.text('Something went wrong'), findsOneWidget);
+      await settleUntil(tester, () => find.text(paymentCancelledTitle).evaluate().isNotEmpty);
+      expect(find.text(paymentCancelledTitle), findsOneWidget);
 
       orderStatus = 'expired';
       calls = mockRazorpayChannel((_) => null);
@@ -1315,7 +1339,7 @@ void main() {
 
     testWidgets('no captured payment and no existing order re-fetches fare and creates a fresh order before reopening Razorpay', (tester) async {
       final trekC = await setUpPaymentScreenDeps(tester);
-      mockRazorpayChannel((_) => razorpayError(message: 'Order expired'));
+      mockRazorpayChannel((_) => razorpayError(code: Razorpay.UNKNOWN_ERROR, message: 'Order expired'));
 
       await pushPaymentScreen(
         tester,

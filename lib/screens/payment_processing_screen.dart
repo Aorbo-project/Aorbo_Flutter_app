@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:arobo_app/controller/dashboard_controller.dart';
+import 'package:arobo_app/controller/payment_failure_message.dart';
 import 'package:arobo_app/controller/payment_verify_outcome.dart';
 import 'package:arobo_app/controller/trek_controller.dart';
 import 'package:arobo_app/controller/user_controller.dart';
@@ -66,6 +67,9 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
   late Razorpay _razorpay;
   PaymentFlowState _state = PaymentFlowState.awaitingGateway;
   String _message = 'Choose a payment option above to continue.';
+  // Title of the failure card: "Payment cancelled" when the customer backed
+  // out of Checkout (no payment exists), else "Something went wrong".
+  String _failureTitle = paymentFailedTitle;
 
   Timer? _statusPoll;
   Timer? _watchdog;
@@ -222,9 +226,8 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
       fatal: false,
     );
     await _resolveViaBackendCheck(
-      fallbackMessage: (r.message?.isNotEmpty ?? false)
-          ? r.message!
-          : 'Payment was not completed.',
+      // Never Razorpay's raw text ("undefined" on a cancelled checkout).
+      fallbackMessage: paymentFailureMessage(code: r.code, gatewayMessage: r.message),
       // Review C-M1: the customer closed the checkout sheet. No payment
       // exists, so the order stays "pending" until it expires; the grace poll
       // would show "Checking with your bank..." for a minute with no RETRY.
@@ -326,6 +329,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
         }
       }
     }
+    _failureTitle = cancelledByCustomer ? paymentCancelledTitle : paymentFailedTitle;
     _resolveTerminal(PaymentFlowState.expiredOrFailed, fallbackMessage);
   }
 
@@ -436,6 +440,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
       _resolved = false;
       _state = PaymentFlowState.awaitingGateway;
       _message = 'Choose a payment option above to continue.';
+      _failureTitle = paymentFailedTitle;
     });
 
     final hasCapturedPayment = _trekC.paymentId.value.isNotEmpty;
@@ -605,8 +610,8 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
       case PaymentFlowState.expiredOrFailed:
         return _statusCard(
           icon: Icons.error_outline_rounded,
-          iconColor: _PP.red,
-          title: 'Something went wrong',
+          iconColor: _failureTitle == paymentCancelledTitle ? _PP.amber : _PP.red,
+          title: _failureTitle,
           message: _message,
           actions: [
             _secondaryAction('GO BACK', () => Get.back()),
