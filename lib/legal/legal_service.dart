@@ -10,7 +10,7 @@ import 'package:get/get.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import 'legal_api.dart';
-import 'legal_document_screen.dart';
+import '../web/aorbo_web_page_screen.dart';
 import 'legal_documents.dart';
 
 /// Opens a legal document (by server key: 'terms', 'privacy', ...) inside the
@@ -26,11 +26,11 @@ Future<void> openLegalDoc(String key) async {
 }
 
 /// Opens [url] (validated as http/https) in the in-app document view
-/// (LegalDocumentScreen: the website's current page under the app's header).
+/// (AorboWebPageScreen: the website's current page under the app's header).
 Future<void> openLegalUrl(String url, {String? title}) async {
   if (!isOpenableLegalUrl(url)) return;
   await Get.to<void>(
-    () => LegalDocumentScreen(url: url, title: title ?? legalTitleFor(url: url)),
+    () => AorboWebPageScreen(url: url, title: title ?? legalTitleFor(url: url)),
   );
 }
 

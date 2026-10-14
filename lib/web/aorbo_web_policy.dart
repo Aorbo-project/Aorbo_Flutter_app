@@ -1,28 +1,28 @@
-/// Rules for the in-app legal document view (LegalDocumentScreen). Pure, so
-/// they are unit-tested without a WebView.
+/// Rules for the in-app view of Aorbo's website (AorboWebPageScreen: legal
+/// documents, blog). Pure, so they are unit-tested without a WebView.
 library;
 
-/// The customer agreement lives on aorbotreks.com (both spellings serve it).
-const Set<String> kLegalWebHosts = {'aorbotreks.com', 'www.aorbotreks.com'};
+/// Aorbo's customer website (both spellings serve it).
+const Set<String> kAorboWebHosts = {'aorbotreks.com', 'www.aorbotreks.com'};
 
-enum LegalNavAction { allow, openExternally, block }
+enum WebNavDecision { allow, openExternally, block }
 
-/// What to do when the document page tries to open [uri].
+/// What to do when the page tries to open [uri].
 ///
-/// Aorbo's website (or the host the server gave for this document, [home])
+/// Aorbo's website (or the host of the page that was opened, [home])
 /// loads in the app; any other web link, e-mail or phone link opens outside
 /// the app; every other scheme (intent:, file:, javascript:, …) is dropped.
-LegalNavAction decideLegalNavigation(Uri uri, {Uri? home}) {
+WebNavDecision decideWebNavigation(Uri uri, {Uri? home}) {
   final scheme = uri.scheme.toLowerCase();
   final host = uri.host.toLowerCase();
   if (scheme == 'https' &&
-      (kLegalWebHosts.contains(host) || (home != null && host == home.host.toLowerCase()))) {
-    return LegalNavAction.allow;
+      (kAorboWebHosts.contains(host) || (home != null && host == home.host.toLowerCase()))) {
+    return WebNavDecision.allow;
   }
   if (scheme == 'https' || scheme == 'http' || scheme == 'mailto' || scheme == 'tel') {
-    return LegalNavAction.openExternally;
+    return WebNavDecision.openExternally;
   }
-  return LegalNavAction.block;
+  return WebNavDecision.block;
 }
 
 /// Hides the website's own menu, footer, cookie banner and page-loading bar,
@@ -31,9 +31,9 @@ LegalNavAction decideLegalNavigation(Uri uri, {Uri? home}) {
 /// (React-web: Navbar.jsx `.site-nav`, Footer.jsx `.site-footer`,
 /// CookieBanner.jsx `#cookie-banner`, Layout.jsx `.route-progress`); if the
 /// site renames them the document still shows, just with its menu.
-const String kLegalHideSiteChromeScript = r'''
+const String kHideSiteChromeScript = r'''
 (function () {
-  var id = 'aorbo-app-legal-view';
+  var id = 'aorbo-app-view';
   if (document.getElementById(id)) return;
   var s = document.createElement('style');
   s.id = id;

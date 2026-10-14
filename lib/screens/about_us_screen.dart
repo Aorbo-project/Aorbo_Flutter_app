@@ -4,6 +4,8 @@ import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:arobo_app/web/aorbo_web_page_screen.dart';
+import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
@@ -733,7 +735,7 @@ class _ExpandableLinkTileState extends State<_ExpandableLinkTile>
 
   @override
   Widget build(BuildContext context) {
-    // A website page (Blogs) opens in the browser; everything else expands
+    // A website page (Blogs) opens inside the app; everything else expands
     // in place.
     final url = widget.link.url;
     final opensPage = url != null;
@@ -741,10 +743,9 @@ class _ExpandableLinkTileState extends State<_ExpandableLinkTile>
       children: [
         InkWell(
           onTap: url != null
-              ? () => launchUrl(
-                  Uri.parse(url),
-                  mode: LaunchMode.externalApplication,
-                ).catchError((_) => false)
+              ? () => Get.to<void>(
+                  () => AorboWebPageScreen(url: url, title: widget.link.title),
+                )
               : _toggle,
           borderRadius: BorderRadius.circular(8),
           child: Padding(

@@ -11,30 +11,31 @@ import 'package:webview_flutter_android/webview_flutter_android.dart';
 import '../theme/app_tokens.dart';
 import '../theme/app_typography.dart';
 import '../utils/screen_constants.dart';
-import 'legal_web_policy.dart';
+import 'aorbo_web_policy.dart';
 
-/// A legal document (Terms, Privacy Policy, User Agreement, Refund Policy)
-/// read inside the app.
+/// A page of Aorbo's website (aorbotreks.com) read inside the app: the legal
+/// documents (Terms, Privacy Policy, User Agreement, Refund Policy) and the
+/// blog.
 ///
 /// It shows the website's CURRENT page — the one source of truth, so the app
 /// can never show an outdated copy — under the app's own header, with the
-/// site's menu, footer and cookie banner hidden (kLegalHideSiteChromeScript).
+/// site's menu, footer and cookie banner hidden (kHideSiteChromeScript).
 /// Locked down like the giveaway view: only Aorbo's site loads here, other
 /// links open outside the app, no file / content / location access, TLS
 /// errors cancel, web debugging only in debug builds.
-class LegalDocumentScreen extends StatefulWidget {
-  const LegalDocumentScreen({super.key, required this.url, required this.title});
+class AorboWebPageScreen extends StatefulWidget {
+  const AorboWebPageScreen({super.key, required this.url, required this.title});
 
   final String url;
   final String title;
 
   @override
-  State<LegalDocumentScreen> createState() => _LegalDocumentScreenState();
+  State<AorboWebPageScreen> createState() => _AorboWebPageScreenState();
 }
 
 enum _Phase { loading, ready, error }
 
-class _LegalDocumentScreenState extends State<LegalDocumentScreen> {
+class _AorboWebPageScreenState extends State<AorboWebPageScreen> {
   static const _loadTimeout = Duration(seconds: 20);
 
   late final Uri _home = Uri.parse(widget.url);
@@ -104,7 +105,7 @@ class _LegalDocumentScreenState extends State<LegalDocumentScreen> {
 
   Future<void> _hideSiteChrome() async {
     try {
-      await _web.runJavaScript(kLegalHideSiteChromeScript);
+      await _web.runJavaScript(kHideSiteChromeScript);
     } catch (_) {
       // Too early in the load (no document yet) — the next tick runs it.
     }
@@ -128,17 +129,17 @@ class _LegalDocumentScreenState extends State<LegalDocumentScreen> {
   FutureOr<NavigationDecision> _onNavigationRequest(NavigationRequest request) {
     final uri = Uri.tryParse(request.url);
     if (uri == null) return NavigationDecision.prevent;
-    switch (decideLegalNavigation(uri, home: _home)) {
-      case LegalNavAction.allow:
+    switch (decideWebNavigation(uri, home: _home)) {
+      case WebNavDecision.allow:
         return NavigationDecision.navigate;
-      case LegalNavAction.openExternally:
+      case WebNavDecision.openExternally:
         // Only a tap in the page itself leaves the app; a frame or script
         // can't push the user out.
         if (request.isMainFrame) {
           launchUrl(uri, mode: LaunchMode.externalApplication).ignore();
         }
         return NavigationDecision.prevent;
-      case LegalNavAction.block:
+      case WebNavDecision.block:
         return NavigationDecision.prevent;
     }
   }
