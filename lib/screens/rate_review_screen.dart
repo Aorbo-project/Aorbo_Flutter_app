@@ -12,6 +12,7 @@ import '../utils/common_colors.dart';
 import '../utils/screen_constants.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
+import 'package:arobo_app/services/app_review_prompt.dart';
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS — FOREST THEME
@@ -949,8 +950,9 @@ class _RateReviewScreenState extends State<RateReviewScreen>
     if (_submitting) return;
     setState(() => _submitting = true);
     final low = _isLowRating;
+    final stars = selectedRating.round();
     try {
-      await _trekC.createReview(
+      final saved = await _trekC.createReview(
         trekId: trekId,
         customerId: customerId,
         batchId: batchId,
@@ -962,6 +964,8 @@ class _RateReviewScreenState extends State<RateReviewScreen>
         womenSafety: !low && womenSafety,
         issueTags: issueTags,
       );
+      // A happy customer (4-5 stars): Google Play's own rating box, in the app.
+      if (saved) AppReviewPrompt.afterTrekReview(stars).ignore();
     } finally {
       // Saved -> this screen is already closing; failed -> try again.
       if (mounted) setState(() => _submitting = false);
