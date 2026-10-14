@@ -254,10 +254,15 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
   List<Traveler> selectedTravellers = [];
   bool _isCouponExpanded = true;
   bool _isPaymentInFlight = false;
+  // The fare quote (fare token) the server accepts at Pay Now lives 7 min
+  // (Backend FARE_TOKEN_TTL_MINUTES). Owner, 14 Oct 2026: no countdown on the
+  // screen and no "session timed out" kick-out — the quote is refreshed in
+  // the background at most 5 min after it was issued (2 min to spare), and
+  // again at Pay Now if it is old. Nothing here is shown to the customer.
   static const int _totalTimerSecs = 5 * 60;
   final RxInt _remainingSecs = _totalTimerSecs.obs;
   bool _isTimerExpired = false;
-  bool _didExitOnExpiry = false;
+  Future<void>? _quoteRefresh;
   Timer? _timer;
   Worker? _fareDebounceWorker;
   Worker? _fareResponseWorker;
@@ -358,10 +363,8 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
     if (expiresAt == null) return;
     final secsLeft = expiresAt.difference(DateTime.now()).inSeconds;
     _remainingSecs.value = secsLeft.clamp(0, _totalTimerSecs);
-    if (_remainingSecs.value <= 0) {
-      _timer?.cancel();
-      _handleTimerExpired();
-    }
+    _isTimerExpired = _remainingSecs.value <= 0;
+    if (_isTimerExpired) _refreshQuote();
   }
 
   void _startTimer() {
@@ -370,25 +373,38 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
       if (_remainingSecs.value > 0) {
         _remainingSecs.value--;
       } else {
-        t.cancel();
-        _handleTimerExpired();
+        _isTimerExpired = true;
+        // Offline: try again every 30 s, not every tick (Pay Now always tries).
+        final last = _lastQuoteRefresh;
+        if (last == null || DateTime.now().difference(last).inSeconds >= 30) {
+          _refreshQuote();
+        }
       }
     });
   }
 
-  void _handleTimerExpired({bool userInitiated = false}) {
-    _isTimerExpired = true;
-    if (!mounted || _isPaymentInFlight) return;
-    if (_didExitOnExpiry && !userInitiated) return;
-    _didExitOnExpiry = true;
-    Navigator.of(context).popUntil((route) => route is PageRoute);
-    CustomSnackBar.show(
-      context,
-      message: 'Payment session timed out. Please start over.',
-    );
-    if (Navigator.of(context).canPop()) {
-      Navigator.of(context).pop();
-    }
+  DateTime? _lastQuoteRefresh;
+
+  /// A fresh fare quote, in the background: the fare stays on screen (only
+  /// its fields dim, and Pay Now waits) and the response worker re-syncs the
+  /// quote's age. Never while a payment is open (that order is already made).
+  /// A refresh already running is joined, not started twice (Pay Now waits
+  /// for the background one instead of reporting a failure).
+  Future<void> _refreshQuote() {
+    if (!mounted || _isPaymentInFlight) return Future.value();
+    final running = _quoteRefresh;
+    if (running != null) return running;
+    _lastQuoteRefresh = DateTime.now();
+    return _quoteRefresh = _trekC
+        .calculateFare(keepPrevious: true)
+        .whenComplete(() => _quoteRefresh = null);
+  }
+
+  double? _payableNow() {
+    final bd = _currentFareResponse()?.breakdown;
+    final payFull = !_isFlexiblePolicy || _selectedPaymentOption == 'full';
+    final raw = payFull ? bd?.finalAmount : bd?.amountToPayNow;
+    return raw == null ? null : double.tryParse(raw.toString());
   }
 
   void _triggerHint(String message, GlobalKey key, int targetIndex) {
@@ -440,11 +456,28 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
 
   Future<void> _handlePayNow() async {
     if (_isPaymentInFlight) return;
-    if (_isTimerExpired || _remainingSecs.value <= 0) {
-      _handleTimerExpired(userInitiated: true);
-      return;
-    }
     if (!_validateBeforePayment()) return;
+    if (_isTimerExpired || _remainingSecs.value <= 0) {
+      // Old quote: get a fresh one first. If the total changed, show it and
+      // let the customer tap again — never charge an amount they didn't see.
+      final before = _payableNow();
+      await _refreshQuote();
+      if (!mounted) return;
+      if (_isTimerExpired || _currentFareResponse() == null) {
+        CustomSnackBar.show(
+          context,
+          message: "Couldn't update the price. Please check your connection and try again.",
+        );
+        return;
+      }
+      if (before != null && _payableNow() != before) {
+        CustomSnackBar.show(
+          context,
+          message: 'The price was updated. Please check the total and tap Pay Now again.',
+        );
+        return;
+      }
+    }
     setState(() => _isPaymentInFlight = true);
     _trekC.createOrderRequestModel.value = _trekC.createOrderRequestModel.value
         .copyWith(
@@ -466,9 +499,7 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
       );
       if (!mounted) return;
       setState(() => _isPaymentInFlight = false);
-      if (_isTimerExpired || _remainingSecs.value <= 0) {
-        _handleTimerExpired();
-      }
+      if (_isTimerExpired || _remainingSecs.value <= 0) _refreshQuote();
     } else {
       setState(() => _isPaymentInFlight = false);
       CustomSnackBar.show(
@@ -1697,60 +1728,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
         'Checkout',
         style: AppType.style(13.sp, w: FontWeight.w700, color: _TI.ink),
       ),
-      actions: [
-        Padding(
-          padding: EdgeInsets.only(right: 4.w),
-          child: _buildTimerAndProgress(),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTimerAndProgress() {
-    return Center(
-      child: Obx(() {
-        final minutes = _remainingSecs.value ~/ 60;
-        final seconds = _remainingSecs.value % 60;
-        final formattedTime =
-            '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-        return Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.timer_outlined,
-                  size: 4.w,
-                  color: CommonColors.orangeColor,
-                ),
-                SizedBox(width: 1.w),
-                Text(
-                  formattedTime,
-                  style: AppType.style(
-                    11.sp,
-                    w: FontWeight.w600,
-                    color: CommonColors.orangeColor,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 0.5.h),
-            SizedBox(
-              width: 17.w,
-              height: 0.5.h,
-              child: LinearProgressIndicator(
-                value: (_remainingSecs.value / _totalTimerSecs).clamp(0.0, 1.0),
-                backgroundColor: CommonColors.greyColor.withValues(alpha: 0.3),
-                color: CommonColors.orangeColor,
-                minHeight: 0.1.h,
-                borderRadius: BorderRadius.circular(200),
-              ),
-            ),
-          ],
-        );
-      }),
     );
   }
 
