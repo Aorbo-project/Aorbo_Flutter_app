@@ -8,6 +8,7 @@ import 'package:arobo_app/security/security_config.dart';
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:flutter/foundation.dart';
+import 'package:arobo_app/services/telemetry_gate.dart';
 
 /// TLS policy for the API client: trust ONLY the root CAs Cloudflare may use
 /// for our edge certificate ([pinnedRootsPem]), not every CA on the phone.
@@ -67,6 +68,8 @@ class PinnedHttp {
   static void _reportMismatch(String host, String issuer) {
     if (_reported) return; // once per app run is enough to raise the alarm
     _reported = true;
+    // A developer's proxy (Charles / Burp) on a debug build is not an alarm.
+    if (!TelemetryGate.allowed) return;
     debugPrint('TLS pin mismatch for $host (issuer: $issuer)');
     // Deliberately a plain, UNPINNED client: the pinned one is what just
     // failed. The report carries no secrets.

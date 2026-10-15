@@ -6,6 +6,7 @@ import 'package:arobo_app/repository/network_url.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:arobo_app/services/telemetry_gate.dart';
 
 /// Runtime tamper detection (RASP) — DeviceSecurityChannel.kt does the checks.
 ///
@@ -74,7 +75,9 @@ class DeviceRiskService {
   }
 
   void _maybeReport() {
-    if (_reported) return;
+    // A developer's debug build always has a debugger attached: never a
+    // security notice (TelemetryGate).
+    if (_reported || !TelemetryGate.allowed) return;
     final reportable = _flags.where(_reportableFlags.contains).toList();
     if (reportable.isEmpty) return;
     _reported = true;

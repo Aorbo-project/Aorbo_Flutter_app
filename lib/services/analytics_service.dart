@@ -8,6 +8,7 @@ import 'package:arobo_app/app_update/app_version_info.dart';
 import 'package:arobo_app/repository/network_url.dart';
 import 'package:arobo_app/repository/repository.dart';
 import 'package:arobo_app/security/pinned_http_client.dart';
+import 'package:arobo_app/services/telemetry_gate.dart';
 
 /// Fire-and-forget behaviour tracking for the vendor Performance Insights
 /// conversion funnel (trek views -> booking started -> booking paid).
@@ -98,6 +99,11 @@ class AnalyticsService {
     _flushTimer?.cancel();
     _flushTimer = null;
     if (_sending || _buffer.isEmpty) return;
+    // Developer / test runs never count as customer activity (TelemetryGate).
+    if (!TelemetryGate.allowed) {
+      _buffer.clear();
+      return;
+    }
     _sending = true;
     final batch = List<Map<String, dynamic>>.from(_buffer);
     _buffer.clear();

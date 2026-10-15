@@ -28,6 +28,7 @@ import '../repository/network_url.dart';
 import '../repository/repository.dart';
 import '../utils/custom_snackbar.dart';
 import '../services/location_cache_service.dart';
+import 'package:arobo_app/services/telemetry_gate.dart';
 
 /// Shown when the booking-detail screen's data can't be loaded.
 const String bookingDetailsLoadError = "Couldn't load booking details";
@@ -651,6 +652,8 @@ class DashboardController extends GetxController {
   /// Fired by SponsoredVideoCard once the card has been ≥50% visible for ≥2s
   /// (IAB viewability). Deduped per slot per session. Fire-and-forget.
   void logSponsoredImpression(int slotId) {
+    // Developer / test runs are not real ad views (TelemetryGate).
+    if (!TelemetryGate.allowed) return;
     if (_loggedSponsoredImpressions.contains(slotId)) {
       return;
     }
@@ -665,6 +668,7 @@ class DashboardController extends GetxController {
 
   /// Fired when the customer taps "Know more". Fire-and-forget.
   void logSponsoredClick(int slotId) {
+    if (!TelemetryGate.allowed) return;
     _repository
         .postApiCall(url: NetworkUrl.sponsoredSlotClick(slotId), body: const {})
         .catchError((_) => null);

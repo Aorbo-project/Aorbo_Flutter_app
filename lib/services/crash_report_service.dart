@@ -8,6 +8,7 @@ import 'package:arobo_app/app_update/app_version_info.dart';
 import 'package:arobo_app/repository/network_url.dart';
 import 'package:arobo_app/repository/repository.dart';
 import 'package:arobo_app/security/pinned_http_client.dart';
+import 'package:arobo_app/services/telemetry_gate.dart';
 import 'package:arobo_app/utils/auth_utils.dart';
 
 /// Sends every crash Firebase Crashlytics already sees into Aorbo's own
@@ -21,10 +22,39 @@ class CrashReportService {
   CrashReportService._();
   static final CrashReportService instance = CrashReportService._();
 
-  /// Off for automated test runs on a phone (integration_test): a test's own
-  /// failure must never reach Admin > Crash Analytics as a customer "fatal
-  /// crash" (two did on 14 Oct 2026 and e-mailed the owner).
-  static bool enabled = true;
+  /// Only customer (release) builds report — see TelemetryGate.
+  static bool get shouldSend => TelemetryGate.allowed;
+
+  /// The report body. `device_info.build_mode` lets the server keep any
+  /// non-release report out of the alerts even if one ever arrives.
+  @visibleForTesting
+  static Map<String, dynamic> payload({
+    required Object error,
+    StackTrace? stack,
+    required bool fatal,
+    String? screenName,
+    required String sessionId,
+    required String os,
+    String? osVersion,
+    String? deviceModel,
+    String? appVersion,
+    required String buildMode,
+  }) =>
+      {
+        'error_message': error.toString(),
+        'stack_trace': stack?.toString(),
+        'severity': fatal ? 'fatal' : 'error',
+        'screen_name': screenName ?? 'mobile_app',
+        'session_id': sessionId,
+        'device_info': {
+          'os': os,
+          // Backend stores this as device_info.version (was always null).
+          'version': osVersion,
+          'device_model': deviceModel,
+          'app_version': appVersion,
+          'build_mode': buildMode,
+        },
+      };
 
   /// One random id per app launch, so every crash from the same run can be
   /// grouped in Admin > Crash Analytics (it was always NULL before — a
@@ -70,7 +100,7 @@ class CrashReportService {
     bool fatal = false,
     String? screenName,
   }) async {
-    if (!enabled) return;
+    if (!shouldSend) return;
     try {
       final appVersion = await AuthUtils.getAppVersion();
       final deviceModel = await AuthUtils.getDeviceModel();
@@ -78,20 +108,18 @@ class CrashReportService {
 
       await _client.post(
         'crash-report',
-        data: {
-          'error_message': error.toString(),
-          'stack_trace': stack?.toString(),
-          'severity': fatal ? 'fatal' : 'error',
-          'screen_name': screenName ?? 'mobile_app',
-          'session_id': _sessionId,
-          'device_info': {
-            'os': Platform.isIOS ? 'ios' : 'android',
-            // Backend stores this as device_info.version (was always null).
-            'version': osVersion,
-            'device_model': deviceModel,
-            'app_version': appVersion,
-          },
-        },
+        data: payload(
+          error: error,
+          stack: stack,
+          fatal: fatal,
+          screenName: screenName,
+          sessionId: _sessionId,
+          os: Platform.isIOS ? 'ios' : 'android',
+          osVersion: osVersion,
+          deviceModel: deviceModel,
+          appVersion: appVersion,
+          buildMode: TelemetryGate.buildMode,
+        ),
         options: Options(
           headers: Repository.token.isNotEmpty
               ? {'Authorization': 'Bearer ${Repository.token}'}
