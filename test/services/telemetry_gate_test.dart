@@ -61,4 +61,13 @@ void main() {
     }
     expect(offenders, isEmpty, reason: 'check TelemetryGate.allowed before reporting');
   });
+
+  test('crash reports name the screen they happened on', () {
+    CrashReportService.currentScreen = '/trek-details';
+    expect(CrashReportService.screenFor(null), '/trek-details');
+    expect(CrashReportService.screenFor(''), '/trek-details');
+    expect(CrashReportService.screenFor('/checkout'), '/checkout');
+    CrashReportService.currentScreen = null;
+    expect(CrashReportService.screenFor(null), isNull); // payload falls back to "mobile_app"
+  });
 }

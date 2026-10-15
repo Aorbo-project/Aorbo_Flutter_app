@@ -4,8 +4,8 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.google.gms:google-services:4.4.2'
-        classpath 'com.google.firebase:firebase-crashlytics-gradle:3.0.2'
+        classpath 'com.google.gms:google-services:4.4.4'
+        classpath 'com.google.firebase:firebase-crashlytics-gradle:3.0.8'
     }
 }
 
@@ -16,14 +16,30 @@ allprojects {
     }
 }
 
-rootProject.buildDir = "../build"
+// Gradle 9 removed Project.buildDir (Flutter 3.47 template): <app>/build as before.
+def newBuildDir = rootProject.layout.buildDirectory.dir("../../build").get()
+rootProject.layout.buildDirectory.value(newBuildDir)
 subprojects {
-    project.buildDir = "${rootProject.buildDir}/${project.name}"
+    project.layout.buildDirectory.value(newBuildDir.dir(project.name))
 }
 subprojects {
     project.evaluationDependsOn(":app")
 }
 
+// Every plugin compiles against the app's own SDK. Unmaintained plugins (e.g.
+// android_play_install_referrer 0.4.0 pins compileSdk 33) fail AGP 9's AAR
+// metadata check against current androidx libraries; compileSdk only decides
+// which Android APIs are visible at compile time, so raising it is safe.
+subprojects { sub ->
+    def raiseCompileSdk = {
+        if (sub.plugins.hasPlugin("com.android.library")) {
+            sub.android.compileSdk = 36
+        }
+    }
+    // :app is already evaluated here (evaluationDependsOn above); plugins are not.
+    if (sub.state.executed) raiseCompileSdk() else sub.afterEvaluate(raiseCompileSdk)
+}
+
 tasks.register("clean", Delete) {
-    delete rootProject.buildDir
+    delete rootProject.layout.buildDirectory
 }

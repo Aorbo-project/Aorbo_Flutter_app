@@ -94,6 +94,16 @@ class CrashReportService {
   @visibleForTesting
   Dio get clientForTesting => _client;
 
+  /// The screen on top when the crash happened (set from main.dart's
+  /// routingCallback). Reports used to say only "mobile_app", so a layout
+  /// overflow could not be traced to its screen.
+  static String? currentScreen;
+
+  /// The screen a report names: the caller's, else the one on top.
+  @visibleForTesting
+  static String? screenFor(String? explicit) =>
+      (explicit != null && explicit.isNotEmpty) ? explicit : currentScreen;
+
   Future<void> report(
     Object error,
     StackTrace? stack, {
@@ -112,7 +122,7 @@ class CrashReportService {
           error: error,
           stack: stack,
           fatal: fatal,
-          screenName: screenName,
+          screenName: screenFor(screenName),
           sessionId: _sessionId,
           os: Platform.isIOS ? 'ios' : 'android',
           osVersion: osVersion,

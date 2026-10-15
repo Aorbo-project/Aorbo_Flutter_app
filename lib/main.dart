@@ -18,6 +18,7 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:arobo_app/layout/app_viewport.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
@@ -119,6 +120,8 @@ void main() async {
     return kDebugMode;
   };
 
+  // Phones start portrait-locked; AppViewport frees rotation on large
+  // screens (tablets / foldables) once the window size is known.
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
   // Flush buffered Performance-Insights analytics events when the app is
@@ -290,7 +293,10 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Sizer(
+    // Tablets, foldables and split-screen get a phone-shaped canvas
+    // (lib/layout/app_viewport.dart); phones are drawn exactly as before.
+    return AppViewport(
+      child: Sizer(
       builder: (context, orientation, deviceType) {
         return GetMaterialApp(
           debugShowCheckedModeBanner: false,
@@ -315,6 +321,8 @@ class MyApp extends StatelessWidget {
             if (screen == null || screen.isEmpty) return;
             // Once "Update required" is up, nothing may navigate away.
             AppUpdateGate.instance.onRouteChanged(screen);
+            // Crash reports name the screen they happened on.
+            CrashReportService.currentScreen = screen;
             // The very first route push happens synchronously during
             // runApp()'s initial build — now potentially before
             // appBootstrapFuture's Firebase.initializeApp() has completed,
@@ -328,6 +336,7 @@ class MyApp extends StatelessWidget {
           },
         );
       },
+    ),
     );
   }
 }
