@@ -17,6 +17,7 @@
 
 import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/main.dart' as app;
+import 'package:arobo_app/services/crash_report_service.dart';
 import 'package:arobo_app/controller/payment_failure_message.dart';
 import 'package:arobo_app/screens/booking_upcoming_screen.dart';
 import 'package:arobo_app/screens/help_screen.dart';
@@ -185,6 +186,9 @@ void main() {
 
     // The app installs its own FlutterError handler (Crashlytics); give the
     // test's back as soon as the app is up, so app errors fail the test.
+    // A test's own failure must never be filed as a customer crash report
+    // (two were on 14 Oct 2026 and e-mailed the owner as "app crashes").
+    CrashReportService.enabled = false;
     final testErrorHandler = FlutterError.onError;
     app.main();
 

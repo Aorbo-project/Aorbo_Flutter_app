@@ -21,6 +21,11 @@ class CrashReportService {
   CrashReportService._();
   static final CrashReportService instance = CrashReportService._();
 
+  /// Off for automated test runs on a phone (integration_test): a test's own
+  /// failure must never reach Admin > Crash Analytics as a customer "fatal
+  /// crash" (two did on 14 Oct 2026 and e-mailed the owner).
+  static bool enabled = true;
+
   /// One random id per app launch, so every crash from the same run can be
   /// grouped in Admin > Crash Analytics (it was always NULL before — a
   /// rebuild-loop's 1000+ reports were indistinguishable from 1000 sessions).
@@ -65,6 +70,7 @@ class CrashReportService {
     bool fatal = false,
     String? screenName,
   }) async {
+    if (!enabled) return;
     try {
       final appVersion = await AuthUtils.getAppVersion();
       final deviceModel = await AuthUtils.getDeviceModel();
