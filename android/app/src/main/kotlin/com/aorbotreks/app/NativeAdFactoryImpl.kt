@@ -7,14 +7,14 @@ import android.widget.TextView
 import com.google.android.gms.ads.nativead.MediaView
 import com.google.android.gms.ads.nativead.NativeAd
 import com.google.android.gms.ads.nativead.NativeAdView
-import io.flutter.plugins.googlemobileads.GoogleMobileAdsPlugin
+import io.flutter.plugins.googlemobileads.NativeAdFactory
 
 /**
  * Binds a loaded [NativeAd] into res/layout/native_ad_feed_card.xml.
  * Registered under the id "feedCard" in [MainActivity].
  */
 class NativeAdFactoryImpl(private val context: Context) :
-    GoogleMobileAdsPlugin.NativeAdFactory {
+    NativeAdFactory { // google_mobile_ads 9: a top-level interface (was GoogleMobileAdsPlugin.NativeAdFactory)
 
     override fun createNativeAd(
         nativeAd: NativeAd,

@@ -10,19 +10,16 @@
         android:allowBackup="true"
         android:fullBackupContent="@xml/backup_rules"
         android:dataExtractionRules="@xml/data_extraction_rules">
-        <!-- resizeableActivity=false: the UI is fixed-layout (sizer %s, no
-             reflow); a narrow split-screen pane on a phone squeezes rows
-             past their content and stripes them, so opt out of
-             freeform/split-screen. NOTE: Android 16+ (targetSdk 36) ignores
-             this on large screens >600dp (tablets/foldables) — those are
-             covered by the app-side font-scale clamp in app_typography.dart.
-             This still takes effect for phone split-screen. -->
+        <!-- Resizable (Play Console, Oct 2026): Android 16 ignores
+             resizeableActivity=false on large screens anyway. Odd windows
+             (tablet, foldable, split-screen) are handled in Dart:
+             lib/layout/app_viewport.dart draws the app on a phone-shaped
+             canvas, so the fixed `sizer` layouts never stretch or squeeze. -->
         <activity
             android:name=".MainActivity"
             android:enableOnBackInvokedCallback="true"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:exported="true"
-            android:resizeableActivity="false"
             android:hardwareAccelerated="true"
             android:launchMode="singleTop"
             android:taskAffinity=""
