@@ -6,6 +6,7 @@ import 'package:arobo_app/freezed_models/treks/trek_detail_model.dart'
 import 'package:arobo_app/freezed_models/treks/trek_detail_model.dart'
     as trek_model
     show Badge;
+import 'package:arobo_app/utils/trek_discount.dart';
 
 // ─────────────────────────────────────────────
 // REUSABLE TREK CARD UI
@@ -33,6 +34,11 @@ class TrekCardUI extends StatelessWidget {
   final String? imageUrl;
   final String? vendorLogo;
 
+  /// The vendor discount (trekDiscountedPrice). When given, the card shows
+  /// the discounted price with the base struck through — the same as the
+  /// search card. [price] is then ignored.
+  final TrekDiscountedPrice? discount;
+
   const TrekCardUI({
     super.key,
     required this.title,
@@ -48,6 +54,7 @@ class TrekCardUI extends StatelessWidget {
     this.onContinue,
     this.imageUrl,
     this.vendorLogo,
+    this.discount,
   });
 
   @override
@@ -63,9 +70,10 @@ class TrekCardUI extends StatelessWidget {
       // so strip any currency symbol/commas the caller already applied
       // (e.g. "₹12,345") before handing it over - otherwise the ₹ /
       // separators get applied twice.
-      price: price.replaceAll(RegExp(r'[^\d.]'), ''),
+      price: discount != null ? _plain(discount!.price) : price.replaceAll(RegExp(r'[^\d.]'), ''),
       duration: durationText,
-      hasDiscount: false,
+      hasDiscount: discount?.hasDiscount == true,
+      discountText: discount?.hasDiscount == true ? discount!.label : null,
       imageUrl: imageUrl,
       vendorLogo: vendorLogo,
       badge: badgeText.isEmpty ? null : trek_model.Badge(name: badgeText),
@@ -94,4 +102,7 @@ class TrekCardUI extends StatelessWidget {
       onViewItineraryTap: onContinue,
     );
   }
+
+  /// 7101.0 -> "7101", 7101.5 -> "7101.50" (CommonTrekCard formats it).
+  static String _plain(double v) => v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(2);
 }

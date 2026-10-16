@@ -29,6 +29,7 @@ import 'package:arobo_app/services/booking_draft_service.dart';
 import 'package:arobo_app/widgets/trek_card_ui.dart';
 import 'package:dio/dio.dart';
 import 'package:arobo_app/widgets/tap_target.dart';
+import 'package:arobo_app/utils/trek_discount.dart';
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS
@@ -841,6 +842,13 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
       price: price,
       imageUrl: coverImage,
       vendorLogo: data.vendor?.businessLogo,
+      // The price checkout charges: base minus the vendor discount (same as the search card).
+      discount: trekDiscountedPrice(
+        basePrice: data.basePrice,
+        hasDiscount: data.hasDiscount,
+        discountType: data.discountType,
+        discountValue: data.discountValue,
+      ),
       onContinue: null,
     );
   }
