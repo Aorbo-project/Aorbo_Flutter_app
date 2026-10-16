@@ -25,6 +25,7 @@ import '../share/trek_share.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
 import 'package:arobo_app/widgets/tap_target.dart';
+import 'package:arobo_app/utils/trek_discount.dart';
 
 // One entry per distinct boarding CITY (not per stage — two boarding stages
 // in the same city are still a single choice for the customer). Shared by
@@ -818,7 +819,18 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
           CancellationPolicyWidget(
             policy: _trekC.trekDetailData.value.cancellationPolicy,
             departureDate: departure.toString(),
-            basePrice: _trekC.trekDetailData.value.basePrice,
+            // Refunds are worked out on the price after the vendor discount
+            // (server cancellationPolicy.config), not the base price.
+            basePrice: () {
+              final t = _trekC.trekDetailData.value;
+              final p = trekDiscountedPrice(
+                basePrice: t.basePrice,
+                hasDiscount: t.hasDiscount,
+                discountType: t.discountType,
+                discountValue: t.discountValue,
+              ).price;
+              return p.toStringAsFixed(2);
+            }(),
           ),
         ],
       ),

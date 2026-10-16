@@ -38,6 +38,7 @@ import 'app_dialog.dart';
 import '../widgets/trek_card_ui.dart';
 import '../widgets/logger.dart';
 import 'package:arobo_app/utils/trek_discount.dart';
+import 'package:arobo_app/utils/trek_departure.dart';
 
 class BookingDraftService {
   BookingDraftService._();
@@ -217,7 +218,9 @@ class _BookingResumeSheetContent extends StatelessWidget {
             badgeText: data.badge?.name ?? '',
             durationText: durationText,
             rating: data.averageRating,
-            departure: data.startDate ?? '-',
+            departure: trekDeparture(stages: data.trekStages, batchId: data.batchId, cityId: trekC.detailCityId, fallbackDate: data.startDate).date,
+            departureTime: trekDeparture(stages: data.trekStages, batchId: data.batchId, cityId: trekC.detailCityId, fallbackDate: data.startDate).time,
+            destinationName: data.destinationData?.name,
             availableSlots: data.availableSlots ?? 0,
             totalCapacity: data.capacity ?? 0,
             price: price,
