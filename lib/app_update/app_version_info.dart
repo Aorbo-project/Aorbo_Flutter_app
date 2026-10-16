@@ -2,6 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+import 'install_id.dart';
+
 /// This build's version, as the backend's force-update gate reads it.
 ///
 /// Enforcement is by build number (Android versionCode = pubspec `+N`):
@@ -95,16 +97,21 @@ class AppVersionInfo {
 /// UX hints only — the server never trusts them for security. Sends nothing
 /// while the version isn't known yet, and never fails a request.
 class AppVersionHeadersInterceptor extends Interceptor {
-  AppVersionHeadersInterceptor({AppVersionInfo? Function()? info})
-    : _info = info ?? (() => AppVersionInfo.current);
+  AppVersionHeadersInterceptor({AppVersionInfo? Function()? info, String? Function()? install})
+    : _info = info ?? (() => AppVersionInfo.current),
+      _install = install ?? (() => InstallId.current);
 
   final AppVersionInfo? Function() _info;
+  final String? Function() _install;
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
     try {
       final info = _info();
       if (info != null) options.headers.addAll(info.headers);
+      // Anonymous install code for the per-build app health counts (InstallId).
+      final install = _install();
+      if (install != null) options.headers[InstallId.header] = install;
     } catch (_) {
       // A version hint must never stop a request.
     }

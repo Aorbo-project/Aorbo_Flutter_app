@@ -13,11 +13,14 @@ class MainActivity : FlutterActivity() {
     private var deviceSecurity: DeviceSecurityChannel? = null
     private var screenSecurity: MethodChannel? = null
     private var appTask: MethodChannel? = null
+    private var nativeCrash: MethodChannel? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         playIntegrity = PlayIntegrityChannel(applicationContext, flutterEngine.dartExecutor.binaryMessenger)
         deviceSecurity = DeviceSecurityChannel(applicationContext, flutterEngine.dartExecutor.binaryMessenger)
+        // The last Android-level crash, sent on this launch (lib/services/native_crash_reporter.dart).
+        nativeCrash = NativeCrashRecorder.channel(applicationContext, flutterEngine.dartExecutor.binaryMessenger)
         // FLAG_SECURE for the OTP step and payment (lib/security/screen_security.dart).
         screenSecurity = MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
@@ -85,6 +88,8 @@ class MainActivity : FlutterActivity() {
         screenSecurity = null
         appTask?.setMethodCallHandler(null)
         appTask = null
+        nativeCrash?.setMethodCallHandler(null)
+        nativeCrash = null
         GoogleMobileAdsPlugin.unregisterNativeAdFactory(flutterEngine, "feedCard")
     }
 }

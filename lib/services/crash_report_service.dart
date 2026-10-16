@@ -38,6 +38,7 @@ class CrashReportService {
     String? osVersion,
     String? deviceModel,
     String? appVersion,
+    String? buildNumber,
     required String buildMode,
   }) =>
       {
@@ -52,6 +53,8 @@ class CrashReportService {
           'version': osVersion,
           'device_model': deviceModel,
           'app_version': appVersion,
+          // versionCode (e.g. "29") — crashes per build in the app health report.
+          if (buildNumber != null && buildNumber.isNotEmpty) 'build_number': buildNumber,
           'build_mode': buildMode,
         },
       };
@@ -128,6 +131,7 @@ class CrashReportService {
           osVersion: osVersion,
           deviceModel: deviceModel,
           appVersion: appVersion,
+          buildNumber: AppVersionInfo.current?.build,
           buildMode: TelemetryGate.buildMode,
         ),
         options: Options(
