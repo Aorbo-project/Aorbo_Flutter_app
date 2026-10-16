@@ -35,3 +35,14 @@
     public void onPayment*(...);
 }
 
+
+# Startup crash in 1.0.0+27 (16 Oct 2026): classes created by reflection need
+# their constructors kept explicitly (R8 full mode does not keep them implicitly).
+# Room databases (WorkManager's WorkDatabase) are built from <Name>_Impl by name.
+-keep class * extends androidx.room.RoomDatabase { <init>(); }
+-keep class **_Impl { <init>(...); }
+# WorkManager workers and input mergers are created by class name.
+-keep class * extends androidx.work.ListenableWorker { <init>(android.content.Context, androidx.work.WorkerParameters); }
+-keep class * extends androidx.work.InputMerger { <init>(); }
+# androidx.startup initializers listed in the manifest.
+-keep class * implements androidx.startup.Initializer { <init>(); }
