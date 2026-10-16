@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 
 import 'package:arobo_app/app_update/app_update_gate.dart';
 import 'package:arobo_app/app_update/app_version_info.dart';
+import 'package:arobo_app/app_update/install_id.dart';
+import 'package:arobo_app/services/native_crash_reporter.dart';
 import 'package:arobo_app/controller/auth_controller.dart';
 import 'package:arobo_app/firebase_options.dart';
 import 'package:arobo_app/giveaway/referral_links.dart';
@@ -159,6 +162,10 @@ Future<void> _bootstrap() async {
   // request carries (force update). Never throws; headers are just left out
   // if it fails.
   await AppVersionInfo.load();
+  // Anonymous install code for the per-build app health counts (X-App-Install).
+  await InstallId.load();
+  // An Android-level crash from the last run, recorded natively (NativeCrashRecorder.kt).
+  unawaited(NativeCrashReporter.sendPending());
   await Repository().initRepo();
 
   _deferredInit();

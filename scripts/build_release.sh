@@ -38,6 +38,13 @@ case "$kind" in
     ;;
 esac
 
+# R8's map for this build: turns obfuscated Android (Java / Kotlin) crash
+# stacks — Aorbo's crash reports from +29, Play vitals — back into real names
+# (retrace). Kept next to the Dart symbols.
+if [ -f build/app/outputs/mapping/release/mapping.txt ]; then
+  mkdir -p "$symbols" && cp build/app/outputs/mapping/release/mapping.txt "$symbols/r8-mapping.txt"
+fi
+
 if command -v firebase >/dev/null 2>&1; then
   firebase crashlytics:symbols:upload --app="$android_app_id" "$symbols" \
     || echo "WARN: Crashlytics symbol upload failed — upload $symbols manually."
