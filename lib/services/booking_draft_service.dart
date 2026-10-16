@@ -37,6 +37,7 @@ import '../theme/app_typography.dart';
 import 'app_dialog.dart';
 import '../widgets/trek_card_ui.dart';
 import '../widgets/logger.dart';
+import 'package:arobo_app/utils/trek_discount.dart';
 
 class BookingDraftService {
   BookingDraftService._();
@@ -222,6 +223,12 @@ class _BookingResumeSheetContent extends StatelessWidget {
             price: price,
             imageUrl: coverImage,
             vendorLogo: data.vendor?.businessLogo,
+            discount: trekDiscountedPrice(
+              basePrice: data.basePrice,
+              hasDiscount: data.hasDiscount,
+              discountType: data.discountType,
+              discountValue: data.discountValue,
+            ),
           ),
           SizedBox(height: 2.5.h),
           Row(
