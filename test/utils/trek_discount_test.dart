@@ -45,4 +45,10 @@ void main() {
     }
     expect(File('lib/widgets/trek_card_ui.dart').readAsStringSync(), contains('hasDiscount: discount?.hasDiscount == true'));
   });
+
+  test('the trek page cancellation box uses the discounted price (refunds are worked out on it)', () {
+    final src = File('lib/screens/trek_details_screen.dart').readAsStringSync();
+    final box = src.substring(src.indexOf('CancellationPolicyWidget('));
+    expect(box.substring(0, 700), contains('trekDiscountedPrice('));
+  });
 }

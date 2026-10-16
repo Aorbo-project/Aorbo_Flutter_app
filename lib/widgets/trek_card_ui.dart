@@ -39,6 +39,13 @@ class TrekCardUI extends StatelessWidget {
   /// search card. [price] is then ignored.
   final TrekDiscountedPrice? discount;
 
+  /// The card heading on search is the destination ("Goa"); without this the
+  /// trek title is used.
+  final String? destinationName;
+
+  /// "05:00 AM" next to the date, as on the search card (trekDeparture).
+  final String? departureTime;
+
   const TrekCardUI({
     super.key,
     required this.title,
@@ -55,13 +62,15 @@ class TrekCardUI extends StatelessWidget {
     this.imageUrl,
     this.vendorLogo,
     this.discount,
+    this.destinationName,
+    this.departureTime,
   });
 
   @override
   Widget build(BuildContext context) {
     final trek = TrekData(
       name: title,
-      destination: title,
+      destination: (destinationName ?? '').trim().isNotEmpty ? destinationName : title,
       vendor: vendorName,
       vendorName: vendorName,
       companyName: vendorName,
@@ -87,10 +96,9 @@ class TrekCardUI extends StatelessWidget {
       ),
       batchInfo: BatchInfo(
         startDate: departure,
-        // No separate start-time value is passed into this widget by
-        // either call site - CommonTrekCard degrades gracefully to just
-        // the date when startTime is null.
-        startTime: null,
+        // The boarding time (trekDeparture); CommonTrekCard shows just the
+        // date when it is null.
+        startTime: departureTime,
         availableSlots: availableSlots,
         capacity: totalCapacity,
       ),

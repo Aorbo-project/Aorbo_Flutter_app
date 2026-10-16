@@ -85,6 +85,10 @@ class TrekController extends GetxController {
   RxString errorMessage = ''.obs;
   Rx<TrekDetailModal> trekDetailModal = TrekDetailModal().obs;
   Rx<TrekDetailData> trekDetailData = TrekDetailData().obs;
+
+  /// The source city [trekDetailData] was loaded for (its boarding time is the
+  /// one the search card showed).
+  int? detailCityId;
   RxInt trekDetailId = 0.obs;
 
   Rx<int?> selectedBoardingCityId = Rx<int?>(null);
@@ -573,6 +577,7 @@ class TrekController extends GetxController {
   /// batch and came back with no dates at all. Returns whether the trek
   /// loaded; [showErrors] false leaves the error message to the caller.
   Future<bool> trekDetail({required int batchId, int? cityId, bool showErrors = true}) async {
+    detailCityId = cityId ?? _dashboardC.selectedCityId.value;
     isLoading.value = true;
     errorMessage.value = '';
 

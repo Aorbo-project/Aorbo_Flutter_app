@@ -30,6 +30,7 @@ import 'package:arobo_app/widgets/trek_card_ui.dart';
 import 'package:dio/dio.dart';
 import 'package:arobo_app/widgets/tap_target.dart';
 import 'package:arobo_app/utils/trek_discount.dart';
+import 'package:arobo_app/utils/trek_departure.dart';
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS
@@ -818,7 +819,9 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
     final badgeText = data.badge?.name ?? '';
     final durationText =
         '${data.durationDays ?? 0}D | ${data.durationNights ?? 0}N';
-    final departure = data.startDate ?? '-';
+    // Same date + boarding time as the search card (the searched city's boarding stage).
+    final dep = trekDeparture(stages: data.trekStages, batchId: data.batchId, cityId: _trekC.detailCityId, fallbackDate: data.startDate);
+    final departure = dep.date;
     final availableSlots = data.availableSlots ?? 0;
     final totalCapacity = data.capacity ?? 0;
     final price = '₹${data.basePrice ?? '0'}';
@@ -842,6 +845,8 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
       price: price,
       imageUrl: coverImage,
       vendorLogo: data.vendor?.businessLogo,
+      destinationName: data.destinationData?.name,
+      departureTime: dep.time,
       // The price checkout charges: base minus the vendor discount (same as the search card).
       discount: trekDiscountedPrice(
         basePrice: data.basePrice,
