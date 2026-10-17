@@ -20,6 +20,7 @@ import 'package:arobo_app/integrity/integrity_interceptor.dart';
 import 'package:arobo_app/security/device_key_service.dart';
 import 'package:arobo_app/security/pinned_http_client.dart';
 import 'package:arobo_app/services/session_teardown.dart';
+import 'api_error_reporting.dart';
 
 export 'package:arobo_app/repository/friendly_error.dart'
     show ApiException, FriendlyText, friendlyError, isFriendlyText;
@@ -298,10 +299,10 @@ class Repository {
             'API ✕ ${error.response?.statusCode} ${error.requestOptions.path}',
           );
 
-          // ✅ Prevent business logic errors (400, 409) from spamming Crashlytics
-          final isBusinessError = statusCode == 400 || statusCode == 409;
-
-          if (!isBusinessError) {
+          // Only real faults (5xx, unexpected failures) — never the server's
+          // own "no" (401 sign in again, 429 please wait, 404 ...) or the
+          // phone being offline (api_error_reporting.dart).
+          if (shouldReportApiError(statusCode, error.type)) {
             FirebaseCrashlytics.instance.recordError(
               error,
               error.stackTrace,
