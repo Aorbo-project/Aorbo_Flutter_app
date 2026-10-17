@@ -13,6 +13,7 @@ import '../utils/screen_constants.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
 import 'package:arobo_app/services/app_review_prompt.dart';
+import 'package:arobo_app/utils/input_rules.dart';
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS — FOREST THEME
@@ -1518,6 +1519,7 @@ class _ReviewTextFieldState extends State<_ReviewTextField>
       child: TextFormField(
         focusNode: _focus,
         controller: widget.controller,
+        inputFormatters: InputRules.freeText(max: 2000),
         maxLines: null,
         expands: true,
         textAlignVertical: TextAlignVertical.top,

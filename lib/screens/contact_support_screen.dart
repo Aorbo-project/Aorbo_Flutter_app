@@ -9,6 +9,7 @@ import '../utils/common_colors.dart';
 import '../utils/screen_constants.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
+import 'package:arobo_app/utils/input_rules.dart';
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS  (matches Help screen)
@@ -503,8 +504,8 @@ class _ContactSupportScreenState extends State<ContactSupportScreen>
             label: 'Full Name',
             hint: 'John Doe',
             icon: Icons.person_outline_rounded,
-            validator: (v) =>
-                (v == null || v.trim().isEmpty) ? 'Name is required' : null,
+            inputFormatters: InputRules.personName,
+            validator: (v) => InputRules.nameProblem(v),
           ),
           SizedBox(height: 1.8.h),
           _buildField(
@@ -513,8 +514,11 @@ class _ContactSupportScreenState extends State<ContactSupportScreen>
             hint: 'you@example.com',
             icon: Icons.email_outlined,
             keyboardType: TextInputType.emailAddress,
+            inputFormatters: InputRules.email,
             validator: (v) {
               if (v == null || v.trim().isEmpty) return 'Email is required';
+              final ruleProblem = InputRules.emailProblem(v);
+              if (ruleProblem != null) return ruleProblem;
               final emailRegex = RegExp(r'^[\w\.\-]+@([\w\-]+\.)+[\w\-]{2,4}$');
               if (!emailRegex.hasMatch(v.trim())) return 'Enter a valid email';
               return null;
@@ -526,6 +530,7 @@ class _ContactSupportScreenState extends State<ContactSupportScreen>
             label: 'Subject',
             hint: 'Brief summary of your issue',
             icon: Icons.subject_rounded,
+            inputFormatters: InputRules.freeText(max: 150),
             validator: (v) =>
                 (v == null || v.trim().isEmpty) ? 'Subject is required' : null,
           ),
@@ -536,6 +541,7 @@ class _ContactSupportScreenState extends State<ContactSupportScreen>
             hint: 'Describe your concern in detail...',
             icon: Icons.message_outlined,
             maxLines: 5,
+            inputFormatters: InputRules.freeText(max: 2000),
             validator: (v) {
               if (v == null || v.trim().isEmpty) return 'Message is required';
               if (v.trim().length < 10) return 'Please provide more detail';
@@ -555,6 +561,7 @@ class _ContactSupportScreenState extends State<ContactSupportScreen>
     String? Function(String?)? validator,
     TextInputType? keyboardType,
     int maxLines = 1,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -571,6 +578,7 @@ class _ContactSupportScreenState extends State<ContactSupportScreen>
           validator: validator,
           keyboardType: keyboardType,
           maxLines: maxLines,
+          inputFormatters: inputFormatters,
           style: AppType.style(FontSize.s10, color: _C.ink),
           decoration: InputDecoration(
             hintText: hint,

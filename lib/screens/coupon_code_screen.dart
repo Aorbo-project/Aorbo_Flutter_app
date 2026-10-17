@@ -10,6 +10,7 @@ import '../utils/vendor_coupon_card.dart';
 import '../models/coupon_code/coupon_code_model.dart';
 import '../controller/trek_controller.dart';
 import 'package:arobo_app/theme/app_typography.dart';
+import 'package:arobo_app/utils/input_rules.dart';
 
 class CouponCodeScreen extends StatefulWidget {
   const CouponCodeScreen({super.key});
@@ -96,6 +97,7 @@ class _CouponCodeScreenState extends State<CouponCodeScreen> {
                     Expanded(
                       child: TextField(
                         controller: _couponController,
+                        inputFormatters: InputRules.couponCode,
                         style: AppType.style(FontSize.s11, color: CommonColors.blackColor),
                         decoration: InputDecoration(
                           hintText: 'Enter Coupon Code',

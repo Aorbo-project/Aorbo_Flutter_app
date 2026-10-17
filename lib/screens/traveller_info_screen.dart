@@ -17,6 +17,7 @@ import '../utils/screen_constants.dart';
 import '../utils/state_selection_bottom_sheet.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
+import 'package:arobo_app/utils/input_rules.dart';
 
 class _C {
   static const bg = AppColors.bgCool;
@@ -604,6 +605,7 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
         hint: 'Name',
         focusNode: nameNode,
         textCapitalization: TextCapitalization.words,
+        inputFormatters: InputRules.personName,
       ),
       SizedBox(height: 1.7.h),
       Row(
@@ -925,6 +927,7 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
                         controller: _userC.nameController.value,
                         hint: 'Your Name',
                         textCapitalization: TextCapitalization.words,
+                        inputFormatters: InputRules.personName,
                       ),
                       SizedBox(height: 1.8.h),
                       _buildFieldLabel('Phone Number'),
@@ -937,6 +940,7 @@ class _TravellerInfoScreenState extends State<TravellerInfoScreen>
                         controller: _userC.emailController.value,
                         hint: 'e.g. john@example.com',
                         keyboardType: TextInputType.emailAddress,
+                        inputFormatters: InputRules.email,
                         suffixIcon: Icon(
                           Icons.email_outlined,
                           size: 4.5.w,
