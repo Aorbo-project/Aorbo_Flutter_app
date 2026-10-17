@@ -7,6 +7,7 @@ import 'package:arobo_app/models/user_profile/state_list_model.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
+import 'package:arobo_app/utils/input_rules.dart';
 
 /// "Select state of residence" bottom sheet — shared by every screen that
 /// needs a state picker (booking traveller info, account profile edit).
@@ -124,6 +125,7 @@ class _StateSelectionSheetState extends State<_StateSelectionSheet> {
                   Expanded(
                     child: TextField(
                       controller: _searchController,
+                      inputFormatters: InputRules.searchText,
                       style: AppType.style(FontSize.s11, color: AppColors.inkStrong),
                       cursorColor: AppColors.teal,
                       decoration: InputDecoration(

@@ -13,6 +13,7 @@ import 'package:get/get.dart';
 import 'package:sizer/sizer.dart';
 import 'package:arobo_app/theme/app_typography.dart';
 import 'package:arobo_app/widgets/tap_target.dart';
+import 'package:arobo_app/utils/input_rules.dart';
 
 class PopularTreksScreen extends StatefulWidget {
   const PopularTreksScreen({super.key});
@@ -215,6 +216,7 @@ class _PopularTreksScreenState extends State<PopularTreksScreen> {
                 child: TextField(
                   controller: _searchController,
                   onChanged: _onSearchChanged,
+                  inputFormatters: InputRules.searchText,
                   style: AppType.style(FontSize.s11, w: FontWeight.w500, color: AppColors.ink),
                   decoration: InputDecoration(
                     hintText: 'Search for a destination or trek...',

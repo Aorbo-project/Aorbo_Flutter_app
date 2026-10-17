@@ -17,6 +17,7 @@ import '../utils/custom_snackbar.dart';
 import '../utils/ist_date_utils.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
+import 'package:arobo_app/utils/input_rules.dart';
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS — matches TravellerInformationScreen
@@ -820,6 +821,7 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
             ),
             child: TextFormField(
               controller: _trekC.cancellationReasonController.value,
+              inputFormatters: InputRules.freeText(max: 500),
               maxLines: 4,
               minLines: 3,
               textAlignVertical: TextAlignVertical.top,

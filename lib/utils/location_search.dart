@@ -134,7 +134,9 @@ int _bestDistance(String q, LocationEntry e, int maxDist) {
 /// spellings (1 edit for 1-3 letters, else 2) are added, nearest first.
 List<T> filterLocations<T extends LocationEntry>(List<T> source, String rawQuery) {
   final q = normalizeLocationName(rawQuery);
-  if (q.isEmpty) return source;
+  // Nothing typed: the full list. Only symbols typed: nothing matches — it used
+  // to normalise to "" and list every place ("6582 matches", 17 Oct 2026).
+  if (q.isEmpty) return rawQuery.trim().isEmpty ? source : <T>[];
   final prefix = <T>[];
   final wordPrefix = <T>[];
   final substring = <T>[];

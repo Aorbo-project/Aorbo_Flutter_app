@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:sizer/sizer.dart';
+import 'package:arobo_app/utils/input_rules.dart';
 
 /// Which dashboard field opened the sheet.
 enum PickTarget { from, to }
@@ -1247,6 +1248,7 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
                             focusNode: focusNode,
                             onChanged: _onSearchChanged,
                             onSubmitted: (_) => _onSubmitField(),
+                            inputFormatters: InputRules.searchText,
                             textInputAction: TextInputAction.done,
                             maxLines: 1,
                             style: AppType.style(

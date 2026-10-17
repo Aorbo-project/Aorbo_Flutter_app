@@ -31,6 +31,7 @@ import 'package:dio/dio.dart';
 import 'package:arobo_app/widgets/tap_target.dart';
 import 'package:arobo_app/utils/trek_discount.dart';
 import 'package:arobo_app/utils/trek_departure.dart';
+import 'package:arobo_app/utils/input_rules.dart';
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS
@@ -2177,6 +2178,7 @@ class _ContactDetailsSheetState extends State<_ContactDetailsSheet> {
                 context,
                 _emailCtrl,
                 keyboardType: TextInputType.emailAddress,
+                inputFormatters: InputRules.email,
               ),
             ),
             SizedBox(height: 1.5.h),
@@ -2511,9 +2513,7 @@ class _TravellerFormSheetState extends State<_TravellerFormSheet> {
                 focusNode: _nameFocus,
                 maxLength: 40,
                 textCapitalization: TextCapitalization.words,
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z \-'.]")),
-                ],
+                inputFormatters: InputRules.personName,
               ),
             ),
             Padding(

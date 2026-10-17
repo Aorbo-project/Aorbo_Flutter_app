@@ -40,6 +40,7 @@ import '../utils/common_images.dart';
 import '../utils/common_safety_card.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
+import 'package:arobo_app/utils/input_rules.dart';
 
 // ═════════════════════════════════════════════════════════════ CONSTANTS ═
 
@@ -1934,6 +1935,7 @@ class _AddContactSheetState extends State<_AddContactSheet> {
             TextField(
               controller: _nameCtrl,
               textCapitalization: TextCapitalization.words,
+              inputFormatters: InputRules.personName,
               style: _ts(11.0),
               onChanged: (_) {
                 if (_nameError != null) setState(() => _nameError = null);
