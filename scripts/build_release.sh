@@ -20,7 +20,9 @@ cd "$(dirname "$0")/.."
 kind="${1:-}"
 version="$(grep -E '^version:' pubspec.yaml | awk '{print $2}')"
 symbols="debug-symbols/${version}"
-android_app_id="1:979616910593:android:fad40c7486469a7e9d9f00"
+# Firebase app of com.aorbotreks.app (fad40c… is the old com.eclipso.arobo_app —
+# symbols went to the wrong app until 17 Oct 2026).
+android_app_id="1:979616910593:android:6b1666ad2b1659719d9f00"
 
 case "$kind" in
   aab)
@@ -45,12 +47,11 @@ if [ -f build/app/outputs/mapping/release/mapping.txt ]; then
   mkdir -p "$symbols" && cp build/app/outputs/mapping/release/mapping.txt "$symbols/r8-mapping.txt"
 fi
 
-if command -v firebase >/dev/null 2>&1; then
-  firebase crashlytics:symbols:upload --app="$android_app_id" "$symbols" \
-    || echo "WARN: Crashlytics symbol upload failed — upload $symbols manually."
-else
-  echo "NOTE: firebase CLI not found — Crashlytics symbols NOT uploaded ($symbols)."
-fi
+# Readable Dart stacks in Crashlytics. The CLI runs through npx when it isn't
+# installed globally (signed in on this machine as an Aorbo account).
+if command -v firebase >/dev/null 2>&1; then fb="firebase"; else fb="npx -y firebase-tools@latest"; fi
+$fb crashlytics:symbols:upload --app="$android_app_id" "$symbols" \
+  || echo "WARN: Crashlytics symbol upload failed — run: $fb crashlytics:symbols:upload --app=$android_app_id $symbols"
 
 echo "Built  : $out"
 echo "Version: $version"
