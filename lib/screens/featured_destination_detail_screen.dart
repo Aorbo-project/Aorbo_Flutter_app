@@ -185,7 +185,7 @@ class _FeaturedDestinationDetailScreenState
               ),
             ),
           ),
-          if (detail?.priceStart != null)
+          if (detail?.priceLabel != null || detail?.priceStart != null)
             Positioned(
               top: topInset + 1.h,
               right: 5.w,
@@ -205,10 +205,13 @@ class _FeaturedDestinationDetailScreenState
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.currency_rupee_rounded, size: 12, color: _accent),
-                    SizedBox(width: 0.5.w),
+                    // The server's text ("₹15,000 onwards") as is; an older server: made here.
+                    if (detail!.priceLabel == null) ...[
+                      Icon(Icons.currency_rupee_rounded, size: 12, color: _accent),
+                      SizedBox(width: 0.5.w),
+                    ],
                     Text(
-                      '${FeaturedTrekFormat.amount(detail!.priceStart) ?? detail.priceStart} onwards',
+                      detail.priceLabel ?? '${FeaturedTrekFormat.amount(detail.priceStart) ?? detail.priceStart} onwards',
                       style: AppType.style(FontSize.s10, w: FontWeight.w700, color: _accent),
                     ),
                   ],
@@ -257,6 +260,14 @@ class _FeaturedDestinationDetailScreenState
     );
   }
 
+  static IconData _factIcon(String key) => switch (key) {
+        'duration' => Icons.access_time_rounded,
+        'departure' => Icons.calendar_month_rounded,
+        'price' => Icons.currency_rupee_rounded,
+        'location' => Icons.location_on_rounded,
+        _ => Icons.info_outline_rounded,
+      };
+
   Widget _buildQuickFacts(FeaturedDestinationDetail? detail) {
     return _sectionShell(
       title: 'Trip details',
@@ -270,16 +281,28 @@ class _FeaturedDestinationDetailScreenState
                 _skeletonLine(width: 56.w),
               ],
             )
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _factChipsRow(Icons.access_time_rounded, 'Duration', detail?.durationDays ?? '—',
-                    options: FeaturedTrekFormat.durationOptions(detail?.durationDays)),
-                SizedBox(height: 1.6.h),
-                _factChipsRow(Icons.calendar_month_rounded, 'Departure', detail?.operatingDays ?? '—',
-                    options: FeaturedTrekFormat.weekdays(detail?.operatingDays)),
-              ],
-            ),
+          : (detail?.facts.isNotEmpty ?? false)
+              // The server's rows ("Duration", "Departure", ...) as is: rows and wording
+              // can change on the server without an app release.
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (final (i, f) in detail!.facts.indexed) ...[
+                      if (i > 0) SizedBox(height: 1.6.h),
+                      _factChipsRow(_factIcon(f.key), f.label, f.options.join(', '), options: f.options),
+                    ],
+                  ],
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _factChipsRow(Icons.access_time_rounded, 'Duration', detail?.durationDays ?? '—',
+                        options: FeaturedTrekFormat.durationOptions(detail?.durationDays)),
+                    SizedBox(height: 1.6.h),
+                    _factChipsRow(Icons.calendar_month_rounded, 'Departure', detail?.operatingDays ?? '—',
+                        options: FeaturedTrekFormat.weekdays(detail?.operatingDays)),
+                  ],
+                ),
     );
   }
 

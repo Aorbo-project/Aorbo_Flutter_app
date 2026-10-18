@@ -1414,13 +1414,35 @@ TopTreksData mapFeaturedDestinationJson(Map item) {
   final imageUrl = (images != null && images.isNotEmpty)
       ? (images.first as Map)['image_url'] as String?
       : null;
-  // Same wording as the website's cards (lib/utils/featured_trek_format.dart).
+  final slug = item['slug'] ?? item['id'];
+  final detailUrl = slug == null ? null : 'https://www.aorbotreks.com/treks/$slug';
+  // The server's ready-to-show lines (display.card, aorboweb display.py), shown as is:
+  // wording changes on the server need no app release (owner, 18 Oct 2026).
+  final display = item['display'];
+  final card = display is Map ? display['card'] : null;
+  if (card is Map && (card['title']?.toString() ?? '').isNotEmpty) {
+    String? line(String key) {
+      final v = card[key]?.toString() ?? '';
+      return v.isEmpty ? null : v;
+    }
+    return TopTreksData(
+      title: line('title'),
+      kicker: line('kicker'),
+      meta: line('meta'),
+      description: line('description') ?? '',
+      imagePath: imageUrl ?? '',
+      badgeType: 'featured',
+      isFavorite: false,
+      trekId: null,
+      detailUrl: detailUrl,
+    );
+  }
+  // An older server without `display`: the same wording, made here (lib/utils/featured_trek_format.dart).
   final price = FeaturedTrekFormat.rupees(item['price_start']);
   // Like the website's card: place + departure days, then every duration in full.
   final days = FeaturedTrekFormat.weekdays(item['operating_days']?.toString());
   final state = item['state'] as String?;
   final where = [if (state != null && state.isNotEmpty) state, if (days.isNotEmpty) days.join(', ')].join(' · ');
-  final slug = item['slug'] ?? item['id'];
   return TopTreksData(
     title: item['name'] as String?,
     kicker: price != null ? '$price ONWARDS' : state,
@@ -1430,6 +1452,6 @@ TopTreksData mapFeaturedDestinationJson(Map item) {
     badgeType: 'featured',
     isFavorite: false,
     trekId: null,
-    detailUrl: slug == null ? null : 'https://www.aorbotreks.com/treks/$slug',
+    detailUrl: detailUrl,
   );
 }
