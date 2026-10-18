@@ -18,6 +18,11 @@ class FeaturedDestinationDetail {
   final double? latitude;
   final double? longitude;
 
+  /// Ready-to-show text from the server (`display.detail`, aorboweb display.py):
+  /// shown as is, so wording changes need no app release. Null on an older server.
+  final String? priceLabel;
+  final List<DisplayFact> facts;
+
   const FeaturedDestinationDetail({
     this.id,
     required this.name,
@@ -33,6 +38,8 @@ class FeaturedDestinationDetail {
     required this.relatedTreks,
     this.latitude,
     this.longitude,
+    this.priceLabel,
+    this.facts = const [],
   });
 
   factory FeaturedDestinationDetail.fromJson(Map json) {
@@ -59,7 +66,15 @@ class FeaturedDestinationDetail {
           : const [],
       latitude: _asDouble(json['latitude']),
       longitude: _asDouble(json['longitude']),
+      priceLabel: _displayDetail(json)?['price_label']?.toString(),
+      facts: DisplayFact.listFrom(_displayDetail(json)?['facts']),
     );
+  }
+
+  static Map? _displayDetail(Map json) {
+    final display = json['display'];
+    final detail = display is Map ? display['detail'] : null;
+    return detail is Map ? detail : null;
   }
 
   static List<String> _stringList(dynamic value) {
@@ -86,5 +101,30 @@ class RelatedTrek {
       name: json['name']?.toString() ?? '',
       state: json['state']?.toString() ?? '',
     );
+  }
+}
+
+/// One row of pills on the trek detail screen ("Duration": ["3 Days / 2 Nights", ...]),
+/// as the server sends it. New rows can be added on the server without an app release.
+class DisplayFact {
+  final String key;
+  final String label;
+  final List<String> options;
+
+  const DisplayFact({required this.key, required this.label, required this.options});
+
+  static List<DisplayFact> listFrom(dynamic value) {
+    if (value is! List) return const [];
+    return value
+        .whereType<Map>()
+        .map((m) => DisplayFact(
+              key: m['key']?.toString() ?? '',
+              label: m['label']?.toString() ?? '',
+              options: (m['options'] is List)
+                  ? (m['options'] as List).map((e) => e.toString()).where((e) => e.isNotEmpty).toList()
+                  : const <String>[],
+            ))
+        .where((f) => f.label.isNotEmpty && f.options.isNotEmpty)
+        .toList();
   }
 }
