@@ -46,8 +46,15 @@ class BookingDocumentService {
 
   /// Opens the system PDF viewer / print sheet on the booking's document.
   static Future<void> preview(BookingHistoryData booking) async {
-    final bytes = await fetch(booking);
-    await Printing.layoutPdf(
+    await present(booking, await fetch(booking));
+  }
+
+  /// Opens the system PDF viewer on bytes already fetched. The returned future
+  /// only completes when that viewer is closed, so a "Generating ticket"
+  /// dialog must be closed BEFORE calling this (18 Oct 2026: it stayed under
+  /// the viewer and came back on every Back press).
+  static Future<void> present(BookingHistoryData booking, Uint8List bytes) {
+    return Printing.layoutPdf(
       name: 'AorboTreks_${booking.bookingNumber ?? 'booking'}.pdf',
       onLayout: (_) async => bytes,
     );
