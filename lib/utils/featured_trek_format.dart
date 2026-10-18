@@ -23,50 +23,33 @@ class FeaturedTrekFormat {
     return a == null ? null : '₹$a';
   }
 
-  static final RegExp _dn = RegExp(r'^(\d+)\s*D(?:\s*[/-]\s*(\d+)\s*N)?$', caseSensitive: false);
-  static final RegExp _daysWord = RegExp(r'^(\d+)\s*days?$', caseSensitive: false);
+  static String _count(int n, String unit) => '$n ${n == 1 ? unit : '${unit}s'}';
 
-  /// "3D/2N" -> "3 Days / 2 Nights", "1D" -> "1 Day", "6 Days" -> "6 Days"; anything else as typed.
-  static String durationOption(String raw) {
-    final text = raw.trim();
-    final m = _dn.firstMatch(text);
-    if (m != null) {
+  // The website's rule (aorbo-frontend/src/utils/format.js durationOptions): every
+  // option in full, duplicates removed, shortest first; never a range like "3-5 days"
+  // (the owner had that removed from the website).
+  static final RegExp _option =
+      RegExp(r'(\d+)\s*D(?:ays?)?\b\s*(?:[/-]\s*(\d+)\s*N(?:ights?)?\b)?', caseSensitive: false);
+
+  /// "3D/2N, 4D/3N,5D/4N" -> ["3 Days / 2 Nights", "4 Days / 3 Nights", "5 Days / 4 Nights"].
+  static List<String> durationOptions(String? raw) {
+    final text = (raw ?? '').trim();
+    if (text.isEmpty) return [];
+    if (RegExp(r'^\d+$').hasMatch(text)) return [_count(int.parse(text), 'Day')];
+    final options = <String>[];
+    for (final m in _option.allMatches(text)) {
       final d = int.parse(m.group(1)!);
       final n = m.group(2) == null ? null : int.parse(m.group(2)!);
-      final days = '$d ${d == 1 ? 'Day' : 'Days'}';
-      return n == null ? days : '$days / $n ${n == 1 ? 'Night' : 'Nights'}';
+      final o = n == null ? _count(d, 'Day') : '${_count(d, 'Day')} / ${_count(n, 'Night')}';
+      if (!options.contains(o)) options.add(o);
     }
-    final w = _daysWord.firstMatch(text);
-    if (w != null) {
-      final d = int.parse(w.group(1)!);
-      return '$d ${d == 1 ? 'Day' : 'Days'}';
-    }
-    return text;
+    if (options.isEmpty) return [text];
+    options.sort((x, y) => int.parse(x.split(' ').first).compareTo(int.parse(y.split(' ').first)));
+    return options;
   }
 
-  /// "3D/2N,4D/3N, 5D/4N Days" -> ["3 Days / 2 Nights", "4 Days / 3 Nights", "5 Days / 4 Nights"].
-  static List<String> durationOptions(String? raw) => (raw ?? '')
-      .replaceAll(RegExp(r'\s*days\s*$', caseSensitive: false), '')
-      .split(',')
-      .map((e) => e.trim())
-      .where((e) => e.isNotEmpty)
-      .map(durationOption)
-      .toList();
-
-  /// One short line for a card: "3 Days" or "2–5 Days"; null when unknown.
-  static String? durationRange(String? raw) {
-    final days = RegExp(r'(\d+)\s*D', caseSensitive: false)
-        .allMatches(raw ?? '')
-        .map((m) => int.parse(m.group(1)!))
-        .toList();
-    if (days.isEmpty) {
-      final only = int.tryParse((raw ?? '').replaceAll(RegExp(r'[^0-9]'), ''));
-      return only == null ? null : '$only ${only == 1 ? 'Day' : 'Days'}';
-    }
-    days.sort();
-    final lo = days.first, hi = days.last;
-    return lo == hi ? '$lo ${lo == 1 ? 'Day' : 'Days'}' : '$lo–$hi Days';
-  }
+  /// Every option in full, as the website writes it: "2 Days / 1 Night, 3 Days / 2 Nights".
+  static String durationText(String? raw) => durationOptions(raw).join(', ');
 
   /// "THU, FRI, SAT" / "fri,sat" -> ["Thu", "Fri", "Sat"]; "DAILY" -> ["Daily"].
   static List<String> weekdays(String? raw) => (raw ?? '')
