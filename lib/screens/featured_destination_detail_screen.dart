@@ -4,6 +4,7 @@ import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:arobo_app/widgets/custom_network_image.dart';
+import 'package:arobo_app/utils/featured_trek_format.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sizer/sizer.dart';
@@ -207,7 +208,7 @@ class _FeaturedDestinationDetailScreenState
                     Icon(Icons.currency_rupee_rounded, size: 12, color: _accent),
                     SizedBox(width: 0.5.w),
                     Text(
-                      '${detail!.priceStart} onwards',
+                      '${FeaturedTrekFormat.amount(detail!.priceStart) ?? detail.priceStart} onwards',
                       style: AppType.style(FontSize.s10, w: FontWeight.w700, color: _accent),
                     ),
                   ],
@@ -272,9 +273,11 @@ class _FeaturedDestinationDetailScreenState
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _factChipsRow(Icons.access_time_rounded, 'Duration', detail?.durationDays ?? '—'),
+                _factChipsRow(Icons.access_time_rounded, 'Duration', detail?.durationDays ?? '—',
+                    options: FeaturedTrekFormat.durationOptions(detail?.durationDays)),
                 SizedBox(height: 1.6.h),
-                _factChipsRow(Icons.calendar_month_rounded, 'Departure', detail?.operatingDays ?? '—'),
+                _factChipsRow(Icons.calendar_month_rounded, 'Departure', detail?.operatingDays ?? '—',
+                    options: FeaturedTrekFormat.weekdays(detail?.operatingDays)),
               ],
             ),
     );
@@ -284,8 +287,10 @@ class _FeaturedDestinationDetailScreenState
   /// SAT") into individual pills instead of one run-on line of text — each
   /// option (each duration, each departure day) reads as its own discrete
   /// choice rather than a single blob the eye has to parse.
-  Widget _factChipsRow(IconData icon, String label, String value) {
-    final options = value
+  /// The pills read like the website's ("3 Days / 2 Nights", "Thu"): [options]
+  /// comes from FeaturedTrekFormat; without it the raw value is split as typed.
+  Widget _factChipsRow(IconData icon, String label, String value, {List<String>? options}) {
+    options ??= value
         .replaceAll(RegExp(r'\s*days\s*$', caseSensitive: false), '')
         .split(',')
         .map((e) => e.trim())

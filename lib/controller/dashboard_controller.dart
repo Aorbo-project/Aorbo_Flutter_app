@@ -29,6 +29,7 @@ import '../repository/repository.dart';
 import '../utils/custom_snackbar.dart';
 import '../services/location_cache_service.dart';
 import 'package:arobo_app/services/telemetry_gate.dart';
+import 'package:arobo_app/utils/featured_trek_format.dart';
 
 /// Shown when the booking-detail screen's data can't be loaded.
 const String bookingDetailsLoadError = "Couldn't load booking details";
@@ -1413,14 +1414,15 @@ TopTreksData mapFeaturedDestinationJson(Map item) {
   final imageUrl = (images != null && images.isNotEmpty)
       ? (images.first as Map)['image_url'] as String?
       : null;
-  final priceStart = item['price_start'];
-  final hasPrice = priceStart != null && priceStart.toString() != 'N/A';
-  final duration = item['duration_days'] ?? '3D/2N';
-  final departure = item['operating_days'] ?? 'THU, FRI, SAT';
+  // Same wording as the website's cards (lib/utils/featured_trek_format.dart).
+  final price = FeaturedTrekFormat.rupees(item['price_start']);
+  final duration = FeaturedTrekFormat.durationRange(item['duration_days']?.toString()) ?? '3 Days';
+  final days = FeaturedTrekFormat.weekdays(item['operating_days']?.toString());
+  final departure = days.isEmpty ? 'Thu, Fri, Sat' : days.join(', ');
   final slug = item['slug'] ?? item['id'];
   return TopTreksData(
     title: item['name'] as String?,
-    kicker: hasPrice ? '₹$priceStart ONWARDS' : (item['state'] as String?),
+    kicker: price != null ? '$price ONWARDS' : (item['state'] as String?),
     meta: item['state'] as String?,
     description: '$duration · $departure',
     imagePath: imageUrl ?? '',
