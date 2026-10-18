@@ -1416,15 +1416,16 @@ TopTreksData mapFeaturedDestinationJson(Map item) {
       : null;
   // Same wording as the website's cards (lib/utils/featured_trek_format.dart).
   final price = FeaturedTrekFormat.rupees(item['price_start']);
-  final duration = FeaturedTrekFormat.durationRange(item['duration_days']?.toString()) ?? '3 Days';
+  // Like the website's card: place + departure days, then every duration in full.
   final days = FeaturedTrekFormat.weekdays(item['operating_days']?.toString());
-  final departure = days.isEmpty ? 'Thu, Fri, Sat' : days.join(', ');
+  final state = item['state'] as String?;
+  final where = [if (state != null && state.isNotEmpty) state, if (days.isNotEmpty) days.join(', ')].join(' · ');
   final slug = item['slug'] ?? item['id'];
   return TopTreksData(
     title: item['name'] as String?,
-    kicker: price != null ? '$price ONWARDS' : (item['state'] as String?),
-    meta: item['state'] as String?,
-    description: '$duration · $departure',
+    kicker: price != null ? '$price ONWARDS' : state,
+    meta: where.isEmpty ? null : where,
+    description: FeaturedTrekFormat.durationText(item['duration_days']?.toString()),
     imagePath: imageUrl ?? '',
     badgeType: 'featured',
     isFavorite: false,

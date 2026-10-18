@@ -60,8 +60,8 @@ void main() {
 
       expect(data.title, 'Kedarkantha Trek');
       expect(data.kicker, '₹15,000 ONWARDS'); // same wording as the website's card
-      expect(data.meta, 'Himachal Pradesh');
-      expect(data.description, '3–4 Days · Thu, Fri, Sat');
+      expect(data.meta, 'Himachal Pradesh · Thu, Fri, Sat');
+      expect(data.description, '3 Days / 2 Nights, 4 Days / 3 Nights'); // every option in full, like the website
       expect(data.imagePath, 'https://example.com/img.jpg');
       // Deliberately null — these ids belong to aorbotreks.com's own DB,
       // never the app's favorite-toggle API (see the function's doc comment).
@@ -83,9 +83,10 @@ void main() {
       expect(data.kicker, 'Kerala');
     });
 
-    test('missing duration/operating days fall back to sensible defaults', () {
+    test('missing duration/operating days: nothing is made up', () {
       final data = mapFeaturedDestinationJson({'name': 'Some Trek'});
-      expect(data.description, '3 Days · Thu, Fri, Sat');
+      expect(data.description, ''); // nothing invented when the website gives no duration
+      expect(data.meta, isNull);
     });
 
     test('no images list -> empty imagePath, not a crash', () {

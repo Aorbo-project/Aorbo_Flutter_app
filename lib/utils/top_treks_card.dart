@@ -388,7 +388,9 @@ class _TopTreksCardState extends State<TopTreksCard>
                       widget.description,
                       textScaler: const TextScaler.linear(1.0),
                       style: AppType.style(10.5, w: FontWeight.w400, color: CommonColors.whiteColor.withValues(alpha: 0.78), height: 1.3),
-                      maxLines: 1,
+                      // Every duration in full ("2 Days / 1 Night, 3 Days / 2 Nights", as on the
+                      // website); the text grows up over the photo, so a third line is safe.
+                      maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
