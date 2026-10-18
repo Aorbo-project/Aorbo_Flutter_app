@@ -309,23 +309,34 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
       return;
     }
 
+    // One ticket at a time: a second tap while it is loading does nothing.
+    if (_ticketBusy) return;
+    _ticketBusy = true;
+
     FirebaseCrashlytics.instance.log('Popup: Ticket download dialog');
 
     _showTicketProgress('Generating ticket...');
 
     try {
       // The server's receipt (falls back to the phone-built PDF offline).
-      await BookingDocumentService.preview(booking);
+      final bytes = await BookingDocumentService.fetch(booking);
 
-      if (Get.isDialogOpen ?? false) Get.back();
+      // Close the progress dialog BEFORE the PDF viewer opens: the viewer's
+      // future only ends when it is closed, so the dialog used to sit under
+      // it and reappear on Back, again and again.
+      _closeTicketProgress();
+      if (!mounted) return;
+      await BookingDocumentService.present(booking, bytes);
     } catch (e) {
-      if (Get.isDialogOpen ?? false) Get.back();
+      _closeTicketProgress();
 
       if (!mounted) return;
       CustomSnackBar.show(
         context,
         message: 'Failed to generate ticket. Please try again.',
       );
+    } finally {
+      _ticketBusy = false;
     }
   }
 
@@ -335,24 +346,40 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
       return;
     }
 
+    if (_ticketBusy) return;
+    _ticketBusy = true;
+
     _showTicketProgress('Preparing ticket...');
 
     try {
       final ticket = await TicketShareService.prepareTicket(booking);
-      if (Get.isDialogOpen ?? false) Get.back();
+      _closeTicketProgress();
       await TicketShareService.share(ticket, booking);
     } catch (e) {
-      if (Get.isDialogOpen ?? false) Get.back();
+      _closeTicketProgress();
 
       if (!mounted) return;
       CustomSnackBar.show(
         context,
         message: 'Unable to share at the moment. Please try again.',
       );
+    } finally {
+      _ticketBusy = false;
     }
   }
 
+  bool _ticketBusy = false;
+  bool _ticketProgressOpen = false;
+
+  /// Closes only OUR progress dialog, once (never pops the screen itself).
+  void _closeTicketProgress() {
+    if (!_ticketProgressOpen) return;
+    _ticketProgressOpen = false;
+    if (Get.isDialogOpen ?? false) Get.back();
+  }
+
   void _showTicketProgress(String label) {
+    _ticketProgressOpen = true;
     Get.dialog(
       Center(
         child: Container(
@@ -375,7 +402,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
         ),
       ),
       barrierDismissible: false,
-    );
+    ).whenComplete(() => _ticketProgressOpen = false);
   }
 
   @override
