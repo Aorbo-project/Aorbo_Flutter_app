@@ -78,6 +78,9 @@ class AuthController extends GetxController {
   // Send OTP to phone via backend (Message Central). Returns true on success.
   // Navigation is the caller's responsibility.
   Future<bool> requestOtp(String phone) async {
+    // One send at a time: a second tap while the first is on its way does nothing
+    // (Crashlytics 15-16 Oct 2026: double taps got "Please wait 59 seconds").
+    if (isProfileLoading.value) return false;
     isProfileLoading.value = true;
     try {
       final body = json.encode({'phone': phone});
