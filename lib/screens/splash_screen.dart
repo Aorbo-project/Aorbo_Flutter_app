@@ -1269,13 +1269,17 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
             start: 0.3,
             end: 0.85,
             child: Obx(() {
-            final ready = isValidPhoneNumber && !_authC.isLoading.value;
-            final loading = _authC.isLoading.value;
+            // isProfileLoading: set while request-otp is in flight (the Continue
+            // button was tappable during the send, so a quick second tap sent twice).
+            final sending = _authC.isLoading.value || _authC.isProfileLoading.value;
+            final ready = isValidPhoneNumber && !sending;
+            final loading = sending;
             return GestureDetector(
               onTapDown: ready ? _onTapDown : null,
               onTapUp: ready ? _onTapUp : null,
               onTapCancel: ready ? _onTapCancel : null,
               onTap: () async {
+                if (sending) return;
                 if (isValidPhoneNumber) {
                   final phone = _authC.phoneNumberLoginTextField.value.text;
                   final success = await _authC.requestOtp(phone);
