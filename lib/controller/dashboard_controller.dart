@@ -474,10 +474,21 @@ class DashboardController extends GetxController {
       jobs.add(job);
     }
 
-    section('whats_new', () => fetchWhatsNew(keepPrevious: true));
+    // Essential content the user actually came for — load it immediately.
     section('top_treks', () => fetchTopTreks(keepPrevious: true));
-    section('seasonal_picks', () => fetchSeasonalPicks(keepPrevious: true));
-    section('sponsored_slots', fetchSponsoredSlots);
+
+    // Promotional / discovery sections (What's New, Seasonal Picks, Sponsored
+    // slots) are NOT needed for the first view, so they must never join the
+    // login API burst (owner, 21 Oct 2026: "why hit all APIs at once?"). Load
+    // them lazily a beat later — on a slow link they then don't steal bandwidth
+    // from the critical content. Each still shows its own skeleton and fills in
+    // when its reply lands; the 5-min freshness + in-flight guards are unchanged.
+    unawaited(Future.delayed(const Duration(milliseconds: 1500), () {
+      section('whats_new', () => fetchWhatsNew(keepPrevious: true));
+      section('seasonal_picks', () => fetchSeasonalPicks(keepPrevious: true));
+      section('sponsored_slots', fetchSponsoredSlots);
+    }));
+
     return Future.wait(jobs);
   }
 

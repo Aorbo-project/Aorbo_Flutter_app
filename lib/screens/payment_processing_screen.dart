@@ -137,9 +137,14 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
             ),
         'currency': params['currency'] ?? 'INR',
         'name': params['name'] ?? '${_trekC.trekDetailData.value.title}',
+        // Fall back to the trek title when there's no description (the Trek
+        // Description field was removed 21 Oct 2026), so the Razorpay sheet never
+        // shows a literal "null".
         'description':
             params['description'] ??
-            '${_trekC.trekDetailData.value.description}',
+            ((_trekC.trekDetailData.value.description ?? '').trim().isEmpty
+                ? '${_trekC.trekDetailData.value.title}'
+                : '${_trekC.trekDetailData.value.description}'),
         'prefill': {
           'contact': '${_userC.userProfileData.value.customer?.phone}',
           'email': '${_userC.userProfileData.value.customer?.email}',

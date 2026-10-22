@@ -679,6 +679,31 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
     return value[0].toUpperCase() + value.substring(1);
   }
 
+  // Customer-facing payment-method label. "razorpay" is the gateway, not a
+  // payment method — the customer should never see that word. Real instruments
+  // get a clean name; the gateway name (or anything unknown) shows as "Online".
+  String _prettyPaymentMethod(String? value) {
+    switch ((value ?? '').trim().toLowerCase()) {
+      case 'upi':
+        return 'UPI';
+      case 'card':
+        return 'Card';
+      case 'netbanking':
+        return 'Netbanking';
+      case 'wallet':
+        return 'Wallet';
+      case 'emi':
+        return 'EMI';
+      case '':
+      case 'n/a':
+      case 'razorpay':
+      case 'online':
+        return 'Online';
+      default:
+        return _capitalize(value);
+    }
+  }
+
   Widget _financeGroupHeader(String title) {
     return Padding(
       padding: EdgeInsets.only(top: 1.2.h, bottom: 0.3.h),
@@ -1355,7 +1380,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                             _dividerLine(),
                             _ticketRow(
                               'Payment Method',
-                              _capitalize(paymentMethod),
+                              _prettyPaymentMethod(paymentMethod),
                             ),
                             _dividerLine(),
                             _ticketRow(
