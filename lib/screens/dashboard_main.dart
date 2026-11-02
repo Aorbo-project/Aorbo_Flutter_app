@@ -181,8 +181,9 @@ class _DashboardMainState extends State<DashboardMain> with RouteAware {
     }
     _toldLinkWaits = false;
     requested.value = null;
+    final resume = await PendingTrekLink.bookingResume();
     await PendingTrekLink.clear();
-    await TrekLinkOpener.open(link);
+    await TrekLinkOpener.open(link, resume: resume);
   }
 
   /// A referral link opened the app while signed in: show the giveaway (the
@@ -238,6 +239,8 @@ class _DashboardMainState extends State<DashboardMain> with RouteAware {
       // Only interrupt on the home tab.
       if (_dashboardC.selectedScreen.value != 0) return;
       if (!mounted) return;
+      // Never over a trek page or booking opened from a link.
+      if (!_isOnTop) return;
 
       await RateTrekPopup.maybeShow(context, bookings);
     } catch (_) {

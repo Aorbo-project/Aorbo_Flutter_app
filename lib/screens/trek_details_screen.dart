@@ -21,6 +21,8 @@ import '../utils/common_btn.dart';
 import '../widgets/cancellation_policy_widget.dart';
 import '../utils/ist_date_utils.dart';
 import '../utils/custom_snackbar.dart';
+import '../services/app_feedback.dart';
+import '../share/trek_link.dart';
 import '../share/trek_share.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
@@ -92,7 +94,20 @@ class _StickyTrekDetailsBarDelegate extends SliverPersistentHeaderDelegate {
 // ─────────────────────────────────────────────
 class TrekDetailsScreen extends StatefulWidget {
   final TrekData? trek;
-  const TrekDetailsScreen({super.key, required this.trek});
+
+  /// Opened from a shared link before login (lib/share/trek_share.dart):
+  /// Continue leads to login, and Back returns to it.
+  final bool guest;
+
+  /// Back from login after Continue: go straight on to the booking.
+  final bool autoContinue;
+
+  const TrekDetailsScreen({
+    super.key,
+    required this.trek,
+    this.guest = false,
+    this.autoContinue = false,
+  });
 
   @override
   State<TrekDetailsScreen> createState() => _TrekDetailsScreenState();
@@ -133,6 +148,9 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollController.addListener(_onScroll);
+      if (widget.autoContinue && !_trekC.trekDetailData.value.isBookingsStopped) {
+        _continueBooking();
+      }
     });
     _sortedReviews = _sortReviews(
       _trekC.trekDetailData.value.latestReviews ?? [],
@@ -526,13 +544,13 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                 ],
               ),
             ),
-            TapTarget(
+            if (!widget.guest) TapTarget(
               onTap: _shareTrek,
               label: 'Share',
               child: Icon(Icons.ios_share, color: _C.ink, size: 6.w),
             ),
             SizedBox(width: 1.w),
-            TapTarget(
+            if (!widget.guest) TapTarget(
               onTap: _toggleFavorite,
               label: 'Save',
               child: Icon(
@@ -545,6 +563,44 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _continueBooking() async {
+    final boardingCities = boardingCitiesFor(
+      _trekC.trekDetailData.value.trekStages,
+    );
+    if (boardingCities.length > 1 &&
+        _trekC.selectedBoardingCityId.value == null) {
+      Get.snackbar(
+        'Select Boarding Point',
+        'Please select your boarding city in the Route section before continuing.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.black87,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(10),
+        borderRadius: 8,
+        duration: const Duration(seconds: 3),
+      );
+      return;
+    }
+    if (widget.guest) {
+      await PendingTrekLink.saveBookingResume(
+        boardingCityId: _trekC.selectedBoardingCityId.value,
+      );
+      if (!mounted) return;
+      Get.back();
+      AppFeedback.info('Log in to continue your booking.');
+      return;
+    }
+    await _userC.getUserProfile();
+    if (!mounted) return;
+    _trekC.trekBatchId.value = _trekC.trekDetailData.value.batchId ?? 0;
+    // Performance-Insights funnel: booking flow entered.
+    AnalyticsService.instance.logBookingStarted(
+      int.tryParse('${widget.trek?.id ?? ''}'),
+      batchId: _trekC.trekBatchId.value,
+    );
+    Get.toNamed('/traveller-information');
   }
 
   Widget _buildBottomBar() {
@@ -577,32 +633,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
           isDisabled: isClosed,
           onPressed: () async {
             if (isClosed) return;
-            final boardingCities = boardingCitiesFor(
-              _trekC.trekDetailData.value.trekStages,
-            );
-            if (boardingCities.length > 1 &&
-                _trekC.selectedBoardingCityId.value == null) {
-              Get.snackbar(
-                'Select Boarding Point',
-                'Please select your boarding city in the Route section before continuing.',
-                snackPosition: SnackPosition.BOTTOM,
-                backgroundColor: Colors.black87,
-                colorText: Colors.white,
-                margin: const EdgeInsets.all(10),
-                borderRadius: 8,
-                duration: const Duration(seconds: 3),
-              );
-              return;
-            }
-            await _userC.getUserProfile();
-            if (!mounted) return;
-            _trekC.trekBatchId.value = _trekC.trekDetailData.value.batchId ?? 0;
-            // Performance-Insights funnel: booking flow entered.
-            AnalyticsService.instance.logBookingStarted(
-              int.tryParse('${widget.trek?.id ?? ''}'),
-              batchId: _trekC.trekBatchId.value,
-            );
-            Get.toNamed('/traveller-information');
+            await _continueBooking();
           },
           gradient: _C.ctaGradient,
           textColor: CommonColors.whiteColor,

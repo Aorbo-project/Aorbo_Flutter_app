@@ -107,12 +107,26 @@ class ReferralLinkCapture {
   /// trek, then clears this. Signed out, the link waits in [PendingTrekLink].
   final Rxn<TrekLink> openTrekRequested = Rxn<TrekLink>();
 
+  /// Set when a trek link arrives signed out; the sign-in screen opens the
+  /// guest trek page, then clears this.
+  final Rxn<TrekLink> guestTrekArrived = Rxn<TrekLink>();
+
+  final Completer<void> _linksRead = Completer<void>();
+
+  /// Done once the opening link and the install referrer have been read, so
+  /// the sign-in screen knows whether a trek is waiting.
+  Future<void> get linksRead => _linksRead.future;
+
   /// [isLoggedIn] is read at the moment a link arrives.
   Future<void> start({required bool Function() isLoggedIn}) async {
-    if (_started || kIsWeb) return;
+    if (_started) return;
     _started = true;
+    if (kIsWeb) {
+      _linksRead.complete();
+      return;
+    }
 
-    unawaited(_readInstallReferrerOnce());
+    final referrer = _readInstallReferrerOnce();
 
     final links = AppLinks();
     try {
@@ -125,6 +139,8 @@ class ReferralLinkCapture {
       (uri) => _handle(uri, isLoggedIn()),
       onError: (Object e) => debugPrint('ReferralLinkCapture: link stream error: $e'),
     );
+    await referrer.timeout(const Duration(seconds: 3), onTimeout: () {});
+    if (!_linksRead.isCompleted) _linksRead.complete();
   }
 
   Future<void> _handle(Uri uri, bool loggedIn) async {
@@ -134,6 +150,7 @@ class ReferralLinkCapture {
         openTrekRequested.value = trek;
       } else {
         await PendingTrekLink.save(trek);
+        guestTrekArrived.value = trek;
       }
       return;
     }
@@ -163,6 +180,7 @@ class ReferralLinkCapture {
       final trek = TrekLink.fromInstallReferrer(details.installReferrer);
       if (trek != null && await PendingTrekLink.read() == null) {
         await PendingTrekLink.save(trek);
+        guestTrekArrived.value = trek;
       }
     } catch (e) {
       // Sideloaded builds and phones without Play have no referrer — normal.

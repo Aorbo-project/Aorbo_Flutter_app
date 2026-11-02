@@ -107,10 +107,9 @@ class AppFeedback {
 
   static void _drain() {
     if (_busy || _queue.isEmpty) return;
-    final ctx = Get.overlayContext;
-    final overlay = ctx == null
-        ? null
-        : Overlay.maybeOf(ctx, rootOverlay: true);
+    // The navigator overlay directly: Overlay.maybeOf only finds one from
+    // inside it, so looking it up from its own context always came back empty.
+    final overlay = Get.key.currentState?.overlay;
     if (overlay == null) {
       // App not ready — never crash for a toast.
       debugPrint('AppFeedback (no overlay): ${_queue.removeFirst().message}');
@@ -118,9 +117,14 @@ class AppFeedback {
     }
     _busy = true;
     final req = _queue.removeFirst();
-    FirebaseCrashlytics.instance.log(
-      'Toast (${req.kind.name}): ${req.message}',
-    );
+    if (kDebugMode) debugPrint('AppFeedback: ${req.message}');
+    try {
+      FirebaseCrashlytics.instance.log(
+        'Toast (${req.kind.name}): ${req.message}',
+      );
+    } catch (_) {
+      // A toast never fails over its log line.
+    }
     _haptic(req.kind);
     _entry = OverlayEntry(
       builder: (_) => _FeedbackToast(

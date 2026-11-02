@@ -35,6 +35,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart' show SharedPreferences;
+import 'package:sizer/sizer.dart';
 
 /// Repository.isInternetAvailable() calls Connectivity().checkConnectivity(),
 /// a real platform channel with no handler in a headless test — that hangs
@@ -142,7 +143,13 @@ Future<TrekController> setUpController() async {
 /// mistake for a pumpWidget problem rather than the missing runAsync().
 Future<TrekController> setUpPumpedController(WidgetTester tester) async {
   final c = await setUpController();
-  await tester.pumpWidget(const GetMaterialApp(home: Scaffold(body: SizedBox())));
+  // Sizer, as in main.dart: toasts now really render, and they size with it.
+  await tester.pumpWidget(
+    Sizer(
+      builder: (context, orientation, deviceType) =>
+          const GetMaterialApp(home: Scaffold(body: SizedBox())),
+    ),
+  );
   await tester.pump();
   return c;
 }

@@ -82,6 +82,12 @@ bool replayFailureEndsSession(Object error) =>
 bool holdUnsignedRefresh({required bool? bound, required String? signature}) =>
     bound == true && signature == null;
 
+/// A guest (a shared trek link, before login) has no session to end, so a
+/// refused request must not sign them out or send them away from the page.
+@visibleForTesting
+bool hasNoSessionToEnd({required String token, required bool? loggedIn}) =>
+    token.isEmpty && loggedIn != true;
+
 /// Set to true on a failed request's `RequestOptions.extra` by the 401/403
 /// handler in [Repository.initRepo] when IT ended the session (the server
 /// refused it: a non-renewable 401, a refused refresh token, a 403
@@ -319,6 +325,11 @@ class Repository {
           // ── Access token expired → try a silent refresh, then replay ──────
           // Only for a genuine expiry (code TOKEN_EXPIRED). Any other 401
           // (revoked, session superseded, bad token) is a real logout.
+          if ((statusCode == 401 || statusCode == 403) &&
+              hasNoSessionToEnd(token: Repository.token, loggedIn: sp?.getBool(SpUtil.isLoggedIn))) {
+            return handler.next(error);
+          }
+
           final alreadyRetried = error.requestOptions.extra['__retried'] == true;
           final isRefreshCall =
               error.requestOptions.path.contains(NetworkUrl.refreshTokenPath);
