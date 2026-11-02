@@ -24,6 +24,9 @@ import '../utils/custom_snackbar.dart';
 import '../services/app_feedback.dart';
 import '../share/trek_link.dart';
 import '../share/trek_share.dart';
+import '../widgets/google_rating_box.dart';
+import '../repository/repository.dart';
+import '../repository/network_url.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
 import 'package:arobo_app/widgets/tap_target.dart';
@@ -132,6 +135,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
   bool _isUserScrolling = false;
 
   bool _isFav = false;
+  GoogleRating? _googleRating;
 
   @override
   void initState() {
@@ -148,6 +152,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollController.addListener(_onScroll);
+      _loadGoogleRating();
       if (widget.autoContinue && !_trekC.trekDetailData.value.isBookingsStopped) {
         _continueBooking();
       }
@@ -164,6 +169,19 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
     _scrollController.dispose();
     _selectedTabIndex.dispose();
     super.dispose();
+  }
+
+  // Its own call, so the page never waits on Google. Any failure means no box.
+  Future<void> _loadGoogleRating() async {
+    final trekId = _trekC.trekDetailData.value.id ?? widget.trek?.id;
+    if (trekId == null || trekId <= 0) return;
+    try {
+      final res = await Repository().getApiCall(url: '${NetworkUrl.getTrekDetail}$trekId/google-rating');
+      final rating = res is Map ? GoogleRating.fromJson(res['data']) : null;
+      if (mounted && rating != null) setState(() => _googleRating = rating);
+    } catch (_) {
+      // Optional content.
+    }
   }
 
   void _toggleFavorite() {
@@ -654,7 +672,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
       detail.activities?.isNotEmpty == true,
       detail.accommodations?.isNotEmpty == true,
       detail.inclusions?.isNotEmpty == true,
-      detail.latestReviews?.isNotEmpty == true,
+      detail.latestReviews?.isNotEmpty == true || _googleRating != null,
       detail.cancellationPolicy?.rules?.isNotEmpty == true,
       (detail.trekkingRules?.isNotEmpty == true) ||
           (detail.emergencyProtocols?.isNotEmpty == true) ||
@@ -1228,7 +1246,20 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
 
   Widget _buildReviewsTab() {
     final reviews = _trekC.trekDetailData.value.latestReviews;
-    if (reviews == null || reviews.isEmpty) return const SizedBox.shrink();
+    final google = _googleRating;
+    if (reviews == null || reviews.isEmpty) {
+      if (google == null) return const SizedBox.shrink();
+      return _card(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _sectionHeader('Ratings & Reviews', Icons.star_rounded),
+            SizedBox(height: 2.5.h),
+            GoogleRatingBox(data: google),
+          ],
+        ),
+      );
+    }
     final ratings = _trekC.trekDetailData.value.categoryRatings;
 
     final displayed = _showFullReviews
@@ -1318,6 +1349,11 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
               ],
             ),
           ),
+
+          if (google != null) ...[
+            SizedBox(height: 2.h),
+            GoogleRatingBox(data: google),
+          ],
 
           SizedBox(height: 3.h),
 
