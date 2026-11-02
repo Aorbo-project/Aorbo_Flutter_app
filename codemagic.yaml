@@ -1,0 +1,20 @@
+# iOS builds run on Codemagic's Macs (we have no Mac). Started by hand only.
+workflows:
+  ios-check:
+    name: iOS check build
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      flutter: 3.47.3
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Get packages
+        script: flutter pub get
+      - name: Install iOS packages
+        script: cd ios && pod install --repo-update
+      - name: Build without signing
+        script: flutter build ios --release --no-codesign
+    artifacts:
+      - /tmp/xcodebuild_logs/*.log
+      - flutter_drive.log
