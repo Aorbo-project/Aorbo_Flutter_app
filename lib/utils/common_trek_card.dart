@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 import '../freezed_models/treks/treks_model_data.dart';
 import '../widgets/custom_network_image.dart';
+import '../widgets/google_rating_box.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
 
@@ -65,9 +66,12 @@ class _CommonTrekCardState extends State<CommonTrekCard>
     with SingleTickerProviderStateMixin {
   late final AnimationController _pressCtrl;
   late final Animation<double> _scaleAnim;
+  GoogleRating? _googleRating;
+
   @override
   void initState() {
     super.initState();
+    _loadGoogleRating();
     _pressCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 120),
@@ -76,6 +80,25 @@ class _CommonTrekCardState extends State<CommonTrekCard>
       begin: 1.0,
       end: 0.98,
     ).animate(CurvedAnimation(parent: _pressCtrl, curve: Curves.easeInOut));
+  }
+
+  @override
+  void didUpdateWidget(covariant CommonTrekCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.trek?.id != widget.trek?.id) {
+      _googleRating = null;
+      _loadGoogleRating();
+    }
+  }
+
+  // Only a card that would say NEW asks for a Google rating.
+  Future<void> _loadGoogleRating() async {
+    final trekId = widget.trek?.id;
+    if (trekId == null || trekId <= 0 || !_isNewVendor()) return;
+    final rating = await GoogleCardRatings.instance.ratingFor(trekId);
+    if (mounted && rating != null && widget.trek?.id == trekId) {
+      setState(() => _googleRating = rating);
+    }
   }
 
   @override
@@ -279,6 +302,7 @@ class _CommonTrekCardState extends State<CommonTrekCard>
                                       icon: Icons.timelapse_rounded,
                                     ),
                                   if (!_isNewVendor()) _ratingPill(trek),
+                                  if (_googleRating != null) _googleRatingPill(_googleRating!),
                                 ],
                               ),
                               SizedBox(height: _rh(1.3, 15)),
@@ -378,7 +402,7 @@ class _CommonTrekCardState extends State<CommonTrekCard>
                       style: AppType.style(FontSize.s10, w: FontWeight.w600, color: _TC.ink, height: 1.2),
                     ),
                   ),
-                  if (_isNewVendor()) ...[
+                  if (_isNewVendor() && _googleRating == null) ...[
                     SizedBox(width: _rw(1.2, 6)),
                     _newOrganiserChip(),
                   ],
@@ -461,6 +485,32 @@ class _CommonTrekCardState extends State<CommonTrekCard>
             textScaler: const TextScaler.linear(1),
             style: AppType.style(FontSize.s7, w: FontWeight.w700, color: _TC.forest, letterSpacing: 0.6),
           ),
+        ],
+      ),
+    );
+  }
+
+  // Set apart from the card's own details, as Google's policy asks for its ratings.
+  Widget _googleRatingPill(GoogleRating google) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: _rw(1.8, 9), vertical: 3),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(100),
+        border: Border.all(color: _TC.divider),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.star_rounded, size: _rw(3, 13), color: _TC.trailAmber),
+          SizedBox(width: _rw(0.7, 3.5)),
+          Text(
+            '${google.rating}',
+            textScaler: const TextScaler.linear(1),
+            style: AppType.style(FontSize.s8, w: FontWeight.w700, color: _TC.ink),
+          ),
+          SizedBox(width: _rw(1.2, 6)),
+          const GoogleMapsAttribution(),
         ],
       ),
     );

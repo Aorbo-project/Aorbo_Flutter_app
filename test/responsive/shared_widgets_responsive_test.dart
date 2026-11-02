@@ -13,6 +13,7 @@ import 'package:arobo_app/freezed_models/treks/treks_model_data.dart';
 import 'package:flutter/material.dart' hide Badge;
 import 'package:arobo_app/utils/common_btn.dart';
 import 'package:arobo_app/utils/common_trek_card.dart';
+import 'package:arobo_app/widgets/google_rating_box.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'responsive_harness.dart';
@@ -98,6 +99,16 @@ void main() {
       final failures = await collectResponsiveOverflows(
         tester,
         build: () => CommonTrekCard(trek: trek(), onTap: () {}),
+      );
+      expectNoResponsiveOverflow(failures);
+    });
+
+    testWidgets('a new vendor with a Google rating fits every phone', (tester) async {
+      GoogleCardRatings.instance.seed(1, const GoogleRating(rating: 4.6, count: 230));
+      addTearDown(GoogleCardRatings.instance.clear);
+      final failures = await collectResponsiveOverflows(
+        tester,
+        build: () => CommonTrekCard(trek: trek().copyWith(rating: 0), onTap: () {}),
       );
       expectNoResponsiveOverflow(failures);
     });
