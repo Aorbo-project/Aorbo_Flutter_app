@@ -113,6 +113,27 @@ void main() {
       expectNoResponsiveOverflow(failures);
     });
 
+    testWidgets('Google rating beside a very long title: the title shortens, nothing overlaps', (tester) async {
+      GoogleCardRatings.instance.seed(1, const GoogleRating(rating: 4.6, count: 1234567));
+      addTearDown(GoogleCardRatings.instance.clear);
+      final failures = await collectResponsiveOverflows(
+        tester,
+        build: () => CommonTrekCard(
+          trek: trek(destination: 'Kedarkantha Winter Summit Expedition via Sankri Uttarkashi Uttarakhand', company: 'A Very Long Trek Organiser Business Name Private Limited', badge: 'SUNRISE SPECIAL OFFER').copyWith(rating: 0),
+          onTap: () {},
+        ),
+      );
+      expectNoResponsiveOverflow(failures);
+    });
+
+    testWidgets('the trek page Google box fits every phone with a huge count', (tester) async {
+      final failures = await collectResponsiveOverflows(
+        tester,
+        build: () => const GoogleRatingBox(data: GoogleRating(rating: 4.6, count: 1234567)),
+      );
+      expectNoResponsiveOverflow(failures);
+    });
+
     testWidgets('long names + discount + low slots (worst case)', (tester) async {
       final failures = await collectResponsiveOverflows(
         tester,
