@@ -96,6 +96,7 @@ _$TrekDetailDataImpl _$$TrekDetailDataImplFromJson(Map<String, dynamic> json) =>
       bookedSlots: json['booked_slots'] as int?,
       availableSlots: json['available_slots'] as int?,
       bookingsStoppedAt: json['bookings_stopped_at'] as String?,
+      bookingsLocked: json['bookings_locked'] as bool?,
       cancellationPolicy: json['cancellation_policy'] == null
           ? null
           : CancellationPolicy.fromJson(
@@ -158,6 +159,7 @@ Map<String, dynamic> _$$TrekDetailDataImplToJson(
       'booked_slots': instance.bookedSlots,
       'available_slots': instance.availableSlots,
       'bookings_stopped_at': instance.bookingsStoppedAt,
+      'bookings_locked': instance.bookingsLocked,
       'cancellation_policy': instance.cancellationPolicy,
       'booking_type': instance.bookingType,
     };

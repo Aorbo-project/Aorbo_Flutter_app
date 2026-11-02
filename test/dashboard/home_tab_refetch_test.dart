@@ -123,13 +123,20 @@ void main() {
       }),
     );
 
-    await dash.loadHomeContent();
+    // What's New and Seasonal Picks load a beat after the critical content, so
+    // they stay out of the login burst (owner, 21 Oct 2026).
+    Future<void> loadAndWaitForLazySections({bool force = false}) async {
+      await dash.loadHomeContent(force: force);
+      await Future<void>.delayed(const Duration(milliseconds: 1700));
+    }
+
+    await loadAndWaitForLazySections();
     failWhatsNew = false;
-    await dash.loadHomeContent();
+    await loadAndWaitForLazySections();
     expect(hits['discovery/seasonal-picks'], 1, reason: 'fresh: not fetched again');
     expect(dash.whatsNewObserver.value.maybeWhen(success: (_) => true, orElse: () => false), isTrue);
 
-    await dash.loadHomeContent(force: true);
+    await loadAndWaitForLazySections(force: true);
     expect(hits['discovery/seasonal-picks'], 2);
   });
 }

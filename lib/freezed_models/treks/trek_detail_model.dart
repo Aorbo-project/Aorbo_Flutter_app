@@ -89,6 +89,9 @@ class TrekDetailData with _$TrekDetailData {
     // this (controllers/v1/trekController.js's batchAttrs); UX-only field,
     // the backend's own booking-flow gates are the real enforcement.
     @JsonKey(name: 'bookings_stopped_at') String? bookingsStoppedAt,
+    // Inside the 6-hour lock before departure, or departed. The server refuses
+    // a booking then; this shows "Bookings Closed" before the customer tries.
+    @JsonKey(name: 'bookings_locked') bool? bookingsLocked,
     @JsonKey(name: 'cancellation_policy')
     CancellationPolicy? cancellationPolicy,
     @JsonKey(name: 'booking_type') String? bookingType,
@@ -103,7 +106,8 @@ extension TrekDetailDataExtension on TrekDetailData {
   /// permanently closed this batch to new bookings. UX signal only; the
   /// backend independently rejects a booking attempt regardless of this.
   bool get isBookingsStopped =>
-      bookingsStoppedAt != null && bookingsStoppedAt!.isNotEmpty;
+      (bookingsStoppedAt != null && bookingsStoppedAt!.isNotEmpty) ||
+      bookingsLocked == true;
 
   /// Returns the departure datetime from the first boarding point stage.
   /// If no boarding stage is found, returns null.
