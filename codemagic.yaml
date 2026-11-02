@@ -40,3 +40,25 @@ workflows:
         ignore_failure: true
     artifacts:
       - ios_test_output/**
+
+  # Start with "Enable SSH/VNC access" ticked: the owner types the number and
+  # SMS code on the simulator over VNC, then the journey runs by itself.
+  ios-journey:
+    name: iOS full journey (owner logs in)
+    instance_type: mac_mini_m2
+    max_build_duration: 90
+    environment:
+      flutter: 3.47.3
+      xcode: latest
+      cocoapods: default
+      vars:
+        IOS_SIM_SIZES: middle
+    scripts:
+      - name: Get packages
+        script: flutter pub get
+      - name: Install iOS packages
+        script: cd ios && pod install --repo-update
+      - name: Customer journey
+        script: bash scripts/ios_sim_test.sh integration_test/app_journey_test.dart --dart-define=E2E_MANUAL_LOGIN=true
+    artifacts:
+      - ios_test_output/**

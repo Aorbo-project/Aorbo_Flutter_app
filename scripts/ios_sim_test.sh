@@ -2,8 +2,10 @@
 # Runs an integration test on a small, a middle and a large iPhone simulator,
 # saving a video and screenshots of each (Codemagic only, needs a Mac).
 #   bash scripts/ios_sim_test.sh integration_test/ios_launch_test.dart
+# Extra arguments go to flutter test. IOS_SIM_SIZES=middle uses one iPhone only.
 set -u
 TEST_FILE="$1"
+shift
 OUT="$PWD/ios_test_output"
 mkdir -p "$OUT"
 
@@ -20,6 +22,9 @@ def pick(pattern):
 for d in filter(None, [pick(r"SE|\d+e\b"), pick(r"^iPhone \d+$"), pick(r"Pro Max")]):
     print(d["udid"] + "|" + d["name"])
 ')
+if [ "${IOS_SIM_SIZES:-all}" = "middle" ]; then
+  DEVICES=$(echo "$DEVICES" | sed -n 2p)
+fi
 echo "Devices:"
 echo "$DEVICES"
 [ -n "$DEVICES" ] || { echo "No iPhone simulators found"; exit 1; }
@@ -31,13 +36,17 @@ while IFS='|' read -r UDID NAME; do
   echo "=== $NAME ==="
   xcrun simctl boot "$UDID"
   xcrun simctl bootstatus "$UDID" -b > /dev/null
+  # The visible window, for typing over VNC.
+  open -a Simulator
   xcrun simctl io "$UDID" recordVideo --force "$DIR/video.mp4" &
   VIDEO=$!
 
-  flutter test "$TEST_FILE" -d "$UDID" 2>&1 < /dev/null | tee "$DIR/log.txt" | while IFS= read -r LINE; do
+  flutter test "$TEST_FILE" -d "$UDID" "$@" 2>&1 < /dev/null | tee "$DIR/log.txt" | while IFS= read -r LINE; do
     echo "$LINE"
     case "$LINE" in
-      *SHOT:*) xcrun simctl io "$UDID" screenshot "$DIR/${LINE##*SHOT:}.png" > /dev/null 2>&1 ;;
+      *SHOT:*)
+        SHOT_NAME=$(echo "${LINE##*SHOT:}" | LC_ALL=C tr -c 'A-Za-z0-9-' '-' | cut -c1-60)
+        xcrun simctl io "$UDID" screenshot "$DIR/$SHOT_NAME.png" > /dev/null 2>&1 ;;
     esac
   done
   RESULT=${PIPESTATUS[0]}

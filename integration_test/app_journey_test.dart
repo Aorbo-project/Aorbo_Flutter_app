@@ -41,8 +41,13 @@ const _otp = String.fromEnvironment('E2E_OTP');
 const _fromCity = String.fromEnvironment('E2E_FROM', defaultValue: 'Hyderabad');
 const _toPlace = String.fromEnvironment('E2E_TO', defaultValue: 'Gokarna');
 
+// iPhone simulator (Codemagic): the owner types the number and the real SMS
+// code over VNC; the test waits, then carries on by itself.
+const _manualLogin = bool.fromEnvironment('E2E_MANUAL_LOGIN');
+
 late WidgetTester _t;
 final List<String> _passed = [];
+var _shots = 0;
 
 /// One named step; a failure says which step broke.
 Future<void> step(String name, Future<void> Function() body) async {
@@ -58,6 +63,12 @@ Future<void> step(String name, Future<void> Function() body) async {
   _passed.add(name);
   // ignore: avoid_print
   print('✓ $name');
+  if (_manualLogin) {
+    // scripts/ios_sim_test.sh saves a simulator screenshot for this line.
+    // ignore: avoid_print
+    print('SHOT:${(++_shots).toString().padLeft(2, '0')}-$name');
+    await settle(const Duration(seconds: 1));
+  }
 }
 
 /// Pumps until [finder] matches, or fails after [timeout].
@@ -177,12 +188,14 @@ Future<void> expectWebPageLoaded(String title) async {
 }
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('customer journey on a real phone', (tester) async {
     _t = tester;
-    expect(_phone.length, 10, reason: 'pass --dart-define=E2E_PHONE=<10-digit test login>');
-    expect(_otp.isNotEmpty, isTrue, reason: 'pass --dart-define=E2E_OTP=<code>');
+    if (!_manualLogin) {
+      expect(_phone.length, 10, reason: 'pass --dart-define=E2E_PHONE=<10-digit test login>');
+      expect(_otp.isNotEmpty, isTrue, reason: 'pass --dart-define=E2E_OTP=<code>');
+    }
 
     // The app installs its own FlutterError handler (Crashlytics); give the
     // test's back as soon as the app is up, so app errors fail the test.
@@ -207,7 +220,15 @@ void main() {
       FlutterError.onError = testErrorHandler;
     });
 
-    if (textFieldWithHint('Mobile number').evaluate().isNotEmpty) {
+    if (_manualLogin && textFieldWithHint('Mobile number').evaluate().isNotEmpty) {
+      await step('owner logs in by hand', () async {
+        binding.shouldPropagateDevicePointerEvents = true;
+        // ignore: avoid_print
+        print('E2E_WAITING_FOR_LOGIN: type the number and SMS code on the simulator');
+        await waitFor(find.byIcon(Icons.home_rounded), timeout: const Duration(minutes: 15), what: 'home after login');
+        binding.shouldPropagateDevicePointerEvents = false;
+      });
+    } else if (textFieldWithHint('Mobile number').evaluate().isNotEmpty) {
       await step('log in with phone + code', () async {
         await tester.enterText(textFieldWithHint('Mobile number'), _phone);
         await settle(const Duration(milliseconds: 600));
@@ -341,7 +362,8 @@ void main() {
     // helper (integration_test/close_razorpay.sh) presses the phone's Back
     // button when it appears. Expected: the "Payment cancelled" card — no
     // "undefined" (real phone, 14 Oct 2026).
-    await step('Pay Now → Razorpay opens → closed → "Payment cancelled"', () async {
+    // No helper can close that window on the simulator: stop at checkout.
+    if (!_manualLogin) await step('Pay Now → Razorpay opens → closed → "Payment cancelled"', () async {
       await pressButton('Pay Now');
       await settle(const Duration(seconds: 2));
       if (find.byType(PaymentProcessingScreen).evaluate().isEmpty) {
@@ -449,5 +471,5 @@ void main() {
 
     // ignore: avoid_print
     print('ALL STEPS PASSED (${_passed.length}): ${_passed.join(' | ')}');
-  }, timeout: const Timeout(Duration(minutes: 20)));
+  }, timeout: const Timeout(Duration(minutes: 40)));
 }
