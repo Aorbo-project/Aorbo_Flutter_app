@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sizer/sizer.dart';
 
 import '../repository/network_url.dart';
 import '../repository/repository.dart';
-import '../theme/app_typography.dart';
 
 /// The organiser's Google rating, read live by the server. Never saved on the
 /// phone, and never mixed with Aorbo's own rating.
@@ -26,20 +26,49 @@ class GoogleRating {
   }
 }
 
-/// Google's policy: its rating must carry the "Google Maps" logo or, where space
-/// is limited, this exact text (12-16sp, not localized, same container). The G
-/// logo alone isn't allowed. This is the only place the attribution is drawn.
-class GoogleMapsAttribution extends StatelessWidget {
-  const GoogleMapsAttribution({super.key});
+const String _googleGSvg = '''
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+<path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+<path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+<path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+<path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+</svg>
+''';
+
+/// G logo, rating and count (owner's choice, 3 Nov 2026). Google's policy asks for the
+/// "Google Maps" logo or text, and doesn't mention the G alone: this one widget is the
+/// only place to change if Google objects.
+class GoogleRatingInline extends StatelessWidget {
+  const GoogleRatingInline({super.key, required this.data, this.size = 14});
+
+  final GoogleRating data;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
-    return const Text(
-      'Google Maps',
-      maxLines: 1,
-      softWrap: false,
-      textScaler: TextScaler.linear(1.0),
-      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w400, color: Color(0xFF5E5E5E)),
+    return Semantics(
+      label: 'Google Maps rating ${data.rating}, ${data.count} ratings',
+      excludeSemantics: true,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SvgPicture.string(_googleGSvg, width: size, height: size),
+          SizedBox(width: size * 0.3),
+          Text(
+            '${data.rating}',
+            maxLines: 1,
+            textScaler: const TextScaler.linear(1.0),
+            style: TextStyle(fontSize: size * 0.93, fontWeight: FontWeight.w700, color: const Color(0xFF188038)),
+          ),
+          SizedBox(width: size * 0.2),
+          Text(
+            '(${data.count})',
+            maxLines: 1,
+            textScaler: const TextScaler.linear(1.0),
+            style: TextStyle(fontSize: size * 0.86, fontWeight: FontWeight.w400, color: const Color(0xFF5E5E5E)),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -116,19 +145,7 @@ class GoogleRatingBox extends StatelessWidget {
         borderRadius: BorderRadius.circular(3.w),
         border: Border.all(color: const Color(0xFF6B7280).withValues(alpha: 0.3)),
       ),
-      child: Row(
-        children: [
-          const GoogleMapsAttribution(),
-          const Spacer(),
-          Icon(Icons.star_rounded, color: Colors.amber, size: 4.5.w),
-          SizedBox(width: 1.w),
-          Text(
-            '${data.rating} (${data.count})',
-            textScaler: const TextScaler.linear(1.0),
-            style: AppType.style(10.0.sp, w: FontWeight.w700, color: Colors.black),
-          ),
-        ],
-      ),
+      child: GoogleRatingInline(data: data, size: 16),
     );
   }
 }

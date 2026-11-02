@@ -276,12 +276,16 @@ class _CommonTrekCardState extends State<CommonTrekCard>
                             children: [
                               _buildHeader(trek, isFlexible),
                               SizedBox(height: _rh(1.6, 18)),
-                              Text(
-                                trek?.destination ?? trek?.name ?? '-',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                textScaler: const TextScaler.linear(1),
-                                style: AppType.style(FontSize.s13, w: FontWeight.w800, color: _TC.ink, height: 1.2, letterSpacing: -0.2),
+                              Row(
+                                children: [
+                                  Flexible(
+                                    child: _titleText(trek),
+                                  ),
+                                  if (_googleRating != null) ...[
+                                    SizedBox(width: _rw(2, 10)),
+                                    GoogleRatingInline(data: _googleRating!),
+                                  ],
+                                ],
                               ),
                               SizedBox(height: _rh(1.2, 14)),
                               Wrap(
@@ -302,7 +306,6 @@ class _CommonTrekCardState extends State<CommonTrekCard>
                                       icon: Icons.timelapse_rounded,
                                     ),
                                   if (!_isNewVendor()) _ratingPill(trek),
-                                  if (_googleRating != null) _googleRatingPill(_googleRating!),
                                 ],
                               ),
                               SizedBox(height: _rh(1.3, 15)),
@@ -490,31 +493,13 @@ class _CommonTrekCardState extends State<CommonTrekCard>
     );
   }
 
-  // Set apart from the card's own details, as Google's policy asks for its ratings.
-  Widget _googleRatingPill(GoogleRating google) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: _rw(1.8, 9), vertical: 3),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(100),
-        border: Border.all(color: _TC.divider),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.star_rounded, size: _rw(3, 13), color: _TC.trailAmber),
-          SizedBox(width: _rw(0.7, 3.5)),
-          Text(
-            '${google.rating}',
-            textScaler: const TextScaler.linear(1),
-            style: AppType.style(FontSize.s8, w: FontWeight.w700, color: _TC.ink),
-          ),
-          SizedBox(width: _rw(1.2, 6)),
-          const GoogleMapsAttribution(),
-        ],
-      ),
-    );
-  }
+  Widget _titleText(TrekData? trek) => Text(
+        trek?.destination ?? trek?.name ?? '-',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        textScaler: const TextScaler.linear(1),
+        style: AppType.style(FontSize.s13, w: FontWeight.w800, color: _TC.ink, height: 1.2, letterSpacing: -0.2),
+      );
 
   Widget _ratingPill(TrekData? trek) {
     final ratingValue = double.tryParse('${trek?.rating ?? 0}') ?? 0.0;

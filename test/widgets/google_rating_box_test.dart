@@ -2,6 +2,7 @@ import 'package:arobo_app/freezed_models/treks/treks_model_data.dart';
 import 'package:arobo_app/utils/common_trek_card.dart';
 import 'package:arobo_app/widgets/google_rating_box.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sizer/sizer.dart';
 
@@ -38,10 +39,11 @@ void main() {
     });
   });
 
-  testWidgets('the trek page box carries Google Maps, the rating and count, and no reviews link', (tester) async {
+  testWidgets('the trek page box carries the G logo, rating and count, and no reviews link', (tester) async {
     await tester.pumpWidget(_app(const GoogleRatingBox(data: GoogleRating(rating: 4.6, count: 230))));
-    expect(find.text('Google Maps'), findsOneWidget);
-    expect(find.text('4.6 (230)'), findsOneWidget);
+    expect(find.byType(SvgPicture), findsOneWidget);
+    expect(find.text('4.6'), findsOneWidget);
+    expect(find.text('(230)'), findsOneWidget);
     expect(find.textContaining('reviews'), findsNothing);
   });
 
@@ -54,7 +56,8 @@ void main() {
       await tester.pump();
       expect(find.text('NEW'), findsNothing);
       expect(find.text('4.6'), findsOneWidget);
-      expect(find.text('Google Maps'), findsOneWidget);
+      expect(find.text('(230)'), findsOneWidget);
+      expect(find.byType(GoogleRatingInline), findsOneWidget);
     });
 
     testWidgets('a new vendor with no Google rating stays NEW', (tester) async {
@@ -62,7 +65,7 @@ void main() {
       await tester.pumpWidget(_app(CommonTrekCard(trek: trek(), onTap: () {})));
       await tester.pump();
       expect(find.text('NEW'), findsOneWidget);
-      expect(find.text('Google Maps'), findsNothing);
+      expect(find.byType(GoogleRatingInline), findsNothing);
     });
 
     testWidgets('a vendor with an Aorbo rating never shows Google', (tester) async {
@@ -70,7 +73,7 @@ void main() {
       await tester.pumpWidget(_app(CommonTrekCard(trek: trek(rating: 4.2), onTap: () {})));
       await tester.pump();
       expect(find.text('4.2'), findsOneWidget);
-      expect(find.text('Google Maps'), findsNothing);
+      expect(find.byType(GoogleRatingInline), findsNothing);
     });
   });
 }
