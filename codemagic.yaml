@@ -18,3 +18,25 @@ workflows:
     artifacts:
       - /tmp/xcodebuild_logs/*.log
       - flutter_drive.log
+
+  ios-test:
+    name: iOS simulator test
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      flutter: 3.47.3
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Get packages
+        script: flutter pub get
+      - name: Install iOS packages
+        script: cd ios && pod install --repo-update
+      - name: Open the app on 3 iPhone sizes
+        script: bash scripts/ios_sim_test.sh integration_test/ios_launch_test.dart
+        ignore_failure: true
+      - name: Unit tests
+        script: flutter test test/
+        ignore_failure: true
+    artifacts:
+      - ios_test_output/**
