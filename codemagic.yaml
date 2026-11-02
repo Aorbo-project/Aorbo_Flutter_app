@@ -41,6 +41,25 @@ workflows:
     artifacts:
       - ios_test_output/**
 
+  # For App Preview: "Quick launch" on the build page opens it in the browser.
+  ios-preview:
+    name: iOS app preview
+    instance_type: mac_mini_m2
+    max_build_duration: 30
+    environment:
+      flutter: 3.47.3
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Get packages
+        script: flutter pub get
+      - name: Install iOS packages
+        script: cd ios && pod install --repo-update
+      - name: Build for the simulator
+        script: flutter build ios --simulator
+    artifacts:
+      - build/ios/iphonesimulator/Runner.app
+
   # Start with "Enable SSH/VNC access" ticked: the owner types the number and
   # SMS code on the simulator over VNC, then the journey runs by itself.
   ios-journey:
