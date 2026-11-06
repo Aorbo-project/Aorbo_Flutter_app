@@ -113,6 +113,7 @@ _$CouponCardDataImpl _$$CouponCardDataImplFromJson(Map<String, dynamic> json) =>
       scope: json['scope'] as String?,
       minAmount: json['min_amount'] as String?,
       maxDiscountAmount: json['max_discount_amount'] as String?,
+      minParticipants: json['min_participants'] as int?,
       styling: json['styling'] == null
           ? null
           : CouponStyling.fromJson(json['styling'] as Map<String, dynamic>),
@@ -142,6 +143,7 @@ Map<String, dynamic> _$$CouponCardDataImplToJson(
       'scope': instance.scope,
       'min_amount': instance.minAmount,
       'max_discount_amount': instance.maxDiscountAmount,
+      'min_participants': instance.minParticipants,
       'styling': instance.styling,
     };
 

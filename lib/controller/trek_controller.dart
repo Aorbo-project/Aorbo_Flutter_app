@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../utils/coupon_not_applied_dialog.dart';
 import 'dart:convert';
 
 import 'package:arobo_app/controller/dashboard_controller.dart';
@@ -407,8 +408,17 @@ class TrekController extends GetxController {
       throw "Response Body Null";
     } catch (e) {
       logger.e('Coupon error: ${e.toString()}');
-      CustomSnackBar.show(Get.context!, message: friendlyError(e));
-      validateCouponObserver.value = ApiResult.error(friendlyError(e));
+      // A popup the customer has to read, in plain words (owner, 6 Nov 2026):
+      // a snackbar went by unnoticed and the coupon was tried 9 times.
+      final reason = couponRefusalText(
+        friendlyError(e),
+        travellers: calculateFareRequestModel.value.travelerCount,
+      );
+      validateCouponObserver.value = ApiResult.error(reason);
+      final context = Get.context;
+      if (context != null) {
+        showCouponNotAppliedDialog(context, code: coupon, reason: reason);
+      }
     }
   }
 

@@ -106,6 +106,10 @@ class CouponCardData with _$CouponCardData {
     /// Cap on the discount amount for percentage-based coupon types.
     @JsonKey(name: 'max_discount_amount') String? maxDiscountAmount,
 
+    /// Group coupons: the fewest travellers in one booking (null for other
+    /// types). Shown as "For 6+ travellers" before the customer taps Apply.
+    @JsonKey(name: 'min_participants') int? minParticipants,
+
     /// Category tag (e.g. "Seasonal", "New trekker") shown above the headline.
     CouponStyling? styling,
 

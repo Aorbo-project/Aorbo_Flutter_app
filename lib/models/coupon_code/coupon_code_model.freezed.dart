@@ -988,6 +988,11 @@ mixin _$CouponCardData {
   @JsonKey(name: 'max_discount_amount')
   String? get maxDiscountAmount => throw _privateConstructorUsedError;
 
+  /// Group coupons: the fewest travellers in one booking (null for other
+  /// types). Shown as "For 6+ travellers" before the customer taps Apply.
+  @JsonKey(name: 'min_participants')
+  int? get minParticipants => throw _privateConstructorUsedError;
+
   /// Category tag (e.g. "Seasonal", "New trekker") shown above the headline.
   CouponStyling? get styling => throw _privateConstructorUsedError;
 
@@ -1025,6 +1030,7 @@ abstract class $CouponCardDataCopyWith<$Res> {
       String? scope,
       @JsonKey(name: 'min_amount') String? minAmount,
       @JsonKey(name: 'max_discount_amount') String? maxDiscountAmount,
+      @JsonKey(name: 'min_participants') int? minParticipants,
       CouponStyling? styling});
 
   $CouponStylingCopyWith<$Res>? get styling;
@@ -1064,6 +1070,7 @@ class _$CouponCardDataCopyWithImpl<$Res, $Val extends CouponCardData>
     Object? scope = freezed,
     Object? minAmount = freezed,
     Object? maxDiscountAmount = freezed,
+    Object? minParticipants = freezed,
     Object? styling = freezed,
   }) {
     return _then(_value.copyWith(
@@ -1151,6 +1158,10 @@ class _$CouponCardDataCopyWithImpl<$Res, $Val extends CouponCardData>
           ? _value.maxDiscountAmount
           : maxDiscountAmount // ignore: cast_nullable_to_non_nullable
               as String?,
+      minParticipants: freezed == minParticipants
+          ? _value.minParticipants
+          : minParticipants // ignore: cast_nullable_to_non_nullable
+              as int?,
       styling: freezed == styling
           ? _value.styling
           : styling // ignore: cast_nullable_to_non_nullable
@@ -1201,6 +1212,7 @@ abstract class _$$CouponCardDataImplCopyWith<$Res>
       String? scope,
       @JsonKey(name: 'min_amount') String? minAmount,
       @JsonKey(name: 'max_discount_amount') String? maxDiscountAmount,
+      @JsonKey(name: 'min_participants') int? minParticipants,
       CouponStyling? styling});
 
   @override
@@ -1239,6 +1251,7 @@ class __$$CouponCardDataImplCopyWithImpl<$Res>
     Object? scope = freezed,
     Object? minAmount = freezed,
     Object? maxDiscountAmount = freezed,
+    Object? minParticipants = freezed,
     Object? styling = freezed,
   }) {
     return _then(_$CouponCardDataImpl(
@@ -1326,6 +1339,10 @@ class __$$CouponCardDataImplCopyWithImpl<$Res>
           ? _value.maxDiscountAmount
           : maxDiscountAmount // ignore: cast_nullable_to_non_nullable
               as String?,
+      minParticipants: freezed == minParticipants
+          ? _value.minParticipants
+          : minParticipants // ignore: cast_nullable_to_non_nullable
+              as int?,
       styling: freezed == styling
           ? _value.styling
           : styling // ignore: cast_nullable_to_non_nullable
@@ -1360,6 +1377,7 @@ class _$CouponCardDataImpl implements _CouponCardData {
       this.scope,
       @JsonKey(name: 'min_amount') this.minAmount,
       @JsonKey(name: 'max_discount_amount') this.maxDiscountAmount,
+      @JsonKey(name: 'min_participants') this.minParticipants,
       this.styling})
       : _gradient = gradient,
         _termsAndConditions = termsAndConditions;
@@ -1456,13 +1474,19 @@ class _$CouponCardDataImpl implements _CouponCardData {
   @JsonKey(name: 'max_discount_amount')
   final String? maxDiscountAmount;
 
+  /// Group coupons: the fewest travellers in one booking (null for other
+  /// types). Shown as "For 6+ travellers" before the customer taps Apply.
+  @override
+  @JsonKey(name: 'min_participants')
+  final int? minParticipants;
+
   /// Category tag (e.g. "Seasonal", "New trekker") shown above the headline.
   @override
   final CouponStyling? styling;
 
   @override
   String toString() {
-    return 'CouponCardData(id: $id, title: $title, description: $description, imagePath: $imagePath, gradient: $gradient, textColour: $textColour, code: $code, discountType: $discountType, discountValue: $discountValue, termsAndConditions: $termsAndConditions, detailedDescription: $detailedDescription, howToApply: $howToApply, footerNote: $footerNote, isExpired: $isExpired, isActive: $isActive, isUsed: $isUsed, validFrom: $validFrom, validUntil: $validUntil, scope: $scope, minAmount: $minAmount, maxDiscountAmount: $maxDiscountAmount, styling: $styling)';
+    return 'CouponCardData(id: $id, title: $title, description: $description, imagePath: $imagePath, gradient: $gradient, textColour: $textColour, code: $code, discountType: $discountType, discountValue: $discountValue, termsAndConditions: $termsAndConditions, detailedDescription: $detailedDescription, howToApply: $howToApply, footerNote: $footerNote, isExpired: $isExpired, isActive: $isActive, isUsed: $isUsed, validFrom: $validFrom, validUntil: $validUntil, scope: $scope, minAmount: $minAmount, maxDiscountAmount: $maxDiscountAmount, minParticipants: $minParticipants, styling: $styling)';
   }
 
   @override
@@ -1506,6 +1530,8 @@ class _$CouponCardDataImpl implements _CouponCardData {
                 other.minAmount == minAmount) &&
             (identical(other.maxDiscountAmount, maxDiscountAmount) ||
                 other.maxDiscountAmount == maxDiscountAmount) &&
+            (identical(other.minParticipants, minParticipants) ||
+                other.minParticipants == minParticipants) &&
             (identical(other.styling, styling) || other.styling == styling));
   }
 
@@ -1534,6 +1560,7 @@ class _$CouponCardDataImpl implements _CouponCardData {
         scope,
         minAmount,
         maxDiscountAmount,
+        minParticipants,
         styling
       ]);
 
@@ -1576,6 +1603,7 @@ abstract class _CouponCardData implements CouponCardData {
       final String? scope,
       @JsonKey(name: 'min_amount') final String? minAmount,
       @JsonKey(name: 'max_discount_amount') final String? maxDiscountAmount,
+      @JsonKey(name: 'min_participants') final int? minParticipants,
       final CouponStyling? styling}) = _$CouponCardDataImpl;
 
   factory _CouponCardData.fromJson(Map<String, dynamic> json) =
@@ -1653,6 +1681,12 @@ abstract class _CouponCardData implements CouponCardData {
   /// Cap on the discount amount for percentage-based coupon types.
   @JsonKey(name: 'max_discount_amount')
   String? get maxDiscountAmount;
+  @override
+
+  /// Group coupons: the fewest travellers in one booking (null for other
+  /// types). Shown as "For 6+ travellers" before the customer taps Apply.
+  @JsonKey(name: 'min_participants')
+  int? get minParticipants;
   @override
 
   /// Category tag (e.g. "Seasonal", "New trekker") shown above the headline.

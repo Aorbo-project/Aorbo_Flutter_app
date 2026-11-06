@@ -6,6 +6,7 @@ import '../models/coupon_code/coupon_code_model.dart';
 import 'auth_utils.dart';
 import 'coupon_display_helper.dart';
 import 'coupon_terms_sheet.dart';
+import 'coupon_not_applied_dialog.dart';
 import 'package:arobo_app/theme/app_typography.dart';
 
 /// Card for vendor-assigned (non-PLATFORM scope) coupons on the checkout
@@ -19,11 +20,15 @@ class VendorCouponCard extends StatelessWidget {
   final VoidCallback onApply;
   final bool isApplied;
 
+  /// Travellers in this booking, for a group coupon's "6+ travellers" rule.
+  final int? travelerCount;
+
   const VendorCouponCard({
     super.key,
     required this.coupon,
     required this.onApply,
     this.isApplied = false,
+    this.travelerCount,
   });
 
   static const Color _accentStart = Color(0xFFE8925A);
@@ -42,6 +47,27 @@ class VendorCouponCard extends StatelessWidget {
       (coupon?.isExpired ?? false) ||
       (coupon?.isUsed ?? false);
 
+  /// Group coupon this booking is too small for: said on the card, and Apply
+  /// explains it in a popup instead of a call the server will refuse.
+  int? get _groupMin => coupon?.discountType == 'group' ? coupon?.minParticipants : null;
+  bool get _tooFewTravellers {
+    final min = _groupMin;
+    final n = travelerCount;
+    return min != null && n != null && n > 0 && n < min;
+  }
+
+  void _apply(BuildContext context) {
+    if (_tooFewTravellers) {
+      showCouponNotAppliedDialog(
+        context,
+        code: coupon?.code,
+        reason: couponGroupReason(_groupMin!, travelerCount),
+      );
+      return;
+    }
+    onApply();
+  }
+
   String get _blockedReason {
     if (coupon?.isUsed ?? false) return 'Already used';
     if (coupon?.isExpired ?? false) return 'Expired';
@@ -54,6 +80,7 @@ class VendorCouponCard extends StatelessWidget {
   String? get _conditionText {
     if (coupon == null) return null;
     final parts = <String>[];
+    if (_groupMin != null) parts.add('For $_groupMin+ travellers');
     final maxDiscount = double.tryParse(coupon!.maxDiscountAmount ?? '') ?? 0;
     if (coupon!.discountType != 'fixed' && maxDiscount > 0) {
       parts.add('Upto ${AuthUtils.formatPrice(coupon!.maxDiscountAmount!)}');
@@ -115,6 +142,13 @@ class VendorCouponCard extends StatelessWidget {
                       _blockedReason,
                       style: AppType.style(FontSize.s9, color: _labelSoft),
                     ),
+                  ] else if (_tooFewTravellers) ...[
+                    SizedBox(height: 0.3.h),
+                    Text(
+                      'Your booking has $travelerCount traveller${travelerCount == 1 ? '' : 's'}',
+                      key: const Key('coupon-group-short'),
+                      style: AppType.style(FontSize.s9, w: FontWeight.w600, color: _accentText),
+                    ),
                   ],
                   SizedBox(height: 1.8.h),
                   Row(
@@ -158,13 +192,13 @@ class VendorCouponCard extends StatelessWidget {
                                 border: Border.all(color: _border),
                               ),
                               child: Text(
-                                'Used',
+                                (coupon?.isUsed ?? false) ? 'Used' : 'Unavailable',
                                 style: AppType.style(FontSize.s9, w: FontWeight.w700, color: _inkSoft),
                               ),
                             )
                           else
                             GestureDetector(
-                              onTap: onApply,
+                              onTap: () => _apply(context),
                               child: Container(
                                 padding: EdgeInsets.symmetric(horizontal: 3.6.w, vertical: 0.9.h),
                                 decoration: BoxDecoration(
