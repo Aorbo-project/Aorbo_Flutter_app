@@ -126,6 +126,12 @@ class BookingHistoryData with _$BookingHistoryData {
     // ─── NEW FINANCE SNAPSHOT FIELDS ─────────────────────────────────────────
     @JsonKey(name: 'finance_snapshot') String? financeSnapshot,
 
+    // The booking's cancellation table, worked out by the SERVER
+    // (GET /api/v1/bookings → cancellation_table: heading, rows[{when, deduction}],
+    // notes[]). The phone-built invoice prints it as-is; the app never computes
+    // the amounts itself (owner, 11 Nov 2026: the server is the source of truth).
+    @JsonKey(name: 'cancellation_table') Map<String, dynamic>? cancellationTable,
+
     @JsonKey(name: 'total_basic_cost', fromJson: _toString)
     String? totalBasicCost,
 

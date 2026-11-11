@@ -521,7 +521,14 @@ mixin _$BookingHistoryData {
   String? get remainingAmount =>
       throw _privateConstructorUsedError; // ─── NEW FINANCE SNAPSHOT FIELDS ─────────────────────────────────────────
   @JsonKey(name: 'finance_snapshot')
-  String? get financeSnapshot => throw _privateConstructorUsedError;
+  String? get financeSnapshot =>
+      throw _privateConstructorUsedError; // The booking's cancellation table, worked out by the SERVER
+// (GET /api/v1/bookings → cancellation_table: heading, rows[{when, deduction}],
+// notes[]). The phone-built invoice prints it as-is; the app never computes
+// the amounts itself (owner, 11 Nov 2026: the server is the source of truth).
+  @JsonKey(name: 'cancellation_table')
+  Map<String, dynamic>? get cancellationTable =>
+      throw _privateConstructorUsedError;
   @JsonKey(name: 'total_basic_cost', fromJson: _toString)
   String? get totalBasicCost => throw _privateConstructorUsedError;
   @JsonKey(name: 'vendor_discount', fromJson: _toString)
@@ -600,6 +607,8 @@ abstract class $BookingHistoryDataCopyWith<$Res> {
       @JsonKey(name: 'remaining_amount', fromJson: _toString)
       String? remainingAmount,
       @JsonKey(name: 'finance_snapshot') String? financeSnapshot,
+      @JsonKey(name: 'cancellation_table')
+      Map<String, dynamic>? cancellationTable,
       @JsonKey(name: 'total_basic_cost', fromJson: _toString)
       String? totalBasicCost,
       @JsonKey(name: 'vendor_discount', fromJson: _toString)
@@ -671,6 +680,7 @@ class _$BookingHistoryDataCopyWithImpl<$Res, $Val extends BookingHistoryData>
     Object? advanceAmount = freezed,
     Object? remainingAmount = freezed,
     Object? financeSnapshot = freezed,
+    Object? cancellationTable = freezed,
     Object? totalBasicCost = freezed,
     Object? vendorDiscount = freezed,
     Object? couponDiscount = freezed,
@@ -802,6 +812,10 @@ class _$BookingHistoryDataCopyWithImpl<$Res, $Val extends BookingHistoryData>
           ? _value.financeSnapshot
           : financeSnapshot // ignore: cast_nullable_to_non_nullable
               as String?,
+      cancellationTable: freezed == cancellationTable
+          ? _value.cancellationTable
+          : cancellationTable // ignore: cast_nullable_to_non_nullable
+              as Map<String, dynamic>?,
       totalBasicCost: freezed == totalBasicCost
           ? _value.totalBasicCost
           : totalBasicCost // ignore: cast_nullable_to_non_nullable
@@ -939,6 +953,8 @@ abstract class _$$BookingHistoryDataImplCopyWith<$Res>
       @JsonKey(name: 'remaining_amount', fromJson: _toString)
       String? remainingAmount,
       @JsonKey(name: 'finance_snapshot') String? financeSnapshot,
+      @JsonKey(name: 'cancellation_table')
+      Map<String, dynamic>? cancellationTable,
       @JsonKey(name: 'total_basic_cost', fromJson: _toString)
       String? totalBasicCost,
       @JsonKey(name: 'vendor_discount', fromJson: _toString)
@@ -1010,6 +1026,7 @@ class __$$BookingHistoryDataImplCopyWithImpl<$Res>
     Object? advanceAmount = freezed,
     Object? remainingAmount = freezed,
     Object? financeSnapshot = freezed,
+    Object? cancellationTable = freezed,
     Object? totalBasicCost = freezed,
     Object? vendorDiscount = freezed,
     Object? couponDiscount = freezed,
@@ -1141,6 +1158,10 @@ class __$$BookingHistoryDataImplCopyWithImpl<$Res>
           ? _value.financeSnapshot
           : financeSnapshot // ignore: cast_nullable_to_non_nullable
               as String?,
+      cancellationTable: freezed == cancellationTable
+          ? _value._cancellationTable
+          : cancellationTable // ignore: cast_nullable_to_non_nullable
+              as Map<String, dynamic>?,
       totalBasicCost: freezed == totalBasicCost
           ? _value.totalBasicCost
           : totalBasicCost // ignore: cast_nullable_to_non_nullable
@@ -1248,6 +1269,8 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
       @JsonKey(name: 'remaining_amount', fromJson: _toString)
       this.remainingAmount,
       @JsonKey(name: 'finance_snapshot') this.financeSnapshot,
+      @JsonKey(name: 'cancellation_table')
+      final Map<String, dynamic>? cancellationTable,
       @JsonKey(name: 'total_basic_cost', fromJson: _toString)
       this.totalBasicCost,
       @JsonKey(name: 'vendor_discount', fromJson: _toString)
@@ -1272,7 +1295,8 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
       this.ratingValue,
       @JsonKey(name: 'can_cancel', fromJson: _parseBoolNullable) this.canCancel,
       @JsonKey(name: 'cancellation_message') this.cancellationMessage})
-      : _travelers = travelers;
+      : _cancellationTable = cancellationTable,
+        _travelers = travelers;
 
   factory _$BookingHistoryDataImpl.fromJson(Map<String, dynamic> json) =>
       _$$BookingHistoryDataImplFromJson(json);
@@ -1358,6 +1382,26 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
   @override
   @JsonKey(name: 'finance_snapshot')
   final String? financeSnapshot;
+// The booking's cancellation table, worked out by the SERVER
+// (GET /api/v1/bookings → cancellation_table: heading, rows[{when, deduction}],
+// notes[]). The phone-built invoice prints it as-is; the app never computes
+// the amounts itself (owner, 11 Nov 2026: the server is the source of truth).
+  final Map<String, dynamic>? _cancellationTable;
+// The booking's cancellation table, worked out by the SERVER
+// (GET /api/v1/bookings → cancellation_table: heading, rows[{when, deduction}],
+// notes[]). The phone-built invoice prints it as-is; the app never computes
+// the amounts itself (owner, 11 Nov 2026: the server is the source of truth).
+  @override
+  @JsonKey(name: 'cancellation_table')
+  Map<String, dynamic>? get cancellationTable {
+    final value = _cancellationTable;
+    if (value == null) return null;
+    if (_cancellationTable is EqualUnmodifiableMapView)
+      return _cancellationTable;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableMapView(value);
+  }
+
   @override
   @JsonKey(name: 'total_basic_cost', fromJson: _toString)
   final String? totalBasicCost;
@@ -1418,7 +1462,7 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
 
   @override
   String toString() {
-    return 'BookingHistoryData(id: $id, customerId: $customerId, trekId: $trekId, vendorId: $vendorId, vendorIdAlt: $vendorIdAlt, batchId: $batchId, couponId: $couponId, totalTravelers: $totalTravelers, totalAmount: $totalAmount, platformFees: $platformFees, gstAmount: $gstAmount, discountAmount: $discountAmount, finalAmount: $finalAmount, paymentStatus: $paymentStatus, status: $status, bookingDate: $bookingDate, specialRequests: $specialRequests, bookingSource: $bookingSource, primaryContactTravelerId: $primaryContactTravelerId, createdAt: $createdAt, updatedAt: $updatedAt, userId: $userId, cityId: $cityId, sourceCityName: $sourceCityName, cancellationPolicyType: $cancellationPolicyType, advanceAmount: $advanceAmount, remainingAmount: $remainingAmount, financeSnapshot: $financeSnapshot, totalBasicCost: $totalBasicCost, vendorDiscount: $vendorDiscount, couponDiscount: $couponDiscount, insuranceAmount: $insuranceAmount, freeCancellationAmount: $freeCancellationAmount, paymentMethod: $paymentMethod, razorpayPaymentId: $razorpayPaymentId, razorpayOrderId: $razorpayOrderId, trek: $trek, batch: $batch, travelers: $travelers, bookingNumber: $bookingNumber, trekStatus: $trekStatus, ratingGiven: $ratingGiven, ratingValue: $ratingValue, canCancel: $canCancel, cancellationMessage: $cancellationMessage)';
+    return 'BookingHistoryData(id: $id, customerId: $customerId, trekId: $trekId, vendorId: $vendorId, vendorIdAlt: $vendorIdAlt, batchId: $batchId, couponId: $couponId, totalTravelers: $totalTravelers, totalAmount: $totalAmount, platformFees: $platformFees, gstAmount: $gstAmount, discountAmount: $discountAmount, finalAmount: $finalAmount, paymentStatus: $paymentStatus, status: $status, bookingDate: $bookingDate, specialRequests: $specialRequests, bookingSource: $bookingSource, primaryContactTravelerId: $primaryContactTravelerId, createdAt: $createdAt, updatedAt: $updatedAt, userId: $userId, cityId: $cityId, sourceCityName: $sourceCityName, cancellationPolicyType: $cancellationPolicyType, advanceAmount: $advanceAmount, remainingAmount: $remainingAmount, financeSnapshot: $financeSnapshot, cancellationTable: $cancellationTable, totalBasicCost: $totalBasicCost, vendorDiscount: $vendorDiscount, couponDiscount: $couponDiscount, insuranceAmount: $insuranceAmount, freeCancellationAmount: $freeCancellationAmount, paymentMethod: $paymentMethod, razorpayPaymentId: $razorpayPaymentId, razorpayOrderId: $razorpayOrderId, trek: $trek, batch: $batch, travelers: $travelers, bookingNumber: $bookingNumber, trekStatus: $trekStatus, ratingGiven: $ratingGiven, ratingValue: $ratingValue, canCancel: $canCancel, cancellationMessage: $cancellationMessage)';
   }
 
   @override
@@ -1476,6 +1520,8 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
                 other.remainingAmount == remainingAmount) &&
             (identical(other.financeSnapshot, financeSnapshot) ||
                 other.financeSnapshot == financeSnapshot) &&
+            const DeepCollectionEquality()
+                .equals(other._cancellationTable, _cancellationTable) &&
             (identical(other.totalBasicCost, totalBasicCost) ||
                 other.totalBasicCost == totalBasicCost) &&
             (identical(other.vendorDiscount, vendorDiscount) ||
@@ -1506,8 +1552,7 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
                 other.ratingValue == ratingValue) &&
             (identical(other.canCancel, canCancel) ||
                 other.canCancel == canCancel) &&
-            (identical(other.cancellationMessage, cancellationMessage) ||
-                other.cancellationMessage == cancellationMessage));
+            (identical(other.cancellationMessage, cancellationMessage) || other.cancellationMessage == cancellationMessage));
   }
 
   @JsonKey(ignore: true)
@@ -1542,6 +1587,7 @@ class _$BookingHistoryDataImpl implements _BookingHistoryData {
         advanceAmount,
         remainingAmount,
         financeSnapshot,
+        const DeepCollectionEquality().hash(_cancellationTable),
         totalBasicCost,
         vendorDiscount,
         couponDiscount,
@@ -1614,6 +1660,8 @@ abstract class _BookingHistoryData implements BookingHistoryData {
       @JsonKey(name: 'remaining_amount', fromJson: _toString)
       final String? remainingAmount,
       @JsonKey(name: 'finance_snapshot') final String? financeSnapshot,
+      @JsonKey(name: 'cancellation_table')
+      final Map<String, dynamic>? cancellationTable,
       @JsonKey(name: 'total_basic_cost', fromJson: _toString)
       final String? totalBasicCost,
       @JsonKey(name: 'vendor_discount', fromJson: _toString)
@@ -1724,6 +1772,12 @@ abstract class _BookingHistoryData implements BookingHistoryData {
   @override // ─── NEW FINANCE SNAPSHOT FIELDS ─────────────────────────────────────────
   @JsonKey(name: 'finance_snapshot')
   String? get financeSnapshot;
+  @override // The booking's cancellation table, worked out by the SERVER
+// (GET /api/v1/bookings → cancellation_table: heading, rows[{when, deduction}],
+// notes[]). The phone-built invoice prints it as-is; the app never computes
+// the amounts itself (owner, 11 Nov 2026: the server is the source of truth).
+  @JsonKey(name: 'cancellation_table')
+  Map<String, dynamic>? get cancellationTable;
   @override
   @JsonKey(name: 'total_basic_cost', fromJson: _toString)
   String? get totalBasicCost;

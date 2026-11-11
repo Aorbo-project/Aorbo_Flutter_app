@@ -33,6 +33,33 @@ class _InvoiceBuildArgs {
   });
 }
 
+/// The booking's cancellation table as the SERVER sent it (GET /api/v1/bookings
+/// → cancellation_table). Read only — the app never works the amounts out.
+class _ServerCancellationTable {
+  final String heading;
+  final List<({String when, String deduction})> rows;
+  final List<String> notes;
+
+  const _ServerCancellationTable(this.heading, this.rows, this.notes);
+
+  factory _ServerCancellationTable.from(Map<String, dynamic>? raw) {
+    final rows = <({String when, String deduction})>[];
+    final rawRows = raw?['rows'];
+    if (rawRows is List) {
+      for (final r in rawRows) {
+        if (r is Map && r['when'] != null && r['deduction'] != null) {
+          rows.add((when: r['when'].toString(), deduction: r['deduction'].toString()));
+        }
+      }
+    }
+    final rawNotes = raw?['notes'];
+    final notes = rawNotes is List
+        ? rawNotes.where((n) => n != null && n.toString().isNotEmpty).map((n) => n.toString()).toList()
+        : <String>[];
+    return _ServerCancellationTable(raw?['heading']?.toString() ?? '', rows, notes);
+  }
+}
+
 class InvoicePdfService {
   // ─────────────────────────────────────────────
   //  COLORS
@@ -444,15 +471,9 @@ class InvoicePdfService {
     required List<Map<String, String>> travelers,
   }) {
     final snap = financeSnapshot;
-    final isFlexible = policyType.toLowerCase() == 'flexible';
-    final isFullPaid = paymentStatus == 'full_paid';
-    final isFlexibleFull = isFlexible && isFullPaid;
-    final isFlexiblePartial = isFlexible && !isFullPaid;
-
-    final finalAmount =
-        snap?['final_amount']?.toString() ?? booking.finalAmount ?? '0';
-    final advanceAmount =
-        snap?['advance_amount']?.toString() ?? booking.advanceAmount ?? '999';
+    // Cancellation table: the server's rows, printed as-is (GET /api/v1/bookings
+    // cancellation_table). The app works no amounts out (11 Nov 2026).
+    final cancellation = _ServerCancellationTable.from(booking.cancellationTable);
 
     return pw.Container(
       decoration: pw.BoxDecoration(
@@ -840,78 +861,13 @@ class InvoicePdfService {
           ),
           pw.SizedBox(height: 8),
           _cancellationPolicyTable(
-            policyType: policyType,
-            paymentStatus: paymentStatus,
-            departureDateTime: departureDateTime,
-            hasStartTime: hasStartTime,
-            finalAmount: finalAmount,
-            advanceAmount: advanceAmount,
+            cancellation,
             font: font,
             fontSemi: fontSemi,
             fontBold: fontBold,
           ),
           pw.SizedBox(height: 12),
-
-          if (isFlexibleFull) ...[
-            _policyNote(
-              'The advance secures your slot and, along with any cancellation charge, is non-refundable. GST is reversed/refunded if cancelled before the trek departs.',
-              font,
-            ),
-            _policyNote(
-              'The remaining balance will be refunded, subject to cancellation terms. Refunds usually take 5 to 7 working days.',
-              font,
-            ),
-            _policyNote(
-              'The cancellation policy will be solely determined and approved by the respective vendor.',
-              font,
-            ),
-            _policyNote(
-              'For group bookings, individual slots may be cancelled.',
-              font,
-            ),
-          ] else if (isFlexiblePartial) ...[
-            _policyNote(
-              'The advance payment is non-refundable. GST is reversed/refunded if cancelled before the trek departs.',
-              font,
-            ),
-            _policyNote(
-              'Since only the advance was paid, no additional cancellation charges apply.',
-              font,
-            ),
-            _policyNote(
-              'The remaining balance is not applicable as the booking is cancelled.',
-              font,
-            ),
-            _policyNote(
-              'The cancellation policy will be solely determined and approved by the respective vendor.',
-              font,
-            ),
-            _policyNote(
-              'For group bookings, individual slots may be cancelled.',
-              font,
-            ),
-          ] else ...[
-            _policyNote(
-              'Cancellation fees are applied on a per-slot basis. The cancellation charge mentioned above is calculated based on a total fare of ₹$finalAmount.',
-              font,
-            ),
-            _policyNote(
-              'The cancellation charge itself is non-refundable; GST is reversed/refunded if cancelled before the trek departs.',
-              font,
-            ),
-            _policyNote(
-              'Refunds usually take 5 to 7 working days.',
-              font,
-            ),
-            _policyNote(
-              'The cancellation policy will be solely determined and approved by the respective vendor.',
-              font,
-            ),
-            _policyNote(
-              'For group bookings, individual slots may be cancelled.',
-              font,
-            ),
-          ],
+          for (final note in cancellation.notes) _policyNote(note, font),
           pw.SizedBox(height: 14),
           if (startTimeStr.isNotEmpty)
             pw.Center(
@@ -1048,151 +1004,54 @@ class InvoicePdfService {
   }
 
   // ─────────────────────────────────────────────
-  //  CANCELLATION POLICY TABLE (three variants)
+  //  CANCELLATION POLICY TABLE — the server's rows, printed as-is
   // ─────────────────────────────────────────────
-  static pw.Widget _cancellationPolicyTable({
-    required String policyType,
-    required String paymentStatus,
-    required DateTime departureDateTime,
-    required bool hasStartTime,
-    required String finalAmount,
-    required String advanceAmount,
+  // The server works the table out (Backend services/invoice/invoiceModel
+  // cancellationTableFor, sent as cancellation_table on GET /api/v1/bookings) —
+  // the same rows as the server-issued document. The app adds no amounts and no
+  // percentages of its own (owner, 11 Nov 2026: the server is the source of truth).
+  static pw.Widget _cancellationPolicyTable(
+    _ServerCancellationTable table, {
     required pw.Font font,
     required pw.Font fontSemi,
     required pw.Font fontBold,
   }) {
-    final isFlexible = policyType.toLowerCase() == 'flexible';
-    final isFullPaid = paymentStatus == 'full_paid';
-
-    final fmt = hasStartTime
-        ? DateFormat('EEE, dd MMM yyyy, hh:mm a')
-        : DateFormat('EEE, dd MMM yyyy');
-
-    // ── STANDARD POLICY ──
-    if (!isFlexible) {
-      final fare = double.tryParse(finalAmount) ?? 0;
-      final r1 = (fare * 0.20).round();
-      final r2 = (fare * 0.50).round();
-      final r3 = (fare * 0.70).round();
-      final r4 = fare.round();
-
-      final cutoff72h = departureDateTime.subtract(const Duration(hours: 72));
-      final cutoff48h = departureDateTime.subtract(const Duration(hours: 48));
-      final cutoff24h = departureDateTime.subtract(const Duration(hours: 24));
-
-      return pw.Table(
-        columnWidths: const {
-          0: pw.FlexColumnWidth(5),
-          1: pw.FlexColumnWidth(3),
-        },
-        children: [
-          pw.TableRow(
-            decoration: const pw.BoxDecoration(
-              border: pw.Border(bottom: pw.BorderSide(color: _ink, width: 0.5)),
-            ),
-            children: [
-              _policyHead('Before departure', fontBold),
-              _policyHead('Deduction', fontBold),
-            ],
-          ),
-          _policyRow(
-            'Cancelled before ${fmt.format(cutoff72h)}',
-            '20% (₹$r1)',
-            font,
-            fontSemi,
-          ),
-          _policyRow(
-            'From ${fmt.format(cutoff72h)} to ${fmt.format(cutoff48h)}',
-            '50% (₹$r2)',
-            font,
-            fontSemi,
-          ),
-          _policyRow(
-            'From ${fmt.format(cutoff48h)} to ${fmt.format(cutoff24h)}',
-            '70% (₹$r3)',
-            font,
-            fontSemi,
-          ),
-          _policyRow(
-            'No refund after ${fmt.format(cutoff24h)}',
-            '100% (₹$r4)',
-            font,
-            fontSemi,
-          ),
-        ],
+    if (table.rows.isEmpty) {
+      // An older cached booking without the server's table: no amounts.
+      return pw.Text(
+        'Cancellation charges and refunds follow the Aorbo Treks Refund & Cancellation Policy: aorbotreks.com/refund-policy',
+        style: pw.TextStyle(font: font, fontSize: 8, color: _ink),
       );
     }
-
-    // ── FLEXIBLE + FULL PAYMENT ──
-    if (isFlexible && isFullPaid) {
-      final advance = double.tryParse(advanceAmount) ?? 999;
-      final fare = double.tryParse(finalAmount) ?? 0;
-      final refund = (fare - advance).round();
-      final cutoff24h = departureDateTime.subtract(const Duration(hours: 24));
-
-      return pw.Table(
-        columnWidths: const {
-          0: pw.FlexColumnWidth(5),
-          1: pw.FlexColumnWidth(4),
-        },
-        children: [
-          pw.TableRow(
-            decoration: const pw.BoxDecoration(
-              border: pw.Border(bottom: pw.BorderSide(color: _ink, width: 0.5)),
-            ),
-            children: [
-              _policyHead('Before departure', fontBold),
-              _policyHead('Deduction', fontBold),
-            ],
-          ),
-          _policyRow(
-            'Advance Payment (₹${advance.toInt()})',
-            'Non-refundable',
-            font,
-            fontSemi,
-          ),
-          _policyRow(
-            'Cancelled before ${fmt.format(cutoff24h)}',
-            '₹${advance.toInt()} forfeited, ₹$refund refunded',
-            font,
-            fontSemi,
-          ),
-          _policyRow(
-            'Cancelled after ${fmt.format(cutoff24h)}',
-            '100% (₹${fare.round()})',
-            font,
-            fontSemi,
-          ),
-        ],
-      );
-    }
-
-    // ── FLEXIBLE + PARTIAL PAYMENT ──
-    final advance = double.tryParse(advanceAmount) ?? 999;
-
-    return pw.Table(
-      columnWidths: const {0: pw.FlexColumnWidth(5), 1: pw.FlexColumnWidth(4)},
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        pw.TableRow(
-          decoration: const pw.BoxDecoration(
-            border: pw.Border(bottom: pw.BorderSide(color: _ink, width: 0.5)),
+        if (table.heading.isNotEmpty)
+          pw.Padding(
+            padding: const pw.EdgeInsets.only(bottom: 4),
+            child: pw.Text(
+              table.heading,
+              style: pw.TextStyle(font: fontSemi, fontSize: 8.5, color: _ink),
+            ),
           ),
+        pw.Table(
+          columnWidths: const {
+            0: pw.FlexColumnWidth(5),
+            1: pw.FlexColumnWidth(4),
+          },
           children: [
-            _policyHead('Before departure', fontBold),
-            _policyHead('Deduction', fontBold),
+            pw.TableRow(
+              decoration: const pw.BoxDecoration(
+                border: pw.Border(bottom: pw.BorderSide(color: _ink, width: 0.5)),
+              ),
+              children: [
+                _policyHead('When you cancel', fontBold),
+                _policyHead('Deduction', fontBold),
+              ],
+            ),
+            for (final row in table.rows)
+              _policyRow(row.when, row.deduction, font, fontSemi),
           ],
-        ),
-        _policyRow(
-          'Advance Payment (₹${advance.toInt()})',
-          'Non-refundable',
-          font,
-          fontSemi,
-        ),
-        _policyRow(
-          'Cancelled at any time',
-          '₹${advance.toInt()} forfeited, no balance due',
-          font,
-          fontSemi,
         ),
       ],
     );
