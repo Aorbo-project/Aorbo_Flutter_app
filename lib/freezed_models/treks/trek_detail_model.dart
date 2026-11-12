@@ -242,10 +242,32 @@ class TrekStages with _$TrekStages {
     @JsonKey(name: 'batch_id') int? batchId,
     @JsonKey(name: 'city_id') int? cityId,
     City? city,
+    // Trek Route card tags, worked out by the server (Backend utils/returnJourney.js
+    // routeTags; owner, 12 Nov 2026): "Boarding", "Meeting point", "Return starts",
+    // "Arrival · back home". The app only shows them.
+    @JsonKey(name: 'route_role', fromJson: _routeTextFromJson) String? routeRole,
+    @JsonKey(name: 'route_label', fromJson: _routeTextFromJson) String? routeLabel,
+    // The travel line after this stop ("≈ 11 h overnight bus"), or null.
+    @JsonKey(name: 'travel_after', fromJson: _travelLabelFromJson) String? travelAfterLabel,
   }) = _TrekStages;
 
   factory TrekStages.fromJson(Map<String, dynamic> json) =>
       _$TrekStagesFromJson(json);
+}
+
+/// A route tag as sent, or null for anything that is not a non-empty string
+/// (an older server sends nothing; bad data must never break the trek page).
+String? _routeTextFromJson(Object? value) {
+  if (value is! String) return null;
+  final text = value.trim();
+  return text.isEmpty ? null : text;
+}
+
+/// The travel line's label from the server's `{ minutes, label }` (or the plain label
+/// this model writes back when a trek is saved on the phone), or null.
+String? _travelLabelFromJson(Object? value) {
+  if (value is Map) return _routeTextFromJson(value['label']);
+  return _routeTextFromJson(value);
 }
 
 @freezed

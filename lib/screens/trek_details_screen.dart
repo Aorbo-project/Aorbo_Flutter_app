@@ -1,3 +1,4 @@
+import 'package:arobo_app/utils/route_stop_tags.dart';
 import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/controller/trek_controller.dart';
 import 'package:arobo_app/controller/user_controller.dart';
@@ -2191,6 +2192,13 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
     String? firstRouteName,
   }) {
     final fmt = _formatDateTime(stop.dateTime);
+    // "Thu 26/11": the day name helps on overnight journeys (owner, 12 Nov 2026).
+    final dayDate = routeStopDate(stop.dateTime);
+    // The server's tag and travel line (utils/route_stop_tags.dart); the line beside
+    // the stop grows with them so the route stays one unbroken line.
+    final hasTag = (stop.routeLabel ?? '').trim().isNotEmpty;
+    final hasTravel = !isLast && (stop.travelAfterLabel ?? '').trim().isNotEmpty;
+    final lineHeight = 48.0 + (hasTag ? 22 : 0) + (hasTravel ? 26 : 0);
     final label = isLast && firstRouteName != null
         ? firstRouteName
         : (stop.isBoardingPoint == true
@@ -2213,7 +2221,7 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
                     style: AppType.style(9.0.sp, color: _C.inkMid),
                   ),
                   Text(
-                    fmt['date'] ?? '',
+                    dayDate.isNotEmpty ? dayDate : (fmt['date'] ?? ''),
                     textScaler: const TextScaler.linear(1.0),
                     style: AppType.style(8.0.sp, color: _C.inkLight),
                   ),
@@ -2239,7 +2247,7 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
                 if (!isLast)
                   Container(
                     width: 2,
-                    height: 48,
+                    height: lineHeight,
                     decoration: BoxDecoration(
                       color: _C.routeLine,
                       borderRadius: BorderRadius.circular(2),
@@ -2288,6 +2296,13 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
                           ),
                         ),
                     ],
+                  ),
+                  RouteStopExtras(
+                    role: stop.routeRole,
+                    label: stop.routeLabel,
+                    travelLabel: stop.travelAfterLabel,
+                    isLast: isLast,
+                    fontSize: 10.0.sp,
                   ),
                   SizedBox(height: isLast ? 0 : 1.h),
                 ],

@@ -252,6 +252,9 @@ _$TrekStagesImpl _$$TrekStagesImplFromJson(Map<String, dynamic> json) =>
       city: json['city'] == null
           ? null
           : City.fromJson(json['city'] as Map<String, dynamic>),
+      routeRole: _routeTextFromJson(json['route_role']),
+      routeLabel: _routeTextFromJson(json['route_label']),
+      travelAfterLabel: _travelLabelFromJson(json['travel_after']),
     );
 
 Map<String, dynamic> _$$TrekStagesImplToJson(_$TrekStagesImpl instance) =>
@@ -265,6 +268,9 @@ Map<String, dynamic> _$$TrekStagesImplToJson(_$TrekStagesImpl instance) =>
       'batch_id': instance.batchId,
       'city_id': instance.cityId,
       'city': instance.city,
+      'route_role': instance.routeRole,
+      'route_label': instance.routeLabel,
+      'travel_after': instance.travelAfterLabel,
     };
 
 _$CityImpl _$$CityImplFromJson(Map<String, dynamic> json) => _$CityImpl(
