@@ -1927,19 +1927,6 @@ class _TravellerInformationScreenState extends State<TravellerInformationScreen>
       return dateString;
     }
   }
-
-  String _calculateEndDate(String? startDate, int? durationDays) {
-    if (startDate == null || startDate.isEmpty || durationDays == null) {
-      return '-';
-    }
-    try {
-      final start = DateTime.parse(startDate);
-      final end = start.add(Duration(days: (durationDays - 1).clamp(0, 365)));
-      return '${end.day.toString().padLeft(2, '0')}-${end.month.toString().padLeft(2, '0')}-${end.year}';
-    } catch (_) {
-      return '-';
-    }
-  }
 }
 
 // ─────────────────────────────────────────────
