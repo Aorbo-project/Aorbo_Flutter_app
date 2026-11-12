@@ -7,20 +7,22 @@ import 'package:intl/intl.dart';
 /// (Backend utils/returnJourney.js routeTags); the app only shows them, and shows
 /// nothing when the server sends nothing (older server, bad data).
 
-/// Tag colours per server role: (background, text).
+/// Tag colours per server role: (background, text). Brand colours only, in soft tints
+/// (owner, 13 Nov 2026): forest green for the ends of the journey, yellow for the
+/// shared route's two key stops.
 (Color, Color) routeTagColors(String? role) {
   switch (role) {
     case 'boarding':
-      return (const Color(0xFFDCFCE7), const Color(0xFF166534));
+      return (const Color(0xFFE8F3ED), const Color(0xFF2D6A4F)); // forest soft
     case 'meeting_point':
     case 'meeting_and_return':
-      return (const Color(0xFFE0F2FE), const Color(0xFF075985));
+      return (const Color(0xFFFFFBD6), const Color(0xFF5C5200)); // yellow soft
     case 'return_start':
-      return (const Color(0xFFF3E8FF), const Color(0xFF6B21A8));
+      return (const Color(0xFFFFF4A3), const Color(0xFF5C5200)); // yellow
     case 'arrival':
-      return (const Color(0xFFFEE2E2), const Color(0xFF991B1B));
+      return (const Color(0xFFD3E6DA), const Color(0xFF1B4332)); // forest deep
     default:
-      return (const Color(0xFFF1F5F9), const Color(0xFF334155));
+      return (const Color(0xFFF4F7F5), const Color(0xFF374151));
   }
 }
 

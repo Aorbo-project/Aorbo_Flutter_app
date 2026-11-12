@@ -16,9 +16,7 @@ import '../freezed_models/treks/trek_detail_model.dart';
 import '../freezed_models/treks/treks_model_data.dart';
 import '../utils/common_colors.dart';
 import '../utils/common_images.dart';
-import '../utils/common_images_card.dart';
 import '../utils/common_trek_details_bar.dart';
-import '../utils/common_btn.dart';
 import '../widgets/cancellation_policy_widget.dart';
 import '../utils/ist_date_utils.dart';
 import '../utils/custom_snackbar.dart';
@@ -30,8 +28,8 @@ import '../repository/repository.dart';
 import '../repository/network_url.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
-import 'package:arobo_app/widgets/tap_target.dart';
 import 'package:arobo_app/utils/trek_discount.dart';
+import '../widgets/trek_page/trek_page_parts.dart';
 
 // One entry per distinct boarding CITY (not per stage — two boarding stages
 // in the same city are still a single choice for the customer). Shared by
@@ -128,6 +126,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
 
   final ValueNotifier<int> _selectedTabIndex = ValueNotifier<int>(0);
   bool _showFullItinerary = false;
+  int _itineraryDay = 0;
   bool _showFullFeatures = false;
   bool _showFullActivities = false;
   bool _showFullReviews = false;
@@ -373,7 +372,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _C.bg,
+      backgroundColor: TrekPageColors.bg,
       body: NotificationListener<ScrollNotification>(
         onNotification: (notification) {
           if (notification is UserScrollNotification) {
@@ -385,39 +384,31 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
           controller: _scrollController,
           physics: const ClampingScrollPhysics(),
           slivers: [
-            _buildSliverAppBar(),
-            if (_trekC.trekDetailData.value.images != null &&
-                _trekC.trekDetailData.value.images!.isNotEmpty)
-              SliverToBoxAdapter(
-                child: Container(
-                  width: 100.w,
-                  margin: EdgeInsets.only(top: 1.h, left: 4.w, bottom: 1.h),
-                  child: GestureDetector(
-                    onTap: () => _showImageViewer(
-                      context,
-                      _trekC.trekDetailData.value.images
-                              ?.map((e) => e.url ?? '')
-                              .toList() ??
-                          [],
-                      0,
-                    ),
-                    child: CommonImageCard(
-                      images:
-                          _trekC.trekDetailData.value.images
-                              ?.map((e) => e.url ?? '')
-                              .toList() ??
-                          [],
+            _buildHeroSliver(),
+            // The floating key facts card, lifted onto the photo (redesign, 13 Nov 2026).
+            SliverToBoxAdapter(
+              child: Transform.translate(
+                offset: const Offset(0, -30),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Obx(
+                    () => TrekKeyFactsCard(
+                      facts: trekKeyFacts(
+                        _trekC.trekDetailData.value,
+                        cityId: _trekC.selectedBoardingCityId.value,
+                      ),
                     ),
                   ),
                 ),
               ),
+            ),
             SliverPersistentHeader(
               pinned: true,
               delegate: _StickyTrekDetailsBarDelegate(
                 child: Container(
                   key: _tabBarKey,
                   width: 100.w,
-                  color: _C.cardBg,
+                  color: TrekPageColors.bg,
                   child: Container(
                     margin: EdgeInsets.symmetric(horizontal: 2.w),
                     child: Center(
@@ -465,121 +456,95 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
     );
   }
 
-  Widget _buildSliverAppBar() {
+  Widget _buildHeroSliver() {
     final trek = widget.trek;
+    final detail = _trekC.trekDetailData.value;
 
-    // CHANGED: destination name replaces the trek name in the app bar.
-    // TrekData.destination is a plain String, and the detail response
-    // exposes the destination as destinationData.name — prefer whichever
-    // is set, falling back to the trek name so the bar is never blank.
-    final String detailDestination =
-        _trekC.trekDetailData.value.destinationData?.name ?? '';
+    // The destination is the heading (owner rule): the detail's destinationData.name,
+    // else the list's destination, else the trek name so it is never blank.
+    final String detailDestination = detail.destinationData?.name ?? '';
     final String listDestination = trek?.destination ?? '';
     final String destinationName = detailDestination.isNotEmpty
         ? detailDestination
         : listDestination.isNotEmpty
         ? listDestination
         : (trek?.name ?? '-');
+    final String organiser =
+        trek?.companyName ?? trek?.businessName ?? trek?.vendor ?? detail.vendor?.businessName ?? '';
+    final String? logo = (trek?.vendorLogo?.isNotEmpty == true) ? trek!.vendorLogo : detail.vendor?.businessLogo;
+    final images = (detail.images ?? []).map((e) => e.url ?? '').where((u) => u.isNotEmpty).toList();
+    final tags = (detail.activities ?? []).map((a) => (a.name ?? '').trim()).where((n) => n.isNotEmpty).toList();
+    final double top = MediaQuery.of(context).padding.top;
+    const double bar = 64;
+    final double expanded = 46.h;
 
     return SliverAppBar(
-      backgroundColor: _C.cardBg,
-      elevation: 0,
       pinned: true,
+      expandedHeight: expanded,
+      toolbarHeight: bar,
+      backgroundColor: TrekPageColors.card,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
       automaticallyImplyLeading: false,
-      titleSpacing: 0,
-      toolbarHeight: 8.h,
-      title: Padding(
-        padding: EdgeInsets.only(left: 1.w, right: 4.w),
-        child: Row(
-          children: [
-            TapTarget(
-              label: 'Back',
-              onTap: () => Get.back(),
-              child: Icon(Icons.arrow_back_rounded, color: _C.ink, size: 6.w),
-            ),
-            Container(
-              width: 7.w,
-              height: 7.w,
-              decoration: const BoxDecoration(
-                color: _C.tealSoft,
-                shape: BoxShape.circle,
+      flexibleSpace: LayoutBuilder(
+        builder: (ctx, c) {
+          final range = (expanded - bar - top).clamp(1.0, double.infinity);
+          final t = ((c.maxHeight - bar - top) / range).clamp(0.0, 1.0);
+          final collapsed = (1 - t * 4).clamp(0.0, 1.0);
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              TrekHeroPhotos(
+                imageUrls: images,
+                destination: destinationName,
+                organiser: organiser.isEmpty ? '-' : organiser,
+                organiserLogo: logo,
+                tags: tags,
+                onImageTap: (i) => _showImageViewer(context, images, i),
               ),
-              clipBehavior: Clip.antiAlias,
-              child: trek?.vendorLogo?.isNotEmpty == true
-                  ? CustomNetworkImage(
-                      imageUrl: trek?.vendorLogo ?? "",
-                      fit: BoxFit.cover,
-                      width: 7.w,
-                      height: 7.w,
-                    )
-                  : Center(
-                      child: Text(
-                        (trek?.companyName?.isNotEmpty == true
-                                ? trek!.companyName![0]
-                                : '?')
-                            .toUpperCase(),
-                        style: const TextStyle(
-                          color: _C.teal,
-                          fontWeight: FontWeight.w800,
-                          fontFamily: 'Poppins',
-                        ),
+              // Collapsed: a plain white bar with the destination.
+              IgnorePointer(
+                ignoring: collapsed < 0.5,
+                child: Opacity(
+                  opacity: collapsed,
+                  child: Container(
+                    color: TrekPageColors.card,
+                    alignment: Alignment.bottomCenter,
+                    padding: const EdgeInsets.only(left: 72, right: 120, bottom: 20),
+                    child: Text(
+                      destinationName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textScaler: const TextScaler.linear(1.0),
+                      style: AppType.style(13.0.sp, w: FontWeight.w700, color: TrekPageColors.ink),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: top + 10,
+                left: 12,
+                right: 12,
+                child: Row(
+                  children: [
+                    TrekRoundButton(icon: Icons.arrow_back_rounded, label: 'Back', onTap: () => Get.back()),
+                    const Spacer(),
+                    if (!widget.guest) ...[
+                      TrekRoundButton(icon: Icons.ios_share_rounded, label: 'Share', onTap: _shareTrek),
+                      const SizedBox(width: 10),
+                      TrekRoundButton(
+                        icon: _isFav ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+                        label: 'Save',
+                        color: _isFav ? TrekPageColors.forest : TrekPageColors.ink,
+                        onTap: _toggleFavorite,
                       ),
-                    ),
-            ),
-            SizedBox(width: 3.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // CHANGED: destination name (was: trek name)
-                  Text(
-                    destinationName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textScaler: const TextScaler.linear(1.0),
-                    style: AppType.style(
-                      12.0.sp,
-                      w: FontWeight.w700,
-                      color: _C.ink,
-                      height: 1.2,
-                    ),
-                  ),
-                  Text(
-                    trek?.companyName ??
-                        trek?.businessName ??
-                        trek?.vendor ??
-                        '-',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textScaler: const TextScaler.linear(1.0),
-                    style: AppType.style(
-                      9.0.sp,
-                      w: FontWeight.w500,
-                      color: _C.inkMid,
-                      height: 1.2,
-                    ),
-                  ),
-                ],
+                    ],
+                  ],
+                ),
               ),
-            ),
-            if (!widget.guest) TapTarget(
-              onTap: _shareTrek,
-              label: 'Share',
-              child: Icon(Icons.ios_share, color: _C.ink, size: 6.w),
-            ),
-            SizedBox(width: 1.w),
-            if (!widget.guest) TapTarget(
-              onTap: _toggleFavorite,
-              label: 'Save',
-              child: Icon(
-                _isFav ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
-                color: _isFav ? _C.teal : _C.ink,
-                size: 6.w,
-              ),
-            ),
-          ],
-        ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -626,40 +591,35 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
     // "Stop Bookings" (STOP_BOOKINGS_SPEC.md) — vendor permanently closed this
     // batch. UX only: the backend's own booking-flow gates already reject the
     // attempt regardless, this just avoids showing a "Continue" button that
-    // would silently fail a step later. No customer-facing "why" beyond this —
-    // the vendor's reason is an admin-only detail.
-    final isClosed = _trekC.trekDetailData.value.isBookingsStopped;
+    // would silently fail a step later.
+    final detail = _trekC.trekDetailData.value;
+    final isClosed = detail.isBookingsStopped;
+    // The price per person after the organiser's discount: the same rule as the search
+    // cards and the server (utils/trek_discount.dart).
+    final p = trekDiscountedPrice(
+      basePrice: detail.basePrice,
+      hasDiscount: detail.hasDiscount,
+      discountType: detail.discountType,
+      discountValue: detail.discountValue,
+    );
+    final facts = trekKeyFacts(detail, cityId: _trekC.selectedBoardingCityId.value);
 
     // Scaffold does NOT safe-area its bottomNavigationBar — without this the
-    // "Continue" button sits under the gesture pill / 3-button nav on
-    // Android, and fully under the system bar on Android 15+ edge-to-edge.
+    // bar sits under the gesture pill / 3-button nav on Android.
     return SafeArea(
       top: false,
-      child: Container(
-        padding: EdgeInsets.fromLTRB(10.w, 1.5.h, 10.w, 1.5.h),
-        decoration: BoxDecoration(
-          color: _C.cardBg,
-          boxShadow: [
-            BoxShadow(
-              color: _C.shadow,
-              blurRadius: 12,
-              offset: const Offset(0, -3),
-            ),
-          ],
-        ),
-        child: CommonButton(
-          text: isClosed ? 'Bookings Closed' : 'Continue',
-          isDisabled: isClosed,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 6, 12, 10),
+        child: TrekPriceBar(
+          priceText: trekPriceText(p.price),
+          wasText: p.hasDiscount ? trekPriceText(p.base) : null,
+          subText: facts.date == null ? 'per person' : 'per person · ${facts.date}',
+          buttonText: isClosed ? 'Bookings Closed' : 'Continue',
+          enabled: !isClosed,
           onPressed: () async {
             if (isClosed) return;
             await _continueBooking();
           },
-          gradient: _C.ctaGradient,
-          textColor: CommonColors.whiteColor,
-          height: 6.h,
-          isFullWidth: true,
-          borderRadius: 14,
-          fontSize: 14.0.sp,
         ),
       ),
     );
@@ -719,47 +679,49 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: _C.cardBg,
-        borderRadius: BorderRadius.circular(4.w),
+        color: TrekPageColors.card,
+        borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: CommonColors.blackColor.withValues(alpha: 0.07),
-            blurRadius: 10,
-            spreadRadius: 0,
-            offset: const Offset(0, 3),
+            color: TrekPageColors.forestDeep.withValues(alpha: 0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
         child: child,
       ),
     );
   }
 
+  // A plain bold title (redesign: no dark icon squares).
   Widget _sectionHeader(String title, IconData icon) {
-    return Row(
-      children: [
-        Container(
-          width: 9.w,
-          height: 9.w,
-          decoration: BoxDecoration(
-            color: _C.iconBadge,
-            borderRadius: BorderRadius.circular(2.5.w),
+    return Text(
+      title,
+      textScaler: const TextScaler.linear(1.0),
+      style: AppType.style(14.0.sp, w: FontWeight.w700, color: TrekPageColors.ink),
+    );
+  }
+
+  Widget _chip(String text, {required Color bg, required Color fg, IconData? icon}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(12)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[Icon(icon, size: 14, color: fg), const SizedBox(width: 6)],
+          Flexible(
+            child: Text(
+              text,
+              textScaler: const TextScaler.linear(1.0),
+              style: AppType.style(9.5.sp, w: FontWeight.w600, color: fg),
+            ),
           ),
-          child: Center(
-            child: Icon(icon, color: Colors.white, size: 4.5.w),
-          ),
-        ),
-        SizedBox(width: 3.w),
-        Expanded(
-          child: Text(
-            title,
-            textScaler: const TextScaler.linear(1.0),
-            style: AppType.style(14.0.sp, w: FontWeight.w700, color: _C.ink),
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -864,7 +826,7 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _sectionHeader('Cancellation Policy', Icons.gavel_rounded),
+          _sectionHeader('Cancellation', Icons.gavel_rounded),
           SizedBox(height: 2.h),
           CancellationPolicyWidget(
             policy: _trekC.trekDetailData.value.cancellationPolicy,
@@ -911,119 +873,94 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
   Widget _buildItineraryTab() {
     final items = _trekC.trekDetailData.value.itineraryItems;
     if (items == null || items.isEmpty) return const SizedBox.shrink();
+    final day = _itineraryDay.clamp(0, items.length - 1);
+    final activities = items[day].activities ?? [];
+    final shown = _showFullItinerary ? activities.length : (activities.length > 4 ? 4 : activities.length);
 
-    final count = (_showFullItinerary || items.length <= 2) ? items.length : 2;
+    // Day 1 is the day after departure (Day 0 = travel): its date from the departure date.
+    final departure = DateTime.tryParse((_trekC.trekDetailData.value.startDate ?? '').split(' ').first);
+    String? dayDate(int i) => departure == null ? null : DateFormat('EEE d').format(departure.add(Duration(days: i + 1)));
 
     return _card(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _sectionHeader('Itinerary', Icons.map_outlined),
+          _sectionHeader('Day plan', Icons.map_outlined),
+          SizedBox(height: 1.8.h),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: List.generate(items.length, (i) {
+                final on = i == day;
+                return Padding(
+                  padding: EdgeInsets.only(right: i == items.length - 1 ? 0 : 8),
+                  child: Material(
+                    color: on ? TrekPageColors.forestDeep : TrekPageColors.bg,
+                    borderRadius: BorderRadius.circular(16),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(16),
+                      onTap: () => setState(() {
+                        _itineraryDay = i;
+                        _showFullItinerary = false;
+                      }),
+                      child: Container(
+                        width: 84,
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        child: Column(
+                          children: [
+                            if (dayDate(i) != null)
+                              Text(
+                                dayDate(i)!,
+                                textScaler: const TextScaler.linear(1.0),
+                                style: AppType.style(8.5.sp, color: on ? const Color(0xFFB7D3C2) : TrekPageColors.inkMid),
+                              ),
+                            Text(
+                              'Day ${i + 1}',
+                              textScaler: const TextScaler.linear(1.0),
+                              style: AppType.style(11.5.sp, w: FontWeight.w700, color: on ? Colors.white : TrekPageColors.ink),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ),
           SizedBox(height: 2.h),
-          ...List.generate(count, (idx) {
-            final day = items[idx];
-            final activities = day.activities ?? [];
-            return Container(
-              margin: EdgeInsets.only(bottom: 2.h),
-              decoration: BoxDecoration(
-                color: _C.softTint,
-                borderRadius: BorderRadius.circular(3.w),
-                border: Border.all(color: _C.brand.withValues(alpha: 0.12)),
-              ),
-              child: Column(
+          ...List.generate(shown, (i) {
+            return Padding(
+              padding: EdgeInsets.only(bottom: 1.4.h),
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 4.w,
-                      vertical: 1.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _C.brand.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(3.w),
-                        topRight: Radius.circular(3.w),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 2.5.w,
-                            vertical: 0.3.h,
-                          ),
-                          decoration: BoxDecoration(
-                            color: _C.brand,
-                            borderRadius: BorderRadius.circular(2.w),
-                          ),
-                          child: Text(
-                            'Day ${idx + 1}',
-                            textScaler: const TextScaler.linear(1.0),
-                            style: AppType.style(
-                              9.0.sp,
-                              w: FontWeight.w700,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 2.w),
-                        Expanded(
-                          child: Text(
-                            'Day ${idx + 1} Activities',
-                            textScaler: const TextScaler.linear(1.0),
-                            style: AppType.style(
-                              10.0.sp,
-                              w: FontWeight.w500,
-                              color: _C.brand,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
+                    width: 26,
+                    height: 26,
+                    alignment: Alignment.center,
+                    decoration: const BoxDecoration(color: TrekPageColors.forestSoft, shape: BoxShape.circle),
+                    child: Text(
+                      '${i + 1}',
+                      textScaler: const TextScaler.linear(1.0),
+                      style: AppType.style(9.0.sp, w: FontWeight.w700, color: TrekPageColors.forest),
                     ),
                   ),
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(4.w, 1.5.h, 4.w, 1.h),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ...activities
-                            .take(_showFullItinerary ? activities.length : 4)
-                            .map((a) => _bulletItem(a)),
-                        if (!_showFullItinerary && activities.length > 4)
-                          InkWell(
-                            onTap: () =>
-                                setState(() => _showFullItinerary = true),
-                            borderRadius: BorderRadius.circular(2.w),
-                            child: Padding(
-                              padding: EdgeInsets.only(
-                                left: 3.w,
-                                top: 0.3.h,
-                                bottom: 0.3.h,
-                              ),
-                              child: Text(
-                                '+ ${activities.length - 4} more '
-                                '${activities.length - 4 == 1 ? 'activity' : 'activities'}',
-                                textScaler: const TextScaler.linear(1.0),
-                                style: AppType.style(
-                                  9.0.sp,
-                                  w: FontWeight.w600,
-                                  color: _C.brand,
-                                  decoration: TextDecoration.underline,
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
+                  SizedBox(width: 3.w),
+                  Expanded(
+                    child: Text(
+                      activities[i],
+                      textScaler: const TextScaler.linear(1.0),
+                      style: AppType.style(10.0.sp, color: TrekPageColors.ink, height: 1.5),
                     ),
                   ),
                 ],
               ),
             );
           }),
-          if (items.length > 2)
+          if (activities.length > 4)
             _toggleBtn(
-              'itinerary',
+              'of Day ${day + 1}',
               _showFullItinerary,
               () => setState(() => _showFullItinerary = !_showFullItinerary),
             ),
@@ -1035,22 +972,28 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
   Widget _buildActivitiesTab() {
     final acts = _trekC.trekDetailData.value.activities;
     if (acts == null || acts.isEmpty) return const SizedBox.shrink();
-
-    final count = (acts.length > 2 && !_showFullActivities) ? 2 : acts.length;
+    final names = acts.map((a) => (a.name ?? '').trim()).where((n) => n.isNotEmpty).toList();
+    if (names.isEmpty) return const SizedBox.shrink();
 
     return _card(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _sectionHeader('Activities', Icons.directions_walk_rounded),
-          SizedBox(height: 2.h),
-          ...List.generate(count, (i) => _bulletItem(acts[i].name ?? '')),
-          if (acts.length > 2)
-            _toggleBtn(
-              'Activities',
-              _showFullActivities,
-              () => setState(() => _showFullActivities = !_showFullActivities),
-            ),
+          SizedBox(height: 1.6.h),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (var i = 0; i < names.length; i++)
+                _chip(
+                  names[i],
+                  bg: i.isEven ? TrekPageColors.forestSoft : TrekPageColors.yellowSoft,
+                  fg: i.isEven ? TrekPageColors.forest : TrekPageColors.yellowInk,
+                  icon: Icons.terrain_rounded,
+                ),
+            ],
+          ),
         ],
       ),
     );
@@ -1060,12 +1003,12 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
     final allInc = _trekC.trekDetailData.value.inclusions;
     final allExc = _trekC.trekDetailData.value.exclusions;
 
-    final inc = (_showFullFeatures || (allInc?.length ?? 0) <= 4)
+    final inc = (_showFullFeatures || (allInc?.length ?? 0) <= 6)
         ? allInc
-        : allInc?.take(4).toList();
-    final exc = (_showFullFeatures || (allExc?.length ?? 0) <= 4)
+        : allInc?.take(6).toList();
+    final exc = (_showFullFeatures || (allExc?.length ?? 0) <= 6)
         ? allExc
-        : allExc?.take(4).toList();
+        : allExc?.take(6).toList();
 
     String asString(dynamic e) {
       if (e == null) return '-';
@@ -1081,20 +1024,33 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _sectionHeader('Inclusions & Exclusions', Icons.checklist_rounded),
-          SizedBox(height: 2.h),
-          if (inc != null && inc.isNotEmpty) ...[
-            _subLabel('Inclusions', _C.teal),
-            SizedBox(height: 1.h),
-            ...inc.map((e) => _checkItem(asString(e), included: true)),
-            SizedBox(height: 2.h),
-          ],
+          _sectionHeader("What's included", Icons.checklist_rounded),
+          SizedBox(height: 1.6.h),
+          if (inc != null && inc.isNotEmpty)
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: inc
+                  .map((e) => _chip(asString(e), bg: TrekPageColors.forestSoft, fg: TrekPageColors.forestDeep, icon: Icons.check_rounded))
+                  .toList(),
+            ),
           if (exc != null && exc.isNotEmpty) ...[
-            _subLabel('Exclusions', CommonColors.cFFDC2626),
+            SizedBox(height: 2.h),
+            Text(
+              'Not included',
+              textScaler: const TextScaler.linear(1.0),
+              style: AppType.style(9.5.sp, w: FontWeight.w600, color: TrekPageColors.inkMid),
+            ),
             SizedBox(height: 1.h),
-            ...exc.map((e) => _checkItem(asString(e), included: false)),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: exc
+                  .map((e) => _chip(asString(e), bg: TrekPageColors.bg, fg: TrekPageColors.inkMid, icon: Icons.close_rounded))
+                  .toList(),
+            ),
           ],
-          if ((allInc?.length ?? 0) > 4 || (allExc?.length ?? 0) > 4)
+          if ((allInc?.length ?? 0) > 6 || (allExc?.length ?? 0) > 6)
             _toggleBtn(
               'Features',
               _showFullFeatures,
@@ -1164,80 +1120,55 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _sectionHeader('Accommodation', Icons.hotel_rounded),
-          SizedBox(height: 2.h),
+          _sectionHeader('Where you stay', Icons.hotel_rounded),
+          SizedBox(height: 1.6.h),
           ...accs.asMap().entries.map((entry) {
             final i = entry.key;
             final acc = entry.value;
-            final isLast = i == accs.length - 1;
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Column(
-                  children: [
-                    Container(
-                      width: 8.w,
-                      height: 8.w,
-                      decoration: BoxDecoration(
-                        color: _C.brand.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: _C.brand.withValues(alpha: 0.3),
-                        ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          'D${i + 1}',
-                          textScaler: const TextScaler.linear(1.0),
-                          style: AppType.style(
-                            8.0.sp,
-                            w: FontWeight.w700,
-                            color: _C.brand,
-                          ),
-                        ),
-                      ),
+            final type = (acc.type ?? '').trim();
+            return Padding(
+              padding: EdgeInsets.only(bottom: i == accs.length - 1 ? 0 : 1.6.h),
+              child: Row(
+                children: [
+                  Container(
+                    width: 64,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: i.isEven ? TrekPageColors.forestSoft : TrekPageColors.yellowSoft,
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    if (!isLast)
-                      Container(width: 1.5, height: 5.h, color: _C.divider),
-                  ],
-                ),
-                SizedBox(width: 3.w),
-                Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.only(bottom: isLast ? 0 : 2.h),
+                    child: Icon(
+                      Icons.night_shelter_rounded,
+                      size: 26,
+                      color: i.isEven ? TrekPageColors.forest : TrekPageColors.yellowInk,
+                    ),
+                  ),
+                  SizedBox(width: 3.w),
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Check in to ${acc.details?.location ?? '-'}',
+                          'NIGHT ${i + 1}',
                           textScaler: const TextScaler.linear(1.0),
-                          style: AppType.style(
-                            11.0.sp,
-                            w: FontWeight.w600,
-                            color: _C.ink,
+                          style: AppType.style(8.0.sp, w: FontWeight.w700, color: TrekPageColors.inkMid, letterSpacing: 0.6),
+                        ),
+                        Text(
+                          acc.details?.location ?? '-',
+                          textScaler: const TextScaler.linear(1.0),
+                          style: AppType.style(11.0.sp, w: FontWeight.w700, color: TrekPageColors.ink),
+                        ),
+                        if (type.isNotEmpty)
+                          Text(
+                            type[0].toUpperCase() + type.substring(1).replaceAll('-', ' '),
+                            textScaler: const TextScaler.linear(1.0),
+                            style: AppType.style(9.0.sp, color: TrekPageColors.inkMid),
                           ),
-                        ),
-                        SizedBox(height: 0.3.h),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.hotel_rounded,
-                              size: 3.5.w,
-                              color: _C.inkLight,
-                            ),
-                            SizedBox(width: 1.w),
-                            Text(
-                              acc.type ?? '-',
-                              textScaler: const TextScaler.linear(1.0),
-                              style: AppType.style(9.0.sp, color: _C.inkMid),
-                            ),
-                          ],
-                        ),
                       ],
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             );
           }),
         ],
@@ -2026,116 +1957,30 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: _C.cardBg,
-        borderRadius: BorderRadius.circular(4.w),
+        color: TrekPageColors.card,
+        borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: CommonColors.blackColor.withValues(alpha: 0.07),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
+            color: TrekPageColors.forestDeep.withValues(alpha: 0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 9.w,
-                height: 9.w,
-                decoration: BoxDecoration(
-                  color: _C.iconBadge,
-                  borderRadius: BorderRadius.circular(2.5.w),
-                ),
-                child: Center(
-                  child: Icon(
-                    Icons.alt_route_rounded,
-                    color: Colors.white,
-                    size: 4.5.w,
-                  ),
-                ),
-              ),
-              SizedBox(width: 3.w),
-              Text(
-                'Trek Route',
-                textScaler: const TextScaler.linear(1.0),
-                style: AppType.style(
-                  14.0.sp,
-                  w: FontWeight.w700,
-                  color: _C.ink,
-                ),
-              ),
-            ],
+          Text(
+            'Route',
+            textScaler: const TextScaler.linear(1.0),
+            style: AppType.style(14.0.sp, w: FontWeight.w700, color: TrekPageColors.ink),
           ),
           SizedBox(height: 2.h),
+          // Several pick-up cities: the customer picks one (needed to book). One city:
+          // the route's first stop is the boarding point, shown once (redesign).
           if (needsBoardingCitySelection) ...[
             _buildBoardingCityPicker(ctrl, boardingByCityId),
-            SizedBox(height: 2.h),
-          ] else if (boarding != null) ...[
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.2.h),
-              decoration: BoxDecoration(
-                color: _C.brand.withValues(alpha: 0.06),
-                borderRadius: BorderRadius.circular(3.w),
-                border: Border.all(color: _C.brand.withValues(alpha: 0.2)),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 8.w,
-                    height: 8.w,
-                    decoration: BoxDecoration(
-                      color: _C.brand,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Center(
-                      child: Icon(
-                        Icons.flag_rounded,
-                        color: Colors.white,
-                        size: 14,
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 3.w),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Boarding Point',
-                          textScaler: const TextScaler.linear(1.0),
-                          style: AppType.style(
-                            8.0.sp,
-                            w: FontWeight.w600,
-                            color: _C.brand,
-                            letterSpacing: 0.8,
-                          ),
-                        ),
-                        Text(
-                          boarding.city?.cityName != null &&
-                                  boarding.city!.cityName!.isNotEmpty
-                              ? '${boarding.city?.cityName} — ${boarding.destination ?? '-'}'
-                              : boarding.destination ?? '-',
-                          textScaler: const TextScaler.linear(1.0),
-                          style: AppType.style(
-                            10.0.sp,
-                            w: FontWeight.w500,
-                            color: _C.ink,
-                          ),
-                        ),
-                        Text(
-                          _formatDateTime(boarding.dateTime)['time'] ?? '-',
-                          textScaler: const TextScaler.linear(1.0),
-                          style: AppType.style(9.0.sp, color: _C.inkMid),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
             SizedBox(height: 2.h),
           ],
           if (visible.isNotEmpty)
@@ -2236,7 +2081,7 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
                   height: 12,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: isLast ? CommonColors.materialRed : _C.brand,
+                    color: isLast ? TrekPageColors.forestDeep : TrekPageColors.forest,
                     border: Border.all(
                       color: Colors.white,
                       width: 2,
@@ -2282,7 +2127,7 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
                             vertical: 0.2.h,
                           ),
                           decoration: BoxDecoration(
-                            color: _C.tealSoft,
+                            color: TrekPageColors.bg,
                             borderRadius: BorderRadius.circular(2.w),
                           ),
                           child: Text(
@@ -2291,7 +2136,7 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
                             style: AppType.style(
                               7.0.sp,
                               w: FontWeight.w500,
-                              color: _C.teal,
+                              color: TrekPageColors.inkMid,
                             ),
                           ),
                         ),
