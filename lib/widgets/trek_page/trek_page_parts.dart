@@ -249,10 +249,6 @@ class _TrekHeroPhotosState extends State<TrekHeroPhotos> {
                     child: Text(widget.organiser, maxLines: 1, overflow: TextOverflow.ellipsis, textScaler: const TextScaler.linear(1.0),
                         style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white)),
                   ),
-                  const SizedBox(width: 6),
-                  const Icon(Icons.verified_rounded, size: 16, color: TrekPageColors.yellow),
-                  const SizedBox(width: 4),
-                  const Text('Verified organiser', textScaler: TextScaler.linear(1.0), style: TextStyle(fontFamily: 'Poppins', fontSize: 11, color: Color(0xE6FFFFFF))),
                 ]),
               ],
             ),
@@ -289,98 +285,6 @@ class TrekRoundButton extends StatelessWidget {
         height: 44,
         decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.92), shape: BoxShape.circle),
         child: Icon(icon, size: 20, color: color),
-      ),
-    );
-  }
-}
-
-// ── Price bar ──────────────────────────────────────────────────────────────────────────
-
-/// "₹7,999" from the price per person (after the organiser's discount), or null.
-String? trekPriceText(double price) {
-  if (!(price > 0)) return null;
-  return '₹${NumberFormat.decimalPattern('en_IN').format(price.round())}';
-}
-
-/// The floating bar at the bottom: price per person + Continue.
-class TrekPriceBar extends StatelessWidget {
-  const TrekPriceBar({
-    super.key,
-    required this.priceText,
-    required this.subText,
-    required this.buttonText,
-    required this.enabled,
-    required this.onPressed,
-    this.wasText,
-  });
-
-  final String? priceText;
-  final String? wasText;
-  final String subText;
-  final String buttonText;
-  final bool enabled;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      key: const ValueKey('trek-price-bar'),
-      padding: const EdgeInsets.fromLTRB(18, 12, 12, 12),
-      decoration: BoxDecoration(
-        color: TrekPageColors.forestDeep,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: TrekPageColors.forestDeep.withValues(alpha: 0.30), blurRadius: 24, offset: const Offset(0, 10))],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: priceText == null
-                ? const SizedBox.shrink()
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Shrinks on a narrow phone instead of overflowing (test caught it).
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
-                        child: Row(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
-                        Text(priceText!, textScaler: const TextScaler.linear(1.0),
-                            style: const TextStyle(fontFamily: 'Poppins', fontSize: 21, fontWeight: FontWeight.w800, color: Colors.white)),
-                        if (wasText != null) ...[
-                          const SizedBox(width: 6),
-                          Text(wasText!, textScaler: const TextScaler.linear(1.0),
-                              style: const TextStyle(fontFamily: 'Poppins', fontSize: 12, color: Color(0x99FFFFFF), decoration: TextDecoration.lineThrough, decorationColor: Color(0x99FFFFFF))),
-                        ],
-                      ]),
-                      ),
-                      Text(subText, maxLines: 1, overflow: TextOverflow.ellipsis, textScaler: const TextScaler.linear(1.0),
-                          style: const TextStyle(fontFamily: 'Poppins', fontSize: 11, color: Color(0xB3FFFFFF))),
-                    ],
-                  ),
-          ),
-          const SizedBox(width: 10),
-          Material(
-            color: enabled ? TrekPageColors.yellow : const Color(0x33FFFFFF),
-            borderRadius: BorderRadius.circular(14),
-            child: InkWell(
-              key: const ValueKey('trek-continue'),
-              borderRadius: BorderRadius.circular(14),
-              onTap: enabled ? onPressed : null,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  Text(buttonText, textScaler: const TextScaler.linear(1.0),
-                      style: TextStyle(fontFamily: 'Poppins', fontSize: 15, fontWeight: FontWeight.w700, color: enabled ? TrekPageColors.ink : const Color(0xB3FFFFFF))),
-                  if (enabled) ...[
-                    const SizedBox(width: 6),
-                    const Icon(Icons.arrow_forward_rounded, size: 18, color: TrekPageColors.ink),
-                  ],
-                ]),
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

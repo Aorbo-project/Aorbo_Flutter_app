@@ -81,34 +81,8 @@ void main() {
     });
   });
 
-  group('price', () {
-    test('Indian grouping, rounded; nothing for zero or less', () {
-      expect(trekPriceText(7999), '₹7,999');
-      expect(trekPriceText(125000.4), '₹1,25,000');
-      expect(trekPriceText(0), isNull);
-      expect(trekPriceText(-5), isNull);
-    });
-  });
-
   group('widgets', () {
     Future<void> pump(WidgetTester t, Widget w) => t.pumpWidget(MaterialApp(home: Scaffold(body: Center(child: SizedBox(width: 360, child: w)))));
-
-    testWidgets('price bar: price, old price, Continue works', (t) async {
-      var tapped = 0;
-      await pump(t, TrekPriceBar(priceText: '₹7,199', wasText: '₹7,999', subText: 'per person · Thu 26 Nov', buttonText: 'Continue', enabled: true, onPressed: () => tapped++));
-      expect(find.text('₹7,199'), findsOneWidget);
-      expect(find.text('₹7,999'), findsOneWidget);
-      await t.tap(find.byKey(const ValueKey('trek-continue')));
-      expect(tapped, 1);
-    });
-
-    testWidgets('price bar: closed bookings cannot be tapped', (t) async {
-      var tapped = 0;
-      await pump(t, TrekPriceBar(priceText: '₹7,999', subText: 'per person', buttonText: 'Bookings Closed', enabled: false, onPressed: () => tapped++));
-      await t.tap(find.byKey(const ValueKey('trek-continue')));
-      expect(tapped, 0);
-      expect(find.text('Bookings Closed'), findsOneWidget);
-    });
 
     testWidgets('key facts card: hidden when there is nothing to say; no overflow at large text', (t) async {
       await pump(t, const TrekKeyFactsCard(facts: TrekKeyFacts()));
@@ -151,7 +125,9 @@ void main() {
     final src = File('lib/screens/trek_details_screen.dart').readAsStringSync();
     expect(src, contains('_buildHeroSliver()'));
     expect(src, contains('TrekKeyFactsCard('));
-    expect(src, contains('TrekPriceBar('));
+    // the bottom keeps the app's own Continue button (owner, 13 Nov 2026)
+    expect(src, contains('CommonButton('));
+    expect(src.contains('TrekPriceBar('), isFalse);
     expect(src, contains('await _continueBooking();'));
     expect(src, contains('_buildBoardingCityPicker(ctrl, boardingByCityId)'));
     expect(src, contains('trekDiscountedPrice('));

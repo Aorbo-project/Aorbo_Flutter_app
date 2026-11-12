@@ -26,12 +26,13 @@ import 'package:intl/intl.dart';
   }
 }
 
-/// "Thu 26/11" from a stop's "YYYY-MM-DD hh:mm AM", or "" when unreadable.
+/// "Thu 26 Nov" from a stop's "YYYY-MM-DD hh:mm AM", or "" when unreadable (the same
+/// style as the page's key facts card).
 String routeStopDate(String? dateTime) {
   if (dateTime == null || dateTime.trim().isEmpty) return '';
   try {
     final d = DateFormat('yyyy-MM-dd hh:mm a').parseStrict(dateTime.trim());
-    return DateFormat('EEE dd/MM').format(d);
+    return DateFormat('EEE d MMM').format(d);
   } catch (_) {
     return '';
   }

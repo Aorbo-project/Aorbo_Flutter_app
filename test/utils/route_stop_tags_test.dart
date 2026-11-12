@@ -62,11 +62,11 @@ void main() {
   });
 
   group('day + date', () {
-    test('"Thu 26/11" from the stored stop time; across month and year end', () {
-      expect(routeStopDate('2026-11-26 07:00 PM'), 'Thu 26/11');
-      expect(routeStopDate('2026-11-30 07:30 AM'), 'Mon 30/11');
-      expect(routeStopDate('2026-12-31 11:59 PM'), 'Thu 31/12');
-      expect(routeStopDate('2027-01-01 12:00 AM'), 'Fri 01/01');
+    test('"Thu 26 Nov" from the stored stop time; across month and year end', () {
+      expect(routeStopDate('2026-11-26 07:00 PM'), 'Thu 26 Nov');
+      expect(routeStopDate('2026-11-30 07:30 AM'), 'Mon 30 Nov');
+      expect(routeStopDate('2026-12-31 11:59 PM'), 'Thu 31 Dec');
+      expect(routeStopDate('2027-01-01 12:00 AM'), 'Fri 1 Jan');
     });
 
     test('unreadable times give "" (the card then falls back to the old date)', () {

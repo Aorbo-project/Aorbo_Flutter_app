@@ -17,6 +17,7 @@ import '../freezed_models/treks/treks_model_data.dart';
 import '../utils/common_colors.dart';
 import '../utils/common_images.dart';
 import '../utils/common_trek_details_bar.dart';
+import '../utils/common_btn.dart';
 import '../widgets/cancellation_policy_widget.dart';
 import '../utils/ist_date_utils.dart';
 import '../utils/custom_snackbar.dart';
@@ -385,13 +386,12 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
           physics: const ClampingScrollPhysics(),
           slivers: [
             _buildHeroSliver(),
-            // The floating key facts card, lifted onto the photo (redesign, 13 Nov 2026).
+            // The key facts card under the photo (redesign, 13 Nov 2026). Not lifted onto
+            // the photo: the pinned header paints over anything that overlaps it.
             SliverToBoxAdapter(
-              child: Transform.translate(
-                offset: const Offset(0, -30),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Obx(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+                child: Obx(
                     () => TrekKeyFactsCard(
                       facts: trekKeyFacts(
                         _trekC.trekDetailData.value,
@@ -399,7 +399,6 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                       ),
                     ),
                   ),
-                ),
               ),
             ),
             SliverPersistentHeader(
@@ -591,35 +590,40 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
     // "Stop Bookings" (STOP_BOOKINGS_SPEC.md) — vendor permanently closed this
     // batch. UX only: the backend's own booking-flow gates already reject the
     // attempt regardless, this just avoids showing a "Continue" button that
-    // would silently fail a step later.
-    final detail = _trekC.trekDetailData.value;
-    final isClosed = detail.isBookingsStopped;
-    // The price per person after the organiser's discount: the same rule as the search
-    // cards and the server (utils/trek_discount.dart).
-    final p = trekDiscountedPrice(
-      basePrice: detail.basePrice,
-      hasDiscount: detail.hasDiscount,
-      discountType: detail.discountType,
-      discountValue: detail.discountValue,
-    );
-    final facts = trekKeyFacts(detail, cityId: _trekC.selectedBoardingCityId.value);
+    // would silently fail a step later. No customer-facing "why" beyond this —
+    // the vendor's reason is an admin-only detail.
+    final isClosed = _trekC.trekDetailData.value.isBookingsStopped;
 
     // Scaffold does NOT safe-area its bottomNavigationBar — without this the
-    // bar sits under the gesture pill / 3-button nav on Android.
+    // "Continue" button sits under the gesture pill / 3-button nav on
+    // Android, and fully under the system bar on Android 15+ edge-to-edge.
     return SafeArea(
       top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 6, 12, 10),
-        child: TrekPriceBar(
-          priceText: trekPriceText(p.price),
-          wasText: p.hasDiscount ? trekPriceText(p.base) : null,
-          subText: facts.date == null ? 'per person' : 'per person · ${facts.date}',
-          buttonText: isClosed ? 'Bookings Closed' : 'Continue',
-          enabled: !isClosed,
+      child: Container(
+        padding: EdgeInsets.fromLTRB(10.w, 1.5.h, 10.w, 1.5.h),
+        decoration: BoxDecoration(
+          color: _C.cardBg,
+          boxShadow: [
+            BoxShadow(
+              color: _C.shadow,
+              blurRadius: 12,
+              offset: const Offset(0, -3),
+            ),
+          ],
+        ),
+        child: CommonButton(
+          text: isClosed ? 'Bookings Closed' : 'Continue',
+          isDisabled: isClosed,
           onPressed: () async {
             if (isClosed) return;
             await _continueBooking();
           },
+          gradient: _C.ctaGradient,
+          textColor: CommonColors.whiteColor,
+          height: 6.h,
+          isFullWidth: true,
+          borderRadius: 14,
+          fontSize: 14.0.sp,
         ),
       ),
     );
@@ -990,7 +994,6 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                   names[i],
                   bg: i.isEven ? TrekPageColors.forestSoft : TrekPageColors.yellowSoft,
                   fg: i.isEven ? TrekPageColors.forest : TrekPageColors.yellowInk,
-                  icon: Icons.terrain_rounded,
                 ),
             ],
           ),
@@ -1799,9 +1802,10 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
     if (dt == null || dt.isEmpty) return {'time': '', 'date': ''};
     try {
       final d = DateFormat('yyyy-MM-dd hh:mm a').parse(dt);
+      // One date style on the page: "7:00 PM" + "Thu 26 Nov" (redesign).
       return {
-        'time': DateFormat('hh:mm a').format(d),
-        'date': DateFormat('dd/MM').format(d),
+        'time': DateFormat('h:mm a').format(d),
+        'date': DateFormat('EEE d MMM').format(d),
       };
     } catch (_) {
       return {'time': dt, 'date': ''};
