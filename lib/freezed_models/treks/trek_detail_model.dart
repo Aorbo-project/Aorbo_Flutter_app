@@ -249,6 +249,11 @@ class TrekStages with _$TrekStages {
     @JsonKey(name: 'route_label', fromJson: _routeTextFromJson) String? routeLabel,
     // The travel line after this stop ("≈ 11 h overnight bus"), or null.
     @JsonKey(name: 'travel_after', fromJson: _travelLabelFromJson) String? travelAfterLabel,
+    // A pickup's map place (Backend utils/returnJourney withRouteTags, 17 Nov 2026): its
+    // kind as shown ("Bus stand") and its pin; null for older pickups (no pin is shown).
+    @JsonKey(name: 'place_label', fromJson: _routeTextFromJson) String? placeLabel,
+    @JsonKey(fromJson: jsonToCoordinate) double? latitude,
+    @JsonKey(fromJson: jsonToCoordinate) double? longitude,
   }) = _TrekStages;
 
   factory TrekStages.fromJson(Map<String, dynamic> json) =>

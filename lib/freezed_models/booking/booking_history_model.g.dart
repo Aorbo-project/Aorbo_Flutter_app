@@ -182,6 +182,10 @@ _$TrekImpl _$$TrekImplFromJson(Map<String, dynamic> json) => _$TrekImpl(
       durationNights: json['duration_nights'] as int?,
       boardingPoint: json['boarding_point'] as String?,
       boardingTime: json['boarding_time'] as String?,
+      boardingLat: jsonToCoordinate(json['boarding_lat']),
+      boardingLon: jsonToCoordinate(json['boarding_lon']),
+      boardingKind: jsonToStringOrNull(json['boarding_kind']),
+      boardingNote: jsonToStringOrNull(json['boarding_note']),
     );
 
 Map<String, dynamic> _$$TrekImplToJson(_$TrekImpl instance) =>
@@ -205,6 +209,10 @@ Map<String, dynamic> _$$TrekImplToJson(_$TrekImpl instance) =>
       'duration_nights': instance.durationNights,
       'boarding_point': instance.boardingPoint,
       'boarding_time': instance.boardingTime,
+      'boarding_lat': instance.boardingLat,
+      'boarding_lon': instance.boardingLon,
+      'boarding_kind': instance.boardingKind,
+      'boarding_note': instance.boardingNote,
     };
 
 _$VendorImpl _$$VendorImplFromJson(Map<String, dynamic> json) => _$VendorImpl(

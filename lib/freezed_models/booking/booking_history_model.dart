@@ -205,6 +205,12 @@ class Trek with _$Trek {
     @JsonKey(name: 'duration_nights') int? durationNights,
     @JsonKey(name: 'boarding_point') String? boardingPoint,
     @JsonKey(name: 'boarding_time') String? boardingTime,
+    // The pickup's map pin, kind and meeting spot (Backend utils/pickupPlaceRule
+    // customerPickupFields, 17 Nov 2026); null for older pickups (no pin shown).
+    @JsonKey(name: 'boarding_lat', fromJson: jsonToCoordinate) double? boardingLat,
+    @JsonKey(name: 'boarding_lon', fromJson: jsonToCoordinate) double? boardingLon,
+    @JsonKey(name: 'boarding_kind', fromJson: jsonToStringOrNull) String? boardingKind,
+    @JsonKey(name: 'boarding_note', fromJson: jsonToStringOrNull) String? boardingNote,
   }) = _Trek;
 
   factory Trek.fromJson(Map<String, dynamic> json) => _$TrekFromJson(json);

@@ -118,3 +118,11 @@ List<String>? jsonToNameList(Object? v) {
       if (jsonDisplayName(e) case final String name) name,
   ];
 }
+
+/// A map coordinate: 17.378, "17.37814140" → double; blank, junk, NaN or out of
+/// range (|v| > 180) → null, so a broken pin is never shown (pickup pins, 17 Nov 2026).
+double? jsonToCoordinate(Object? v) {
+  final d = v is num ? v.toDouble() : (v is String ? double.tryParse(v.trim()) : null);
+  if (d == null || d.isNaN || d.isInfinite || d.abs() > 180) return null;
+  return d;
+}

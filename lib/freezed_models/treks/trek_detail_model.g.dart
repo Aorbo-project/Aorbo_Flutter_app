@@ -255,6 +255,9 @@ _$TrekStagesImpl _$$TrekStagesImplFromJson(Map<String, dynamic> json) =>
       routeRole: _routeTextFromJson(json['route_role']),
       routeLabel: _routeTextFromJson(json['route_label']),
       travelAfterLabel: _travelLabelFromJson(json['travel_after']),
+      placeLabel: _routeTextFromJson(json['place_label']),
+      latitude: jsonToCoordinate(json['latitude']),
+      longitude: jsonToCoordinate(json['longitude']),
     );
 
 Map<String, dynamic> _$$TrekStagesImplToJson(_$TrekStagesImpl instance) =>
@@ -271,6 +274,9 @@ Map<String, dynamic> _$$TrekStagesImplToJson(_$TrekStagesImpl instance) =>
       'route_role': instance.routeRole,
       'route_label': instance.routeLabel,
       'travel_after': instance.travelAfterLabel,
+      'place_label': instance.placeLabel,
+      'latitude': instance.latitude,
+      'longitude': instance.longitude,
     };
 
 _$CityImpl _$$CityImplFromJson(Map<String, dynamic> json) => _$CityImpl(

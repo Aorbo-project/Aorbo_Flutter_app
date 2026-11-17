@@ -1868,7 +1868,17 @@ mixin _$Trek {
   @JsonKey(name: 'boarding_point')
   String? get boardingPoint => throw _privateConstructorUsedError;
   @JsonKey(name: 'boarding_time')
-  String? get boardingTime => throw _privateConstructorUsedError;
+  String? get boardingTime =>
+      throw _privateConstructorUsedError; // The pickup's map pin, kind and meeting spot (Backend utils/pickupPlaceRule
+// customerPickupFields, 17 Nov 2026); null for older pickups (no pin shown).
+  @JsonKey(name: 'boarding_lat', fromJson: jsonToCoordinate)
+  double? get boardingLat => throw _privateConstructorUsedError;
+  @JsonKey(name: 'boarding_lon', fromJson: jsonToCoordinate)
+  double? get boardingLon => throw _privateConstructorUsedError;
+  @JsonKey(name: 'boarding_kind', fromJson: jsonToStringOrNull)
+  String? get boardingKind => throw _privateConstructorUsedError;
+  @JsonKey(name: 'boarding_note', fromJson: jsonToStringOrNull)
+  String? get boardingNote => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -1899,7 +1909,15 @@ abstract class $TrekCopyWith<$Res> {
       @JsonKey(name: 'duration_days') int? durationDays,
       @JsonKey(name: 'duration_nights') int? durationNights,
       @JsonKey(name: 'boarding_point') String? boardingPoint,
-      @JsonKey(name: 'boarding_time') String? boardingTime});
+      @JsonKey(name: 'boarding_time') String? boardingTime,
+      @JsonKey(name: 'boarding_lat', fromJson: jsonToCoordinate)
+      double? boardingLat,
+      @JsonKey(name: 'boarding_lon', fromJson: jsonToCoordinate)
+      double? boardingLon,
+      @JsonKey(name: 'boarding_kind', fromJson: jsonToStringOrNull)
+      String? boardingKind,
+      @JsonKey(name: 'boarding_note', fromJson: jsonToStringOrNull)
+      String? boardingNote});
 
   $VendorCopyWith<$Res>? get vendor;
   $DestinationCopyWith<$Res>? get destination;
@@ -1937,6 +1955,10 @@ class _$TrekCopyWithImpl<$Res, $Val extends Trek>
     Object? durationNights = freezed,
     Object? boardingPoint = freezed,
     Object? boardingTime = freezed,
+    Object? boardingLat = freezed,
+    Object? boardingLon = freezed,
+    Object? boardingKind = freezed,
+    Object? boardingNote = freezed,
   }) {
     return _then(_value.copyWith(
       id: freezed == id
@@ -2015,6 +2037,22 @@ class _$TrekCopyWithImpl<$Res, $Val extends Trek>
           ? _value.boardingTime
           : boardingTime // ignore: cast_nullable_to_non_nullable
               as String?,
+      boardingLat: freezed == boardingLat
+          ? _value.boardingLat
+          : boardingLat // ignore: cast_nullable_to_non_nullable
+              as double?,
+      boardingLon: freezed == boardingLon
+          ? _value.boardingLon
+          : boardingLon // ignore: cast_nullable_to_non_nullable
+              as double?,
+      boardingKind: freezed == boardingKind
+          ? _value.boardingKind
+          : boardingKind // ignore: cast_nullable_to_non_nullable
+              as String?,
+      boardingNote: freezed == boardingNote
+          ? _value.boardingNote
+          : boardingNote // ignore: cast_nullable_to_non_nullable
+              as String?,
     ) as $Val);
   }
 
@@ -2069,7 +2107,15 @@ abstract class _$$TrekImplCopyWith<$Res> implements $TrekCopyWith<$Res> {
       @JsonKey(name: 'duration_days') int? durationDays,
       @JsonKey(name: 'duration_nights') int? durationNights,
       @JsonKey(name: 'boarding_point') String? boardingPoint,
-      @JsonKey(name: 'boarding_time') String? boardingTime});
+      @JsonKey(name: 'boarding_time') String? boardingTime,
+      @JsonKey(name: 'boarding_lat', fromJson: jsonToCoordinate)
+      double? boardingLat,
+      @JsonKey(name: 'boarding_lon', fromJson: jsonToCoordinate)
+      double? boardingLon,
+      @JsonKey(name: 'boarding_kind', fromJson: jsonToStringOrNull)
+      String? boardingKind,
+      @JsonKey(name: 'boarding_note', fromJson: jsonToStringOrNull)
+      String? boardingNote});
 
   @override
   $VendorCopyWith<$Res>? get vendor;
@@ -2106,6 +2152,10 @@ class __$$TrekImplCopyWithImpl<$Res>
     Object? durationNights = freezed,
     Object? boardingPoint = freezed,
     Object? boardingTime = freezed,
+    Object? boardingLat = freezed,
+    Object? boardingLon = freezed,
+    Object? boardingKind = freezed,
+    Object? boardingNote = freezed,
   }) {
     return _then(_$TrekImpl(
       id: freezed == id
@@ -2184,6 +2234,22 @@ class __$$TrekImplCopyWithImpl<$Res>
           ? _value.boardingTime
           : boardingTime // ignore: cast_nullable_to_non_nullable
               as String?,
+      boardingLat: freezed == boardingLat
+          ? _value.boardingLat
+          : boardingLat // ignore: cast_nullable_to_non_nullable
+              as double?,
+      boardingLon: freezed == boardingLon
+          ? _value.boardingLon
+          : boardingLon // ignore: cast_nullable_to_non_nullable
+              as double?,
+      boardingKind: freezed == boardingKind
+          ? _value.boardingKind
+          : boardingKind // ignore: cast_nullable_to_non_nullable
+              as String?,
+      boardingNote: freezed == boardingNote
+          ? _value.boardingNote
+          : boardingNote // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -2211,7 +2277,15 @@ class _$TrekImpl implements _Trek {
       @JsonKey(name: 'duration_days') this.durationDays,
       @JsonKey(name: 'duration_nights') this.durationNights,
       @JsonKey(name: 'boarding_point') this.boardingPoint,
-      @JsonKey(name: 'boarding_time') this.boardingTime})
+      @JsonKey(name: 'boarding_time') this.boardingTime,
+      @JsonKey(name: 'boarding_lat', fromJson: jsonToCoordinate)
+      this.boardingLat,
+      @JsonKey(name: 'boarding_lon', fromJson: jsonToCoordinate)
+      this.boardingLon,
+      @JsonKey(name: 'boarding_kind', fromJson: jsonToStringOrNull)
+      this.boardingKind,
+      @JsonKey(name: 'boarding_note', fromJson: jsonToStringOrNull)
+      this.boardingNote})
       : _cityIds = cityIds,
         _cityNames = cityNames;
 
@@ -2285,10 +2359,24 @@ class _$TrekImpl implements _Trek {
   @override
   @JsonKey(name: 'boarding_time')
   final String? boardingTime;
+// The pickup's map pin, kind and meeting spot (Backend utils/pickupPlaceRule
+// customerPickupFields, 17 Nov 2026); null for older pickups (no pin shown).
+  @override
+  @JsonKey(name: 'boarding_lat', fromJson: jsonToCoordinate)
+  final double? boardingLat;
+  @override
+  @JsonKey(name: 'boarding_lon', fromJson: jsonToCoordinate)
+  final double? boardingLon;
+  @override
+  @JsonKey(name: 'boarding_kind', fromJson: jsonToStringOrNull)
+  final String? boardingKind;
+  @override
+  @JsonKey(name: 'boarding_note', fromJson: jsonToStringOrNull)
+  final String? boardingNote;
 
   @override
   String toString() {
-    return 'Trek(id: $id, title: $title, duration: $duration, description: $description, basePrice: $basePrice, status: $status, vendor: $vendor, destination: $destination, destinationId: $destinationId, cityIds: $cityIds, destinationName: $destinationName, cityNames: $cityNames, captainName: $captainName, captainPhone: $captainPhone, difficulty: $difficulty, durationDays: $durationDays, durationNights: $durationNights, boardingPoint: $boardingPoint, boardingTime: $boardingTime)';
+    return 'Trek(id: $id, title: $title, duration: $duration, description: $description, basePrice: $basePrice, status: $status, vendor: $vendor, destination: $destination, destinationId: $destinationId, cityIds: $cityIds, destinationName: $destinationName, cityNames: $cityNames, captainName: $captainName, captainPhone: $captainPhone, difficulty: $difficulty, durationDays: $durationDays, durationNights: $durationNights, boardingPoint: $boardingPoint, boardingTime: $boardingTime, boardingLat: $boardingLat, boardingLon: $boardingLon, boardingKind: $boardingKind, boardingNote: $boardingNote)';
   }
 
   @override
@@ -2328,7 +2416,15 @@ class _$TrekImpl implements _Trek {
             (identical(other.boardingPoint, boardingPoint) ||
                 other.boardingPoint == boardingPoint) &&
             (identical(other.boardingTime, boardingTime) ||
-                other.boardingTime == boardingTime));
+                other.boardingTime == boardingTime) &&
+            (identical(other.boardingLat, boardingLat) ||
+                other.boardingLat == boardingLat) &&
+            (identical(other.boardingLon, boardingLon) ||
+                other.boardingLon == boardingLon) &&
+            (identical(other.boardingKind, boardingKind) ||
+                other.boardingKind == boardingKind) &&
+            (identical(other.boardingNote, boardingNote) ||
+                other.boardingNote == boardingNote));
   }
 
   @JsonKey(ignore: true)
@@ -2353,7 +2449,11 @@ class _$TrekImpl implements _Trek {
         durationDays,
         durationNights,
         boardingPoint,
-        boardingTime
+        boardingTime,
+        boardingLat,
+        boardingLon,
+        boardingKind,
+        boardingNote
       ]);
 
   @JsonKey(ignore: true)
@@ -2391,7 +2491,15 @@ abstract class _Trek implements Trek {
       @JsonKey(name: 'duration_days') final int? durationDays,
       @JsonKey(name: 'duration_nights') final int? durationNights,
       @JsonKey(name: 'boarding_point') final String? boardingPoint,
-      @JsonKey(name: 'boarding_time') final String? boardingTime}) = _$TrekImpl;
+      @JsonKey(name: 'boarding_time') final String? boardingTime,
+      @JsonKey(name: 'boarding_lat', fromJson: jsonToCoordinate)
+      final double? boardingLat,
+      @JsonKey(name: 'boarding_lon', fromJson: jsonToCoordinate)
+      final double? boardingLon,
+      @JsonKey(name: 'boarding_kind', fromJson: jsonToStringOrNull)
+      final String? boardingKind,
+      @JsonKey(name: 'boarding_note', fromJson: jsonToStringOrNull)
+      final String? boardingNote}) = _$TrekImpl;
 
   factory _Trek.fromJson(Map<String, dynamic> json) = _$TrekImpl.fromJson;
 
@@ -2444,6 +2552,19 @@ abstract class _Trek implements Trek {
   @override
   @JsonKey(name: 'boarding_time')
   String? get boardingTime;
+  @override // The pickup's map pin, kind and meeting spot (Backend utils/pickupPlaceRule
+// customerPickupFields, 17 Nov 2026); null for older pickups (no pin shown).
+  @JsonKey(name: 'boarding_lat', fromJson: jsonToCoordinate)
+  double? get boardingLat;
+  @override
+  @JsonKey(name: 'boarding_lon', fromJson: jsonToCoordinate)
+  double? get boardingLon;
+  @override
+  @JsonKey(name: 'boarding_kind', fromJson: jsonToStringOrNull)
+  String? get boardingKind;
+  @override
+  @JsonKey(name: 'boarding_note', fromJson: jsonToStringOrNull)
+  String? get boardingNote;
   @override
   @JsonKey(ignore: true)
   _$$TrekImplCopyWith<_$TrekImpl> get copyWith =>

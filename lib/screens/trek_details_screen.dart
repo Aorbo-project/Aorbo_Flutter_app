@@ -29,6 +29,7 @@ import '../repository/repository.dart';
 import '../repository/network_url.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
+import 'package:arobo_app/widgets/pickup_pin.dart';
 import 'package:arobo_app/utils/trek_discount.dart';
 import '../widgets/trek_page/trek_page_parts.dart';
 
@@ -2047,7 +2048,14 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
     // the stop grows with them so the route stays one unbroken line.
     final hasTag = (stop.routeLabel ?? '').trim().isNotEmpty;
     final hasTravel = !isLast && (stop.travelAfterLabel ?? '').trim().isNotEmpty;
-    final lineHeight = 48.0 + (hasTag ? 22 : 0) + (hasTravel ? 26 : 0);
+    // A pickup's place under its city (owner, 17 Nov 2026): "Bus stand · Mahatma Gandhi
+    // Bus Station" + a small pin to Google Maps; no line when it is just the city again.
+    final pickupPlace = (stop.destination ?? '').trim();
+    final showPickup = stop.isBoardingPoint == true &&
+        !(isLast && firstRouteName != null) &&
+        pickupPlace.isNotEmpty &&
+        pickupPlace.toLowerCase() != (stop.city?.cityName ?? '').trim().toLowerCase();
+    final lineHeight = 48.0 + (hasTag ? 22 : 0) + (hasTravel ? 26 : 0) + (showPickup ? (pickupPlace.length > 24 ? 40 : 24) : 0); // a long name wraps to 2 lines
     final label = isLast && firstRouteName != null
         ? firstRouteName
         : (stop.isBoardingPoint == true
@@ -2146,6 +2154,17 @@ class _TrekRouteTabState extends State<TrekRouteTab> {
                         ),
                     ],
                   ),
+                  if (showPickup)
+                    Padding(
+                      padding: EdgeInsets.only(top: 0.4.h),
+                      child: RoutePickupLine(
+                        place: pickupPlace,
+                        label: stop.placeLabel,
+                        lat: stop.latitude,
+                        lon: stop.longitude,
+                        fontSize: 8.5.sp,
+                      ),
+                    ),
                   RouteStopExtras(
                     role: stop.routeRole,
                     label: stop.routeLabel,
