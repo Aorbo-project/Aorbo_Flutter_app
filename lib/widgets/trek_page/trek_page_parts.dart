@@ -232,19 +232,20 @@ class _TrekHeroPhotosState extends State<TrekHeroPhotos> {
                 ),
                 const SizedBox(height: 8),
                 Row(children: [
+                  // Organiser logo: 36 px (owner, 17 Nov 2026: 24 px was too small to read).
                   Container(
-                    width: 24,
-                    height: 24,
+                    width: 36,
+                    height: 36,
                     clipBehavior: Clip.antiAlias,
                     decoration: const BoxDecoration(color: TrekPageColors.yellow, shape: BoxShape.circle),
                     child: (widget.organiserLogo ?? '').isNotEmpty
-                        ? CustomNetworkImage(imageUrl: widget.organiserLogo!, fit: BoxFit.cover, width: 24, height: 24)
+                        ? CustomNetworkImage(imageUrl: widget.organiserLogo!, fit: BoxFit.cover, width: 36, height: 36)
                         : Center(
                             child: Text(widget.organiser.isNotEmpty ? widget.organiser[0].toUpperCase() : '?',
-                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: TrekPageColors.ink)),
+                                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: TrekPageColors.ink)),
                           ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 10),
                   Flexible(
                     child: Text(widget.organiser, maxLines: 1, overflow: TextOverflow.ellipsis, textScaler: const TextScaler.linear(1.0),
                         style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white)),
