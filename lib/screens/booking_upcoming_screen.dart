@@ -1167,11 +1167,14 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                           'Captain Contact',
                           trek?.captainPhone ?? 'Not available',
                         ),
-                        _dividerLine(),
-                        _ticketRow(
-                          'Difficulty',
-                          trek?.difficulty ?? 'Moderate',
-                        ),
+                        // The organiser's own choice only (19 Nov 2026): no made-up "Moderate".
+                        if ((trek?.difficulty ?? '').trim().isNotEmpty) ...[
+                          _dividerLine(),
+                          _ticketRow(
+                            'Difficulty',
+                            '${trek!.difficulty![0].toUpperCase()}${trek.difficulty!.substring(1)}',
+                          ),
+                        ],
                       ],
                     ),
                   ),
