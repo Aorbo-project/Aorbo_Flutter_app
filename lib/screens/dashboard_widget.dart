@@ -1048,6 +1048,8 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                                     ht.logoOverrideUrl!,
                                     height: 7.h,
                                     width: 30.w,
+                                    // Decode at the size shown, not the file's (Play Console, 20 Nov 2026).
+                                    cacheWidth: (30.w * MediaQuery.devicePixelRatioOf(context)).ceil(),
                                     fit: BoxFit.contain,
                                     errorBuilder: (_, __, ___) => Image.asset(
                                       CommonImages.logo1,

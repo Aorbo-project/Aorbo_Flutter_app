@@ -123,9 +123,21 @@ void main() async {
     return kDebugMode;
   };
 
-  // Phones start portrait-locked; AppViewport frees rotation on large
-  // screens (tablets / foldables) once the window size is known.
-  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  // Play Console (20 Nov 2026), large screens: a tablet or foldable is never
+  // locked, not even for the first frames - the display size is known here
+  // already. Phones start portrait-locked; AppViewport re-applies the same rule
+  // (orientationsFor) when a foldable opens or closes.
+  final firstView = PlatformDispatcher.instance.views.isEmpty ? null : PlatformDispatcher.instance.views.first;
+  if (firstView != null && firstView.devicePixelRatio > 0) {
+    SystemChrome.setPreferredOrientations(orientationsFor(firstView.physicalSize / firstView.devicePixelRatio));
+  }
+
+  // Play Console (20 Nov 2026), edge-to-edge: Android 15+ draws the app under the
+  // status and navigation bars (targetSdk 36); do the same on older Android so
+  // every phone looks alike. Screens keep their content clear of the bars with
+  // SafeArea / MediaQuery padding. No bar colours are set anywhere (those
+  // setters are deprecated on Android 15).
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
   // Flush buffered Performance-Insights analytics events when the app is
   // hidden / paused, so nothing is lost between the 12s auto-flushes.
