@@ -98,6 +98,14 @@ void main() {
     expect(File('lib/utils/native_feed_ad_card.dart').readAsStringSync(), contains('await AdConsentService.instance.start()'));
   });
 
+  test('background push handler keeps its entry-point mark (release builds drop it otherwise)', () {
+    final main = File('lib/main.dart').readAsStringSync();
+    expect(
+      main,
+      contains("@pragma('vm:entry-point')\nFuture<void> _firebaseMessagingBackgroundHandler"),
+    );
+  });
+
   test('home glow follows the header; ad view only while its card is on screen', () {
     final home = File('lib/screens/dashboard_widget.dart').readAsStringSync();
     expect(home, isNot(contains(')..repeat(reverse: true);\n\n    // Kept and disposed')), reason: 'the glow must not loop from initState');

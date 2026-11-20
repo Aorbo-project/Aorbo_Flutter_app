@@ -35,6 +35,10 @@ import 'package:arobo_app/integrity/play_integrity_service.dart';
 import 'package:arobo_app/security/security_config.dart';
 import 'package:arobo_app/security/security_guard.dart';
 
+// Android calls this by name in a background isolate. Without the entry-point mark the
+// release build drops it (20 Nov 2026, iQOO log: "NoSuchMethodError: No top-level getter
+// '_firebaseMessagingBackgroundHandler' declared" on every background push).
+@pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // Message received while app is terminated/in background — system tray handles display.
 }
