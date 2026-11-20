@@ -8,6 +8,7 @@ import 'package:get/get.dart';
 
 import '../share/trek_link.dart';
 import '../utils/shared_preferences.dart';
+import 'install_source.dart';
 import 'giveaway_config.dart';
 
 /// Pure parsing for referral codes arriving from outside the app. Everything
@@ -95,6 +96,9 @@ class ReferralLinkCapture {
   static final ReferralLinkCapture instance = ReferralLinkCapture._();
 
   static const String _referrerCheckedKey = 'giveaway_install_referrer_checked';
+  // Read separately (19 Nov 2026): phones that read the referrer before this existed
+  // still report where they came from once.
+  static const String _sourceCheckedKey = 'install_source_checked_v1';
 
   StreamSubscription<Uri>? _sub;
   bool _started = false;
@@ -169,8 +173,13 @@ class ReferralLinkCapture {
     if (!Platform.isAndroid) return;
     try {
       final sp = await SpUtil.getInstance();
-      if (sp.getBool(_referrerCheckedKey) == true) return;
+      final linksChecked = sp.getBool(_referrerCheckedKey) == true;
+      final sourceChecked = sp.getBool(_sourceCheckedKey) == true;
+      if (linksChecked && sourceChecked) return;
       final details = await AndroidPlayInstallReferrer.installReferrer;
+      await sp.putBool(_sourceCheckedKey, true);
+      await InstallSource.saveFromReferrer(details.installReferrer);
+      if (linksChecked) return;
       await sp.putBool(_referrerCheckedKey, true);
       final code = ReferralLinkParser.fromInstallReferrer(details.installReferrer);
       // An App Link code, if any, is more recent — don't overwrite it.
