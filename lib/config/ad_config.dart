@@ -4,26 +4,25 @@ import 'package:flutter/foundation.dart';
 
 /// AdMob configuration.
 ///
-/// Right now every id below is a **Google test id** — real ads never
-/// render, no revenue, and clicking is safe. When the real AdMob account
-/// + ad units exist, flip [useRealAds] to true and fill the `_real*`
-/// maps. The App ID also lives in AndroidManifest.xml / Info.plist and
-/// must be swapped there too.
+/// REAL ads since 1.0.0+45 (20 Nov 2026; owner: AdMob account "Ready"). Debug builds and the
+/// test devices below still get Google's test ads, so our own taps never count (invalid
+/// clicks can close the AdMob account). The server sends the Google fallback only to builds
+/// >= 45 (Backend utils/realAdsRule.js): older builds carry the test ids.
 class AdConfig {
   AdConfig._();
 
   /// Master switch. While false the app always serves Google test ads.
-  static const bool useRealAds = false;
+  static const bool useRealAds = !kDebugMode;
 
   /// AdMob App ID — also declared in the native manifest.
   static String get appId => Platform.isAndroid
       ? (useRealAds ? _realAppIdAndroid : _testAppIdAndroid)
-      : (useRealAds ? _realAppIdIos : _testAppIdIos);
+      : (useRealAds && _realAppIdIos.isNotEmpty ? _realAppIdIos : _testAppIdIos);
 
   /// Native ad unit for the in-feed sponsored card (dashboard + search).
   static String get nativeFeedUnitId => Platform.isAndroid
       ? (useRealAds ? _realNativeAndroid : _testNativeAndroid)
-      : (useRealAds ? _realNativeIos : _testNativeIos);
+      : (useRealAds && _realNativeIos.isNotEmpty ? _realNativeIos : _testNativeIos);
 
   // ── Google's public test ids (do not change) ──────────────────────────
   static const _testAppIdAndroid = 'ca-app-pub-3940256099942544~3347511713';

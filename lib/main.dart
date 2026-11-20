@@ -207,7 +207,7 @@ void _deferredInit() {
         .start(isLoggedIn: () => sp?.getBool(SpUtil.isLoggedIn) == true)
         .catchError((Object e) => debugPrint('ReferralLinkCapture failed: $e'));
 
-    // AdMob — off the critical path. Test ads only until AdConfig.useRealAds.
+    // AdMob — off the critical path. Real ads in release builds (AdConfig.useRealAds); the test devices get test ads.
     // UMP consent is resolved first; nothing requests an ad until
     // AdConsentService.instance.canRequestAds is true.
     try {
