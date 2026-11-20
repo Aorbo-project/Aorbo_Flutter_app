@@ -544,6 +544,40 @@ class _ScenePainter extends CustomPainter {
     );
   }
 
+  /// A soft line without a blur: three strokes, wide and faint to thin and strong.
+  static void _softLine(
+    Canvas c,
+    Path p,
+    Color color,
+    double width,
+    double sigma, {
+    StrokeCap cap = StrokeCap.round,
+    StrokeJoin join = StrokeJoin.round,
+  }) {
+    for (final (w, a) in [(width + sigma * 3, 0.25), (width + sigma, 0.4), (width, 0.6)]) {
+      c.drawPath(
+        p,
+        Paint()
+          ..color = color.withValues(alpha: color.a * a)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = w
+          ..strokeCap = cap
+          ..strokeJoin = join,
+      );
+    }
+  }
+
+  /// A soft oval without a blur (a soft dot squashed to [rect]).
+  static void _softOval(Canvas c, Rect rect, double sigma, Color color) {
+    final r = rect.width / 2;
+    if (r <= 0) return;
+    c.save();
+    c.translate(rect.center.dx, rect.center.dy);
+    c.scale(1, rect.height / rect.width);
+    _softDot(c, Offset.zero, r, sigma, color);
+    c.restore();
+  }
+
   int _cycles(double speed, double multiplier, int min, int max) {
     return (speed * multiplier).round().clamp(min, max).toInt();
   }
@@ -713,18 +747,19 @@ class _ScenePainter extends CustomPainter {
     }
 
     if (l.variant == 'moon') {
-      c.saveLayer(Offset.zero & s, Paint());
-      c.drawCircle(
-        center,
-        r,
-        Paint()..color = col.withValues(alpha: l.opacity),
+      // A crescent shape, not a full-screen layer with a cut-out.
+      final crescent = Path.combine(
+        PathOperation.difference,
+        Path()..addOval(Rect.fromCircle(center: center, radius: r)),
+        Path()
+          ..addOval(
+            Rect.fromCircle(
+              center: center.translate(r * 0.4, -r * 0.18),
+              radius: r * 0.9,
+            ),
+          ),
       );
-      c.drawCircle(
-        center.translate(r * 0.4, -r * 0.18),
-        r * 0.9,
-        Paint()..blendMode = BlendMode.clear,
-      );
-      c.restore();
+      c.drawPath(crescent, Paint()..color = col.withValues(alpha: l.opacity));
     } else {
       c.drawCircle(
         center,
@@ -767,8 +802,7 @@ class _ScenePainter extends CustomPainter {
               l.colors[layer].withValues(alpha: 0.0),
             ],
             const [0.0, 0.5, 1.0],
-          )
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, 22),
+          ),
       );
     }
   }
@@ -1019,14 +1053,7 @@ class _ScenePainter extends CustomPainter {
         path.lineTo(x * s.width, y + wave);
       }
 
-      c.drawPath(
-        path,
-        Paint()
-          ..color = foam.withValues(alpha: alpha)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.0 + t * 1.8
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, 1.5 + t * 2),
-      );
+      _softLine(c, path, foam.withValues(alpha: alpha), 1.0 + t * 1.8, 1.5 + t * 2);
     }
 
     final glint = 0.18 + 0.18 * math.sin(t01 * 2 * math.pi * cycles);
@@ -1067,8 +1094,7 @@ class _ScenePainter extends CustomPainter {
         const [0.0, 0.6, 1.0],
       )
       ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..maskFilter = MaskFilter.blur(BlurStyle.normal, 1.2);
+      ..strokeCap = StrokeCap.round;
 
     for (var i = 0; i < strands; i++) {
       final sx = rnd.nextDouble();
@@ -1092,13 +1118,7 @@ class _ScenePainter extends CustomPainter {
       final mx = x + (rnd.nextDouble() - 0.5) * w * 1.4;
       final my = topY + h + rnd.nextDouble() * 12;
       final mr = w * (0.12 + rnd.nextDouble() * 0.16);
-      c.drawCircle(
-        Offset(mx, my),
-        mr,
-        Paint()
-          ..color = Colors.white.withValues(alpha: 0.18 * l.opacity)
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, 12),
-      );
+      _softDot(c, Offset(mx, my), mr, 12, Colors.white.withValues(alpha: 0.18 * l.opacity));
     }
   }
 
@@ -1270,12 +1290,7 @@ class _ScenePainter extends CustomPainter {
           paint
             ..shader = null
             ..color = col.withValues(alpha: l.opacity * (1 - prog) * depth);
-          c.drawCircle(
-            Offset(x, y),
-            size * 2.5,
-            paint..maskFilter = MaskFilter.blur(BlurStyle.normal, 4),
-          );
-          paint.maskFilter = null;
+          _softDot(c, Offset(x, y), size * 2.5, 4, paint.color);
           paint.color = Colors.orange.withValues(alpha: l.opacity * (1 - prog));
           c.drawCircle(Offset(x, y), size, paint);
           break;
@@ -1320,12 +1335,7 @@ class _ScenePainter extends CustomPainter {
           paint
             ..shader = null
             ..color = col.withValues(alpha: l.opacity * blink);
-          c.drawCircle(
-            Offset(x, y),
-            4,
-            paint..maskFilter = MaskFilter.blur(BlurStyle.normal, 5),
-          );
-          paint.maskFilter = null;
+          _softDot(c, Offset(x, y), 4, 5, paint.color);
           c.drawCircle(Offset(x, y), 1.2, paint);
           break;
 
@@ -1415,14 +1425,12 @@ class _ScenePainter extends CustomPainter {
           final cx = l.x * s.width + math.sin(prog * 3 + sp) * 6;
           final cy = l.y * s.height - prog * 20;
           final r = 2 + prog * 6;
-          c.drawCircle(
+          _softDot(
+            c,
             Offset(cx, cy),
             r,
-            Paint()
-              ..color = Colors.white.withValues(
-                alpha: (1 - prog) * 0.4 * l.opacity,
-              )
-              ..maskFilter = MaskFilter.blur(BlurStyle.normal, 2.5),
+            2.5,
+            Colors.white.withValues(alpha: (1 - prog) * 0.4 * l.opacity),
           );
           break;
 
@@ -1848,12 +1856,12 @@ class _ScenePainter extends CustomPainter {
       final prog = (t01 * 2 + i * 0.18) % 1.0;
       final smokeY = -size * (0.8 + prog * 2.4);
       final smokeX = math.sin(prog * 6 + i) * size * 0.25;
-      c.drawCircle(
+      _softDot(
+        c,
         Offset(smokeX, smokeY),
         size * (0.12 + prog * 0.22),
-        Paint()
-          ..color = Colors.grey.withValues(alpha: (1 - prog) * 0.12 * l.opacity)
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, 8),
+        8,
+        Colors.grey.withValues(alpha: (1 - prog) * 0.12 * l.opacity),
       );
     }
 
@@ -1897,8 +1905,7 @@ class _ScenePainter extends CustomPainter {
               Colors.yellow.withValues(alpha: l.opacity * 0.95),
             ],
             const [0.0, 0.5, 1.0],
-          )
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, f == 0 ? 4.0 : 1.0),
+          ),
       );
     }
 
@@ -1988,16 +1995,12 @@ class _ScenePainter extends CustomPainter {
             }
           }
 
-          c.drawPath(
+          _softLine(
+            c,
             foamPath,
-            Paint()
-              ..color = Colors.white.withValues(
-                alpha: (0.48 - pass * 0.18) * l.opacity,
-              )
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = 3.5 - pass * 1.2
-              ..strokeCap = StrokeCap.round
-              ..maskFilter = MaskFilter.blur(BlurStyle.normal, 3),
+            Colors.white.withValues(alpha: (0.48 - pass * 0.18) * l.opacity),
+            3.5 - pass * 1.2,
+            3,
           );
         }
 
@@ -2556,8 +2559,7 @@ class _ScenePainter extends CustomPainter {
           Paint()
             ..color = l.colors.first.withValues(alpha: l.opacity * 0.45)
             ..style = PaintingStyle.stroke
-            ..strokeWidth = 0.7
-            ..maskFilter = MaskFilter.blur(BlurStyle.normal, 0.6),
+            ..strokeWidth = 0.7,
         );
         c.restore();
       }
@@ -2684,15 +2686,7 @@ class _ScenePainter extends CustomPainter {
         bolt.moveTo(x, y);
       }
     }
-    c.drawPath(
-      bolt,
-      Paint()
-        ..color = Colors.white.withValues(alpha: flash * l.opacity)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.2
-        ..strokeJoin = StrokeJoin.round
-        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 1.5),
-    );
+    _softLine(c, bolt, Colors.white.withValues(alpha: flash * l.opacity), 2.2, 1.5, cap: StrokeCap.butt);
   }
 
   void _rays(Canvas c, Size s, SceneLayer l) {
@@ -2740,15 +2734,11 @@ class _ScenePainter extends CustomPainter {
     c.rotate(tilt);
 
     // Water ripple around boat
-    c.drawOval(
-      Rect.fromCenter(
-        center: Offset(0, h * 0.5),
-        width: w * 1.8,
-        height: h * 0.6,
-      ),
-      Paint()
-        ..color = Colors.white.withValues(alpha: 0.15 * l.opacity)
-        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 4),
+    _softOval(
+      c,
+      Rect.fromCenter(center: Offset(0, h * 0.5), width: w * 1.8, height: h * 0.6),
+      4,
+      Colors.white.withValues(alpha: 0.15 * l.opacity),
     );
 
     // Boat Hull

@@ -66,15 +66,13 @@ void main() {
     expect(find.byType(RawImage), findsOneWidget);
   });
 
-  test('the live theme layers draw soft edges with gradients, not blurs (~190 MB GPU)', () {
+  test('every header theme draws soft edges with gradients: no blur, layer or cut-out (~190 MB GPU)', () {
     final src = File('lib/utils/header_scene.dart').readAsStringSync();
-    String body(String fn) {
-      final start = src.indexOf('  void $fn(Canvas');
-      final end = src.indexOf(RegExp(r'\n  void _[a-zA-Z]+\('), start + 10);
-      return src.substring(start, end);
-    }
-    for (final fn in ['_clouds', '_fog', '_mountains', '_sky', '_trees', '_birds', '_scrim']) {
-      expect(body(fn), isNot(contains('MaskFilter.blur')), reason: '$fn must not blur: use _softDot / gradients');
+    // Code only: comments may name what is banned.
+    final code = src.split('\n').where((l) => !l.trimLeft().startsWith('//')).join('\n');
+    for (final banned in ['MaskFilter.blur', 'saveLayer', 'BlendMode.clear', 'ImageFilter']) {
+      expect(code, isNot(contains(banned)),
+          reason: '$banned costs a GPU buffer every frame on every phone: use _softDot / _softLine / _softOval');
     }
     expect(src, contains("static const _pin = String.fromEnvironment('SCENE_PIN');"));
   });
