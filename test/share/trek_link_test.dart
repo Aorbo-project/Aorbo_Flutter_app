@@ -1,10 +1,65 @@
 import 'package:arobo_app/giveaway/referral_links.dart';
+import 'package:arobo_app/repository/repository.dart';
 import 'package:arobo_app/share/trek_link.dart';
 import 'package:arobo_app/utils/shared_preferences.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  group('PendingTrekLink guest progress', () {
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      await SpUtil.getInstance();
+    });
+
+    test('the guest page opens once per link', () async {
+      await PendingTrekLink.save(const TrekLink('Kp4mQ7xZ'));
+      expect(await PendingTrekLink.guestShown(), isFalse);
+      await PendingTrekLink.markGuestShown();
+      expect(await PendingTrekLink.guestShown(), isTrue);
+    });
+
+    test('Continue is remembered with the boarding city', () async {
+      await PendingTrekLink.save(const TrekLink('Kp4mQ7xZ'));
+      expect(await PendingTrekLink.bookingResume(), isNull);
+      await PendingTrekLink.saveBookingResume(boardingCityId: 2589);
+      expect((await PendingTrekLink.bookingResume())?.boardingCityId, 2589);
+      await PendingTrekLink.saveBookingResume();
+      final resume = await PendingTrekLink.bookingResume();
+      expect(resume, isNotNull);
+      expect(resume!.boardingCityId, isNull);
+    });
+
+    test('a new link starts over', () async {
+      await PendingTrekLink.save(const TrekLink('Kp4mQ7xZ'));
+      await PendingTrekLink.markGuestShown();
+      await PendingTrekLink.saveBookingResume(boardingCityId: 2589);
+      await PendingTrekLink.save(const TrekLink('Ab3dEf7H'));
+      expect(await PendingTrekLink.guestShown(), isFalse);
+      expect(await PendingTrekLink.bookingResume(), isNull);
+    });
+
+    test('clear forgets everything', () async {
+      await PendingTrekLink.save(const TrekLink('Kp4mQ7xZ'));
+      await PendingTrekLink.markGuestShown();
+      await PendingTrekLink.saveBookingResume();
+      await PendingTrekLink.clear();
+      expect(await PendingTrekLink.read(), isNull);
+      expect(await PendingTrekLink.guestShown(), isFalse);
+      expect(await PendingTrekLink.bookingResume(), isNull);
+    });
+  });
+
+  group('A guest has no session to end', () {
+    test('only with no token and not signed in', () {
+      expect(hasNoSessionToEnd(token: '', loggedIn: null), isTrue);
+      expect(hasNoSessionToEnd(token: '', loggedIn: false), isTrue);
+      expect(hasNoSessionToEnd(token: '', loggedIn: true), isFalse);
+      expect(hasNoSessionToEnd(token: 'abc', loggedIn: null), isFalse);
+      expect(hasNoSessionToEnd(token: 'abc', loggedIn: true), isFalse);
+    });
+  });
+
   group('TrekLink.fromUri', () {
     test('reads the code from a trek link on either host', () {
       expect(TrekLink.fromUri(Uri.parse('https://aorbotreks.co.in/t/Kp4mQ7xZ')), const TrekLink('Kp4mQ7xZ'));

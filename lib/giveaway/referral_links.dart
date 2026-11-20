@@ -8,6 +8,7 @@ import 'package:get/get.dart';
 
 import '../share/trek_link.dart';
 import '../utils/shared_preferences.dart';
+import 'install_source.dart';
 import 'giveaway_config.dart';
 
 /// Pure parsing for referral codes arriving from outside the app. Everything
@@ -95,6 +96,9 @@ class ReferralLinkCapture {
   static final ReferralLinkCapture instance = ReferralLinkCapture._();
 
   static const String _referrerCheckedKey = 'giveaway_install_referrer_checked';
+  // Read separately (19 Nov 2026): phones that read the referrer before this existed
+  // still report where they came from once.
+  static const String _sourceCheckedKey = 'install_source_checked_v1';
 
   StreamSubscription<Uri>? _sub;
   bool _started = false;
@@ -107,12 +111,26 @@ class ReferralLinkCapture {
   /// trek, then clears this. Signed out, the link waits in [PendingTrekLink].
   final Rxn<TrekLink> openTrekRequested = Rxn<TrekLink>();
 
+  /// Set when a trek link arrives signed out; the sign-in screen opens the
+  /// guest trek page, then clears this.
+  final Rxn<TrekLink> guestTrekArrived = Rxn<TrekLink>();
+
+  final Completer<void> _linksRead = Completer<void>();
+
+  /// Done once the opening link and the install referrer have been read, so
+  /// the sign-in screen knows whether a trek is waiting.
+  Future<void> get linksRead => _linksRead.future;
+
   /// [isLoggedIn] is read at the moment a link arrives.
   Future<void> start({required bool Function() isLoggedIn}) async {
-    if (_started || kIsWeb) return;
+    if (_started) return;
     _started = true;
+    if (kIsWeb) {
+      _linksRead.complete();
+      return;
+    }
 
-    unawaited(_readInstallReferrerOnce());
+    final referrer = _readInstallReferrerOnce();
 
     final links = AppLinks();
     try {
@@ -125,6 +143,8 @@ class ReferralLinkCapture {
       (uri) => _handle(uri, isLoggedIn()),
       onError: (Object e) => debugPrint('ReferralLinkCapture: link stream error: $e'),
     );
+    await referrer.timeout(const Duration(seconds: 3), onTimeout: () {});
+    if (!_linksRead.isCompleted) _linksRead.complete();
   }
 
   Future<void> _handle(Uri uri, bool loggedIn) async {
@@ -134,6 +154,7 @@ class ReferralLinkCapture {
         openTrekRequested.value = trek;
       } else {
         await PendingTrekLink.save(trek);
+        guestTrekArrived.value = trek;
       }
       return;
     }
@@ -152,8 +173,13 @@ class ReferralLinkCapture {
     if (!Platform.isAndroid) return;
     try {
       final sp = await SpUtil.getInstance();
-      if (sp.getBool(_referrerCheckedKey) == true) return;
+      final linksChecked = sp.getBool(_referrerCheckedKey) == true;
+      final sourceChecked = sp.getBool(_sourceCheckedKey) == true;
+      if (linksChecked && sourceChecked) return;
       final details = await AndroidPlayInstallReferrer.installReferrer;
+      await sp.putBool(_sourceCheckedKey, true);
+      await InstallSource.saveFromReferrer(details.installReferrer);
+      if (linksChecked) return;
       await sp.putBool(_referrerCheckedKey, true);
       final code = ReferralLinkParser.fromInstallReferrer(details.installReferrer);
       // An App Link code, if any, is more recent — don't overwrite it.
@@ -163,6 +189,7 @@ class ReferralLinkCapture {
       final trek = TrekLink.fromInstallReferrer(details.installReferrer);
       if (trek != null && await PendingTrekLink.read() == null) {
         await PendingTrekLink.save(trek);
+        guestTrekArrived.value = trek;
       }
     } catch (e) {
       // Sideloaded builds and phones without Play have no referrer — normal.

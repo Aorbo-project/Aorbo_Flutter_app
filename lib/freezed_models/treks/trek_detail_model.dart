@@ -89,6 +89,9 @@ class TrekDetailData with _$TrekDetailData {
     // this (controllers/v1/trekController.js's batchAttrs); UX-only field,
     // the backend's own booking-flow gates are the real enforcement.
     @JsonKey(name: 'bookings_stopped_at') String? bookingsStoppedAt,
+    // Inside the 6-hour lock before departure, or departed. The server refuses
+    // a booking then; this shows "Bookings Closed" before the customer tries.
+    @JsonKey(name: 'bookings_locked') bool? bookingsLocked,
     @JsonKey(name: 'cancellation_policy')
     CancellationPolicy? cancellationPolicy,
     @JsonKey(name: 'booking_type') String? bookingType,
@@ -103,7 +106,8 @@ extension TrekDetailDataExtension on TrekDetailData {
   /// permanently closed this batch to new bookings. UX signal only; the
   /// backend independently rejects a booking attempt regardless of this.
   bool get isBookingsStopped =>
-      bookingsStoppedAt != null && bookingsStoppedAt!.isNotEmpty;
+      (bookingsStoppedAt != null && bookingsStoppedAt!.isNotEmpty) ||
+      bookingsLocked == true;
 
   /// Returns the departure datetime from the first boarding point stage.
   /// If no boarding stage is found, returns null.
@@ -238,10 +242,37 @@ class TrekStages with _$TrekStages {
     @JsonKey(name: 'batch_id') int? batchId,
     @JsonKey(name: 'city_id') int? cityId,
     City? city,
+    // Trek Route card tags, worked out by the server (Backend utils/returnJourney.js
+    // routeTags; owner, 12 Nov 2026): "Boarding", "Meeting point", "Return starts",
+    // "Arrival · back home". The app only shows them.
+    @JsonKey(name: 'route_role', fromJson: _routeTextFromJson) String? routeRole,
+    @JsonKey(name: 'route_label', fromJson: _routeTextFromJson) String? routeLabel,
+    // The travel line after this stop ("≈ 11 h overnight bus"), or null.
+    @JsonKey(name: 'travel_after', fromJson: _travelLabelFromJson) String? travelAfterLabel,
+    // A pickup's map place (Backend utils/returnJourney withRouteTags, 17 Nov 2026): its
+    // kind as shown ("Bus stand") and its pin; null for older pickups (no pin is shown).
+    @JsonKey(name: 'place_label', fromJson: _routeTextFromJson) String? placeLabel,
+    @JsonKey(fromJson: jsonToCoordinate) double? latitude,
+    @JsonKey(fromJson: jsonToCoordinate) double? longitude,
   }) = _TrekStages;
 
   factory TrekStages.fromJson(Map<String, dynamic> json) =>
       _$TrekStagesFromJson(json);
+}
+
+/// A route tag as sent, or null for anything that is not a non-empty string
+/// (an older server sends nothing; bad data must never break the trek page).
+String? _routeTextFromJson(Object? value) {
+  if (value is! String) return null;
+  final text = value.trim();
+  return text.isEmpty ? null : text;
+}
+
+/// The travel line's label from the server's `{ minutes, label }` (or the plain label
+/// this model writes back when a trek is saved on the phone), or null.
+String? _travelLabelFromJson(Object? value) {
+  if (value is Map) return _routeTextFromJson(value['label']);
+  return _routeTextFromJson(value);
 }
 
 @freezed

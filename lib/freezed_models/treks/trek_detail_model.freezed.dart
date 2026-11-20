@@ -293,7 +293,11 @@ mixin _$TrekDetailData {
 // this (controllers/v1/trekController.js's batchAttrs); UX-only field,
 // the backend's own booking-flow gates are the real enforcement.
   @JsonKey(name: 'bookings_stopped_at')
-  String? get bookingsStoppedAt => throw _privateConstructorUsedError;
+  String? get bookingsStoppedAt =>
+      throw _privateConstructorUsedError; // Inside the 6-hour lock before departure, or departed. The server refuses
+// a booking then; this shows "Bookings Closed" before the customer tries.
+  @JsonKey(name: 'bookings_locked')
+  bool? get bookingsLocked => throw _privateConstructorUsedError;
   @JsonKey(name: 'cancellation_policy')
   CancellationPolicy? get cancellationPolicy =>
       throw _privateConstructorUsedError;
@@ -365,6 +369,7 @@ abstract class $TrekDetailDataCopyWith<$Res> {
       @JsonKey(name: 'booked_slots') int? bookedSlots,
       @JsonKey(name: 'available_slots') int? availableSlots,
       @JsonKey(name: 'bookings_stopped_at') String? bookingsStoppedAt,
+      @JsonKey(name: 'bookings_locked') bool? bookingsLocked,
       @JsonKey(name: 'cancellation_policy')
       CancellationPolicy? cancellationPolicy,
       @JsonKey(name: 'booking_type') String? bookingType});
@@ -441,6 +446,7 @@ class _$TrekDetailDataCopyWithImpl<$Res, $Val extends TrekDetailData>
     Object? bookedSlots = freezed,
     Object? availableSlots = freezed,
     Object? bookingsStoppedAt = freezed,
+    Object? bookingsLocked = freezed,
     Object? cancellationPolicy = freezed,
     Object? bookingType = freezed,
   }) {
@@ -653,6 +659,10 @@ class _$TrekDetailDataCopyWithImpl<$Res, $Val extends TrekDetailData>
           ? _value.bookingsStoppedAt
           : bookingsStoppedAt // ignore: cast_nullable_to_non_nullable
               as String?,
+      bookingsLocked: freezed == bookingsLocked
+          ? _value.bookingsLocked
+          : bookingsLocked // ignore: cast_nullable_to_non_nullable
+              as bool?,
       cancellationPolicy: freezed == cancellationPolicy
           ? _value.cancellationPolicy
           : cancellationPolicy // ignore: cast_nullable_to_non_nullable
@@ -787,6 +797,7 @@ abstract class _$$TrekDetailDataImplCopyWith<$Res>
       @JsonKey(name: 'booked_slots') int? bookedSlots,
       @JsonKey(name: 'available_slots') int? availableSlots,
       @JsonKey(name: 'bookings_stopped_at') String? bookingsStoppedAt,
+      @JsonKey(name: 'bookings_locked') bool? bookingsLocked,
       @JsonKey(name: 'cancellation_policy')
       CancellationPolicy? cancellationPolicy,
       @JsonKey(name: 'booking_type') String? bookingType});
@@ -866,6 +877,7 @@ class __$$TrekDetailDataImplCopyWithImpl<$Res>
     Object? bookedSlots = freezed,
     Object? availableSlots = freezed,
     Object? bookingsStoppedAt = freezed,
+    Object? bookingsLocked = freezed,
     Object? cancellationPolicy = freezed,
     Object? bookingType = freezed,
   }) {
@@ -1078,6 +1090,10 @@ class __$$TrekDetailDataImplCopyWithImpl<$Res>
           ? _value.bookingsStoppedAt
           : bookingsStoppedAt // ignore: cast_nullable_to_non_nullable
               as String?,
+      bookingsLocked: freezed == bookingsLocked
+          ? _value.bookingsLocked
+          : bookingsLocked // ignore: cast_nullable_to_non_nullable
+              as bool?,
       cancellationPolicy: freezed == cancellationPolicy
           ? _value.cancellationPolicy
           : cancellationPolicy // ignore: cast_nullable_to_non_nullable
@@ -1150,6 +1166,7 @@ class _$TrekDetailDataImpl implements _TrekDetailData {
       @JsonKey(name: 'booked_slots') this.bookedSlots,
       @JsonKey(name: 'available_slots') this.availableSlots,
       @JsonKey(name: 'bookings_stopped_at') this.bookingsStoppedAt,
+      @JsonKey(name: 'bookings_locked') this.bookingsLocked,
       @JsonKey(name: 'cancellation_policy') this.cancellationPolicy,
       @JsonKey(name: 'booking_type') this.bookingType})
       : _cityIds = cityIds,
@@ -1391,6 +1408,11 @@ class _$TrekDetailDataImpl implements _TrekDetailData {
   @override
   @JsonKey(name: 'bookings_stopped_at')
   final String? bookingsStoppedAt;
+// Inside the 6-hour lock before departure, or departed. The server refuses
+// a booking then; this shows "Bookings Closed" before the customer tries.
+  @override
+  @JsonKey(name: 'bookings_locked')
+  final bool? bookingsLocked;
   @override
   @JsonKey(name: 'cancellation_policy')
   final CancellationPolicy? cancellationPolicy;
@@ -1400,7 +1422,7 @@ class _$TrekDetailDataImpl implements _TrekDetailData {
 
   @override
   String toString() {
-    return 'TrekDetailData(cityIds: $cityIds, inclusions: $inclusions, exclusions: $exclusions, activities: $activities, id: $id, mtrId: $mtrId, title: $title, description: $description, vendorId: $vendorId, destinationId: $destinationId, captainId: $captainId, duration: $duration, durationDays: $durationDays, durationNights: $durationNights, basePrice: $basePrice, maxParticipants: $maxParticipants, trekkingRules: $trekkingRules, emergencyProtocols: $emergencyProtocols, organizerNotes: $organizerNotes, status: $status, discountValue: $discountValue, discountType: $discountType, hasDiscount: $hasDiscount, badgeId: $badgeId, hasBeenEdited: $hasBeenEdited, safetySecurityCount: $safetySecurityCount, organizerMannerCount: $organizerMannerCount, trekPlanningCount: $trekPlanningCount, womenSafetyCount: $womenSafetyCount, createdAt: $createdAt, updatedAt: $updatedAt, vendor: $vendor, destinationData: $destinationData, badge: $badge, trekStages: $trekStages, accommodations: $accommodations, itineraryItems: $itineraryItems, images: $images, averageRating: $averageRating, totalReviews: $totalReviews, ratingTotal: $ratingTotal, reviewCommentsCount: $reviewCommentsCount, latestReviews: $latestReviews, categoryRatings: $categoryRatings, batchId: $batchId, tbrId: $tbrId, startDate: $startDate, endDate: $endDate, capacity: $capacity, bookedSlots: $bookedSlots, availableSlots: $availableSlots, bookingsStoppedAt: $bookingsStoppedAt, cancellationPolicy: $cancellationPolicy, bookingType: $bookingType)';
+    return 'TrekDetailData(cityIds: $cityIds, inclusions: $inclusions, exclusions: $exclusions, activities: $activities, id: $id, mtrId: $mtrId, title: $title, description: $description, vendorId: $vendorId, destinationId: $destinationId, captainId: $captainId, duration: $duration, durationDays: $durationDays, durationNights: $durationNights, basePrice: $basePrice, maxParticipants: $maxParticipants, trekkingRules: $trekkingRules, emergencyProtocols: $emergencyProtocols, organizerNotes: $organizerNotes, status: $status, discountValue: $discountValue, discountType: $discountType, hasDiscount: $hasDiscount, badgeId: $badgeId, hasBeenEdited: $hasBeenEdited, safetySecurityCount: $safetySecurityCount, organizerMannerCount: $organizerMannerCount, trekPlanningCount: $trekPlanningCount, womenSafetyCount: $womenSafetyCount, createdAt: $createdAt, updatedAt: $updatedAt, vendor: $vendor, destinationData: $destinationData, badge: $badge, trekStages: $trekStages, accommodations: $accommodations, itineraryItems: $itineraryItems, images: $images, averageRating: $averageRating, totalReviews: $totalReviews, ratingTotal: $ratingTotal, reviewCommentsCount: $reviewCommentsCount, latestReviews: $latestReviews, categoryRatings: $categoryRatings, batchId: $batchId, tbrId: $tbrId, startDate: $startDate, endDate: $endDate, capacity: $capacity, bookedSlots: $bookedSlots, availableSlots: $availableSlots, bookingsStoppedAt: $bookingsStoppedAt, bookingsLocked: $bookingsLocked, cancellationPolicy: $cancellationPolicy, bookingType: $bookingType)';
   }
 
   @override
@@ -1500,6 +1522,8 @@ class _$TrekDetailDataImpl implements _TrekDetailData {
                 other.availableSlots == availableSlots) &&
             (identical(other.bookingsStoppedAt, bookingsStoppedAt) ||
                 other.bookingsStoppedAt == bookingsStoppedAt) &&
+            (identical(other.bookingsLocked, bookingsLocked) ||
+                other.bookingsLocked == bookingsLocked) &&
             (identical(other.cancellationPolicy, cancellationPolicy) ||
                 other.cancellationPolicy == cancellationPolicy) &&
             (identical(other.bookingType, bookingType) ||
@@ -1562,6 +1586,7 @@ class _$TrekDetailDataImpl implements _TrekDetailData {
         bookedSlots,
         availableSlots,
         bookingsStoppedAt,
+        bookingsLocked,
         cancellationPolicy,
         bookingType
       ]);
@@ -1639,6 +1664,7 @@ abstract class _TrekDetailData implements TrekDetailData {
       @JsonKey(name: 'booked_slots') final int? bookedSlots,
       @JsonKey(name: 'available_slots') final int? availableSlots,
       @JsonKey(name: 'bookings_stopped_at') final String? bookingsStoppedAt,
+      @JsonKey(name: 'bookings_locked') final bool? bookingsLocked,
       @JsonKey(name: 'cancellation_policy')
       final CancellationPolicy? cancellationPolicy,
       @JsonKey(name: 'booking_type')
@@ -1797,6 +1823,10 @@ abstract class _TrekDetailData implements TrekDetailData {
 // the backend's own booking-flow gates are the real enforcement.
   @JsonKey(name: 'bookings_stopped_at')
   String? get bookingsStoppedAt;
+  @override // Inside the 6-hour lock before departure, or departed. The server refuses
+// a booking then; this shows "Bookings Closed" before the customer tries.
+  @JsonKey(name: 'bookings_locked')
+  bool? get bookingsLocked;
   @override
   @JsonKey(name: 'cancellation_policy')
   CancellationPolicy? get cancellationPolicy;
@@ -2768,7 +2798,25 @@ mixin _$TrekStages {
   int? get batchId => throw _privateConstructorUsedError;
   @JsonKey(name: 'city_id')
   int? get cityId => throw _privateConstructorUsedError;
-  City? get city => throw _privateConstructorUsedError;
+  City? get city =>
+      throw _privateConstructorUsedError; // Trek Route card tags, worked out by the server (Backend utils/returnJourney.js
+// routeTags; owner, 12 Nov 2026): "Boarding", "Meeting point", "Return starts",
+// "Arrival · back home". The app only shows them.
+  @JsonKey(name: 'route_role', fromJson: _routeTextFromJson)
+  String? get routeRole => throw _privateConstructorUsedError;
+  @JsonKey(name: 'route_label', fromJson: _routeTextFromJson)
+  String? get routeLabel =>
+      throw _privateConstructorUsedError; // The travel line after this stop ("≈ 11 h overnight bus"), or null.
+  @JsonKey(name: 'travel_after', fromJson: _travelLabelFromJson)
+  String? get travelAfterLabel =>
+      throw _privateConstructorUsedError; // A pickup's map place (Backend utils/returnJourney withRouteTags, 17 Nov 2026): its
+// kind as shown ("Bus stand") and its pin; null for older pickups (no pin is shown).
+  @JsonKey(name: 'place_label', fromJson: _routeTextFromJson)
+  String? get placeLabel => throw _privateConstructorUsedError;
+  @JsonKey(fromJson: jsonToCoordinate)
+  double? get latitude => throw _privateConstructorUsedError;
+  @JsonKey(fromJson: jsonToCoordinate)
+  double? get longitude => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -2791,7 +2839,17 @@ abstract class $TrekStagesCopyWith<$Res> {
       @JsonKey(name: 'is_boarding_point') bool? isBoardingPoint,
       @JsonKey(name: 'batch_id') int? batchId,
       @JsonKey(name: 'city_id') int? cityId,
-      City? city});
+      City? city,
+      @JsonKey(name: 'route_role', fromJson: _routeTextFromJson)
+      String? routeRole,
+      @JsonKey(name: 'route_label', fromJson: _routeTextFromJson)
+      String? routeLabel,
+      @JsonKey(name: 'travel_after', fromJson: _travelLabelFromJson)
+      String? travelAfterLabel,
+      @JsonKey(name: 'place_label', fromJson: _routeTextFromJson)
+      String? placeLabel,
+      @JsonKey(fromJson: jsonToCoordinate) double? latitude,
+      @JsonKey(fromJson: jsonToCoordinate) double? longitude});
 
   $CityCopyWith<$Res>? get city;
 }
@@ -2818,6 +2876,12 @@ class _$TrekStagesCopyWithImpl<$Res, $Val extends TrekStages>
     Object? batchId = freezed,
     Object? cityId = freezed,
     Object? city = freezed,
+    Object? routeRole = freezed,
+    Object? routeLabel = freezed,
+    Object? travelAfterLabel = freezed,
+    Object? placeLabel = freezed,
+    Object? latitude = freezed,
+    Object? longitude = freezed,
   }) {
     return _then(_value.copyWith(
       id: freezed == id
@@ -2856,6 +2920,30 @@ class _$TrekStagesCopyWithImpl<$Res, $Val extends TrekStages>
           ? _value.city
           : city // ignore: cast_nullable_to_non_nullable
               as City?,
+      routeRole: freezed == routeRole
+          ? _value.routeRole
+          : routeRole // ignore: cast_nullable_to_non_nullable
+              as String?,
+      routeLabel: freezed == routeLabel
+          ? _value.routeLabel
+          : routeLabel // ignore: cast_nullable_to_non_nullable
+              as String?,
+      travelAfterLabel: freezed == travelAfterLabel
+          ? _value.travelAfterLabel
+          : travelAfterLabel // ignore: cast_nullable_to_non_nullable
+              as String?,
+      placeLabel: freezed == placeLabel
+          ? _value.placeLabel
+          : placeLabel // ignore: cast_nullable_to_non_nullable
+              as String?,
+      latitude: freezed == latitude
+          ? _value.latitude
+          : latitude // ignore: cast_nullable_to_non_nullable
+              as double?,
+      longitude: freezed == longitude
+          ? _value.longitude
+          : longitude // ignore: cast_nullable_to_non_nullable
+              as double?,
     ) as $Val);
   }
 
@@ -2889,7 +2977,17 @@ abstract class _$$TrekStagesImplCopyWith<$Res>
       @JsonKey(name: 'is_boarding_point') bool? isBoardingPoint,
       @JsonKey(name: 'batch_id') int? batchId,
       @JsonKey(name: 'city_id') int? cityId,
-      City? city});
+      City? city,
+      @JsonKey(name: 'route_role', fromJson: _routeTextFromJson)
+      String? routeRole,
+      @JsonKey(name: 'route_label', fromJson: _routeTextFromJson)
+      String? routeLabel,
+      @JsonKey(name: 'travel_after', fromJson: _travelLabelFromJson)
+      String? travelAfterLabel,
+      @JsonKey(name: 'place_label', fromJson: _routeTextFromJson)
+      String? placeLabel,
+      @JsonKey(fromJson: jsonToCoordinate) double? latitude,
+      @JsonKey(fromJson: jsonToCoordinate) double? longitude});
 
   @override
   $CityCopyWith<$Res>? get city;
@@ -2915,6 +3013,12 @@ class __$$TrekStagesImplCopyWithImpl<$Res>
     Object? batchId = freezed,
     Object? cityId = freezed,
     Object? city = freezed,
+    Object? routeRole = freezed,
+    Object? routeLabel = freezed,
+    Object? travelAfterLabel = freezed,
+    Object? placeLabel = freezed,
+    Object? latitude = freezed,
+    Object? longitude = freezed,
   }) {
     return _then(_$TrekStagesImpl(
       id: freezed == id
@@ -2953,6 +3057,30 @@ class __$$TrekStagesImplCopyWithImpl<$Res>
           ? _value.city
           : city // ignore: cast_nullable_to_non_nullable
               as City?,
+      routeRole: freezed == routeRole
+          ? _value.routeRole
+          : routeRole // ignore: cast_nullable_to_non_nullable
+              as String?,
+      routeLabel: freezed == routeLabel
+          ? _value.routeLabel
+          : routeLabel // ignore: cast_nullable_to_non_nullable
+              as String?,
+      travelAfterLabel: freezed == travelAfterLabel
+          ? _value.travelAfterLabel
+          : travelAfterLabel // ignore: cast_nullable_to_non_nullable
+              as String?,
+      placeLabel: freezed == placeLabel
+          ? _value.placeLabel
+          : placeLabel // ignore: cast_nullable_to_non_nullable
+              as String?,
+      latitude: freezed == latitude
+          ? _value.latitude
+          : latitude // ignore: cast_nullable_to_non_nullable
+              as double?,
+      longitude: freezed == longitude
+          ? _value.longitude
+          : longitude // ignore: cast_nullable_to_non_nullable
+              as double?,
     ));
   }
 }
@@ -2969,7 +3097,16 @@ class _$TrekStagesImpl implements _TrekStages {
       @JsonKey(name: 'is_boarding_point') this.isBoardingPoint,
       @JsonKey(name: 'batch_id') this.batchId,
       @JsonKey(name: 'city_id') this.cityId,
-      this.city});
+      this.city,
+      @JsonKey(name: 'route_role', fromJson: _routeTextFromJson) this.routeRole,
+      @JsonKey(name: 'route_label', fromJson: _routeTextFromJson)
+      this.routeLabel,
+      @JsonKey(name: 'travel_after', fromJson: _travelLabelFromJson)
+      this.travelAfterLabel,
+      @JsonKey(name: 'place_label', fromJson: _routeTextFromJson)
+      this.placeLabel,
+      @JsonKey(fromJson: jsonToCoordinate) this.latitude,
+      @JsonKey(fromJson: jsonToCoordinate) this.longitude});
 
   factory _$TrekStagesImpl.fromJson(Map<String, dynamic> json) =>
       _$$TrekStagesImplFromJson(json);
@@ -2998,10 +3135,34 @@ class _$TrekStagesImpl implements _TrekStages {
   final int? cityId;
   @override
   final City? city;
+// Trek Route card tags, worked out by the server (Backend utils/returnJourney.js
+// routeTags; owner, 12 Nov 2026): "Boarding", "Meeting point", "Return starts",
+// "Arrival · back home". The app only shows them.
+  @override
+  @JsonKey(name: 'route_role', fromJson: _routeTextFromJson)
+  final String? routeRole;
+  @override
+  @JsonKey(name: 'route_label', fromJson: _routeTextFromJson)
+  final String? routeLabel;
+// The travel line after this stop ("≈ 11 h overnight bus"), or null.
+  @override
+  @JsonKey(name: 'travel_after', fromJson: _travelLabelFromJson)
+  final String? travelAfterLabel;
+// A pickup's map place (Backend utils/returnJourney withRouteTags, 17 Nov 2026): its
+// kind as shown ("Bus stand") and its pin; null for older pickups (no pin is shown).
+  @override
+  @JsonKey(name: 'place_label', fromJson: _routeTextFromJson)
+  final String? placeLabel;
+  @override
+  @JsonKey(fromJson: jsonToCoordinate)
+  final double? latitude;
+  @override
+  @JsonKey(fromJson: jsonToCoordinate)
+  final double? longitude;
 
   @override
   String toString() {
-    return 'TrekStages(id: $id, stageName: $stageName, destination: $destination, meansOfTransport: $meansOfTransport, dateTime: $dateTime, isBoardingPoint: $isBoardingPoint, batchId: $batchId, cityId: $cityId, city: $city)';
+    return 'TrekStages(id: $id, stageName: $stageName, destination: $destination, meansOfTransport: $meansOfTransport, dateTime: $dateTime, isBoardingPoint: $isBoardingPoint, batchId: $batchId, cityId: $cityId, city: $city, routeRole: $routeRole, routeLabel: $routeLabel, travelAfterLabel: $travelAfterLabel, placeLabel: $placeLabel, latitude: $latitude, longitude: $longitude)';
   }
 
   @override
@@ -3022,13 +3183,40 @@ class _$TrekStagesImpl implements _TrekStages {
                 other.isBoardingPoint == isBoardingPoint) &&
             (identical(other.batchId, batchId) || other.batchId == batchId) &&
             (identical(other.cityId, cityId) || other.cityId == cityId) &&
-            (identical(other.city, city) || other.city == city));
+            (identical(other.city, city) || other.city == city) &&
+            (identical(other.routeRole, routeRole) ||
+                other.routeRole == routeRole) &&
+            (identical(other.routeLabel, routeLabel) ||
+                other.routeLabel == routeLabel) &&
+            (identical(other.travelAfterLabel, travelAfterLabel) ||
+                other.travelAfterLabel == travelAfterLabel) &&
+            (identical(other.placeLabel, placeLabel) ||
+                other.placeLabel == placeLabel) &&
+            (identical(other.latitude, latitude) ||
+                other.latitude == latitude) &&
+            (identical(other.longitude, longitude) ||
+                other.longitude == longitude));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(runtimeType, id, stageName, destination,
-      meansOfTransport, dateTime, isBoardingPoint, batchId, cityId, city);
+  int get hashCode => Object.hash(
+      runtimeType,
+      id,
+      stageName,
+      destination,
+      meansOfTransport,
+      dateTime,
+      isBoardingPoint,
+      batchId,
+      cityId,
+      city,
+      routeRole,
+      routeLabel,
+      travelAfterLabel,
+      placeLabel,
+      latitude,
+      longitude);
 
   @JsonKey(ignore: true)
   @override
@@ -3046,15 +3234,26 @@ class _$TrekStagesImpl implements _TrekStages {
 
 abstract class _TrekStages implements TrekStages {
   const factory _TrekStages(
-      {final int? id,
-      @JsonKey(name: 'stage_name') final String? stageName,
-      final String? destination,
-      @JsonKey(name: 'means_of_transport') final String? meansOfTransport,
-      @JsonKey(name: 'date_time') final String? dateTime,
-      @JsonKey(name: 'is_boarding_point') final bool? isBoardingPoint,
-      @JsonKey(name: 'batch_id') final int? batchId,
-      @JsonKey(name: 'city_id') final int? cityId,
-      final City? city}) = _$TrekStagesImpl;
+          {final int? id,
+          @JsonKey(name: 'stage_name') final String? stageName,
+          final String? destination,
+          @JsonKey(name: 'means_of_transport') final String? meansOfTransport,
+          @JsonKey(name: 'date_time') final String? dateTime,
+          @JsonKey(name: 'is_boarding_point') final bool? isBoardingPoint,
+          @JsonKey(name: 'batch_id') final int? batchId,
+          @JsonKey(name: 'city_id') final int? cityId,
+          final City? city,
+          @JsonKey(name: 'route_role', fromJson: _routeTextFromJson)
+          final String? routeRole,
+          @JsonKey(name: 'route_label', fromJson: _routeTextFromJson)
+          final String? routeLabel,
+          @JsonKey(name: 'travel_after', fromJson: _travelLabelFromJson)
+          final String? travelAfterLabel,
+          @JsonKey(name: 'place_label', fromJson: _routeTextFromJson)
+          final String? placeLabel,
+          @JsonKey(fromJson: jsonToCoordinate) final double? latitude,
+          @JsonKey(fromJson: jsonToCoordinate) final double? longitude}) =
+      _$TrekStagesImpl;
 
   factory _TrekStages.fromJson(Map<String, dynamic> json) =
       _$TrekStagesImpl.fromJson;
@@ -3083,6 +3282,27 @@ abstract class _TrekStages implements TrekStages {
   int? get cityId;
   @override
   City? get city;
+  @override // Trek Route card tags, worked out by the server (Backend utils/returnJourney.js
+// routeTags; owner, 12 Nov 2026): "Boarding", "Meeting point", "Return starts",
+// "Arrival · back home". The app only shows them.
+  @JsonKey(name: 'route_role', fromJson: _routeTextFromJson)
+  String? get routeRole;
+  @override
+  @JsonKey(name: 'route_label', fromJson: _routeTextFromJson)
+  String? get routeLabel;
+  @override // The travel line after this stop ("≈ 11 h overnight bus"), or null.
+  @JsonKey(name: 'travel_after', fromJson: _travelLabelFromJson)
+  String? get travelAfterLabel;
+  @override // A pickup's map place (Backend utils/returnJourney withRouteTags, 17 Nov 2026): its
+// kind as shown ("Bus stand") and its pin; null for older pickups (no pin is shown).
+  @JsonKey(name: 'place_label', fromJson: _routeTextFromJson)
+  String? get placeLabel;
+  @override
+  @JsonKey(fromJson: jsonToCoordinate)
+  double? get latitude;
+  @override
+  @JsonKey(fromJson: jsonToCoordinate)
+  double? get longitude;
   @override
   @JsonKey(ignore: true)
   _$$TrekStagesImplCopyWith<_$TrekStagesImpl> get copyWith =>

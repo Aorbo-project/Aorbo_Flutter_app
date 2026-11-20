@@ -1,7 +1,10 @@
 import 'package:get/get.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../controller/coupon_controller.dart';
+import '../controller/dashboard_controller.dart';
 import '../controller/trek_controller.dart';
+import '../controller/user_controller.dart';
 import '../freezed_models/treks/trek_detail_model.dart' show TrekDetailData;
 import '../freezed_models/treks/treks_model_data.dart' show TrekData;
 import '../repository/trek_share_repository.dart';
@@ -47,18 +50,39 @@ class TrekLinkOpener {
 
   static bool _opening = false;
 
+  /// The trek page needs these, and a guest hasn't reached the dashboard
+  /// that normally creates them.
+  static void _ensureTrekScreenControllers() {
+    if (!Get.isRegistered<DashboardController>()) Get.put(DashboardController(), permanent: true);
+    if (!Get.isRegistered<TrekController>()) Get.put(TrekController(), permanent: true);
+    if (!Get.isRegistered<CouponController>()) Get.put(CouponController(), permanent: true);
+    if (!Get.isRegistered<UserController>()) Get.put(UserController(), permanent: true);
+  }
+
+  /// Link before login: the trek page alone, with Continue leading to login.
+  static Future<void> openAsGuest(TrekLink link) async {
+    _ensureTrekScreenControllers();
+    final opened = await open(link, guest: true);
+    // Nothing to return to after login.
+    if (!opened) await PendingTrekLink.clear();
+  }
+
   /// Resolves the link's code on the server, then opens that trek. A shared
   /// date that has passed or no longer exists falls back to the trek's next
-  /// upcoming one; an unknown code or a trek that is no longer live gets a
-  /// plain message, not an error.
-  static Future<void> open(TrekLink link) async {
-    if (_opening) return;
+  /// upcoming one; an unknown code, a trek with no upcoming date or a trek
+  /// that is no longer live gets a plain message, not an error.
+  static Future<bool> open(
+    TrekLink link, {
+    bool guest = false,
+    TrekBookingResume? resume,
+  }) async {
+    if (_opening) return false;
     _opening = true;
     try {
       final target = await TrekShareRepository().resolve(link);
       if (target == null) {
         AppFeedback.warning("This trek isn't available any more.");
-        return;
+        return false;
       }
       final trekC = Get.find<TrekController>();
       trekC.trekDetailId.value = target.trekId;
@@ -70,11 +94,15 @@ class TrekLinkOpener {
         ok = await trekC.trekDetail(batchId: 0, cityId: target.cityId, showErrors: false);
       }
       final data = trekC.trekDetailData.value;
-      if (!ok || data.id != target.trekId) {
+      if (!ok || data.id != target.trekId || TrekLink.isPastDate(data.startDate)) {
         AppFeedback.warning("This trek isn't available any more.");
-        return;
+        return false;
       }
-      Get.to(() => TrekDetailsScreen(trek: cardFor(data)));
+      if (resume?.boardingCityId != null) {
+        trekC.selectedBoardingCityId.value = resume!.boardingCityId;
+      }
+      Get.to(() => TrekDetailsScreen(trek: cardFor(data), guest: guest, autoContinue: resume != null));
+      return true;
     } finally {
       _opening = false;
     }

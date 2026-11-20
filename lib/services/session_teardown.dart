@@ -29,6 +29,9 @@ class SessionTeardown {
   static const Set<String> keptPrefKeys = {
     'pending_trek_link_code',
     'pending_trek_link_saved_at',
+    'pending_trek_guest_shown',
+    'pending_trek_continue',
+    'pending_trek_boarding_city',
     'giveaway_pending_referral_code',
     'giveaway_pending_referral_saved_at',
     'giveaway_install_referrer_checked',

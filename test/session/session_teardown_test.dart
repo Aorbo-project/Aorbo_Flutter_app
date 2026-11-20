@@ -79,6 +79,9 @@ void main() {
     await sp!.putBool(SpUtil.isLoggedIn, true);
     await sp!.putString(SpUtil.fcmTokenSynced, 'fake-fcm-token');
     // A trek link tapped on this phone, not yet opened: belongs to the phone.
+    await sp!.putBool('pending_trek_continue', true);
+    await sp!.putInt('pending_trek_boarding_city', 2589);
+    await sp!.putBool('pending_trek_guest_shown', true);
     await sp!.putString('pending_trek_link_code', 'Ab3dEf7h');
     await sp!.putBool('giveaway_install_referrer_checked', true);
   });
@@ -94,6 +97,9 @@ void main() {
   }
 
   void expectPhoneLevelKeysKept() {
+    expect(sp!.getBool('pending_trek_continue'), isTrue);
+    expect(sp!.getInt('pending_trek_boarding_city'), 2589);
+    expect(sp!.getBool('pending_trek_guest_shown'), isTrue);
     expect(sp!.getString('pending_trek_link_code'), 'Ab3dEf7h');
     expect(sp!.getBool('giveaway_install_referrer_checked'), isTrue);
   }

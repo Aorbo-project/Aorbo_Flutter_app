@@ -2,6 +2,8 @@ import 'package:arobo_app/app_update/app_update_gate.dart';
 import 'package:arobo_app/controller/auth_controller.dart';
 import 'package:arobo_app/controller/otp_controller.dart';
 import 'package:arobo_app/giveaway/referral_links.dart';
+import 'package:arobo_app/share/trek_link.dart';
+import 'package:arobo_app/share/trek_share.dart';
 import 'package:arobo_app/legal/legal_links_text.dart';
 import 'package:arobo_app/main.dart';
 import 'package:arobo_app/security/screen_security.dart';
@@ -229,6 +231,10 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
   @override
   void initState() {
     super.initState();
+    // A trek link tapped while this screen is already open.
+    _guestLinkWorker = ever<TrekLink?>(ReferralLinkCapture.instance.guestTrekArrived, (link) {
+      if (link != null) _openGuestTrekIfLinked();
+    });
     _otpC = Get.put(OTPController());
 
     // Logo Animations — 700ms was overcorrecting on "don't make it feel
@@ -531,10 +537,35 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
         // so the user lands cleanly on the login form instead of a
         // dashboard that would immediately bounce them back out.
         await SessionTeardown.clearLocalSession();
+        await _openGuestTrekIfLinked();
         _startFormAnimation();
       }
     } else {
+      await _openGuestTrekIfLinked();
       _startFormAnimation(); // Defined below, handles form slide up
+    }
+  }
+
+  bool _openingGuestTrek = false;
+  Worker? _guestLinkWorker;
+
+  // A shared trek link before login: the trek page on top of this screen, so
+  // Back lands on the login form and there is no way to the dashboard.
+  Future<void> _openGuestTrekIfLinked() async {
+    if (_openingGuestTrek || !mounted || CommonLogics.checkUserLogin()) return;
+    _openingGuestTrek = true;
+    try {
+      final links = ReferralLinkCapture.instance;
+      await links.linksRead.timeout(const Duration(seconds: 2), onTimeout: () {});
+      links.guestTrekArrived.value = null;
+      final link = await PendingTrekLink.read();
+      if (link == null || await PendingTrekLink.guestShown() || !mounted) return;
+      await PendingTrekLink.markGuestShown();
+      await TrekLinkOpener.openAsGuest(link);
+    } catch (e) {
+      debugPrint('Guest trek link failed: $e');
+    } finally {
+      _openingGuestTrek = false;
     }
   }
 
@@ -644,6 +675,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
 
   @override
   void dispose() {
+    _guestLinkWorker?.dispose();
     _otpScreenSecurity.release();
     _otpController.dispose();
     if (_timer?.isActive == true) _timer?.cancel();

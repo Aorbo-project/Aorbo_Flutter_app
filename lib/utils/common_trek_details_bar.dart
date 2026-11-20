@@ -37,12 +37,13 @@ class _CommonTrekDetailsBarState extends State<CommonTrekDetailsBar> {
   final ScrollController _scrollController = ScrollController();
   late final List<GlobalKey> _tabKeys;
 
+  // Short names, matching the redesigned section titles (13 Nov 2026).
   final List<String> _tabs = [
-    'Trek Route',
-    'Itinerary',
+    'Route',
+    'Day plan',
     'Activities',
-    'Resorts',
-    'Features',
+    'Stay',
+    'Included',
     'Reviews',
     'Cancellation',
     'Other Policies',
@@ -144,7 +145,7 @@ class _CommonTrekDetailsBarState extends State<CommonTrekDetailsBar> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: AroboTheme.cardBg,
+      color: const Color(0xFFF4F7F5),
       padding: EdgeInsets.symmetric(vertical: 1.h),
       child: SizedBox(
         height: 5.5.h,
@@ -174,36 +175,19 @@ class _CommonTrekDetailsBarState extends State<CommonTrekDetailsBar> {
                   right: 2.w,
                 ),
                 padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 0.9.h),
+                // Redesign (13 Nov 2026): soft pills, brand forest when selected.
                 decoration: BoxDecoration(
-                  gradient: isSelected
-                      ? const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            _TabBarColors.forestDeep,
-                            _TabBarColors.forest,
-                          ],
-                        )
-                      : null,
-                  color: isSelected ? null : AroboTheme.elevated,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isSelected
-                        ? _TabBarColors.forestDeep
-                        : AroboTheme.border,
-                    width: 1,
-                  ),
+                  color: isSelected ? _TabBarColors.forestDeep : Colors.white,
+                  borderRadius: BorderRadius.circular(999),
                   boxShadow: isSelected
-                      ? [
+                      ? []
+                      : [
                           BoxShadow(
-                            color: _TabBarColors.forestDeep.withValues(
-                              alpha: 0.25,
-                            ),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
+                            color: _TabBarColors.forestDeep.withValues(alpha: 0.06),
+                            blurRadius: 6,
+                            offset: const Offset(0, 1),
                           ),
-                        ]
-                      : [],
+                        ],
                 ),
                 child: Center(
                   child: Text(
@@ -211,7 +195,7 @@ class _CommonTrekDetailsBarState extends State<CommonTrekDetailsBar> {
                     textScaler: const TextScaler.linear(1.0),
                     style: AroboTheme.label(
                       size: FontSize.s11,
-                      weight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                      weight: FontWeight.w600,
                       color: isSelected ? Colors.white : AroboTheme.ink400,
                     ),
                   ),

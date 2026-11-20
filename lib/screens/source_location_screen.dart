@@ -1007,7 +1007,8 @@ class _SourceLocationSheetState extends State<SourceLocationSheet> {
     if (sheetHeight < 220) sheetHeight = 220;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.dark,
+      // Icon colours only: setting a bar colour calls APIs deprecated on Android 15 (Play Console, 20 Nov 2026).
+      value: const SystemUiOverlayStyle(statusBarIconBrightness: Brightness.dark, statusBarBrightness: Brightness.light),
       child: Padding(
         // Keyboard rides up underneath the sheet's bottom edge.
         padding: EdgeInsets.only(bottom: mq.viewInsets.bottom),

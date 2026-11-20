@@ -107,6 +107,14 @@ class TrekShareText {
   }
 }
 
+/// A guest who tapped Continue on a shared trek: booking resumes after login.
+class TrekBookingResume {
+  const TrekBookingResume({this.boardingCityId});
+
+  /// The boarding city the guest picked, when the trek has several.
+  final int? boardingCityId;
+}
+
 /// A trek link that arrived before the person was signed in (tapped link or
 /// Play install referrer). Held until the dashboard opens after login.
 class PendingTrekLink {
@@ -114,12 +122,46 @@ class PendingTrekLink {
 
   static const String _codeKey = 'pending_trek_link_code';
   static const String _savedAtKey = 'pending_trek_link_saved_at';
+  static const String _guestShownKey = 'pending_trek_guest_shown';
+  static const String _continueKey = 'pending_trek_continue';
+  static const String _boardingCityKey = 'pending_trek_boarding_city';
   static const Duration maxAge = Duration(days: 7);
 
   static Future<void> save(TrekLink link) async {
     final sp = await SpUtil.getInstance();
+    await _clearProgress(sp);
     await sp.putString(_codeKey, link.code);
     await sp.putInt(_savedAtKey, DateTime.now().millisecondsSinceEpoch);
+  }
+
+  /// The guest trek page opens by itself once per link, so a later app start
+  /// goes to the login form instead of the same trek for a week.
+  static Future<void> markGuestShown() async {
+    final sp = await SpUtil.getInstance();
+    await sp.putBool(_guestShownKey, true);
+  }
+
+  static Future<bool> guestShown() async {
+    final sp = await SpUtil.getInstance();
+    return sp.getBool(_guestShownKey) == true;
+  }
+
+  /// Saved, not held in memory: the phone may close the app while the person
+  /// reads the OTP in their messages.
+  static Future<void> saveBookingResume({int? boardingCityId}) async {
+    final sp = await SpUtil.getInstance();
+    await sp.putBool(_continueKey, true);
+    if (boardingCityId != null) {
+      await sp.putInt(_boardingCityKey, boardingCityId);
+    } else {
+      await sp.remove(_boardingCityKey);
+    }
+  }
+
+  static Future<TrekBookingResume?> bookingResume() async {
+    final sp = await SpUtil.getInstance();
+    if (sp.getBool(_continueKey) != true) return null;
+    return TrekBookingResume(boardingCityId: sp.getInt(_boardingCityKey));
   }
 
   /// The saved link, or null when there is none or it is older than [maxAge].
@@ -143,5 +185,12 @@ class PendingTrekLink {
     final sp = await SpUtil.getInstance();
     await sp.remove(_codeKey);
     await sp.remove(_savedAtKey);
+    await _clearProgress(sp);
+  }
+
+  static Future<void> _clearProgress(SpUtil sp) async {
+    await sp.remove(_guestShownKey);
+    await sp.remove(_continueKey);
+    await sp.remove(_boardingCityKey);
   }
 }

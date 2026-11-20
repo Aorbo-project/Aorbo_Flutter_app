@@ -25,6 +25,7 @@ import '../utils/screen_constants.dart';
 import '../widgets/rate_trek_popup.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
+import 'package:arobo_app/widgets/pickup_pin.dart';
 import 'package:arobo_app/widgets/logger.dart';
 
 // ─────────────────────────────────────────────
@@ -627,6 +628,43 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
     }
   }
 
+  /// "Boarding Point" with the pickup's kind + meeting spot as one grey line and a small pin
+  /// that opens Google Maps directions (owner, 17 Nov 2026). Older pickups: name only, no pin.
+  Widget _boardingPointRow(Trek? trek) {
+    final name = (trek?.boardingPoint ?? '').trim();
+    final kind = (trek?.boardingKind ?? '').trim();
+    final note = (trek?.boardingNote ?? '').trim();
+    final pin = hasPickupPin(trek?.boardingLat, trek?.boardingLon);
+    if (kind.isEmpty && note.isEmpty && !pin) {
+      return _ticketRow('Boarding Point', name.isEmpty ? 'To be announced' : name);
+    }
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 0.9.h),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 5,
+            child: Text('Boarding Point', style: AppType.style(9.sp, color: _TC.inkMid)),
+          ),
+          Expanded(
+            flex: 6,
+            child: TicketPickupValue(
+              name: name.isEmpty ? 'To be announced' : name,
+              kind: kind,
+              note: note,
+              lat: trek?.boardingLat,
+              lon: trek?.boardingLon,
+              fontSize: 9.sp,
+              inkColor: _TC.ink,
+              mutedColor: _TC.inkMid,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _ticketRow(String title, String value, {bool isHighlight = false}) {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 0.9.h),
@@ -1141,10 +1179,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                         _dividerLine(),
                         _ticketRow('Source City', sourceCity),
                         _dividerLine(),
-                        _ticketRow(
-                          'Boarding Point',
-                          trek?.boardingPoint ?? 'To be announced',
-                        ),
+                        _boardingPointRow(trek),
                         _dividerLine(),
                         _ticketRow(
                           'Boarding Time',
@@ -1167,11 +1202,14 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                           'Captain Contact',
                           trek?.captainPhone ?? 'Not available',
                         ),
-                        _dividerLine(),
-                        _ticketRow(
-                          'Difficulty',
-                          trek?.difficulty ?? 'Moderate',
-                        ),
+                        // The organiser's own choice only (19 Nov 2026): no made-up "Moderate".
+                        if ((trek?.difficulty ?? '').trim().isNotEmpty) ...[
+                          _dividerLine(),
+                          _ticketRow(
+                            'Difficulty',
+                            '${trek!.difficulty![0].toUpperCase()}${trek.difficulty!.substring(1)}',
+                          ),
+                        ],
                       ],
                     ),
                   ),

@@ -96,6 +96,7 @@ _$TrekDetailDataImpl _$$TrekDetailDataImplFromJson(Map<String, dynamic> json) =>
       bookedSlots: json['booked_slots'] as int?,
       availableSlots: json['available_slots'] as int?,
       bookingsStoppedAt: json['bookings_stopped_at'] as String?,
+      bookingsLocked: json['bookings_locked'] as bool?,
       cancellationPolicy: json['cancellation_policy'] == null
           ? null
           : CancellationPolicy.fromJson(
@@ -158,6 +159,7 @@ Map<String, dynamic> _$$TrekDetailDataImplToJson(
       'booked_slots': instance.bookedSlots,
       'available_slots': instance.availableSlots,
       'bookings_stopped_at': instance.bookingsStoppedAt,
+      'bookings_locked': instance.bookingsLocked,
       'cancellation_policy': instance.cancellationPolicy,
       'booking_type': instance.bookingType,
     };
@@ -250,6 +252,12 @@ _$TrekStagesImpl _$$TrekStagesImplFromJson(Map<String, dynamic> json) =>
       city: json['city'] == null
           ? null
           : City.fromJson(json['city'] as Map<String, dynamic>),
+      routeRole: _routeTextFromJson(json['route_role']),
+      routeLabel: _routeTextFromJson(json['route_label']),
+      travelAfterLabel: _travelLabelFromJson(json['travel_after']),
+      placeLabel: _routeTextFromJson(json['place_label']),
+      latitude: jsonToCoordinate(json['latitude']),
+      longitude: jsonToCoordinate(json['longitude']),
     );
 
 Map<String, dynamic> _$$TrekStagesImplToJson(_$TrekStagesImpl instance) =>
@@ -263,6 +271,12 @@ Map<String, dynamic> _$$TrekStagesImplToJson(_$TrekStagesImpl instance) =>
       'batch_id': instance.batchId,
       'city_id': instance.cityId,
       'city': instance.city,
+      'route_role': instance.routeRole,
+      'route_label': instance.routeLabel,
+      'travel_after': instance.travelAfterLabel,
+      'place_label': instance.placeLabel,
+      'latitude': instance.latitude,
+      'longitude': instance.longitude,
     };
 
 _$CityImpl _$$CityImplFromJson(Map<String, dynamic> json) => _$CityImpl(

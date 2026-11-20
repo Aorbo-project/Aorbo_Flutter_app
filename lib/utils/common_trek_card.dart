@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 import '../freezed_models/treks/treks_model_data.dart';
 import '../widgets/custom_network_image.dart';
+import '../widgets/google_rating_box.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
 
@@ -65,9 +66,12 @@ class _CommonTrekCardState extends State<CommonTrekCard>
     with SingleTickerProviderStateMixin {
   late final AnimationController _pressCtrl;
   late final Animation<double> _scaleAnim;
+  GoogleRating? _googleRating;
+
   @override
   void initState() {
     super.initState();
+    _loadGoogleRating();
     _pressCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 120),
@@ -76,6 +80,25 @@ class _CommonTrekCardState extends State<CommonTrekCard>
       begin: 1.0,
       end: 0.98,
     ).animate(CurvedAnimation(parent: _pressCtrl, curve: Curves.easeInOut));
+  }
+
+  @override
+  void didUpdateWidget(covariant CommonTrekCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.trek?.id != widget.trek?.id) {
+      _googleRating = null;
+      _loadGoogleRating();
+    }
+  }
+
+  // Only a card that would say NEW asks for a Google rating.
+  Future<void> _loadGoogleRating() async {
+    final trekId = widget.trek?.id;
+    if (trekId == null || trekId <= 0 || !_isNewVendor()) return;
+    final rating = await GoogleCardRatings.instance.ratingFor(trekId);
+    if (mounted && rating != null && widget.trek?.id == trekId) {
+      setState(() => _googleRating = rating);
+    }
   }
 
   @override
@@ -253,12 +276,16 @@ class _CommonTrekCardState extends State<CommonTrekCard>
                             children: [
                               _buildHeader(trek, isFlexible),
                               SizedBox(height: _rh(1.6, 18)),
-                              Text(
-                                trek?.destination ?? trek?.name ?? '-',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                textScaler: const TextScaler.linear(1),
-                                style: AppType.style(FontSize.s13, w: FontWeight.w800, color: _TC.ink, height: 1.2, letterSpacing: -0.2),
+                              Row(
+                                children: [
+                                  Flexible(
+                                    child: _titleText(trek),
+                                  ),
+                                  if (_googleRating != null) ...[
+                                    SizedBox(width: _rw(2, 10)),
+                                    GoogleRatingInline(data: _googleRating!),
+                                  ],
+                                ],
                               ),
                               SizedBox(height: _rh(1.2, 14)),
                               Wrap(
@@ -378,7 +405,7 @@ class _CommonTrekCardState extends State<CommonTrekCard>
                       style: AppType.style(FontSize.s10, w: FontWeight.w600, color: _TC.ink, height: 1.2),
                     ),
                   ),
-                  if (_isNewVendor()) ...[
+                  if (_isNewVendor() && _googleRating == null) ...[
                     SizedBox(width: _rw(1.2, 6)),
                     _newOrganiserChip(),
                   ],
@@ -465,6 +492,14 @@ class _CommonTrekCardState extends State<CommonTrekCard>
       ),
     );
   }
+
+  Widget _titleText(TrekData? trek) => Text(
+        trek?.destination ?? trek?.name ?? '-',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        textScaler: const TextScaler.linear(1),
+        style: AppType.style(FontSize.s13, w: FontWeight.w800, color: _TC.ink, height: 1.2, letterSpacing: -0.2),
+      );
 
   Widget _ratingPill(TrekData? trek) {
     final ratingValue = double.tryParse('${trek?.rating ?? 0}') ?? 0.0;

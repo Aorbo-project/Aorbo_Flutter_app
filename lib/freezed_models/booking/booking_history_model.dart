@@ -126,6 +126,12 @@ class BookingHistoryData with _$BookingHistoryData {
     // ─── NEW FINANCE SNAPSHOT FIELDS ─────────────────────────────────────────
     @JsonKey(name: 'finance_snapshot') String? financeSnapshot,
 
+    // The booking's cancellation table, worked out by the SERVER
+    // (GET /api/v1/bookings → cancellation_table: heading, rows[{when, deduction}],
+    // notes[]). The phone-built invoice prints it as-is; the app never computes
+    // the amounts itself (owner, 11 Nov 2026: the server is the source of truth).
+    @JsonKey(name: 'cancellation_table') Map<String, dynamic>? cancellationTable,
+
     @JsonKey(name: 'total_basic_cost', fromJson: _toString)
     String? totalBasicCost,
 
@@ -199,6 +205,12 @@ class Trek with _$Trek {
     @JsonKey(name: 'duration_nights') int? durationNights,
     @JsonKey(name: 'boarding_point') String? boardingPoint,
     @JsonKey(name: 'boarding_time') String? boardingTime,
+    // The pickup's map pin, kind and meeting spot (Backend utils/pickupPlaceRule
+    // customerPickupFields, 17 Nov 2026); null for older pickups (no pin shown).
+    @JsonKey(name: 'boarding_lat', fromJson: jsonToCoordinate) double? boardingLat,
+    @JsonKey(name: 'boarding_lon', fromJson: jsonToCoordinate) double? boardingLon,
+    @JsonKey(name: 'boarding_kind', fromJson: jsonToStringOrNull) String? boardingKind,
+    @JsonKey(name: 'boarding_note', fromJson: jsonToStringOrNull) String? boardingNote,
   }) = _Trek;
 
   factory Trek.fromJson(Map<String, dynamic> json) => _$TrekFromJson(json);

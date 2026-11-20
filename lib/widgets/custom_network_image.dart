@@ -49,13 +49,32 @@ class CustomNetworkImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final decodeWidth = decodeWidthFor(
+    // Play Console (20 Nov 2026), bitmap memory: an image with no width or height
+    // given (photo carousels, full-width banners) used to decode at the photo's full
+    // size (4,000 px+). It now decodes at the width it is laid out at.
+    if (width == null && height == null) {
+      return LayoutBuilder(builder: (context, c) {
+        final dpr = MediaQuery.maybeDevicePixelRatioOf(context) ?? 2.0;
+        final shownWidth = c.hasBoundedWidth ? c.maxWidth : MediaQuery.sizeOf(context).width;
+        return _build(decodeWidthFor(
+          width: shownWidth,
+          height: c.hasBoundedHeight ? c.maxHeight : null,
+          devicePixelRatio: dpr,
+          fit: fit,
+          zoom: zoomable ? 2 : 1,
+        ));
+      });
+    }
+    return _build(decodeWidthFor(
       width: width,
       height: height,
       devicePixelRatio: MediaQuery.maybeDevicePixelRatioOf(context) ?? 2.0,
       fit: fit,
       zoom: zoomable ? 2 : 1,
-    );
+    ));
+  }
+
+  Widget _build(int? decodeWidth) {
 
     // For transparent background images, return without shadow
     if (hasTransparentBackground) {

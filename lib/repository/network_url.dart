@@ -228,6 +228,9 @@ class NetworkUrl {
   static const String referralInfo = 'customer/referral';
   // POST { code } → applies a referrer's code to my account (pre-first-booking only).
   static const String referralApply = 'customer/referral/apply';
+  // POST { source, medium?, campaign? } -> where this install came from (Play install
+  // referrer utm_*), sent once after sign-in (lib/giveaway/install_source.dart).
+  static const String customerAcquisition = 'customer/acquisition';
   // GET ?code=&phone= → pre-check for the login-screen field. Passing the
   // typed phone lets the backend say "new accounts only" for an existing user
   // instead of a false "you'll get ₹50 off".

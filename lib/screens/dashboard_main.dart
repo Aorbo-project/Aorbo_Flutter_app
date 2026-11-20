@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer';
 import 'package:arobo_app/app_update/app_update_banner.dart';
 import 'package:arobo_app/controller/coupon_controller.dart';
@@ -6,6 +7,7 @@ import 'package:arobo_app/controller/trek_controller.dart';
 import 'package:arobo_app/controller/user_controller.dart';
 import 'package:arobo_app/freezed_models/booking/booking_history_model.dart';
 import 'package:arobo_app/giveaway/giveaway_config.dart';
+import 'package:arobo_app/giveaway/install_source.dart';
 import 'package:arobo_app/giveaway/referral_links.dart';
 import 'package:arobo_app/legal/legal_update_sheet.dart';
 import 'package:arobo_app/screens/bookings_history_screen.dart';
@@ -80,6 +82,8 @@ class _DashboardMainState extends State<DashboardMain> with RouteAware {
     // Everything network-bound is deferred to after the first frame so the
     // splash→dashboard reveal isn't competing with these calls.
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // Where this install came from (Play install referrer), sent once; silent on failure.
+      unawaited(InstallSource.sendOnce());
       trekC.checkPendingOrderOnResume();
       // "We've updated our terms" — once per app run, silent on failure.
       // The rate popup waits for it so the two never stack.
@@ -181,8 +185,9 @@ class _DashboardMainState extends State<DashboardMain> with RouteAware {
     }
     _toldLinkWaits = false;
     requested.value = null;
+    final resume = await PendingTrekLink.bookingResume();
     await PendingTrekLink.clear();
-    await TrekLinkOpener.open(link);
+    await TrekLinkOpener.open(link, resume: resume);
   }
 
   /// A referral link opened the app while signed in: show the giveaway (the
@@ -238,6 +243,8 @@ class _DashboardMainState extends State<DashboardMain> with RouteAware {
       // Only interrupt on the home tab.
       if (_dashboardC.selectedScreen.value != 0) return;
       if (!mounted) return;
+      // Never over a trek page or booking opened from a link.
+      if (!_isOnTop) return;
 
       await RateTrekPopup.maybeShow(context, bookings);
     } catch (_) {

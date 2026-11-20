@@ -228,6 +228,7 @@ class _CouponCodeScreenState extends State<CouponCodeScreen> {
                         coupon: coupon,
                         onApply: onApply,
                         isApplied: false,
+                        travelerCount: _trekController.calculateFareRequestModel.value.travelerCount,
                       );
                     },
                   );
