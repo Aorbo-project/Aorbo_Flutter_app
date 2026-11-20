@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -120,8 +122,15 @@ class HeaderSceneSpec {
 /// 20 Nov 2026: on a 2.5 GB Galaxy A03 the full 13-layer scene took ~55 ms to draw a
 /// frame, so the home screen ran at 18 fps even untouched and felt stuck. Each phone now
 /// learns its level from its own frame times: full (60 fps) -> lite (no fog/shimmer, half
-/// the particles, 30 fps) -> still (one painted frame). Kept per app build, so a new build
-/// measures again; only ever steps down within a build.
+/// the particles, 30 fps) -> still (one painted frame).
+///
+/// First-open rules (owner, 20 Nov 2026: a fresh install is the busiest moment - data,
+/// photos and the ads SDK all start at once - so never measure or draw heavy then):
+/// - start from the phone's memory: < 2.2 GB still, < 4 GB lite, else full;
+/// - measure only after the scene has been on screen 3 s;
+/// - step down only after 2 slow windows in a row (one busy moment is not the phone);
+/// - a lite phone that is clearly fast tries full once;
+/// - a level that holds is saved for this build: later opens never measure again.
 enum SceneQuality { full, lite, still }
 
 class HeaderSceneQuality {
@@ -134,40 +143,90 @@ class HeaderSceneQuality {
   static Future<void>? _loading;
   static String _build = '';
 
+  /// A level is saved for this build: no more measuring.
+  static bool settled = false;
+
+  /// Lite already tried full this build (never loop up and down).
+  static bool triedFull = false;
+
+  /// The starting level for a phone with [ramMb] of memory (first open of a build).
+  static SceneQuality startFor({required int ramMb, bool lowRam = false}) {
+    if (lowRam || ramMb < 2200) return SceneQuality.still;
+    if (ramMb < 4000) return SceneQuality.lite;
+    return SceneQuality.full;
+  }
+
   /// Median frame cost (ms, the slower of build/raster) a level may use before
   /// stepping down. 60 fps = 16.7 ms a frame, 30 fps = 33 ms; both leave room for the
   /// rest of the screen (scrolling lists, images).
   static const budgetMs = {SceneQuality.full: 12.0, SceneQuality.lite: 24.0};
 
+  /// Test builds only: `--dart-define=SCENE_PIN=full|lite|still` fixes the level (no
+  /// measuring) so one phone can be measured at every level. Empty in store builds.
+  static const _pin = String.fromEnvironment('SCENE_PIN');
+
   static Future<void> load() => _loading ??= _load();
 
   static Future<void> _load() async {
+    for (final q in SceneQuality.values) {
+      if (q.name == _pin) {
+        current.value = q;
+        return;
+      }
+    }
     try {
       _build = (await PackageInfo.fromPlatform()).buildNumber;
       final saved = (await SharedPreferences.getInstance()).getString(_key);
       final parts = (saved ?? '').split('|');
       if (parts.length == 2 && parts[1] == _build) {
         for (final q in SceneQuality.values) {
-          if (q.name == parts[0]) current.value = q;
+          if (q.name == parts[0]) {
+            current.value = q;
+            settled = true;
+            return;
+          }
         }
       }
+      if (Platform.isAndroid) {
+        final a = await DeviceInfoPlugin().androidInfo;
+        current.value = startFor(ramMb: a.physicalRamSize, lowRam: a.isLowRamDevice);
+      }
     } catch (_) {
-      // No saved level: start at full and measure.
+      current.value = SceneQuality.lite; // unknown phone: the safe middle
     }
+  }
+
+  static void _save(SceneQuality q) => unawaited(
+    SharedPreferences.getInstance()
+        .then((p) => p.setString(_key, '${q.name}|$_build'))
+        .catchError((_) => false),
+  );
+
+  /// The level held: keep it for this build.
+  static void settle(SceneQuality q) {
+    if (_pin.isNotEmpty) return;
+    settled = true;
+    _save(q);
+  }
+
+  /// Lite with room to spare: try full (not saved until it holds).
+  static void stepUp() {
+    if (_pin.isNotEmpty || triedFull || current.value != SceneQuality.lite) return;
+    triedFull = true;
+    current.value = SceneQuality.full;
   }
 
   /// [toStill]: the phone is far over budget (3x) - skip the lighter scene.
   static void stepDown({bool toStill = false}) {
+    if (_pin.isNotEmpty) return;
     final next = toStill || current.value == SceneQuality.lite
         ? SceneQuality.still
         : SceneQuality.lite;
     if (next == current.value) return;
+    if (current.value == SceneQuality.full) triedFull = true; // full failed: never again
     current.value = next;
-    unawaited(
-      SharedPreferences.getInstance()
-          .then((p) => p.setString(_key, '${next.name}|$_build'))
-          .catchError((_) => false),
-    );
+    // Lite after a failed try at full, or still: final for this build.
+    if (next == SceneQuality.still || triedFull) settle(next);
   }
 
   /// The lighter scene: drops the big blurred layers, halves the moving items.
@@ -210,7 +269,8 @@ class _HeaderSceneBackgroundState extends State<HeaderSceneBackground>
   // Frame-cost sampling for the current level.
   final List<double> _costs = [];
   DateTime? _sampleFrom;
-  bool _levelPassed = false;
+  int _strikes = 0; // slow windows in a row
+  int _passes = 0; // good windows at this level
 
   SceneQuality get _q => HeaderSceneQuality.current.value;
 
@@ -244,7 +304,8 @@ class _HeaderSceneBackgroundState extends State<HeaderSceneBackground>
   }
 
   void _onQuality() {
-    _levelPassed = false;
+    _strikes = 0;
+    _passes = 0;
     _stopDriver();
     if (mounted) setState(() {});
     _sync();
@@ -268,9 +329,10 @@ class _HeaderSceneBackgroundState extends State<HeaderSceneBackground>
       } else {
         _timer = Timer.periodic(const Duration(milliseconds: 33), (_) => _tick());
       }
-      if (!_levelPassed) {
+      if (!HeaderSceneQuality.settled) {
         _costs.clear();
-        _sampleFrom = DateTime.now().add(const Duration(milliseconds: 1500));
+        // Calm start: the first seconds on screen are the busiest (data, photos).
+        _sampleFrom = DateTime.now().add(const Duration(seconds: 3));
       }
     } else if (!_shouldRun && running) {
       _stopDriver();
@@ -291,7 +353,7 @@ class _HeaderSceneBackgroundState extends State<HeaderSceneBackground>
 
   void _onTimings(List<FrameTiming> timings) {
     final from = _sampleFrom;
-    if (from == null || _levelPassed || DateTime.now().isBefore(from)) return;
+    if (from == null || HeaderSceneQuality.settled || DateTime.now().isBefore(from)) return;
     for (final f in timings) {
       final ms = math.max(f.buildDuration.inMicroseconds, f.rasterDuration.inMicroseconds) / 1000.0;
       _costs.add(ms);
@@ -303,10 +365,21 @@ class _HeaderSceneBackgroundState extends State<HeaderSceneBackground>
     final median = _costs[_costs.length ~/ 2];
     _costs.clear();
     final budget = HeaderSceneQuality.budgetMs[_q];
-    if (budget != null && median > budget) {
-      HeaderSceneQuality.stepDown(toStill: median > budget * 3);
-    } else {
-      _levelPassed = true;
+    if (budget == null) return;
+    if (median > budget) {
+      _passes = 0;
+      // Two slow windows in a row: one busy moment is not the phone.
+      if (++_strikes >= 2) HeaderSceneQuality.stepDown(toStill: median > budget * 3);
+      return;
+    }
+    _strikes = 0;
+    final fullBudget = HeaderSceneQuality.budgetMs[SceneQuality.full]!;
+    if (_q == SceneQuality.lite && median < fullBudget * 0.5) {
+      HeaderSceneQuality.stepUp();
+      if (_q == SceneQuality.full) return;
+    }
+    if (++_passes >= 2) {
+      HeaderSceneQuality.settle(_q);
       _sampleFrom = null;
     }
   }
@@ -446,6 +519,30 @@ class _ScenePainter extends CustomPainter {
   final double t01;
 
   _ScenePainter({required this.layers, required this.t01});
+
+  /// A soft-edged dot drawn with a gradient instead of a blur (20 Nov 2026: every
+  /// MaskFilter.blur needs its own GPU buffer - the live header's ~60 blurs held ~190 MB
+  /// of graphics memory on an iQOO and cost frame time on every phone). Looks like a
+  /// circle of radius [r] blurred by [sigma]: [centre] inside, [edge] at r - sigma,
+  /// half of it at r, gone by r + 2 sigma.
+  static void _softDot(Canvas c, Offset o, double r, double sigma, Color centre, [Color? edge]) {
+    final outer = r.abs() + 2 * sigma;
+    if (outer <= 0) return;
+    final e = edge ?? centre;
+    final inner = ((r.abs() - sigma) / outer).clamp(0.0, 0.98);
+    final mid = (r.abs() / outer).clamp(inner + 0.005, 0.99);
+    c.drawCircle(
+      o,
+      outer,
+      Paint()
+        ..shader = ui.Gradient.radial(
+          o,
+          outer,
+          [centre, e, e.withValues(alpha: e.a * 0.5), e.withValues(alpha: 0)],
+          [0, inner, mid, 1],
+        ),
+    );
+  }
 
   int _cycles(double speed, double multiplier, int min, int max) {
     return (speed * multiplier).round().clamp(min, max).toInt();
@@ -695,12 +792,12 @@ class _ScenePainter extends CustomPainter {
       for (var j = 0; j < puffs; j++) {
         final dx = (j - puffs / 2) * size * 0.32;
         final dy = (j.isEven ? 1 : -1) * size * 0.08;
-        c.drawCircle(
+        _softDot(
+          c,
           Offset(x + dx + 6, y + dy + 8),
           size * (0.22 + 0.12 * math.sin(j + sx * 5)).abs(),
-          Paint()
-            ..color = Colors.black.withValues(alpha: 0.06 * l.opacity)
-            ..maskFilter = MaskFilter.blur(BlurStyle.normal, 8),
+          8,
+          Colors.black.withValues(alpha: 0.06 * l.opacity),
         );
       }
 
@@ -708,24 +805,22 @@ class _ScenePainter extends CustomPainter {
         final dx = (j - puffs / 2) * size * 0.32;
         final dy = (j.isEven ? 1 : -1) * size * 0.08;
         final r = size * (0.22 + 0.14 * math.sin(j + sx * 5)).abs();
-        c.drawCircle(
+        _softDot(
+          c,
           Offset(x + dx, y + dy),
           r,
-          Paint()
-            ..shader = ui.Gradient.radial(Offset(x + dx, y + dy - r * 0.2), r, [
-              l.colors.first.withValues(alpha: alpha),
-              l.colors.first.withValues(alpha: alpha * 0.55),
-            ])
-            ..maskFilter = MaskFilter.blur(BlurStyle.normal, 5),
+          5,
+          l.colors.first.withValues(alpha: alpha),
+          l.colors.first.withValues(alpha: alpha * 0.55),
         );
       }
 
-      c.drawCircle(
+      _softDot(
+        c,
         Offset(x - size * 0.15, y - size * 0.08),
         size * 0.18,
-        Paint()
-          ..color = Colors.white.withValues(alpha: alpha * 0.5)
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, 6),
+        6,
+        Colors.white.withValues(alpha: alpha * 0.5),
       );
     }
   }
@@ -867,16 +962,17 @@ class _ScenePainter extends CustomPainter {
               ..strokeJoin = StrokeJoin.round,
           );
 
-          c.drawPath(
-            snow,
-            Paint()
-              ..color = Colors.white.withValues(alpha: 0.22 * l.opacity)
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = 7
-              ..strokeCap = StrokeCap.round
-              ..strokeJoin = StrokeJoin.round
-              ..maskFilter = MaskFilter.blur(BlurStyle.normal, 5),
-          );
+          for (final (w, a) in const [(15.0, 0.06), (9.0, 0.10)]) {
+            c.drawPath(
+              snow,
+              Paint()
+                ..color = Colors.white.withValues(alpha: a * l.opacity)
+                ..style = PaintingStyle.stroke
+                ..strokeWidth = w
+                ..strokeCap = StrokeCap.round
+                ..strokeJoin = StrokeJoin.round,
+            );
+          }
         }
       }
     }
@@ -1382,7 +1478,7 @@ class _ScenePainter extends CustomPainter {
       if (rectH <= 0) continue;
 
       c.drawRect(
-        Rect.fromLTWH(0, topY, s.width, rectH),
+        Rect.fromLTWH(-40, topY, s.width + 80, rectH),
         Paint()
           ..shader = ui.Gradient.linear(
             Offset(s.width / 2, topY),
@@ -1393,8 +1489,7 @@ class _ScenePainter extends CustomPainter {
               l.colors.first.withValues(alpha: density * l.opacity * 0.9),
             ],
             const [0.0, 0.5, 1.0],
-          )
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, 25),
+          ),
       );
     }
   }
@@ -2096,10 +2191,9 @@ class _ScenePainter extends CustomPainter {
           c.drawPath(
             rock,
             Paint()
-              ..color = Colors.white.withValues(alpha: 0.15 * l.opacity)
+              ..color = Colors.white.withValues(alpha: 0.11 * l.opacity)
               ..style = PaintingStyle.stroke
-              ..strokeWidth = 2.0
-              ..maskFilter = MaskFilter.blur(BlurStyle.normal, 2),
+              ..strokeWidth = 2.6,
           );
         }
       } else if (l.variant == 'frozenLake') {

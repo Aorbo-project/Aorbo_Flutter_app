@@ -46,7 +46,6 @@ class _NativeFeedAdCardState extends State<NativeFeedAdCard> {
   bool _loaded = false;
   bool _failed = false;
   bool _impressionFired = false;
-  int _consentWaits = 0;
   // Google's view is kept only while the card is on screen (20 Nov 2026: a video ad
   // kept playing under other screens and after scrolling away - 30 redraws a second,
   // the trek page stuttered on a Galaxy A03). The loaded ad stays; only its view goes.
@@ -58,18 +57,12 @@ class _NativeFeedAdCardState extends State<NativeFeedAdCard> {
     _load();
   }
 
-  void _load() {
+  Future<void> _load() async {
+    // The ads SDK starts after home is up (AdConsentService.start); wait for it.
+    await AdConsentService.instance.start();
+    if (!mounted) return;
     if (!AdConsentService.instance.canRequestAds) {
-      // Consent may still be resolving at first frame — poll a few times
-      // before giving up.
-      if (_consentWaits < 5) {
-        _consentWaits++;
-        Future.delayed(const Duration(seconds: 1), () {
-          if (mounted && !_loaded) _load();
-        });
-        return;
-      }
-      if (mounted) setState(() => _failed = true);
+      setState(() => _failed = true);
       return;
     }
     _ad = NativeAd(

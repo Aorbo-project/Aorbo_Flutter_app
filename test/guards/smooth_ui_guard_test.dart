@@ -66,6 +66,40 @@ void main() {
     expect(find.byType(RawImage), findsOneWidget);
   });
 
+  test('the live theme layers draw soft edges with gradients, not blurs (~190 MB GPU)', () {
+    final src = File('lib/utils/header_scene.dart').readAsStringSync();
+    String body(String fn) {
+      final start = src.indexOf('  void $fn(Canvas');
+      final end = src.indexOf(RegExp(r'\n  void _[a-zA-Z]+\('), start + 10);
+      return src.substring(start, end);
+    }
+    for (final fn in ['_clouds', '_fog', '_mountains', '_sky', '_trees', '_birds', '_scrim']) {
+      expect(body(fn), isNot(contains('MaskFilter.blur')), reason: '$fn must not blur: use _softDot / gradients');
+    }
+    expect(src, contains("static const _pin = String.fromEnvironment('SCENE_PIN');"));
+  });
+
+  test('first open: the starting level comes from the phone memory', () {
+    expect(HeaderSceneQuality.startFor(ramMb: 2000), SceneQuality.still);
+    expect(HeaderSceneQuality.startFor(ramMb: 7600, lowRam: true), SceneQuality.still);
+    expect(HeaderSceneQuality.startFor(ramMb: 2600), SceneQuality.lite); // Galaxy A03
+    expect(HeaderSceneQuality.startFor(ramMb: 7600), SceneQuality.full); // iQOO I2404
+    final src = File('lib/utils/header_scene.dart').readAsStringSync();
+    expect(src, contains('const Duration(seconds: 3)'), reason: 'calm start before measuring');
+    expect(src, contains('++_strikes >= 2'), reason: 'two slow windows before stepping down');
+    expect(src, contains('HeaderSceneQuality.settle(_q)'), reason: 'a level that holds is saved');
+  });
+
+  test('first open: ads start after home is drawn; home sections hold their space', () {
+    expect(File('lib/main.dart').readAsStringSync(), isNot(contains('MobileAds.instance.initialize')));
+    final ads = File('lib/services/ad_consent_service.dart').readAsStringSync();
+    expect(ads, contains('await _homeShown.future.timeout'));
+    final home = File('lib/screens/dashboard_widget.dart').readAsStringSync();
+    expect(home, contains('AdConsentService.instance.homeShown()'));
+    expect('.maybeWhen(init: () => true, loading: (_) => true'.allMatches(home).length, 3);
+    expect(File('lib/utils/native_feed_ad_card.dart').readAsStringSync(), contains('await AdConsentService.instance.start()'));
+  });
+
   test('home glow follows the header; ad view only while its card is on screen', () {
     final home = File('lib/screens/dashboard_widget.dart').readAsStringSync();
     expect(home, isNot(contains(')..repeat(reverse: true);\n\n    // Kept and disposed')), reason: 'the glow must not loop from initState');

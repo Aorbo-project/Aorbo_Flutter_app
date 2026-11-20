@@ -13,6 +13,7 @@ import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/common_images.dart';
 import 'package:arobo_app/utils/dashboard_header_theme.dart';
 import 'package:arobo_app/utils/header_scene.dart';
+import 'package:arobo_app/services/ad_consent_service.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:arobo_app/utils/know_more_card.dart';
 import 'package:arobo_app/utils/sponsored_video_card.dart';
@@ -170,6 +171,8 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Home is drawn: the ads SDK may start now (not during the splash).
+      AdConsentService.instance.homeShown();
       _resetAllScrolls();
       // Only sections that are not fresh; loaded ones stay on screen.
       _dashboardC.loadHomeContent();
@@ -1856,9 +1859,12 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                   if (GiveawayConfig.enabled) const GiveawayBannerSlot(),
 
                   // ── What's New ──
+                  // Not fetched yet (it starts 1.5 s after Top Treks) counts as loading, so
+                  // the skeleton holds the space from the first frame (20 Nov 2026: the row
+                  // popped in later and pushed the whole page down). Same for each section.
                   Obx(() {
                     final whatsNewLoading = _dashboardC.whatsNewObserver.value
-                        .maybeWhen(loading: (_) => true, orElse: () => false);
+                        .maybeWhen(init: () => true, loading: (_) => true, orElse: () => false);
 
                     final whatsNewResponse = _dashboardC.whatsNewObserver.value
                         .maybeWhen(
@@ -2081,7 +2087,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                   // ── Top Treks ──
                   Obx(() {
                     final topTreksLoading = _dashboardC.topTreksObserver.value
-                        .maybeWhen(loading: (_) => true, orElse: () => false);
+                        .maybeWhen(init: () => true, loading: (_) => true, orElse: () => false);
 
                     final topTreksResponse = _dashboardC.topTreksObserver.value
                         .maybeWhen(
@@ -2320,7 +2326,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                     final seasonalLoading = _dashboardC
                         .seasonalPicksObserver
                         .value
-                        .maybeWhen(loading: (_) => true, orElse: () => false);
+                        .maybeWhen(init: () => true, loading: (_) => true, orElse: () => false);
 
                     final seasonalData = _dashboardC.seasonalPicksObserver.value
                         .maybeWhen(
