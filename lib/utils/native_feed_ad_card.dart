@@ -47,6 +47,10 @@ class _NativeFeedAdCardState extends State<NativeFeedAdCard> {
   bool _failed = false;
   bool _impressionFired = false;
   int _consentWaits = 0;
+  // Google's view is kept only while the card is on screen (20 Nov 2026: a video ad
+  // kept playing under other screens and after scrolling away - 30 redraws a second,
+  // the trek page stuttered on a Galaxy A03). The loaded ad stays; only its view goes.
+  bool _onScreen = true;
 
   @override
   void initState() {
@@ -91,6 +95,8 @@ class _NativeFeedAdCardState extends State<NativeFeedAdCard> {
   }
 
   void _onVisibility(VisibilityInfo info) {
+    final on = info.visibleFraction > 0;
+    if (on != _onScreen && mounted) setState(() => _onScreen = on);
     if (_impressionFired || !_loaded) return;
     if (info.visibleFraction > 0.5) {
       _impressionFired = true;
@@ -135,7 +141,10 @@ class _NativeFeedAdCardState extends State<NativeFeedAdCard> {
         margin: EdgeInsets.only(right: widget.trailingMargin ?? 4.w),
         clipBehavior: Clip.antiAlias,
         decoration: _shell,
-        child: AdWidget(ad: _ad!),
+        // Covered by another screen (TickerMode off) or scrolled away: drop the view.
+        child: _onScreen && TickerMode.valuesOf(context).enabled
+            ? AdWidget(ad: _ad!)
+            : const ColoredBox(color: Colors.black),
       ),
     );
   }

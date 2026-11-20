@@ -1,8 +1,12 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Premium trekking / seasonal scene layer.
 class SceneLayer {
@@ -55,6 +59,25 @@ class SceneLayer {
     elevation: _d(j['elevation'], 1.0).clamp(0.0, 3.0),
     edge: j['edge']?.toString() ?? '',
   );
+
+  /// The same layer with fewer items (the lighter scene for slow phones).
+  SceneLayer withCount(int n) => SceneLayer(
+    type: type,
+    variant: variant,
+    colors: colors,
+    colorsB: colorsB,
+    opacity: opacity,
+    speed: speed,
+    count: n,
+    x: x,
+    y: y,
+    size: size,
+    interval: interval,
+    seed: seed,
+    intensity: intensity,
+    elevation: elevation,
+    edge: edge,
+  );
 }
 
 double _d(dynamic v, double fallback) {
@@ -92,9 +115,81 @@ class HeaderSceneSpec {
   }
 }
 
+/// How much of the animated header a phone can afford.
+///
+/// 20 Nov 2026: on a 2.5 GB Galaxy A03 the full 13-layer scene took ~55 ms to draw a
+/// frame, so the home screen ran at 18 fps even untouched and felt stuck. Each phone now
+/// learns its level from its own frame times: full (60 fps) -> lite (no fog/shimmer, half
+/// the particles, 30 fps) -> still (one painted frame). Kept per app build, so a new build
+/// measures again; only ever steps down within a build.
+enum SceneQuality { full, lite, still }
+
+class HeaderSceneQuality {
+  HeaderSceneQuality._();
+
+  static final ValueNotifier<SceneQuality> current = ValueNotifier(
+    SceneQuality.full,
+  );
+  static const _key = 'header_scene_quality';
+  static Future<void>? _loading;
+  static String _build = '';
+
+  /// Median frame cost (ms, the slower of build/raster) a level may use before
+  /// stepping down. 60 fps = 16.7 ms a frame, 30 fps = 33 ms; both leave room for the
+  /// rest of the screen (scrolling lists, images).
+  static const budgetMs = {SceneQuality.full: 12.0, SceneQuality.lite: 24.0};
+
+  static Future<void> load() => _loading ??= _load();
+
+  static Future<void> _load() async {
+    try {
+      _build = (await PackageInfo.fromPlatform()).buildNumber;
+      final saved = (await SharedPreferences.getInstance()).getString(_key);
+      final parts = (saved ?? '').split('|');
+      if (parts.length == 2 && parts[1] == _build) {
+        for (final q in SceneQuality.values) {
+          if (q.name == parts[0]) current.value = q;
+        }
+      }
+    } catch (_) {
+      // No saved level: start at full and measure.
+    }
+  }
+
+  /// [toStill]: the phone is far over budget (3x) - skip the lighter scene.
+  static void stepDown({bool toStill = false}) {
+    final next = toStill || current.value == SceneQuality.lite
+        ? SceneQuality.still
+        : SceneQuality.lite;
+    if (next == current.value) return;
+    current.value = next;
+    unawaited(
+      SharedPreferences.getInstance()
+          .then((p) => p.setString(_key, '${next.name}|$_build'))
+          .catchError((_) => false),
+    );
+  }
+
+  /// The lighter scene: drops the big blurred layers, halves the moving items.
+  static List<SceneLayer> lighten(List<SceneLayer> layers) => [
+    for (final l in layers)
+      if (!const {'fog', 'aurora', 'shimmer', 'rays'}.contains(l.type))
+        const {'particles', 'clouds', 'birds'}.contains(l.type)
+            ? l.withCount((l.count / 2).ceil())
+            : l,
+  ];
+}
+
 class HeaderSceneBackground extends StatefulWidget {
   final HeaderSceneSpec scene;
-  const HeaderSceneBackground({super.key, required this.scene});
+
+  /// False while the header is scrolled out of view: nothing is drawn then.
+  final bool active;
+  const HeaderSceneBackground({
+    super.key,
+    required this.scene,
+    this.active = true,
+  });
 
   @override
   State<HeaderSceneBackground> createState() => _HeaderSceneBackgroundState();
@@ -102,38 +197,188 @@ class HeaderSceneBackground extends StatefulWidget {
 
 class _HeaderSceneBackgroundState extends State<HeaderSceneBackground>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(
-    vsync: this,
-    duration: const Duration(seconds: 60),
-  );
+  static const double _startAt = 0.15; // leaves already mid-air on the first frame
+  final ValueNotifier<double> _t = ValueNotifier(_startAt);
+  final Stopwatch _clock = Stopwatch();
+  late final Ticker _ticker = createTicker((_) => _tick());
+  Timer? _timer;
+  bool _ready = false; // saved level read
+  bool _reduceMotion = false;
+  bool _tickerOn = true;
+  late List<SceneLayer> _lite = HeaderSceneQuality.lighten(widget.scene.layers);
+
+  // Frame-cost sampling for the current level.
+  final List<double> _costs = [];
+  DateTime? _sampleFrom;
+  bool _levelPassed = false;
+
+  SceneQuality get _q => HeaderSceneQuality.current.value;
+
+  @override
+  void initState() {
+    super.initState();
+    HeaderSceneQuality.current.addListener(_onQuality);
+    SchedulerBinding.instance.addTimingsCallback(_onTimings);
+    HeaderSceneQuality.load().then((_) {
+      if (!mounted) return;
+      _ready = true;
+      _sync();
+    });
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final reduce = MediaQuery.of(context).disableAnimations;
-    if (reduce) {
-      _c.stop();
-      _c.value = 0;
-    } else if (!_c.isAnimating) {
-      _c.repeat();
+    _reduceMotion = MediaQuery.of(context).disableAnimations;
+    _tickerOn = TickerMode.valuesOf(context).enabled; // covered by another screen -> off
+    _sync();
+  }
+
+  @override
+  void didUpdateWidget(HeaderSceneBackground old) {
+    super.didUpdateWidget(old);
+    if (old.scene != widget.scene) {
+      _lite = HeaderSceneQuality.lighten(widget.scene.layers);
     }
+    if (old.active != widget.active) _sync();
+  }
+
+  void _onQuality() {
+    _levelPassed = false;
+    _stopDriver();
+    if (mounted) setState(() {});
+    _sync();
+  }
+
+  bool get _shouldRun =>
+      _ready &&
+      widget.active &&
+      _tickerOn &&
+      !_reduceMotion &&
+      _q != SceneQuality.still &&
+      widget.scene.layers.isNotEmpty;
+
+  void _sync() {
+    if (!mounted) return;
+    final running = _ticker.isActive || _timer != null;
+    if (_shouldRun && !running) {
+      _clock.start();
+      if (_q == SceneQuality.full) {
+        _ticker.start();
+      } else {
+        _timer = Timer.periodic(const Duration(milliseconds: 33), (_) => _tick());
+      }
+      if (!_levelPassed) {
+        _costs.clear();
+        _sampleFrom = DateTime.now().add(const Duration(milliseconds: 1500));
+      }
+    } else if (!_shouldRun && running) {
+      _stopDriver();
+    }
+  }
+
+  void _stopDriver() {
+    if (_ticker.isActive) _ticker.stop();
+    _timer?.cancel();
+    _timer = null;
+    _clock.stop();
+    _sampleFrom = null;
+  }
+
+  void _tick() {
+    _t.value = (_startAt + _clock.elapsedMilliseconds / 60000) % 1.0;
+  }
+
+  void _onTimings(List<FrameTiming> timings) {
+    final from = _sampleFrom;
+    if (from == null || _levelPassed || DateTime.now().isBefore(from)) return;
+    for (final f in timings) {
+      final ms = math.max(f.buildDuration.inMicroseconds, f.rasterDuration.inMicroseconds) / 1000.0;
+      _costs.add(ms);
+    }
+    // 40 frames, or 2 s of a slow phone (it may draw only ~12 frames a second).
+    final waited = DateTime.now().difference(from).inMilliseconds;
+    if (_costs.length < 40 && !(waited >= 2000 && _costs.length >= 12)) return;
+    _costs.sort();
+    final median = _costs[_costs.length ~/ 2];
+    _costs.clear();
+    final budget = HeaderSceneQuality.budgetMs[_q];
+    if (budget != null && median > budget) {
+      HeaderSceneQuality.stepDown(toStill: median > budget * 3);
+    } else {
+      _levelPassed = true;
+      _sampleFrom = null;
+    }
+  }
+
+  // The still scene as a picture. Impeller (our renderer) keeps no cache of drawings,
+  // so a still CustomPaint was redrawn - blurs and all - on every scroll frame
+  // (18 fps on the A03). Painted once into an image, scrolling just moves the image.
+  ui.Image? _still;
+  Object? _stillFor;
+
+  ui.Image _stillImage(Size size, double dpr) {
+    final key = Object.hash(size, dpr, widget.scene, _t.value);
+    if (_still != null && _stillFor == key) return _still!;
+    final rec = ui.PictureRecorder();
+    final canvas = Canvas(rec)..scale(dpr);
+    _ScenePainter(layers: widget.scene.layers, t01: _t.value).paint(canvas, size);
+    final pic = rec.endRecording();
+    final img = pic.toImageSync(
+      (size.width * dpr).ceil(),
+      (size.height * dpr).ceil(),
+    );
+    pic.dispose();
+    _still?.dispose();
+    _still = img;
+    _stillFor = key;
+    return img;
   }
 
   @override
   void dispose() {
-    _c.dispose();
+    HeaderSceneQuality.current.removeListener(_onQuality);
+    SchedulerBinding.instance.removeTimingsCallback(_onTimings);
+    _timer?.cancel();
+    _ticker.dispose();
+    _t.dispose();
+    _still?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     if (widget.scene.layers.isEmpty) return const SizedBox.shrink();
+    final stillPicture = _q == SceneQuality.still || _reduceMotion;
+    if (stillPicture) {
+      final dpr = MediaQuery.devicePixelRatioOf(context);
+      return IgnorePointer(
+        child: LayoutBuilder(
+          builder: (_, box) {
+            final size = box.biggest;
+            if (!size.isFinite || size.isEmpty) return const SizedBox.shrink();
+            return RawImage(
+              image: _stillImage(size, dpr),
+              width: size.width,
+              height: size.height,
+              fit: BoxFit.fill,
+            );
+          },
+        ),
+      );
+    }
+    if (_still != null) {
+      _still!.dispose();
+      _still = null;
+      _stillFor = null;
+    }
+    final layers = _q == SceneQuality.lite ? _lite : widget.scene.layers;
     return IgnorePointer(
       child: RepaintBoundary(
-        child: AnimatedBuilder(
-          animation: _c,
-          builder: (_, __) => CustomPaint(
-            painter: _ScenePainter(layers: widget.scene.layers, t01: _c.value),
+        child: ValueListenableBuilder<double>(
+          valueListenable: _t,
+          builder: (_, t, __) => CustomPaint(
+            painter: _ScenePainter(layers: layers, t01: t),
             size: Size.infinite,
           ),
         ),

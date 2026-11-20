@@ -89,6 +89,10 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
   late AnimationController _glowController; // pulsing glow on Search button
+  // The header scene + glow only animate while the header is on screen (20 Nov 2026:
+  // they kept the whole screen redrawing 60x a second after scrolling away).
+  final GlobalKey _headerKey = GlobalKey();
+  final ValueNotifier<bool> _headerOnScreen = ValueNotifier(true);
   bool _isPressed = false;
 
   final PageController _pageController = PageController(
@@ -153,7 +157,11 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
     _glowController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1800),
-    )..repeat(reverse: true);
+      value: 0.5,
+    );
+    _scrollController.addListener(_onHomeScroll);
+    HeaderSceneQuality.current.addListener(_syncGlow);
+    _syncGlow();
 
     // Kept and disposed: the controller is permanent, so an un-stored
     // worker outlived every Home visit (scan D4).
@@ -188,6 +196,8 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
     _stopAutoScroll();
     _pageController.dispose();
     _animationController.dispose();
+    HeaderSceneQuality.current.removeListener(_syncGlow);
+    _headerOnScreen.dispose();
     _glowController.dispose();
     _scrollController.dispose();
     _knowMoreController.dispose();
@@ -305,6 +315,31 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
   // ---------------------------------------------------------------------------
   // Auto-scroll
   // ---------------------------------------------------------------------------
+
+  void _onHomeScroll() {
+    if (!_scrollController.hasClients) return;
+    final h = _headerKey.currentContext?.size?.height ?? 400;
+    final on = _scrollController.offset < h;
+    if (on != _headerOnScreen.value) {
+      _headerOnScreen.value = on;
+      _syncGlow();
+    }
+  }
+
+  /// The pulsing Search glow runs only where the scene runs at full level.
+  void _syncGlow() {
+    final run =
+        _headerOnScreen.value &&
+        HeaderSceneQuality.current.value == SceneQuality.full;
+    if (run && !_glowController.isAnimating) {
+      _glowController.repeat(reverse: true);
+    } else if (!run && _glowController.isAnimating) {
+      _glowController.stop();
+      if (HeaderSceneQuality.current.value != SceneQuality.full) {
+        _glowController.value = 0.5;
+      }
+    }
+  }
 
   void _startAutoScroll() {
     _autoScrollTimer?.cancel();
@@ -1003,11 +1038,15 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                 duration: Duration(
                   milliseconds: _themeC.hasResolvedRemote.value ? 600 : 0,
                 ),
-                child: HeaderSceneBackground(
+                child: ValueListenableBuilder<bool>(
                   key: ValueKey('scene_${ht.id}'),
-                  scene: ht.scene.layers.isEmpty
-                      ? DashboardHeaderTheme.classic.scene
-                      : ht.scene,
+                  valueListenable: _headerOnScreen,
+                  builder: (_, onScreen, __) => HeaderSceneBackground(
+                    active: onScreen,
+                    scene: ht.scene.layers.isEmpty
+                        ? DashboardHeaderTheme.classic.scene
+                        : ht.scene,
+                  ),
                 ),
               ),
             ),
@@ -1802,7 +1841,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
             // resolves from default → cache → remote a beat after open.
             Obx(() {
               final ht = _themeC.theme.value;
-              return _buildHeader(ht);
+              return KeyedSubtree(key: _headerKey, child: _buildHeader(ht));
             }),
 
             // ----------------------------------------------------------------
