@@ -30,7 +30,7 @@ class TrekPageColors {
 /// What the floating card says, worked out from the server's trek detail. Each item is
 /// null when the server sent nothing to say it with (that column is then left out).
 class TrekKeyFacts {
-  const TrekKeyFacts({this.date, this.duration, this.departTime, this.fromCity, this.backDate, this.backTime});
+  const TrekKeyFacts({this.date, this.duration, this.departTime, this.fromCity, this.backDate, this.backTime, this.transport});
 
   final String? date; // "Thu 26 Nov"
   final String? duration; // "3 days · 2 nights"
@@ -38,6 +38,17 @@ class TrekKeyFacts {
   final String? fromCity; // "From Hyderabad"
   final String? backDate; // "Sun 29 Nov"
   final String? backTime; // "Back 7:30 AM"
+  final String? transport; // the boarding stop's means_of_transport: flight / train / bus / minibus / car
+}
+
+/// The departure icon for the boarding stop's transport (20 Nov 2026: airport pickups showed a bus).
+IconData transportIcon(String? transport) {
+  final t = (transport ?? '').trim().toLowerCase();
+  if (t.contains('flight') || t.contains('air')) return Icons.flight_takeoff_rounded;
+  if (t.contains('train')) return Icons.train_rounded;
+  if (t.contains('car') || t.contains('cab') || t.contains('jeep')) return Icons.directions_car_rounded;
+  if (t.contains('minibus') || t.contains('tempo')) return Icons.airport_shuttle_rounded;
+  return Icons.directions_bus_rounded;
 }
 
 final _stageFmt = DateFormat('yyyy-MM-dd hh:mm a');
@@ -96,6 +107,7 @@ TrekKeyFacts trekKeyFacts(TrekDetailData d, {int? cityId}) {
     fromCity: from,
     backDate: back == null ? null : _dayFmt.format(back),
     backTime: back == null ? null : 'Back ${_timeFmt.format(back)}',
+    transport: boarding?.meansOfTransport,
   );
 }
 
@@ -111,7 +123,7 @@ class TrekKeyFactsCard extends StatelessWidget {
       if (facts.date != null || facts.duration != null)
         _fact(Icons.calendar_month_rounded, TrekPageColors.forestSoft, TrekPageColors.forest, facts.date ?? '', facts.duration ?? ''),
       if (facts.departTime != null || facts.fromCity != null)
-        _fact(Icons.directions_bus_rounded, TrekPageColors.yellowSoft, TrekPageColors.yellowInk, facts.departTime ?? '', facts.fromCity ?? ''),
+        _fact(transportIcon(facts.transport), TrekPageColors.yellowSoft, TrekPageColors.yellowInk, facts.departTime ?? '', facts.fromCity ?? ''),
       if (facts.backDate != null)
         _fact(Icons.home_rounded, TrekPageColors.forestSoft, TrekPageColors.forestDeep, facts.backDate!, facts.backTime ?? ''),
     ];
