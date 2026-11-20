@@ -134,4 +134,13 @@ void main() {
     // no dark icon squares left in the section titles
     expect(src.contains('color: _C.iconBadge'), isFalse);
   });
+
+  test('departure icon follows the transport (20 Nov 2026: airport pickups showed a bus)', () {
+    expect(transportIcon('flight'), Icons.flight_takeoff_rounded);
+    expect(transportIcon('Train'), Icons.train_rounded);
+    expect(transportIcon('minibus'), Icons.airport_shuttle_rounded);
+    expect(transportIcon('car'), Icons.directions_car_rounded);
+    expect(transportIcon('bus'), Icons.directions_bus_rounded);
+    expect(transportIcon(null), Icons.directions_bus_rounded);
+  });
 }
