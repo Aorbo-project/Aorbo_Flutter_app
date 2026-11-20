@@ -14,6 +14,6 @@ void main() {
     expect(AdConfig.testDeviceIds, isNotEmpty);
     expect(File('android/app/src/main/AndroidManifest.xml').readAsStringSync(), contains('ca-app-pub-1409410183966075~2943255858'));
     final version = RegExp(r'^version: \d+\.\d+\.\d+\+(\d+)', multiLine: true).firstMatch(File('pubspec.yaml').readAsStringSync())!;
-    expect(int.parse(version.group(1)!), greaterThanOrEqualTo(45), reason: 'the server gives the Google fallback to build >= 45 only');
+    expect(int.parse(version.group(1)!), greaterThanOrEqualTo(46), reason: "the server gives the Google fallback to build >= 46 only");
   });
 }

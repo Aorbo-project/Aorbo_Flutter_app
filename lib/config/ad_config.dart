@@ -4,10 +4,10 @@ import 'package:flutter/foundation.dart';
 
 /// AdMob configuration.
 ///
-/// REAL ads since 1.0.0+45 (20 Nov 2026; owner: AdMob account "Ready"). Debug builds and the
+/// REAL ads since 1.0.0+46 (20 Nov 2026; owner: AdMob account "Ready"). Debug builds and the
 /// test devices below still get Google's test ads, so our own taps never count (invalid
 /// clicks can close the AdMob account). The server sends the Google fallback only to builds
-/// >= 45 (Backend utils/realAdsRule.js): older builds carry the test ids.
+/// >= 46 (Backend utils/realAdsRule.js): older builds, including the 45 that went live, carry the test ids.
 class AdConfig {
   AdConfig._();
 
