@@ -175,7 +175,15 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
     }
     // No nested Sizer here — main.dart already wraps the whole app in one at
     // the root, so a second instance was redundant.
-    return Scaffold(
+    //
+    // Back is blocked while the cancellation request runs (owner test,
+    // 23 Nov 2026: booking 1909 was cancelled on the server, but the screen
+    // was closed during the ~2 s request, so the success screen never came
+    // and the stale details screen still offered "Cancel"). The app-bar
+    // back button goes through the same check.
+    return PopScope(
+      canPop: !_isCancelling,
+      child: Scaffold(
       backgroundColor: _TI.bg,
       appBar: _buildAppBar(),
       body: Obx(() {
@@ -202,6 +210,7 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
         return _buildBody(cancellationDataModel, booking!);
       }),
       bottomNavigationBar: _buildBottomBar(booking),
+    ),
     );
   }
 
@@ -1064,7 +1073,18 @@ class _BookingsCancelScreenState extends State<BookingsCancelScreen>
     }
     try {
       final String? message = await _trekC.reqCancellation(bookingId);
-      if (!mounted) return;
+      if (!mounted) {
+        // The screen was closed while the request ran (app sent to the
+        // background, a call came in). A cancellation that went through must
+        // still reach the booking screen underneath and the customer: refresh
+        // that booking and say so, instead of leaving "Cancel" on a booking
+        // that is already cancelled (owner test, 23 Nov 2026, booking 1909).
+        if (message == null) {
+          _dashboardC.getBookingDetail(bookingId: bookingId);
+          CustomSnackBar.success('Booking cancelled. Your refund details are in My Bookings.');
+        }
+        return;
+      }
       if (message != null) {
         SchedulerBinding.instance.addPostFrameCallback((_) {
           if (mounted) CustomSnackBar.show(context, message: message);

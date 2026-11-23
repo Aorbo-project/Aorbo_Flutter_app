@@ -1067,6 +1067,19 @@ class TrekController extends GetxController {
       }
       throw "Response Body Null";
     } catch (e) {
+      // Already cancelled (the screen was out of date — owner test, 23 Nov
+      // 2026: "Cancel" tapped 3x on booking 1909 after it was cancelled):
+      // not an error. Refresh this booking so the Cancel button goes away,
+      // and say what happened in plain words.
+      if (friendlyError(e).toLowerCase().contains('already cancelled') ||
+          e.toString().toLowerCase().contains('already cancelled')) {
+        const msg = 'This booking is already cancelled.';
+        cancellationDetailsResponseObserver.value = ApiResult.error(msg);
+        final dash = Get.find<DashboardController>();
+        dash.getBookingDetail(bookingId: bookingId);
+        dash.loadAllBookingHistory(force: true, waitForCompletion: false);
+        return msg;
+      }
       // show the REAL error, not a stale one:
       CustomSnackBar.error(friendlyError(e));
       cancellationDetailsResponseObserver.value = ApiResult.error(
