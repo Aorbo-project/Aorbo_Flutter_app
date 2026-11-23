@@ -13,5 +13,5 @@ class AppEnv {
   // String socketUrl  = "http://192.168.29.60:3001";
   // String imageUrl   = "http://192.168.29.60:3001/";
 
-  String razorpayKey = "rzp_test_TBii9P0UpWmSoW";
+  // No Razorpay key: the server sends it with each order (23 Nov 2026).
 }
