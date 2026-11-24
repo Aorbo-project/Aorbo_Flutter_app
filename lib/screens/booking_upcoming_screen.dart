@@ -3047,7 +3047,10 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
             final bool isRated = _isRated(booking);
 
             final bool showRatingFab =
-                booking != null && _isTrekCompleted(booking) && !isRated;
+                booking != null &&
+                _isTrekCompleted(booking) &&
+                !isRated &&
+                canRateOnAorbo(booking);
 
             // ── Cancel eligibility ────────────────────────────────────────────
             // Cancellation is allowed ONLY when:

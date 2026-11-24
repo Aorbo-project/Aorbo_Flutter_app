@@ -16,6 +16,10 @@ const String kOfflineTicketSource = 'offline_ticket';
 
 bool isOfflineTicket(BookingHistoryData? b) => b?.bookingSource == kOfflineTicketSource;
 
+/// A review shows on a trek page, so only offline tickets for a trek listed on Aorbo can be
+/// rated ("quick" tickets for other trips have no trek). App bookings: always true here.
+bool canRateOnAorbo(BookingHistoryData? b) => !isOfflineTicket(b) || b?.trek?.id != null;
+
 /// Design preview only (never on in a store build unless passed at build time).
 const bool kOfflineTicketPreview = bool.fromEnvironment('OFFLINE_TICKET_PREVIEW');
 

@@ -73,6 +73,17 @@ void main() {
     expect(_read('lib/screens/trek_details_screen.dart'), contains("'\$dateStr · Booked directly'"));
   });
 
+  test('Rate only where the server takes the review: quick offline tickets (no Aorbo trek) have none', () {
+    const quick = BookingHistoryData(bookingSource: 'offline_ticket', trek: Trek(title: 'Goa'));
+    const listed = BookingHistoryData(bookingSource: 'offline_ticket', trek: Trek(id: 7, title: 'Kudremukh'));
+    expect(canRateOnAorbo(quick), isFalse);
+    expect(canRateOnAorbo(listed), isTrue);
+    expect(canRateOnAorbo(const BookingHistoryData(id: 1)), isTrue);
+    expect(_read('lib/utils/common_booked_card.dart'), contains('canRateOnAorbo(booking)'));
+    final fab = details.substring(details.indexOf('final bool showRatingFab'));
+    expect(fab.substring(0, 300), contains('canRateOnAorbo(booking)'));
+  });
+
   test('"Not my booking" calls the server', () {
     expect(details, contains('_dashboardC.hideOfflineTicket(number)'));
     expect(_read('lib/repository/network_url.dart'), contains("'bookings/offline-tickets/"));

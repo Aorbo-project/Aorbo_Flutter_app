@@ -155,7 +155,7 @@ class CommonBookedCard extends StatelessWidget {
 
     final double ratingValue = booking.ratingValue ?? 0.0;
 
-    final bool showRateHint = isCompleted && !ratingGiven;
+    final bool showRateHint = isCompleted && !ratingGiven && canRateOnAorbo(booking);
     final bool showRatedStrip = isCompleted && ratingGiven;
     final String title = booking.trek?.title ?? '-';
     final String? durationDays = booking.trek?.durationDays?.toString();
