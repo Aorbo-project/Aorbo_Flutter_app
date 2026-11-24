@@ -40,6 +40,16 @@ void main() {
     expect(details, contains('if (isOfflineTicket(booking)) return _offlinePaymentRows(booking);'));
   });
 
+  test('one ID everywhere: an offline ticket shows its Booking ID, highlighted', () {
+    final rows = details.substring(details.indexOf('List<Widget> _offlineBookingRows'));
+    expect(rows.substring(0, 700), contains("_ticketRow('Booking ID', b.bookingNumber ?? 'N/A', isHighlight: true)"));
+    expect(details, isNot(contains("'Ticket No.'")));
+  });
+
+  test('guard: customers never see internal ids such as Destination ID', () {
+    expect(details, isNot(contains("'Destination ID'")));
+  });
+
   test('guard: offline tickets never trigger "Booked just now"', () {
     final src = _read('lib/screens/bookings_history_screen.dart');
     final fn = src.substring(src.indexOf('BookingHistoryData? _justBookedBooking'));

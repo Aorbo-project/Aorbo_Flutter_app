@@ -1193,11 +1193,6 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                         _ticketRow('Destination', destinationName),
                         _dividerLine(),
                         _ticketRow(
-                          'Destination ID',
-                          trek?.destinationId?.toString() ?? 'N/A',
-                        ),
-                        _dividerLine(),
-                        _ticketRow(
                           'Trek Captain',
                           trek?.captainName ?? 'To be announced',
                         ),
@@ -1522,9 +1517,14 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
 
   // ── An organiser's own sale (offline ticket, 24 Nov 2026) ──────────────────
   List<Widget> _offlineBookingRows(BookingHistoryData b, DateTime? bookingDate) => [
-        _ticketRow('Booked with', b.trek?.vendor?.businessName ?? 'Organiser', isHighlight: true),
+        // One ID everywhere: an offline ticket's booking ID (OB2026…) is shown like any booking's.
+        if ((b.batch?.tbrId ?? '').isNotEmpty) ...[
+          _ticketRow('TBR ID', b.batch!.tbrId!),
+          _dividerLine(),
+        ],
+        _ticketRow('Booking ID', b.bookingNumber ?? 'N/A', isHighlight: true),
         _dividerLine(),
-        _ticketRow('Ticket No.', b.bookingNumber ?? 'N/A'),
+        _ticketRow('Booked with', b.trek?.vendor?.businessName ?? 'Organiser'),
         _dividerLine(),
         _ticketRow(
           'Booking Date',

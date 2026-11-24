@@ -30,7 +30,7 @@ final List<BookingHistoryData> offlineTicketSamples = [
   BookingHistoryData(
     id: -9001,
     bookingSource: kOfflineTicketSource,
-    bookingNumber: 'DS/26-27/0012',
+    bookingNumber: 'OB20260012',
     bookingDate: '2026-11-22T10:30:00.000Z',
     status: 'confirmed',
     trekStatus: 'upcoming',
@@ -57,12 +57,12 @@ final List<BookingHistoryData> offlineTicketSamples = [
       vendor: Vendor(businessName: _sampleOrganiser, phone: '90000 00000'),
       destination: Destination(name: 'Gokarna & Dandeli'),
     ),
-    batch: const Batch(startDate: '2026-12-05', endDate: '2026-12-07', startTime: '9:30 PM'),
+    batch: const Batch(tbrId: 'TBR7QK2M4X', startDate: '2026-12-05', endDate: '2026-12-07', startTime: '9:30 PM'),
   ),
   BookingHistoryData(
     id: -9002,
     bookingSource: kOfflineTicketSource,
-    bookingNumber: 'DS/26-27/0007',
+    bookingNumber: 'OB20260007',
     bookingDate: '2026-10-28T08:00:00.000Z',
     status: 'completed',
     trekStatus: 'completed',
@@ -86,7 +86,7 @@ final List<BookingHistoryData> offlineTicketSamples = [
       vendor: Vendor(businessName: _sampleOrganiser, phone: '90000 00000'),
       destination: Destination(name: 'Kudremukh'),
     ),
-    batch: const Batch(startDate: '2026-11-07', endDate: '2026-11-08', startTime: '10:00 PM'),
+    batch: const Batch(tbrId: 'TBR3HN8W2D', startDate: '2026-11-07', endDate: '2026-11-08', startTime: '10:00 PM'),
   ),
 ];
 
