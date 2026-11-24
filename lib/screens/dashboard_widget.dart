@@ -13,6 +13,7 @@ import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/common_images.dart';
 import 'package:arobo_app/utils/dashboard_header_theme.dart';
 import 'package:arobo_app/utils/header_scene.dart';
+import 'package:arobo_app/services/ad_consent_service.dart';
 import 'package:arobo_app/utils/screen_constants.dart';
 import 'package:arobo_app/utils/know_more_card.dart';
 import 'package:arobo_app/utils/sponsored_video_card.dart';
@@ -89,6 +90,10 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
   late AnimationController _glowController; // pulsing glow on Search button
+  // The header scene + glow only animate while the header is on screen (20 Nov 2026:
+  // they kept the whole screen redrawing 60x a second after scrolling away).
+  final GlobalKey _headerKey = GlobalKey();
+  final ValueNotifier<bool> _headerOnScreen = ValueNotifier(true);
   bool _isPressed = false;
 
   final PageController _pageController = PageController(
@@ -153,7 +158,11 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
     _glowController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1800),
-    )..repeat(reverse: true);
+      value: 0.5,
+    );
+    _scrollController.addListener(_onHomeScroll);
+    HeaderSceneQuality.current.addListener(_syncGlow);
+    _syncGlow();
 
     // Kept and disposed: the controller is permanent, so an un-stored
     // worker outlived every Home visit (scan D4).
@@ -162,6 +171,8 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Home is drawn: the ads SDK may start now (not during the splash).
+      AdConsentService.instance.homeShown();
       _resetAllScrolls();
       // Only sections that are not fresh; loaded ones stay on screen.
       _dashboardC.loadHomeContent();
@@ -188,6 +199,8 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
     _stopAutoScroll();
     _pageController.dispose();
     _animationController.dispose();
+    HeaderSceneQuality.current.removeListener(_syncGlow);
+    _headerOnScreen.dispose();
     _glowController.dispose();
     _scrollController.dispose();
     _knowMoreController.dispose();
@@ -305,6 +318,31 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
   // ---------------------------------------------------------------------------
   // Auto-scroll
   // ---------------------------------------------------------------------------
+
+  void _onHomeScroll() {
+    if (!_scrollController.hasClients) return;
+    final h = _headerKey.currentContext?.size?.height ?? 400;
+    final on = _scrollController.offset < h;
+    if (on != _headerOnScreen.value) {
+      _headerOnScreen.value = on;
+      _syncGlow();
+    }
+  }
+
+  /// The pulsing Search glow runs only where the scene runs at full level.
+  void _syncGlow() {
+    final run =
+        _headerOnScreen.value &&
+        HeaderSceneQuality.current.value == SceneQuality.full;
+    if (run && !_glowController.isAnimating) {
+      _glowController.repeat(reverse: true);
+    } else if (!run && _glowController.isAnimating) {
+      _glowController.stop();
+      if (HeaderSceneQuality.current.value != SceneQuality.full) {
+        _glowController.value = 0.5;
+      }
+    }
+  }
 
   void _startAutoScroll() {
     _autoScrollTimer?.cancel();
@@ -1003,11 +1041,15 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                 duration: Duration(
                   milliseconds: _themeC.hasResolvedRemote.value ? 600 : 0,
                 ),
-                child: HeaderSceneBackground(
+                child: ValueListenableBuilder<bool>(
                   key: ValueKey('scene_${ht.id}'),
-                  scene: ht.scene.layers.isEmpty
-                      ? DashboardHeaderTheme.classic.scene
-                      : ht.scene,
+                  valueListenable: _headerOnScreen,
+                  builder: (_, onScreen, __) => HeaderSceneBackground(
+                    active: onScreen,
+                    scene: ht.scene.layers.isEmpty
+                        ? DashboardHeaderTheme.classic.scene
+                        : ht.scene,
+                  ),
                 ),
               ),
             ),
@@ -1802,7 +1844,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
             // resolves from default → cache → remote a beat after open.
             Obx(() {
               final ht = _themeC.theme.value;
-              return _buildHeader(ht);
+              return KeyedSubtree(key: _headerKey, child: _buildHeader(ht));
             }),
 
             // ----------------------------------------------------------------
@@ -1817,9 +1859,12 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                   if (GiveawayConfig.enabled) const GiveawayBannerSlot(),
 
                   // ── What's New ──
+                  // Not fetched yet (it starts 1.5 s after Top Treks) counts as loading, so
+                  // the skeleton holds the space from the first frame (20 Nov 2026: the row
+                  // popped in later and pushed the whole page down). Same for each section.
                   Obx(() {
                     final whatsNewLoading = _dashboardC.whatsNewObserver.value
-                        .maybeWhen(loading: (_) => true, orElse: () => false);
+                        .maybeWhen(init: () => true, loading: (_) => true, orElse: () => false);
 
                     final whatsNewResponse = _dashboardC.whatsNewObserver.value
                         .maybeWhen(
@@ -2042,7 +2087,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                   // ── Top Treks ──
                   Obx(() {
                     final topTreksLoading = _dashboardC.topTreksObserver.value
-                        .maybeWhen(loading: (_) => true, orElse: () => false);
+                        .maybeWhen(init: () => true, loading: (_) => true, orElse: () => false);
 
                     final topTreksResponse = _dashboardC.topTreksObserver.value
                         .maybeWhen(
@@ -2281,7 +2326,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                     final seasonalLoading = _dashboardC
                         .seasonalPicksObserver
                         .value
-                        .maybeWhen(loading: (_) => true, orElse: () => false);
+                        .maybeWhen(init: () => true, loading: (_) => true, orElse: () => false);
 
                     final seasonalData = _dashboardC.seasonalPicksObserver.value
                         .maybeWhen(

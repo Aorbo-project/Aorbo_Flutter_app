@@ -452,6 +452,7 @@ _$LatestReviewsImpl _$$LatestReviewsImplFromJson(Map<String, dynamic> json) =>
       content: json['content'] as String?,
       createdAt: json['created_at'] as String?,
       categoryHighlights: json['category_highlights'] as Map<String, dynamic>?,
+      bookedDirectly: json['booked_directly'] as bool?,
     );
 
 Map<String, dynamic> _$$LatestReviewsImplToJson(_$LatestReviewsImpl instance) =>
@@ -462,4 +463,5 @@ Map<String, dynamic> _$$LatestReviewsImplToJson(_$LatestReviewsImpl instance) =>
       'content': instance.content,
       'created_at': instance.createdAt,
       'category_highlights': instance.categoryHighlights,
+      'booked_directly': instance.bookedDirectly,
     };

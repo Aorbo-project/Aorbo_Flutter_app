@@ -972,10 +972,15 @@ class TrekController extends GetxController {
     required bool trekPlanning,
     required bool womenSafety,
     List<String> issueTags = const [],
+    // An organiser's offline ticket (24 Nov 2026): reviewed by its booking ID (OB…).
+    String? offlineTicketNumber,
   }) async {
     String body = json.encode({
       "trek_id": trekId,
-      "booking_id": bookingId,
+      if (offlineTicketNumber != null)
+        "offline_ticket_number": offlineTicketNumber
+      else
+        "booking_id": bookingId,
       "batch_id": batchId,
       "rating_value": rating.value,
       "content": reviewController.value.text,
@@ -1067,6 +1072,19 @@ class TrekController extends GetxController {
       }
       throw "Response Body Null";
     } catch (e) {
+      // Already cancelled (the screen was out of date — owner test, 23 Nov
+      // 2026: "Cancel" tapped 3x on booking 1909 after it was cancelled):
+      // not an error. Refresh this booking so the Cancel button goes away,
+      // and say what happened in plain words.
+      if (friendlyError(e).toLowerCase().contains('already cancelled') ||
+          e.toString().toLowerCase().contains('already cancelled')) {
+        const msg = 'This booking is already cancelled.';
+        cancellationDetailsResponseObserver.value = ApiResult.error(msg);
+        final dash = Get.find<DashboardController>();
+        dash.getBookingDetail(bookingId: bookingId);
+        dash.loadAllBookingHistory(force: true, waitForCompletion: false);
+        return msg;
+      }
       // show the REAL error, not a stale one:
       CustomSnackBar.error(friendlyError(e));
       cancellationDetailsResponseObserver.value = ApiResult.error(

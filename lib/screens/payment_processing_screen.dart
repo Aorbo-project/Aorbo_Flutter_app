@@ -10,7 +10,6 @@ import 'package:arobo_app/security/screen_security.dart';
 import 'package:arobo_app/freezed_models/booking/booking_data_model.dart';
 import 'package:arobo_app/screens/booking_upcoming_screen.dart';
 import 'package:arobo_app/screens/dashboard_main.dart';
-import 'package:arobo_app/utils/booking_constants.dart';
 import 'package:arobo_app/utils/common_colors.dart';
 import 'package:arobo_app/utils/custom_snackbar.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -122,11 +121,23 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
   }
 
   void _openRazorpay() async {
+    // The Razorpay key comes only from the server, with the order
+    // (next_action_params.key). The app has no key of its own (23 Nov 2026,
+    // payment audit gap 6): a built-in test key could never pay a live
+    // order. Without one, checkout is not opened and RETRY asks again.
+    final key = _trekC.orderNextActionParams['key']?.toString() ?? '';
+    if (key.isEmpty) {
+      _resolveTerminal(
+        PaymentFlowState.expiredOrFailed,
+        'Could not open the payment page. Please try again.',
+      );
+      return;
+    }
     try {
       final breakdown = widget.breakdown;
       final params = _trekC.orderNextActionParams;
       final options = {
-        'key': params['key'] ?? BookingConstants.razorpayKey,
+        'key': key,
         'order_id': params['order_id'] ?? '${_trekC.orderData.value.id}',
         'amount':
             params['amount'] ??

@@ -1,8 +1,14 @@
+import 'dart:async';
+import 'dart:io' show Platform;
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Premium trekking / seasonal scene layer.
 class SceneLayer {
@@ -55,6 +61,25 @@ class SceneLayer {
     elevation: _d(j['elevation'], 1.0).clamp(0.0, 3.0),
     edge: j['edge']?.toString() ?? '',
   );
+
+  /// The same layer with fewer items (the lighter scene for slow phones).
+  SceneLayer withCount(int n) => SceneLayer(
+    type: type,
+    variant: variant,
+    colors: colors,
+    colorsB: colorsB,
+    opacity: opacity,
+    speed: speed,
+    count: n,
+    x: x,
+    y: y,
+    size: size,
+    interval: interval,
+    seed: seed,
+    intensity: intensity,
+    elevation: elevation,
+    edge: edge,
+  );
 }
 
 double _d(dynamic v, double fallback) {
@@ -92,9 +117,138 @@ class HeaderSceneSpec {
   }
 }
 
+/// How much of the animated header a phone can afford.
+///
+/// 20 Nov 2026: on a 2.5 GB Galaxy A03 the full 13-layer scene took ~55 ms to draw a
+/// frame, so the home screen ran at 18 fps even untouched and felt stuck. Each phone now
+/// learns its level from its own frame times: full (60 fps) -> lite (no fog/shimmer, half
+/// the particles, 30 fps) -> still (one painted frame).
+///
+/// First-open rules (owner, 20 Nov 2026: a fresh install is the busiest moment - data,
+/// photos and the ads SDK all start at once - so never measure or draw heavy then):
+/// - start from the phone's memory: < 2.2 GB still, < 4 GB lite, else full;
+/// - measure only after the scene has been on screen 3 s;
+/// - step down only after 2 slow windows in a row (one busy moment is not the phone);
+/// - a lite phone that is clearly fast tries full once;
+/// - a level that holds is saved for this build: later opens never measure again.
+enum SceneQuality { full, lite, still }
+
+class HeaderSceneQuality {
+  HeaderSceneQuality._();
+
+  static final ValueNotifier<SceneQuality> current = ValueNotifier(
+    SceneQuality.full,
+  );
+  static const _key = 'header_scene_quality';
+  static Future<void>? _loading;
+  static String _build = '';
+
+  /// A level is saved for this build: no more measuring.
+  static bool settled = false;
+
+  /// Lite already tried full this build (never loop up and down).
+  static bool triedFull = false;
+
+  /// The starting level for a phone with [ramMb] of memory (first open of a build).
+  static SceneQuality startFor({required int ramMb, bool lowRam = false}) {
+    if (lowRam || ramMb < 2200) return SceneQuality.still;
+    if (ramMb < 4000) return SceneQuality.lite;
+    return SceneQuality.full;
+  }
+
+  /// Median frame cost (ms, the slower of build/raster) a level may use before
+  /// stepping down. 60 fps = 16.7 ms a frame, 30 fps = 33 ms; both leave room for the
+  /// rest of the screen (scrolling lists, images).
+  static const budgetMs = {SceneQuality.full: 12.0, SceneQuality.lite: 24.0};
+
+  /// Test builds only: `--dart-define=SCENE_PIN=full|lite|still` fixes the level (no
+  /// measuring) so one phone can be measured at every level. Empty in store builds.
+  static const _pin = String.fromEnvironment('SCENE_PIN');
+
+  static Future<void> load() => _loading ??= _load();
+
+  static Future<void> _load() async {
+    for (final q in SceneQuality.values) {
+      if (q.name == _pin) {
+        current.value = q;
+        return;
+      }
+    }
+    try {
+      _build = (await PackageInfo.fromPlatform()).buildNumber;
+      final saved = (await SharedPreferences.getInstance()).getString(_key);
+      final parts = (saved ?? '').split('|');
+      if (parts.length == 2 && parts[1] == _build) {
+        for (final q in SceneQuality.values) {
+          if (q.name == parts[0]) {
+            current.value = q;
+            settled = true;
+            return;
+          }
+        }
+      }
+      if (Platform.isAndroid) {
+        final a = await DeviceInfoPlugin().androidInfo;
+        current.value = startFor(ramMb: a.physicalRamSize, lowRam: a.isLowRamDevice);
+      }
+    } catch (_) {
+      current.value = SceneQuality.lite; // unknown phone: the safe middle
+    }
+  }
+
+  static void _save(SceneQuality q) => unawaited(
+    SharedPreferences.getInstance()
+        .then((p) => p.setString(_key, '${q.name}|$_build'))
+        .catchError((_) => false),
+  );
+
+  /// The level held: keep it for this build.
+  static void settle(SceneQuality q) {
+    if (_pin.isNotEmpty) return;
+    settled = true;
+    _save(q);
+  }
+
+  /// Lite with room to spare: try full (not saved until it holds).
+  static void stepUp() {
+    if (_pin.isNotEmpty || triedFull || current.value != SceneQuality.lite) return;
+    triedFull = true;
+    current.value = SceneQuality.full;
+  }
+
+  /// [toStill]: the phone is far over budget (3x) - skip the lighter scene.
+  static void stepDown({bool toStill = false}) {
+    if (_pin.isNotEmpty) return;
+    final next = toStill || current.value == SceneQuality.lite
+        ? SceneQuality.still
+        : SceneQuality.lite;
+    if (next == current.value) return;
+    if (current.value == SceneQuality.full) triedFull = true; // full failed: never again
+    current.value = next;
+    // Lite after a failed try at full, or still: final for this build.
+    if (next == SceneQuality.still || triedFull) settle(next);
+  }
+
+  /// The lighter scene: drops the big blurred layers, halves the moving items.
+  static List<SceneLayer> lighten(List<SceneLayer> layers) => [
+    for (final l in layers)
+      if (!const {'fog', 'aurora', 'shimmer', 'rays'}.contains(l.type))
+        const {'particles', 'clouds', 'birds'}.contains(l.type)
+            ? l.withCount((l.count / 2).ceil())
+            : l,
+  ];
+}
+
 class HeaderSceneBackground extends StatefulWidget {
   final HeaderSceneSpec scene;
-  const HeaderSceneBackground({super.key, required this.scene});
+
+  /// False while the header is scrolled out of view: nothing is drawn then.
+  final bool active;
+  const HeaderSceneBackground({
+    super.key,
+    required this.scene,
+    this.active = true,
+  });
 
   @override
   State<HeaderSceneBackground> createState() => _HeaderSceneBackgroundState();
@@ -102,38 +256,202 @@ class HeaderSceneBackground extends StatefulWidget {
 
 class _HeaderSceneBackgroundState extends State<HeaderSceneBackground>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(
-    vsync: this,
-    duration: const Duration(seconds: 60),
-  );
+  static const double _startAt = 0.15; // leaves already mid-air on the first frame
+  final ValueNotifier<double> _t = ValueNotifier(_startAt);
+  final Stopwatch _clock = Stopwatch();
+  late final Ticker _ticker = createTicker((_) => _tick());
+  Timer? _timer;
+  bool _ready = false; // saved level read
+  bool _reduceMotion = false;
+  bool _tickerOn = true;
+  late List<SceneLayer> _lite = HeaderSceneQuality.lighten(widget.scene.layers);
+
+  // Frame-cost sampling for the current level.
+  final List<double> _costs = [];
+  DateTime? _sampleFrom;
+  int _strikes = 0; // slow windows in a row
+  int _passes = 0; // good windows at this level
+
+  SceneQuality get _q => HeaderSceneQuality.current.value;
+
+  @override
+  void initState() {
+    super.initState();
+    HeaderSceneQuality.current.addListener(_onQuality);
+    SchedulerBinding.instance.addTimingsCallback(_onTimings);
+    HeaderSceneQuality.load().then((_) {
+      if (!mounted) return;
+      _ready = true;
+      _sync();
+    });
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final reduce = MediaQuery.of(context).disableAnimations;
-    if (reduce) {
-      _c.stop();
-      _c.value = 0;
-    } else if (!_c.isAnimating) {
-      _c.repeat();
+    _reduceMotion = MediaQuery.of(context).disableAnimations;
+    _tickerOn = TickerMode.valuesOf(context).enabled; // covered by another screen -> off
+    _sync();
+  }
+
+  @override
+  void didUpdateWidget(HeaderSceneBackground old) {
+    super.didUpdateWidget(old);
+    if (old.scene != widget.scene) {
+      _lite = HeaderSceneQuality.lighten(widget.scene.layers);
     }
+    if (old.active != widget.active) _sync();
+  }
+
+  void _onQuality() {
+    _strikes = 0;
+    _passes = 0;
+    _stopDriver();
+    if (mounted) setState(() {});
+    _sync();
+  }
+
+  bool get _shouldRun =>
+      _ready &&
+      widget.active &&
+      _tickerOn &&
+      !_reduceMotion &&
+      _q != SceneQuality.still &&
+      widget.scene.layers.isNotEmpty;
+
+  void _sync() {
+    if (!mounted) return;
+    final running = _ticker.isActive || _timer != null;
+    if (_shouldRun && !running) {
+      _clock.start();
+      if (_q == SceneQuality.full) {
+        _ticker.start();
+      } else {
+        _timer = Timer.periodic(const Duration(milliseconds: 33), (_) => _tick());
+      }
+      if (!HeaderSceneQuality.settled) {
+        _costs.clear();
+        // Calm start: the first seconds on screen are the busiest (data, photos).
+        _sampleFrom = DateTime.now().add(const Duration(seconds: 3));
+      }
+    } else if (!_shouldRun && running) {
+      _stopDriver();
+    }
+  }
+
+  void _stopDriver() {
+    if (_ticker.isActive) _ticker.stop();
+    _timer?.cancel();
+    _timer = null;
+    _clock.stop();
+    _sampleFrom = null;
+  }
+
+  void _tick() {
+    _t.value = (_startAt + _clock.elapsedMilliseconds / 60000) % 1.0;
+  }
+
+  void _onTimings(List<FrameTiming> timings) {
+    final from = _sampleFrom;
+    if (from == null || HeaderSceneQuality.settled || DateTime.now().isBefore(from)) return;
+    for (final f in timings) {
+      final ms = math.max(f.buildDuration.inMicroseconds, f.rasterDuration.inMicroseconds) / 1000.0;
+      _costs.add(ms);
+    }
+    // 40 frames, or 2 s of a slow phone (it may draw only ~12 frames a second).
+    final waited = DateTime.now().difference(from).inMilliseconds;
+    if (_costs.length < 40 && !(waited >= 2000 && _costs.length >= 12)) return;
+    _costs.sort();
+    final median = _costs[_costs.length ~/ 2];
+    _costs.clear();
+    final budget = HeaderSceneQuality.budgetMs[_q];
+    if (budget == null) return;
+    if (median > budget) {
+      _passes = 0;
+      // Two slow windows in a row: one busy moment is not the phone.
+      if (++_strikes >= 2) HeaderSceneQuality.stepDown(toStill: median > budget * 3);
+      return;
+    }
+    _strikes = 0;
+    final fullBudget = HeaderSceneQuality.budgetMs[SceneQuality.full]!;
+    if (_q == SceneQuality.lite && median < fullBudget * 0.5) {
+      HeaderSceneQuality.stepUp();
+      if (_q == SceneQuality.full) return;
+    }
+    if (++_passes >= 2) {
+      HeaderSceneQuality.settle(_q);
+      _sampleFrom = null;
+    }
+  }
+
+  // The still scene as a picture. Impeller (our renderer) keeps no cache of drawings,
+  // so a still CustomPaint was redrawn - blurs and all - on every scroll frame
+  // (18 fps on the A03). Painted once into an image, scrolling just moves the image.
+  ui.Image? _still;
+  Object? _stillFor;
+
+  ui.Image _stillImage(Size size, double dpr) {
+    final key = Object.hash(size, dpr, widget.scene, _t.value);
+    if (_still != null && _stillFor == key) return _still!;
+    final rec = ui.PictureRecorder();
+    final canvas = Canvas(rec)..scale(dpr);
+    _ScenePainter(layers: widget.scene.layers, t01: _t.value).paint(canvas, size);
+    final pic = rec.endRecording();
+    final img = pic.toImageSync(
+      (size.width * dpr).ceil(),
+      (size.height * dpr).ceil(),
+    );
+    pic.dispose();
+    _still?.dispose();
+    _still = img;
+    _stillFor = key;
+    return img;
   }
 
   @override
   void dispose() {
-    _c.dispose();
+    HeaderSceneQuality.current.removeListener(_onQuality);
+    SchedulerBinding.instance.removeTimingsCallback(_onTimings);
+    _timer?.cancel();
+    _ticker.dispose();
+    _t.dispose();
+    _still?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     if (widget.scene.layers.isEmpty) return const SizedBox.shrink();
+    final stillPicture = _q == SceneQuality.still || _reduceMotion;
+    if (stillPicture) {
+      final dpr = MediaQuery.devicePixelRatioOf(context);
+      return IgnorePointer(
+        child: LayoutBuilder(
+          builder: (_, box) {
+            final size = box.biggest;
+            if (!size.isFinite || size.isEmpty) return const SizedBox.shrink();
+            return RawImage(
+              image: _stillImage(size, dpr),
+              width: size.width,
+              height: size.height,
+              fit: BoxFit.fill,
+            );
+          },
+        ),
+      );
+    }
+    if (_still != null) {
+      _still!.dispose();
+      _still = null;
+      _stillFor = null;
+    }
+    final layers = _q == SceneQuality.lite ? _lite : widget.scene.layers;
     return IgnorePointer(
       child: RepaintBoundary(
-        child: AnimatedBuilder(
-          animation: _c,
-          builder: (_, __) => CustomPaint(
-            painter: _ScenePainter(layers: widget.scene.layers, t01: _c.value),
+        child: ValueListenableBuilder<double>(
+          valueListenable: _t,
+          builder: (_, t, __) => CustomPaint(
+            painter: _ScenePainter(layers: layers, t01: t),
             size: Size.infinite,
           ),
         ),
@@ -201,6 +519,64 @@ class _ScenePainter extends CustomPainter {
   final double t01;
 
   _ScenePainter({required this.layers, required this.t01});
+
+  /// A soft-edged dot drawn with a gradient instead of a blur (20 Nov 2026: every
+  /// MaskFilter.blur needs its own GPU buffer - the live header's ~60 blurs held ~190 MB
+  /// of graphics memory on an iQOO and cost frame time on every phone). Looks like a
+  /// circle of radius [r] blurred by [sigma]: [centre] inside, [edge] at r - sigma,
+  /// half of it at r, gone by r + 2 sigma.
+  static void _softDot(Canvas c, Offset o, double r, double sigma, Color centre, [Color? edge]) {
+    final outer = r.abs() + 2 * sigma;
+    if (outer <= 0) return;
+    final e = edge ?? centre;
+    final inner = ((r.abs() - sigma) / outer).clamp(0.0, 0.98);
+    final mid = (r.abs() / outer).clamp(inner + 0.005, 0.99);
+    c.drawCircle(
+      o,
+      outer,
+      Paint()
+        ..shader = ui.Gradient.radial(
+          o,
+          outer,
+          [centre, e, e.withValues(alpha: e.a * 0.5), e.withValues(alpha: 0)],
+          [0, inner, mid, 1],
+        ),
+    );
+  }
+
+  /// A soft line without a blur: three strokes, wide and faint to thin and strong.
+  static void _softLine(
+    Canvas c,
+    Path p,
+    Color color,
+    double width,
+    double sigma, {
+    StrokeCap cap = StrokeCap.round,
+    StrokeJoin join = StrokeJoin.round,
+  }) {
+    for (final (w, a) in [(width + sigma * 3, 0.25), (width + sigma, 0.4), (width, 0.6)]) {
+      c.drawPath(
+        p,
+        Paint()
+          ..color = color.withValues(alpha: color.a * a)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = w
+          ..strokeCap = cap
+          ..strokeJoin = join,
+      );
+    }
+  }
+
+  /// A soft oval without a blur (a soft dot squashed to [rect]).
+  static void _softOval(Canvas c, Rect rect, double sigma, Color color) {
+    final r = rect.width / 2;
+    if (r <= 0) return;
+    c.save();
+    c.translate(rect.center.dx, rect.center.dy);
+    c.scale(1, rect.height / rect.width);
+    _softDot(c, Offset.zero, r, sigma, color);
+    c.restore();
+  }
 
   int _cycles(double speed, double multiplier, int min, int max) {
     return (speed * multiplier).round().clamp(min, max).toInt();
@@ -371,18 +747,19 @@ class _ScenePainter extends CustomPainter {
     }
 
     if (l.variant == 'moon') {
-      c.saveLayer(Offset.zero & s, Paint());
-      c.drawCircle(
-        center,
-        r,
-        Paint()..color = col.withValues(alpha: l.opacity),
+      // A crescent shape, not a full-screen layer with a cut-out.
+      final crescent = Path.combine(
+        PathOperation.difference,
+        Path()..addOval(Rect.fromCircle(center: center, radius: r)),
+        Path()
+          ..addOval(
+            Rect.fromCircle(
+              center: center.translate(r * 0.4, -r * 0.18),
+              radius: r * 0.9,
+            ),
+          ),
       );
-      c.drawCircle(
-        center.translate(r * 0.4, -r * 0.18),
-        r * 0.9,
-        Paint()..blendMode = BlendMode.clear,
-      );
-      c.restore();
+      c.drawPath(crescent, Paint()..color = col.withValues(alpha: l.opacity));
     } else {
       c.drawCircle(
         center,
@@ -425,8 +802,7 @@ class _ScenePainter extends CustomPainter {
               l.colors[layer].withValues(alpha: 0.0),
             ],
             const [0.0, 0.5, 1.0],
-          )
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, 22),
+          ),
       );
     }
   }
@@ -450,12 +826,12 @@ class _ScenePainter extends CustomPainter {
       for (var j = 0; j < puffs; j++) {
         final dx = (j - puffs / 2) * size * 0.32;
         final dy = (j.isEven ? 1 : -1) * size * 0.08;
-        c.drawCircle(
+        _softDot(
+          c,
           Offset(x + dx + 6, y + dy + 8),
           size * (0.22 + 0.12 * math.sin(j + sx * 5)).abs(),
-          Paint()
-            ..color = Colors.black.withValues(alpha: 0.06 * l.opacity)
-            ..maskFilter = MaskFilter.blur(BlurStyle.normal, 8),
+          8,
+          Colors.black.withValues(alpha: 0.06 * l.opacity),
         );
       }
 
@@ -463,24 +839,22 @@ class _ScenePainter extends CustomPainter {
         final dx = (j - puffs / 2) * size * 0.32;
         final dy = (j.isEven ? 1 : -1) * size * 0.08;
         final r = size * (0.22 + 0.14 * math.sin(j + sx * 5)).abs();
-        c.drawCircle(
+        _softDot(
+          c,
           Offset(x + dx, y + dy),
           r,
-          Paint()
-            ..shader = ui.Gradient.radial(Offset(x + dx, y + dy - r * 0.2), r, [
-              l.colors.first.withValues(alpha: alpha),
-              l.colors.first.withValues(alpha: alpha * 0.55),
-            ])
-            ..maskFilter = MaskFilter.blur(BlurStyle.normal, 5),
+          5,
+          l.colors.first.withValues(alpha: alpha),
+          l.colors.first.withValues(alpha: alpha * 0.55),
         );
       }
 
-      c.drawCircle(
+      _softDot(
+        c,
         Offset(x - size * 0.15, y - size * 0.08),
         size * 0.18,
-        Paint()
-          ..color = Colors.white.withValues(alpha: alpha * 0.5)
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, 6),
+        6,
+        Colors.white.withValues(alpha: alpha * 0.5),
       );
     }
   }
@@ -622,16 +996,17 @@ class _ScenePainter extends CustomPainter {
               ..strokeJoin = StrokeJoin.round,
           );
 
-          c.drawPath(
-            snow,
-            Paint()
-              ..color = Colors.white.withValues(alpha: 0.22 * l.opacity)
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = 7
-              ..strokeCap = StrokeCap.round
-              ..strokeJoin = StrokeJoin.round
-              ..maskFilter = MaskFilter.blur(BlurStyle.normal, 5),
-          );
+          for (final (w, a) in const [(15.0, 0.06), (9.0, 0.10)]) {
+            c.drawPath(
+              snow,
+              Paint()
+                ..color = Colors.white.withValues(alpha: a * l.opacity)
+                ..style = PaintingStyle.stroke
+                ..strokeWidth = w
+                ..strokeCap = StrokeCap.round
+                ..strokeJoin = StrokeJoin.round,
+            );
+          }
         }
       }
     }
@@ -678,14 +1053,7 @@ class _ScenePainter extends CustomPainter {
         path.lineTo(x * s.width, y + wave);
       }
 
-      c.drawPath(
-        path,
-        Paint()
-          ..color = foam.withValues(alpha: alpha)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.0 + t * 1.8
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, 1.5 + t * 2),
-      );
+      _softLine(c, path, foam.withValues(alpha: alpha), 1.0 + t * 1.8, 1.5 + t * 2);
     }
 
     final glint = 0.18 + 0.18 * math.sin(t01 * 2 * math.pi * cycles);
@@ -726,8 +1094,7 @@ class _ScenePainter extends CustomPainter {
         const [0.0, 0.6, 1.0],
       )
       ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..maskFilter = MaskFilter.blur(BlurStyle.normal, 1.2);
+      ..strokeCap = StrokeCap.round;
 
     for (var i = 0; i < strands; i++) {
       final sx = rnd.nextDouble();
@@ -751,13 +1118,7 @@ class _ScenePainter extends CustomPainter {
       final mx = x + (rnd.nextDouble() - 0.5) * w * 1.4;
       final my = topY + h + rnd.nextDouble() * 12;
       final mr = w * (0.12 + rnd.nextDouble() * 0.16);
-      c.drawCircle(
-        Offset(mx, my),
-        mr,
-        Paint()
-          ..color = Colors.white.withValues(alpha: 0.18 * l.opacity)
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, 12),
-      );
+      _softDot(c, Offset(mx, my), mr, 12, Colors.white.withValues(alpha: 0.18 * l.opacity));
     }
   }
 
@@ -929,12 +1290,7 @@ class _ScenePainter extends CustomPainter {
           paint
             ..shader = null
             ..color = col.withValues(alpha: l.opacity * (1 - prog) * depth);
-          c.drawCircle(
-            Offset(x, y),
-            size * 2.5,
-            paint..maskFilter = MaskFilter.blur(BlurStyle.normal, 4),
-          );
-          paint.maskFilter = null;
+          _softDot(c, Offset(x, y), size * 2.5, 4, paint.color);
           paint.color = Colors.orange.withValues(alpha: l.opacity * (1 - prog));
           c.drawCircle(Offset(x, y), size, paint);
           break;
@@ -979,12 +1335,7 @@ class _ScenePainter extends CustomPainter {
           paint
             ..shader = null
             ..color = col.withValues(alpha: l.opacity * blink);
-          c.drawCircle(
-            Offset(x, y),
-            4,
-            paint..maskFilter = MaskFilter.blur(BlurStyle.normal, 5),
-          );
-          paint.maskFilter = null;
+          _softDot(c, Offset(x, y), 4, 5, paint.color);
           c.drawCircle(Offset(x, y), 1.2, paint);
           break;
 
@@ -1074,14 +1425,12 @@ class _ScenePainter extends CustomPainter {
           final cx = l.x * s.width + math.sin(prog * 3 + sp) * 6;
           final cy = l.y * s.height - prog * 20;
           final r = 2 + prog * 6;
-          c.drawCircle(
+          _softDot(
+            c,
             Offset(cx, cy),
             r,
-            Paint()
-              ..color = Colors.white.withValues(
-                alpha: (1 - prog) * 0.4 * l.opacity,
-              )
-              ..maskFilter = MaskFilter.blur(BlurStyle.normal, 2.5),
+            2.5,
+            Colors.white.withValues(alpha: (1 - prog) * 0.4 * l.opacity),
           );
           break;
 
@@ -1137,7 +1486,7 @@ class _ScenePainter extends CustomPainter {
       if (rectH <= 0) continue;
 
       c.drawRect(
-        Rect.fromLTWH(0, topY, s.width, rectH),
+        Rect.fromLTWH(-40, topY, s.width + 80, rectH),
         Paint()
           ..shader = ui.Gradient.linear(
             Offset(s.width / 2, topY),
@@ -1148,8 +1497,7 @@ class _ScenePainter extends CustomPainter {
               l.colors.first.withValues(alpha: density * l.opacity * 0.9),
             ],
             const [0.0, 0.5, 1.0],
-          )
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, 25),
+          ),
       );
     }
   }
@@ -1508,12 +1856,12 @@ class _ScenePainter extends CustomPainter {
       final prog = (t01 * 2 + i * 0.18) % 1.0;
       final smokeY = -size * (0.8 + prog * 2.4);
       final smokeX = math.sin(prog * 6 + i) * size * 0.25;
-      c.drawCircle(
+      _softDot(
+        c,
         Offset(smokeX, smokeY),
         size * (0.12 + prog * 0.22),
-        Paint()
-          ..color = Colors.grey.withValues(alpha: (1 - prog) * 0.12 * l.opacity)
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, 8),
+        8,
+        Colors.grey.withValues(alpha: (1 - prog) * 0.12 * l.opacity),
       );
     }
 
@@ -1557,8 +1905,7 @@ class _ScenePainter extends CustomPainter {
               Colors.yellow.withValues(alpha: l.opacity * 0.95),
             ],
             const [0.0, 0.5, 1.0],
-          )
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, f == 0 ? 4.0 : 1.0),
+          ),
       );
     }
 
@@ -1648,16 +1995,12 @@ class _ScenePainter extends CustomPainter {
             }
           }
 
-          c.drawPath(
+          _softLine(
+            c,
             foamPath,
-            Paint()
-              ..color = Colors.white.withValues(
-                alpha: (0.48 - pass * 0.18) * l.opacity,
-              )
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = 3.5 - pass * 1.2
-              ..strokeCap = StrokeCap.round
-              ..maskFilter = MaskFilter.blur(BlurStyle.normal, 3),
+            Colors.white.withValues(alpha: (0.48 - pass * 0.18) * l.opacity),
+            3.5 - pass * 1.2,
+            3,
           );
         }
 
@@ -1851,10 +2194,9 @@ class _ScenePainter extends CustomPainter {
           c.drawPath(
             rock,
             Paint()
-              ..color = Colors.white.withValues(alpha: 0.15 * l.opacity)
+              ..color = Colors.white.withValues(alpha: 0.11 * l.opacity)
               ..style = PaintingStyle.stroke
-              ..strokeWidth = 2.0
-              ..maskFilter = MaskFilter.blur(BlurStyle.normal, 2),
+              ..strokeWidth = 2.6,
           );
         }
       } else if (l.variant == 'frozenLake') {
@@ -2217,8 +2559,7 @@ class _ScenePainter extends CustomPainter {
           Paint()
             ..color = l.colors.first.withValues(alpha: l.opacity * 0.45)
             ..style = PaintingStyle.stroke
-            ..strokeWidth = 0.7
-            ..maskFilter = MaskFilter.blur(BlurStyle.normal, 0.6),
+            ..strokeWidth = 0.7,
         );
         c.restore();
       }
@@ -2345,15 +2686,7 @@ class _ScenePainter extends CustomPainter {
         bolt.moveTo(x, y);
       }
     }
-    c.drawPath(
-      bolt,
-      Paint()
-        ..color = Colors.white.withValues(alpha: flash * l.opacity)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.2
-        ..strokeJoin = StrokeJoin.round
-        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 1.5),
-    );
+    _softLine(c, bolt, Colors.white.withValues(alpha: flash * l.opacity), 2.2, 1.5, cap: StrokeCap.butt);
   }
 
   void _rays(Canvas c, Size s, SceneLayer l) {
@@ -2401,15 +2734,11 @@ class _ScenePainter extends CustomPainter {
     c.rotate(tilt);
 
     // Water ripple around boat
-    c.drawOval(
-      Rect.fromCenter(
-        center: Offset(0, h * 0.5),
-        width: w * 1.8,
-        height: h * 0.6,
-      ),
-      Paint()
-        ..color = Colors.white.withValues(alpha: 0.15 * l.opacity)
-        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 4),
+    _softOval(
+      c,
+      Rect.fromCenter(center: Offset(0, h * 0.5), width: w * 1.8, height: h * 0.6),
+      4,
+      Colors.white.withValues(alpha: 0.15 * l.opacity),
     );
 
     // Boat Hull

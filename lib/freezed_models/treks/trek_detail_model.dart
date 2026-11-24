@@ -419,6 +419,8 @@ class LatestReviews with _$LatestReviews {
     // 👇 ADD THIS LINE
     @JsonKey(name: 'category_highlights')
     Map<String, dynamic>? categoryHighlights,
+    // A review from an organiser's offline ticket (24 Nov 2026): "Booked directly".
+    @JsonKey(name: 'booked_directly') bool? bookedDirectly,
   }) = _LatestReviews;
 
   factory LatestReviews.fromJson(Map<String, dynamic> json) =>

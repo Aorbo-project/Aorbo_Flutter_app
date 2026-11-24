@@ -825,7 +825,26 @@ class HeaderThemeController extends GetxController {
   /// controllers/v1/dashboardHeaderThemeController.js) refreshes and re-caches.
   /// Backs pushing updated seasonal scenes and brand-partner takeovers without
   /// an app release.
+  /// Test builds only: `--dart-define=SCENE_THEME=winter` (spring / summer / monsoon /
+  /// autumn / winter / classic) shows that built-in theme, so every season can be
+  /// measured on a phone. Empty in store builds.
+  static const _pinnedTheme = String.fromEnvironment('SCENE_THEME');
+
   Future<void> loadTheme() async {
+    if (_pinnedTheme.isNotEmpty) {
+      final pinned = {
+        'classic': DashboardHeaderTheme.classic,
+        'spring': DashboardHeaderTheme.spring,
+        'summer': DashboardHeaderTheme.summer,
+        'monsoon': DashboardHeaderTheme.monsoon,
+        'autumn': DashboardHeaderTheme.autumn,
+        'winter': DashboardHeaderTheme.winter,
+      }[_pinnedTheme];
+      if (pinned != null) {
+        theme.value = pinned;
+        return;
+      }
+    }
     theme.value = await _readCachedTheme() ?? seasonalFallback(DateTime.now());
     await _tryLoadRemoteTheme();
   }

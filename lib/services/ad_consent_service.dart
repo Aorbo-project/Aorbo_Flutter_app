@@ -22,6 +22,35 @@ class AdConsentService {
   /// True once consent is resolved AND ads are allowed.
   bool get canRequestAds => _resolved && _canRequestAds;
 
+  Future<void>? _start;
+  final Completer<void> _homeShown = Completer<void>();
+
+  /// Home's first frame is on screen (dashboard calls this).
+  void homeShown() {
+    if (!_homeShown.isCompleted) _homeShown.complete();
+  }
+
+  /// Starts the Google ads SDK once, after the app has opened (20 Nov 2026: started at
+  /// launch, it loaded its web engine during the splash animation on a 2.5 GB phone).
+  /// Waits for home's first frame - or 6 s, for a screen reached without home - then
+  /// 1.5 s more. Every ad waits on this; never throws.
+  Future<void> start() => _start ??= _startNow();
+
+  Future<void> _startNow() async {
+    await _homeShown.future.timeout(const Duration(seconds: 6), onTimeout: () {});
+    await Future<void>.delayed(const Duration(milliseconds: 1500));
+    try {
+      MobileAds.instance.updateRequestConfiguration(
+        RequestConfiguration(testDeviceIds: AdConfig.testDeviceIds),
+      );
+      await MobileAds.instance.initialize();
+      debugPrint('AdMob initialised');
+    } catch (e) {
+      debugPrint('AdMob init failed: $e');
+    }
+    await ensureConsent();
+  }
+
   /// Run once at startup (after MobileAds.initialize). Safe to await; never
   /// throws — on any failure ads simply stay disabled for the session.
   Future<void> ensureConsent() async {

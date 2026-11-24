@@ -25,10 +25,8 @@ import 'package:arobo_app/layout/app_viewport.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:sizer/sizer.dart';
 
-import 'config/ad_config.dart';
 import 'services/ad_consent_service.dart';
 import 'services/analytics_service.dart';
 import 'services/crash_report_service.dart';
@@ -37,6 +35,10 @@ import 'package:arobo_app/integrity/play_integrity_service.dart';
 import 'package:arobo_app/security/security_config.dart';
 import 'package:arobo_app/security/security_guard.dart';
 
+// Android calls this by name in a background isolate. Without the entry-point mark the
+// release build drops it (20 Nov 2026, iQOO log: "NoSuchMethodError: No top-level getter
+// '_firebaseMessagingBackgroundHandler' declared" on every background push).
+@pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // Message received while app is terminated/in background — system tray handles display.
 }
@@ -207,19 +209,11 @@ void _deferredInit() {
         .start(isLoggedIn: () => sp?.getBool(SpUtil.isLoggedIn) == true)
         .catchError((Object e) => debugPrint('ReferralLinkCapture failed: $e'));
 
-    // AdMob — off the critical path. Test ads only until AdConfig.useRealAds.
+    // AdMob — off the critical path. Real ads in release builds (AdConfig.useRealAds); the test devices get test ads.
     // UMP consent is resolved first; nothing requests an ad until
     // AdConsentService.instance.canRequestAds is true.
-    try {
-      MobileAds.instance.updateRequestConfiguration(
-        RequestConfiguration(testDeviceIds: AdConfig.testDeviceIds),
-      );
-      await MobileAds.instance.initialize();
-      await AdConsentService.instance.ensureConsent();
-      debugPrint('AdMob initialised');
-    } catch (e) {
-      debugPrint('AdMob init failed: $e');
-    }
+    // Started after home is up, not during the splash (AdConsentService.start).
+    unawaited(AdConsentService.instance.start());
 
     try {
       await FirebaseMessaging.instance

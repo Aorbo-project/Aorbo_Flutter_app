@@ -1,12 +1,10 @@
-import '../repository/app_env.dart';
-
 /// Constants used throughout the booking flow for business logic and UI values
 class BookingConstants {
 
 
   // Payment Constants
-  // Pass at build time: flutter build apk --dart-define=RAZORPAY_KEY=rzp_live_XXXX
-  static final String razorpayKey = AppEnv().razorpayKey;
+  // No Razorpay key here: it comes from the server with each order
+  // (create-order next_action_params.key), 23 Nov 2026.
   static const String partialPayment = 'partial';
 
   // UI Constants

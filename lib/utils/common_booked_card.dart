@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 import '../freezed_models/booking/booking_history_model.dart';
 import 'ist_date_utils.dart';
+import '../offline_ticket/offline_ticket.dart';
 import 'screen_constants.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
@@ -154,7 +155,7 @@ class CommonBookedCard extends StatelessWidget {
 
     final double ratingValue = booking.ratingValue ?? 0.0;
 
-    final bool showRateHint = isCompleted && !ratingGiven;
+    final bool showRateHint = isCompleted && !ratingGiven && canRateOnAorbo(booking);
     final bool showRatedStrip = isCompleted && ratingGiven;
     final String title = booking.trek?.title ?? '-';
     final String? durationDays = booking.trek?.durationDays?.toString();
@@ -235,7 +236,10 @@ class CommonBookedCard extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'ORGANISED BY',
+                                  // An organiser's own sale says so (owner, 24 Nov 2026).
+                                  isOfflineTicket(booking)
+                                      ? 'BOOKED DIRECTLY WITH'
+                                      : 'ORGANISED BY',
                                   textScaler: const TextScaler.linear(1),
                                   style: AppType.style(
                                     FontSize.s7,

@@ -154,6 +154,9 @@ class _PaymentScreenStubDashboardController extends DashboardController {
 // buttons genuinely overflow at that size (confirmed — not a production bug,
 // this screen is phone-only). Setting a realistic phone viewport avoids
 // asserting against a synthetic layout no user ever sees.
+/// The Razorpay key the (fake) server sends with each order.
+const String kServerKey = 'rzp_test_from_server';
+
 Future<TrekController> setUpPaymentScreenDeps(WidgetTester tester) async {
   tester.view.physicalSize = const Size(1080, 2340);
   tester.view.devicePixelRatio = 3.0;
@@ -168,6 +171,9 @@ Future<TrekController> setUpPaymentScreenDeps(WidgetTester tester) async {
   // isRegistered guard skips putting its stub instead.
   Get.put<DashboardController>(_PaymentScreenStubDashboardController());
   final trekC = await setUpController();
+  // As the server's create-order reply leaves it: the key always comes from
+  // the server (the app has none of its own since 23 Nov 2026).
+  trekC.orderNextActionParams.value = {'key': kServerKey};
   Get.put<TrekController>(trekC);
   Get.put<UserController>(UserController());
   await setUpFakeFirebase();
@@ -240,7 +246,7 @@ void main() {
       final args = openCall.arguments as Map;
       expect(args['amount'], 1051000); // 10510.00 * 100
       expect(args['currency'], 'INR');
-      expect(trekC.orderNextActionParams, isEmpty); // confirms amount truly came from _toPaise, not next_action_params
+      expect(trekC.orderNextActionParams['amount'], isNull); // confirms amount truly came from _toPaise, not next_action_params
     });
 
     testWidgets('full payment: a String final_amount ("1234.00", as real API responses send money fields) is parsed defensively, not string-repeated', (tester) async {
@@ -271,6 +277,25 @@ void main() {
 
       final args = calls.firstWhere((c) => c.method == 'open').arguments as Map;
       expect(args['amount'], 200050);
+    });
+
+    // Payment audit gap 6 (23 Nov 2026): the app has no key of its own, so a
+    // reply without one must not open checkout (it used to fall back to a
+    // built-in TEST key, which can never pay a live order).
+    testWidgets('no key from the server -> checkout NOT opened, error card with RETRY', (tester) async {
+      final trekC = await setUpPaymentScreenDeps(tester);
+      trekC.orderNextActionParams.value = {'order_id': 'order_no_key', 'amount': 1051000};
+      final calls = mockRazorpayChannel((_) => null);
+
+      await pushPaymentScreen(
+        tester,
+        breakdown: BreakDownDataModel(finalAmount: 10510, amountToPayNow: 5000),
+      );
+      await tester.pump();
+
+      expect(calls.where((c) => c.method == 'open'), isEmpty);
+      expect(find.text('Could not open the payment page. Please try again.'), findsOneWidget);
+      expect(find.text('RETRY'), findsOneWidget);
     });
 
     testWidgets('next_action_params amount from the server overrides the locally computed one', (tester) async {
@@ -1193,7 +1218,7 @@ void main() {
         NetworkUrl.addBooking: (_) => {
           'success': true,
           'order': {'id': 'order_new', 'amount': 1051000, 'currency': 'INR'},
-          'next_action_params': {},
+          'next_action_params': {'key': kServerKey},
         },
       });
       await pushPaymentScreen(
@@ -1232,7 +1257,7 @@ void main() {
         },
         NetworkUrl.addBooking: (_) {
           created++;
-          return {'success': true, 'order': {'id': 'order_second', 'amount': 1051000, 'currency': 'INR'}, 'next_action_params': {}};
+          return {'success': true, 'order': {'id': 'order_second', 'amount': 1051000, 'currency': 'INR'}, 'next_action_params': {'key': kServerKey}};
         },
       });
       await pushPaymentScreen(
@@ -1272,7 +1297,7 @@ void main() {
         NetworkUrl.addBooking: (_) => {
           'success': true,
           'order': {'id': 'order_fresh', 'amount': 1051000, 'currency': 'INR'},
-          'next_action_params': {},
+          'next_action_params': {'key': kServerKey},
         },
       });
       await pushPaymentScreen(
@@ -1301,7 +1326,7 @@ void main() {
       // As left by an earlier successful create-order.
       trekC.orderModal.value = const BookingResponse(success: true, order: Order(id: 'order_old'));
       trekC.orderData.value = const Order(id: 'order_old');
-      trekC.orderNextActionParams.value = {'order_id': 'order_old', 'amount': 1051000};
+      trekC.orderNextActionParams.value = {'key': kServerKey, 'order_id': 'order_old', 'amount': 1051000};
       var orderStatus = <String, dynamic>{'status': 'unknown'};
       installFakeBackend({
         'order-status': (_) => {'success': true, 'data': orderStatus},
@@ -1362,7 +1387,7 @@ void main() {
         NetworkUrl.addBooking: (_) => {
           'success': true,
           'order': {'id': 'order_fresh', 'amount': 1051000, 'currency': 'INR'},
-          'next_action_params': {},
+          'next_action_params': {'key': kServerKey},
         },
       });
       final calls = mockRazorpayChannel((_) => razorpayError(message: 'still testing'));
