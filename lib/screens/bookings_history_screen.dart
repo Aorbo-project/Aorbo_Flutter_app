@@ -18,6 +18,8 @@ import '../utils/common_colors.dart';
 import '../utils/ist_date_utils.dart';
 import 'package:arobo_app/widgets/tap_target.dart';
 import '../utils/screen_constants.dart'; // FontSize
+import '../offline_ticket/offline_ticket.dart';
+import '../offline_ticket/offline_ticket_screen.dart';
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS — aligned with CommonBookedCard
@@ -394,6 +396,8 @@ class _BookingsScreenState extends State<BookingsScreen>
           (resp as BookingHistoryModel).data ?? const <BookingHistoryData>[],
       orElse: () => const <BookingHistoryData>[],
     );
+    // Design preview of organisers' offline tickets (24 Nov 2026); off in normal builds.
+    if (kOfflineTicketPreview) return _dedupe([...offlineTicketSamples, ...raw]);
     return _dedupe(raw);
   }
 
@@ -514,6 +518,9 @@ class _BookingsScreenState extends State<BookingsScreen>
     DateTime? bestDate;
     for (final b in all) {
       if (_statusOf(b) != 'upcoming') continue;
+      // "Booked just now" celebrates a booking made in the app; an organiser's
+      // offline ticket was sold to them elsewhere (24 Nov 2026).
+      if (isOfflineTicket(b)) continue;
       final DateTime? dt = _tryParseDate(b.bookingDate);
       if (dt == null) continue;
       final d = DateTime(dt.year, dt.month, dt.day);
@@ -1977,6 +1984,16 @@ class _BookingsScreenState extends State<BookingsScreen>
 
   // ── BOOKING CARD (timeline — CommonBookedCard + spotlight on just-booked)
   Widget _commonCard(BookingHistoryData booking) {
+    // An organiser's own sale opens its own view-only ticket screen.
+    if (isOfflineTicket(booking)) {
+      final details = offlineTicketDetailsFor(booking);
+      void open() => Get.to(() => OfflineTicketScreen(booking: booking, details: details!));
+      return CommonBookedCard(
+        booking: booking,
+        onViewDetailsTap: details == null ? null : open,
+        onRateTrekTap: details == null ? null : open,
+      );
+    }
     return CommonBookedCard(
       booking: booking,
       onViewDetailsTap: booking.id == null
