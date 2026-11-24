@@ -155,7 +155,8 @@ class CommonBookedCard extends StatelessWidget {
 
     final double ratingValue = booking.ratingValue ?? 0.0;
 
-    final bool showRateHint = isCompleted && !ratingGiven;
+    // Offline tickets get reviews in a later step (server part not built yet).
+    final bool showRateHint = isCompleted && !ratingGiven && !isOfflineTicket(booking);
     final bool showRatedStrip = isCompleted && ratingGiven;
     final String title = booking.trek?.title ?? '-';
     final String? durationDays = booking.trek?.durationDays?.toString();

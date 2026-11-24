@@ -22,7 +22,7 @@ void main() {
 
   test('the preview is off unless switched on at build time', () {
     expect(kOfflineTicketPreview, isFalse);
-    expect(offlineTicketSampleFor(-9001), isNull);
+    expect(offlineTicketSampleFor('OB20260012'), isNull);
   });
 
   test('no separate ticket screen: it uses the normal Booking Details screen', () {
@@ -54,5 +54,23 @@ void main() {
     final src = _read('lib/screens/bookings_history_screen.dart');
     final fn = src.substring(src.indexOf('BookingHistoryData? _justBookedBooking'));
     expect(fn.substring(0, 900), contains('isOfflineTicket(b)'));
+  });
+
+  test('an offline ticket opens by its booking ID (it has no app booking row)', () {
+    final src = _read('lib/screens/bookings_history_screen.dart');
+    final card = src.substring(src.indexOf('Widget _commonCard('));
+    expect(card.substring(0, 700), contains('BookingsUpcomingScreen(bookingId: number)'));
+    expect(src, contains('final key = b.id ?? b.bookingNumber ?? b;'));
+  });
+
+  test('no Rate button on offline tickets until their reviews are built on the server', () {
+    expect(_read('lib/utils/common_booked_card.dart'), contains('!isOfflineTicket(booking)'));
+    final fab = details.substring(details.indexOf('final bool showRatingFab'));
+    expect(fab.substring(0, 400), contains('!isOfflineTicket(booking)'));
+  });
+
+  test('"Not my booking" calls the server', () {
+    expect(details, contains('_dashboardC.hideOfflineTicket(number)'));
+    expect(_read('lib/repository/network_url.dart'), contains("'bookings/offline-tickets/"));
   });
 }

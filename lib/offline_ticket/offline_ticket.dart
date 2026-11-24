@@ -28,7 +28,6 @@ TravelersDataModel _t(String name, int age, String gender, {bool primary = false
 
 final List<BookingHistoryData> offlineTicketSamples = [
   BookingHistoryData(
-    id: -9001,
     bookingSource: kOfflineTicketSource,
     bookingNumber: 'OB20260012',
     bookingDate: '2026-11-22T10:30:00.000Z',
@@ -60,7 +59,6 @@ final List<BookingHistoryData> offlineTicketSamples = [
     batch: const Batch(tbrId: 'TBR7QK2M4X', startDate: '2026-12-05', endDate: '2026-12-07', startTime: '9:30 PM'),
   ),
   BookingHistoryData(
-    id: -9002,
     bookingSource: kOfflineTicketSource,
     bookingNumber: 'OB20260007',
     bookingDate: '2026-10-28T08:00:00.000Z',
@@ -94,7 +92,7 @@ final List<BookingHistoryData> offlineTicketSamples = [
 BookingHistoryData? offlineTicketSampleFor(dynamic id) {
   if (!kOfflineTicketPreview) return null;
   for (final b in offlineTicketSamples) {
-    if ('${b.id}' == '$id') return b;
+    if (b.bookingNumber == '$id') return b;
   }
   return null;
 }

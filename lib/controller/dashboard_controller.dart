@@ -1238,6 +1238,25 @@ class DashboardController extends GetxController {
     }
   }
 
+  /// "Not my booking" (offline ticket): hides it from this account; the organiser is told.
+  /// Returns the server's message, or null when it could not be done.
+  Future<String?> hideOfflineTicket(String bookingNumber) async {
+    try {
+      final response = await _repository.postApiCall(
+        url: NetworkUrl.offlineTicketNotMine(bookingNumber),
+        body: const <String, dynamic>{},
+      );
+      if (response is Map && response['success'] == true) {
+        getBookingHistory(refresh: true);
+        final message = response['message'];
+        return message is String ? message : 'Hidden from your bookings.';
+      }
+    } catch (e) {
+      logger.e('hideOfflineTicket($bookingNumber) failed: $e');
+    }
+    return null;
+  }
+
   getBookingDetail({required dynamic bookingId}) =>
       _loadBookingDetail(bookingId, keepPrevious: false);
 

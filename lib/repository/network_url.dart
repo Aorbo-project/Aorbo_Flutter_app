@@ -183,6 +183,10 @@ class NetworkUrl {
   static String bookingDetails(dynamic bookingId) =>
       'booking-details/$bookingId';
 
+  /// "Not my booking" on an organiser's offline ticket (24 Nov 2026).
+  static String offlineTicketNotMine(String bookingNumber) =>
+      'bookings/offline-tickets/${Uri.encodeComponent(bookingNumber)}/not-mine';
+
   static String invoiceUpload(String bookingNumber) =>
       'customer/bookings/$bookingNumber/invoice';
 

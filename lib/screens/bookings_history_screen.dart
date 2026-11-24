@@ -383,7 +383,7 @@ class _BookingsScreenState extends State<BookingsScreen>
     final seen = <Object>{};
     final out = <BookingHistoryData>[];
     for (final b in list) {
-      final key = b.id ?? b;
+      final key = b.id ?? b.bookingNumber ?? b;
       if (seen.add(key)) out.add(b);
     }
     return out;
@@ -1983,6 +1983,16 @@ class _BookingsScreenState extends State<BookingsScreen>
 
   // ── BOOKING CARD (timeline — CommonBookedCard + spotlight on just-booked)
   Widget _commonCard(BookingHistoryData booking) {
+    // An organiser's offline ticket has no app booking row: it opens by its booking ID (OB…).
+    if (isOfflineTicket(booking)) {
+      final number = booking.bookingNumber;
+      return CommonBookedCard(
+        booking: booking,
+        onViewDetailsTap: number == null
+            ? null
+            : () => Get.to(() => BookingsUpcomingScreen(bookingId: number)),
+      );
+    }
     return CommonBookedCard(
       booking: booking,
       onViewDetailsTap: booking.id == null

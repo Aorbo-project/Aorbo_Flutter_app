@@ -1660,11 +1660,24 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                 Expanded(child: _buildActionButton(Icons.close_rounded, 'Keep it', onTap: Get.back)),
                 SizedBox(width: 3.w),
                 Expanded(
-                  child: _buildActionButton(Icons.visibility_off_outlined, 'Hide it', onTap: () {
+                  child: _buildActionButton(Icons.visibility_off_outlined, 'Hide it', onTap: () async {
                     Get.back();
-                    if (kOfflineTicketPreview && Get.context != null) {
-                      CustomSnackBar.show(Get.context!, message: 'Sample: this ticket would be hidden.');
+                    final number = b.bookingNumber;
+                    if (number == null) return;
+                    if (kOfflineTicketPreview && offlineTicketSampleFor(number) != null) {
+                      if (Get.context != null) {
+                        CustomSnackBar.show(Get.context!, message: 'Sample: this ticket would be hidden.');
+                      }
+                      return;
                     }
+                    final message = await _dashboardC.hideOfflineTicket(number);
+                    if (Get.context == null) return;
+                    if (message == null) {
+                      CustomSnackBar.show(Get.context!, message: 'Could not update this booking. Please try again.');
+                      return;
+                    }
+                    Get.back(); // leave the hidden booking
+                    CustomSnackBar.show(Get.context!, message: message);
                   }),
                 ),
               ],
@@ -3034,7 +3047,11 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
             final bool isRated = _isRated(booking);
 
             final bool showRatingFab =
-                booking != null && _isTrekCompleted(booking) && !isRated;
+                booking != null &&
+                _isTrekCompleted(booking) &&
+                !isRated &&
+                // Offline-ticket reviews come in a later step (server part not built yet).
+                !isOfflineTicket(booking);
 
             // ── Cancel eligibility ────────────────────────────────────────────
             // Cancellation is allowed ONLY when:
