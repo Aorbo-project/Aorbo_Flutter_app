@@ -1,53 +1,30 @@
 // An organiser's own sale (an "offline ticket") shown in the customer's My Bookings
-// (owner, 24 Nov 2026). The customer paid the organiser directly, so the app is
-// VIEW-ONLY for money: no cancel, refund or payment here — changes go to the organiser.
-// Rate & review is allowed after the trip. The server enforces the same rules.
+// (owner, 24 Nov 2026). It opens the SAME Booking Details screen as any booking, so it
+// looks like the rest of the app; only the money actions differ. The customer paid the
+// organiser directly, so there is no cancel, refund, ticket download or payment here —
+// changes go to the organiser. Rate & review is allowed after the trip. The server
+// enforces the same rules.
 //
 // DESIGN STAGE: the server part is not built yet. `--dart-define=OFFLINE_TICKET_PREVIEW=true`
 // adds two sample tickets to My Bookings so the screens can be reviewed on a phone.
 
 import '../freezed_models/booking/booking_history_model.dart';
+import '../freezed_models/profile/user_profile_model.dart';
 
 /// `booking_source` the server will send for an organiser's offline ticket.
 const String kOfflineTicketSource = 'offline_ticket';
 
-bool isOfflineTicket(BookingHistoryData b) => b.bookingSource == kOfflineTicketSource;
+bool isOfflineTicket(BookingHistoryData? b) => b?.bookingSource == kOfflineTicketSource;
 
 /// Design preview only (never on in a store build unless passed at build time).
 const bool kOfflineTicketPreview = bool.fromEnvironment('OFFLINE_TICKET_PREVIEW');
 
-/// What the ticket screen shows beyond the list card.
-class OfflineTicketDetails {
-  const OfflineTicketDetails({
-    required this.ticketNumber,
-    required this.organiserName,
-    required this.organiserPhone,
-    required this.pickupPoint,
-    required this.pickupTime,
-    required this.captainName,
-    required this.captainPhone,
-    required this.travellers,
-    required this.total,
-    required this.paid,
-  });
-
-  final String ticketNumber;
-  final String organiserName;
-  final String organiserPhone;
-  final String pickupPoint;
-  final String pickupTime;
-  final String captainName;
-  final String captainPhone;
-  final List<String> travellers;
-  final double total;
-  final double paid;
-
-  double get due => (total - paid) < 0 ? 0 : total - paid;
-}
-
 // ── Sample data (preview only) ──────────────────────────────────────────────
 
 const String _sampleOrganiser = 'Demo Summit Treks';
+
+TravelersDataModel _t(String name, int age, String gender, {bool primary = false}) =>
+    TravelersDataModel(isPrimary: primary, traveler: Traveler(name: name, age: age, gender: gender));
 
 final List<BookingHistoryData> offlineTicketSamples = [
   BookingHistoryData(
@@ -55,62 +32,69 @@ final List<BookingHistoryData> offlineTicketSamples = [
     bookingSource: kOfflineTicketSource,
     bookingNumber: 'DS/26-27/0012',
     bookingDate: '2026-11-22T10:30:00.000Z',
+    status: 'confirmed',
     trekStatus: 'upcoming',
     totalTravelers: 3,
+    sourceCityName: 'Bengaluru',
+    finalAmount: '17670',
+    advanceAmount: '6000',
+    remainingAmount: '11670',
+    travelers: [
+      _t('Abhishek', 25, 'Male', primary: true),
+      _t('Kiran', 26, 'Male'),
+      _t('Sai', 24, 'Male'),
+    ],
     trek: const Trek(
       title: 'Gokarna & Dandeli Weekend Trip',
+      duration: '3D 2N',
       durationDays: 3,
       durationNights: 2,
-      vendor: Vendor(businessName: _sampleOrganiser),
+      destinationName: 'Gokarna & Dandeli',
+      boardingPoint: 'Majestic Bus Stand, Bengaluru',
+      boardingTime: '9:30 PM',
+      captainName: 'Ravi Kumar',
+      captainPhone: '90000 00001',
+      vendor: Vendor(businessName: _sampleOrganiser, phone: '90000 00000'),
       destination: Destination(name: 'Gokarna & Dandeli'),
     ),
-    batch: const Batch(startDate: '2026-12-05', startTime: '9:30 PM'),
+    batch: const Batch(startDate: '2026-12-05', endDate: '2026-12-07', startTime: '9:30 PM'),
   ),
   BookingHistoryData(
     id: -9002,
     bookingSource: kOfflineTicketSource,
     bookingNumber: 'DS/26-27/0007',
     bookingDate: '2026-10-28T08:00:00.000Z',
+    status: 'completed',
     trekStatus: 'completed',
     ratingGiven: false,
     totalTravelers: 1,
+    sourceCityName: 'Bengaluru',
+    finalAmount: '4200',
+    advanceAmount: '4200',
+    remainingAmount: '0',
+    travelers: [_t('Abhishek', 25, 'Male', primary: true)],
     trek: const Trek(
       title: 'Kudremukh Peak Trek',
+      duration: '2D 1N',
       durationDays: 2,
       durationNights: 1,
-      vendor: Vendor(businessName: _sampleOrganiser),
+      destinationName: 'Kudremukh',
+      boardingPoint: 'Silk Board Junction, Bengaluru',
+      boardingTime: '10:00 PM',
+      captainName: 'Suresh Naik',
+      captainPhone: '90000 00002',
+      vendor: Vendor(businessName: _sampleOrganiser, phone: '90000 00000'),
       destination: Destination(name: 'Kudremukh'),
     ),
-    batch: const Batch(startDate: '2026-11-07', startTime: '10:00 PM'),
+    batch: const Batch(startDate: '2026-11-07', endDate: '2026-11-08', startTime: '10:00 PM'),
   ),
 ];
 
-const Map<int, OfflineTicketDetails> _sampleDetails = {
-  -9001: OfflineTicketDetails(
-    ticketNumber: 'DS/26-27/0012',
-    organiserName: _sampleOrganiser,
-    organiserPhone: '90000 00000',
-    pickupPoint: 'Majestic Bus Stand, Bengaluru',
-    pickupTime: 'Fri 5 Dec · 9:30 PM',
-    captainName: 'Ravi Kumar',
-    captainPhone: '90000 00001',
-    travellers: ['Abhishek', 'Kiran', 'Sai'],
-    total: 17670,
-    paid: 6000,
-  ),
-  -9002: OfflineTicketDetails(
-    ticketNumber: 'DS/26-27/0007',
-    organiserName: _sampleOrganiser,
-    organiserPhone: '90000 00000',
-    pickupPoint: 'Silk Board Junction, Bengaluru',
-    pickupTime: 'Fri 7 Nov · 10:00 PM',
-    captainName: 'Suresh Naik',
-    captainPhone: '90000 00002',
-    travellers: ['Abhishek'],
-    total: 4200,
-    paid: 4200,
-  ),
-};
-
-OfflineTicketDetails? offlineTicketDetailsFor(BookingHistoryData b) =>
-    b.id == null ? null : _sampleDetails[b.id!];
+/// The sample with this id, in preview builds only.
+BookingHistoryData? offlineTicketSampleFor(dynamic id) {
+  if (!kOfflineTicketPreview) return null;
+  for (final b in offlineTicketSamples) {
+    if ('${b.id}' == '$id') return b;
+  }
+  return null;
+}

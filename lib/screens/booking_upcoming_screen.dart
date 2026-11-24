@@ -23,6 +23,8 @@ import '../services/ticket_share_service.dart';
 import '../utils/ist_date_utils.dart';
 import '../utils/screen_constants.dart';
 import '../widgets/rate_trek_popup.dart';
+import '../offline_ticket/offline_ticket.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
 import 'package:arobo_app/widgets/pickup_pin.dart';
@@ -1006,7 +1008,9 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Column(
-                      children: [
+                      children: isOfflineTicket(booking)
+                          ? _offlineBookingRows(booking, bookingDate)
+                          : [
                         _ticketRow(
                           'TBR ID',
                           batch?.tbrId ?? 'N/A',
@@ -1229,6 +1233,8 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                     ),
                     child: Builder(
                       builder: (context) {
+                        // Paid to the organiser directly: what they recorded, nothing more.
+                        if (isOfflineTicket(booking)) return _offlinePaymentRows(booking);
                         final snap = _parseFinanceSnapshot(
                           booking.financeSnapshot,
                         );
@@ -1513,6 +1519,161 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
 
   Widget _adCard(int i) =>
       DetailScreenAdSlot(screen: 'booking_details', index: i);
+
+  // ── An organiser's own sale (offline ticket, 24 Nov 2026) ──────────────────
+  List<Widget> _offlineBookingRows(BookingHistoryData b, DateTime? bookingDate) => [
+        _ticketRow('Booked with', b.trek?.vendor?.businessName ?? 'Organiser', isHighlight: true),
+        _dividerLine(),
+        _ticketRow('Ticket No.', b.bookingNumber ?? 'N/A'),
+        _dividerLine(),
+        _ticketRow(
+          'Booking Date',
+          bookingDate != null ? DateFormat('E, d MMM yyyy').format(bookingDate) : 'N/A',
+        ),
+      ];
+
+  Widget _offlinePaymentRows(BookingHistoryData b) {
+    final organiser = b.trek?.vendor?.businessName ?? 'the organiser';
+    String inr(String? v) =>
+        '₹${NumberFormat('#,##,##0', 'en_IN').format(double.tryParse(v ?? '') ?? 0)}';
+    final due = double.tryParse(b.remainingAmount ?? '') ?? 0;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _ticketRow('Paid to organiser', inr(b.advanceAmount)),
+        if (due > 0) ...[
+          _dividerLine(),
+          _ticketRow('Due at pickup', inr(b.remainingAmount), isHighlight: true),
+        ],
+        _dividerLine(),
+        _ticketRow('Total', inr(b.finalAmount)),
+        Padding(
+          padding: EdgeInsets.only(top: 1.h),
+          child: Text(
+            'Paid directly to $organiser. Aorbo did not take this payment.',
+            style: AppType.style(8.sp, color: _TC.inkMid, height: 1.3),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _offlineOrganiserCard(BookingHistoryData b) {
+    final name = b.trek?.vendor?.businessName ?? 'Organiser';
+    final phone = (b.trek?.vendor?.phone ?? '').trim();
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 4.w),
+      child: Container(
+        padding: EdgeInsets.all(4.w),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 10.w,
+                  height: 10.w,
+                  decoration: BoxDecoration(
+                    color: _TC.tealLight,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(Icons.storefront_outlined, size: 5.w, color: _TC.teal),
+                ),
+                SizedBox(width: 3.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Booked directly with', style: AppType.style(8.sp, color: _TC.inkMid)),
+                      SizedBox(height: 0.2.h),
+                      Text(name, style: AppType.style(11.sp, w: FontWeight.w600, color: _TC.ink)),
+                      if (phone.isNotEmpty)
+                        GestureDetector(
+                          onTap: () => launchUrl(Uri(scheme: 'tel', path: phone.replaceAll(' ', ''))),
+                          child: Text(phone, style: AppType.style(12.sp, w: FontWeight.w700, color: _TC.brand)),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 1.4.h),
+            Container(height: 1, color: _TC.divider),
+            SizedBox(height: 1.2.h),
+            Text(
+              'For any change or cancellation, contact $name directly.',
+              style: AppType.style(9.sp, color: _TC.inkMid, height: 1.3),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _notMyBookingLink(BookingHistoryData b) => Padding(
+        padding: EdgeInsets.only(top: 1.2.h),
+        child: Center(
+          child: TextButton(
+            onPressed: () => _confirmNotMine(b),
+            child: Text(
+              'Not my booking',
+              style: AppType.style(9.sp,
+                  w: FontWeight.w600, color: _TC.inkMid, decoration: TextDecoration.underline),
+            ),
+          ),
+        ),
+      );
+
+  void _confirmNotMine(BookingHistoryData b) {
+    final organiser = b.trek?.vendor?.businessName ?? 'the organiser';
+    Get.bottomSheet(
+      Container(
+        padding: EdgeInsets.fromLTRB(5.w, 3.h, 5.w, 3.h),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Not your booking?', style: AppType.style(13.sp, w: FontWeight.w700, color: _TC.ink)),
+            SizedBox(height: 1.h),
+            Text(
+              'We will hide it from your account and tell $organiser the phone number may be wrong.',
+              style: AppType.style(9.sp, color: _TC.inkMid, height: 1.35),
+            ),
+            SizedBox(height: 2.4.h),
+            Row(
+              children: [
+                Expanded(child: _buildActionButton(Icons.close_rounded, 'Keep it', onTap: Get.back)),
+                SizedBox(width: 3.w),
+                Expanded(
+                  child: _buildActionButton(Icons.visibility_off_outlined, 'Hide it', onTap: () {
+                    Get.back();
+                    if (kOfflineTicketPreview && Get.context != null) {
+                      CustomSnackBar.show(Get.context!, message: 'Sample: this ticket would be hidden.');
+                    }
+                  }),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _dividerLine() => Container(
     height: 1,
@@ -2884,6 +3045,8 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
             //   • the trek is NOT completed (arrival date passed)
             final bool statusAllowsCancel =
                 booking != null &&
+                // An organiser's own sale is cancelled with the organiser (24 Nov 2026).
+                !isOfflineTicket(booking) &&
                 (status == 'upcoming' ||
                     status == 'confirmed' ||
                     status == 'booked') &&
@@ -2921,7 +3084,9 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                         padding: EdgeInsets.symmetric(horizontal: 4.w),
                         child: _buildTicketCard(booking),
                       ),
-                      if (status == 'cancelled' && booking != null) ...[
+                      if (status == 'cancelled' &&
+                          booking != null &&
+                          !isOfflineTicket(booking)) ...[
                         SizedBox(height: 2.5.h),
                         _buildRefundTrackerCard(booking),
                       ],
@@ -2938,6 +3103,9 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
 
                       SizedBox(height: 2.5.h),
 
+                      if (isOfflineTicket(booking))
+                        _offlineOrganiserCard(booking!)
+                      else
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: 4.w),
                         child: Container(
@@ -3024,6 +3192,7 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                         padding: EdgeInsets.symmetric(horizontal: 4.w),
                         child: Row(
                           children: [
+                            if (!isOfflineTicket(booking))
                             Expanded(
                               child: _buildActionButton(
                                 Icons.confirmation_number_outlined,
@@ -3065,7 +3234,8 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                                 ),
                               ),
                             ],
-                            SizedBox(width: 3.w),
+                            if (!isOfflineTicket(booking))
+                              SizedBox(width: 3.w),
                             Expanded(
                               child: _buildActionButton(
                                 Icons.share_outlined,
@@ -3076,6 +3246,8 @@ class _BookingsUpcomingScreenState extends State<BookingsUpcomingScreen>
                           ],
                         ),
                       ),
+
+                      if (isOfflineTicket(booking)) _notMyBookingLink(booking!),
 
                       if (cancelBlockedMessage != null)
                         Padding(

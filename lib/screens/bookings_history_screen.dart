@@ -19,7 +19,6 @@ import '../utils/ist_date_utils.dart';
 import 'package:arobo_app/widgets/tap_target.dart';
 import '../utils/screen_constants.dart'; // FontSize
 import '../offline_ticket/offline_ticket.dart';
-import '../offline_ticket/offline_ticket_screen.dart';
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS — aligned with CommonBookedCard
@@ -1984,16 +1983,6 @@ class _BookingsScreenState extends State<BookingsScreen>
 
   // ── BOOKING CARD (timeline — CommonBookedCard + spotlight on just-booked)
   Widget _commonCard(BookingHistoryData booking) {
-    // An organiser's own sale opens its own view-only ticket screen.
-    if (isOfflineTicket(booking)) {
-      final details = offlineTicketDetailsFor(booking);
-      void open() => Get.to(() => OfflineTicketScreen(booking: booking, details: details!));
-      return CommonBookedCard(
-        booking: booking,
-        onViewDetailsTap: details == null ? null : open,
-        onRateTrekTap: details == null ? null : open,
-      );
-    }
     return CommonBookedCard(
       booking: booking,
       onViewDetailsTap: booking.id == null

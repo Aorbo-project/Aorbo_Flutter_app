@@ -28,6 +28,7 @@ import '../repository/network_url.dart';
 import '../repository/repository.dart';
 import '../utils/custom_snackbar.dart';
 import '../services/location_cache_service.dart';
+import '../offline_ticket/offline_ticket.dart';
 import 'package:arobo_app/services/telemetry_gate.dart';
 import 'package:arobo_app/utils/featured_trek_format.dart';
 
@@ -1246,6 +1247,14 @@ class DashboardController extends GetxController {
       _loadBookingDetail(bookingId, keepPrevious: true);
 
   Future<void> _loadBookingDetail(dynamic bookingId, {required bool keepPrevious}) async {
+    // Design preview of an organiser's offline ticket (24 Nov 2026): sample data, no call.
+    final sample = offlineTicketSampleFor(bookingId);
+    if (sample != null) {
+      final body = BookingDetailsResponseModel(success: true, data: sample);
+      bookingDetailsObserver.value = ApiResult.success(body);
+      bookingHistoryModal.value = sample;
+      return;
+    }
     final shown = bookingDetailsObserver.value.maybeWhen(
       success: (r) => (r as BookingDetailsResponseModel?)?.data,
       orElse: () => null,
