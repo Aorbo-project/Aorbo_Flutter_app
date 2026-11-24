@@ -5426,7 +5426,9 @@ mixin _$LatestReviews {
       throw _privateConstructorUsedError; // 👇 ADD THIS LINE
   @JsonKey(name: 'category_highlights')
   Map<String, dynamic>? get categoryHighlights =>
-      throw _privateConstructorUsedError;
+      throw _privateConstructorUsedError; // A review from an organiser's offline ticket (24 Nov 2026): "Booked directly".
+  @JsonKey(name: 'booked_directly')
+  bool? get bookedDirectly => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -5447,7 +5449,8 @@ abstract class $LatestReviewsCopyWith<$Res> {
       String? content,
       @JsonKey(name: 'created_at') String? createdAt,
       @JsonKey(name: 'category_highlights')
-      Map<String, dynamic>? categoryHighlights});
+      Map<String, dynamic>? categoryHighlights,
+      @JsonKey(name: 'booked_directly') bool? bookedDirectly});
 }
 
 /// @nodoc
@@ -5469,6 +5472,7 @@ class _$LatestReviewsCopyWithImpl<$Res, $Val extends LatestReviews>
     Object? content = freezed,
     Object? createdAt = freezed,
     Object? categoryHighlights = freezed,
+    Object? bookedDirectly = freezed,
   }) {
     return _then(_value.copyWith(
       customerId: freezed == customerId
@@ -5495,6 +5499,10 @@ class _$LatestReviewsCopyWithImpl<$Res, $Val extends LatestReviews>
           ? _value.categoryHighlights
           : categoryHighlights // ignore: cast_nullable_to_non_nullable
               as Map<String, dynamic>?,
+      bookedDirectly: freezed == bookedDirectly
+          ? _value.bookedDirectly
+          : bookedDirectly // ignore: cast_nullable_to_non_nullable
+              as bool?,
     ) as $Val);
   }
 }
@@ -5514,7 +5522,8 @@ abstract class _$$LatestReviewsImplCopyWith<$Res>
       String? content,
       @JsonKey(name: 'created_at') String? createdAt,
       @JsonKey(name: 'category_highlights')
-      Map<String, dynamic>? categoryHighlights});
+      Map<String, dynamic>? categoryHighlights,
+      @JsonKey(name: 'booked_directly') bool? bookedDirectly});
 }
 
 /// @nodoc
@@ -5534,6 +5543,7 @@ class __$$LatestReviewsImplCopyWithImpl<$Res>
     Object? content = freezed,
     Object? createdAt = freezed,
     Object? categoryHighlights = freezed,
+    Object? bookedDirectly = freezed,
   }) {
     return _then(_$LatestReviewsImpl(
       customerId: freezed == customerId
@@ -5560,6 +5570,10 @@ class __$$LatestReviewsImplCopyWithImpl<$Res>
           ? _value._categoryHighlights
           : categoryHighlights // ignore: cast_nullable_to_non_nullable
               as Map<String, dynamic>?,
+      bookedDirectly: freezed == bookedDirectly
+          ? _value.bookedDirectly
+          : bookedDirectly // ignore: cast_nullable_to_non_nullable
+              as bool?,
     ));
   }
 }
@@ -5574,7 +5588,8 @@ class _$LatestReviewsImpl implements _LatestReviews {
       this.content,
       @JsonKey(name: 'created_at') this.createdAt,
       @JsonKey(name: 'category_highlights')
-      final Map<String, dynamic>? categoryHighlights})
+      final Map<String, dynamic>? categoryHighlights,
+      @JsonKey(name: 'booked_directly') this.bookedDirectly})
       : _categoryHighlights = categoryHighlights;
 
   factory _$LatestReviewsImpl.fromJson(Map<String, dynamic> json) =>
@@ -5609,9 +5624,14 @@ class _$LatestReviewsImpl implements _LatestReviews {
     return EqualUnmodifiableMapView(value);
   }
 
+// A review from an organiser's offline ticket (24 Nov 2026): "Booked directly".
+  @override
+  @JsonKey(name: 'booked_directly')
+  final bool? bookedDirectly;
+
   @override
   String toString() {
-    return 'LatestReviews(customerId: $customerId, customerName: $customerName, ratingValue: $ratingValue, content: $content, createdAt: $createdAt, categoryHighlights: $categoryHighlights)';
+    return 'LatestReviews(customerId: $customerId, customerName: $customerName, ratingValue: $ratingValue, content: $content, createdAt: $createdAt, categoryHighlights: $categoryHighlights, bookedDirectly: $bookedDirectly)';
   }
 
   @override
@@ -5629,7 +5649,9 @@ class _$LatestReviewsImpl implements _LatestReviews {
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             const DeepCollectionEquality()
-                .equals(other._categoryHighlights, _categoryHighlights));
+                .equals(other._categoryHighlights, _categoryHighlights) &&
+            (identical(other.bookedDirectly, bookedDirectly) ||
+                other.bookedDirectly == bookedDirectly));
   }
 
   @JsonKey(ignore: true)
@@ -5641,7 +5663,8 @@ class _$LatestReviewsImpl implements _LatestReviews {
       ratingValue,
       content,
       createdAt,
-      const DeepCollectionEquality().hash(_categoryHighlights));
+      const DeepCollectionEquality().hash(_categoryHighlights),
+      bookedDirectly);
 
   @JsonKey(ignore: true)
   @override
@@ -5659,14 +5682,16 @@ class _$LatestReviewsImpl implements _LatestReviews {
 
 abstract class _LatestReviews implements LatestReviews {
   const factory _LatestReviews(
-      {@JsonKey(name: 'customer_id') final int? customerId,
-      @JsonKey(name: 'customer_name') final String? customerName,
-      @JsonKey(name: 'rating_value', fromJson: jsonToInt)
-      final int? ratingValue,
-      final String? content,
-      @JsonKey(name: 'created_at') final String? createdAt,
-      @JsonKey(name: 'category_highlights')
-      final Map<String, dynamic>? categoryHighlights}) = _$LatestReviewsImpl;
+          {@JsonKey(name: 'customer_id') final int? customerId,
+          @JsonKey(name: 'customer_name') final String? customerName,
+          @JsonKey(name: 'rating_value', fromJson: jsonToInt)
+          final int? ratingValue,
+          final String? content,
+          @JsonKey(name: 'created_at') final String? createdAt,
+          @JsonKey(name: 'category_highlights')
+          final Map<String, dynamic>? categoryHighlights,
+          @JsonKey(name: 'booked_directly') final bool? bookedDirectly}) =
+      _$LatestReviewsImpl;
 
   factory _LatestReviews.fromJson(Map<String, dynamic> json) =
       _$LatestReviewsImpl.fromJson;
@@ -5688,6 +5713,9 @@ abstract class _LatestReviews implements LatestReviews {
   @override // 👇 ADD THIS LINE
   @JsonKey(name: 'category_highlights')
   Map<String, dynamic>? get categoryHighlights;
+  @override // A review from an organiser's offline ticket (24 Nov 2026): "Booked directly".
+  @JsonKey(name: 'booked_directly')
+  bool? get bookedDirectly;
   @override
   @JsonKey(ignore: true)
   _$$LatestReviewsImplCopyWith<_$LatestReviewsImpl> get copyWith =>

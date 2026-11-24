@@ -1991,6 +1991,11 @@ class _BookingsScreenState extends State<BookingsScreen>
         onViewDetailsTap: number == null
             ? null
             : () => Get.to(() => BookingsUpcomingScreen(bookingId: number)),
+        onRateTrekTap: number == null
+            ? null
+            : () => Get.to(
+                () => BookingsUpcomingScreen(bookingId: number, autoOpenRating: true),
+              ),
       );
     }
     return CommonBookedCard(

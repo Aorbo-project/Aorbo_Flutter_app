@@ -63,10 +63,14 @@ void main() {
     expect(src, contains('final key = b.id ?? b.bookingNumber ?? b;'));
   });
 
-  test('no Rate button on offline tickets until their reviews are built on the server', () {
-    expect(_read('lib/utils/common_booked_card.dart'), contains('!isOfflineTicket(booking)'));
-    final fab = details.substring(details.indexOf('final bool showRatingFab'));
-    expect(fab.substring(0, 400), contains('!isOfflineTicket(booking)'));
+  test('offline tickets are reviewed by their booking ID; reviews from them say "Booked directly"', () {
+    final review = _read('lib/screens/rate_review_screen.dart');
+    expect(review, contains('offlineTicketNumber: isOfflineTicket(booking)'));
+    expect(_read('lib/controller/trek_controller.dart'), contains('"offline_ticket_number": offlineTicketNumber'));
+    final history = _read('lib/screens/bookings_history_screen.dart');
+    final card = history.substring(history.indexOf('Widget _commonCard('));
+    expect(card.substring(0, 900), contains('autoOpenRating: true'));
+    expect(_read('lib/screens/trek_details_screen.dart'), contains("'\$dateStr · Booked directly'"));
   });
 
   test('"Not my booking" calls the server', () {

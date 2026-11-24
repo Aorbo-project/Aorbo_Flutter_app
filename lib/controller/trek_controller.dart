@@ -972,10 +972,15 @@ class TrekController extends GetxController {
     required bool trekPlanning,
     required bool womenSafety,
     List<String> issueTags = const [],
+    // An organiser's offline ticket (24 Nov 2026): reviewed by its booking ID (OB…).
+    String? offlineTicketNumber,
   }) async {
     String body = json.encode({
       "trek_id": trekId,
-      "booking_id": bookingId,
+      if (offlineTicketNumber != null)
+        "offline_ticket_number": offlineTicketNumber
+      else
+        "booking_id": bookingId,
       "batch_id": batchId,
       "rating_value": rating.value,
       "content": reviewController.value.text,

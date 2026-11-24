@@ -14,6 +14,7 @@ import 'package:arobo_app/theme/app_tokens.dart';
 import 'package:arobo_app/theme/app_typography.dart';
 import 'package:arobo_app/services/app_review_prompt.dart';
 import 'package:arobo_app/utils/input_rules.dart';
+import 'package:arobo_app/offline_ticket/offline_ticket.dart';
 
 // ─────────────────────────────────────────────
 //  DESIGN TOKENS — FOREST THEME
@@ -913,6 +914,9 @@ class _RateReviewScreenState extends State<RateReviewScreen>
                 customerId: booking?.customerId ?? 0,
                 bookingId: booking?.id ?? 0,
                 batchId: booking?.batch?.id ?? 0,
+                offlineTicketNumber: isOfflineTicket(booking)
+                    ? booking?.bookingNumber
+                    : null,
                 safetySecurity: selectedCategories.contains(
                   'Safety & Security',
                 ),
@@ -947,6 +951,7 @@ class _RateReviewScreenState extends State<RateReviewScreen>
     required bool trekPlanning,
     required bool womenSafety,
     required List<String> issueTags,
+    String? offlineTicketNumber,
   }) async {
     if (_submitting) return;
     setState(() => _submitting = true);
@@ -964,6 +969,7 @@ class _RateReviewScreenState extends State<RateReviewScreen>
         trekPlanning: !low && trekPlanning,
         womenSafety: !low && womenSafety,
         issueTags: issueTags,
+        offlineTicketNumber: offlineTicketNumber,
       );
       // A happy customer (4-5 stars): Google Play's own rating box, in the app.
       if (saved) AppReviewPrompt.afterTrekReview(stars).ignore();

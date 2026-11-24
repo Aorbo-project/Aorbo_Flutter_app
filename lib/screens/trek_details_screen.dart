@@ -1596,7 +1596,10 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                           ),
                           SizedBox(height: 0.2.h),
                           Text(
-                            dateStr,
+                            // Reviews from an organiser's own sale say so (24 Nov 2026).
+                            review.bookedDirectly == true
+                                ? '$dateStr · Booked directly'
+                                : dateStr,
                             textScaler: const TextScaler.linear(1.0),
                             style: AppType.style(8.0.sp, color: _C.inkLight),
                           ),
