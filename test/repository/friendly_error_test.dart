@@ -41,6 +41,11 @@ void main() {
     'old timeout text': (Exception('Receive Timeout Exception'), FriendlyText.generic),
     'ApiException passes through': (const ApiException('Coupon expired', statusCode: 400), 'Coupon expired'),
     'ApiException with developer text': (const ApiException('Null check operator used on a null value', statusCode: 500), FriendlyText.serverBusy),
+    // the database's own sentences read like words (25 Nov 2026)
+    '500 database deadlock': (_bad(500, {'message': 'Error registering device token: Deadlock found when trying to get lock; try restarting transaction'}), FriendlyText.serverBusy),
+    '409 duplicate entry': (_bad(409, {'message': "Duplicate entry '98' for key 'PRIMARY'"}), FriendlyText.generic),
+    '401 jwt text': (_bad(401, {'message': 'JWT verification failed: invalid signature'}), FriendlyText.generic),
+    'server plain words pass': (_bad(400, {'message': 'Booking is already cancelled'}), 'Booking is already cancelled'),
   };
 
   for (final c in cases.entries) {

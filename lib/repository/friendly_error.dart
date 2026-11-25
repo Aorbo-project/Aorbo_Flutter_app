@@ -64,7 +64,13 @@ final RegExp _developerText = RegExp(
   r'response body null|is not a subtype|null check|nosuchmethod|'
   r'typeerror|\bsocket|errno|econn|etimedout|\bstack\b|'
   r'sequelize|sql|undefined|is not a function|cannot read|'
-  r'unexpected token|<html|<!doctype',
+  r'unexpected token|<html|<!doctype|'
+  // the database's own sentences read like words (owner, 25 Nov 2026: "Deadlock found when
+  // trying to get lock; try restarting transaction" reached a reply). Same list as the
+  // server's utils/plainErrorText.js, which now rewords these before they leave.
+  r'deadlock|lock wait timeout|try restarting transaction|duplicate entry|data too long|'
+  r'unknown column|default value|child row|parent row|out of range value|data truncated|'
+  r'too many connections|getaddrinfo|socket hang up|\bjwt\b|\bcors\b',
   caseSensitive: false,
 );
 

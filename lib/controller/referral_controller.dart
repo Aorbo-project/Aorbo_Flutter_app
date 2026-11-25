@@ -93,7 +93,8 @@ class ReferralController extends GetxController {
       await load(silent: true);
       return true;
     }
-    applyState.value = ApiResult.error(res.message ?? 'Could not apply this code');
+    final msg = res.message;
+    applyState.value = ApiResult.error(msg != null && isFriendlyText(msg) ? msg : 'Could not apply this code');
     return false;
   }
 

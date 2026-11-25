@@ -25,6 +25,7 @@ import 'package:sizer/sizer.dart';
 import 'package:arobo_app/theme/app_typography.dart';
 import 'package:arobo_app/widgets/otp_success_overlay.dart';
 import 'package:arobo_app/widgets/dissolve_to_dashboard.dart';
+import 'package:arobo_app/repository/friendly_error.dart';
 
 class SplashWithLoginScreen extends StatefulWidget {
   const SplashWithLoginScreen({super.key});
@@ -637,7 +638,7 @@ class _SplashWithLoginScreenState extends State<SplashWithLoginScreen>
     Future.delayed(const Duration(milliseconds: 800), () {
       Get.snackbar(
         ok ? 'Referral applied 🎉' : 'Referral code',
-        r.message,
+        friendlyError(r.message),
         snackPosition: SnackPosition.TOP,
         backgroundColor:
             ok ? const Color(0xFF1E8E3E) : const Color(0xFF4A3B00),
