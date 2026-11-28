@@ -99,7 +99,8 @@ void main() {
   });
 
   test('background push handler keeps its entry-point mark (release builds drop it otherwise)', () {
-    final main = File('lib/main.dart').readAsStringSync();
+    // Line endings normalised: Windows checkouts (core.autocrlf) give CRLF.
+    final main = File('lib/main.dart').readAsStringSync().replaceAll('\r\n', '\n');
     expect(
       main,
       contains("@pragma('vm:entry-point')\nFuture<void> _firebaseMessagingBackgroundHandler"),
