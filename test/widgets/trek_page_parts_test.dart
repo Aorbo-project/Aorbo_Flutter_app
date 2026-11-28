@@ -101,12 +101,11 @@ void main() {
           body: SizedBox(
             width: 390,
             height: 380,
-            child: TrekHeroPhotos(imageUrls: [], destination: 'Gokarna Dandeli', organiser: 'AORBO INFOCOM', tags: ['Trekking', 'Camping', 'Rafting']),
+            child: TrekHeroPhotos(imageUrls: [], destination: 'Gokarna Dandeli', organiser: 'AORBO INFOCOM'),
           ),
         ),
       ));
       expect(find.text('Gokarna Dandeli'), findsOneWidget);
-      expect(find.text('Trekking · Camping'), findsOneWidget);
       expect(find.text('AORBO INFOCOM'), findsOneWidget);
       expect(t.takeException(), isNull);
     });
@@ -119,6 +118,15 @@ void main() {
       expect(brand.contains(bg.toARGB32()), isTrue, reason: '$r background');
       expect(brand.contains(fg.toARGB32()), isTrue, reason: '$r text');
     }
+  });
+
+  test('guard: trek photos only slide (owner 28 Nov 2026): no tap viewer, no zoom, no text on the photo', () {
+    final page = File('lib/screens/trek_details_screen.dart').readAsStringSync();
+    final parts = File('lib/widgets/trek_page/trek_page_parts.dart').readAsStringSync();
+    expect(page.contains('_showImageViewer'), isFalse);
+    expect(page.contains('InteractiveViewer'), isFalse);
+    expect(parts.contains('onImageTap'), isFalse);
+    expect(parts.contains('widget.tags'), isFalse);
   });
 
   test('guard: the trek page uses the redesigned parts and keeps its booking logic', () {

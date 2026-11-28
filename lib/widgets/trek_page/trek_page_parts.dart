@@ -165,6 +165,8 @@ class TrekKeyFactsCard extends StatelessWidget {
 // ── Photo header ───────────────────────────────────────────────────────────────────────
 
 /// The big photo with the destination on it (destination = the heading, owner rule).
+/// Photos only SLIDE (owner, 28 Nov 2026): no tap-to-open viewer, no zoom, no activity text on the photo
+/// ("screen odd aayipothundi"); the small 1 / N counter stays so people know they can swipe.
 class TrekHeroPhotos extends StatefulWidget {
   const TrekHeroPhotos({
     super.key,
@@ -172,16 +174,12 @@ class TrekHeroPhotos extends StatefulWidget {
     required this.destination,
     required this.organiser,
     this.organiserLogo,
-    this.tags = const [],
-    this.onImageTap,
   });
 
   final List<String> imageUrls;
   final String destination;
   final String organiser;
   final String? organiserLogo;
-  final List<String> tags;
-  final void Function(int index)? onImageTap;
 
   @override
   State<TrekHeroPhotos> createState() => _TrekHeroPhotosState();
@@ -202,10 +200,7 @@ class _TrekHeroPhotosState extends State<TrekHeroPhotos> {
           PageView.builder(
             itemCount: urls.length,
             onPageChanged: (i) => setState(() => _page = i),
-            itemBuilder: (_, i) => GestureDetector(
-              onTap: widget.onImageTap == null ? null : () => widget.onImageTap!(i),
-              child: CustomNetworkImage(imageUrl: urls[i], fit: BoxFit.cover),
-            ),
+            itemBuilder: (_, i) => CustomNetworkImage(imageUrl: urls[i], fit: BoxFit.cover),
           ),
         // Readability scrim under the name (not decoration: white text needs it).
         const IgnorePointer(
@@ -229,12 +224,10 @@ class _TrekHeroPhotosState extends State<TrekHeroPhotos> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Row(children: [
-                  if (widget.tags.isNotEmpty) _glass(widget.tags.take(2).join(' · ')),
-                  if (widget.tags.isNotEmpty && urls.length > 1) const SizedBox(width: 8),
-                  if (urls.length > 1) _glass('${_page + 1} / ${urls.length}'),
-                ]),
-                const SizedBox(height: 10),
+                if (urls.length > 1) ...[
+                  _glass('${_page + 1} / ${urls.length}'),
+                  const SizedBox(height: 10),
+                ],
                 Text(
                   widget.destination,
                   maxLines: 2,

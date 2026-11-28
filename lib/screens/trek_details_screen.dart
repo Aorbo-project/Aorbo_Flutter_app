@@ -3,8 +3,6 @@ import 'package:arobo_app/controller/dashboard_controller.dart';
 import 'package:arobo_app/controller/trek_controller.dart';
 import 'package:arobo_app/controller/user_controller.dart';
 import 'package:arobo_app/services/analytics_service.dart';
-import 'package:arobo_app/widgets/custom_network_image.dart';
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
@@ -473,7 +471,6 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
         trek?.companyName ?? trek?.businessName ?? trek?.vendor ?? detail.vendor?.businessName ?? '';
     final String? logo = (trek?.vendorLogo?.isNotEmpty == true) ? trek!.vendorLogo : detail.vendor?.businessLogo;
     final images = (detail.images ?? []).map((e) => e.url ?? '').where((u) => u.isNotEmpty).toList();
-    final tags = (detail.activities ?? []).map((a) => (a.name ?? '').trim()).where((n) => n.isNotEmpty).toList();
     final double top = MediaQuery.of(context).padding.top;
     const double bar = 64;
     final double expanded = 46.h;
@@ -499,8 +496,6 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                 destination: destinationName,
                 organiser: organiser.isEmpty ? '-' : organiser,
                 organiserLogo: logo,
-                tags: tags,
-                onImageTap: (i) => _showImageViewer(context, images, i),
               ),
               // Collapsed: a plain white bar with the destination.
               IgnorePointer(
@@ -781,46 +776,6 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  void _showImageViewer(
-    BuildContext context,
-    List<String> images,
-    int initial,
-  ) {
-    FirebaseCrashlytics.instance.log('Popup: Trek image viewer');
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => SizedBox(
-        height: 100.h,
-        child: Stack(
-          children: [
-            PageView.builder(
-              itemCount: images.length,
-              controller: PageController(initialPage: initial),
-              itemBuilder: (_, i) => GestureDetector(
-                onTap: () => Navigator.pop(ctx),
-                child: Center(
-                  child: InteractiveViewer(
-                    minScale: 0.5,
-                    maxScale: 3.0,
-                    child: CustomNetworkImage(
-                      imageUrl: images[i],
-                      fit: BoxFit.contain,
-                      width: 100.w,
-                      height: 100.h,
-                      zoomable: true, // up to 3x pinch-zoom (scan D6)
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
