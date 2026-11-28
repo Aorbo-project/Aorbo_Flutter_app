@@ -79,7 +79,7 @@ class AppTheme {
   // instead of the app's yellow/teal brand). `textTheme` only affects
   // Text widgets that don't already set an explicit style, so screens
   // using AppTextStyles/inline TextStyle are unaffected.
-  static ThemeData lightTheme = ThemeData(
+  static ThemeData get lightTheme => ThemeData(
     scaffoldBackgroundColor: CommonColors.whiteColor,
     fontFamily: "Poppins",
     visualDensity: VisualDensity.adaptivePlatformDensity,

@@ -15,7 +15,7 @@ class AppTextStyles {
 
   // ─── HEADINGS ────────────────────────────────────────────────────────
   /// Large screen heading (splash login heading: 24.sp, SairaStencilOne)
-  static TextStyle splashHeading = TextStyle(
+  static TextStyle get splashHeading => TextStyle(
     fontSize: FontSize.s24,
     fontWeight: FontWeight.w600,
     fontFamily: 'SairaStencilOne',
@@ -23,89 +23,89 @@ class AppTextStyles {
   );
 
   /// Auth screen heading / section title (19.sp Poppins Bold)
-  static TextStyle authHeading = AppType.style(FontSize.s19, w: FontWeight.w700, color: CommonColors.blackColor);
+  static TextStyle get authHeading => AppType.style(FontSize.s19, w: FontWeight.w700, color: CommonColors.blackColor);
 
   /// Auth heading secondary lines (19.sp Poppins SemiBold white)
-  static TextStyle authHeadingSecondary = AppType.style(FontSize.s19, w: FontWeight.w600, color: CommonColors.whiteColor);
+  static TextStyle get authHeadingSecondary => AppType.style(FontSize.s19, w: FontWeight.w600, color: CommonColors.whiteColor);
 
   /// Auth heading accent / highlight (19.sp Poppins Bold yellow)
-  static TextStyle authHeadingAccent = AppType.style(FontSize.s19, w: FontWeight.w700, color: CommonColors.appYellowColor);
+  static TextStyle get authHeadingAccent => AppType.style(FontSize.s19, w: FontWeight.w700, color: CommonColors.appYellowColor);
 
   // ─── SECTION TITLES & LABELS ─────────────────────────────────────────
   /// OTP / form section title (14.sp Poppins SemiBold)
-  static TextStyle sectionTitle = AppType.style(FontSize.s14, w: FontWeight.w600);
+  static TextStyle get sectionTitle => AppType.style(FontSize.s14, w: FontWeight.w600);
 
   /// OTP subtitle / sub-label (12.sp Poppins Medium)
-  static TextStyle sectionSubtitle = AppType.style(FontSize.s12, w: FontWeight.w500, color: CommonColors.blackColor);
+  static TextStyle get sectionSubtitle => AppType.style(FontSize.s12, w: FontWeight.w500, color: CommonColors.blackColor);
 
   // ─── BODY TEXT ───────────────────────────────────────────────────────
   /// Body large (14.sp Poppins Regular)
-  static TextStyle bodyLarge = AppType.style(FontSize.s14, w: FontWeight.w400, color: CommonColors.textColor);
+  static TextStyle get bodyLarge => AppType.style(FontSize.s14, w: FontWeight.w400, color: CommonColors.textColor);
 
   /// Body medium (12.sp Poppins Regular)
-  static TextStyle bodyMedium = AppType.style(FontSize.s12, w: FontWeight.w400, color: CommonColors.textColor);
+  static TextStyle get bodyMedium => AppType.style(FontSize.s12, w: FontWeight.w400, color: CommonColors.textColor);
 
   /// Body small (10.sp Poppins Regular)
-  static TextStyle bodySmall = AppType.style(FontSize.s10, w: FontWeight.w400, color: CommonColors.textColor);
+  static TextStyle get bodySmall => AppType.style(FontSize.s10, w: FontWeight.w400, color: CommonColors.textColor);
 
   // ─── CAPTIONS & HINTS ────────────────────────────────────────────────
   /// Caption / hint text (9.sp Poppins Regular)
-  static TextStyle caption = AppType.style(FontSize.s9, w: FontWeight.w500, color: CommonColors.greyColor);
+  static TextStyle get caption => AppType.style(FontSize.s9, w: FontWeight.w500, color: CommonColors.greyColor);
 
   /// Inline links & disclaimer text (9.sp Poppins Medium white)
-  static TextStyle disclaimerText = AppType.style(FontSize.s9, w: FontWeight.w500, color: CommonColors.whiteColor);
+  static TextStyle get disclaimerText => AppType.style(FontSize.s9, w: FontWeight.w500, color: CommonColors.whiteColor);
 
   /// Link / accent disclaimer (9.sp Poppins ExtraBold yellow)
-  static TextStyle disclaimerLink = AppType.style(FontSize.s9, w: FontWeight.w800, color: CommonColors.appYellowColor);
+  static TextStyle get disclaimerLink => AppType.style(FontSize.s9, w: FontWeight.w800, color: CommonColors.appYellowColor);
 
   // ─── BUTTONS ─────────────────────────────────────────────────────────
   /// Standard button label (14.sp Poppins ExtraBold)
-  static TextStyle buttonText = AppType.style(FontSize.s14, w: FontWeight.w800, color: CommonColors.searchbtntext);
+  static TextStyle get buttonText => AppType.style(FontSize.s14, w: FontWeight.w800, color: CommonColors.searchbtntext);
 
   // ─── TREK CARD ───────────────────────────────────────────────────────
   /// Trek card title (11.sp Poppins SemiBold)
-  static TextStyle trekCardTitle = AppType.style(FontSize.s11, w: FontWeight.w600, color: CommonColors.blackColor);
+  static TextStyle get trekCardTitle => AppType.style(FontSize.s11, w: FontWeight.w600, color: CommonColors.blackColor);
 
   /// Trek card vendor name (9.sp Poppins Regular grey)
-  static TextStyle trekCardVendor = AppType.style(FontSize.s9, w: FontWeight.w400, color: CommonColors.grey_AEAEAE);
+  static TextStyle get trekCardVendor => AppType.style(FontSize.s9, w: FontWeight.w400, color: CommonColors.grey_AEAEAE);
 
   /// Trek card badge label (7.sp Poppins SemiBold)
-  static TextStyle trekCardBadge = AppType.style(FontSize.s7, w: FontWeight.w600, color: CommonColors.blackColor, letterSpacing: 1);
+  static TextStyle get trekCardBadge => AppType.style(FontSize.s7, w: FontWeight.w600, color: CommonColors.blackColor, letterSpacing: 1);
 
   /// Trek card price (14.sp Roboto ExtraBold)
-  static TextStyle trekCardPrice = AppType.style(FontSize.s14, w: FontWeight.w800, color: CommonColors.blackColor);
+  static TextStyle get trekCardPrice => AppType.style(FontSize.s14, w: FontWeight.w800, color: CommonColors.blackColor);
 
   /// Trek card price discounted (14.sp Roboto ExtraBold green)
-  static TextStyle trekCardPriceDiscounted = AppType.style(FontSize.s14, w: FontWeight.w800, color: CommonColors.softGreen3);
+  static TextStyle get trekCardPriceDiscounted => AppType.style(FontSize.s14, w: FontWeight.w800, color: CommonColors.softGreen3);
 
   /// Trek card original price strikethrough (8.sp Roboto regular)
-  static TextStyle trekCardOriginalPrice = AppType.style(FontSize.s8, w: FontWeight.w400, decoration: TextDecoration.lineThrough);
+  static TextStyle get trekCardOriginalPrice => AppType.style(FontSize.s8, w: FontWeight.w400, decoration: TextDecoration.lineThrough);
 
   /// Trek card sub-label (10.sp Poppins SemiBold)
-  static TextStyle trekCardSubLabel = AppType.style(FontSize.s10, w: FontWeight.w600, color: CommonColors.blackColor);
+  static TextStyle get trekCardSubLabel => AppType.style(FontSize.s10, w: FontWeight.w600, color: CommonColors.blackColor);
 
   /// Trek card sub-value (9.sp Poppins Medium muted)
-  static TextStyle trekCardSubValue = AppType.style(FontSize.s9, w: FontWeight.w500);
+  static TextStyle get trekCardSubValue => AppType.style(FontSize.s9, w: FontWeight.w500);
 
   /// Trek card rating text (11.sp Poppins Medium white)
-  static TextStyle trekCardRating = AppType.style(FontSize.s11, w: FontWeight.w500, color: CommonColors.whiteColor);
+  static TextStyle get trekCardRating => AppType.style(FontSize.s11, w: FontWeight.w500, color: CommonColors.whiteColor);
 
   /// Trek card action link (9.sp Poppins Medium blue)
-  static TextStyle trekCardActionLink = AppType.style(FontSize.s9, w: FontWeight.w500, color: CommonColors.blueColor);
+  static TextStyle get trekCardActionLink => AppType.style(FontSize.s9, w: FontWeight.w500, color: CommonColors.blueColor);
 
   // ─── INPUT FIELDS ────────────────────────────────────────────────────
   /// Phone input prefix +91 (11.sp Poppins Medium) — login screen
-  static TextStyle phoneInputPrefix = AppType.style(FontSize.s11, w: FontWeight.w500);
+  static TextStyle get phoneInputPrefix => AppType.style(FontSize.s11, w: FontWeight.w500);
 
   /// Phone input field text (12.sp) — login_screen.dart
-  static TextStyle phoneInputText = AppType.style(FontSize.s12, w: FontWeight.w400);
+  static TextStyle get phoneInputText => AppType.style(FontSize.s12, w: FontWeight.w400);
 
   /// OTP timer countdown (14.sp Poppins Medium black, letterSpacing 0.5w)
-  static TextStyle otpTimer = AppType.style(FontSize.s14, w: FontWeight.w500, color: CommonColors.blackColor);
+  static TextStyle get otpTimer => AppType.style(FontSize.s14, w: FontWeight.w500, color: CommonColors.blackColor);
 
   /// OTP resend link (9.sp blue underlined)
-  static TextStyle otpResendLink = AppType.style(FontSize.s9, w: FontWeight.w500, color: CommonColors.bluebac, decoration: TextDecoration.underline);
+  static TextStyle get otpResendLink => AppType.style(FontSize.s9, w: FontWeight.w500, color: CommonColors.bluebac, decoration: TextDecoration.underline);
 
   /// OTP pin text inside cell (16.sp Poppins Bold)
-  static TextStyle otpPinText = AppType.style(FontSize.s16, w: FontWeight.w700, color: CommonColors.blackColor);
+  static TextStyle get otpPinText => AppType.style(FontSize.s16, w: FontWeight.w700, color: CommonColors.blackColor);
 }
